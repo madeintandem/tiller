@@ -1,6 +1,3 @@
-# Historical fixture false positive: the node slug pay/bill/finished
-# inside a YAML string literal in a test, already on main and not rewritable.
-00a761f06e65364eb211cb6ac5c8966412b765cf:internal/core/mutate/migrate_contributor_test.go:generic-api-key:22
-
-# Historical false positive in this file's explanatory fixture-slug comment.
-51f57b88b7a056d53bb64bdb68c77b81eac24f75:.gitleaksignore:generic-api-key:1
+# Fixture false positive in the initial public commit: a node slug inside a
+# YAML string literal in a test, already on main and not rewritable.
+661299d8eb7196486f6774722690b5c58065a19a:internal/core/mutate/migrate_contributor_test.go:generic-api-key:23
