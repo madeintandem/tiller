@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "command": "show",
+  "data": {
+    "noun": "feature",
+    "id": "F-xxxxxx",
+    "key": "form-engine/nrca-form-loading",
+    "title": "NRCA form loading",
+    "status": "draft",
+    "contributors": [],
+    "change_type": "create",
+    "epic": "form-engine",
+    "review_grain": "task",
+    "review_grain_source": "default",
+    "source": "design/04-form-engine.md",
+    "next_owner": "agent"
+  }
+}

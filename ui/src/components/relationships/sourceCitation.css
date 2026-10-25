@@ -1,0 +1,17 @@
+.relationship-source-citation {
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.relationship-source-citation .copy-cmd {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.relationship-source-citation .copy-cmd code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

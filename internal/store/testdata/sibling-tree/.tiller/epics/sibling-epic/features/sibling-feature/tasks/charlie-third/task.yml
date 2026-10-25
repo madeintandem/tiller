@@ -1,0 +1,12 @@
+id: T-aaaaaa
+key: sibling-epic/sibling-feature/charlie-third
+title: Sorts first by id; keyed last, so an id-keyed map alone would misorder it.
+status: proposed
+blocked: false
+started: false
+owner: sam
+proposed_by: sam
+depends_on: []
+evidence: []
+pr: null
+policy_violations: []

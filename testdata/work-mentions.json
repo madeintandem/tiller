@@ -1,0 +1,11 @@
+[
+ {"name":"formatted prose and repeat locations","markdown":"# E-j8m4q2\n\n**F-79dh3q** and (`T-k3p9w6`).\n\n- E-j8m4q2\n\n| Feature |\n| --- |\n| F-79dh3q |","mentions":[{"id":"E-j8m4q2","line":1},{"id":"F-79dh3q","line":3},{"id":"T-k3p9w6","line":3},{"id":"E-j8m4q2","line":5},{"id":"F-79dh3q","line":9}]},
+ {"name":"commands and blocks","markdown":"`tiller show F-79dh3q`\n\n```md\nE-j8m4q2\n```\n\n    T-k3p9w6\n\n~~F-79dh3q~~","mentions":[{"id":"F-79dh3q","line":9}]},
+ {"name":"existing links and URLs","markdown":"[F-79dh3q](https://example.com) [T-k3p9w6][ref]\n\n[ref]: https://example.com\n\nhttps://example.com/F-79dh3q https://example.com/?id=E-j8m4q2 <https://example.com/T-k3p9w6>","mentions":[]},
+ {"name":"identifier and path boundaries","markdown":"F-79dh3q1 F-79dh3 F-79DH3Q f-79dh3q prefixF-79dh3q F-79dh3q-suffix F-79dh3q_suffix path/F-79dh3q F-79dh3q.md @F-79dh3q .F-79dh3q éF-79dh3q F-79dh3qé Q-h2n7m5\n\n(F-79dh3q), F-79dh3q. F-79dh3q!","mentions":[{"id":"F-79dh3q","line":3},{"id":"F-79dh3q","line":3},{"id":"F-79dh3q","line":3}]},
+ {"name":"standalone code values","markdown":"`F-79dh3q` `` T-k3p9w6 `` `E-j8m4q2 extra` `path/F-79dh3q`","mentions":[{"id":"F-79dh3q","line":1},{"id":"T-k3p9w6","line":1}]},
+ {"name":"multiline references and unknown ID","markdown":"> E-j8m4q2\r\n> F-zzzzzz\r\n\r\nT-k3p9w6","mentions":[{"id":"E-j8m4q2","line":1},{"id":"F-zzzzzz","line":2},{"id":"T-k3p9w6","line":4}]},
+ {"name":"Markdown escapes and entities share renderer text","markdown":"F&#45;79dh3q F\\-79dh3q\n\n&#233;F-79dh3q \\@F-79dh3q F\\&#45;79dh3q F&#38;#45;79dh3q","mentions":[{"id":"F-79dh3q","line":1},{"id":"F-79dh3q","line":1}]},
+ {"name":"footnote body retains original source line","markdown":"A[^note].\n\n[^note]: F-79dh3q","mentions":[{"id":"F-79dh3q","line":3}]},
+ {"name":"raw HTML attributes are not prose","markdown":"<div title=\"F-79dh3q\">\nT-k3p9w6\n</div>\n\nVisible <span title=\"E-j8m4q2\">F-79dh3q</span>","mentions":[{"id":"F-79dh3q","line":5}]}
+]

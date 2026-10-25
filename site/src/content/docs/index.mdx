@@ -1,0 +1,51 @@
+---
+title: Tiller
+description: An opinionated SDLC workflow tool for humans and AI coding agents working together.
+template: splash
+hero:
+  tagline: Tiller holds the structure, the gates, and the state of a software project. The agent does the reasoning. The human approves at the gates. Everything it knows lives as files in your repo, under git, next to the code it describes.
+  image:
+    html: '<img class="light:sl-hidden" src="/tiller/console-home-dark.webp" width="1440" height="780" alt="The tiller console showing an Acme Platform project, the decisions that need a human, work in flight, and what is next." /><img class="dark:sl-hidden" src="/tiller/console-home-light.webp" width="1440" height="780" alt="The tiller console showing an Acme Platform project, the decisions that need a human, work in flight, and what is next." />'
+  actions:
+    - text: Quickstart
+      link: /tiller/quickstart/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/madeintandem/tiller
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## The opinions
+
+<CardGrid>
+  <Card title="Files are the source of truth">
+    Markdown for prose, YAML for state, git as the spine. No database, no hosted service. `.tiller/` is a directory in your repository, and a clone carries the whole plan with it.
+  </Card>
+  <Card title="Prose and state never share a file">
+    A node's `.md` is yours, intent and acceptance criteria in your words. Its `.yml` is tiller's, status and gate results mutated by the machine. The CLI can churn state all day without touching a word you wrote.
+  </Card>
+  <Card title="One tree, progressively elaborated">
+    Epics, then features, then tasks. A feature gets specified and broken into tasks when its turn comes, and not a moment before.
+  </Card>
+  <Card title="A gatekeeper, not an orchestrator">
+    Tiller declares and records gates. It never runs the agent's reasoning or someone else's tooling. Required gates block done; review gates are visible and non-blocking.
+  </Card>
+  <Card title="The done gate is the PR merge">
+    An agent can drive work right to the edge of done and turn every gate green. Only a human merge crosses it, and tiller finds out by watching git.
+  </Card>
+  <Card title="Model and harness agnostic">
+    The agent surface is the `tiller` CLI, skills served by `tiller guide`, and a generated `orientation.md`. Claude Code, Codex, and a bare shell all see the same thing.
+  </Card>
+</CardGrid>
+
+## Install
+
+```sh
+brew install --cask madeintandem/tap/tiller        # macOS
+curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh | sh   # macOS or Linux
+```
+
+One static binary, console and skills included. Nothing else to install, nothing else to place.

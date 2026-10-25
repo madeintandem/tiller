@@ -1,0 +1,20 @@
+# gitleaks configuration. Extends the default ruleset; the allowlist below
+# keeps tiller's own fixture shapes from tripping the generic-api-key rule.
+# A node key is a slug path like `form-engine/nrca-form-loading`; test fixtures
+# write it as `key: "<slug>"`, `Key: "<slug>"`, `key := "<slug>"`,
+# `task.Key == "<slug>"`, `"key": "<slug>"`, or `--key", "<slug>"`, every one
+# of which the generic rule reads as a credential. The allowlist targets only
+# that rule's exact match around a standalone key field and a canonical
+# lowercase slug path, so unrelated findings on the same line remain visible.
+title = "tiller"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "canonical tiller node key fields are slug paths, not secrets"
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+regexes = [
+  '''(^|[^[:alnum:]_-])(--)?[[:alnum:]_]*[kK]ey\W{0,4}["'][a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*["']''',
+]

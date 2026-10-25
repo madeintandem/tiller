@@ -1,0 +1,242 @@
+{
+  "pagefindVersion": "1.5.2",
+  "correspondingSource": {
+    "archive": "pagefind-1.5.2-corresponding-source.tar.gz",
+    "release": "third-party/pagefind-1.5.2-source",
+    "sha256": "3f6a900217013edd46dacd44b259dedeb0438b727814b30e17248dafb2127233"
+  },
+  "components": [
+    {
+      "name": "Pagefind Web",
+      "version": "1.5.2",
+      "source": "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/LICENSE",
+      "files": [
+        "pagefind-1.5.2/LICENSE"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "bit-set",
+      "version": "0.10.0",
+      "source": "https://static.crates.io/crates/bit-set/bit-set-0.10.0.crate",
+      "files": [
+        "bit-set-0.10.0/LICENSE-APACHE",
+        "bit-set-0.10.0/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "bit-vec",
+      "version": "0.9.1",
+      "source": "https://static.crates.io/crates/bit-vec/bit-vec-0.9.1.crate",
+      "files": [
+        "bit-vec-0.9.1/LICENSE-APACHE",
+        "bit-vec-0.9.1/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "bumpalo",
+      "version": "3.20.2",
+      "source": "https://static.crates.io/crates/bumpalo/bumpalo-3.20.2.crate",
+      "files": [
+        "bumpalo-3.20.2/LICENSE-APACHE",
+        "bumpalo-3.20.2/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "cfg-if",
+      "version": "1.0.4",
+      "source": "https://static.crates.io/crates/cfg-if/cfg-if-1.0.4.crate",
+      "files": [
+        "cfg-if-1.0.4/LICENSE-APACHE",
+        "cfg-if-1.0.4/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "minicbor",
+      "version": "2.2.1",
+      "source": "https://static.crates.io/crates/minicbor/minicbor-2.2.1.crate",
+      "files": [
+        "minicbor-2.2.1/LICENSE.txt"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "once_cell",
+      "version": "1.21.4",
+      "source": "https://static.crates.io/crates/once_cell/once_cell-1.21.4.crate",
+      "files": [
+        "once_cell-1.21.4/LICENSE-APACHE",
+        "once_cell-1.21.4/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "pagefind_microjson",
+      "version": "0.1.4",
+      "source": "https://static.crates.io/crates/pagefind_microjson/pagefind_microjson-0.1.4.crate",
+      "files": [
+        "pagefind_microjson-0.1.4/LICENCE",
+        "pagefind_microjson-0.1.4/COPYRIGHT-header.txt"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "pagefind_stem",
+      "version": "1.0.0",
+      "source": "https://static.crates.io/crates/pagefind_stem/pagefind_stem-1.0.0.crate",
+      "files": [
+        "pagefind_stem-1.0.0/NOTICE.txt"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "proc-macro2",
+      "version": "1.0.106",
+      "source": "https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.106.crate",
+      "files": [
+        "proc-macro2-1.0.106/LICENSE-APACHE",
+        "proc-macro2-1.0.106/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "quote",
+      "version": "1.0.45",
+      "source": "https://static.crates.io/crates/quote/quote-1.0.45.crate",
+      "files": [
+        "quote-1.0.45/LICENSE-APACHE",
+        "quote-1.0.45/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "rustversion",
+      "version": "1.0.22",
+      "source": "https://static.crates.io/crates/rustversion/rustversion-1.0.22.crate",
+      "files": [
+        "rustversion-1.0.22/LICENSE-APACHE",
+        "rustversion-1.0.22/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "serde",
+      "version": "1.0.228",
+      "source": "https://static.crates.io/crates/serde/serde-1.0.228.crate",
+      "files": [
+        "serde-1.0.228/LICENSE-APACHE",
+        "serde-1.0.228/LICENSE-MIT"
+      ],
+      "scope": "optional-not-enabled"
+    },
+    {
+      "name": "serde_core",
+      "version": "1.0.228",
+      "source": "https://static.crates.io/crates/serde_core/serde_core-1.0.228.crate",
+      "files": [
+        "serde_core-1.0.228/LICENSE-APACHE",
+        "serde_core-1.0.228/LICENSE-MIT"
+      ],
+      "scope": "optional-not-enabled"
+    },
+    {
+      "name": "serde_derive",
+      "version": "1.0.228",
+      "source": "https://static.crates.io/crates/serde_derive/serde_derive-1.0.228.crate",
+      "files": [
+        "serde_derive-1.0.228/LICENSE-APACHE",
+        "serde_derive-1.0.228/LICENSE-MIT"
+      ],
+      "scope": "optional-not-enabled"
+    },
+    {
+      "name": "syn",
+      "version": "2.0.117",
+      "source": "https://static.crates.io/crates/syn/syn-2.0.117.crate",
+      "files": [
+        "syn-2.0.117/LICENSE-APACHE",
+        "syn-2.0.117/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "unicode-ident",
+      "version": "1.0.24",
+      "source": "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.24.crate",
+      "files": [
+        "unicode-ident-1.0.24/LICENSE-APACHE",
+        "unicode-ident-1.0.24/LICENSE-MIT",
+        "unicode-ident-1.0.24/LICENSE-UNICODE"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "wasm-bindgen",
+      "version": "0.2.117",
+      "source": "https://static.crates.io/crates/wasm-bindgen/wasm-bindgen-0.2.117.crate",
+      "files": [
+        "wasm-bindgen-0.2.117/LICENSE-APACHE",
+        "wasm-bindgen-0.2.117/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "wasm-bindgen-macro",
+      "version": "0.2.117",
+      "source": "https://static.crates.io/crates/wasm-bindgen-macro/wasm-bindgen-macro-0.2.117.crate",
+      "files": [
+        "wasm-bindgen-macro-0.2.117/LICENSE-APACHE",
+        "wasm-bindgen-macro-0.2.117/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "wasm-bindgen-macro-support",
+      "version": "0.2.117",
+      "source": "https://static.crates.io/crates/wasm-bindgen-macro-support/wasm-bindgen-macro-support-0.2.117.crate",
+      "files": [
+        "wasm-bindgen-macro-support-0.2.117/LICENSE-APACHE",
+        "wasm-bindgen-macro-support-0.2.117/LICENSE-MIT"
+      ],
+      "scope": "compiler-only"
+    },
+    {
+      "name": "wasm-bindgen-shared",
+      "version": "0.2.117",
+      "source": "https://static.crates.io/crates/wasm-bindgen-shared/wasm-bindgen-shared-0.2.117.crate",
+      "files": [
+        "wasm-bindgen-shared-0.2.117/LICENSE-APACHE",
+        "wasm-bindgen-shared-0.2.117/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "write-json",
+      "version": "0.1.4",
+      "source": "https://static.crates.io/crates/write-json/write-json-0.1.4.crate",
+      "files": [
+        "write-json-0.1.4/LICENSE-APACHE",
+        "write-json-0.1.4/LICENSE-MIT"
+      ],
+      "scope": "wasm-runtime"
+    },
+    {
+      "name": "Rust standard library (including compiler-builtins and bundled libm)",
+      "version": "1.97.0-nightly (bf4fbfb7a 2026-04-11)",
+      "source": "https://static.rust-lang.org/dist/2026-04-12/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+      "files": [
+        "rust-stdlib-nightly-2026-04-12/LICENSE-APACHE",
+        "rust-stdlib-nightly-2026-04-12/LICENSE-MIT",
+        "rust-stdlib-nightly-2026-04-12/COPYRIGHT",
+        "rust-stdlib-nightly-2026-04-12/COPYRIGHT-library.html",
+        "rust-stdlib-nightly-2026-04-12/compiler-builtins-LICENSE.txt",
+        "rust-stdlib-nightly-2026-04-12/libm-LICENSE.txt"
+      ],
+      "scope": "wasm-runtime; complete conservative library-source notices"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Pre-paint twin of lib/theme.ts's bootTheme: Vite's module script
+         (main.tsx) is deferred, so it can run after first paint and let a
+         forced theme flash one frame against the OS default. This inline
+         script can't be deferred, so it applies the stored pick first;
+         bootTheme still owns normalize/persist semantics for the app. Kept
+         after charset/viewport (charset must land within the document's
+         first 1024 bytes) but still ahead of Vite's injected
+         stylesheet/bundle tags, which inject at head-end regardless of
+         where this block sits. -->
+    <script>
+      try {
+        var t = localStorage.getItem('tiller-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Tiller</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

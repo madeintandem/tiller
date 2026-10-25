@@ -1,0 +1,39 @@
+---
+import DefaultSearch from '@astrojs/starlight/components/Search.astro';
+---
+
+<script is:inline>
+  (() => {
+    const marker = '__tillerPagefindWorkerPatched';
+    if (window[marker]) return;
+
+    // Starlight passes Pagefind's bundle path as a root-relative URL. Pagefind
+    // 1.5 moves that path into a blob worker, where fetch cannot resolve it.
+    // Keep Starlight's UI but give only Pagefind's init message an absolute
+    // same-origin base. Pagefind retains absolute paths inside worker scope.
+
+    const NativeWorker = window.Worker;
+    window.Worker = class extends NativeWorker {
+      postMessage(message, ...args) {
+        const init =
+          message?.method === 'init' &&
+          typeof message?.instanceId === 'string' &&
+          message.instanceId.startsWith('pf_');
+        const options = init ? message.args?.[0] : undefined;
+        if (typeof options?.basePath === 'string' && options.basePath.startsWith('/')) {
+          message = {
+            ...message,
+            args: [
+              { ...options, basePath: new URL(options.basePath, window.location.origin).href },
+              ...message.args.slice(1),
+            ],
+          };
+        }
+        return super.postMessage(message, ...args);
+      }
+    };
+    window[marker] = true;
+  })();
+</script>
+
+<DefaultSearch {...Astro.props} />

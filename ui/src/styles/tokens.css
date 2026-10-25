@@ -1,0 +1,439 @@
+/* Console v2's design-token layer (Phase 0, task 2): the madeintandem role-
+   token system, adapted for the console's own jobs, replacing the chart-
+   table pass's prefixed token layer (task B1, docs/plans/2026-07-23-console-
+   chart-table-mocks.html) wholesale rather than aliasing alongside it. Every
+   value in the :root block below comes verbatim from the mock's own token
+   block (docs/plans/2026-08-09-console-v2-mocks.html:59-136), itself
+   adapted from the madeintandem site's global.css: role-named surfaces
+   (paper, panel, recess) and inks (ink, ink-2, ink-3, heading) rather than
+   the old layer's literal-hue names, a single --accent in place of its old
+   magenta token, and the same seven-state chart palette carried forward as
+   --st-<state> / --st-<state>-t pairs.
+
+   Every color is wrapped in @supports (color: light-dark(...)): a browser
+   that has it themes automatically off color-scheme (:root sets `light
+   dark`, and a future [data-theme='light'|'dark'] pins it once Task 3 lands
+   a toggle - the selectors are declared here already, inert until that
+   attribute exists); a browser that lacks it falls back to the plain :root
+   block above, the light values only. --tint is not a color: it is the
+   percentage (13% light, 22% dark, since the same mix reads lighter on a
+   dark ground) the color-mix() chip/dot idiom mixes a state's --st-<state>
+   toward --panel at, so a component composes its own tint from the live
+   token rather than reading a pre-mixed color (see .chip below, and every
+   call site the migration touched: `color-mix(in srgb, var(--st-x) var(--
+   tint), var(--panel))`). --tint cannot ride light-dark() itself - that
+   function only themes colors, never bare numbers/percentages, so a
+   `--tint: light-dark(13%, 22%)` inside the @supports block would resolve
+   to one value in both schemes, silently, with nothing in the syntax to
+   flag it. It stays 13% on the bare :root and is bumped to 22% by a
+   `prefers-color-scheme: dark` media query, scoped with `:not([data-
+   theme='light'])` so an explicit forced-light choice still wins over a
+   dark OS once Task 3 wires the toggle; `[data-theme='dark']` gets its own
+   override for the opposite forced case, a dark theme chosen under a light
+   OS, which the media query alone would never see. Forced light needs no
+   override of its own: excluding it from the media query's selector is
+   what leaves it at the bare :root's 13%.
+
+   Fonts: --font-display (Space Grotesk), --font-body (Inter), --font-mono
+   (Space Mono), self-hosted via styles/fonts.css (Task 1) and wired to
+   these names here for the first time. The display voice changes from the
+   chart-table pass's serif to Space Grotesk; that is the redesign, not a
+   carryover bug.
+
+   Radii collapse the chart-table pass's four-step scale (sm/md/lg/xl) to
+   the mock's two: --radius-btn (chips, tags, small controls, folding the
+   old sm and md) and --radius-card (cards, panels, warning boxes, folding
+   the old lg and xl); a full pill stays the literal 999px the mock itself
+   uses rather than a third token.
+
+   The component rules below the custom properties (state dot/bar, chip,
+   copy-cmd, copy-ref, eyebrow, count-badge) are not from the mock - they
+   are the chart-table pass's own shared primitives, repainted onto the
+   roles above rather than rebuilt, since this task is a re-paint, not a
+   rebuild (later phases redo each view's own layout). The eight-step
+   spacing scale at the very bottom is the same kind of carryover, renamed
+   from the chart-table pass's own scale; see its own comment for why it
+   stays unrederived. */
+
+:root {
+  color-scheme: light;
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --radius-card: 6px;
+  --radius-btn: 3px;
+
+  --paper: #fbfbf5;
+  --panel: #ffffff;
+  --recess: #f2f2f3;
+  --hair: #e3dcd9;
+
+  --heading: #001129;
+  --ink: #191819;
+  --ink-2: #54524f;
+  --ink-3: #76736e;
+
+  --olive: #6f7347;
+  --accent: #8d134d;
+  --accent-soft: rgba(141, 19, 77, 0.08);
+  --accent-line: rgba(141, 19, 77, 0.28);
+  --error: #8b2d2e;
+
+  /* The drop shadow a surface floating over another one wears (the Explore
+     map's selected-node card and the copy toast): enough lift to read as a
+     layer above what is under it, not enough to read as a dialog over it.
+     Only the color is themed, in the @supports block below, since
+     light-dark() takes colors and nothing else; the geometry is the same in
+     both schemes, so stating it once here is the whole of it, and a
+     component says var(--shadow-panel) rather than composing offsets of its
+     own.
+     --shadow-panel itself is declared here and nowhere else on purpose. Its
+     var() is substituted when :root's own computed values are worked out,
+     not at the box-shadow that reads it, so what makes the theming land is
+     the cascade rather than the substitution: the @supports block below
+     redeclares --shadow-color on :root too, later in the file at the same
+     specificity, so it wins, and this one composite line picks the themed
+     color up. A copy of the whole shadow inside that block would only be a
+     second thing to keep in step. */
+  --shadow-color: rgba(20, 40, 50, 0.16);
+  --shadow-panel: 0 6px 20px var(--shadow-color);
+
+  --tint: 13%;
+
+  --st-draft: #76736e;
+  --st-draft-t: #54524f;
+  --st-specced: #7a3e62;
+  --st-specced-t: #5e2f4b;
+  --st-ready: #3e7f87;
+  --st-ready-t: #2d6169;
+  --st-active: #1f5583;
+  --st-active-t: #17416a;
+  --st-in_review: #a5801c;
+  --st-in_review-t: #7a5e12;
+  --st-done: #4e7a5c;
+  --st-done-t: #2d4f38;
+  --st-blocked: #962f1e;
+  --st-blocked-t: #7c2517;
+
+  /* Shelf nouns (bug / chore / tweak): violet, copper, lime, kept off the
+     --st-* hues. --noun-x is the text/swatch ink, --noun-x-bg its soft ground. */
+  --noun-bug: #5a3a9e;
+  --noun-bug-bg: #ebe4f8;
+  --noun-chore: #8f4a0f;
+  --noun-chore-bg: #f8e5d2;
+  --noun-tweak: #566312;
+  --noun-tweak-bg: #e9eec9;
+}
+
+@supports (color: light-dark(white, black)) {
+  :root {
+    color-scheme: light dark;
+
+    --paper: light-dark(#fbfbf5, #12171e);
+    --panel: light-dark(#ffffff, #232a34);
+    --recess: light-dark(#f2f2f3, #0d1219);
+    --hair: light-dark(#e3dcd9, #2b3542);
+
+    --heading: light-dark(#001129, #e8eef5);
+    --ink: light-dark(#191819, #c2cbd6);
+    --ink-2: light-dark(#54524f, #98a2ae);
+    --ink-3: light-dark(#76736e, #838d99);
+
+    --olive: light-dark(#6f7347, #a6ab74);
+    --accent: light-dark(#8d134d, #ec7ca6);
+    --accent-soft: light-dark(rgba(141, 19, 77, 0.08), rgba(236, 124, 166, 0.12));
+    --accent-line: light-dark(rgba(141, 19, 77, 0.28), rgba(236, 124, 166, 0.35));
+    --error: light-dark(#8b2d2e, #f0918b);
+
+    /* Heavier on a dark ground, where a shadow mixed from the light theme's
+       blue-black barely separates a panel from the paper behind it. */
+    --shadow-color: light-dark(rgba(20, 40, 50, 0.16), rgba(0, 0, 0, 0.5));
+
+    --st-draft: light-dark(#76736e, #8a93a0);
+    --st-draft-t: light-dark(#54524f, #a7b0bc);
+    --st-specced: light-dark(#7a3e62, #c98bb0);
+    --st-specced-t: light-dark(#5e2f4b, #d9a6c4);
+    --st-ready: light-dark(#3e7f87, #7fb6b6);
+    --st-ready-t: light-dark(#2d6169, #96caca);
+    --st-active: light-dark(#1f5583, #6fa8d6);
+    --st-active-t: light-dark(#17416a, #8fbce0);
+    --st-in_review: light-dark(#a5801c, #d3ad44);
+    --st-in_review-t: light-dark(#7a5e12, #e0c167);
+    --st-done: light-dark(#4e7a5c, #7fa96b);
+    --st-done-t: light-dark(#2d4f38, #9fc08b);
+    --st-blocked: light-dark(#962f1e, #e0796b);
+    --st-blocked-t: light-dark(#7c2517, #f0918b);
+
+    /* Shelf nouns: violet, copper, lime, off the --st-* hues. --noun-x is the
+       text/swatch ink, --noun-x-bg its soft ground (>= 4.5:1, both themes). */
+    --noun-bug: light-dark(#5a3a9e, #c3a8f2);
+    --noun-bug-bg: light-dark(#ebe4f8, #2c2244);
+    --noun-chore: light-dark(#8f4a0f, #efb27a);
+    --noun-chore-bg: light-dark(#f8e5d2, #40281a);
+    --noun-tweak: light-dark(#566312, #c2d26a);
+    --noun-tweak-bg: light-dark(#e9eec9, #2e3516);
+  }
+
+  /* --tint's dark bump: light-dark() cannot express it (see the header
+     comment), so a media query stands in for "auto, and the OS says dark",
+     scoped off [data-theme='light'] so a forced-light choice still wins
+     over a dark OS. Forced dark gets its own rule below, for the opposite
+     case a media query alone can never see: a dark theme chosen under a
+     light OS. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --tint: 22%;
+    }
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --tint: 22%;
+  }
+}
+
+/* ---------- Spacing (carried from the chart-table pass) ----------
+   The mock carries no spacing scale of its own - the plan explicitly scopes
+   this task to the palette. Phases 2-5 re-derive spacing per view as each
+   is rebuilt; until then the shell keeps the chart-table pass's own 8-step
+   scale, renamed to drop the old prefix so the whole layer reads as one
+   system, even though these particular values did not come from the new
+   mock. */
+:root {
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+}
+
+/* ---------- Layout (topbar height, phase-3 carry-in) ----------
+   The topbar's own rendered height, 52px, first hardcoded into build.css's
+   `.build { height: calc(100vh - 52px); }` (Phase 3, task 12/13) and matched
+   by the mock's own `.explore` rule at the identical literal. Promoted to a
+   token here, the same carryover posture the spacing scale above already
+   takes, so Explore's restyle (Phase 4, task 16) can consume the same value
+   build.css does rather than a second hardcoded 52px living a few files
+   away from the first. The header actually renders 60px tall, and taller
+   when its row wraps on a narrow window, so App measures it and overwrites
+   this token on the root; 60px is only the first paint's value. A stale 52px
+   left Explore, Build, and Fix 8px taller than the viewport, and with the
+   topbar sticky that 8px scrolled under it. */
+:root {
+  --topbar-h: 60px;
+}
+
+/* StateDot: the node's own color. Sized by the size prop via inline style;
+   this rule only supplies the shape. */
+.state-dot {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+}
+
+/* StateGlyph: the Explore tree's shape-coded status mark. Sized by the size
+   prop via the svg's own width/height; this rule only keeps it from
+   shrinking in a flex row or sitting on the text baseline. */
+.state-glyph {
+  display: block;
+  flex: none;
+}
+
+/* StateGlyph's hover tooltip: the status label alone. The same look as the
+   Report's chart tooltip (.report-tooltip), but fixed to the viewport from
+   a portal, so the Explore rail's scroll box never clips it; StateGlyph
+   sets left and top. Above the sticky topbar (z 10), below the copy toast
+   (z 1000). */
+.state-glyph-tip {
+  position: fixed;
+  z-index: 20;
+  padding: 4px 8px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  box-shadow: var(--shadow-panel);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--heading);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* StateBar: the children's-mix bar. The container is always the recessed
+   groove; segments (below) draw on top of it, so an all-zero mix still
+   reads as an empty track rather than nothing. */
+.state-bar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  width: 100%;
+  height: 5px;
+  border-radius: var(--radius-btn);
+  overflow: hidden;
+  background: var(--recess);
+}
+
+.state-bar-segment {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-btn);
+}
+
+/* Chip: the tinted state pill, dot plus word. The fill is the CSS color-mix()
+   of statusColor()'s var() at --tint toward --panel (the mock's own idiom,
+   mock:202); the word is statusTextColor()'s twin, both composed inline per
+   instance (see Chip.tsx), so no color is hardcoded here. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  vertical-align: 3px;
+  white-space: nowrap;
+}
+
+/* CopyCmd: the mono command chip. The whole element is a <button>, styled to
+   read as the mock's .cmd box rather than a native button. */
+.copy-cmd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 6px 10px;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.copy-cmd code {
+  font-family: inherit;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+/* Accent is opt-in only (the accent prop), never the default chip chrome
+   above. */
+.copy-cmd-accent {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.copy-cmd-icon {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+
+/* CopyRef: the header ref in its quiet register. No chip chrome; the mono
+   text keeps its surrounding line's look and only the icon says clickable.
+   The icon stays faint, not accent: nothing here needs the human. */
+.copy-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.copy-ref-icon {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+
+.copy-ref:hover .mono,
+.copy-ref:hover .copy-ref-icon {
+  color: var(--ink-2);
+}
+
+/* The single shared toast root CopyCmd creates lazily in document.body
+   (see CopyCmd.tsx): fixed, centered low on the viewport, invisible until
+   the "visible" class lands on a copy. */
+.copy-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 6px);
+  background: var(--ink);
+  color: var(--panel);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-btn);
+  /* The same lift the map's floating card has, off the shared token rather
+     than the literal 0 8px 28px rgba(20, 40, 50, 0.18) this carried before
+     the token existed: the two are a hair apart in blur and opacity, which
+     is not a difference either of them is trying to say, and only the token
+     darkens the shadow for a dark scheme. */
+  box-shadow: var(--shadow-panel);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 1000;
+}
+
+.copy-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* SectionHead: the letterspaced eyebrow, with an optional accent count
+   badge (never a default fill; only what needs the human wears accent). */
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+/* The row's trailing slot (SectionHead's headerExtra): whatever sits here is
+   pushed to the far edge, so the eyebrow's own count stays beside its label. */
+.eyebrow-row-extra {
+  margin-left: auto;
+}
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 650;
+}
+
+.count-badge {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  padding: 1px 9px;
+}

@@ -1,0 +1,66 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Build / output
+# Fetched and checksum-verified by site/scripts/fetch-pagefind-source.mjs.
+/site/public/pagefind-*-corresponding-source.tar.gz
+dist/
+# ui/dist is committed: go:embed ships it in the binary (docs/plans/2026-07-05-serve-pass-1-watching-console.md)
+!/ui/dist/
+build/
+# ui/src/views/build is the console's own Build VIEW (console v2 phase 3,
+# task-13-brief.md), not a build-output directory the generic build/ pattern
+# above means to catch - it collided by name coincidence only.
+!/ui/src/views/build/
+out/
+target/
+coverage/
+tmp/
+
+# Compiled tiller binary (produced by `go build -o tiller ./cmd/tiller`)
+/tiller
+
+# Dependencies (language-specific entries get added when the stack lands)
+node_modules/
+vendor/
+
+# Tiller generated cache (see docs/artifact-schema.md)
+.tiller/.cache/
+.cache/
+
+# Agent worktrees
+.worktrees/
+.claude/worktrees/
+
+# Docs site: build output and the pages sync-docs.mjs generates from repo markdown
+site/dist/
+site/.astro/
+site/src/content/docs/spec/
+site/src/content/docs/contributing.md
+site/src/content/docs/releasing.md
+site/src/content/docs/cli.md
+
+# Subagent-driven-development scratch (ledgers, briefs, review packages)
+.superpowers/

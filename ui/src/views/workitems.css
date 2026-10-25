@@ -1,0 +1,533 @@
+/* Fix uses the console's dense board vocabulary: a quiet filter
+   rail, recessed shelf columns, and flat panel cards. Component-level layout
+   tokens name the two dimensions this view owns; palette, type, spacing,
+   radii, focus, and state colors stay on the shared console tokens. */
+.work-items-page {
+  --work-items-filter-width: 11rem;
+  --work-items-column-width: 14.5rem;
+
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--topbar-h));
+  min-width: 0;
+  overflow: hidden;
+}
+
+
+.work-items-page .work-items-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.work-items-page .work-items-filters {
+  align-self: stretch;
+  width: var(--work-items-filter-width);
+  flex: none;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 14px;
+  border-right: 1px solid var(--hair);
+  background: var(--paper);
+  transition: width 0.18s ease, padding 0.18s ease;
+}
+
+
+.work-items-page .panel-closed .work-items-filters {
+  width: 0;
+  padding: 18px 0;
+  border-right: 0;
+  overflow: hidden;
+}
+
+.work-items-page .work-items-board-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+
+.work-items-page .work-items-filters h2 {
+  margin: 0 0 var(--space-6);
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.work-items-page .work-item-filter-group + .work-item-filter-group {
+  margin-top: calc(var(--space-8) + var(--space-4));
+}
+
+.work-items-page .work-item-filter-label {
+  margin: 0 0 var(--space-4);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.work-items-page .work-item-filter-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.work-items-page .work-item-filter-link {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.work-items-page .work-item-filter-link:hover {
+  border-color: var(--hair);
+  color: var(--heading);
+  text-decoration: none;
+}
+
+.work-items-page .work-item-filter-link.active {
+  border-color: var(--hair);
+  background: var(--panel);
+  color: var(--heading);
+  font-weight: 700;
+}
+
+.work-items-page .work-items-board {
+  --board-col-min: var(--work-items-column-width);
+  --board-gap: var(--space-6);
+
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 16px;
+  padding: 0 20px 24px;
+}
+
+/* A column is its heading in the heads row over its cards in the scrolling
+   row (components/board.css), one recessed shape split across the two. */
+.work-items-page .work-item-column {
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 var(--space-5) var(--space-5);
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  background: var(--recess);
+}
+
+.work-items-page .work-item-column-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: calc(var(--space-5) + var(--space-1)) calc(var(--space-2) + var(--space-5)) var(--space-5);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: var(--recess);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.work-items-page .work-item-column-count {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.work-items-page .work-item-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.work-items-page .work-item-column > .none {
+  padding: 0 var(--space-2);
+}
+
+.work-items-page .work-item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+}
+
+.work-items-page .work-item-card:hover {
+  border-color: var(--ink-3);
+}
+
+.work-items-page .work-item-noun-chip {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-btn);
+  background: var(--recess);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.work-items-page .work-item-noun-chip[data-noun="bug"] {
+  background: var(--noun-bug-bg);
+  color: var(--noun-bug);
+}
+
+.work-items-page .work-item-filter-link[data-noun="bug"] {
+  color: var(--noun-bug);
+}
+
+.work-items-page .work-item-filter-link[data-noun="bug"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: var(--space-3);
+  border-radius: 50%;
+  background: var(--noun-bug);
+}
+
+.work-items-page .work-item-filter-link[data-noun="bug"]:hover,
+.work-items-page .work-item-filter-link[data-noun="bug"].active {
+  border-color: var(--noun-bug);
+  background: var(--noun-bug-bg);
+  color: var(--noun-bug);
+}
+
+.work-items-page .work-item-noun-chip[data-noun="chore"] {
+  background: var(--noun-chore-bg);
+  color: var(--noun-chore);
+}
+
+.work-items-page .work-item-filter-link[data-noun="chore"] {
+  color: var(--noun-chore);
+}
+
+.work-items-page .work-item-filter-link[data-noun="chore"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: var(--space-3);
+  border-radius: 50%;
+  background: var(--noun-chore);
+}
+
+.work-items-page .work-item-filter-link[data-noun="chore"]:hover,
+.work-items-page .work-item-filter-link[data-noun="chore"].active {
+  border-color: var(--noun-chore);
+  background: var(--noun-chore-bg);
+  color: var(--noun-chore);
+}
+
+.work-items-page .work-item-noun-chip[data-noun="tweak"] {
+  background: var(--noun-tweak-bg);
+  color: var(--noun-tweak);
+}
+
+.work-items-page .work-item-filter-link[data-noun="tweak"] {
+  color: var(--noun-tweak);
+}
+
+.work-items-page .work-item-filter-link[data-noun="tweak"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: var(--space-3);
+  border-radius: 50%;
+  background: var(--noun-tweak);
+}
+
+.work-items-page .work-item-filter-link[data-noun="tweak"]:hover,
+.work-items-page .work-item-filter-link[data-noun="tweak"].active {
+  border-color: var(--noun-tweak);
+  background: var(--noun-tweak-bg);
+  color: var(--noun-tweak);
+}
+
+.work-items-page .work-item-card-title {
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: underline dotted var(--hair);
+  text-underline-offset: var(--space-2);
+}
+
+.work-items-page .work-item-card-title:hover {
+  text-decoration-style: solid;
+}
+
+.work-items-page .work-item-owner {
+  padding: var(--space-1) var(--space-4);
+  border-radius: 999px;
+  background: var(--recess);
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.work-items-page .work-item-attachment {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.work-items-page .work-item-attachment a {
+  color: var(--ink-2);
+  text-decoration: underline dotted var(--hair);
+  text-underline-offset: var(--space-2);
+}
+
+.work-items-page .work-item-attachment a:hover {
+  color: var(--heading);
+  text-decoration-style: solid;
+}
+
+.work-items-page .work-item-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Show older items: a switch in the rail that widens Closed past its
+   five newest rows (terminal=all). */
+.work-items-page .work-items-older-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.work-items-page .work-items-older-toggle input {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--recess);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.work-items-page .work-items-older-toggle input::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  content: "";
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.work-items-page .work-items-older-toggle input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.work-items-page .work-items-older-toggle input:checked::before {
+  background: var(--panel);
+  transform: translateX(12px);
+}
+
+.work-items-page .work-items-older-toggle input:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+/* Attached to: picked nodes as chips over a search field. Both the chip
+   tray and the result list hold a fixed max height and scroll inside, so
+   the rail no longer grows with the project. The list sits in flow, not as
+   an overlay, because the rail itself scrolls and would clip a popover. */
+.work-items-page .attachment-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.work-items-page .attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-height: 5.5rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.work-items-page .attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  background: var(--panel);
+  color: var(--heading);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.work-items-page .attachment-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.work-items-page .attachment-chip-remove {
+  flex: none;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.work-items-page .attachment-chip-remove:hover,
+.work-items-page .attachment-chip-remove:focus-visible {
+  color: var(--heading);
+}
+
+.work-items-page .attachment-input input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 11.5px;
+}
+
+.work-items-page .attachment-options {
+  max-height: 16rem;
+  margin-top: var(--space-2);
+  overflow-y: auto;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  background: var(--panel);
+}
+
+.work-items-page .attachment-options ul {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+}
+
+/* One column: the kind pill sits above the title so the title takes the
+   rail's full width, with the key beneath. */
+.work-items-page .attachment-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+
+.work-items-page .attachment-option.active {
+  background: var(--accent-soft);
+}
+
+.work-items-page .attachment-option[aria-selected="true"] {
+  border-left-color: var(--heading);
+}
+
+.work-items-page .attachment-option[aria-selected="true"] .attachment-option-title {
+  font-weight: 700;
+}
+
+.work-items-page .attachment-option-kind {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-btn);
+  background: var(--recess);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.work-items-page .attachment-option-title {
+  min-width: 0;
+  color: var(--heading);
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+/* The key never breaks mid-word; a key wider than the rail ellipsizes and
+   keeps its full value in title. */
+.work-items-page .attachment-option-key {
+  justify-self: stretch;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.work-items-page .attachment-options-empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 11px;
+}
+
+@media (max-width: 48rem) {
+  .work-items-page .work-items-layout {
+    flex-direction: column;
+  }
+
+  .work-items-page .work-items-filters {
+    width: auto;
+    max-height: 30vh;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .work-items-page .panel-closed .work-items-filters {
+    max-height: 0;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .work-items-page .work-item-filter-links {
+    flex-flow: row wrap;
+  }
+
+}

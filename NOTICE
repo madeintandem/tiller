@@ -1,0 +1,16 @@
+Tiller
+Copyright 2026 DevMynd Software, Inc. (dba Made In Tandem)
+
+This product is developed and maintained by Made In Tandem.
+  Website:         https://madeintandem.com
+  Original source: https://github.com/madeintandem/tiller
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+Made In Tandem(R) and the MiT logo are registered trademarks of DevMynd
+Software, Inc. "Tiller", "MiT", and the Tiller logo are trademarks of DevMynd
+Software, Inc. The Apache License does not grant permission to use any of
+them; see the TRADEMARKS file.
+
+Distributed builds include third-party components under their own licenses.
+Their license and copyright notices are in THIRD_PARTY_NOTICES.txt.

@@ -1,0 +1,440 @@
+/* Full-index relationships are an overlay, never a second display tree. */
+.map-kind-select {
+  display: flex;
+}
+
+.map-context-heading {
+  position: absolute;
+  width: 280px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.map-endpoint-card {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.map-endpoint-card .map-card-body {
+  width: 100%;
+  flex: 1;
+}
+
+.map-endpoint-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px 8px;
+  color: var(--ink-3);
+  font-size: 10px;
+}
+
+.map-endpoint-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-endpoint-meta a {
+  flex: none;
+  color: var(--ink);
+}
+
+.map-relationship-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: min(320px, calc(100% - 24px));
+  max-height: 32%;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  box-shadow: var(--shadow-panel);
+  font-size: 12px;
+  z-index: 2;
+}
+
+.map-relationship-legend summary,
+.map-relation summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.map-legend-kinds,
+.map-relation-sources {
+  list-style: none;
+  padding: 0;
+}
+
+.map-legend-kinds li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.map-legend-kinds svg {
+  flex: none;
+}
+
+.map-legend-kinds button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-legend-kinds button[aria-pressed="true"] {
+  border-color: var(--ink-3);
+  background: var(--recess);
+}
+
+.map-relation {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.map-relation-direction {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+
+.map-endpoint-dock .map-dock-head {
+  cursor: default;
+}
+
+.map-endpoint-dock .copy-cmd {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.map-refresh-status {
+  position: absolute;
+  top: 48px;
+  left: 12px;
+  max-width: min(480px, calc(100% - 24px));
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  background: var(--panel);
+  font-size: 12px;
+  z-index: 2;
+}
+
+.map-toolbar :focus-visible,
+.map-endpoint-card :focus-visible,
+.map-relation :focus-visible,
+.map-relationship-legend summary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.map-relation-row {
+  min-width: 0;
+  width: 100%;
+}
+
+.map-relation-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.map-relation-title > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-relation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+
+.map-relation-evidence > button {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.map-relation-meta,
+.map-relation-scope,
+.map-copy-label {
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.map-relation-meta {
+  margin: 4px 0;
+}
+
+.map-relation-scope,
+.map-reference-issues {
+  margin-top: 18px;
+}
+
+.map-copy-label {
+  display: block;
+  margin-top: 8px;
+}
+
+.map-dock .copy-cmd,
+.map-relationship-results .copy-cmd {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.map-relationship-results {
+  position: absolute;
+  top: 48px;
+  bottom: 12px;
+  left: 12px;
+  width: min(600px, calc(100% - 380px));
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-panel);
+  font-size: 13px;
+  z-index: 4;
+}
+
+.map-results-head {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.map-results-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.map-results-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.map-results-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  overscroll-behavior: contain;
+}
+
+.map-relationship-results button:not(.map-card-link, .map-dock-close, .copy-cmd),
+.map-relationship-results select,
+.map-relationship-results input,
+.map-issue-group > button {
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 5px 8px;
+  font: inherit;
+  max-width: 100%;
+}
+
+.map-relationship-results button {
+  cursor: pointer;
+}
+
+.map-relationship-results button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.map-results-tabs button[aria-pressed="true"] {
+  background: var(--recess);
+  border-color: var(--ink-3);
+}
+
+.map-result-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.map-result-filters label,
+.map-query-presets label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.map-query-presets {
+  margin-top: 16px;
+}
+
+.map-query-presets summary {
+  cursor: pointer;
+}
+
+.map-query-presets form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.map-result-count {
+  padding-top: 12px;
+  border-top: 1px solid var(--hair);
+}
+
+.map-result-list {
+  padding-left: 24px;
+  margin: 12px 0 0;
+}
+
+.map-result-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.map-result-kind {
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.map-result-endpoints {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.map-result-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  flex: none;
+  border-top: 1px solid var(--hair);
+  font-size: 12px;
+}
+
+.map-issue-group {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+
+.map-issue-group > ol {
+  padding-left: 20px;
+}
+
+.map-reference-occurrence {
+  border-top: 1px solid var(--hair);
+  padding: 10px 0;
+}
+
+.map-issue-subjects {
+  padding-left: 14px;
+}
+
+.map-issue-subjects li {
+  margin: 8px 0;
+}
+
+.map-issue-subjects li > * {
+  display: block;
+}
+
+.map-extraction-warning {
+  position: absolute;
+  left: 12px;
+  top: 48px;
+  width: min(300px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 12px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  z-index: 2;
+}
+
+.map-extraction-warning button {
+  display: block;
+  margin-top: 5px;
+  text-decoration: underline;
+}
+
+.map-dock :focus-visible,
+.map-relationship-results :focus-visible,
+.map-relationship-legend :focus-visible,
+.map-extraction-warning :focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .map-relationship-results {
+    width: calc(100% - 24px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .map-relationship-legend {
+    max-height: 30%;
+  }
+
+  .map-relationship-results {
+    top: auto;
+    height: 48%;
+    bottom: 8px;
+    left: 8px;
+    width: calc(100% - 16px);
+  }
+
+  .map-result-endpoints,
+  .map-result-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .map-extraction-warning {
+    top: auto;
+    bottom: 54px;
+    max-width: calc(100% - 24px);
+  }
+
+  .map-result-pagination {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiller: the workflow at a glance</title>
+</head>
+<body>
+<style>
+  :root {
+    --paper:#f4f7f7; --panel:#ffffff; --ink:#1d2e36; --slate:#5e7078;
+    --faint:#8fa0a7; --hairline:#dae4e6; --tint:#eff4f5;
+    --loud:#c2186b; --loud-soft:#f9e9f2; --loud-line:#ecc3d8;
+    --draft:#75878f; --specced:#6f5799; --ready:#1e94ad;
+    --active:#2a5db0; --review:#c4861c; --done:#1e7a52; --blocked:#c0392b;
+    --draft-text:#4e5b60; --specced-text:#614c86; --ready-text:#10606f;
+    --active-text:#234a80; --review-text:#7a520d; --done-text:#166341;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:Seravek,"Gill Sans Nova",Ubuntu,Calibri,"DejaVu Sans","Helvetica Neue",system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#12191c; --panel:#182126; --ink:#e6edef; --slate:#9fb2b9;
+      --faint:#6f838b; --hairline:#2a373d; --tint:#1c262b;
+      --loud:#f06fa6; --loud-soft:#331522; --loud-line:#5c2740;
+      --draft:#8fa0a7; --specced:#a48fd0; --ready:#4fc0d8;
+      --active:#6d9be8; --review:#e0a94a; --done:#4fb684; --blocked:#e06c5b;
+      --draft-text:#b9c6cb; --specced-text:#c3b2e4; --ready-text:#8fd8e8;
+      --active-text:#a7c3f2; --review-text:#edc98d; --done-text:#8fd0af;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#12191c; --panel:#182126; --ink:#e6edef; --slate:#9fb2b9;
+    --faint:#6f838b; --hairline:#2a373d; --tint:#1c262b;
+    --loud:#f06fa6; --loud-soft:#331522; --loud-line:#5c2740;
+    --draft:#8fa0a7; --specced:#a48fd0; --ready:#4fc0d8;
+    --active:#6d9be8; --review:#e0a94a; --done:#4fb684; --blocked:#e06c5b;
+    --draft-text:#b9c6cb; --specced-text:#c3b2e4; --ready-text:#8fd8e8;
+    --active-text:#a7c3f2; --review-text:#edc98d; --done-text:#8fd0af;
+  }
+  :root[data-theme="light"] {
+    --paper:#f4f7f7; --panel:#ffffff; --ink:#1d2e36; --slate:#5e7078;
+    --faint:#8fa0a7; --hairline:#dae4e6; --tint:#eff4f5;
+    --loud:#c2186b; --loud-soft:#f9e9f2; --loud-line:#ecc3d8;
+    --draft:#75878f; --specced:#6f5799; --ready:#1e94ad;
+    --active:#2a5db0; --review:#c4861c; --done:#1e7a52; --blocked:#c0392b;
+    --draft-text:#4e5b60; --specced-text:#614c86; --ready-text:#10606f;
+    --active-text:#234a80; --review-text:#7a520d; --done-text:#166341;
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    line-height:1.55; margin:0; padding:clamp(1.5rem,4vw,3.5rem) 1.25rem 5rem;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:66rem; margin:0 auto; }
+  a { color:inherit; }
+  a:focus-visible, .cmd:focus-visible { outline:2px solid var(--loud); outline-offset:2px; }
+  code, .mono { font-family:var(--mono); }
+
+  /* ---------- masthead ---------- */
+  .mast { padding-bottom:2.25rem; border-bottom:1px solid var(--hairline); }
+  .mast h1 {
+    font-family:var(--serif); font-weight:600; letter-spacing:-0.01em;
+    font-size:clamp(2.6rem,6vw,3.6rem); margin:0 0 0.35rem;
+  }
+  .kicker {
+    font-size:0.72rem; font-weight:650; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--slate); margin:0 0 1rem;
+  }
+  .thesis {
+    display:grid; gap:0.4rem; margin:1.75rem 0 0; padding:0; list-style:none;
+    max-width:46rem;
+  }
+  .thesis li { display:flex; gap:0.75rem; align-items:baseline; font-size:1.06rem; }
+  .thesis .who {
+    flex:none; width:6.2rem; font-size:0.7rem; font-weight:700; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--slate);
+  }
+  .thesis .who.you { color:var(--loud); }
+  .statusline { margin-top:1.6rem; font-size:0.78rem; color:var(--faint); }
+  .statusline code { font-size:0.74rem; color:var(--slate); }
+
+  /* ---------- section chrome ---------- */
+  section { margin-top:3.5rem; }
+  h2 {
+    font-family:var(--serif); font-weight:600; font-size:1.65rem; margin:0 0 0.4rem;
+  }
+  .lede { color:var(--slate); max-width:44rem; margin:0 0 1.8rem; }
+
+  /* ---------- the passage (signature) ---------- */
+  .lanes {
+    display:grid; grid-template-columns:1fr 1fr; gap:0 3.4rem;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--slate); margin-bottom:0.9rem;
+  }
+  .lanes .you-lane { text-align:right; color:var(--loud); }
+  .passage { position:relative; }
+  .passage::before {
+    content:""; position:absolute; top:0.5rem; bottom:0.5rem; left:50%;
+    width:2px; margin-left:-1px; background:var(--hairline);
+  }
+  .leg {
+    position:relative; display:grid; grid-template-columns:1fr 1fr; gap:0 3.4rem;
+    padding:0.65rem 0;
+  }
+  .leg .dot {
+    position:absolute; left:50%; top:1.55rem; width:14px; height:14px;
+    margin-left:-7px; border-radius:50%; border:3px solid var(--paper);
+  }
+  .card {
+    background:var(--panel); border:1px solid var(--hairline); border-radius:10px;
+    padding:0.85rem 1.05rem 0.95rem;
+  }
+  .leg .you-card { grid-column:1; }
+  .leg .agent-card { grid-column:2; }
+  .card .step {
+    font-size:0.68rem; font-weight:700; letter-spacing:0.11em; text-transform:uppercase;
+    color:var(--slate); margin:0 0 0.3rem;
+  }
+  .card p { margin:0; font-size:0.92rem; }
+  .card p + p { margin-top:0.45rem; }
+  .cmd {
+    display:inline-block; font-family:var(--mono); font-size:0.78rem; color:var(--ink);
+    background:var(--tint); border:1px solid var(--hairline); border-radius:6px;
+    padding:0.18rem 0.5rem; margin-top:0.5rem; white-space:nowrap; max-width:100%;
+    overflow-x:auto;
+  }
+  .card .quiet { color:var(--slate); font-size:0.85rem; }
+
+  /* gates: the only loud element on the page */
+  .gate {
+    position:relative; z-index:1; margin:0.9rem 0;
+    background:var(--loud-soft); border:1px solid var(--loud-line); border-radius:10px;
+    padding:0.8rem 1.1rem; display:flex; flex-wrap:wrap; gap:0.35rem 1rem;
+    align-items:baseline;
+  }
+  .gate .g-label {
+    font-size:0.7rem; font-weight:750; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--loud);
+  }
+  .gate .g-what { font-size:0.92rem; }
+  .gate .cmd { margin-top:0; background:var(--panel); }
+  .loop-note {
+    position:relative; z-index:1; text-align:center; color:var(--slate);
+    font-size:0.85rem; padding:0.9rem 0 0.2rem;
+  }
+  .loop-note .mono { font-size:0.78rem; }
+
+  /* ---------- state ribbon ---------- */
+  .ribbon {
+    display:flex; flex-wrap:wrap; gap:0.45rem 1.35rem; align-items:center;
+    background:var(--panel); border:1px solid var(--hairline); border-radius:10px;
+    padding:0.8rem 1.1rem; margin-top:1.6rem;
+  }
+  .ribbon .r-title {
+    font-size:0.68rem; font-weight:700; letter-spacing:0.11em; text-transform:uppercase;
+    color:var(--slate); margin-right:0.4rem;
+  }
+  .state { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.82rem; }
+  .state i { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .state .arrow { color:var(--faint); margin-left:0.9rem; }
+
+  /* ---------- who runs what ---------- */
+  .lanes-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1.1rem; }
+  .lane-card {
+    background:var(--panel); border:1px solid var(--hairline); border-radius:10px;
+    padding:1.05rem 1.2rem 1.15rem;
+  }
+  .lane-card.human-only { border-color:var(--loud-line); }
+  .lane-card h3 { margin:0 0 0.15rem; font-size:1.02rem; font-weight:650; }
+  .lane-card .sub { font-size:0.82rem; color:var(--slate); margin:0 0 0.75rem; }
+  .lane-card.human-only h3 { color:var(--loud); }
+  .chips { display:flex; flex-wrap:wrap; gap:0.35rem; }
+  .chips code {
+    font-size:0.76rem; background:var(--tint); border:1px solid var(--hairline);
+    border-radius:6px; padding:0.14rem 0.45rem; color:var(--ink);
+  }
+  .lane-card.human-only .chips code { background:var(--loud-soft); border-color:var(--loud-line); }
+  .lane-card .note { font-size:0.83rem; color:var(--slate); margin:0.75rem 0 0; }
+  .delegation {
+    margin-top:1.1rem; font-size:0.9rem; color:var(--ink); background:var(--panel);
+    border:1px solid var(--hairline); border-left:3px solid var(--loud); border-radius:8px;
+    padding:0.75rem 1rem; max-width:52rem;
+  }
+
+  /* ---------- what you say ---------- */
+  .moments { display:grid; gap:1.1rem; }
+  .moment {
+    background:var(--panel); border:1px solid var(--hairline); border-radius:10px;
+    padding:1rem 1.2rem 1.1rem;
+  }
+  .moment h3 { margin:0 0 0.2rem; font-size:0.98rem; font-weight:650; display:flex; align-items:center; gap:0.5rem; }
+  .moment h3 i { width:9px; height:9px; border-radius:50%; flex:none; }
+  .moment .m-sub { font-size:0.83rem; color:var(--slate); margin:0 0 0.7rem; }
+  .say { display:grid; gap:0.4rem; margin:0; padding:0; list-style:none; }
+  .say li {
+    font-size:0.9rem; padding-left:1rem; position:relative;
+  }
+  .say li::before {
+    content:"\201C"; position:absolute; left:0; top:0; color:var(--faint);
+    font-family:var(--serif); font-size:1.05rem;
+  }
+  .say .aside { color:var(--slate); font-size:0.83rem; padding-left:0; }
+  .say .aside::before { content:""; }
+  .say code { font-size:0.78rem; background:var(--tint); border:1px solid var(--hairline); border-radius:5px; padding:0.05rem 0.35rem; }
+
+  /* ---------- footer ---------- */
+  .more { border-top:1px solid var(--hairline); margin-top:3.5rem; padding-top:1.5rem; }
+  .more ul { margin:0.6rem 0 0; padding-left:1.1rem; }
+  .more li { margin:0.25rem 0; font-size:0.9rem; }
+  .more .mono { font-size:0.8rem; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 760px) {
+    .lanes { display:none; }
+    .passage::before { left:8px; }
+    .leg { grid-template-columns:1fr; gap:0.6rem; padding-left:1.8rem; }
+    .leg .dot { left:8px; top:1.4rem; }
+    .leg .you-card, .leg .agent-card { grid-column:1; }
+    .card .step .actor { display:inline; }
+    .lanes-grid { grid-template-columns:1fr; }
+    .gate { margin-left:1.8rem; }
+    .loop-note { padding-left:1.8rem; }
+  }
+  .actor {
+    display:none; font-weight:700; letter-spacing:0.1em;
+  }
+  @media (max-width:760px) {
+    .actor.you { color:var(--loud); }
+    .actor.agent { color:var(--slate); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card, .gate { transition:border-color 0.15s ease; }
+    .card:hover { border-color:var(--faint); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="kicker">An SDLC instrument for humans and AI agents building together</p>
+    <h1>Tiller</h1>
+    <ul class="thesis">
+      <li><span class="who">Tiller</span><span>holds the structure, the gates, and the state.</span></li>
+      <li><span class="who">The agent</span><span>does the reasoning and the work.</span></li>
+      <li><span class="who you">You</span><span>approve at the gates.</span></li>
+      <li><span class="who you">Your merge</span><span>is the only thing that makes work done.</span></li>
+    </ul>
+    <p class="statusline">Everything lives in the repo: markdown for prose, YAML for state, git as the spine.
+      Written against the binary at <code>d91bc1a</code>; when this page and the binary disagree, the binary wins.</p>
+  </header>
+
+  <section aria-labelledby="passage-h">
+    <h2 id="passage-h">The passage</h2>
+    <p class="lede">One tree of work: epics hold features, features hold tasks, each level elaborated
+      just in time. Every feature sails the same route, and the three magenta gates are yours.
+      Magenta on this page means exactly one thing: a human is needed.</p>
+
+    <div class="lanes" aria-hidden="true">
+      <div class="you-lane">You</div>
+      <div>The agent</div>
+    </div>
+
+    <div class="passage">
+
+      <div class="leg">
+        <i class="dot" style="background:var(--draft)"></i>
+        <div class="card you-card">
+          <p class="step"><span class="actor you">You · </span>Onboard</p>
+          <p>Scaffold the workspace, record who you are, drop the design inputs in.</p>
+          <span class="cmd">tiller init · tiller join --as &lt;you&gt;</span>
+        </div>
+        <div class="card agent-card">
+          <p class="step"><span class="actor agent">Agent · </span>Orient</p>
+          <p>Reads the state, names the seam, briefs you, and stops. The stop is your
+             briefing moment: standing context goes to AGENTS.md.</p>
+          <span class="cmd">tiller guide</span>
+        </div>
+      </div>
+
+      <div class="leg">
+        <i class="dot" style="background:var(--draft)"></i>
+        <div class="card agent-card">
+          <p class="step"><span class="actor agent">Agent · </span>Decompose</p>
+          <p>Lays the whole epic and feature tree down in <strong style="color:var(--draft-text)">draft</strong>,
+             records dependencies and open questions, commits the diff, and stops.</p>
+          <span class="cmd">tiller add epic · add feature · link --depends-on · add question</span>
+        </div>
+      </div>
+
+      <div class="gate">
+        <span class="g-label">Gate 1 · The tree</span>
+        <span class="g-what">You review the committed diff and approve the shape of the work.</span>
+        <span class="cmd">tiller approve epic &lt;epic&gt;</span>
+      </div>
+
+      <div class="leg">
+        <i class="dot" style="background:var(--specced)"></i>
+        <div class="card agent-card">
+          <p class="step"><span class="actor agent">Agent · </span>Specify <span class="quiet">(per feature, just in time)</span></p>
+          <p>Writes the specification (<code>feature.md</code>), the acceptance contract
+             (<code>feature.eval.md</code>), and the task explosion (<code>tasks/&lt;key&gt;/task.md</code>),
+             then asserts the whole stage. <em>Spec checks what was written; it writes nothing.</em></p>
+          <span class="cmd">tiller spec feature &lt;feature&gt;</span>
+          <p class="quiet">draft &rarr; <strong style="color:var(--specced-text)">specced</strong>: inked, awaiting your signature.</p>
+        </div>
+      </div>
+
+      <div class="gate">
+        <span class="g-label">Gate 2 · The plan</span>
+        <span class="g-what">You read the spec and contract; one approval moves the feature and its
+          initial tasks to <strong style="color:var(--ready-text)">ready</strong>, basis pinned.</span>
+        <span class="cmd">tiller approve feature &lt;feature&gt;</span>
+      </div>
+
+      <div class="leg">
+        <i class="dot" style="background:var(--active)"></i>
+        <div class="card agent-card">
+          <p class="step"><span class="actor agent">Agent · </span>Execute <span class="quiet">(per task)</span></p>
+          <p>Starts the feature and its first task, codes on the recorded branch, runs the gates
+             (build, tests, the acceptance contract), and submits the PR.</p>
+          <span class="cmd">tiller start · check · submit --pr &lt;n&gt;</span>
+          <p class="quiet"><strong style="color:var(--active-text)">active</strong> &rarr;
+             <strong style="color:var(--review-text)">in_review</strong>: driven to the edge of done.</p>
+        </div>
+        <div class="card you-card">
+          <p class="step"><span class="actor you">You · </span>Attest along the way</p>
+          <p class="quiet">Manual criteria and review gates are your judgment, recorded as yours.
+            The agent hands you the command; it never runs it.</p>
+          <span class="cmd">tiller attest &lt;node&gt; --criterion C-x --status pass</span>
+        </div>
+      </div>
+
+      <div class="gate">
+        <span class="g-label">Gate 3 · The merge</span>
+        <span class="g-what">You review the PR and merge it, in git or on the host. Tiller never merges;
+          an agent never marks done.</span>
+      </div>
+
+      <div class="leg">
+        <i class="dot" style="background:var(--done)"></i>
+        <div class="card agent-card">
+          <p class="step"><span class="actor agent">Either · </span>Sync</p>
+          <p>Observes the merge and records the crossing: the task is
+             <strong style="color:var(--done-text)">done</strong> by evidence, and the feature and
+             epic roll up behind their tasks. Nothing is ever marked done by hand.</p>
+          <span class="cmd">tiller sync</span>
+        </div>
+      </div>
+
+      <p class="loop-note">&darr; back to the frontier: the next feature&rsquo;s specify turn, in dependency order.<br>
+        Alongside the loop: the question ledger (<span class="mono">add question · answer question</span>),
+        the drift sweep (<span class="mono">tiller drift</span>), and your read-only console
+        (<span class="mono">tiller serve</span>).</p>
+    </div>
+
+    <div class="ribbon" role="img" aria-label="Lifecycle states in order: draft, specced, ready, active, in review, done; blocked is the exception state">
+      <span class="r-title">A feature&rsquo;s states</span>
+      <span class="state"><i style="background:var(--draft)"></i>draft</span>
+      <span class="state"><i style="background:var(--specced)"></i>specced</span>
+      <span class="state"><i style="background:var(--ready)"></i>ready</span>
+      <span class="state"><i style="background:var(--active)"></i>active</span>
+      <span class="state"><i style="background:var(--review)"></i>in_review</span>
+      <span class="state"><i style="background:var(--done)"></i>done</span>
+      <span class="state"><span class="arrow">and the exception:</span></span>
+      <span class="state"><i style="background:var(--blocked)"></i>blocked</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="who-h">
+    <h2 id="who-h">Who runs what</h2>
+    <p class="lede">The gate is your decision, not necessarily your keyboard. Full syntax for every
+      command lives in <a href="./tiller-commands.md">tiller-commands.md</a>.</p>
+
+    <div class="lanes-grid">
+      <div class="lane-card">
+        <h3>You, delegable</h3>
+        <p class="sub">The agent may type these only on your explicit instruction naming the nodes,
+          and says what it will record first.</p>
+        <div class="chips">
+          <code>approve</code><code>return</code><code>cancel</code><code>archive</code>
+        </div>
+        <p class="note">Approving is the review. <code>approve --refresh-basis</code> re-records a
+          drifted basis; <code>approve --reviewed-assumption</code> clears an answered question.</p>
+      </div>
+
+      <div class="lane-card human-only">
+        <h3>You alone, never delegable</h3>
+        <p class="sub">Human judgment, recorded as such. The agent hands you the command and stops.</p>
+        <div class="chips">
+          <code>attest</code><code>answer question</code><code>sync --accept-fast-forward</code><code>the merge</code>
+        </div>
+        <p class="note">The merge is git&rsquo;s, not Tiller&rsquo;s, and it is the one boundary that
+          physically holds.</p>
+      </div>
+
+      <div class="lane-card">
+        <h3>The agent&rsquo;s lane</h3>
+        <p class="sub">Its day job. You can run any of these yourself; the agent runs them for you.</p>
+        <div class="chips">
+          <code>add</code><code>link</code><code>spec</code><code>start</code><code>check</code>
+          <code>submit</code><code>resume</code><code>eval</code><code>sync</code><code>guide</code><code>readout</code>
+        </div>
+        <p class="note">Laying the tree, writing and asserting specs, driving tasks to review,
+          running gates, observing merges.</p>
+      </div>
+
+      <div class="lane-card">
+        <h3>Either: setup and reads</h3>
+        <p class="sub">Setup once, reads always.</p>
+        <div class="chips">
+          <code>init</code><code>join</code><code>status</code><code>show</code><code>ls</code>
+          <code>tree</code><code>search</code><code>drift</code><code>serve</code>
+        </div>
+        <p class="note"><code>serve</code> exists for your eyes; <code>drift</code> is a read that
+          names what moved out of agreement.</p>
+      </div>
+    </div>
+
+    <p class="delegation">These lanes are guidance the agent is asked to honor, not walls: Tiller
+      guides, it does not control, and every action attributes to the person who directed it.
+      The enforcement that genuinely holds sits at the merge.</p>
+  </section>
+
+  <section aria-labelledby="say-h">
+    <h2 id="say-h">What you say to the agent</h2>
+    <p class="lede">The skills installed by <span class="mono">tiller join</span>
+      (<span class="mono">/tiller-orient</span>, <span class="mono">/tiller-decompose</span>,
+      <span class="mono">/tiller-specify</span>, <span class="mono">/tiller-execute</span>,
+      <span class="mono">/tiller-mend-drift</span>) mean you steer in plain sentences and the agent
+      finds the commands. The shapes that come up, by moment:</p>
+
+    <div class="moments">
+      <div class="moment">
+        <h3><i style="background:var(--draft)"></i>Orienting and briefing</h3>
+        <p class="m-sub">The agent surfaces the picture and stops. The stop is your briefing moment;
+          durable context belongs in AGENTS.md.</p>
+        <ul class="say">
+          <li>Orient yourself and tell me where things stand.</li>
+          <li>We work through PRs only; never push to main. Record that in AGENTS.md.</li>
+          <li>Tests run with <code>bin/ci</code>; the design system lives at docs/design-system.md.</li>
+        </ul>
+      </div>
+
+      <div class="moment">
+        <h3><i style="background:var(--draft)"></i>Decomposing</h3>
+        <p class="m-sub">The agent proposes; the committed diff is the review surface. The go is a
+          delegated gate, so name the set.</p>
+        <ul class="say">
+          <li>Decompose the project from the design docs.</li>
+          <li>Split the reporting epic; it is doing two jobs.</li>
+          <li>Record that as a question blocking the auth feature instead of deciding it now.</li>
+          <li>The tree looks right; approve all nine epics.</li>
+        </ul>
+      </div>
+
+      <div class="moment">
+        <h3><i style="background:var(--specced)"></i>Specifying</h3>
+        <p class="m-sub">The agent writes the spec, the contract, and the tasks, then asserts.
+          You read, push back in prose, and take the plan gate.</p>
+        <ul class="say">
+          <li>Specify foundation/repo-tooling.</li>
+          <li>Criterion C3 is untestable as written; make it a command binding.</li>
+          <li>Six tasks is too coarse; split the migration work.</li>
+          <li>I have read the spec; approve the feature.</li>
+        </ul>
+      </div>
+
+      <div class="moment">
+        <h3><i style="background:var(--active)"></i>Executing</h3>
+        <p class="m-sub">One task at a time, driven to review on its own branch.</p>
+        <ul class="say">
+          <li>Work the next task and drive it to review.</li>
+          <li>Run the gates and show me what is red.</li>
+          <li>Submit it; the PR number is 41.</li>
+          <li>Stop: that approach duplicates the form engine. Rework the task spec.</li>
+        </ul>
+      </div>
+
+      <div class="moment">
+        <h3><i style="background:var(--review)"></i>Questions and assumptions</h3>
+        <p class="m-sub">Open decisions live in the ledger, not in chat. Answering is yours to type.</p>
+        <ul class="say">
+          <li>File a question: does a phase auto-lock 48 hours after test completion? It blocks the submission feature.</li>
+          <li>Proceed under Q-1hxeyk on the assumption the lock is 48 hours; record the assumption.</li>
+          <li class="aside">You answer at the keyboard: <code>tiller answer question Q-1hxeyk --answer "..."</code></li>
+        </ul>
+      </div>
+
+      <div class="moment">
+        <h3><i style="background:var(--done)"></i>The crossings you keep, and drift</h3>
+        <p class="m-sub">At its boundaries the agent hands you commands rather than running them.
+          If it ever offers to merge, that is a briefing bug, not a convenience.</p>
+        <ul class="say">
+          <li>I merged the PR; run sync.</li>
+          <li>Run the drift sweep and propose fixes for what moved.</li>
+          <li class="aside">Attestation stays at your keyboard: the agent pastes the
+            <code>tiller attest</code> line and waits.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="more">
+    <h2>Where to read more</h2>
+    <ul>
+      <li><a href="./tiller-commands.md">tiller-commands.md</a>: every command with exact syntax.</li>
+      <li><span class="mono">.tiller/orientation.md</span> in any joined project: the zero-dependency
+        front door the agent reads first.</li>
+      <li><a href="./spec/cli-surface.md">spec/cli-surface.md</a>: the settled decisions and the full
+        who-may-run table.</li>
+      <li><a href="./plans/STATUS.md">plans/STATUS.md</a>: what exists right now versus what the specs
+        describe ahead of the build.</li>
+    </ul>
+  </footer>
+
+</div>
+</body>
+</html>

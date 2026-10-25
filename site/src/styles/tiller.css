@@ -1,0 +1,200 @@
+/* The docs site wears the console's visual system (ui/src/styles/tokens.css):
+   paper, panel, and recess surfaces, the ink ramp, the heading navy, and one
+   accent, the Admiralty-chart magenta, which the console reserves for what
+   needs the human. Here that is the hero's one call to action and the page
+   you are on; links stay ink with a quiet underline. Fonts are the console's
+   own: Space Grotesk for identity and headings, Inter for everything read,
+   Space Mono for keys, commands, and code. Dark first, as Starlight is. */
+
+/* ---- Fonts (self-hosted, same files the console embeds) ---- */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400 500; font-display: swap; src: url("../fonts/inter-400.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400 500; font-display: swap; src: url("../fonts/inter-400-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("../fonts/inter-600.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("../fonts/inter-600-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Space Grotesk"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("../fonts/space-grotesk-400.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Space Grotesk"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("../fonts/space-grotesk-400-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/space-mono-400.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/space-mono-400-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/space-mono-700.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Space Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/space-mono-700-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+/* ---- Tokens: dark (Starlight's default scheme) ---- */
+:root {
+  --sl-font: "Inter", system-ui, sans-serif;
+  --sl-font-mono: "Space Mono", ui-monospace, monospace;
+  --tiller-font-display: "Space Grotesk", system-ui, sans-serif;
+  --tiller-radius-card: 6px;
+  --tiller-radius-btn: 3px;
+
+  --sl-color-accent-low: #3a1a2a;
+  --sl-color-accent: #ec7ca6;
+  --sl-color-accent-high: #f5bdd3;
+  --sl-color-white: #e8eef5;    /* heading */
+  --sl-color-gray-1: #c2cbd6;   /* ink */
+  --sl-color-gray-2: #98a2ae;   /* ink-2 */
+  --sl-color-gray-3: #838d99;   /* ink-3 */
+  --sl-color-gray-4: #4b5664;
+  --sl-color-gray-5: #2b3542;   /* hair */
+  --sl-color-gray-6: #232a34;   /* panel */
+  --sl-color-gray-7: #0d1219;   /* recess */
+  --sl-color-black: #12171e;    /* paper */
+
+  --sl-color-text: var(--sl-color-gray-1);
+  --sl-color-text-accent: var(--sl-color-accent);
+  --sl-color-bg: var(--sl-color-black);
+  --sl-color-bg-nav: var(--sl-color-gray-6);
+  --sl-color-bg-sidebar: var(--sl-color-black);
+  --sl-color-bg-inline-code: var(--sl-color-gray-7);
+  --sl-color-hairline: var(--sl-color-gray-5);
+  --sl-color-hairline-light: var(--sl-color-gray-5);
+  --sl-color-hairline-shade: var(--sl-color-gray-7);
+
+  /* Starlight's semantic hues, repainted onto the console's state palette so
+     asides, badges, and icons speak the same colors the console does. */
+  --sl-color-blue: #7fb6b6;   --sl-color-blue-low: color-mix(in srgb, #7fb6b6 22%, #232a34);   --sl-color-blue-high: #96caca;   /* ready */
+  --sl-color-green: #7fa96b;  --sl-color-green-low: color-mix(in srgb, #7fa96b 22%, #232a34);  --sl-color-green-high: #9fc08b;  /* done */
+  --sl-color-orange: #d3ad44; --sl-color-orange-low: color-mix(in srgb, #d3ad44 22%, #232a34); --sl-color-orange-high: #e0c167; /* in review */
+  --sl-color-red: #e0796b;    --sl-color-red-low: color-mix(in srgb, #e0796b 22%, #232a34);    --sl-color-red-high: #f0918b;    /* blocked */
+  --sl-color-purple: #c98bb0; --sl-color-purple-low: color-mix(in srgb, #c98bb0 22%, #232a34); --sl-color-purple-high: #d9a6c4; /* specced */
+}
+
+/* ---- Tokens: light ---- */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #f5e1ea;
+  --sl-color-accent: #8d134d;
+  --sl-color-accent-high: #5c0b31;
+  --sl-color-white: #001129;    /* heading */
+  --sl-color-gray-1: #191819;   /* ink */
+  --sl-color-gray-2: #54524f;   /* ink-2 */
+  --sl-color-gray-3: #76736e;   /* ink-3 */
+  --sl-color-gray-4: #a29d98;
+  --sl-color-gray-5: #e3dcd9;   /* hair */
+  --sl-color-gray-6: #f2f2f3;   /* recess */
+  --sl-color-gray-7: #fbfbf5;   /* paper */
+  --sl-color-black: #ffffff;    /* panel */
+
+  --sl-color-text: var(--sl-color-gray-1);
+  --sl-color-text-accent: var(--sl-color-accent);
+  --sl-color-bg: var(--sl-color-gray-7);
+  --sl-color-bg-nav: var(--sl-color-black);
+  --sl-color-bg-sidebar: var(--sl-color-gray-7);
+  --sl-color-bg-inline-code: var(--sl-color-gray-6);
+  --sl-color-hairline: var(--sl-color-gray-5);
+  --sl-color-hairline-light: var(--sl-color-gray-5);
+  --sl-color-hairline-shade: #ece6e3;
+
+  --sl-color-blue: #3e7f87;   --sl-color-blue-low: color-mix(in srgb, #3e7f87 13%, #ffffff);   --sl-color-blue-high: #2d6169;
+  --sl-color-green: #4e7a5c;  --sl-color-green-low: color-mix(in srgb, #4e7a5c 13%, #ffffff);  --sl-color-green-high: #2d4f38;
+  --sl-color-orange: #a5801c; --sl-color-orange-low: color-mix(in srgb, #a5801c 13%, #ffffff); --sl-color-orange-high: #7a5e12;
+  --sl-color-red: #962f1e;    --sl-color-red-low: color-mix(in srgb, #962f1e 13%, #ffffff);    --sl-color-red-high: #7c2517;
+  --sl-color-purple: #7a3e62; --sl-color-purple-low: color-mix(in srgb, #7a3e62 13%, #ffffff); --sl-color-purple-high: #5e2f4b;
+}
+
+/* ---- The console's two loud marks: selection and focus ---- */
+::selection { background: #fdbe14; color: #001129; }
+:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; border-radius: 2px; }
+
+/* ---- Identity and headings in the display voice ---- */
+.site-title,
+.sl-markdown-content :is(h1, h2, h3, h4),
+.hero h1,
+h1[data-page-title] {
+  font-family: var(--tiller-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.site-title { font-size: 1.05rem; color: var(--sl-color-white); }
+.site-title img { width: 3.3rem; height: 2rem; flex-shrink: 0; }
+/* Reuse the official silhouette above the homepage title without competing
+   with the console screenshot. The mask follows the selected page theme. */
+.hero h1::before {
+  content: "";
+  display: block;
+  width: clamp(7rem, 12vw, 9rem);
+  aspect-ratio: 747 / 453;
+  margin-bottom: 0.75rem;
+  margin-inline: auto;
+  background-color: #e8eef5;
+  mask: url("../../../tiller-logo.svg") center / contain no-repeat;
+}
+:root[data-theme="light"] .hero h1::before { background-color: #001129; }
+@media (min-width: 50rem) {
+  .hero h1::before { margin-inline: 0; }
+}
+.hero .tagline { font-family: var(--sl-font); }
+
+/* ---- Links: ink with a quiet underline; the underline, not the ink, takes
+   the accent on hover. Sidebar and nav keep Starlight's own grammar. ---- */
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--sl-color-white);
+  text-decoration: underline;
+  text-decoration-color: var(--sl-color-gray-4);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+  color: var(--sl-color-white);
+  text-decoration-color: var(--sl-color-accent);
+}
+
+/* ---- Code: mono in the recessed chip, the console's small radius ---- */
+.sl-markdown-content code:not(:where(.not-content *)):not(pre code) {
+  font-size: 0.86em;
+  border-radius: var(--tiller-radius-btn);
+  padding: 0.1em 0.35em;
+}
+
+/* ---- Cards, buttons, asides: the console's radii, hairline borders ---- */
+.card, .sl-link-card, .starlight-aside, .expressive-code .frame {
+  border-radius: var(--tiller-radius-card);
+}
+.sl-link-button { border-radius: var(--tiller-radius-btn); font-weight: 600; }
+.sl-link-button.primary { background: var(--sl-color-accent); border-color: var(--sl-color-accent); color: #ffffff; }
+:root[data-theme="light"] .sl-link-button.primary { color: #ffffff; }
+.sl-link-button.minimal { color: var(--sl-color-white); }
+
+/* ---- Hero image: our own markup (hero.image.html), full width of its
+   column, a hairline like a console card. Two images, one per theme, shown
+   by Starlight's light:/dark: utilities. ---- */
+.hero img { width: 100%; max-width: 40rem; height: auto; border: 1px solid var(--sl-color-hairline); border-radius: var(--tiller-radius-card); box-shadow: 0 10px 30px rgba(0, 17, 41, 0.12); }
+
+/* ---- Tables: hairlines, recessed header, like the console's tables ---- */
+.sl-markdown-content table:not(:where(.not-content *)) { border-collapse: collapse; }
+.sl-markdown-content th:not(:where(.not-content *)) { background: var(--sl-color-bg-inline-code); font-weight: 600; }
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) { border: 1px solid var(--sl-color-hairline); padding: 0.45rem 0.7rem; }
+
+/* ---- State palette (tokens.css --st-*), for diagrams ---- */
+:root {
+  --tiller-st-draft: #8a93a0; --tiller-st-specced: #c98bb0; --tiller-st-ready: #7fb6b6; --tiller-st-active: #6fa8d6;
+  --tiller-st-in_review: #d3ad44; --tiller-st-done: #7fa96b; --tiller-st-blocked: #e0796b;
+}
+:root[data-theme="light"] {
+  --tiller-st-draft: #76736e; --tiller-st-specced: #7a3e62; --tiller-st-ready: #3e7f87; --tiller-st-active: #1f5583;
+  --tiller-st-in_review: #a5801c; --tiller-st-done: #4e7a5c; --tiller-st-blocked: #962f1e;
+}
+
+/* ---- Diagrams: inline SVG in the prose, themed by the page ---- */
+.diagram { display: block; width: 100%; height: auto; margin: 0.25rem 0 0.5rem; color: var(--sl-color-text); }
+.diagram text { fill: currentColor; font-family: var(--sl-font); font-size: 14px; }
+.diagram .h { font-family: var(--tiller-font-display); font-weight: 600; font-size: 16px; fill: var(--sl-color-white); }
+.diagram .mono { font-family: var(--sl-font-mono); font-size: 12px; }
+.diagram .muted { fill: var(--sl-color-gray-3); }
+.diagram .small { font-size: 12.5px; }
+.diagram .box { fill: var(--sl-color-bg-nav); stroke: var(--sl-color-hairline); stroke-width: 1; }
+.diagram .recess { fill: var(--sl-color-bg-inline-code); stroke: var(--sl-color-hairline); stroke-width: 1; }
+.diagram .pill { fill: var(--sl-color-bg-nav); stroke: var(--sl-color-hairline); stroke-width: 1; }
+.diagram .line { stroke: var(--sl-color-gray-3); stroke-width: 1.25; fill: none; }
+.diagram .dashed { stroke-dasharray: 4 3; }
+.diagram .accent { stroke: var(--sl-color-accent); stroke-width: 1.5; }
+.diagram .accent-fill { fill: var(--sl-color-accent); }
+.diagram .accent-text { fill: var(--sl-color-accent); font-weight: 600; }
+.diagram .arrow { fill: var(--sl-color-gray-3); }
+.diagram .arrow-accent { fill: var(--sl-color-accent); }
+.diagram .st-draft { fill: var(--tiller-st-draft); } .diagram .st-specced { fill: var(--tiller-st-specced); }
+.diagram .st-ready { fill: var(--tiller-st-ready); } .diagram .st-active { fill: var(--tiller-st-active); }
+.diagram .st-in_review { fill: var(--tiller-st-in_review); } .diagram .st-done { fill: var(--tiller-st-done); }
+.diagram .st-proposed { fill: var(--tiller-st-draft); } .diagram .st-check { fill: var(--tiller-st-active); }
+.diagram .st-in_progress { fill: var(--tiller-st-active); } .diagram .st-archived { fill: var(--tiller-st-draft); }
+figure.diagram-figure { margin: 1.5rem 0; }
+:root { --sl-content-width: 48rem; }
+figure.diagram-figure figcaption { font-size: 0.9rem; color: var(--sl-color-gray-2); margin-top: 0.25rem; }

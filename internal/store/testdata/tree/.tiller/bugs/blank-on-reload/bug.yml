@@ -1,0 +1,17 @@
+id: B-7k2p9x
+key: bugs/blank-on-reload
+title: NRCA form renders blank after a reload mid-entry
+status: ready
+blocked: false
+started: false
+owner: pat
+proposed_by: pat
+attached_to: F-79dh3q
+depends_on: [CH-4m2x9q]
+source: docs/feedback/2026-08-27-reload-investigation.md#L12-40
+accepted_against:
+  spec: { kind: git_blob, value: "git:5c1e8a9", path: bugs/blank-on-reload/bug.md, observed_at: "2026-08-28T00:00:00Z" }
+  commit: { kind: git_commit, value: "git:7bc1a20", observed_at: "2026-08-28T00:00:00Z" }
+evidence: []
+pr: null
+policy_violations: []

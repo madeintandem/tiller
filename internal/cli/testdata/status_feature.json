@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "command": "status",
+  "data": {
+    "noun": "feature",
+    "id": "F-xxxxxx",
+    "key": "form-engine/nrca-form-loading",
+    "status": "draft",
+    "legal_next": [
+      "cancel",
+      "spec"
+    ],
+    "contributors": []
+  }
+}

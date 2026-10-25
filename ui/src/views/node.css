@@ -1,0 +1,127 @@
+/* Node page extensions to the quiet skin: the record rows, the answer block,
+   and the history timeline, shared by RelationshipHub, RelatedList, and
+   HistorySection. The section chrome those three used to borrow from the
+   pass-1 shell (<h2>, <h3>, .rule-list) is gone: they ride
+   components/InstrSection and its .instr-fh head now, the same frame the task
+   ledger already used, so the whole node page speaks one section voice. */
+
+/* ONE LINE PER NODE, the same grammar Explore's filter rows use: the title
+   leads and takes the row, the materialized address (Q-id or key) trails as
+   muted mono, and the chip closes it.
+
+   There is no companion record-row grammar here any more. The rules that
+   promised one lost their last consumer with the blitz body, and the facts they
+   named have their own homes: attestations and policy violations render through
+   components/IntegrityNotes, and a verified surface rides the header's basis
+   line. A rule nothing selects is a rule that drifts, so the promise went with
+   the rules. */
+.related-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.related-list > li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.related-list > li:last-child {
+  border-bottom: none;
+}
+
+.related-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.related-title:hover {
+  text-decoration: none;
+}
+
+.related-key {
+  flex: none;
+  font-size: 11.5px;
+}
+
+/* A question's complete statement is flat body content, not a second title
+   or a quoted answer. Authored paragraphs stay semantic, while single line
+   breaks are explicit <br> elements from QuestionBody. */
+.question-statement {
+  overflow-wrap: anywhere;
+}
+
+.question-statement > p {
+  margin: 0;
+}
+
+.question-statement > p + p {
+  margin-top: var(--space-7);
+}
+
+/* The answer renders distinctly but quietly: a plain-text block held by a
+   hairline, not a styled quotation and not a second loud accent (the pass-1
+   --accent steel blue this rule used to carry was a second attention color on
+   a page whose one loud ink is reserved for what needs the human). Pre-wrap
+   because an answer can be several lines of plain text. */
+.answer-block {
+  margin: 0.5rem 0 0;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  border-left: 2px solid var(--hair);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* One history event on one line: the timestamp leads in muted mono, the type
+   and actor follow, and the literal command takes the rest of the row and
+   ellipses rather than wrapping the row to a second line. */
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 12.5px;
+}
+
+.history-entry:last-child {
+  border-bottom: none;
+}
+
+/* Sans with tabular figures, not mono: the three voices reserve mono for keys,
+   ids, paths, and commands, and a recorded time is none of the four. Tabular
+   nums keep the column the mono was really being used for. */
+.history-at {
+  flex: none;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-type {
+  flex: none;
+}
+
+.history-command {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}

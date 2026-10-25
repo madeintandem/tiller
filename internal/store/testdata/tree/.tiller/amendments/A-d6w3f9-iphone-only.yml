@@ -1,0 +1,29 @@
+id: A-d6w3f9
+key: iphone-only
+title: Remove native iPad support from v1
+status: proposed
+implements: ""
+triggered_by: [design/04-platform-and-constraints.md]
+amends_design: [design/01-overview.md]
+base_revision: git:78d2166
+operations:
+  - op: revise
+    target: F-z8e13q
+    preconditions: { spec_revision: "git:aaa...", eval_revision: "git:bbb..." }
+  - op: supersede
+    target: F-79dh3q
+    by: F-x5q1z8
+    preconditions: { target_status: done, target_revision: "git:7bc..." }
+  - op: cancel
+    target: T-p7kknm
+    reason: "superseded under the iPhone-only decision"
+    superseded_by: T-newone
+    preconditions: { target_status: check }
+  - op: add-feature
+    key: form-engine/table-backed-forms
+    change_type: replace
+    preconditions: { key_absent: form-engine/table-backed-forms }
+  - op: add-task
+    key: app-experience/fast-logging/iphone-acceptance
+    title: iPhone-only acceptance
+    preconditions: { key_absent: app-experience/fast-logging/iphone-acceptance }

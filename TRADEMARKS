@@ -1,0 +1,53 @@
+Tiller trademark policy
+
+Tiller's code is open source under the Apache License, Version 2.0. Its
+names and logos are not. Section 6 of the license says so directly: it grants
+no permission to use the licensor's trade names, trademarks, service marks,
+or product names, except as reasonable and customary use in describing the
+origin of the work and reproducing the NOTICE file.
+
+The marks
+
+DevMynd Software, Inc. (dba Made In Tandem) owns these marks.
+
+Registered trademarks:
+
+- Made In Tandem(R)
+- The MiT logo
+
+Unregistered trademarks:
+
+- "Tiller"
+- "MiT"
+- The Tiller logo (tiller-logo.svg, tiller-logo-inverted.svg)
+
+This policy applies to all of them. A mark being unregistered does not make
+it free to use.
+
+What you can do without asking
+
+- Say that your software is built with, works with, or is derived from
+  Tiller, as long as the statement is accurate.
+- Redistribute unmodified official releases under the Tiller name.
+- Write about Tiller, teach it, and talk about it, using the name to refer to
+  the project.
+- Keep the NOTICE file and its attribution intact, as the license requires.
+
+What needs written permission
+
+- Naming a fork, modified distribution, product, or service "Tiller", or
+  anything confusingly similar.
+- Using the marks in a way that suggests Made In Tandem made, sponsors, or
+  endorses your work when it did not.
+- Using the logos in your own product, packaging, or marketing.
+- Using the marks in a company name, domain name, or social media handle.
+
+Forks
+
+Forks are welcome. If you distribute a modified version, give it a different
+name and logo, keep the NOTICE file, and say plainly that it is based on
+Tiller from https://github.com/madeintandem/tiller.
+
+Questions and permission requests
+
+Contact Made In Tandem at https://madeintandem.com.

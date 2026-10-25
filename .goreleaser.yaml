@@ -1,0 +1,113 @@
+# GoReleaser builds and publishes a tagged release: four checksummed binaries,
+# a GitHub Release with grouped notes, and the Homebrew formula in
+# madeintandem/homebrew-tap. Driven by .github/workflows/release.yml on a
+# `v*` tag push. Local dry run: see docs/releasing.md.
+version: 2
+
+project_name: tiller
+
+before:
+  hooks:
+    # The binary reports the version stamped in internal/cli/root.go, not an
+    # injected one; refuse a tag that disagrees with the stamp.
+    - sh scripts/check-version-stamp.sh {{ .Tag }}
+    - go mod download
+
+builds:
+  - id: tiller
+    main: ./cmd/tiller
+    binary: tiller
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    # ui/dist is committed and embedded by ui/embed.go, so no Node here.
+    flags: [-trimpath]
+    ldflags: [-s, -w]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: tiller
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - NOTICE
+      - TRADEMARKS
+      - README.md
+      - THIRD_PARTY_NOTICES.txt
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  use: git
+  sort: asc
+  abbrev: 7
+  filters:
+    exclude:
+      - "^Release: stamp"
+      - "^Merge "
+  groups:
+    - title: Features
+      regexp: '^[Ff]eat'
+      order: 0
+    - title: Fixes
+      regexp: "^Fix:"
+      order: 1
+    - title: Build and tooling
+      regexp: "^Build:"
+      order: 2
+    - title: Docs
+      regexp: "^Docs:"
+      order: 3
+    - title: Tests
+      regexp: "^Test:"
+      order: 4
+    - title: Other
+      order: 9
+
+release:
+  github:
+    owner: madeintandem
+    name: tiller
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+  footer: |
+    ## Install
+
+    ```sh
+    brew install --cask madeintandem/tap/tiller     # macOS
+    curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh | sh   # macOS or Linux
+    ```
+
+    Checksums for every archive are in `checksums.txt`.
+
+# Homebrew: a cask in madeintandem/homebrew-tap (GoReleaser's `brews` formula
+# path is deprecated and removed in v2.16). Casks are macOS-only; Linux users
+# take the installer or go install. The binaries are unsigned, so the post-
+# install hook drops the quarantine bit Homebrew sets on cask downloads.
+homebrew_casks:
+  - name: tiller
+    repository:
+      owner: madeintandem
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "tiller {{ .Tag }}"
+    homepage: https://github.com/madeintandem/tiller
+    description: "An opinionated SDLC workflow tool for humans and AI coding agents working together"
+    binaries:
+      - tiller
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/tiller"]
+          end

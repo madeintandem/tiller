@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go build, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # check-doc-versions.sh reads the previous stamp from history.
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: python3 scripts/check-client-privacy.py --self-test
+      - run: python3 scripts/check-client-privacy.py
+      - run: scripts/check-doc-versions_test.sh
+      - run: scripts/check-doc-versions.sh
+      - run: scripts/install_test.sh
+      - run: site/screenshots/acme_test.sh
+      - run: make build
+      - run: make lint
+      # -count=1 on purpose: internal/e2e builds the binary and drives it as a
+      # subprocess, so Go's test cache cannot see its real inputs (Makefile).
+      - run: make test
+
+  console:
+    name: Console tests and ui/dist freshness
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Console notices include the shipped Go runtime's version and licenses.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: node --test ../scripts/third-party-notices.test.mjs
+      - run: npm run build
+      # ui/dist is committed and embedded into the binary by ui/embed.go, and
+      # the same build regenerates the root and ui/public notices (the root copy
+      # ships in release archives) and the website's font licenses. Every copy
+      # must reproduce the committed bytes exactly.
+      - name: ui/dist and generated notices match ui/src
+        run: |
+          paths="dist public ../THIRD_PARTY_NOTICES.txt ../site/src/fonts ../site/public/fonts"
+          if [ -n "$(git status --porcelain -- $paths)" ]; then
+            echo "::error::Generated console files are stale. Run 'make ui' and commit every changed file."
+            git status --porcelain -- $paths
+            git diff --stat -- $paths
+            exit 1
+          fi
+
+  secrets:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      # The CLI needs no license; the gitleaks GitHub Action does for orgs.
+      - run: scripts/check-gitleaks-config.sh
+      - run: go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner --config .gitleaks.toml .
+
+  dco:
+    name: DCO sign-off
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: every commit in the PR carries a Signed-off-by trailer
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          for sha in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            if ! git show -s --format=%B "$sha" | grep -qE '^Signed-off-by: .+ <.+@.+>$'; then
+              echo "::error::commit $sha has no Signed-off-by trailer (git commit -s; see CONTRIBUTING.md)"
+              git show -s --format='  %h %s' "$sha"
+              missing=1
+            fi
+          done
+          exit $missing

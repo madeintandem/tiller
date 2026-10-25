@@ -1,0 +1,585 @@
+/* History (the view formerly named Recap - renamed 2026-08-10, task-6-
+   brief.md item 3; restyled to the console-v2 mock 2026-08-11, task-19-
+   brief.md, phase 5). The values ride the locked mock's palette and spacing
+   (docs/plans/2026-08-09-console-v2-mocks.html:603-626, the HISTORY block)
+   and the three type voices it settled: Iowan Old Style for numerals, system
+   sans for everything read and operated, mono ONLY for keys, ids, paths and
+   commands and always smaller and muted.
+
+   Like home.css and explore.css, this file rides tokens.css's custom
+   properties rather than styles.css's pass-1 skin, so it re-scopes the shared
+   utility classes (.muted, .mono, .error, .none, and - new in this pass -
+   the generic row-anatomy leaves .t/.dot/.what/.who) it reaches for under its
+   own root. Without these rules the page silently loses most of its ink, or
+   (the newer risk) silently borrows Home's: home.css defines a BARE .prow
+   .t/.what/.who trio for its own pulse rows, unscoped, so a rule written here
+   as bare .t/.what/.who would repaint Home's "Just happened" column the
+   moment both files load in the same bundle. Scoping every generic leaf name
+   under .history-page is what keeps the two files from fighting over them;
+   .hrow/.day/.day-h/.seg/.burst-toggle/.burst-body/.hist-sub stay bare
+   because nothing else in the app defines them.
+
+   Only the root class and its title-row wrapper took the rename (.recap-page
+   -> .history-page, .recap-page-head -> .history-page-head): both name the
+   VIEW's own structure, not its data. Every class beneath them names a part
+   of the view's own anatomy (a group, a burst, an entry) and stays
+   "recap-" prefixed, the same vocabulary the wire still uses (RecapEntry,
+   RecapGroup, RecapWindow, api.ts) and the reason nothing else here moved -
+   that, and node.css already owns .history-entry for a node page's own
+   History tab, so a wholesale prefix swap would collide with it. The row
+   anatomy this pass adds (.hrow, .day, .seg, .burst-toggle, .burst-body) is
+   new structure the mock names directly, so it takes the mock's own class
+   names rather than inventing "recap-" siblings for them. */
+
+/* mock:606 - History is the settled exception to full window (task 4): a
+   centered reading measure, not edge-to-edge, matching the mock's own
+   History view (max-width: 1020px; margin: 0 auto), plus the same default
+   gutter every other view sets for itself (26px/28px top/sides, a deeper
+   64px bottom - mock's own .hist value). */
+.history-page {
+  padding: 26px 28px 64px;
+  max-width: 1020px;
+  margin: 0 auto;
+}
+
+.history-page .muted {
+  color: var(--ink-2);
+}
+
+.history-page .mono {
+  font-family: var(--font-mono);
+}
+
+.history-page .error {
+  color: var(--error);
+}
+
+.history-page .none {
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+/* ---------- Title row: the view's name, the window switch beside it ---------- */
+
+.history-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-bottom: 6px;
+}
+
+.history-page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+  color: var(--heading);
+  margin: 0;
+}
+
+/* The wrapper around the two segs (task 21's grouping toggle beside the
+   existing window switcher): plain flex, no border or background of its own
+   - each .seg still draws its own strip, this only holds the pair together
+   at the head's own right edge so .history-page-head's justify-content:
+   space-between still reads as "title, then controls" (two flex children)
+   rather than spacing three items across the row. */
+.hist-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+/* The segmented control idiom the topbar's theme toggle already uses
+   (styles.css's .segmented-control): a bordered, overflow-hidden strip, a
+   recessed active cell, mono uppercase labels. .seg stays generic (not
+   .history-page-scoped) because the mock names it bare and nothing else in
+   the app defines it yet - the empty state's "look back further" escape
+   hatch (RecapEmpty) reuses this exact class for the same reason a second
+   segmented control belongs to the same idiom, not a new one. */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  overflow: hidden;
+  flex: none;
+}
+
+.seg a {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 9px;
+  color: var(--ink-3);
+}
+
+.seg a:hover {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.seg a + a {
+  border-left: 1px solid var(--hair);
+}
+
+.seg a.active,
+.seg a.active:hover {
+  background: var(--recess);
+  color: var(--heading);
+}
+
+/* ---------- The marking one-liner, and the asks/stream line beneath it ---------- */
+
+/* mock:1144's own sentence, adapted per window by histSubFor (History.tsx):
+   what this window holds, and whether reading it just marked the reader
+   caught up. */
+.hist-sub {
+  font-size: 12.5px;
+  padding-bottom: var(--space-4);
+}
+
+/* The asks/stream line: only renders when it has something to say (asks or
+   more than one stream), so an ordinary window does not carry an empty bar
+   under the one-liner. */
+.recap-tally {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  font-size: 12px;
+  padding-bottom: var(--space-6);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--hair);
+}
+
+/* The count of asks is the loud ink, and the only text-carried one on a
+   collapsed page (the per-row ask dot is the same fact in a second, silent
+   register - see .dot.ask below). */
+.recap-asks-count {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 650;
+}
+
+/* The live number lives behind this link, on the surface that owns
+   present-tense claims about state. Same ink, same idiom, one gesture apart. */
+.recap-needs-link {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 650;
+}
+
+/* When neither line above renders (a genuinely empty window, no stream or
+   ask to name), the divider still has to appear somewhere before the empty
+   state - .recap-tally's own border-bottom does that job when present; a
+   bare .hist-sub carries none of its own, which is a minor cosmetic gap on
+   an already-empty page rather than a claim that reads wrong. */
+
+/* ---------- Empty state, which is the steady state ---------- */
+
+.recap-empty {
+  padding: var(--space-8) 0;
+}
+
+.recap-empty-more {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  font-size: 12px;
+  padding-top: var(--space-6);
+}
+
+/* ---------- A group: one (epic, stream) lane ---------- */
+
+.recap-group {
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.recap-group:last-child {
+  border-bottom: none;
+}
+
+.recap-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recap-group-head::-webkit-details-marker {
+  display: none;
+}
+
+/* Hierarchy inversion at the head: the epic's title leads in sans ink, its key
+   retreats to smaller muted mono behind it. */
+.recap-group-title {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.recap-group-key,
+.recap-group-stream {
+  font-size: 11px;
+}
+
+/* The trailing hairline: the same rule-line the day subheads below draw
+   (.day-h::after), so a section head reads as part of the same eyebrow
+   family (task-19-brief.md, "restyled to the house eyebrow idiom") instead
+   of the pre-restyle treatment. It, not the count, carries the flex:1 now -
+   the count and chevron trail it at their own natural width. */
+.recap-group-head .head-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+  align-self: center;
+}
+
+.recap-group-count {
+  font-size: 11px;
+  flex: none;
+}
+
+/* ---------- The row anatomy: mono time, dot, bold what, mono ref, who ---------- */
+
+/* .hrow is the mock's own name (mocks.html:614) for one event/burst row: a
+   lone entry renders it on a plain div, a run of more than one renders it on
+   the <summary> of its own <details> so the whole row stays the click target
+   the way a disclosure control should be. */
+.hrow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-5);
+  padding: 7px 0;
+  font-size: 13px;
+}
+
+.recap-burst > details > summary,
+summary.hrow {
+  list-style: none;
+  cursor: pointer;
+}
+
+.recap-burst > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.recap-burst > details > summary:hover {
+  background: var(--recess);
+}
+
+/* The divider between rows: on the LAST burst of a list (whether the list is
+   a whole group's flat run or one day's own slice under a subhead) it drops,
+   so the list does not end on a trailing hairline the way none of the
+   console's other lists do. Scoped by descendant rather than a bare
+   :last-child on .hrow itself, because .hrow sits at two different nesting
+   depths (a lone row's own div; a run's <details><summary>) and this reaches
+   both the same way. */
+.recap-bursts > .recap-burst {
+  border-bottom: 1px solid var(--hair);
+}
+
+.recap-bursts > .recap-burst:last-child {
+  border-bottom: none;
+}
+
+/* The generic row leaves, scoped under .history-page so they cannot collide
+   with home.css's own bare .prow .t/.what/.who trio (see the file banner).
+   Used by both .hrow (the burst row itself) and .recap-entry (an expanded
+   burst's own sub-rows), which is why they live here rather than nested
+   under .hrow specifically. */
+/* Fixed to a MEASURED width, not the mock's own 58px (mocks.html:616,
+   sized for their shorter "2:10p" clock format): History.tsx's formatTime
+   ({month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) tops
+   out at 16 characters ("Dec 31, 06:59 PM", verified across every month/
+   day/hour combination in en-US, the reader's browser locale being the
+   actual formatter since formatTime calls toLocaleString(undefined, ...) -
+   a different locale can render wider, which is what the wrap below is for,
+   not a truncation risk this measurement pretends to rule out), and 16ch is
+   exact rather than approximate because Space Mono is monospace - every
+   glyph, including the comma and the space, advances the same width as the
+   "0" ch is measured from. Without a real
+   width here every row's dot/what/ref/who started at a different x,
+   because a single stamp (~16ch) and burstWhen's span form ("earliest to
+   latest", ~2x that) rendered at whatever width their own text needed.
+   The span form still needs somewhere to go: it WRAPS inside the fixed
+   column (plain text with spaces in it wraps by default; no extra CSS
+   required) rather than truncating, the same anti-truncation call the
+   entry title already makes below - a burst that spans days is rare
+   enough that a taller row is a fair trade for never hiding when it
+   happened. */
+.history-page .t {
+  flex: none;
+  width: 16ch;
+  overflow-wrap: break-word;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.history-page .dot {
+  flex: none;
+  position: relative;
+  top: -1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+/* The one state a RecapEntry actually carries, painted quietly: never the
+   fact's only carrier (the adjacent .recap-asks-count word always ships
+   alongside it - ui-surface.md's "a status is never color alone"), just a
+   second, silent register of the same one. */
+.history-page .dot.ask {
+  background: var(--accent);
+}
+
+.history-page .what {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.history-page .what b {
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.history-page .who {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.recap-burst-node {
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+/* The address slot: a lone question's Q-id or a keyed node's leaf key, mono,
+   between what and who. leafKey collapses a key equal to the group so an
+   epic's own add row does not repeat its head one line below it. */
+.recap-burst-key {
+  flex: none;
+  font-size: 11px;
+}
+
+/* The origin label (task 21, flat mode only): the same treatment as the
+   address slot above, since task-21-brief.md asks to reuse it. A separate
+   class keeps the different facts and cardinalities clear: origin identifies
+   the merged row's epic and renders on a multi-entry row too, while
+   .recap-burst-key is the lone target's own address. */
+.recap-burst-origin {
+  flex: none;
+  font-size: 11px;
+}
+
+.burst-toggle {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Indented to where the dot starts on the row above it (the .t column's own
+   16ch width plus the one gap ahead of it - the mock's own arithmetic too:
+   mocks.html's .burst-body left-pads 68px against a 58px .t, the same
+   "column width plus one gap" shape, just against their shorter clock
+   format), so an expanded burst reads as a detail of its own row rather
+   than a new list starting at the left edge. Not .what's own start (a
+   dot's-width-and-a-gap further in): the entries below carry their own
+   dot on the same leading edge, so lining the block up with the ROW's
+   dot column is what keeps the two dot columns themselves aligned.
+
+   The `ch` unit resolves against the ELEMENT'S OWN font (family and size),
+   not whatever font its content happens to render in, so `16ch` here only
+   lands at the same px as `.t`'s own `16ch` if `.burst-body` is given the
+   identical font context `.t` uses - Space Mono at 10.5px, restated below
+   rather than left to inherit. Left to inherit, `.burst-body` picked up
+   Inter 14px from body (nothing between it and body sets a font), whose
+   "0" glyph is both a different typeface AND a third larger, so its 16ch
+   landed 25-35px right of the head row's own dot column (found on real
+   pixels, task-19-fix-wave review: no screenshot up to that point showed
+   an OPEN burst). Nothing below leaks this font change visibly: every
+   text-bearing descendant already sets its own font-family explicitly
+   (.recap-entry-title, the .mono .recap-entry-key spans, .recap-more's
+   button text), so only the ch calculation here ever sees mono. */
+.burst-body {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 0 8px calc(16ch + var(--space-5));
+}
+
+/* ---------- Day subheads: within a group whose bursts span more than one calendar day ---------- */
+
+.day {
+  margin-bottom: var(--space-8);
+}
+
+.day-h {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.day-h::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+}
+
+.recap-bursts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Entries: the third and last level of disclosure ---------- */
+
+.recap-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recap-entry {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: 4px 0;
+  font-size: 12.5px;
+}
+
+/* The statements WRAP here rather than truncating: mid-word truncation in a
+   narrow rail was half the reported defect, and a full-width page has the
+   room to just say the sentence. */
+.recap-entry-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.recap-entry-key {
+  flex: none;
+  font-size: 11px;
+}
+
+/* The per-row ask mark, which the view paints only inside a MIXED burst: in a
+   burst that is all asks the head already said it once for every row. The
+   dot beside it (.dot.ask above) is NOT gated the same way: it is
+   unconditional, painting e.ask's own truth on every row of every burst,
+   mixed or not (History.tsx's own comment on BurstEntries states why - a
+   6px dot repeated 32 times on an all-ask burst is not the "same loud mark
+   32 times" problem this border's own gate exists to avoid, and gating it
+   anyway painted a muted dot under an accent head, the inversion the dot
+   exists to prevent). */
+.recap-entry-ask {
+  border-left: 2px solid var(--accent-line);
+  margin-left: -8px;
+  padding-left: 6px;
+}
+
+/* "N more" is DecisionCard's footer, sitting flush with the entries above it
+   (the indent is .burst-body's job now, not this button's own). */
+.recap-more {
+  display: block;
+  padding: var(--space-2) 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.recap-more:hover {
+  color: var(--ink);
+}
+
+.recap-omitted {
+  font-size: 11px;
+  padding: var(--space-3) 0 0;
+}
+
+/* ---------- Shared: the group head's own chevron (unrestyled - see history.css's own banner) ---------- */
+
+/* The chevron column stays a fixed width so a stack of group heads keeps its
+   trailing edge aligned down the page; the burst row's own former chevron
+   column (and the alignment trick it needed) is gone with it, replaced by
+   .burst-toggle, which does not need to hold a slot on a row that has
+   nothing to open. */
+.history-page .chevron-glyph {
+  width: 0.75rem;
+  text-align: right;
+}
+
+/* ---------- Below 48rem: let the row wrap as whole pieces, not words -----
+   Phone-width pass (whole-branch merge gate finding), the same live
+   375x812 verification explore.css's and build.css's own mobile blocks
+   came out of. History carries no fixed viewport frame the way Build and
+   Explore did (.history-page is a centered reading measure that already
+   scrolls at the document level, mock:606's own settled exception to full
+   window), so the page itself was never the risk here - .hrow was.
+
+   .hrow packs up to six flex children on ONE unwrapping line (time, dot,
+   what, an optional ask clause, an optional leaf-key ref or origin label,
+   who, and a multi-entry burst's own toggle), sized against .what's own
+   `flex: 1 1 auto; min-width: 0`. On a full-width desktop row there is
+   always enough room for all six; at 375px there often is not, and
+   min-width: 0 is what a flex item needs to shrink BELOW its own text's
+   natural width in the first place - with no flex-wrap to fall back on,
+   the browser's only remaining move is to shrink .what's box toward zero
+   and let its own text wrap internally, one word per line, rather than
+   push any sibling off the line. Time/dot/`5`/`tasks`/`added` (four lines
+   for a single row) is not a truncation - the count and every word are
+   still literally on the page - but it fails the same test task 25's
+   sliver did: a reader cannot read "5 tasks added" as the one phrase it
+   is, because nothing marks the burst-toggle's own "+ open" as connected to
+   a subject three line-breaks above it. Reproduced ONLY in flat/time mode
+   (?group=time): epic mode's row never carries BurstRow's own `origin`
+   span (the section head already named the epic, so the row does not have
+   to), and that one extra fixed-width mono child is what tips the row's
+   six-way math over 375px - confirmed live by removing it experimentally,
+   which stopped the fragmentation.
+
+   The fix is not a redesign of the row's own anatomy (unlike Explore's
+   frame, nothing here needs a second column or a stacked layout - .t's own
+   comment already measured its 16ch width against this exact same font,
+   and that measurement is untouched): flex-wrap: wrap alone is enough.
+   Wrapped, the browser's line-breaking runs on each child's own natural
+   (max-content) width BEFORE any shrinking happens, so a child that does
+   not fit the current line moves to the next line WHOLE rather than
+   being squeezed into shrinking piecemeal - "5 tasks added" now always
+   reads as one phrase, on its own line if the row's earlier columns left
+   no room for it, and only the trailing meta (an address, the origin label,
+   who, the toggle) drops to a second line on a crowded row, still
+   each in one piece. Verified against every row shape live: a short lone
+   row keeps its single line unchanged (nothing here forces a wrap that
+   was not already needed), a multi-entry row's toggle alone drops to its
+   own line, and the origin-carrying flat rows read as two clean lines
+   instead of the four-line word stack. */
+@media (max-width: 48rem) {
+  .hrow {
+    flex-wrap: wrap;
+  }
+}

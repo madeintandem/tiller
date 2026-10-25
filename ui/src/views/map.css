@@ -1,0 +1,622 @@
+/* The Explore map (docs/plans/2026-08-30-explore-map-design.md, amended
+   2026-08-31): a full-width canvas under the mode rail, a balanced
+   horizontal mind map. Branch connectors in the quiet ink are the only lines
+   at rest; dependency arcs are drawn by policy and light in full ink. Cards
+   are one row each, in the console's own grammar (kind pill, state dot), and
+   the accent lands on nothing but a question badge.
+
+   The canvas is three elements deep: a frame that clips the drawing and
+   takes every gesture, an SVG of wires stacked inside it, and an HTML layer
+   of cards over that. The cards were foreignObject content inside the SVG
+   until 2026-08-31; the layer is what leaves WebKit's foreignObject
+   mispositioning and repaint faults behind. */
+
+.map-mode {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* The frame: the one element the reader's gestures land on, and the one that
+   clips the drawing. Everything inside it is a layer, so a press, a wheel, or
+   a resize is answered once for the whole map rather than once per layer.
+
+   clip, not hidden. The card layer's children run past the frame on every
+   side, which under `overflow: hidden` would make this a scroll container:
+   tab-focusing a card that is off screen would scroll the frame itself, and
+   every pan and wheel zoom after that would be offset by a scrollLeft and
+   scrollTop the canvas never reads. `clip` cuts at the same edge and creates
+   no scroll container to be scrolled. */
+.map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  background: var(--paper);
+  touch-action: none;
+  /* A pan is a press and a drag over a surface full of text. Left alone, a
+     drag that starts on empty canvas and crosses a stack of cards sweeps a
+     selection through their titles, and the reader lets go holding a
+     highlighted diagonal of the map. The prefixed form is for Safari, which
+     only took the standard property in 17. */
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.map-canvas:active {
+  cursor: grabbing;
+}
+
+/* The wire layer, sized to the frame it is stacked in rather than to a flex
+   track of its own. It holds the branch connectors and the dependency arcs
+   and nothing else, and none of them ever wanted a pointer, so the whole
+   layer is inert and a press over it reaches the frame underneath. */
+.map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The card layer: plain HTML over the drawing rather than inside it. The
+   cards used to be foreignObject content, which WebKit both mispositions
+   (a mirrored row painted its chevron far outside its own card) and fails
+   to repaint when the viewBox moves (ghost cards at old positions, cards
+   over the toolbar). Up here they are ordinary absolutely positioned divs
+   sharing one world transform, and the whole bug class is gone.
+
+   The layer is a zero-size box pinned at the frame's origin: it is a
+   containing block and a transform, not a surface. Its transform (inline,
+   beside the transform-origin it has to agree with) is the same expression
+   the wire group inside the SVG carries, so both layers move together. It
+   takes no pointer of its own, which is what leaves the gaps between the
+   cards pannable. */
+.map-card-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+/* The branch connectors: the tree itself, drawn under every card and never
+   in the way of a pointer, since the canvas beneath them is what pans.
+   Lighter than an arc, because the tree is the base layer and the dependency
+   graph has to read as something laid over it: at the same ink they were the
+   same line, and Work links drew one undifferentiated mesh where only
+   the curvature told parentage from a dependency (fix round 1). */
+.map-branch {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink-3) 55%, var(--paper));
+  stroke-width: 1.4;
+  pointer-events: none;
+}
+
+/* A dependency arc is only ever on screen because the reader asked for it,
+   by selecting a node or by turning Work links on. Each one rides on a
+   halo in the paper, painted just under it, so that where it crosses a branch
+   connector or an earlier arc it cuts a small gap through that line and the
+   eye can follow the one on top; the lit arcs paint last and so bridge over
+   the rest. */
+.map-edge-halo {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--paper);
+  stroke-width: 5;
+}
+
+.map-edge {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.5;
+  transition: stroke 0.12s;
+}
+
+.map-edge[data-kind="attached_to"] {
+  stroke-dasharray: 2 4;
+}
+
+.map-edge[data-kind="resolved_by"] {
+  stroke-dasharray: 8 4;
+}
+
+.map-edge.lit {
+  stroke: var(--ink);
+  stroke-width: 1.8;
+}
+
+.map-arrowhead {
+  fill: var(--ink-3);
+}
+
+/* A card is one row and nothing more: the branch's chevron, then what the
+   node is, what it is called, and how much is on it. The row is the card,
+   since the mind map stacks a branch's children beside it rather than
+   nesting them inside its box. Its left, top, width and height are the
+   layout's own box, written inline in world units; the layer's scale is
+   what turns them into pixels. */
+.map-card {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  transition: opacity 0.12s, box-shadow 0.12s;
+}
+
+/* The chevron belongs at the edge the branch line arrives on, which mirrors
+   with the side: on the left half of the map the line comes in from the
+   right. The row itself is never reversed to say that. `flex-direction:
+   row-reverse` was the mirror until 2026-08-31, and it is the exact shape
+   WebKit mispositions inside a foreignObject, which is how a left-side
+   card's chevron came to paint detached and far outside its own card.
+   Moving the chevron with `order` instead flips the one item that mirrors
+   and leaves the row running one way for every card on the map. */
+.map-card[data-side="left"] .map-chevron {
+  order: 99;
+}
+
+/* A branch head sits a shade back from the leaves hanging off it. */
+.map-card[data-noun="epic"],
+.map-card[data-noun="shelf"] {
+  background: color-mix(in srgb, var(--panel) 90%, var(--recess));
+}
+
+/* The project itself, the one card that is not a node: it says the name and
+   nothing else, in reverse video, so the center of the map reads as the thing
+   everything hangs off rather than as another epic. */
+.map-card.root {
+  justify-content: center;
+  background: var(--heading);
+  color: var(--paper);
+  border-color: var(--heading);
+  cursor: default;
+}
+
+.map-card.root .map-title {
+  flex: none;
+}
+
+.map-card.selected {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.map-card.lit {
+  box-shadow: inset 0 0 0 1px var(--ink-2);
+}
+
+.map-card.dim {
+  opacity: 0.28;
+}
+
+.map-chevron {
+  flex: none;
+  width: 16px;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.map-chevron[aria-expanded="true"] .chevron-glyph {
+  transform: rotate(90deg);
+}
+
+/* A closed branch's chevron points the way its children will open, which on
+   the left half of the map is leftward. Open, it points down on both sides,
+   so the rule above already covers it. */
+.map-card[data-side="left"] .map-chevron[aria-expanded="false"] .chevron-glyph {
+  transform: rotate(180deg);
+}
+
+/* The card button is the whole row bar the chevron, which stays outside it
+   because a button cannot nest inside a button. One button rather than
+   several, so a click anywhere on the card selects. */
+.map-card-body {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-card-body .kind-pill {
+  flex: none;
+  font-size: 9px;
+  padding: 3px 7px 3px 8px;
+}
+
+.map-card-body .state-dot {
+  flex: none;
+}
+
+/* The title takes the slack, one line, ellipsized, the full string on hover,
+   which is what leaves the count and the badge pinned to the far edge. */
+.map-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.map-card[data-noun="task"] .map-title,
+.map-card[data-noun="bug"] .map-title,
+.map-card[data-noun="chore"] .map-title,
+.map-card[data-noun="tweak"] .map-title {
+  font-size: 11.5px;
+}
+
+/* How much is on a branch, said in the mono register so a column of counts
+   lines up down a stack. The auto margin is what pins it on a SHELF card,
+   which is the one card with no .map-title to take up the slack, since a
+   shelf's pill is its whole name. Everywhere else the title's flex: 1 has
+   already eaten the free space and this resolves to nothing. */
+.map-count {
+  flex: none;
+  margin-left: auto;
+  font: 500 10.5px var(--font-mono);
+  color: var(--ink-3);
+}
+
+/* The badge ends the row, away from the pill and the title that name the
+   node, since it is the one thing on the card that is not about it. Behind a
+   count it just follows along. */
+.map-holds {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+
+.map-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  overflow-x: auto;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.map-toolbar button,
+.map-toolbar select {
+  font-family: var(--font-body);
+  font-size: 12px;
+  flex: none;
+  color: var(--ink-2);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.map-toolbar button:hover {
+  color: var(--ink);
+}
+
+/* A toggle that looks the same held down as up is a toggle nobody trusts,
+   and Work links has nothing else to say so on a map whose nodes
+   happen to depend on nothing. Held is full ink on the recessed ground the
+   console gives a pressed control; the accent stays reserved for the
+   question badge. */
+.map-toolbar button[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--recess);
+  border-color: var(--ink-3);
+}
+
+/* The selected node's card: a compact panel floating at the top right of the
+   map, rather than the full-height sheet down its right edge it was until
+   2026-08-31. Most nodes have four or five lines to say, and the sheet made
+   a tall column of empty paper out of them while hiding whatever the map had
+   drawn behind it.
+
+   It starts below the toolbar's band, at the same 48px MapMode's own FIT_TOP
+   holds clear (12px of offset, the toolbar's own row, and a few pixels of
+   air), and it is bounded by what is left of the frame under it. A node with
+   a long list of dependencies asks for more room than that, so the card is a
+   column: a header that holds still and a body that scrolls under it. The
+   whole card was the scroller until 2026-08-31, with the close control
+   absolutely positioned inside it, which meant a tall card scrolled its own
+   close button off the top. Its width and the margin it sits in are the two
+   numbers
+   MapCard's DOCK_INSET adds up: the fit and the trip to a selection center
+   in the width this card leaves rather than in the whole frame, so a change
+   to either number here is a change there.
+
+   The card is the canvas's sibling and not its child, so a press, a drag, or
+   a wheel over it never reaches the frame that pans: the card's own body
+   scrolls and the map holds still under it. Everywhere the card is not, which is now
+   most of the map, the canvas takes the gesture as it always did. */
+.map-dock {
+  position: absolute;
+  top: 48px;
+  right: 16px;
+  width: 320px;
+  max-height: calc(100% - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-panel);
+  /* No padding of its own: the header and the body carry it between them
+     (2026-08-31), so the header reaches the card's edges as a handle. */
+  /* Over the card layer, which takes no stacking order of its own, and over
+     the toolbar, whose band this starts below but whose row it would meet on
+     a frame too narrow to hold both. */
+  z-index: 3;
+}
+
+/* The header: the line the card opens on, and the close control at the end
+   of it. It is the half of the card that does not scroll, so the way out of
+   a card stays where the reader last saw it however long the body under it
+   runs. */
+.map-dock-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  /* The handle (2026-08-31): a press here and a drag moves the card, so the
+     cursor says so, the touch gesture is the card's rather than the page's,
+     and a drag across the kind pill never sweeps a selection through it.
+     The card's top and side padding live here rather than on the card, so
+     the handle reaches the card's own edges and the reader can take hold of
+     the corner and not only the pill. */
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  padding: 14px 16px 10px;
+}
+
+.map-dock-head:active {
+  cursor: grabbing;
+}
+
+/* Everything the card has to say, and the one box on it that scrolls. The
+   min-height is what lets it: a flex item's floor is its content, so without
+   it the body grows past the card's own max-height and the frame, rather than
+   taking the room that is left and scrolling inside it. */
+.map-dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* The card's side and bottom padding, the header holding the rest; the
+     scrollbar this box grows sits at the card's own edge as a result. */
+  padding: 0 16px 14px;
+}
+
+.map-dock-close {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 16px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+/* The body's type runs in four registers (2026-08-31, the detail pane pass):
+   the title in the display face and the heading ink; the key and the
+   container line under it in the quiet ink; the facts in the body ink; and
+   each relation as a labeled tree, the label an eyebrow and the rows in full
+   ink. Before this the title, the rows, and the facts all sat within a point
+   and a half of each other in the same middle grey, and a node with a dozen
+   dependents read as one wall. */
+.map-dock-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  color: var(--heading);
+  /* The header's own bottom padding is most of the air above this. */
+  margin: 2px 0 3px;
+}
+
+.map-dock-key {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* "in <container>": the one line that says whose feature this is. */
+.map-dock-in {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin: 6px 0 0;
+}
+
+.map-dock-in .map-card-link {
+  color: var(--ink-2);
+}
+
+.map-dock-facts {
+  margin-top: 12px;
+  display: grid;
+  gap: 3px;
+}
+
+.map-dock-fact,
+.map-dock-holds {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.map-dock-group {
+  margin-top: 18px;
+}
+
+/* The label and, beside it, how many rows hang under it: the reader knows
+   the size of a list before scrolling to its end. */
+.map-dock-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.map-dock-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* The tree. Each row is a flex line, its text first and its chip pushed to
+   the far edge so the chips stand in one column and a wrapped title stays
+   left-aligned under its own first line. The bracket in front of a row is
+   drawn by two pseudo-elements on the row itself: ::before is the L, down
+   from the row's top edge and across to its text, meeting the first line of
+   text at its middle (the row's 3px of top padding plus half its 20px
+   line); ::after, on every row but the last, carries the trunk on from that
+   middle down to the row below, where the next ::before picks it up. The
+   chip gets a line height of its own, since the row's 20px would otherwise
+   reach it and swell it past the 20px it stands at everywhere else, with
+   its middle 2px under the elbow. Both strokes are drawn in --tree-line:
+   the quiet ink mixed most of the way toward the
+   panel, since the hairline the browse tree's indent guide uses all but
+   vanishes on the dark theme's panel, which sits closer to --hair than the
+   paper does. */
+.map-dock-tree {
+  --tree-line: color-mix(in srgb, var(--ink-3) 45%, var(--panel));
+  list-style: none;
+  margin: 4px 0 0 4px;
+  padding: 0;
+}
+
+.map-dock-tree > li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 3px 0 3px 16px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.map-dock-tree > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 13px;
+  border-left: 1px solid var(--tree-line);
+  border-bottom: 1px solid var(--tree-line);
+  border-bottom-left-radius: 3px;
+}
+
+.map-dock-tree > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 13px;
+  bottom: 0;
+  border-left: 1px solid var(--tree-line);
+}
+
+.map-dock-tree .map-card-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.map-dock-tree .chip {
+  flex: none;
+  margin-left: auto;
+  line-height: 16px;
+}
+
+/* A link on the card selects that node on the map; it reads as text in the
+   full ink and says clickable on hover, since a dotted underline under every
+   row of a long list was most of what made the list a wall. */
+.map-card-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-card-link:hover {
+  color: var(--heading);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.map-dock-open {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--panel);
+  background: var(--ink);
+  border-radius: var(--radius-btn);
+  padding: 6px 12px;
+}
+
+.map-status {
+  padding: 26px 28px;
+  color: var(--ink-2);
+}
+
+.map-dock-label h3 {
+  margin: 0;
+}
+
+
+@media (max-width: 48rem) {
+  /* Unlike the stacked reading panes, the canvas needs a bounded flex frame. */
+  .explore:has(> .explore-modebody-map) {
+    height: calc(100dvh - var(--topbar-h));
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 600px) {
+  .map-dock {
+    right: 8px;
+    width: min(320px, calc(100% - 16px));
+    max-height: 42%;
+  }
+
+}

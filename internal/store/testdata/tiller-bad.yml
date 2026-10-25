@@ -1,0 +1,29 @@
+schema_version: 12
+schema_epoch: initial
+
+project:
+  name: Acme Platform
+  key: acme
+  kind: greenfield
+  requires_tiller: ">= 1.0"
+
+# contributors block intentionally omitted: this fixture exercises the
+# "contributors must be set" readiness gap in Manifest.Validate.
+
+
+inputs:
+  docs:
+    - design/
+  current_state: []
+  code: []
+
+gates:
+  required:
+    build: { kind: command, run: "bin/rails runner 'true'", on: [feature, task] }
+
+git:
+  branch_pattern: "tiller/${node.key}"
+  pr_coherence: true
+
+drift:
+  checks: [stale_spec, active_basis]

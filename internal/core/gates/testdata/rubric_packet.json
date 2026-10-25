@@ -1,0 +1,16 @@
+{
+  "schema": "tiller.rubric_packet.v1",
+  "node": "F-aaaaaa",
+  "noun": "feature",
+  "generated_at": "2026-06-27T00:00:00Z",
+  "criteria": [
+    {
+      "id": "C4",
+      "statement": "The generated copy reads naturally for a homeowner",
+      "polarity": "introduce",
+      "required": true,
+      "rubric": "Grade whether the copy reads naturally.",
+      "output_path": "artifacts/tiller/evals/F-aaaaaa-C4.json"
+    }
+  ]
+}

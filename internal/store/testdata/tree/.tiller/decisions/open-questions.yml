@@ -1,0 +1,10 @@
+questions:
+  - id: Q-h2n7m5
+    statement: Does the audit selection count projects or project-phases?
+    owner: jc
+    due: { date: 2026-08-15, hint: "end of week 6" }
+    blocks: [E-j8m4q2]
+    status: open
+    answer: null
+    answer_revision: null
+    source: "(99-open-questions.md 1.10)"

@@ -1,0 +1,14 @@
+test
+└─ foundation (E-xxxxxx)               Foundation
+      .tiller/epics/foundation/epic.md
+      .tiller/epics/foundation/epic.yml
+   ├─ authn (F-xxxxxx)                 Authentication foundation
+   │     .tiller/epics/foundation/features/authn/feature.md
+   │     .tiller/epics/foundation/features/authn/feature.yml
+   └─ db-core (F-xxxxxx)               Database core
+         .tiller/epics/foundation/features/db-core/feature.md
+         .tiller/epics/foundation/features/db-core/feature.yml
+         .tiller/epics/foundation/features/db-core/feature.eval.md
+      └─ define-the-schema (T-xxxxxx)  Define the schema
+            .tiller/epics/foundation/features/db-core/tasks/define-the-schema/task.md
+            .tiller/epics/foundation/features/db-core/tasks/define-the-schema/task.yml

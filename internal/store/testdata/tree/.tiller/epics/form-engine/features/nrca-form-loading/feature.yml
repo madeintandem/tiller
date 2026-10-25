@@ -1,0 +1,49 @@
+id: F-79dh3q
+key: form-engine/nrca-form-loading
+title: NRCA form loading (2022 + 2025)
+status: active
+blocked: false
+change_type: create
+surface:
+  paths: []
+depends_on: []
+supersedes: []
+superseded_by: null
+branch: tiller/form-engine/nrca-form-loading
+pr: null
+accepted_against:
+  spec: { kind: git_blob, value: "git:31fd9c2", path: epics/form-engine/features/nrca-form-loading/feature.md, observed_at: "2026-06-23T00:00:00Z" }
+  eval: { kind: git_blob, value: "git:b71a322", path: epics/form-engine/features/nrca-form-loading/feature.eval.md, observed_at: "2026-06-23T00:00:00Z" }
+assumption_basis: {}
+verified_against:
+  spec: null
+  eval: null
+  surfaces: []
+gates:
+  build:
+    required: true
+    kind: command
+    status: pass
+    run_by: pat
+    run_at: "2026-06-23T00:00:00Z"
+    against: { kind: git_commit, value: "git:abc1234" }
+    evidence: [{ kind: command_output, ref: artifacts/tiller/gates/build-abc1234.txt }]
+  evals:
+    required: true
+    kind: command
+    status: pending
+    run_by: pat
+    run_at: "2026-06-23T00:00:00Z"
+    against: { kind: git_commit, value: "git:abc1234" }
+    criteria:
+      C3:
+        status: needs_attestation
+        evidence: [{ kind: rubric_output, ref: artifacts/tiller/evals/F-79dh3q-C3.json }]
+attestations:
+  - id: AT-4m9x2q
+    target: { kind: criterion, id: C3 }
+    status: pass
+    by: jc
+    at: "2026-06-23T00:00:00Z"
+    evidence_ref: artifacts/tiller/evals/F-79dh3q-C3.json
+policy_violations: []

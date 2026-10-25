@@ -1,0 +1,54 @@
+.backlinks-group {
+  margin-top: var(--space-7);
+  min-width: 0;
+}
+
+.backlinks-group h3 {
+  font-size: 12px;
+  font-weight: 650;
+  margin: 0 0 var(--space-4);
+}
+
+.backlinks-source {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+  overflow-wrap: anywhere;
+}
+
+.backlinks-source:last-child {
+  border-bottom: none;
+}
+
+.backlinks-source-head {
+  font-weight: 600;
+}
+
+.backlinks-owner,
+.backlinks-citations,
+.backlinks-diagnostics {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.backlinks-owner {
+  margin-top: 4px;
+}
+
+.backlinks-citations {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.backlinks-diagnostics > li + li {
+  margin-top: 6px;
+}
+
+.backlinks-source .copy-cmd {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.backlinks-source .copy-cmd code {
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,78 @@
+# Dependabot opens one grouped PR per ecosystem each month, so dependency
+# drift arrives as a small review instead of a periodic sweep (issue #97).
+# Two things to know when one lands:
+#   - A ui/ PR fails the "ui/dist and generated notices match ui/src" CI gate until
+#     someone runs `make ui` on the branch and commits the rebuilt dist and notices. docs/releasing.md,
+#     "Dependency updates", has the steps.
+#   - Majors are grouped apart from minors and patches, so a routine round
+#     never carries a breaking bump.
+# Dependabot does not bump the Go toolchain for you: a stdlib fix never
+# arrives as a PR here, so the `go` line in go.mod stays a by-hand bump
+# prompted by govulncheck. A module bump can still drag that line up when
+# the module requires a newer Go; read the go.mod diff on gomod PRs.
+# Every ecosystem waits ten days after a release before proposing it. That
+# is the same minimum release age npm enforces on the maintainer's machine
+# (`npm config get min-release-age`), so a PR here never names a version
+# local npm refuses to install, and a freshly published package gets ten
+# days of scrutiny before it can land.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 10
+    commit-message:
+      prefix: "Build"
+    groups:
+      go-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      go-major:
+        patterns: ["*"]
+        update-types: [major]
+
+  - package-ecosystem: npm
+    directory: /ui
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 10
+    commit-message:
+      prefix: "Build"
+    groups:
+      console-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      console-major:
+        patterns: ["*"]
+        update-types: [major]
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 10
+    commit-message:
+      prefix: "Build"
+    groups:
+      site-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      site-major:
+        patterns: ["*"]
+        update-types: [major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 10
+    commit-message:
+      prefix: "Build"
+    groups:
+      actions:
+        patterns: ["*"]

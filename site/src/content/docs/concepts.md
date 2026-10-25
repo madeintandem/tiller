@@ -1,0 +1,508 @@
+---
+title: Concepts
+description: The mental model behind tiller, the tree, the lifecycle and its gates, who does what, drift and amendments, and the surfaces, with diagrams.
+---
+
+Tiller holds the structure, the gates, and the state of a software project. The agent does the reasoning. The human approves at the gates. Everything below is that one sentence, unpacked.
+
+## The tree
+
+Work is a single hierarchy: epics, then features, then tasks. Three more shelves of leaf work, bugs, chores, and tweaks, sit beside the tree rather than inside it (more on those below). Each grain carries more detail than the one above it. An epic is a narrative. A feature is a narrative plus a specification and an acceptance contract. A task carries the implementation detail. A pull request represents exactly one node, a task by default, or the feature or epic when Review Grain moves review upward. Every node has a stable id (`E-mu0v91`, `F-dv5ppv`, `T-h389ih`) and a human key path (`foundation`, `foundation/app-scaffold`, `foundation/app-scaffold/wire-the-build`). The id survives renames; the key is how people talk about it.
+
+Every node is 2 files. The `.md` is prose and it's yours: intent, specification, acceptance criteria. The `.yml` is state and it's tiller's: status, owner, gate results, revisions. That split is what lets the CLI churn state all day without touching a word a human wrote, and it's what keeps 2 people's work from colliding in a merge.
+
+Initial decomposition proposes epic and feature narratives through the full known initial scope. Features get detailed specifications, acceptance contracts, and tasks just in time, normally one named feature at a time rather than the entire future tree.
+
+An epic is a bounded delivery increment, not the permanent home of a subsystem. Recommend the progression from documented consumer outcomes, including operators, developers, and API consumers, and interleave product work with the small platform increments it genuinely needs. Related capabilities can recur in later epics. Design shared machinery with later needs in mind without implementing all of them before its first consumer.
+
+Features express honestly acceptable outcomes; their own contracts must be satisfiable at that boundary. Keep one unfinished feature when no sensible split exists rather than presenting incomplete behavior as complete. Tasks may be technical implementation units. True execution prerequisites belong in `depends_on`; preferred sibling sequence belongs in `tiller order`. Eventual architectural integration alone does not establish a prerequisite, and zero cross-epic edges is valid for independent work.
+
+<figure class="diagram-figure">
+<svg class="diagram" viewBox="0 0 980 310" role="img" aria-label="Epic, feature, and task side by side, each with a prose file that grows more detailed from left to right and a state file tiller owns; the task carries implementation detail while Review Grain decides whether the task, feature, or epic owns the pull request.">
+  <defs><marker id="d2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
+  <text x="20" y="26" class="h">Epic</text><text x="20" y="44" class="muted small">a narrative</text>
+  <text x="360" y="26" class="h">Feature</text><text x="360" y="44" class="muted small">narrative, specification, contract</text>
+  <text x="700" y="26" class="h">Task</text><text x="700" y="44" class="muted small">implementation detail</text>
+  <rect x="20" y="58" width="260" height="72" rx="6" class="box"/>
+  <text x="32" y="80" class="mono">epic.md</text><text x="268" y="80" text-anchor="end" class="muted small">yours</text>
+  <text x="32" y="102" class="small">What this slice of the product is, why,</text>
+  <text x="32" y="120" class="small">and which features belong to it.</text>
+  <rect x="20" y="144" width="260" height="50" rx="6" class="recess"/>
+  <text x="32" y="166" class="mono">epic.yml</text><text x="268" y="166" text-anchor="end" class="muted small">tiller's</text>
+  <text x="32" y="184" class="small muted">status, gates, depends_on</text>
+  <rect x="360" y="58" width="260" height="128" rx="6" class="box"/>
+  <text x="372" y="80" class="mono">feature.md</text><text x="608" y="80" text-anchor="end" class="muted small">yours</text>
+  <text x="372" y="102" class="small">The narrative, then the specification:</text>
+  <text x="372" y="120" class="small">what it does, and what it must not break.</text>
+  <text x="372" y="146" class="mono">feature.eval.md</text>
+  <text x="372" y="166" class="small">The acceptance contract: criteria with</text>
+  <text x="372" y="182" class="small">bindings tiller can run.</text>
+  <rect x="360" y="200" width="260" height="50" rx="6" class="recess"/>
+  <text x="372" y="222" class="mono">feature.yml</text><text x="608" y="222" text-anchor="end" class="muted small">tiller's</text>
+  <text x="372" y="240" class="small muted">status, gates, accepted_against</text>
+  <rect x="700" y="58" width="260" height="160" rx="6" class="box"/>
+  <text x="712" y="80" class="mono">task.md</text><text x="948" y="80" text-anchor="end" class="muted small">yours</text>
+  <text x="712" y="102" class="small">The approach: which files, which seams,</text>
+  <text x="712" y="120" class="small">what to build first, how to prove it.</text>
+  <text x="712" y="146" class="small">Pinned as the basis when the plan is</text>
+  <text x="712" y="164" class="small">approved; an edit after that is drift</text>
+  <text x="712" y="182" class="small">until a human re-records it.</text>
+  <text x="712" y="200" class="small muted">Review at the resolved grain:</text>
+  <text x="712" y="216" class="small muted">task by default, or feature / epic.</text>
+  <rect x="700" y="232" width="260" height="50" rx="6" class="recess"/>
+  <text x="712" y="254" class="mono">task.yml</text><text x="948" y="254" text-anchor="end" class="muted small">tiller's</text>
+  <text x="712" y="272" class="small muted">status, gates, review, accepted basis</text>
+  <line x1="280" y1="94" x2="358" y2="94" class="line" marker-end="url(#d2a)"/>
+  <text x="320" y="86" text-anchor="middle" class="small muted">decomposed</text>
+  <line x1="620" y1="94" x2="698" y2="94" class="line" marker-end="url(#d2a)"/>
+  <text x="660" y="86" text-anchor="middle" class="small muted">specified</text>
+  <text x="660" y="112" text-anchor="middle" class="small muted">just in time</text>
+  <text x="20" y="302" class="small muted">Each grain says more than the one before it. Prose is human-owned, state is machine-mutated, and they never share a file.</text>
+</svg>
+<figcaption>The tree as progressive elaboration: an epic is narrative, a feature adds a specification and an acceptance contract, a task carries the implementation detail. Every grain is a prose file you own beside a state file tiller owns.</figcaption>
+</figure>
+
+## Existing-code baseline
+
+The Brownfield Baseline workflow in v0.11.0 uses an as-is ledger and a human confirmation gate,
+not another work-node lifecycle. The optional
+`.tiller/design/baseline.yml` records each design-relative Markdown path, the code it `describes`,
+recoverable source blobs in `derived_from`, and an optional `confirmed` block. Markdown stays
+human-owned. Frontmatter does not register a doc as as-is state.
+
+Brownfield explains this repository's existing system; legacy-migration explains the reference
+system a new system will replace. Both require at least one confirmed doc before ordinary startup
+routing resumes. Greenfield has no confirmed-baseline gate. Kinds do not restrict feature change
+types: all can later create, modify, replace, or migrate code. Every code root still requires an
+explicit surface or reference mode. Work-node surfaces cannot overlap reference code, but design
+docs may describe paths equal to or beneath any declared valid root, including an external
+reference tree. Merely containing a root does not make a described path valid.
+
+`link design` records paths and provenance; it never confirms. A real describes change clears
+confirmation, an idempotent retry preserves it, and provenance-only changes do not invalidate it.
+Removing the final describes path removes the ledger entry, not its prose. `approve design`
+confirms named docs atomically against current working-tree fingerprints and one project HEAD,
+without editing or hashing their prose. It is the human's decision, and there is no `--all`.
+Dirty code, additions, and removals count. Project HEAD is a history anchor, not a claim that
+the observed code is committed, not `project.adopted`, and not an external repository's HEAD.
+
+Inside Git, described directory inventory includes tracked files still present and nonignored
+untracked files. Declared external non-Git trees include all regular files. Explicit files are
+observed even if ignored. `.git` and `.tiller` metadata are excluded. The
+[artifact schema](/tiller/spec/artifact-schema/#baseline-ledger-designbaselineyml) defines path
+safety, fingerprint framing, and inventory details.
+
+The shared guide, orient, and readout route chooses `derive-baseline` before ordinary no-tree or
+work routing when either existing-code kind has no confirmation. The skill reads docs first,
+derives undocumented code, or translates existing sources at module grain. In-repo sources move
+only when ownership moves; otherwise use a pointer page rather than duplicate live specs.
+External imports preserve their originals. Commit exact inputs and record project-HEAD blob
+provenance before retiring agreed sources. Missing adoption history is stated, not invented.
+
+The baseline readout exposes every recorded source path plus blob mapping and every doc's
+described paths and confirmation facts. It is a review map, not proof that all source meaning
+survived. Dropped, merged, or unplaceable material belongs to the agent's separate run notes;
+`Open questions` counts the current project state. Pending docs lead to one HUMAN review action,
+not another derivation or a false empty-Queue claim that nobody needs the human. One accepted doc
+releases the baseline route; remaining pending docs are not a global blocker. Readiness still
+reports each independent gap, including `missing_design_doc` in every kind. A ledger alone does
+not count as design input.
+
+`stale_design` joins confirmed docs to done features that crossed after confirmation on overlapping
+paths; vanished described paths also need review. It is enabled in fresh projects.
+`shifted_design` is opt-in and compares the confirmation with working-tree code, including dirty
+bytes, additions, removals, and external reference trees. Unconfirmed docs and failed comparisons
+are uncovered, never clean. Existing manifests keep their recorded checks list.
+
+At a feature crossing, sync names overlapping docs but writes no baseline state. The console
+shows each registered doc's confirmation, provenance, and drift facts. `mend-drift` reads the
+bounded tracked-work diff where one exists, or the broader working-tree evidence where it does
+not, proposes the prose correction, and stops for the human's named-doc confirmation.
+
+## The lifecycle and its gates
+
+Each grain moves through a short list of states, and the states are the queue. `draft` is the backlog, `specced` and `ready` are on deck, `active` and `in_progress` are in motion, and `done` is done. An agent can drive any node to the edge of done. But, 3 crossings belong to the human, and tiller marks them as such on every surface:
+
+- **The epic gate**, `tiller approve epic`. The human approves the shape of the tree, not the details.
+- **The plan gate**, `tiller approve feature`. The human approves a feature's specification, its acceptance contract, and its tasks in one act. The tasks ride that gate from `proposed` to `ready`, and each one's spec gets pinned as the basis it was approved against.
+- **The merge.** Every task reaches `in_review` through `tiller submit task`. At task grain, the task owns the PR. At feature or epic grain, the task records branch-and-head provenance and rides the reviewed node's shared PR. Only a human merge crosses the work to `done`, and tiller learns of it by watching git (`tiller sync`), never by being told.
+
+Everything above a task still completes by rollup. A feature is done when its tasks are done and its own required gates have run green; an epic is done when its features are. At a coarse review grain, one feature or epic merge can cross several riding tasks together, and no feature or epic gains a separate `in_review` lifecycle state.
+
+Completion is history, not a permanent ban on continuation. New work serving the same bounded outcome can be added beneath a done epic or feature; a distinct outcome or delivery phase warrants a new increment, even in the same subsystem. Additions keep their ordinary specification and approval gates. The addition itself does not immediately change the parent's stored status: normal sync reopens the rollup, clears current parent completion/review fields, and stales feature gates as appropriate. Completed tasks and terminal feature/task prose remain accepted history. Cancelled or archived ancestors are not executable continuation targets.
+
+<figure class="diagram-figure">
+<svg class="diagram" viewBox="0 0 960 350" role="img" aria-label="Three lanes, epic, feature, and task, each a ribbon of states from left to right. The human-only crossings are approve epic, approve feature, and the reviewed pull request merge. Tasks always enter in_review; Review Grain decides whether their review is owned by the task, feature, or epic. Done flows upward by rollup.">
+  <defs>
+    <marker id="d1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker>
+    <marker id="d1b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow-accent"/></marker>
+  </defs>
+  <!-- epic lane -->
+  <text x="12" y="74" class="h">Epic</text>
+  <rect x="90" y="57" width="86" height="26" rx="13" class="pill"/><circle cx="104" cy="70" r="4" class="st-draft"/><text x="114" y="74" class="small">draft</text>
+  <rect x="230" y="57" width="86" height="26" rx="13" class="pill"/><circle cx="244" cy="70" r="4" class="st-ready"/><text x="254" y="74" class="small">ready</text>
+  <rect x="440" y="57" width="86" height="26" rx="13" class="pill"/><circle cx="454" cy="70" r="4" class="st-done"/><text x="464" y="74" class="small">done</text>
+  <rect x="600" y="57" width="86" height="26" rx="13" class="pill"/><circle cx="614" cy="70" r="4" class="st-archived"/><text x="624" y="74" class="small">archived</text>
+  <line x1="176" y1="70" x2="228" y2="70" class="line accent" marker-end="url(#d1b)"/>
+  <text x="203" y="50" text-anchor="middle" class="accent-text small">approve epic</text>
+  <line x1="526" y1="70" x2="598" y2="70" class="line" marker-end="url(#d1a)"/>
+  <text x="562" y="62" text-anchor="middle" class="small muted">archive</text>
+  <!-- feature lane -->
+  <text x="12" y="164" class="h">Feature</text>
+  <rect x="90" y="147" width="86" height="26" rx="13" class="pill"/><circle cx="104" cy="160" r="4" class="st-draft"/><text x="114" y="164" class="small">draft</text>
+  <rect x="230" y="147" width="86" height="26" rx="13" class="pill"/><circle cx="244" cy="160" r="4" class="st-specced"/><text x="254" y="164" class="small">specced</text>
+  <rect x="370" y="147" width="86" height="26" rx="13" class="pill"/><circle cx="384" cy="160" r="4" class="st-ready"/><text x="394" y="164" class="small">ready</text>
+  <rect x="510" y="147" width="86" height="26" rx="13" class="pill"/><circle cx="524" cy="160" r="4" class="st-active"/><text x="534" y="164" class="small">active</text>
+  <rect x="650" y="147" width="86" height="26" rx="13" class="pill"/><circle cx="664" cy="160" r="4" class="st-done"/><text x="674" y="164" class="small">done</text>
+  <line x1="176" y1="160" x2="228" y2="160" class="line" marker-end="url(#d1a)"/>
+  <text x="203" y="180" text-anchor="middle" class="small mono muted">spec feature</text>
+  <line x1="316" y1="160" x2="368" y2="160" class="line accent" marker-end="url(#d1b)"/>
+  <text x="343" y="140" text-anchor="middle" class="accent-text small">approve feature</text>
+  <line x1="456" y1="160" x2="508" y2="160" class="line" marker-end="url(#d1a)"/>
+  <text x="483" y="180" text-anchor="middle" class="small mono muted">start</text>
+  <!-- task lane -->
+  <text x="12" y="264" class="h">Task</text>
+  <rect x="90" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="104" cy="260" r="4" class="st-proposed"/><text x="114" y="264" class="small">proposed</text>
+  <rect x="230" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="244" cy="260" r="4" class="st-ready"/><text x="254" y="264" class="small">ready</text>
+  <rect x="370" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="384" cy="260" r="4" class="st-in_progress"/><text x="394" y="264" class="small">in_progress</text>
+  <rect x="510" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="524" cy="260" r="4" class="st-check"/><text x="534" y="264" class="small">check</text>
+  <rect x="650" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="664" cy="260" r="4" class="st-in_review"/><text x="674" y="264" class="small">in_review</text>
+  <rect x="790" y="247" width="86" height="26" rx="13" class="pill"/><circle cx="804" cy="260" r="4" class="st-done"/><text x="814" y="264" class="small">done</text>
+  <line x1="176" y1="260" x2="228" y2="260" class="line accent" marker-end="url(#d1b)"/>
+  <text x="203" y="284" text-anchor="middle" class="accent-text small">with the plan gate</text>
+  <line x1="316" y1="260" x2="368" y2="260" class="line" marker-end="url(#d1a)"/>
+  <text x="343" y="284" text-anchor="middle" class="small mono muted">start</text>
+  <line x1="456" y1="260" x2="508" y2="260" class="line" marker-end="url(#d1a)"/>
+  <text x="483" y="284" text-anchor="middle" class="small mono muted">check</text>
+  <line x1="596" y1="260" x2="648" y2="260" class="line" marker-end="url(#d1a)"/>
+  <text x="623" y="284" text-anchor="middle" class="small mono muted">submit</text>
+  <line x1="736" y1="260" x2="788" y2="260" class="line accent" marker-end="url(#d1b)"/>
+  <text x="763" y="284" text-anchor="middle" class="accent-text small">reviewed PR merge, seen by sync</text>
+  <!-- rollups -->
+  <polyline points="833,247 833,214 693,214 693,175" class="line dashed" marker-end="url(#d1a)"/>
+  <text x="765" y="208" text-anchor="middle" class="small muted">rollup over tasks</text>
+  <polyline points="693,147 693,114 483,114 483,85" class="line dashed" marker-end="url(#d1a)"/>
+  <text x="590" y="108" text-anchor="middle" class="small muted">rollup over features</text>
+  <text x="12" y="322" class="small muted">Review Grain moves PR ownership, not lifecycle states.</text>
+  <text x="12" y="340" class="small muted">Dashed arrows remain rollups; magenta marks human crossings.</text>
+</svg>
+<figcaption>The lifecycle ribbon stays task-shaped at every review grain. Tasks enter review one by one; the configured task, feature, or epic owns the PR whose merge lets sync record their crossings.</figcaption>
+</figure>
+
+## Review Grain
+
+Review Grain controls where the human reviews work without changing how tasks get planned, claimed, checked, or recorded. The default is `task`, one PR per task. `feature` opens one PR after every live task in that feature reaches `in_review` or `done`. `epic` repeats that shape across the features riding one shared epic branch.
+
+Schema 5 separates working branches from review branches. Every task records its own branch, immutable on resume. Feature aggregates use `reviews/features/<epic>/<feature>` and epic aggregates `reviews/epics/<epic>` through the configured branch pattern. The agent reads back `branch` and `base_branch`, creates refs, and ordinary-merges submitted task tips including submission state into the aggregate. Independent tasks start from integration; task-PR dependencies wait there, while coarse dependents may start from the aggregate containing submitted prerequisites. No stacked task PRs, cherry-pick, or squash assembly.
+
+Before feature checks, draft publication, or coarse submit, the agent assembles all current task tips and recorded review heads; Tiller verifies their ancestry. Requested changes resume the task's own branch, then reassemble, recheck, and update the same aggregate PR. Reopened coarse rounds get a new recorded aggregate instead of reusing a finally merged branch. Preserve nonoverlapping state/events through Git; never hand-edit machine state. Routine branch work and mechanical conflicts belong to the agent; semantic conflicts, acceptance, and the final integration merge belong to the human.
+
+| Resolved grain | PR represents | Execute stops when |
+|---|---|---|
+| `task` | one task | that task reaches `in_review` with its own PR or local review reference, and its state commits are published when a remote exists |
+| `feature` | one feature | every live task is `in_review` or `done`, feature gates are green, and the feature review and state commits are recorded and published |
+| `epic` | one epic | every riding feature's live tasks are `in_review` or `done`, its gates are green, independent overrides are done, and the epic review and state commits are recorded and published |
+
+A green `check` state is intermediate execute work. The authorized agent commits and pushes implementation and gate state, creates or reuses the correct PR, records its actual number with `tiller submit`, then commits and pushes submission state. Tiller records these facts but does not publish to Git or the host. A riding task's review ref names its feature or epic surface, not a PR that may not exist yet. No-remote projects retain local review refs without a push requirement. Human approval, attestation, and merge boundaries stay intact.
+
+The setting can live at 3 homes, and the most specific explicit value wins:
+
+```sh
+tiller configure project --review-grain feature
+tiller configure epic foundation --review-grain epic
+tiller configure feature foundation/auth --review-grain task
+```
+
+A feature can only say `task` or `feature`; epic participation comes from inheritance. Different task owners may share a feature or epic aggregate. Any registered developer may perform authorized assembly/checks/submission; no coordinator claim exists. A feature overridden to task or feature grain finishes its own review before the epic PR opens.
+
+Choose or change the grain before it would reinterpret submitted work. Tiller refuses a change that would affect a live feature review, a task in `in_progress`, `check`, or `in_review`, or a feature branch that has already started crossing into or out of epic grain. Finish and sync that work, then configure the next round. The [CLI reference](/tiller/cli/#configure) carries the exact commands and refusal rules.
+
+If the final aggregate merge happened before its review was recorded, explicitly authorized `submit feature|epic --recover-merged` binds the historical reviewed head and exact integration result from the integration checkout. It records provenance only; ordinary sync then observes immutable included work. Current acceptance and historical nonpassing policy remain separate. Tiller verifies local Git, not the PR host, and never resets refs or commits to the merged branch. Contained work without a merge witness still needs the human's fast-forward assertion.
+
+
+`tiller status <noun> <node>` names the legal next moves from any state, with nothing executed. A command that refuses says why and what to do about it. Exit `1` is a business answer (a red gate, an illegal move), `2` a bad call, `3` a broken environment.
+
+## Who does what
+
+Three acts, three actors, and tiller keeps them apart on purpose. The agent **reasons**: it reads the inputs and the tree, writes the prose, does the work, runs the gates, and proposes. Tiller **records**: every conclusion lands through a command into the state files and the event stream, illegal moves get refused, and the next move gets named. The human **approves**: the tree, each plan, the review gates, the answers to questions, and the merge.
+
+Tiller can't make an agent follow the process and doesn't pretend to. On one machine the agent and the human share a filesystem, a shell, and git credentials, so any check that tried to stop the agent from running a human-only verb would be theater. The human-only gates are guidance the skills and `orientation.md` ask the agent to honor. The one boundary that actually holds is the merge, and only a human performs it. The developer drives, and the developer answers for the result.
+
+<figure class="diagram-figure">
+<svg class="diagram" viewBox="0 0 960 300" role="img" aria-label="Three columns: the agent reasons, tiller records, the human approves. The agent drives state through tiller commands; tiller tells the human what needs them; the human approves back through tiller and merges in git; tiller observes the merge.">
+  <defs>
+    <marker id="d3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker>
+    <marker id="d3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow-accent"/></marker>
+  </defs>
+  <rect x="20" y="30" width="230" height="160" rx="6" class="box"/>
+  <text x="36" y="56" class="h">The agent reasons</text>
+  <text x="36" y="84" class="small">reads the inputs and the tree</text>
+  <text x="36" y="104" class="small">writes specs, contracts, tasks</text>
+  <text x="36" y="124" class="small">does the work, runs the gates</text>
+  <text x="36" y="144" class="small">proposes, stops at each gate</text>
+  <text x="36" y="170" class="small muted">never approves or marks done</text>
+  <rect x="365" y="30" width="230" height="160" rx="6" class="box"/>
+  <text x="381" y="56" class="h">Tiller records</text>
+  <text x="381" y="84" class="small">state, events, gate results</text>
+  <text x="381" y="104" class="small">refuses illegal moves, says why</text>
+  <text x="381" y="124" class="small">names the next move</text>
+  <text x="381" y="144" class="small">provides live status, orientation</text>
+  <text x="381" y="170" class="small muted">never does the reasoning</text>
+  <rect x="710" y="30" width="230" height="160" rx="6" class="box"/>
+  <text x="726" y="56" class="h">The human approves</text>
+  <text x="726" y="84" class="small">the tree, then each plan</text>
+  <text x="726" y="104" class="small">answers questions, attests</text>
+  <text x="726" y="124" class="small">paces which feature is next</text>
+  <text x="726" y="144" class="small">merges the PR</text>
+  <text x="726" y="170" class="small muted">the one boundary that holds</text>
+  <line x1="250" y1="108" x2="363" y2="108" class="line" marker-end="url(#d3a)"/>
+  <text x="307" y="78" text-anchor="middle" class="mono muted">add · spec</text>
+  <text x="307" y="96" text-anchor="middle" class="mono muted">start · check</text>
+  <text x="307" y="128" text-anchor="middle" class="mono muted">submit</text>
+  <line x1="595" y1="90" x2="708" y2="90" class="line" marker-end="url(#d3a)"/>
+  <text x="652" y="70" text-anchor="middle" class="mono muted">queue · readout</text>
+  <text x="652" y="110" text-anchor="middle" class="mono muted">serve</text>
+  <line x1="708" y1="150" x2="597" y2="150" class="line accent" marker-end="url(#d3b)"/>
+  <text x="652" y="170" text-anchor="middle" class="mono accent-text">approve</text>
+  <text x="652" y="186" text-anchor="middle" class="mono accent-text">attest · answer</text>
+  <rect x="365" y="236" width="230" height="44" rx="6" class="recess"/>
+  <text x="480" y="263" text-anchor="middle" class="mono">git: branches, PRs, the merge</text>
+  <polyline points="135,190 135,258 363,258" class="line" marker-end="url(#d3a)"/>
+  <text x="145" y="250" class="small muted">commits, opens the PR</text>
+  <polyline points="825,190 825,258 597,258" class="line accent" marker-end="url(#d3b)"/>
+  <text x="815" y="250" text-anchor="end" class="small accent-text">merges</text>
+  <line x1="480" y1="236" x2="480" y2="192" class="line dashed" marker-end="url(#d3a)"/>
+  <text x="490" y="218" class="small muted">sync observes the merge</text>
+</svg>
+<figcaption>Reasoning, recording, approving: the agent drives state through tiller, tiller tells the human what needs them, the human approves through tiller and merges in git, and tiller records done by observing the merge.</figcaption>
+</figure>
+
+## Contributors and claims
+
+Identity lives in the repo. A committed roster in `.tiller/tiller.yml` says who may hold work, and `tiller add contributor` and `tiller remove contributor`, deliberate human acts, maintain it. A gitignored `.tiller/identity.yml`, written by `tiller join --as <id>`, says who this checkout is. There's no global config and no machine default; a fresh clone carries the roster and runs its own `join`.
+
+Schema 8→9 is a terminology migration: the committed roster becomes `contributors:` and local identity becomes `contributor:`, preserving IDs, selected identity, work claims/lifecycle, branches, reviews, evidence, and historical events. It needs no work drain or ownership review. Older migration requirements remain unchanged. Acting identity uses `--contributor` or `TILLER_CONTRIBUTOR`; task/bug/chore/tweak and question `owner` fields and ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
+
+New tasks are unclaimed regardless of who creates or approves them. `tiller claim task <key>` reserves that task only; bugs, chores, and tweaks use the same individual claim verbs. Before start, release returns your reservation to the pool and human-directed reassign changes it. Another reservation requires its actual holder in `--from` and explicit human handoff, never opportunistic identity switching. First start permanently fixes the unit’s owner. Resume, checks, review, cancellation, and completion never reopen ownership; all terminal owners are immutable, including cancellation before start. Features and epics have no owner/claim, and nothing cascades.
+
+The first successful task start atomically activates its ready feature and records task/applicable aggregate branch identities. Dependencies, bases, questions, retired ancestors, and review-round guards still apply. Feature-only assumptions use `tiller approve feature <ref> --assume-question <Q-id> --reason <text>` on explicit human instruction, without a lifecycle move or silent task inheritance. Judgment verbs keep their existing actor and human-gate rules; recorded identity is workflow discipline, not authentication.
+
+Contributors are distinct owners of started descendant tasks, including done/cancelled/transferred originals and cancelled features. Ready reservations, reviewers, creators, and attached shelf owners do not count. `tiller ls features --contributor <id>` finds contribution history; `tiller ls tasks --owner <id>` finds scalar assignments. Personal current work includes every unfinished assignment, including proposed/blocked/checked/in-review, not all work beneath a past contribution. Shared closeout appears once per feature/epic, including final feature checks after task-grain work lands. Coordinate one aggregate updater at a time through Git and the team; route suggestions are not authorization.
+
+### Exceptional transfer
+
+Only an explicit human instruction naming work and recipient authorizes `tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason <text>`. Before start use reassign. Started unfinished work transfers by preserving and cancelling the original, then creating a same-noun ready successor with a distinct ID/key, recipient claim, fresh accepted basis, and reciprocal lineage. Original prose, attribution, branch, review, and evidence remain historical. The replacement is unstarted and inherits no review, branch, green checks, attestations, or evidence.
+
+Transfer requires unchanged approved scope; specification changes use human review/amendment, not an override flag. Same-owner/terminal transfers and an unfinished started dependent refuse. Unstarted dependents redirect, terminal edges stay historical, and questions/pauses/attachments/carriers remain operative. Start the returned replacement ref, preserving implementation through ordinary Git. Close old task/shelf PRs without merging; retain and update an unmerged coarse aggregate PR, rerunning affected checks/acceptance. Tiller changes no refs/host state and old aggregate commits/approvals do not disappear. If already merged, sync and use forward work.
+
+## Gates and evidence
+
+Required gates are `build`, `tests`, and `evals`. They're command-backed, configured in `tiller.yml`, and they block done. Optional review gates (code, security, performance, accessibility) are attestation-backed and non-blocking, visible encouragement rather than enforcement. `tiller check` runs the required gates for a node and records the result on it, with the revision it ran against. `tiller eval` runs the acceptance contract, and `tiller attest` records a human's review. A gate result goes `stale` when the thing it verified moves, so last week's green can't quietly stand in for this week's.
+
+## Managed-project independence
+
+Tiller manages the development workflow, not the project's ability to run. Setup, build, tests, CI, packaging, deployment, runtime, and merge eligibility must work without Tiller installed, access to its releases, or `.tiller/` operational or state-validation inputs. This extends the same independence the harness has to the managed project. Even optional Tiller CI jobs are out of bounds.
+
+Local Tiller may run an independently runnable command such as `bin/ci` and record its result, but `bin/ci` must not call Tiller. Planning and evidence can stay committed in `.tiller/` without becoming application or CI gate inputs. Planning-only CI uses ordinary repository tooling and runs full project checks whenever classification is uncertain, never a blanket planning-path skip or replacement Tiller validation.
+
+Tiller's own implementation, tests, releases, and disposable verification are exempt. The [distribution contract](/tiller/spec/distribution/#managed-project-independence) owns the detailed boundary and conservative planning-only CI pattern.
+
+## Corrections, drift and amendments
+
+Approval creates an accepted basis and structural history. It doesn't freeze cosmetic titles, epic narrative, additive child work, soft order, or same-scope prose on a non-terminal feature or task. The route depends on what the correction changes:
+
+| Route | Use it for | What happens next |
+|---|---|---|
+| **Direct** | A display title at any state, approved epic narrative, one more task under an approved feature, soft order, or a dependency edge before affected work starts | Run the mapped command or edit human-owned `epic.md`. An additive task gets its own task approval; the other direct changes need no new gate. |
+| **Refresh** | Same-scope accepted prose on a non-terminal feature or task | Edit the Markdown, review the `active_basis` drift, then a human runs `approve --refresh-basis`. State does not move; the accepted bytes do. A wrong fact found while executing a task is instead a departure recorded in its commit and review, with `task.md` unedited. |
+| **Return and reapprove** | A ready, unstarted feature or task plan whose original approval should be replayed | `return` moves it back across the pre-work gate, the plan is revised, and the ordinary approval happens again. |
+| **Amend** | Genuine replacement, cancellation, or a supported structural batch | Stage supported operations with preconditions and stop for amendment approval. Done or cancelled feature and task prose stays historical; corrections move forward through additive or replacement work with supersession where appropriate. |
+
+Amendment cannot link, unlink, or order. `revise` re-pins non-terminal prose, not dependencies; it does not unlock started work. An in-place hard-edge edit on unchanged started work remains unsupported, even where a refusal hints at amendment. A genuine replacement can carry prerequisites on fresh eligible work, never a replacement manufactured just to evade a lock. A fresh task under an active feature can still receive legal sibling prerequisites.
+
+Unchanged unstarted features can move through a reviewed `move-feature` amendment without replacing their identities. Before discussing placement, inspect installed command help, every descendant's execution/review history, both parents, effective prerequisites/question holds, and review grain. Draft, specced, and ready features with proposed/ready tasks may qualify; ready claims survive. Both parents must be draft or ready, with an earlier staged epic allowed as destination. Started descendants, affected open coarse reviews, and changed effective inherited prerequisites or question holds refuse. The move preserves status, authored content, accepted provenance, and review grain; it does not approve a specced plan or draft destination. Stage and inspect the proposal, then stop for human amendment approval. Genuine abandoned/replaced scope still uses cancellation/supersession.
+
+Epics remain bounded delivery outcomes, but their features can interleave. A projected epic ordering cycle is a nonblocking advisory about grouped rendering, with the implicated features and edges shown. Actual prerequisite cycles still block, including explicit epic dependencies and mixed feature/epic completion deadlocks. Keep valid prerequisites rather than deleting them to make containers sort neatly.
+
+An amendment may stage an epic and then its features in one batch. A new feature's tasks follow materialization and ordinary specification. Approval appends new epics to root soft order, not to whatever position the narrative suggests; intended placement needs a separate explicit `tiller order`, whose supplied sibling list replaces the prior list and may be partial. Post-approval hard links remain legal only while the dependent is eligible. A planning request authorizes the proposal, not its approval or an unsolicited broader replan.
+
+```sh
+# direct display correction, at any state
+tiller rename feature foundation/app-scaffold --title "Application scaffold"
+
+# direct additive work under an approved feature, with its own gate
+tiller add task foundation/app-scaffold/document-setup --title "Document local setup"
+tiller approve task foundation/app-scaffold/document-setup
+
+# accept corrected same-scope prose without moving state
+tiller approve feature foundation/app-scaffold --refresh-basis
+
+# replay a ready plan's approval before work starts
+tiller return task foundation/app-scaffold/document-setup --reason "revise the setup contract"
+
+# a post-start structural correction is reviewed history
+tiller add amendment app-scaffold-reshape --title "Reshape application setup"
+```
+
+Before approval, prose feedback re-enters the proposal seam. `decompose` can rename a draft, task-free feature's key and move it between draft epics, record eligible hard-edge corrections, or remove unwanted proposal nodes before returning to the epic gate. `specify` revises feature plans and proposed tasks at the feature gate. Unchanged feature relocation outside the direct rename window, including a specced plan, uses the reviewed move route, not cancellation and recreation. `tiller remove` is permanent proposal deletion, not cancellation, and it accepts only a proposed task, a task-free draft feature, or a task-free draft epic subtree.
+
+Approving a feature plan pins its spec and contract, and each task's spec, as `accepted_against` revisions. Edit one afterwards and tiller reports `active_basis`, and `start`, `check`, and `submit` refuse until a human follows the refresh, return, or amendment route above. `tiller drift` sweeps the other markers too: a done node whose spec or code surface no longer matches what was verified (`stale_spec`), a plan made under an assumption whose answer has since arrived (`answered_question`), or a recorded surface or eval reference that no longer exists. Detection is tiller's, the proposed fix is the agent's through `mend-drift`, and approval is the human's.
+
+`tiller intake` starts the amendment path from an external review or field report. It lands the document under `.tiller/feedback/` and opens the proposed amendment it implies. The agent still classifies each finding first, so lightweight corrections stay direct and only the structural casualties enter the batch.
+
+## Bugs, chores, and tweaks
+
+Choose a **Bug** for a defect: observed behavior violates an agreed expectation. Choose a **Chore** for housekeeping without code side effects, such as documentation or administrative upkeep. Choose a **Tweak** for a minor adjustment that may change code. Choose a **Task** under a feature for substantive planned work. These are choice guidelines, not file-diff restrictions: Tiller does not enforce a no-code rule for Chores.
+
+For example, changing a completed button from “Save” to “Save changes” to improve the wording is a Tweak, even when the label lives in application code. If the button text violates its agreed requirement, record a Bug instead. A new button or a broader interaction redesign belongs in planned Task work.
+
+Keep changes forward-only. Never reopen or rewrite done work to express a new request. Add a new Bug, Chore, Tweak, or Task with attachment or source context as appropriate; the completed record stays history. Adding planned descendants may recompute feature and epic rollups, but it does not reopen merge-backed done execution nodes.
+Bugs, Chores, and Tweaks are leaf work nodes beside the tree, at `.tiller/bugs/<key>/`, `.tiller/chores/<key>/`, and `.tiller/tweaks/<key>/`. None has parents or children. Bug contracts describe reproduction, expected and actual behavior, and fixed-when. Chore and Tweak contracts describe what, why, and done-when. A Tweak uses `tweak.md`, `tweak.yml`, a canonical `tweaks/<key>` address, and a `TW-` ID.
+
+Under the surface bugs, chores, and tweaks carry the task's own lifecycle: `proposed` (captured, awaiting triage), `ready` (triaged by a human's approval), `in_progress`, `check`, `in_review`, `done`. Each carries its own branch and its own PR, so a shelf node reaches `done` the way a task does. A human merges, `tiller sync` observes it, and nobody marks it by hand.
+
+`attached_to` records where a bug, chore, or tweak was found (an epic, feature, or task id) and it's provenance only, reading context for the agent, never a parent and never a gate. `resolved_by` is a different pointer, the tree work whose merge actually fixes the shelf node, set with `tiller resolve`. A resolved node reads the derived phase `carried`. It keeps its own stored state, drops out of the queue, and moves with its carrier, crossing to `done` with `done_basis: carried` in the same run that records the carrier's own `done`.
+
+`capture` is the agent skill for this seam. Given an investigation or a developer's description, it writes one complete proposed contract, with source, attachment, and shelf dependencies where they apply, commits it, and stops. It never approves, claims, starts, resolves, or cancels the node it just wrote. Triage stays a human act. `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak` is what moves a captured contract from `proposed` to `ready`, the same way `approve feature` is the plan gate for a feature.
+
+Once claimed, a bug, chore, or tweak ranks like any other owned work. The reader's own ready or in-progress tasks come first, then their owned bugs, chores, and tweaks in shelf order. An unclaimed bug, chore, or tweak is never a ranked next move, and neither is a `carried` one, since its motion belongs to its carrier. The console's Fix lens is the board for all of it, 6 columns in task vocabulary, Proposed through Closed.
+
+```sh
+tiller add bug blank-on-reload --title "Form blanks on reload" --attach foundation/app-scaffold
+tiller add tweak button-text --title "Clarify save button text" --attach foundation/app-scaffold
+# Complete .tiller/tweaks/button-text/tweak.md, then await human triage.
+tiller approve bug blank-on-reload
+tiller claim bug blank-on-reload
+tiller start bug blank-on-reload
+tiller check bug blank-on-reload
+tiller submit bug blank-on-reload --pr 51
+# ... a human reviews and merges the PR ...
+tiller sync
+```
+
+## The surfaces
+
+Tiller is one static binary with the console's assets and the skill text embedded, so the CLI, the console, the generated orientation, and the skills always agree with each other. It reads and writes `.tiller/` in your repository, under git, next to the code. A coding agent reaches it 3 ways that are really one: the CLI, the skills served by `tiller guide`, and the committed `.tiller/orientation.md`. `tiller join` wires a harness by writing files it already watches (a managed block in `AGENTS.md`, a redirect in `CLAUDE.md`, thin skill shims), and the dependency arrow points the safe way. The harness never depends on tiller. Remove tiller and the harness doesn't notice.
+
+The console, `tiller serve`, is a small set of lenses over that same tree: Home (the desk, what needs you and what's in flight), Build (the board), Fix (the shelf board), Explore (browse, filter, search, and a map of the whole project with its dependency arcs), History, and the node page each of those opens into. [The console](/tiller/console/) has the full tour.
+
+<figure class="diagram-figure">
+<svg class="diagram" viewBox="0 0 980 390" role="img" aria-label="Three columns: the tiller binary with its CLI, skills, and console; the repository with .tiller under git and the files join wrote; the coding agent's harness that reads those files and runs the CLI. The harness never depends on tiller.">
+  <defs><marker id="d4a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
+  <rect x="20" y="40" width="240" height="200" rx="6" class="box"/>
+  <text x="36" y="66" class="h">tiller, one static binary</text>
+  <rect x="36" y="84" width="208" height="34" rx="3" class="recess"/><text x="48" y="106" class="mono">tiller &lt;command&gt;</text><text x="232" y="106" text-anchor="end" class="small muted">CLI</text>
+  <rect x="36" y="128" width="208" height="34" rx="3" class="recess"/><text x="48" y="150" class="mono">tiller guide &lt;skill&gt;</text><text x="232" y="150" text-anchor="end" class="small muted">skills</text>
+  <rect x="36" y="172" width="208" height="34" rx="3" class="recess"/><text x="48" y="194" class="mono">tiller serve</text><text x="232" y="194" text-anchor="end" class="small muted">console</text>
+  <text x="36" y="228" class="small muted">console and skills embedded</text>
+  <rect x="330" y="20" width="330" height="330" rx="6" class="box"/>
+  <text x="346" y="46" class="h">your repository, under git</text>
+  <rect x="346" y="62" width="298" height="168" rx="3" class="recess"/>
+  <text x="358" y="84" class="mono">.tiller/</text>
+  <text x="370" y="104" class="mono small">tiller.yml</text><text x="632" y="104" text-anchor="end" class="small muted">project, roster, gates</text>
+  <text x="370" y="122" class="mono small">epics/&lt;key&gt;/epic.md + .yml</text>
+  <text x="370" y="140" class="mono small">features/&lt;key&gt;/feature.md,</text>
+  <text x="370" y="158" class="mono small">  feature.eval.md, feature.yml</text>
+  <text x="370" y="176" class="mono small">tasks/&lt;key&gt;/task.md + .yml</text>
+  <text x="370" y="194" class="mono small">events/ · feedback/ · design/</text>
+  <text x="370" y="212" class="mono small">orientation.md</text><text x="632" y="212" text-anchor="end" class="small muted">generated</text>
+  <text x="370" y="228" class="mono small">identity.yml</text><text x="632" y="228" text-anchor="end" class="small muted">gitignored</text>
+  <rect x="346" y="244" width="298" height="92" rx="3" class="recess"/>
+  <text x="358" y="264" class="small">written by <tspan class="mono">tiller join</tspan>:</text>
+  <text x="370" y="284" class="mono small">AGENTS.md</text><text x="632" y="284" text-anchor="end" class="small muted">managed pointer block</text>
+  <text x="370" y="302" class="mono small">CLAUDE.md</text><text x="632" y="302" text-anchor="end" class="small muted">a redirect to it</text>
+  <text x="370" y="320" class="mono small">.claude/skills/tiller-*</text><text x="632" y="320" text-anchor="end" class="small muted">shims</text>
+  <rect x="720" y="40" width="240" height="140" rx="6" class="box"/>
+  <text x="736" y="66" class="h">the agent's harness</text>
+  <text x="736" y="92" class="small">reads the pointer block, then</text>
+  <text x="736" y="110" class="small">orientation.md; discovers the</text>
+  <text x="736" y="128" class="small">skill shims; runs the tiller CLI</text>
+  <text x="736" y="160" class="small muted">never depends on tiller</text>
+  <line x1="260" y1="146" x2="328" y2="146" class="line" marker-end="url(#d4a)"/>
+  <text x="294" y="134" text-anchor="middle" class="small muted">reads and</text>
+  <text x="294" y="164" text-anchor="middle" class="small muted">writes state</text>
+  <polyline points="660,290 690,290 690,110 718,110" class="line" marker-end="url(#d4a)"/>
+  <text x="698" y="206" class="small muted">watches</text>
+  <polyline points="840,180 840,372 140,372 140,242" class="line dashed" marker-end="url(#d4a)"/>
+  <text x="490" y="362" text-anchor="middle" class="small muted">runs tiller in the repository, like any other tool</text>
+</svg>
+<figcaption>The surface map: one binary embedding the CLI, the skills, and the console; the repository carrying .tiller under git and the files join wrote; the harness reading what it already watches and running the CLI. The dependency arrow points the safe way: the harness never depends on tiller. The human's surfaces, the console and the merge, are in the figure above.</figcaption>
+</figure>
+
+## Getting a project onto tiller
+
+Install once per machine, `init` once per repository, `add contributor` once per person, `join` once per checkout (each Git worktree included), then hand the repository to your agent to decompose and approve the tree it proposes. The [Quickstart](/tiller/quickstart/) walks it with real output.
+
+The diagram below is the greenfield path. Brownfield and legacy-migration insert `derive-baseline`
+and human confirmation after join and before ordinary decomposition. Existing pending docs go
+back to inspection or review, not regeneration. Current source uses schema 10 and orientation
+generation 50; local v0.12.2 introduced generation 35's task/aggregate branch model.
+
+After onboarding, `tiller upgrade` updates the binary and the current checkout's supported schema
+and generated guidance. `tiller upgrade --project-only` maintains this checkout offline with the
+running binary; `--binary-only` deliberately excludes the checkout. Join selects identity, not
+routine maintenance. Current-schema refresh needs no identity; a real migration needs a registered
+actor and never rewrites identity. Other branches, worktrees, and repositories remain untouched.
+
+Schema-5 migration requires old-schema active work to drain with a verified compatible binary,
+including human final merges and sync. Upgrade never completes or cancels work to clear blockers.
+Retained executables are explicit recovery material, not automatic schema dispatch. Use their
+reported directory on a temporary drain session's PATH so child gates select the same binary,
+then leave that session and retry the upgraded executable explicitly. Never mutate a migrated
+checkout with an older build. Review/commit maintenance changes and reload long-running
+serve/harness sessions as needed; failed phases preserve completed work and recovery journals.
+The [Quickstart maintenance guide](/tiller/quickstart/#keep-a-checkout-current) covers installation
+ownership and the first-release adoption boundary for older running binaries.
+
+<figure class="diagram-figure">
+<svg class="diagram" viewBox="0 0 960 120" role="img" aria-label="Six steps left to right: install, tiller init, tiller add contributor, tiller join, decompose, tiller serve, with who does each underneath.">
+  <defs><marker id="d5a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
+  <rect x="20" y="28" width="130" height="34" rx="17" class="pill"/><text x="85" y="49" text-anchor="middle" class="mono">install</text>
+  <rect x="175" y="28" width="130" height="34" rx="17" class="pill"/><text x="240" y="49" text-anchor="middle" class="mono">tiller init</text>
+  <rect x="330" y="28" width="130" height="34" rx="17" class="pill"/><text x="395" y="49" text-anchor="middle" class="mono" font-size="10">tiller add contributor</text>
+  <rect x="485" y="28" width="130" height="34" rx="17" class="pill"/><text x="550" y="49" text-anchor="middle" class="mono">tiller join</text>
+  <rect x="640" y="28" width="130" height="34" rx="17" class="pill"/><text x="705" y="49" text-anchor="middle" class="mono">decompose</text>
+  <rect x="795" y="28" width="130" height="34" rx="17" class="pill"/><text x="860" y="49" text-anchor="middle" class="mono">tiller serve</text>
+  <line x1="150" y1="45" x2="173" y2="45" class="line" marker-end="url(#d5a)"/>
+  <line x1="305" y1="45" x2="328" y2="45" class="line" marker-end="url(#d5a)"/>
+  <line x1="460" y1="45" x2="483" y2="45" class="line" marker-end="url(#d5a)"/>
+  <line x1="615" y1="45" x2="638" y2="45" class="line" marker-end="url(#d5a)"/>
+  <line x1="770" y1="45" x2="793" y2="45" class="line" marker-end="url(#d5a)"/>
+  <text x="85" y="84" text-anchor="middle" class="small muted">you, once per machine</text>
+  <text x="240" y="84" text-anchor="middle" class="small muted">you, once per repo</text>
+  <text x="395" y="84" text-anchor="middle" class="small muted">you, once per person</text>
+  <text x="550" y="84" text-anchor="middle" class="small muted">you, once per checkout</text>
+  <text x="705" y="84" text-anchor="middle" class="small muted">your agent proposes,</text>
+  <text x="705" y="100" text-anchor="middle" class="small accent-text">you approve the epics</text>
+  <text x="860" y="84" text-anchor="middle" class="small muted">you, any time</text>
+</svg>
+<figcaption>Onboarding: install, init, add contributor, join, decompose, serve. Productive in minutes, and the agent's first proposal is the human's first decision.</figcaption>
+</figure>
+
+## Where things live
+
+```
+.tiller/
+  tiller.yml            project, contributors roster, gates, schema version
+  orientation.md        generated; the agent's front door (committed, do not hand-edit)
+  identity.yml          who this checkout is (gitignored)
+  design/               your input documents
+  feedback/             documents landed by tiller intake
+  amendments/           reviewed, recorded changes to the plan
+  decisions/            open questions and architecture decision records
+  events/YYYY/MM/DD/    one immutable event per file
+  epics/<key>/
+    epic.md  epic.yml
+    features/<key>/
+      feature.md  feature.eval.md  feature.yml
+      tasks/<key>/
+        task.md  task.yml
+  bugs/<key>/
+    bug.md  bug.yml
+  chores/<key>/
+    chore.md  chore.yml
+  tweaks/<key>/
+    tweak.md  tweak.yml
+```
+
+The design documents under [Design](/tiller/spec/artifact-schema/) carry every field, state, and rule in full. This page is the shape of it.

@@ -1,0 +1,37 @@
+schema_version: 12
+schema_epoch: initial
+
+project:
+  name: Acme Platform
+  key: acme
+  kind: greenfield
+  requires_tiller: ">= 1.0"
+
+contributors:
+  - { id: jc,    name: JC Grubbs }
+  - { id: pat, name: Pat Nguyen }
+
+
+inputs:
+  docs:
+    - design/
+  current_state: []
+  code: []
+
+gates:
+  required:
+    build:  { kind: command, run: "bin/rails runner 'true'",  on: [feature, task] }
+    tests:  { kind: command, run: "bundle exec rspec",         on: [feature, task] }
+    evals:  { kind: command, run: "tiller eval ${node.noun} ${node.id}", on: [feature, task] }
+  optional:
+    code_review:          { kind: attestation, on: pr }
+    security_review:      { kind: attestation, on: pr }
+    performance_review:   { kind: attestation, on: pr }
+    accessibility_review: { kind: attestation, on: pr }
+
+git:
+  branch_pattern: "tiller/${node.key}"
+  pr_coherence: true
+
+drift:
+  checks: [stale_spec, active_basis, answered_question, missing_surface, orphan_eval]

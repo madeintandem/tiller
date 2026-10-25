@@ -1,0 +1,84 @@
+/* Drift is a report, not a new surface grammar (task-11-brief.md): rows
+   reuse Explore's own list chrome directly (explore.css's rule-list and
+   explore-result-* classes, styles.css's .mono/.muted/.error/.none). This
+   file adds only what that flat, single-line row shape never needed: the
+   section rhythm, a candidate row's stacked detail/files/since/context
+   lines, and the footer. No new tokens, only tokens.css's existing custom
+   properties.
+
+   .drift-page's padding used to be bottom-only, the rest supplied by the
+   global .container App.tsx wrapped every view in; task 4 (full window)
+   retired that, so this is now the section's whole gutter, the same
+   default every other view sets for itself (26px/28px top/sides, a deeper
+   56px bottom). */
+
+.drift-page {
+  padding: 26px 28px 56px;
+}
+
+.drift-section {
+  margin: 1.75rem 0;
+}
+
+.drift-section:first-child {
+  margin-top: 0.5rem;
+}
+
+.drift-section-head {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border-bottom: none;
+}
+
+/* A candidate row is a small stack, unlike Explore's flat flex rows: the
+   reference leads, then whichever of detail/files/since/context the
+   candidate actually carries follows on its own line. */
+.drift-row {
+  padding: var(--space-5) 0;
+}
+
+.drift-row-detail {
+  font-size: 13px;
+  margin: var(--space-2) 0 0;
+}
+
+.drift-row-line {
+  font-size: 12px;
+  margin: var(--space-2) 0 0;
+}
+
+.drift-row-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.drift-row-context {
+  margin: var(--space-3) 0 0;
+  padding-left: 1.1rem;
+  font-size: 12px;
+}
+
+.drift-row-context li {
+  padding: var(--space-1) 0;
+}
+
+.drift-uncovered-marker {
+  font-size: 11px;
+}
+
+.drift-footer {
+  margin-top: var(--space-8);
+  padding-top: var(--space-7);
+  border-top: 1px solid var(--hair);
+  font-size: 12.5px;
+}
+
+.drift-footer p {
+  margin: var(--space-2) 0;
+}
+
+.drift-coverage ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1rem;
+}

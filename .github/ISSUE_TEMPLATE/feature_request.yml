@@ -1,0 +1,25 @@
+name: Feature request
+description: Something tiller should do, or do differently.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and where tiller gets in the way or leaves you on your own. Concrete beats abstract; a real session is the best evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like instead
+      description: The behavior you want. If it changes a command or a file tiller writes, sketch the new shape.
+    validations:
+      required: true
+  - type: textarea
+    id: fit
+    attributes:
+      label: How it fits tiller's principles
+      description: Tiller holds the structure, the gates, and the state; the agent reasons; the human approves at the gates. Say which principle in AGENTS.md this serves, or which one it pushes on and why that is worth it.
+    validations:
+      required: false

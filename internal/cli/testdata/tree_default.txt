@@ -1,0 +1,5 @@
+test
+└─ foundation (E-xxxxxx)               Foundation
+   ├─ authn (F-xxxxxx)                 Authentication foundation
+   └─ db-core (F-xxxxxx)               Database core
+      └─ define-the-schema (T-xxxxxx)  Define the schema

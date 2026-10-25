@@ -1,0 +1,777 @@
+/* Home rebuilt to the console v2 mock's own anatomy (task-10-brief.md, Phase
+   2): the header band, the needs-you card grid, and the three-column pulse,
+   docs/plans/2026-08-09-console-v2-mocks.html's `<main class="view home">`
+   block (mock:651-748) and its "HOME" CSS banner (mock:253-335). Class names
+   below are lifted straight from the mock (.home, .home-head, .home-id,
+   .stats/.stat, .needs, .card-grid/.dcard, .pulse/.pcol/.prow/.pfoot,
+   .contributor-group) rather than translated through a project-local
+   prefix the way the earlier "desk" pass named its own pieces: this is a full
+   anatomy rebuild, not a coat of paint over the old structure, so there is no
+   old internal naming worth preserving the way History's root-only rename
+   kept its recap-* internals. Where the console already has a shared,
+   tested primitive for a piece of the mock's raw HTML/CSS (StateBar for the
+   mock's own hand-rolled .mixbar, SectionHead for its .sect-head, CopyCmd for
+   its .copy-cmd), this file reuses that component and its own CSS in
+   tokens.css rather than re-implementing the mock's markup a second time. */
+
+.home {
+  padding: 26px 28px 56px;
+}
+
+.home .muted {
+  color: var(--ink-2);
+}
+
+.home .mono {
+  font-family: var(--font-mono);
+}
+
+.home .error {
+  color: var(--error);
+}
+
+/* The page's own Overview / Execution rail (NodeTabs): the first line of the
+   page, so it drops the rail's default top margin and leaves the header band
+   the same 24px the band leaves the queue. */
+.home > .mode-nav {
+  margin: 0 0 24px;
+}
+
+/* ---------- Header band: identity left, stat tiles right (mock:258-279) ---------- */
+
+.home-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 24px;
+}
+
+.home-id h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 24px;
+  line-height: 1.15;
+  color: var(--heading);
+  margin: 0 0 4px;
+  padding: 0;
+  border-bottom: none;
+}
+
+.home-id .meta {
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 34px;
+}
+
+.stat {
+  min-width: 84px;
+}
+
+.stat .n {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--heading);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tile whose list has not resolved: the dash numeral sits dim, never a
+   confident heading-ink 0 over data that was not actually read. */
+.stat .n.dim {
+  color: var(--ink-3);
+}
+
+.stat .lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--olive);
+  margin: 2px 0 6px;
+}
+
+.stat .cap {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
+/* The drift slot is the one stat tile that is also a link (DriftStat,
+   home/HeaderBand.tsx): plain heading ink like its counted siblings, DELIBERATELY
+   NOT the mock's own .stat.drift .n magenta (mock:278) - the needs-you
+   queue count is the console's one loud ink, and a round-1 review already
+   found a hover rule painting this numeral magenta and called it out as the
+   exact false severity signal this file must not repaint (drift is a fact
+   about the tree, never a queue row, ui-surface.md's own settled bullet).
+   The underline still drops on hover, a link default's own suppression, so
+   the tile reads as clickable without reading as urgent. */
+.stat.drift,
+.stat.shelf {
+  display: block;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stat.drift:hover,
+.stat.shelf:hover {
+  text-decoration: none;
+}
+
+/* The feature funnel (FunnelStrip, home/HeaderBand.tsx, settled decision 8 of the home
+   burst redesign): the six Build columns read as shape in place of the old
+   Features and Tasks stat tiles, so it spans roughly the width those two
+   tiles held. Each segment stacks its numeral over its label the same way a
+   .stat does, a thin hairline dividing one segment from the next so the row
+   reads as one strip rather than six separate tiles. */
+.funnel {
+  min-width: 220px;
+}
+
+.funnel-row {
+  display: flex;
+}
+
+.fseg {
+  display: block;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 12px;
+  border-left: 1px solid var(--hair);
+}
+
+.fseg:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.fseg:hover {
+  text-decoration: none;
+}
+
+/* Deliberately a smaller register than a stat tile's numeral and label
+   (.stat .n at 26px, .stat .lbl at 10px/0.08em): six segments have to fit
+   the width two tiles occupy, so the funnel reads as one shape rather than
+   six competing tiles. */
+.fseg .n {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.fseg .lbl {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--olive);
+  margin-top: 2px;
+}
+
+/* A zero segment stays in the strip rather than disappearing, so the six-
+   column shape never shifts; its numeral drops to the same muted ink an
+   unresolved tile's dash uses (.stat .n.dim, above), never a confident
+   heading-ink 0 over a count that really is empty. */
+.fseg.dim .n {
+  color: var(--ink-3);
+}
+
+.funnel .cap {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
+/* ---------- Needs you: the full-width card grid (mock:281-304) ---------- */
+
+.needs {
+  margin-bottom: 30px;
+}
+
+/* Room under the eyebrow row before the first card or band; without it the
+   count badge sat on the first band's top edge (JC, 2026-08-31). The pulse
+   columns give their eyebrow the same breathing room (.pcol .eyebrow-row). */
+.needs > .eyebrow-row {
+  margin-bottom: 12px;
+}
+
+/* The decision-kind rail (NodeTabs, past the cap and with more than one
+   kind): the console's one tab shape, sat tighter than the node page sets it
+   since the eyebrow row above already gave it room. */
+.needs .mode-nav {
+  margin: 0 0 14px;
+}
+
+/* Home's recap pointer, at the trailing edge of the needs-you eyebrow row
+   (SectionHead's headerExtra). Never magenta: events behind the horizon are
+   not what needs you, and the cards below are. */
+.recap-signal {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.recap-signal:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 14px;
+}
+
+.dcard {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+
+.dcard.warn {
+  border-left-color: var(--st-in_review);
+}
+
+.dcard.warn .kind {
+  color: var(--st-in_review-t);
+}
+
+.dcard .kind,
+.dband .kind {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 7px;
+}
+
+.dcard .who {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--heading);
+  line-height: 1.3;
+}
+
+/* Bound an unusually long explicit title to three lines without allowing it
+   to push the rest of the card out of rhythm. Non-question rows still carry
+   one clampable who line; a question clamps only its title link so the Q-id
+   remains visible as a non-shrinking address beside it. */
+.dcard .who.clamp,
+.dcard .who .clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dcard .question-who {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.dcard .question-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.dcard .question-who .mono {
+  flex: none;
+}
+
+.dcard .who .mono {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.dcard .why,
+.dband .why {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin: 3px 0 10px;
+}
+
+.dcard .copy-cmd {
+  width: 100%;
+}
+
+/* Runs (bands.ts's own BandRun) are the body's columns, one per kind in
+   gravity order, a band or a stack of cards alike: auto-fit packs as many
+   360px columns as the width holds (three at a laptop width) and a lone kind
+   stretches across all of it. Under 1100px the columns fold to one, at the
+   same breakpoint the pulse folds. The body used to stack its runs
+   vertically, and three kinds past the cap read as three full-width walls of
+   rows (JC, 2026-08-31, Acme's 17 epics, 14 chores, 9 questions). */
+.needs-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+/* minmax(0, 1fr), not 1fr: a bare 1fr track's minimum is its content, and
+   the band foot's one-line command is as wide as seventeen keys, so at 1000px
+   the folded column grew to 2821px and took the page with it. */
+@media (max-width: 1100px) {
+  .needs-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A small kind's cards stack inside their own column rather than packing
+   the settled 430px grid, which a column cannot hold anyway. */
+.needs-body .card-grid {
+  grid-template-columns: 1fr;
+}
+
+/* ---------- Decision bands: a kind past ROW_CAP, compressed (home burst
+   redesign, settled decisions 1-4) ---------- */
+
+.dband {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+
+/* The kind pill and the count sit on one line; the shared why-line, when
+   there is one, wraps to its own line beneath them rather than crowding the
+   count off the row. */
+.dband-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 9px;
+  margin-bottom: 7px;
+}
+
+.dband-head .kind {
+  margin-bottom: 0;
+}
+
+.dband-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.dband-head .why {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+}
+
+/* One row per member: every row visible, never a per-row command (the
+   honest individual flow is click through, review, approve on the node
+   page). Two lines, the title over its address, because the row lives in a
+   column a third of the page wide now and a chore title beside its key did
+   not fit on one. */
+.dband-row {
+  padding: 7px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.dband-row-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--heading);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dband-row a {
+  color: var(--heading);
+}
+
+/* The address line: key or id, then the qualifier and the due date where
+   present, all in the quiet register. */
+.dband-row-addr {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.dband-row-addr .mono {
+  font-weight: 400;
+}
+
+/* The one batch command, after every row, captioned after-review rather
+   than as a headline (settled decision 1). Rendered only where
+   cli-surface.md has the batch verb (bands.ts's own BATCH_NOUN). The
+   caption sits over the command and the command stays one line that
+   scrolls sideways: seventeen keys wrapped into a three-line block that
+   outweighed the rows above it, and it is copied whole either way. */
+.dband-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  border-top: 1px solid var(--hair);
+  margin-top: 7px;
+  padding-top: 10px;
+}
+
+.dband-foot .muted {
+  font-size: 12.5px;
+}
+
+.dband-foot .copy-cmd {
+  display: flex;
+  min-width: 0;
+}
+
+.dband-foot .copy-cmd code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+/* ---------- All clear: the needs-you column's empty-queue branch ---------- */
+
+.all-clear {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-7);
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  border-radius: var(--radius-card);
+  padding: var(--space-8) 20px;
+}
+
+.all-clear-tick {
+  color: var(--st-done);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.all-clear-headline {
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.all-clear-ownership {
+  font-size: 12.5px;
+  margin: var(--space-2) 0 0;
+}
+
+.all-clear-review {
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--hair);
+}
+
+.all-clear-review-lead {
+  font-size: 12.5px;
+  margin: 0 0 var(--space-4);
+  color: var(--ink);
+}
+
+.all-clear-review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 12.5px;
+}
+
+/* A node name in ink, the same as every other row title on the console. */
+.all-clear-review-list a {
+  color: var(--ink);
+}
+
+/* The all-clear's honest failure twin: the queue is empty but one of the
+   four list fetches failed, so the claim "nothing needs you" cannot be
+   made. Same panel chrome as the all-clear it replaces; the failed fetches'
+   own error strings name exactly what could not be read. */
+.all-clear-unverified {
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  border-radius: var(--radius-card);
+  padding: var(--space-8) 20px;
+}
+
+.all-clear-unverified-lead {
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.all-clear-unverified .error {
+  font-size: 12.5px;
+  margin: var(--space-4) 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- The pulse: three columns, one row under 1100px (mock:306-335) ---------- */
+
+.pulse {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 26px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .pulse {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pcol {
+  border-top: 2px solid var(--hair);
+  padding-top: 12px;
+}
+
+.pcol .eyebrow-row {
+  margin-bottom: 10px;
+}
+
+/* The "last 24h" tag beside Just happened's eyebrow (mock's own inline
+   font-size:10px on that span, mock:713). */
+.pulse-window {
+  font-size: 10px;
+}
+
+.prow {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+
+.prow:last-child {
+  border-bottom: none;
+}
+
+/* Up next's actor label ("You", "Agent") takes the clock's lead column, so
+   the pulse's columns share one left edge. */
+.prow .t,
+.prow .actor {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  flex: none;
+  width: 52px;
+}
+
+/* mock:316's .prow .dot, translated onto StateDot's own .state-dot (the
+   mock's raw HTML has no component behind its dot; the console's real one
+   does, and this file reuses it rather than re-drawing a second circle). */
+.prow .state-dot {
+  position: relative;
+  top: -1px;
+}
+
+/* Shelf-noun self-label (bug, chore): a small bordered chip in the muted
+   register, page-local rather than a reuse of workitems.css's
+   .work-item-noun-chip (that one's props carry lens-specific behavior this
+   row does not need). */
+.prow .noun-chip {
+  padding: 1px 6px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  color: var(--ink-3);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  flex: none;
+}
+
+.prow .what {
+  color: var(--ink);
+}
+
+.prow .what b {
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.prow .who {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-left: auto;
+  flex: none;
+}
+
+.pfoot {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  padding-top: 9px;
+}
+
+.pfoot a {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The unclaimed pool's rollup line (home burst redesign, settled decision
+   5): the .prow rhythm without the row's flex/dot layout, since a rollup
+   line is one sentence, not an addressed row. */
+.pool-line {
+  /* margin: 0 because this is a <p>: the UA's own paragraph margin would sit
+     on top of the padding and make the pool line taller than the .prow rows
+     it shares a column with. */
+  margin: 0;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+
+.pool-line a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.contributor-group {
+  margin-bottom: 10px;
+}
+
+.contributor-group .og-name {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  padding: 4px 0 2px;
+}
+
+/* An Up next row's reason: its own line under the action and node, in the
+   quiet context register the retired route strip gave its reason. */
+.prow .why {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* Up next's one-sentence notes (not personalized, the caught-up hint): the
+   .prow rhythm without its rule, margin 0 for the same <p> reason as
+   .pool-line. */
+.pnote {
+  margin: 0;
+  padding: 7px 0;
+  font-size: 12px;
+}
+
+/* ---------- Rail: collapsible sections ---------- */
+
+/* No page mounts a RailSection today (ui-surface.md's rail decision: "an
+   empty rail is never drawn; a column reserved for nothing is worse than no
+   column"). This chrome stays specified for the first future tenant;
+   primitives.test.tsx mounts the component directly to pin it. It lives in
+   this file rather than styles.css because that is where it always has -
+   home.css is still the CSS Home.tsx imports, which is what keeps this
+   bundled at all. */
+.rail-section {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-7);
+  overflow: hidden;
+}
+
+.rail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: 13px var(--space-8) 11px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.rail-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.rail-section-toggle .eyebrow {
+  margin: 0;
+}
+
+.rail-section-body {
+  padding: var(--space-7) var(--space-8);
+}
+
+/* ---------- Below 48rem: let the needs-you grid actually fit ----------
+   Phone-width pass (whole-branch merge gate finding). Home carries no
+   fixed frame the way Build and Explore did - it is the plainest page on
+   the console, natural height, one 1100px breakpoint already collapsing
+   .pulse to a single column - but live 375x812 verification (agent-browser)
+   found .card-grid's own `grid-template-columns: repeat(auto-fill,
+   minmax(430px, 1fr))` never yielded either: auto-fill still only ever
+   packs ONE track at any width under ~874px (two 430px tracks plus their
+   own gap), so the breakpoint's practical effect at every viewport this
+   pass tests is identical to a bare `1fr` - EXCEPT that minmax's 430px
+   FLOOR is a hard minimum, not a preference, so a 375px viewport was
+   handed a single grid track 430px wide regardless, 55px wider than the
+   screen that has to show it. That is not a clipped card - CSS grid does
+   not clip an overflowing track, it grows the GRID past its own container
+   - it is the whole PAGE gaining a 269px horizontal scrollbar (measured
+   live: document.documentElement.scrollWidth 644 against a 375px
+   window.innerWidth), dragging the topbar's own nav links off-screen
+   sideways along with it, the one full-page horizontal scroll this whole
+   pass found anywhere on the branch. A reader has to discover sideways
+   scrolling exists before they can finish reading "tiller approve epic
+   admin" - the copy command clipped clean off the right edge of every
+   card.
+   The fix does not touch .dcard or CopyCmd's own CSS - tokens.css's
+   .copy-cmd already carries `max-width: 100%` and its own `code` child
+   `overflow-wrap: anywhere`, and .dcard .copy-cmd is already `width: 100%`,
+   so once the grid itself stops forcing a track wider than the viewport,
+   the existing chip chrome wraps the command inside whatever width the
+   card actually gets, no override needed (verified live). Only the floor
+   goes: below 48rem the grid runs a single unconstrained 1fr track, which
+   is the exact layout auto-fill was already choosing at this width, minus
+   the 430px minimum that was the entire defect. */
+@media (max-width: 48rem) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "@pagefind/default-ui@1.5.2": {
+    "bundleSource": "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/pagefind_ui/default/package-lock.json",
+    "components": [
+      {
+        "name": "@pagefind/default-ui",
+        "version": "1.5.2",
+        "source": "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/LICENSE",
+        "files": ["npm/pagefind-default-ui-1.5.2-LICENSE.txt"]
+      },
+      {
+        "name": "svelte (prebundled Pagefind UI runtime)",
+        "version": "4.2.20",
+        "source": "https://raw.githubusercontent.com/sveltejs/svelte/svelte%404.2.20/LICENSE.md",
+        "files": ["npm/svelte-4.2.20-LICENSE.txt"]
+      },
+      {
+        "name": "is-alphabetical (prebundled Pagefind UI runtime)",
+        "version": "2.0.1",
+        "source": "https://raw.githubusercontent.com/wooorm/is-alphabetical/2.0.1/license",
+        "files": ["npm/is-alphabetical-2.0.1-LICENSE.txt"]
+      },
+      {
+        "name": "is-decimal (prebundled Pagefind UI runtime)",
+        "version": "2.0.1",
+        "source": "https://raw.githubusercontent.com/wooorm/is-decimal/2.0.1/license",
+        "files": ["npm/is-decimal-2.0.1-LICENSE.txt"]
+      },
+      {
+        "name": "is-alphanumerical (prebundled Pagefind UI runtime)",
+        "version": "2.0.1",
+        "source": "https://raw.githubusercontent.com/wooorm/is-alphanumerical/2.0.1/license",
+        "files": ["npm/is-alphanumerical-2.0.1-LICENSE.txt"]
+      },
+      {
+        "name": "bcp-47 (prebundled Pagefind UI runtime)",
+        "version": "2.1.0",
+        "source": "https://raw.githubusercontent.com/wooorm/bcp-47/2.1.0/license",
+        "files": ["npm/bcp-47-2.1.0-LICENSE.txt"]
+      }
+    ]
+  },
+  "pagefind@1.5.2": {
+    "bundleSources": [
+      "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/pagefind_ui/component/package-lock.json",
+      "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/pagefind_web_js/package-lock.json",
+      "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/pagefind_web_js/lib/gz.js"
+    ],
+    "emittedFiles": [
+      "pagefind-component-ui.js",
+      "pagefind-highlight.js",
+      "pagefind-modular-ui.js",
+      "pagefind-ui.js",
+      "pagefind-worker.js",
+      "pagefind.js"
+    ],
+    "components": [
+      {
+        "name": "adequate-little-templates (prebundled Pagefind component UI)",
+        "version": "1.0.2",
+        "source": "https://raw.githubusercontent.com/bglw/adequate-little-templates/47d207b7840a5e7ea847e1f630454d81ee3ad16e/LICENSE",
+        "files": ["npm/adequate-little-templates-1.0.2-LICENSE.txt"]
+      },
+      {
+        "name": "mark.js (prebundled Pagefind highlighting)",
+        "version": "8.11.1",
+        "source": "https://raw.githubusercontent.com/julkue/mark.js/8.11.1/LICENSE",
+        "files": ["npm/mark.js-8.11.1-LICENSE.txt"]
+      },
+      {
+        "name": "fflate (vendored Pagefind decompressor)",
+        "version": "source shipped in Pagefind 1.5.2",
+        "source": "https://raw.githubusercontent.com/Pagefind/pagefind/v1.5.2/pagefind_web_js/lib/gz.js",
+        "files": ["npm/fflate-pagefind-1.5.2-LICENSE.txt"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,379 @@
+/* The console shell: the topbar, the content container, and the few shared
+   primitives the views still compose. Rebuilt onto the chart-table pass's
+   palette (styles/tokens.css, docs/plans/2026-07-23-console-chart-table-
+   mocks.html) rather than the pass-1 placeholder skin it carried before.
+
+   Pass 1 sized this layer for a plain functional read: a 16px/1.55 body in
+   the system UI face, a steel-blue --accent on every link, a near-white
+   --bg, and a set of table, list, gate, and definition primitives. The
+   chart-table rebuild then landed island by island (Home, Explore, the node
+   instrument), each island setting its own tokens.css custom properties, and
+   this file stayed pass 1 the whole time. The result was two palettes and two
+   type scales on one page, and everything an island did not explicitly size
+   fell through to the old one.
+
+   This closes that seam. The shell reads tokens.css's custom properties
+   directly (the pass-1 --ink/--muted/--hairline/--bg/--accent aliases are
+   gone; nothing outside this file ever spelled them except node.css's
+   belt-and-braces fallbacks),
+   and the primitives with no consumer left are deleted rather than kept
+   standing where a future view could reintroduce the old voice. What
+   remains is what is still mounted: the header, .mono / .muted / .error,
+   .none, .rule-list, and the filter controls.
+
+   The global .container max-width (task 4, full window) is gone: the header
+   runs full width and each routed view now owns its own gutters in its own
+   css file (home.css's .desk, history.css's .history-page, explore.css's
+   .explore, drift.css's .drift-page). .page-shell below supplies the shared
+   initial loading and no-such-page shells with the same default gutter. */
+
+* {
+  box-sizing: border-box;
+}
+
+/* mock:59-61 - paper ground, chart ink, Seravek, 14px/1.5. The 16px/1.55 this
+   carried was +18% of vertical space on every line no island had sized, and
+   the near-white #fcfcfb left the white panels (cards, rails, gates) with a
+   1.3% luminance step to sit on where the mock gives them 4.9%. */
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* No global link color. The mock has none: a nav link is slate or ink
+   (mock:69-70), a row title is plain ink (mock:101, mock:181), a quiet
+   out-link is a dotted underline (mock:166). Pass 1's --accent steel blue
+   was a second loud ink on a console whose one loud ink is reserved for what
+   needs the human, and it reached every link no island had colored. A link
+   now inherits its context and earns its affordance on hover. */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* v2 mock:149-150 - the console's one selection and one focus mark, both loud
+   on purpose: selection is the mature-yellow-on-navy pair regardless of
+   theme (a literal pair, not themed, since selected text is a transient
+   overlay rather than a surface), and focus is the accent outline, the same
+   ink that marks "this needs you" everywhere else on the console. */
+::selection {
+  background: #fdbe14;
+  color: #001129;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.error {
+  color: var(--error);
+}
+
+/* Header (mock:64-70) */
+
+/* The topbar is a white band over the paper, not paper over paper. It sticks
+   to the top of the viewport so long page-scrolled views (Home, Report,
+   History) keep the nav in reach. Explore, Build, and Fix size their own
+   frames to the viewport below it and never scroll the page, so sticking
+   changes nothing there. Above in-page tooltips (z 2), below the copy toast
+   (z 1000); modal dialogs sit in the top layer over both. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hair);
+}
+
+/* The slightest lift on the views that scroll under the topbar (App.tsx's
+   scrollsUnderTopbar), so the content reads as passing beneath it. */
+.site-header-shadow {
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+/* v2 mock:206-213 - the topbar's own horizontal gutter (padding: 0 28px), now
+   carried here directly instead of by the retired global .container: the
+   header runs full width and this is the one row inside it. */
+.header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 28px 14px;
+}
+
+/* mock:66 - the wordmark is the one identity-shaped element in the chrome,
+   so it takes the identity voice. It was the only place the serif was
+   specified and not used. */
+.wordmark {
+  position: relative;
+  flex-shrink: 0;
+  padding-left: 52px;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wordmark:hover {
+  text-decoration: none;
+}
+
+.wordmark-logo {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 44px;
+  height: auto;
+  transform: translateY(-50%);
+}
+
+/* Use the UI mode, not color-scheme propagation into an external SVG. */
+.wordmark-logo-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .wordmark-logo-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .wordmark-logo-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .wordmark-logo-light {
+    display: none;
+  }
+
+  :root:not([data-theme]) .wordmark-logo-dark {
+    display: block;
+  }
+}
+
+.wordmark-version {
+  position: absolute;
+  top: 100%;
+  left: 52px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--ink-2);
+}
+
+/* mock:67 - the project key is a keyed chip, not loose mono. Declared after
+   .mono so its explicit size wins over .mono's 0.9em. */
+.project-key {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  background: var(--recess);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 2px 8px;
+}
+
+.site-nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* v2 mock:226-231 - the nav's own voice: mono, uppercase, tracked out,
+   distinct from the reading typefaces every view sets for its own body. */
+.site-nav a {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-2);
+  padding: 6px 12px 4px;
+  border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover {
+  text-decoration: none;
+  color: var(--heading);
+}
+
+/* v2 mock:232 - the active view reads as heading ink under a burgundy rule:
+   you are here, not "go here". Weight stays 700 at rest and active alike
+   (the mock's own .nav button rule never varies it), so only ink and the
+   underline move. */
+.site-nav a.active {
+  color: var(--heading);
+  border-bottom-color: var(--accent);
+}
+
+/* v2 mock:235-236 - the topbar's right cluster: the asof freshness line
+   (AsOf.tsx) beside the theme toggle, the console v2 phase 2 home for both
+   (JC's ruling, 2026-08-10; ui-surface.md's amended header-band sentence).
+   .site-nav's own margin-left: auto above already pushes this wrapper and
+   everything in it to the far edge, so this rule only has to hold the two
+   children together. */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.asof {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* The manual refresh (AsOf.tsx, round-1 review Finding 4): a plain-text
+   button reset so it reads as part of the same quiet mono line the mock
+   draws ("synced 4m ago · ↻"), only brightening on hover/focus to say it is
+   the one clickable character in that line. The glyph is sized up from the
+   line's 11px so it reads as a control at a glance. */
+.asof-refresh {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  vertical-align: -1px;
+}
+
+.asof-refresh:hover {
+  color: var(--ink);
+}
+
+/* Shared joined button selector for theme and board scrolling. */
+.segmented-control {
+  display: flex;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  overflow: hidden;
+}
+
+.segmented-control button {
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 9px;
+  color: var(--ink-3);
+}
+
+.segmented-control button + button {
+  border-left: 1px solid var(--hair);
+}
+
+.segmented-control button.active {
+  background: var(--recess);
+  color: var(--heading);
+}
+
+/* Main (mock:71) */
+
+/* The one routed "view" with no css file of its own (App.tsx's NoSuchPage):
+   same default gutter every other view now sets for itself (home.css's
+   .desk, drift.css's .drift-page - v2 mock:256/606's 26px/28px top/sides). */
+.page-shell {
+  padding: 26px 28px 56px;
+}
+
+h1 {
+  font-size: 22px;
+  line-height: 1.3;
+  margin: 0 0 4px;
+}
+
+/* The one section voice the chart-table pass uses is the mock's .fh eyebrow
+   (mock:177), which instrument.css reproduces as .instr-fh and every node-page
+   section now rides. This rule is what is left for the bare <h3> headings
+   IntegrityNotes still draws over its two record lists, matched to that same
+   eyebrow so the page speaks one voice.
+
+   The pass-1 <h2> rule that used to sit here is gone with its last consumer:
+   36px of top margin over a 16.8px sentence-case line under a hairline, ~60px
+   of chrome per section. It also leaked, since .prose h2 overrides font-size
+   and margin but not padding-bottom or border-bottom, so every "##" in a
+   rendered spec wore a rule the prose scale never asked for. */
+h3 {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  margin: 20px 0 6px;
+}
+
+/* Shared primitives still mounted by a live view. */
+
+/* The muted note where a list would be (EmptyNote). */
+.none {
+  color: var(--ink-2);
+  margin: 0.25rem 0 0.75rem;
+}
+
+/* Rule list: entries separated by hairlines, none after the last. Explore's
+   filter and search results are the remaining consumers. */
+.rule-list {
+  list-style: none;
+  margin: 0.25rem 0 0.75rem;
+  padding: 0;
+}
+
+.rule-list > li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.rule-list > li:last-child {
+  border-bottom: none;
+}
+
+/* Form controls: the filter selects and the search input, in the skin's
+   register rather than the browser's. */
+.control {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  padding: 0.3rem 0.5rem;
+}
+
+/* Filter bar: the row the controls sit in. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}

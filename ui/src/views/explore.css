@@ -1,0 +1,1204 @@
+/* Explore rebuilt as navigator plus reading pane (task C2, docs/plans/
+   2026-07-23-console-chart-table-mocks.html, "Explore, refreshed with #27
+   order"). Every value here rides tokens.css's
+   custom properties, the chart-table pass's own palette, the same layering
+   choice C1's home.css and C3's instrument.css already established: this
+   file re-scopes the shared utility classes (.muted, .mono, .error) it
+   still reaches for under .explore, so Home and Node Detail keep riding
+   their own re-scoped copies untouched.
+
+   Browse's navigator and reading pane share one chart-table grammar with
+   filter and search: title-first rows, muted mono addresses, and hairlines
+   between entries. Search destinations add a persistent underline so both
+   node and source-file routes remain visible before hover.
+
+   The navigator uses chevrons, indent guides, denser rows, and parent
+   counts. Search and tree controls stay above its scroll area; Questions
+   and Amendments live in the mode rail above the split.
+
+   Task 25 (JC's ruling, 2026-08-11): Explore takes the mock's fixed
+   two-pane frame outright, superseding task 16's own honest-minimum
+   approximation (a max-height cap on .explore-nav alone, so only the
+   navigator ever got its own scroll and the reading pane just grew the
+   page). The mock's rule is `.explore { display:flex; height: calc(100vh -
+   52px) }` with `.navigator` owning its scroll (mocks.html:445-452); here
+   the frame is `.explore` itself (height: calc(100vh - var(--topbar-h)),
+   the same token build.css already consumes for its own identical frame,
+   Phase 3's carry-in), and BOTH panes own an independent overflow-y: auto,
+   not just the navigator - .explore-nav-tree below and .explore-detail
+   further down. The page itself never scrolls on Explore: the frame's
+   height is capped to the viewport below the topbar and nothing inside it
+   can grow past that box, so the topbar reads as standing without needing
+   position: sticky of its own (identical reasoning to build.css's own
+   frame, which carries no sticky rule either).
+
+   The navigation rail sits directly beneath the topbar, without a page
+   heading or a reserved title gutter. Search and tree controls sit outside
+   the navigator's scroll area. Filter and search use .explore-modebody as
+   their own scrolling area. The mode rail owns its horizontal gutter;
+   the split runs edge to edge and its panes own their content gutters. */
+.explore {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--topbar-h));
+  /* The page-level no-scroll pin: nothing below this box can push the
+     document taller than the viewport, so overflow always resolves inside
+     a child's own overflow-y instead of the page's. */
+  overflow: hidden;
+}
+
+/* Only the mode rail needs a frame-level horizontal gutter. */
+.explore > .mode-nav {
+  flex: none;
+  padding-top: 8px;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+/* The space between Explore's tab strip and the split below it. The divider
+   reaches back up through it (.explore-divider's negative margin-top) so the
+   vertical seam meets the tab hairline instead of stopping short of it. */
+.explore {
+  --explore-tabs-gap: 1.5rem;
+}
+
+.explore > .mode-nav {
+  margin: 0 0 var(--explore-tabs-gap);
+}
+
+.explore .muted {
+  color: var(--ink-2);
+}
+
+.explore .mono {
+  font-family: var(--font-mono);
+}
+
+.explore .error {
+  color: var(--error);
+}
+
+.explore .rule-list > li {
+  border-bottom-color: var(--hair);
+}
+
+.explore .control {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+}
+
+.explore .filter-bar {
+  margin: 0.75rem 0 1.25rem;
+}
+
+/* ---------- Mode switch: an underline rail ---------- */
+/* Node Detail's own tab row (task-1-brief.md, NodeTabs) rides these same
+   classes: a tab is a button rather than a Link (it is not its own history
+   entry), so every rule below also targets .mode-nav button, with the plain
+   button chrome it would otherwise carry (border, background, pointer)
+   zeroed right here rather than in a second stylesheet - no new color,
+   font, or token, only the reset a button needs to read as the identical
+   rail entry an anchor already is. */
+
+/* The mode nav is an underline rail (node header pass, 2026-08-30): text on
+   a hairline, the active entry in ink with a 2px underline, counts muted.
+   It used to be a row of pills, the same shape every data chip on the
+   console takes, and the tabs got lost among them; pills stay reserved for
+   chips, and this one navigation shape serves Explore's mode switch and the
+   node page's tab row (NodeTabs) alike. */
+.mode-nav {
+  display: flex;
+  gap: 22px;
+  margin: 0.75rem 0 1.5rem;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--hair);
+  flex-wrap: wrap;
+}
+
+.mode-nav a,
+.mode-nav button {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 1px 9px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.mode-nav button {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  background: none;
+  cursor: pointer;
+}
+
+.mode-nav a:hover,
+.mode-nav button:hover {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.mode-nav a.active,
+.mode-nav button.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--ink);
+}
+
+.mode-nav a.active:hover,
+.mode-nav button.active:hover {
+  color: var(--ink);
+}
+
+.mode-nav .tab-count {
+  color: var(--ink-3);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.mode-nav .tab-count-warning {
+  color: var(--st-blocked-t);
+}
+
+.explore-nav-separator {
+  align-self: center;
+  height: 20px;
+  border-left: 1px solid var(--hair);
+}
+
+.mode-nav .explore-ledger-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Browse: the navigator-plus-reading-pane split ---------- */
+
+/* No border-top: the mode rail above already draws the one hairline the
+   page needs, and a second one a margin below it read as a double rule
+   (JC, 2026-08-31). */
+.explore-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The dragging class (task 3, docs/plans/2026-08-14-explore-tree-state.md):
+   applied to .explore-split for the duration of a mouse drag (Explore.tsx's
+   own dragging state), never persisted. Without it, a fast drag across the
+   reading pane's own prose selects text under the pointer along the way -
+   the same smear-select any resizable-pane UI has to guard against, since
+   the pointer crosses ordinary readable content, not just the divider
+   itself, while it moves. */
+.explore-split.dragging {
+  user-select: none;
+}
+
+/* padding-left added in the follow-up frame-padding fix above: with
+   .explore no longer supplying a left gutter to the whole split, the
+   navigator owns its own now - the same left-side-lives-on-the-pane move
+   build.css's own .epic-panel already made (18px 14px, no padding on
+   .build itself at all), and the mock's own .navigator agrees (padding:
+   16px 12px 24px, mocks.html:447). 14px rather than the mock's 12px to
+   match the 14px .explore-nav-head/.explore-nav-tree already spend on the
+   RIGHT (below) - one number for the column's near and far edges, not two.
+   The 48rem block resets this to 0 (below): below that width the split
+   un-stacks into one column and each pane goes back to owning a full,
+   self-contained gutter instead of splitting it with an ancestor.
+
+   Task 3 (the resizable split): width reads the --explore-nav-w custom
+   property Explore.tsx sets on .explore-split (its own inline style, one
+   number driving both the CSS and, unchanged, whatever Task 4 persists),
+   falling back to the same 300px this rule used to hardcode so a stylesheet
+   loaded without that inline style (a snapshot test reading raw CSS, a
+   future consumer of this sheet alone) still renders the original width.
+   border-right moved off this rule onto .explore-divider below: with a real
+   divider element between the nav and the outlet now, drawing the hairline
+   twice (once here, once on the divider) would double the seam. */
+.explore-nav {
+  width: var(--explore-nav-w, 300px);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-left: 14px;
+}
+
+/* The divider (task 3): a hand-rolled resizer, the first drag/resize control
+   anywhere in ui/src - no existing precedent to match, so its own idiom is
+   set here. A slim 5px hit area keeps it comfortably grabbable without
+   widening the visible seam: transparent 2px borders on each side collapse
+   the visible background (background-clip: content-box, so the fill paints
+   only inside the border) down to the true 1px hairline .explore-nav's own
+   border-right used to draw, same idiom, now living here instead. Rest
+   state rides --hair, the same quiet hairline every other border in this
+   file uses - the divider should not announce itself as a control until a
+   reader's pointer or focus lands on it; hover and active feedback step up
+   to --ink-2 (the same escalation .explore-nav-actions button:hover already
+   uses one section up), and a keyboard focus ring in --accent-line, inset so
+   it never spills into the navigator or reading pane on either side of a
+   div this narrow. */
+.explore-divider {
+  flex: none;
+  width: 5px;
+  cursor: col-resize;
+  background: var(--hair);
+  background-clip: content-box;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  /* Stretched in the split's row, a negative top margin lengthens the
+     divider upward, so it closes the gap under the tab strip and joins the
+     tab hairline while the navigator and reading pane stay where they are. */
+  margin-top: calc(-1 * var(--explore-tabs-gap));
+}
+
+.explore-divider:hover,
+.explore-divider:active {
+  background-color: var(--ink-2);
+}
+
+.explore-divider:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: -2px;
+}
+
+/* Search and whole-tree controls stay above the navigator's scroll area. */
+.explore-nav-head {
+  flex: none;
+  padding: 16px 14px 0 0;
+}
+
+/* Reserve one compact line through pending, failed, and settled reads.
+   Additional notices scroll here, never inside the navigator's row flow. */
+.explore-nav-status {
+  height: 16px;
+  overflow-y: auto;
+  margin-bottom: 4px;
+  color: var(--ink-2);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.explore-nav-status > span {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* The tree's own scroll container - the pane half of task 25's two
+   independently-scrolling panes. min-height: 0 overrides the flex item
+   default (min-height: auto), which would otherwise let the tree's natural
+   content height push this box taller than .explore-nav has to give it. */
+.explore-nav-tree {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 14px 30px 0;
+}
+
+/* Persistent search uses the same control chrome as filter/search inputs. */
+.nav-search {
+  display: block;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 7px 10px;
+  margin: 0 0 10px;
+}
+
+.nav-search::placeholder {
+  color: var(--ink-3);
+}
+
+
+/* Whole-tree controls sit above the tree's scroll area. */
+.explore-nav-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* Sized from each label rather than split in thirds, so the longer
+   "Hide cancelled" stays on one line in the default 300px pane. */
+.explore-nav-actions button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.explore-nav-actions button:hover {
+  border-color: var(--ink-2);
+  color: var(--ink);
+}
+
+/* A pressed toggle inverts to solid ink, so its state reads by lightness
+   alone rather than by a hue shift. */
+.explore-nav-actions button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--panel);
+}
+
+.explore-eb {
+  margin: 4px 0 8px 10px;
+}
+
+.explore-eb:first-child {
+  margin-top: 0;
+}
+
+/* Bugs and Chores are virtual top-level branches inside the navigator's
+   existing scroll area. Their branch rows reuse the epic tier's spacing;
+   their children reuse the task tier's compact link grammar. */
+/* The shelf group: the Bugs and Chores rows read apart from the epic tree
+   beneath them (JC's ask, 2026-08-30) - one wrapper, one hairline under it,
+   and air on both sides of the line, so the queue's two rows and the
+   definition tree stop reading as one list. */
+.explore-nav-tree .explore-shelves {
+  padding-top: 8px;
+  border-top: 1px solid var(--hair);
+  margin-top: 10px;
+}
+
+.explore-nav-tree .explore-shelf {
+  padding: 5px 8px;
+  border-radius: var(--radius-btn);
+}
+
+.explore-nav-tree .explore-shelf-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.explore-nav-tree .explore-shelf-row > a {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explore-nav-tree .explore-shelf-row > a:hover,
+.explore-nav-tree .explore-shelf-node:hover {
+  text-decoration: none;
+}
+
+.explore-nav-tree .explore-shelf-row > .tc {
+  flex: none;
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.explore-nav-tree .explore-shelf-node {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px 4px 41px;
+  border-radius: var(--radius-btn);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.explore-nav-tree .explore-shelf-node > span:last-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explore-nav-tree .explore-shelf-node:hover {
+  background: var(--recess);
+}
+
+.explore-nav-tree .explore-shelf-row > a:focus-visible,
+.explore-nav-tree .explore-shelf-node:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+/* Epic row: chevron, dot, title, feature count, and the child-mix bar are
+   always visible; the bar sits below them, also always visible (even
+   collapsed), which is why this is plain divs with React-held open state
+   rather than a native details/summary - details hides everything but the
+   summary when closed, and the bar has to survive collapse. */
+.explore-epic {
+  padding: 5px 8px;
+  border-radius: var(--radius-btn);
+}
+
+.explore-epic:hover {
+  background: var(--recess);
+}
+
+.explore-epic.is-selected {
+  background: var(--recess);
+  box-shadow: inset 2px 0 0 var(--ink);
+}
+
+.explore-epic-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.explore-epic-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explore-epic-title:hover {
+  text-decoration: none;
+}
+
+.explore-epic-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* The chevron and its same-width spacer twin (a childless row's stand-in,
+   Navigator.tsx's ChevronSpacer): both reserve the identical box so every
+   tier's title starts at the same left edge whether or not the row can
+   expand (the mock's own alignment rule, an empty .tw span on a leaf row). */
+.explore-chevron,
+.explore-chevron-spacer {
+  flex: none;
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explore-chevron {
+  background: none;
+  border: none;
+  padding: 2px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Enlarged off the mock's 9px .tw (JC finding, 2026-08-10: "almost
+   invisible" at that size, the mock's rows read denser than this navigator's
+   own); raised again 2026-08-30 (the Acme field screenshot, same finding
+   at 13px/ink-2) to 15px in full ink, so the one control that opens a tier
+   reads as a control. Same rotate-off-aria-expanded behavior below. */
+.chevron-glyph {
+  display: inline-block;
+  font-size: 15px;
+  color: var(--ink);
+  transition: transform 0.12s;
+}
+
+/* Rotate off aria-expanded rather than swapping the glyph in JS (the mock's
+   own .tw rotate rule): one visual rule instead of two literal chevron
+   characters to keep in sync with the button's own state. */
+.explore-chevron[aria-expanded="true"] .chevron-glyph {
+  transform: rotate(90deg);
+}
+
+.explore-epic-bar {
+  margin-top: 5px;
+  padding-left: 23px;
+}
+
+.explore-epic-bar .state-bar {
+  height: 3px;
+}
+
+/* Indent guide: a hairline running down the left edge of every nested tier
+   (the mock's nested <ul> border-left, reproduced on the tier's own
+   wrapping div instead - Navigator.tsx's doc comment on why this stays
+   div-held rather than a real <ul>). .explore-tasks repeats the same rule
+   one tier further in, so a task's own guide nests inside its feature's. */
+.explore-feats,
+.explore-tasks {
+  margin: 2px 0 4px 17px;
+  padding-left: 10px;
+  border-left: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+}
+
+/* The two rows below the epic share one grammar: a chevron (or its
+   spacer), a dot, a title, and an optional child count. They differ only
+   in type size - the indent itself comes from .explore-feats/
+   .explore-tasks's own nesting now, not a large left-padding hack on the
+   row. */
+.explore-feat,
+.explore-task {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border-radius: var(--radius-btn);
+}
+
+.explore-task {
+  font-size: 12.5px;
+}
+
+.explore-feat:hover,
+.explore-task:hover {
+  background: var(--recess);
+}
+
+.explore-nav-tree .explore-shelf-node.current,
+.explore-feat.is-selected,
+.explore-task.is-selected {
+  background: var(--recess);
+  box-shadow: inset 2px 0 0 var(--ink);
+}
+
+.explore-feat-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explore-feat-title:hover {
+  text-decoration: none;
+}
+
+.explore-feat-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* Status emphasis (JC, 2026-10-18): finished rows (done, answered,
+   cancelled, archived) step back to --ink-3 with a dimmed glyph, so a scan
+   lands on unfinished work; blocked rows step forward with a faint wash of
+   their own color and a bolder title. Both read by lightness and weight, not
+   by hue alone. A selected blocked row keeps the selected background (the
+   last rule here), so the selection never disappears under the wash. */
+.is-settled .explore-epic-title,
+.is-settled .explore-feat-title,
+.explore-nav-tree .explore-shelf-node.is-settled {
+  color: var(--ink-3);
+}
+
+.is-settled .state-glyph {
+  opacity: 0.55;
+}
+
+.explore-epic-row.is-blocked,
+.explore-feat.is-blocked,
+.explore-task.is-blocked,
+.explore-nav-tree .explore-shelf-node.is-blocked {
+  background: color-mix(in srgb, var(--st-blocked) 9%, transparent);
+}
+
+.explore-feat.is-blocked:hover,
+.explore-task.is-blocked:hover,
+.explore-nav-tree .explore-shelf-node.is-blocked:hover {
+  background: color-mix(in srgb, var(--st-blocked) 15%, transparent);
+}
+
+.explore-epic-row.is-blocked {
+  margin: -2px -4px;
+  padding: 2px 4px;
+  border-radius: var(--radius-btn);
+}
+
+.is-blocked .explore-epic-title,
+.is-blocked .explore-feat-title,
+.explore-nav-tree .explore-shelf-node.is-blocked {
+  font-weight: 600;
+}
+
+.explore-feat.is-blocked.is-selected,
+.explore-task.is-blocked.is-selected,
+.explore-nav-tree .explore-shelf-node.is-blocked.current {
+  background: var(--recess);
+}
+
+/* ---------- The reading pane ---------- */
+
+/* The reading pane's own scroll container, the other half of task 25's two
+   independently-scrolling panes: a node page's header rides inside this box
+   and scrolls with everything beneath it (the instrument is long, and
+   nothing about the header is standing chrome the way Explore's own heading
+   and mode pills are). Task 25 review fix (2026-08-11): this rule used to
+   carry max-width: 720px, which read as "the prose reading measure" but was
+   actually clamping it - the mock's own reading pane (docs/plans/2026-08-09-
+   console-v2-mocks.html:491, .reading) is fluid with no max-width of its
+   own, and every measure lives on the CONTENT instead (prose.css's .prose at
+   72ch, instrument.css's .attn/.criteria at 880px). A pane cap tighter than
+   those content measures silently clamped them to whatever the pane had
+   left, which is exactly what happened here: the scrollbar sat at 720px
+   instead of the split's true edge, and .attn/.criteria never reached their
+   own 880px. The pane itself now fills the split's remaining width so the
+   scrollbar lands at the window edge, same as the mock; flex/min-height/
+   overflow-y are unchanged. Right padding now matches the mock's own
+   .reading (40px) - it used to read 0, the one geometry value this rule
+   never actually took from the mock it cites. */
+.explore-detail {
+  padding: 22px 40px 40px 32px;
+  min-width: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Source-file destinations keep their authored path visible above both the
+   source locator and every load state. Long repo-relative paths may wrap
+   rather than widening the reading pane. */
+.file-address {
+  margin: 0 0 var(--space-8);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* One honest source-line strip, separate from the rendered Markdown below it:
+   the API supplies the exact line text, so pre-wrapping preserves its spacing
+   without pretending the full Markdown renderer can expose source positions. */
+.file-source-locator {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-6);
+  max-width: 72ch;
+  margin: 0 0 var(--space-8);
+  padding: var(--space-6) var(--space-8);
+  background: var(--recess);
+  border-left: var(--space-1) solid var(--accent-line);
+  border-radius: var(--radius-btn);
+}
+
+.file-source-line,
+.file-source-locator code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.file-source-line {
+  color: var(--ink-3);
+  user-select: none;
+}
+
+.file-source-locator code {
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Filter and search mode's own scroll area (Explore.tsx wraps FilterMode/
+   SearchMode in this div): the frame's third rider, alongside the split's
+   two panes above - there is no navigator beside these modes, so one column
+   scrolls rather than two. Side padding added in the follow-up frame-
+   padding fix above (was 0, riding .explore's own removed horizontal
+   padding): unlike .explore-split, filter/search content never grew its
+   own per-side gutter the way the navigator and reading pane did, so this
+   is the one spot that inlines the frame's old 28px verbatim rather than
+   picking a new pane-owned value - same visual result at every viewport
+   this rule was never itself media-gated. */
+.explore-modebody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 28px 56px;
+}
+
+/* Map mode owns its own pan and zoom, so its body drops the reading
+   padding and never scrolls; the canvas fills the frame under the rail. */
+.explore-modebody.explore-modebody-map {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Below 48rem: honest page flow, not a squeezed frame ----------
+   Task 25 review fix: this block used to sit ABOVE the base .explore-nav /
+   .explore-nav-head / .explore-nav-tree / .explore-detail rules it means to
+   override, and CSS breaks that tie the way it breaks every equal-
+   specificity tie - by SOURCE ORDER, not by which @media condition reads
+   narrower. A @media wrapper adds no specificity of its own, so the LATER
+   plain .explore-nav-tree (or .explore-detail) rule always won, at every
+   viewport, whether or not the media query even matched. The base rules'
+   fixed-height flex sizing rode along regardless of screen width, and on a
+   real phone the reading pane clamped to a ~62px sliver behind double-
+   nested scrolling - worse than the plain page flow this view had before
+   task 25 touched it. Existence-only regex tests (explore.css.test.ts)
+   stayed green through this, since they only checked that a rule EXISTED
+   somewhere in the file, never which declaration the cascade actually
+   crowned; that test now also pins this block's own POSITION, after every
+   base rule it overrides, so a future reorder that reintroduces this bug
+   fails loudly instead of shipping quiet.
+
+   The fix is placement (this block now sits after all six rules above),
+   plus an honest re-derivation of what "stacked" should mean: the fixed
+   frame it overrides exists to cap Explore to the viewport so two panes can
+   scroll independently side by side, and there is no room for two side-by-
+   side panes on a phone in the first place. Below 48rem the frame itself
+   is off - .explore reverts to its natural (auto) height with visible
+   overflow - so the page is exactly what it was pre-task-25: one column
+   that flows and scrolls at the document level, heading, mode pills,
+   navigator, and reading pane all reachable by an ordinary page scroll,
+   each pane sized to its own content rather than clamped to a slice of the
+   viewport.
+
+   Follow-up frame-padding fix (2026-08-11): .explore-nav-head/-tree and
+   .explore-detail used to zero their own horizontal padding here on
+   purpose, because .explore's own 26px 28px 0 (never itself media-gated)
+   already gave every pane a uniform 28px side gutter at every viewport -
+   doubling it here would have over-padded a phone. Now that gutter lives
+   on the panes themselves instead (.explore-nav's own padding-left,
+   .explore-detail's own left/right, both above) SO THIS SPLIT COULD RUN
+   EDGE TO EDGE AT DESKTOP WIDTH, those pane-owned values are sized for
+   sitting side by side next to a 300px-wide navigator, not for a phone
+   where each one is the full-width column. Below 48rem each pane goes back
+   to owning a plain, self-contained 28px gutter directly - the exact
+   pixels the old ancestor-derived padding produced, so the stacked mobile
+   page reads identically to before this fix; only the desktop split's own
+   edges moved. */
+@media (max-width: 48rem) {
+  .explore {
+    height: auto;
+    overflow: visible;
+  }
+
+  .explore-split {
+    flex-direction: column;
+  }
+
+  .explore-nav {
+    width: auto;
+    flex: none;
+    border-bottom: 1px solid var(--hair);
+    padding-left: 0;
+  }
+
+  /* The resizer is inert once the split un-stacks into one column (Global
+     Constraint, desktop-first posture, ui-surface.md 2026-08-11): there is
+     no side-by-side boundary left to drag, so the divider is hidden
+     outright rather than left as dead, unreachable chrome between two
+     stacked panes. */
+  .explore-divider {
+    display: none;
+  }
+
+  .explore-nav-head {
+    padding: 16px 28px 0;
+  }
+
+  .explore-nav-tree {
+    flex: none;
+    overflow-y: visible;
+    padding: 0 28px 16px;
+  }
+
+  .explore-detail {
+    flex: none;
+    overflow-y: visible;
+    padding: 22px 28px 40px;
+  }
+}
+
+/* ---------- Questions ledger (Phase 4 item 2, the mock's #pane-questions):
+   the navigation link's destination, one card per question, with bounded title
+   and Q-id leading due/blocks/command; answered cards keep their answer visible
+   (QuestionsPane.tsx). ---------- */
+
+.qhead {
+  margin-bottom: 16px;
+}
+
+.qhead h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+  color: var(--heading);
+  margin: 0 0 3px;
+}
+
+.qhead .sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.qlist {
+  max-width: 880px;
+  display: grid;
+  gap: 10px;
+}
+
+.qcard {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+
+/* An open question's own left-edge accent stripe, the same mark the pinned
+   row and every attention box already wear for "worth a look". */
+.qcard.open-q {
+  border-left: 3px solid var(--accent);
+}
+
+.qcard .q-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.qcard .q-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.qcard .q-st {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--heading);
+  flex: 1;
+  min-width: 0;
+}
+
+.qcard .q-meta {
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.qcard .q-meta .due {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.qcard .q-ans {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--hair);
+}
+
+.qcard .copy-cmd {
+  width: 100%;
+  margin-top: 9px;
+}
+
+/* ---------- Filter: title-first result rows ---------- */
+
+.explore-results {
+  margin-top: 0.5rem;
+}
+
+.explore-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+}
+
+.explore-result-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.explore-result-title:hover {
+  text-decoration: none;
+}
+
+.explore-result-key {
+  font-size: 11.5px;
+}
+
+.explore-result-owner {
+  font-size: 12.5px;
+  margin-left: auto;
+}
+
+/* ---------- Faceted filters ---------- */
+.filter-combobox {
+  position: relative;
+  flex: 1 1 11rem;
+  min-width: 9rem;
+  align-self: flex-start;
+}
+
+.filter-input {
+  position: relative;
+}
+
+.filter-input input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 1.8rem;
+}
+
+.filter-clear {
+  position: absolute;
+  inset: 0 0.25rem 0 auto;
+  padding: 0 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.filter-clear:hover,
+.filter-clear:focus-visible {
+  color: var(--ink);
+}
+
+.filter-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 18rem;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  box-shadow: var(--shadow-panel);
+}
+
+.filter-options ul {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+}
+
+.filter-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  padding: 0.3rem 0.6rem;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.filter-option.active {
+  background: var(--accent-soft);
+}
+
+.filter-option[aria-selected="true"] .filter-option-label {
+  font-weight: 600;
+}
+
+.filter-option.cancelled {
+  color: var(--ink-3);
+}
+
+.filter-option-key {
+  grid-column: 1;
+}
+
+.filter-option-key,
+.filter-option-count {
+  font-size: 11.5px;
+}
+
+.filter-option-count {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin-left: auto;
+  padding-left: 1rem;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+
+.filter-options-empty {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+}
+
+.filter-note {
+  margin: 0.25rem 0 0;
+  color: var(--error);
+  font-size: 12px;
+}
+
+.filter-clear-all {
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Search: one row per node or document, grouped by kind ---------- */
+
+.search-summary {
+  margin: 0 0 var(--space-4);
+}
+
+/* Each kind's section is an eyebrow over its rows, spaced like the other
+   eyebrowed lists so the page reads as a set of short lists, not one long
+   one. The exact match sits first in the same chrome. */
+.search-section {
+  margin-bottom: 1.5rem;
+}
+
+.search-result {
+  padding: 0.55rem 0;
+}
+
+/* The head line mirrors Filter's title-first row: the title is what a reader
+   recognizes, so it leads at full ink; the key or Q-id follows in the quiet
+   mono address register; then status, then how the node matched, pushed
+   right where the owner sits on a Filter row. */
+.search-result-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.search-result-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-3);
+  text-underline-offset: var(--space-1);
+}
+
+.search-result-title:hover {
+  text-decoration-color: currentColor;
+}
+
+/* A document's head is its path, so it takes mono, at the title's place and
+   weight but the address register's size. */
+.search-doc-title {
+  font-size: 12.5px;
+}
+
+.search-result-key {
+  font-size: 11.5px;
+}
+
+.search-result-match {
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* The kind pill only appears on the exact match, where the row stands outside
+   any kind's section; it takes the node header's pill a size down. */
+.search-kind {
+  font-size: 10px;
+  padding: 3px 9px 3px 10px;
+}
+
+.search-result-more {
+  margin: 0.2rem 0 0;
+  font-size: 12px;
+}
+
+/* One line, always: the snippet is a pointer into the corpus, not a transport
+   for it (search.snippet caps it at 200 runes for the same reason), and a
+   wrapping snippet doubled every row's height on the page. A snippet is a line
+   of English lifted out of a document, so it is read, not operated: system
+   sans, in the quiet slate the rest of the row takes. Where it came from leads
+   in mono, smaller and muted, mono's job for paths. */
+.hit-snippet {
+  margin: 0.2rem 0 0;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-2);
+}
+
+.hit-where {
+  display: inline-block;
+  min-width: 7.5rem;
+  margin-right: 0.6rem;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+a.hit-where {
+  min-width: 3rem;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-3);
+  text-underline-offset: var(--space-1);
+}
+
+/* The section's expand: the console-wide "N more" idiom (lib/disclosure.ts's
+   ROW_CAP), restated here since this is Explore's sheet. It spans the full
+   row width flush with the rows above it. */
+.search-hits-more {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 0;
+  font-size: 12.5px;
+  font-family: var(--font-body);
+  color: var(--ink-2);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--hair);
+  cursor: pointer;
+}
+
+.search-hits-more:hover {
+  color: var(--ink);
+}
+
+/* The match highlight is a neutral ink tint, never accent or a semantic
+   state color: it marks a text match, not something that needs the human.
+   color-mix() composes it from the live token so it themes with light-dark().
+   The 12% is its own literal, not --tint, because this is a neutral wash
+   marking a text match, not a state. */
+.search-result mark {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 0 0.08em;
+}

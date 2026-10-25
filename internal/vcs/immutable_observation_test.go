@@ -1,0 +1,72 @@
+package vcs
+
+import (
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestRecoveryPrimitivesIgnoreReplacementObjects(t *testing.T) {
+	t.Setenv("GIT_NO_REPLACE_OBJECTS", "")
+	require.NoError(t, os.Unsetenv("GIT_NO_REPLACE_OBJECTS"))
+	dir, g := newRepo(t)
+	root := run(t, dir, "rev-parse", "HEAD")
+	run(t, dir, "checkout", "-b", "review")
+	require.NoError(t, writeRepoFile(dir, "README.md", "reviewed bytes\n"))
+	run(t, dir, "add", ".")
+	run(t, dir, "commit", "-m", "reviewed work")
+	head := run(t, dir, "rev-parse", "HEAD")
+	run(t, dir, "checkout", "main")
+	require.NoError(t, writeRepoFile(dir, "app/main.go", "package main\n// integration change\n"))
+	run(t, dir, "add", ".")
+	run(t, dir, "commit", "-m", "integration work")
+	trunk := run(t, dir, "rev-parse", "HEAD")
+	run(t, dir, "merge", "--no-ff", "review", "-m", "integration result")
+	result := run(t, dir, "rev-parse", "HEAD")
+	patch, err := g.PatchID(trunk, result)
+	require.NoError(t, err)
+	require.NotEmpty(t, patch)
+	digest, err := g.PatchDigest(trunk, result)
+	require.NoError(t, err)
+	require.NotEmpty(t, digest)
+	patches, err := g.FirstParentPatchIDs(result, 10)
+	require.NoError(t, err)
+	require.NotEmpty(t, patches)
+
+	// This replacement erases the merge's topology and reviewed tree for an
+	// ordinary Git command. Tiller must continue observing the literal objects.
+	run(t, dir, "replace", result, root)
+	require.Equal(t, "hello", run(t, dir, "show", result+":README.md"))
+	beforeRefs := run(t, dir, "show-ref")
+	beforeIndex := run(t, dir, "ls-files", "--stage")
+	contained, err := g.IsMergedInto(head, result)
+	require.NoError(t, err)
+	require.True(t, contained)
+	onTrunk, err := g.FirstParentContains(result, trunk)
+	require.NoError(t, err)
+	require.True(t, onTrunk)
+	onTrunk, err = g.FirstParentContains(result, head)
+	require.NoError(t, err)
+	require.False(t, onTrunk)
+	base, err := g.MergeBase(head, result)
+	require.NoError(t, err)
+	require.Equal(t, head, base)
+	observedPatch, err := g.PatchID(trunk, result)
+	require.NoError(t, err)
+	require.Equal(t, patch, observedPatch)
+	observedDigest, err := g.PatchDigest(trunk, result)
+	require.NoError(t, err)
+	require.Equal(t, digest, observedDigest)
+	observedPatches, err := g.FirstParentPatchIDs(result, 10)
+	require.NoError(t, err)
+	require.Equal(t, patches, observedPatches)
+	parents, err := g.CommitParents(result)
+	require.NoError(t, err)
+	require.Equal(t, []string{trunk, head}, parents)
+	data, _, err := g.ReadFileAt(result, "README.md")
+	require.NoError(t, err)
+	require.Equal(t, []byte("reviewed bytes\n"), data)
+	require.Equal(t, beforeRefs, run(t, dir, "show-ref"))
+	require.Equal(t, beforeIndex, run(t, dir, "ls-files", "--stage"))
+}

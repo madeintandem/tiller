@@ -1,0 +1,967 @@
+/* The acceptance instrument (task C3, docs/plans/2026-07-23-console-chart-
+   table-mocks.html round 4): NodeDetail's own header, attention strip, gate
+   cards, criterion rows, provenance line, and task ledger. Every value here
+   rides tokens.css's custom properties, the chart-table pass's own
+   palette, the same layering choice C1's home.css already established:
+   this file re-scopes the shared utility classes (.muted, .mono, .error) it
+   still reaches for under .instr, and coexists with node.css's pass-1 classes
+   (.related-list, .history-entry, and the rest RelationshipHub/HistorySection
+   still paint with) rather than replacing them wholesale. */
+
+.instr .muted {
+  color: var(--ink-2);
+}
+
+.instr .mono {
+  font-family: var(--font-mono);
+}
+
+.instr .error {
+  color: var(--error);
+}
+
+/* ---------- Header: the chain (task 17, node page rebuild; node header pass,
+   2026-08-30) ----------
+   docs/plans/2026-08-09-console-v2-mocks.html:495-519 was the pixel spec for
+   the crumb chain and the ref line; the node header pass reshaped what sits
+   between and beneath them off JC's review of the Lantern screenshots (the
+   session's own mock was built from Lantern's real state): a kind line above
+   the title (solid kind pill, hero-size state chip, gate ticks, the
+   drift/held/grain chips), the title alone, the ref line, the children's mix
+   on an epic or a feature, then ONE label-over-value facts block under ONE
+   divider, the header's only rule. Values ride this codebase's own tokens,
+   the same repaint-not-copy convention tokens.css's header comment states.
+   .instr-header keeps its class (tests scope queries by it). */
+
+.instr-header {
+  padding-bottom: 0;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  margin-bottom: var(--space-7);
+}
+
+.crumbs a {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.crumbs a:hover {
+  color: var(--heading);
+}
+
+.crumbs .sep {
+  color: var(--ink-3);
+}
+
+/* The kind line: the noun on a solid pill in the heading ink, so it anchors
+   the line and the tinted chip beside it reads as its state. The pill sets
+   in the display face, letterspaced, the one place the console puts a word
+   in the heading ink on a fill; the paper token is its text, so the pair
+   inverts cleanly under the dark scheme. */
+.kind-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-5);
+}
+
+.kind-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--heading);
+  border-radius: 999px;
+  padding: 5px 12px 5px 13px;
+  white-space: nowrap;
+}
+
+/* The hero chip: Chip's own pill a step up (Chip's size prop), so the page's
+   state outranks the 11px chips on the crumbs at a glance. */
+.chip.chip-hero {
+  font-size: 12.5px;
+  padding: 5px 12px 5px 10px;
+  gap: 7px;
+}
+
+.gate-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin-left: var(--space-2);
+}
+
+.gate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.gate-chip .g {
+  font-size: 11px;
+}
+
+.gate-chip .g.pass {
+  color: var(--st-done-t);
+}
+
+.gate-chip .g.pend {
+  color: var(--st-in_review-t);
+}
+
+.node-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border-bottom: none;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.instr-blocked {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* The mono reference line: CopyRef's own quiet register (tokens.css's
+   .copy-ref) already supplies the mono text, the copy icon, and their hover
+   color; this rule only spaces the line off from what follows. */
+.refline {
+  margin-bottom: var(--space-8);
+}
+
+/* The children's mix: the state bar at a fixed width with its count caption
+   beside it, between the ref line and the facts. */
+.node-mix {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: calc(-1 * var(--space-2)) 0 var(--space-8);
+}
+
+.node-mix-caption {
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* The facts block: label over value, wrapping, one hairline under the whole
+   block. */
+.node-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-7) 34px;
+  margin: 0;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.node-facts .fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.node-facts dt {
+  font-family: var(--font-body);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.node-facts dd {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.node-facts dd .mono {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+.node-facts dd b.mono {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.node-facts dd a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.node-facts .dotsep {
+  color: var(--ink-3);
+}
+
+.node-facts abbr[title] {
+  text-decoration: none;
+  cursor: help;
+}
+
+/* Links out of the header: a console-internal link (a found-in target, a
+   question's source) keeps the quiet dotted underline; a link that leaves
+   the console (a PR, a branch, a commit on the origin host) carries a small
+   outbound glyph so the reader knows before clicking. Neither takes the
+   accent, which stays reserved for what needs the human. */
+.node-facts a.ext,
+.node-facts .instr-source-link {
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ink-3);
+}
+
+.node-facts a.ext::after {
+  content: "\2197";
+  font-family: var(--font-body);
+  font-size: 10px;
+  margin-left: 3px;
+  color: var(--ink-3);
+}
+
+.node-facts a.ext:hover,
+.node-facts .instr-source-link:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ---------- Attention stack: every ask and warning, all at once ----------
+   docs/plans/2026-08-09-console-v2-mocks.html:521-536: replaces the earlier
+   pass's single-trigger .instr-attn strip (ui-surface.md's amended
+   uniform-shell bullet, 2026-08-10 - "the attention surface stacks rather
+   than choosing"). .abox is the loud register (the accent left border, the
+   page's magenta CopyCmd); .abox.warn swaps to the in_review register for a
+   caution, unpushed_review among them, distinct from a decision. */
+
+.attn {
+  max-width: 880px;
+  display: grid;
+  gap: 10px;
+  margin: var(--space-8) 0 0;
+}
+
+.abox {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+
+.abox .kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.abox .why {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-bottom: 9px;
+}
+
+.abox .copy-cmd {
+  width: 100%;
+  margin: 0;
+}
+
+.abox.warn {
+  border-left-color: var(--st-in_review);
+}
+
+.abox.warn .kind {
+  color: var(--st-in_review-t);
+}
+
+/* ---------- Gate card ---------- */
+
+/* max-width added task 25 review fix (explore.css's .explore-detail lost its
+   own 720px pane cap, 2026-08-11): with nothing capping this card, its
+   header (.instr-gate-head, a plain flex row) and evidence list would
+   stretch to the pane's full fluid width while its own .criteria grid below
+   stayed pinned to 880px, leaving the card's chrome wider than its content -
+   an empty gap on the right under every header. 880px matches .criteria
+   exactly so a gate card with a per-criterion breakdown reads as one
+   consistent-width block, header to last row. */
+.instr-gate {
+  max-width: 880px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  margin-top: var(--space-8);
+  overflow: hidden;
+}
+
+.instr-gate-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 12px var(--space-8);
+  border-bottom: 1px solid var(--hair);
+  flex-wrap: wrap;
+}
+
+.instr-gate-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.instr-gate-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+  background: var(--recess);
+  border-radius: var(--radius-btn);
+  padding: 2px 7px;
+}
+
+/* "Green is quiet, amber is yours" (mock note 5, round 4). The mock varies
+   this line's color inline in both directions, slate for the pre-check case
+   (mock:427) and the in_review amber when a criterion is waiting on the human
+   (mock:468); rendering both in the same bold ink made the quiet case shout
+   and the loud one whisper. The state comes off gateDisplay's own dotStatus,
+   which the dot beside it already consumes, so the line and the dot cannot
+   disagree. Red for a failed gate is the one case the mock never draws: it
+   follows from the same rule, since a failure is the other thing on this page
+   that is not quiet. */
+.instr-gate-state {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-2);
+}
+
+.instr-gate-state[data-state="in_review"] {
+  color: var(--st-in_review);
+}
+
+.instr-gate-state[data-state="blocked"] {
+  color: var(--st-blocked);
+}
+
+.instr-gate-against,
+.instr-gate-evidence,
+.instr-gate-evidence-list {
+  padding: var(--space-5) var(--space-8);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  font-size: 12px;
+}
+
+.instr-gate-against {
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-gate-against:last-child {
+  border-bottom: none;
+}
+
+.instr-gate-against .mono {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Contract criteria: the mock's own .crow grid (task 17) ----------
+   docs/plans/2026-08-09-console-v2-mocks.html:561-571: id, statement, binding
+   type, status chip, one row per criterion, replacing the earlier pass's
+   stacked .instr-crit row (dot + statement + a bindchip pill beneath it) now
+   that the compact grid carries the same five fields task-17-brief.md item 6
+   names and nothing more. */
+
+.criteria {
+  max-width: 880px;
+}
+
+.crow {
+  display: grid;
+  grid-template-columns: 44px 1fr 84px 130px;
+  gap: var(--space-6);
+  align-items: baseline;
+  /* Fix wave (task-17-review, minor): matches .instr-gate-head's own
+     horizontal padding (12px var(--space-8)) so a criterion row lines up
+     under its own card header instead of sitting --space-8 minus
+     --space-3 (10px) left of it. */
+  padding: 9px var(--space-8);
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+
+.crow:last-child {
+  border-bottom: none;
+}
+
+.crow .cid {
+  color: var(--ink-3);
+}
+
+.crow-statement {
+  display: block;
+}
+
+/* Fix wave (task-17-review, Critical finding 1): the per-criterion evidence
+   link, restored as the statement cell's own second line rather than a
+   sixth grid column - .instr-evid already supplies the color, the dotted
+   underline, and the wrap-anywhere rule; these two properties are the only
+   ones this context needs on top of it. */
+.crow-evid {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.crow .cty {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.crow .cst {
+  justify-self: end;
+}
+
+/* .instr-bindchip stays: AmendmentBody's own precondition rows still reach
+   for it (a staged operation's live validity word), even though the
+   criterion row above no longer does. */
+.instr-bindchip {
+  font-size: 11px;
+  color: var(--ink-2);
+  background: var(--recess);
+  border-radius: var(--radius-btn);
+  padding: 2px 7px;
+}
+
+.instr-evid {
+  font-size: 11px;
+  /* The chart-table mock reuses its own ready chip's text hex here verbatim
+     (mock:137 and mock:166, docs/plans/2026-07-23-console-chart-table-
+     mocks.html): evidence attached reads as the same affirmative register
+     as a passed/ready criterion. --st-ready-t carries that forward themed. */
+  color: var(--st-ready-t);
+  text-decoration: underline dotted;
+  /* The link shows the full verbatim ref (no ellipsis convention exists in
+     this codebase), so an arbitrary-shaped ref must wrap inside its row
+     rather than overflow it. */
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Eval contract error (never hide a malformed contract) ---------- */
+
+/* max-width added alongside .instr-gate above, same task 25 review fix: this
+   is the Contract tab's other card (the served {path, error} shown verbatim
+   when the contract fails to parse), rendered in .instr-gate's place rather
+   than beside it, so it takes the same 880px measure that register already
+   settled on rather than stretching to the bare pane's fluid width. */
+.instr-warning {
+  max-width: 880px;
+  margin-top: var(--space-8);
+  padding: var(--space-7) var(--space-8);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  background: var(--recess);
+}
+
+/* ---------- Provenance line ---------- */
+
+.instr-provline {
+  font-size: 12px;
+  color: var(--ink-2);
+  /* mock:174 */
+  margin-top: var(--space-6);
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.instr-provline .mono {
+  font-size: 11px;
+}
+
+/* Provenance is one line at caption weight (round-4 note 3), so its PR link
+   out reads as a quiet link the same way the relationship hub's source path
+   does: the mock's own marker for one is a dotted underline (.evid, mock:166),
+   never a second ink. */
+.instr-provline a {
+  color: var(--ink-2);
+  text-decoration: underline dotted;
+}
+
+.instr-provline a:hover {
+  color: var(--ink);
+}
+
+/* ---------- Integrity notes (attestations, policy violations) ---------- */
+
+.instr-integrity {
+  margin-top: var(--space-8);
+}
+
+.instr-integrity-list {
+  list-style: none;
+  margin: var(--space-3) 0 var(--space-7);
+  padding: 0;
+}
+
+.instr-integrity-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-integrity-row:last-child {
+  border-bottom: none;
+}
+
+/* A gate's name reads at the mock's .gname weight (mock:154), not in mono:
+   it is a name, the same one GateCard's own header stopped spelling in mono. */
+.instr-integrity-name {
+  font-weight: 600;
+}
+
+.integrity-at {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Task ledger ---------- */
+
+/* Every node-page section now rides this frame (InstrSection), not only the
+   task ledger: the mock's .flist/.fh at 26px + ~35px, in place of the pass-1
+   <h2>'s 36px margin over a 16.8px sentence-case line, which cost ~60px of
+   chrome per section for the same job. The margin lives on the section so the
+   head itself can be a plain h2 with the shell's own margins reset. */
+.instr-section {
+  margin-top: 26px;
+}
+
+.instr-fh {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 650;
+  /* Breathing room between the head's rule and the content beneath it (JC's
+     field note, 2026-08-30: "it's jammed up"). The row variant below owns
+     the same gap when a lead shares the line. */
+  margin: 0 0 14px;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-fh-caption {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+/* The caption register: a quiet line of facts, a bold say and mono values.
+   The header's own captions (source, change type and surface, basis) moved
+   into its facts block in the node header pass (2026-08-30); the amendment
+   page's provenance lines (AmendmentBody's DesignDocLine and
+   AmendmentSourceLine: triggered_by, amends_design, the intake source) are
+   the register's remaining tenants, so the rule stays. */
+.instr-dmeta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.instr-dmeta .mono {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* Text for assistive tech only: the outbound cue on a link that leaves the
+   console (the header's a.ext carries a glyph in ::after, which a screen
+   reader never hears). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The head's lead row (InstrHead's lead slot, node header pass 2026-08-30):
+   the eyebrow and its companion on one line over one hairline; the h2 inside
+   gives its own hairline up to the row. The Spec section's "from <source>"
+   is the companion, the quiet dotted-underline link that used to sit in the
+   header, left-led like every other line on the page. */
+.instr-fh-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 14px;
+}
+
+.instr-fh-row .instr-fh {
+  padding-bottom: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.instr-source {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.instr-source .instr-source-link {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.instr-source .instr-source-link:hover {
+  color: var(--ink);
+}
+
+.instr-taskrow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-taskrow:last-child {
+  border-bottom: none;
+}
+
+.instr-taskrow-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* Ink, not the shell's steel blue. Every other row title in this pass sets
+   its own color (.instr-decomp-title, .explore-result-title, .related-title)
+   and this one did not, so a feature page's tasks were the only blue rows on
+   an otherwise quiet page. The mock's .frow .t is plain ink. */
+.instr-taskrow-body a {
+  color: var(--ink);
+}
+
+.instr-taskrow-body a:hover {
+  text-decoration: none;
+}
+
+/* The row's trailing address. It used to hold the id, back when a task had no
+   key of its own; a task is a folder node now, so the same slot holds the local
+   key segment and the rule is unchanged but for its name. */
+.instr-taskrow-key {
+  flex: none;
+  font-size: 11.5px;
+}
+
+/* ---------- Epic decomposition ---------- */
+
+.instr-decomp-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: var(--space-6) 0;
+}
+
+.instr-decomp-bar .state-bar {
+  flex: none;
+}
+
+.instr-decomp {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ONE LINE PER NODE: the mock's .frow, title leading and key pinned at the
+   margin where a human would copy it. This row used to stack the key, a
+   `change_type · source` line, and one line per surface path and module; all
+   of those read on the feature's own page instead. */
+.instr-decomp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-decomp-row:last-child {
+  border-bottom: none;
+}
+
+.instr-decomp-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.instr-decomp-title:hover {
+  text-decoration: none;
+}
+
+.instr-decomp-key {
+  flex: none;
+  font-size: 11.5px;
+}
+
+/* ---------- One-line facts that carry a move ---------- */
+
+/* One quiet caption, ~60px measured at the 856px content column, in place of
+   ~280px of generated boilerplate and three empty headings. Same register as
+   the header's dmeta, because that is what it is: a fact about the node, not
+   content. It wraps to a second row rather than truncating: a feature's path
+   and its spec command together outrun the column, and neither is worth
+   hiding to buy back one line.
+
+   .instr-drift is the second tenant of the same register: the active_basis
+   report a node page carries when a pin moved after approval (NodeDetail's
+   BasisDrift). It is the identical shape, a bold say, mono facts, and the
+   command that ends it, so it is the identical rules rather than a second set
+   of values. */
+.instr-unwritten,
+.instr-drift {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.instr-unwritten .mono,
+.instr-drift .mono {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.instr-unwritten-say,
+.instr-drift-say {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* The CopyCmds on the console that sit outside a human-ask context. Magenta is
+   the console's single loud ink and it means "this needs you" (the Global
+   Constraint), so the copy glyph goes quiet on both: the unwritten line's move
+   is the agent's, and the drift line's move is the human's but the loud slot on
+   a node page is the attention stack's alone (task 17; ui-surface.md's amended
+   uniform-shell bullet). The chip still copies; only the shout is dropped. */
+.instr-unwritten .copy-cmd-icon,
+.instr-drift .copy-cmd-icon {
+  color: var(--ink-2);
+}
+
+/* The one quiet line an absence gets when the absence is worth stating. */
+.instr-note {
+  margin: 20px 0 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.instr-note .mono {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* ---------- Expand-in-place affordance ---------- */
+
+/* The disclosure DecisionCard established, in the instrument's register:
+   the row it sits under already stated the true count, and the click needs
+   no fetch. */
+.instr-more {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 2px;
+  font-size: 12.5px;
+  font-family: var(--font-body);
+  color: var(--ink-2);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--hair);
+  cursor: pointer;
+}
+
+.instr-more:hover {
+  color: var(--ink);
+}
+
+/* ---------- The drift panel (JC's chip-to-panel ask, 2026-08-06) ---------- */
+
+/* The Drifted chip as a disclosure button: a bare wrapper that inherits the
+   title row's baseline so the Chip inside paints exactly as it did while
+   inert; the chevron rides beside it in the quiet ink. The button, not the
+   Chip span, owns the click, the tooltip, and aria-expanded. */
+.instr-drift-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.instr-drift-chip .chevron-glyph {
+  font-size: 10px;
+  color: var(--ink-2);
+}
+
+/* The panel itself adds no chrome of its own: each finding is one
+   .instr-drift row (the grammar the basis line set), so the panel only
+   spaces the stack and carries the two quiet extras, the uncovered lines
+   and the /drift footer link. */
+.instr-drift-uncovered {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.instr-drift-uncovered .instr-drift-say {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.instr-drift-more {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.instr-drift-more:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* ---------- Amendment operations (task 6) ---------- */
+
+/* Each staged operation and each of its preconditions reuses .instr-drift's
+   own row grammar (this file's own comment above it, at .instr-unwritten,
+   .instr-drift: "the identical shape ... so it is the identical rules
+   rather than a second set of values"): a bold word leading a flex row of
+   mono facts is this console's one grammar for "a fact worth a line, not a
+   chart", and a staged operation is exactly that. These two rules only
+   adjust spacing for the nested context; instr-drift's own colors and
+   layout carry over unchanged. */
+.instr-amendop {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.instr-amendop:last-child {
+  border-bottom: none;
+}
+
+.instr-amendop-head {
+  margin-top: 0;
+}
+
+.instr-amendop-detail,
+.instr-amendop-reason,
+.instr-amendop-superseded,
+.instr-amendop-source {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.instr-amendop-detail {
+  overflow-wrap: anywhere;
+}
+
+.instr-amendop-detail > p {
+  margin: 0;
+}
+
+.instr-amendop-detail > p + p {
+  margin-top: var(--space-4);
+}
+
+/* .instr-amendop-defect (#57): source_missing and shape_error, the two
+   per-op hand-edit-defect markers, reuse .instr-amendop-reason's own spacing
+   and size (the identical "a fact worth its own quiet line" grammar) but
+   paint through .instr .error's existing warning ink (line 19 of this file)
+   rather than .instr-amendop-reason's muted ink-2: a defect a human has to
+   fix before approve will accept the batch is not the same register as a
+   cancel's own plain reason text. */
+.instr-amendop-defect {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+}
+
+.instr-amendop-pre {
+  list-style: none;
+  margin: 4px 0 0 20px;
+  padding: 0;
+}
+
+.instr-amendop-pre .instr-drift {
+  margin-top: 6px;
+  font-size: 11.5px;
+}

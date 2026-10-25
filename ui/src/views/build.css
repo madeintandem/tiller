@@ -1,0 +1,458 @@
+/* Build: the epic-selection board (console v2 phase 3, task-13-brief.md),
+   replacing the Phase 1 stub wholesale. Pixel spec: docs/plans/2026-08-09-
+   console-v2-mocks.html's BUILD banner (~line 315) and its markup
+   (~line 728), adapted rather than copied verbatim in two places -
+
+     - the mock paints column/mixbar/dot color through its own `.s-<state>`
+       classes, which set a `--sc`/`--sct` custom property pair the real app
+       never ships (tokens.css has no such utility layer); Build.tsx paints
+       those spots with lib/states.ts's statusColor/statusTextColor inline
+       instead, the same runtime bridge every other real view already uses
+       (StateDot, StateBar, Chip).
+     - the epic row's mix bar reuses the real StateBar component rather than
+       hand-drawn width-percentage spans, so .mixbar below only supplies the
+       spacing/opacity context StateBar's own .state-bar does not carry on
+       its own.
+
+   .build-page survives as the error shell Build.tsx renders when a required
+   read fails. Initial loading uses the shared PageLoading shell, with the
+   same default gutter every other simple page state uses (26px/28px top/
+   sides, 56px bottom). */
+
+.build-page {
+  padding: 26px 28px 56px;
+}
+
+.build {
+  display: flex;
+  /* 52px promoted to --topbar-h (tokens.css's carryover section, phase-4
+     task 16): the same literal, now named once and consumed here and by
+     explore.css rather than carried as a second hardcoded copy. */
+  height: calc(100vh - var(--topbar-h));
+  overflow: hidden;
+}
+
+/* ---------- The epic panel ---------- */
+
+.epic-panel {
+  width: 264px;
+  flex: none;
+  border-right: 1px solid var(--hair);
+  background: var(--paper);
+  padding: 18px 14px;
+  overflow-y: auto;
+  transition:
+    width 0.18s ease,
+    padding 0.18s ease;
+}
+
+.build.panel-closed .epic-panel {
+  width: 0;
+  padding: 18px 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.epic-panel .sect-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.epic-panel .sect-head .spacer {
+  flex: 1;
+}
+
+.panel-count {
+  font-size: 10px;
+}
+
+/* .epic-row is the row's own wrapping div (not the button - review finding
+   3), so the toggle and the mix bar below can be true siblings rather than
+   the bar living inside the button's content model. Hovering anywhere in
+   the row, including over the bar, still lights the border: :hover on an
+   ancestor already matches while the pointer is over any descendant, native
+   CSS behavior, no :has() needed for that part. */
+.epic-row {
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  padding: 9px 10px;
+  margin-bottom: 4px;
+}
+
+/* Browsers without :has() support keep the plain hover border rather than
+   losing the hover cue on every epic row. */
+.epic-row:hover {
+  border-color: var(--hair);
+}
+
+.epic-row.on {
+  background: var(--panel);
+  border-color: var(--hair);
+}
+
+/* The actual interactive element: a plain button reset (RailSection's own
+   button-shaped-element-resets-itself precedent) so it reads as the row's
+   click target without visually competing with .epic-row's own chrome. */
+.epic-row-toggle {
+  width: 100%;
+  display: block;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.epic-row-toggle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.epic-row .er-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.epic-row .er-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.epic-row.on .er-name {
+  color: var(--heading);
+}
+
+.epic-row .er-n {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.epic-row .er-tick {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--hair);
+  border-radius: 3px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: transparent;
+}
+
+.epic-row.on .er-tick {
+  background: var(--olive);
+  border-color: var(--olive);
+  color: var(--paper);
+}
+
+.epic-row .mixbar {
+  display: block;
+  margin-top: 7px;
+  opacity: 0.55;
+}
+
+.epic-row.on .mixbar {
+  opacity: 1;
+}
+
+/* Keyless-epic cosmetics (fix wave, task-22-brief.md item 4a), gated behind
+   @supports selector(:has(...)) rather than applied unconditionally - this
+   file's first use of :has(), and task-22 review Important finding 1 caught
+   the first pass shipping it unscoped: `.epic-row:not(:has(...)):hover`
+   rewrote the base hover selector directly, so a browser without :has()
+   support drops the WHOLE selector as invalid and loses the hover cue on
+   EVERY epic row, keyless or not, not just the one case this feature
+   targets. The fix takes the same feature-detected-with-plain-fallback
+   shape tokens.css already established for light-dark(). Both declarations
+   below are pure overrides of the plain rules above - additive, so a
+   supporting browser gets the refined behavior and a non-supporting one is
+   left with exactly the plain fallback, never a broken intermediate state.
+   A keyless epic's toggle disables itself (EpicRow's own `selectable`
+   guard, an older server with no key on this epic) and dims to the
+   button's own 0.5 opacity on its own; the mix bar sits OUTSIDE that
+   button now (the sibling split, comment above), so it stopped inheriting
+   that dim and sat at the ordinary off-row 0.55 instead, and the row's
+   hover border above lit up unconditionally, with nothing to click. :has()
+   reaches the disabled toggle from the row wrapper both need it from. */
+@supports selector(:has(a)) {
+  .epic-row:has(.epic-row-toggle:disabled):hover {
+    border-color: transparent;
+  }
+
+  .epic-row:has(.epic-row-toggle:disabled) .mixbar {
+    opacity: 0.5;
+  }
+}
+
+.panel-note {
+  font-size: 11px;
+  color: var(--ink-3);
+  padding: 8px 4px 0;
+}
+
+/* ---------- The board bar and its columns ---------- */
+
+.board-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.board-empty {
+  padding: 20px;
+}
+
+.board {
+  --board-col-min: 232px;
+  --board-gap: 12px;
+
+  flex: 1;
+  min-height: 0;
+  margin-top: 16px;
+  padding: 0 20px 24px;
+}
+
+/* A column is its head in the heads row over its body in the scrolling row
+   (components/board.css), one recessed shape split across the two. */
+.col {
+  background: var(--recess);
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  padding: 0 10px 10px;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.col-head {
+  background: var(--recess);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 14px 10px;
+}
+
+.col-head .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.col-head .cn {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.col-head .cc {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+/* ---------- One board card ---------- */
+
+.fcard {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  position: relative;
+  cursor: pointer;
+}
+
+.fcard.needs-you {
+  border-left: 3px solid var(--accent);
+}
+
+.fcard .f-epic {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--olive);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fcard .f-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.3;
+  color: var(--heading);
+}
+
+.fcard .f-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.contributors-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: var(--recess);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.epic-contributors {
+  color: var(--ink-3);
+  font-size: 10.5px;
+  line-height: 1.5;
+  padding: 0 12px 6px;
+}
+
+.taskcount {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.fcard .f-meta > .feature-work-items {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  text-decoration: none;
+}
+
+.fcard .f-meta > .feature-work-items:hover {
+  color: var(--ink-2);
+}
+
+.fcard .f-meta > .feature-work-items svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.flag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-btn);
+  padding: 1px 6px;
+}
+
+.flag.blocked {
+  color: var(--st-blocked-t);
+  background: color-mix(in srgb, var(--st-blocked) var(--tint), var(--panel));
+}
+
+.flag.drift {
+  color: var(--ink-2);
+  background: var(--recess);
+  border: 1px solid var(--hair);
+}
+
+.flag.ask {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.f-expand {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  font: inherit;
+  background: none;
+  border: 0;
+  color: var(--ink-3);
+  font-size: 11px;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.f-expand:hover {
+  color: var(--heading);
+}
+
+.fcard.open .f-expand {
+  transform: rotate(180deg);
+}
+
+.tasklist {
+  margin-top: 9px;
+  border-top: 1px solid var(--hair);
+  padding-top: 7px;
+  display: flex;
+  flex-direction: column;
+}
+
+.trow {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 3.5px 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* The title takes the row's slack and wraps; the status chip keeps its word
+   whole at the trailing edge. */
+.trow-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trow .chip {
+  flex: 0 0 auto;
+}
+
+.trow:hover {
+  color: var(--heading);
+}
+
+/* Stack the sidebar on narrow screens while retaining both scroll modes. */
+@media (max-width: 48rem) {
+  .build {
+    flex-direction: column;
+  }
+
+  .epic-panel {
+    width: auto;
+    max-height: 30vh;
+    border-right: none;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .build.panel-closed .epic-panel {
+    max-height: 0;
+    padding: 0;
+    border-bottom: none;
+  }
+}

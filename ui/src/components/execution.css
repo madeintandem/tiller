@@ -1,0 +1,11 @@
+/* Home's Branches tab (ExecutionSources): the explanatory lines, then an
+   eyebrow over each list, spaced the way the pulse columns space theirs. */
+.execution-sources { font-size: 0.8rem; }
+.execution-sources p { margin: 0 0 0.5rem; }
+.execution-sources > section { margin-top: 24px; }
+.execution-sources .eyebrow-row { margin-bottom: 10px; }
+.execution-sources ul { margin: 0; padding-left: 1.25rem; }
+.execution-sources li { margin: 0.5rem 0; }
+.execution-provenance { overflow-wrap: anywhere; font-size: 0.8rem; }
+.instr > .execution-provenance { padding: 0.75rem 0; }
+.execution-boundary { margin: 0 0 0.75rem; font-size: 0.8rem; }

@@ -1,0 +1,46 @@
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-06-27T14:30:00Z
+        against:
+            kind: git_commit
+            value: git:abc1234
+            observed_at: 2026-06-27T14:30:00Z
+        config: sha256:64066b93b431fa67d60bf47338d12217ca7d55c29b96660dbe5af272c516e17d
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-abc1234-out-<empty-output-sha256>.txt
+    evals:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-06-27T14:30:00Z
+        against:
+            kind: git_commit
+            value: git:abc1234
+            observed_at: 2026-06-27T14:30:00Z
+        criteria:
+            C1:
+                status: pass
+                config: sha256:9fd32564716de7e7d6c2f6be82460f3530ff1054990015908e567519c9108b82
+                evidence:
+                    - kind: command_output
+                      ref: artifacts/tiller/gates/eval-C1-abc1234-out-<empty-output-sha256>.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-06-27T14:30:00Z
+        against:
+            kind: git_commit
+            value: git:abc1234
+            observed_at: 2026-06-27T14:30:00Z
+        config: sha256:64066b93b431fa67d60bf47338d12217ca7d55c29b96660dbe5af272c516e17d
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-abc1234-out-<empty-output-sha256>.txt

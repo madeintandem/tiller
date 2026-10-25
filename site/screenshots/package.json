@@ -1,0 +1,14 @@
+{
+  "name": "tiller-site-screenshots",
+  "private": true,
+  "description": "Builds the Acme stand-in project and shoots the documentation screenshots. Separate from site/ so the site's own npm ci never installs a browser.",
+  "type": "module",
+  "scripts": {
+    "project": "bash ./acme.sh",
+    "shoot": "node ./shoot.mjs",
+    "test": "bash ./acme_test.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

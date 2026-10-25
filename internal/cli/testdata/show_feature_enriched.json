@@ -1,0 +1,82 @@
+{
+  "ok": true,
+  "command": "show",
+  "data": {
+    "noun": "feature",
+    "id": "F-xxxxxx",
+    "key": "form-engine/nrca-form-loading",
+    "title": "NRCA form loading",
+    "status": "active",
+    "contributors": [],
+    "change_type": "create",
+    "epic": "form-engine",
+    "review_grain": "task",
+    "review_grain_source": "default",
+    "gates": {
+      "build": {
+        "required": true,
+        "kind": "command",
+        "status": "pass",
+        "run_by": "jc",
+        "run_at": "2026-06-27T12:00:00Z",
+        "against": "git:abc1234",
+        "evidence": [
+          {
+            "kind": "command_output",
+            "ref": "artifacts/tiller/gates/build-abc1234.txt"
+          }
+        ]
+      },
+      "evals": {
+        "required": true,
+        "kind": "command",
+        "status": "pending",
+        "run_by": "jc",
+        "run_at": "2026-06-27T12:00:00Z",
+        "against": "git:abc1234",
+        "criteria": {
+          "C1": {
+            "status": "pass"
+          },
+          "C2": {
+            "status": "needs_attestation",
+            "evidence": [
+              {
+                "kind": "rubric_output",
+                "ref": "artifacts/tiller/evals/F-xxxxxx-C2.json"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "attestations": [
+      {
+        "id": "AT-xxxxxx",
+        "target_kind": "criterion",
+        "target_id": "C1",
+        "status": "pass",
+        "by": "jc",
+        "at": "2026-06-27T12:00:00Z"
+      }
+    ],
+    "policy_violations": [
+      {
+        "gate": "evals",
+        "observed": "git:abc1234",
+        "status": "pending",
+        "evidence_ref": "artifacts/tiller/evals/F-xxxxxx-C2.json"
+      }
+    ],
+    "accepted_against": {
+      "spec": "git:5pec0aa",
+      "eval": "git:e7a10aa"
+    },
+    "verified_against": {
+      "spec": "git:5pec1bb",
+      "eval": "git:e7a11bb",
+      "surfaces": []
+    },
+    "next_owner": "human"
+  }
+}

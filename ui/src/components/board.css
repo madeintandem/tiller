@@ -1,0 +1,108 @@
+.board-bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.panel-toggle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.panel-toggle:hover {
+  color: var(--heading);
+}
+
+.board-bar .showing,
+.board-bar-notice {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.board-scroll-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.board-scroll-control > span {
+  margin-right: 4px;
+}
+
+.board-scroll-control .segmented-control button:hover {
+  color: var(--heading);
+}
+
+/* The board (components/BoardGrid.tsx) is one horizontal scroller holding
+   two rows: the column heads, which never scroll vertically, over the column
+   bodies, which do. Each page sets the column floor and gap; both rows share
+   the template and are as wide as the columns need, so they pan together.
+   No head sticks inside a scroller: Safari composited sticky heads a few
+   pixels off their layout position, showing scrolled cards above them. */
+.board-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.board-heads,
+.board-body {
+  display: grid;
+  grid-template-columns: repeat(var(--board-columns), minmax(var(--board-col-min), 1fr));
+  column-gap: var(--board-gap);
+  min-width: calc(var(--board-columns) * var(--board-col-min) + (var(--board-columns) - 1) * var(--board-gap));
+}
+
+/* The heads paint above the body, so nothing the body draws at its top edge
+   can cover them. */
+.board-heads {
+  flex: none;
+  position: relative;
+  z-index: 1;
+}
+
+.board-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Board mode scrolls the body as one. Its single row stretches every column
+   to the body's height or the tallest column, whichever is taller. */
+.board-scroll[data-scroll-mode="board"] > .board-body {
+  grid-template-rows: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* A column's own min-height: 0 would let the row settle at the body's height
+   and leave short columns ending mid-scroll; content-based sizing lets the
+   row grow to the tallest column. */
+.board-scroll[data-scroll-mode="board"] > .board-body > .board-column {
+  min-height: auto;
+}
+
+.board-scroll[data-scroll-mode="columns"] > .board-body {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.board-scroll[data-scroll-mode="columns"] > .board-body > .board-column {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}

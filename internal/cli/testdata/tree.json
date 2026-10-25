@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "command": "tree",
+  "data": {
+    "project": "test",
+    "nodes": [
+      {
+        "noun": "epic",
+        "id": "E-xxxxxx",
+        "key": "foundation",
+        "title": "Foundation",
+        "status": "draft",
+        "contributors": [],
+        "activity": "idle",
+        "path": ".tiller/epics/foundation/epic.md",
+        "files": [
+          ".tiller/epics/foundation/epic.md",
+          ".tiller/epics/foundation/epic.yml"
+        ],
+        "children": [
+          {
+            "noun": "feature",
+            "id": "F-xxxxxx",
+            "key": "foundation/authn",
+            "title": "Authentication foundation",
+            "status": "draft",
+            "contributors": [],
+            "path": ".tiller/epics/foundation/features/authn/feature.md",
+            "files": [
+              ".tiller/epics/foundation/features/authn/feature.md",
+              ".tiller/epics/foundation/features/authn/feature.yml"
+            ],
+            "children": []
+          },
+          {
+            "noun": "feature",
+            "id": "F-xxxxxx",
+            "key": "foundation/db-core",
+            "title": "Database core",
+            "status": "draft",
+            "contributors": [],
+            "path": ".tiller/epics/foundation/features/db-core/feature.md",
+            "files": [
+              ".tiller/epics/foundation/features/db-core/feature.md",
+              ".tiller/epics/foundation/features/db-core/feature.yml",
+              ".tiller/epics/foundation/features/db-core/feature.eval.md"
+            ],
+            "children": [
+              {
+                "noun": "task",
+                "id": "T-xxxxxx",
+                "key": "foundation/db-core/define-the-schema",
+                "title": "Define the schema",
+                "status": "proposed",
+                "path": ".tiller/epics/foundation/features/db-core/tasks/define-the-schema/task.md",
+                "files": [
+                  ".tiller/epics/foundation/features/db-core/tasks/define-the-schema/task.md",
+                  ".tiller/epics/foundation/features/db-core/tasks/define-the-schema/task.yml"
+                ],
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

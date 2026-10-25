@@ -1,0 +1,181 @@
+/* The Report page's layout (Task 8): the header, the off-branch notice, the
+   KPI strip, and the chart grid. Chart cards and their marks are styled in
+   report/charts.css. Only tokens.css's existing custom properties are used,
+   so the console's Auto, Light, and Dark themes apply unchanged (D17).
+
+   The page reads as one calm column a client can take in top to bottom, so
+   it is capped and centered rather than running the full window the
+   working lenses use. The KPI strip is one band divided by hairlines rather
+   than five separate cards, so the figures read as a single summary line
+   above the chart cards. */
+
+.report-page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 26px 28px 56px;
+}
+
+/* ---------- Header ---------- */
+
+.report-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.report-head h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--heading);
+  margin: 0 0 4px;
+}
+
+.report-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.report-asof {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Off-branch notice (D15) ---------- */
+
+/* The console's amber (in_review) on its own tint: a caution about the
+   numbers, never a block in front of them. */
+.report-notice {
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--st-in_review);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--st-in_review) var(--tint), var(--panel));
+  color: var(--ink);
+}
+
+/* ---------- KPI strip (D13) ---------- */
+
+.report-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0 0 16px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+}
+
+.report-kpi {
+  padding: 16px 18px;
+  min-width: 0;
+}
+
+.report-kpi + .report-kpi {
+  border-left: 1px solid var(--hair);
+}
+
+.report-kpi dt {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.report-kpi dd {
+  margin: 0;
+}
+
+.report-kpi-value {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.report-kpi-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--heading);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "of 8" sits beside the count it qualifies, a step quieter. */
+.report-kpi-of {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+/* A placeholder ("Not yet") is not a figure, so it never wears the
+   figure's weight. */
+.report-kpi-value.is-muted .report-kpi-number {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: var(--ink-3);
+}
+
+.report-kpi-value .report-sparkline {
+  margin-bottom: 5px;
+}
+
+.report-kpi-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Chart grid (D12 layout) ---------- */
+
+/* Burn-up, lead and cycle, and epic progress span the row; throughput and
+   bugs share one. */
+.report-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.report-wide {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* build.css's narrow breakpoint: every grid collapses to one column. */
+@media (max-width: 48rem) {
+  .report-page {
+    padding: 20px 16px 48px;
+  }
+
+  .report-head h1 {
+    font-size: 24px;
+  }
+
+  .report-kpis,
+  .report-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-kpi {
+    padding: 12px 16px;
+  }
+
+  .report-kpi + .report-kpi {
+    border-left: none;
+    border-top: 1px solid var(--hair);
+  }
+}

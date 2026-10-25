@@ -1,0 +1,44 @@
+name: Bug report
+description: Something tiller did that it should not have, or did not do that it should have.
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: tiller version
+      description: Output of `tiller --version`.
+      placeholder: v0.9.4
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and arch
+      placeholder: macOS 15 arm64, Ubuntu 24.04 amd64
+    validations:
+      required: true
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness, if an agent was driving
+      options:
+        - Not relevant, I ran the command myself
+        - Claude Code
+        - Codex
+        - Other (say which in the description)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command you ran, what tiller printed, and what you expected instead. Paste output as text, not screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The smallest sequence of tiller commands that shows it, or the shape of the `.tiller/` tree involved. `tiller status --json` output helps when state matters.
+    validations:
+      required: false
