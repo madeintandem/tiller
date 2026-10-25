@@ -2,7 +2,7 @@
 
 The important decisions and completed work from Tiller's first specifications on June 20, 2026 through local 0.21.2 distribution on October 25. The latest authorized local installation is 0.21.2; the latest published release remains v0.11.3 from September 8. This is not a task queue or a replacement for the current specs. [Build status](plans/STATUS.md) names what ships and what remains open; [the five specs](spec/) own the current contracts.
 
-This record replaces completed implementation plans, review transcripts, and repeated change histories inside the specs. It preserves decisions that explain the current design, not every fix, test run, or release stamp. Original records remain in git; [Retired records](#retired-records) explains how to recover them.
+This record replaces completed implementation plans, review transcripts, and repeated change histories inside the specs. It preserves decisions that explain the current design, not every fix, test run, or release stamp. [Retired records](#retired-records) explains where the originals went.
 
 ## October 25 cancel a question
 
@@ -19,7 +19,7 @@ Settled decisions:
 - **Re-asking mints a new question.** `add question` skips cancelled entries when it deduplicates by statement, notes `re-asks cancelled <Q-id>`, and the amendment `add-question` operation follows the same path. Cancel, link, and unlink are not amendment operations.
 - **Console.** Explore's Questions pane gains a fixed Cancelled tab (shown at zero) and cancelled cards show the reason; open cards and the question page carry copyable answer, cancel, and per-target unlink commands. `/api/ls` and the node response serve `cancel_reason`.
 
-Verification: the Go suite across all packages, the console suite (90 files, 1,484 tests), lint, and the console and site builds passed on the branch tip. The retired [design](https://github.com/madeintandem/tiller/blob/be506cb8/docs/plans/2026-10-25-cancel-question-design.md) and [build plan](https://github.com/madeintandem/tiller/blob/16d9fad6/docs/plans/2026-10-25-cancel-question-implementation.md) remain in git at those commits.
+Verification: the Go suite across all packages, the console suite (90 files, 1,484 tests), lint, and the console and site builds passed on the branch tip. The design and build plan were retired once built.
 
 ## October 22 code-review remediation
 
@@ -278,7 +278,7 @@ Managed projects keep schema 10 and their generation until refreshed: `tiller up
 
 ## October 19 field issues 146 to 150
 
-**Shipped in local 0.19.3.** A teammate's field run raised five issues, settled together in [the plan](plans/2026-10-19-adayag-field-issues-plan.md). Schema moves to **11** and orientation generation to **53**.
+**Shipped in local 0.19.3.** A teammate's field run raised five issues, settled together in [the plan](plans/2026-10-19-field-run-issues-plan.md). Schema moves to **11** and orientation generation to **53**.
 
 - **A started task may add an edge to a done task (#148).** A dependency edge onto a done prerequisite no longer refuses once the dependent has started, and the refusal that remains never names an amendment.
 - **A task keeps the grain it started under (#146).** `start` records `started_grain` in `task.yml`. A task started at task grain under a feature that later went coarse takes its own PR or review ref and crosses on its own merge, and the aggregate never absorbs it. Readout lists such tasks as `grain_notes`, `configure` prints a commit note, and the submit and start refusals say the task started at task grain. Schema 11 is the stamp-only migration for the field.
@@ -366,7 +366,7 @@ Managed projects were not refreshed.
 
 ## October 12 concurrent generation read
 
-**Source only.** [Issue #151](https://github.com/madeintandem/tiller/issues/151) came from one full-suite failure during the v0.18.4 release checks. A concurrent `tiller add` was refused with an empty reason: "generation changed while it was opened". Reads take `.tiller/.cache/generation` without the mutation lock. When another writer atomically replaced that file between the reader's lstat and open, the anchored walk's identity check reported the change under `ErrUnsafe`, the same class as symlink substitution. The refusal was right; its reason was not.
+**Source only.** Issue #151 came from one full-suite failure during the v0.18.4 release checks. A concurrent `tiller add` was refused with an empty reason: "generation changed while it was opened". Reads take `.tiller/.cache/generation` without the mutation lock. When another writer atomically replaced that file between the reader's lstat and open, the anchored walk's identity check reported the change under `ErrUnsafe`, the same class as symlink substitution. The refusal was right; its reason was not.
 
 `rootpath` now marks a regular leaf replaced by another regular file as `ErrChanged`, which also still matches `ErrUnsafe` and keeps the same message. A symlink at the leaf is never `ErrChanged`. The lock-free generation read classifies `ErrChanged` as `mutation_stale` and says a retry is safe. The generation read under the lock is unchanged: there a replacement would not come from Tiller.
 
@@ -374,7 +374,7 @@ Deterministic tests reproduce the replace through the reader's open seam: a rena
 
 ## v0.18.4 publication
 
-**October 12, published release.** The annotated tag `v0.18.4` points at commit `85d0dd10c93498a969598587ce6bb4d8d29ba730`. The release workflow ran the suite and GoReleaser, which published [v0.18.4](https://github.com/madeintandem/tiller/releases/tag/v0.18.4) as the latest release. It has four archives (macOS and Linux, amd64 and arm64) and `checksums.txt`. The workflow also updated `Casks/tiller.rb` in the tap to 0.18.4. This is the first published release since v0.11.3. Its notes cover everything since that tag. The repository remains private, so anonymous installation is still unavailable.
+**October 12, published release.** The annotated tag `v0.18.4` points at commit `85d0dd10c93498a969598587ce6bb4d8d29ba730`. The release workflow ran the suite and GoReleaser, which published v0.18.4 as the latest release. It has four archives (macOS and Linux, amd64 and arm64) and `checksums.txt`. The workflow also updated `Casks/tiller.rb` in the tap to 0.18.4. This is the first published release since v0.11.3. Its notes cover everything since that tag. The repository remains private, so anonymous installation is still unavailable.
 
 Release checks before the tag:
 - The release Quickstart completed end to end with the installed 0.18.4 binary. The embedded console served its status, tree, and page routes.
@@ -396,7 +396,7 @@ The uncached Go suite, lint, doc-version and client-privacy checks, and the site
 
 ## October 12 specced-feature re-validation
 
-**Source only.** [Issue #145, specced features never re-validated](https://github.com/madeintandem/tiller/issues/145), came from an Acme specify batch whose agents edited specced features and read `spec feature`'s "already specced (no change)" as proof the edits were valid. One agent swapped a task's spec for a stub and got the same answer. Validation ran only on the draft to specced move, and the plan gate recorded the basis without validating, so a contract emptied after spec was approved and pinned while `readout specify` reported "Contracts valid: 0 of 1".
+**Source only.** Issue #145, specced features never re-validated, came from an Acme specify batch whose agents edited specced features and read `spec feature`'s "already specced (no change)" as proof the edits were valid. One agent swapped a task's spec for a stub and got the same answer. Validation ran only on the draft to specced move, and the plan gate recorded the basis without validating, so a contract emptied after spec was approved and pinned while `readout specify` reported "Contracts valid: 0 of 1".
 
 Re-running `spec feature` on a specced feature now runs the same stage-2 validation: a passing output keeps the no-change answer, and a failing one gets the first spec's refusals (exit 1 not written, exit 2 malformed) with the feature left specced. `approve feature` runs the same validation before any write. The blocked line for a specced feature says its specify output no longer passes rather than calling it unspecced. `--refresh-basis` on an approved feature is unchanged.
 
@@ -404,15 +404,15 @@ Lint and the full Go suite passed. On a disposable project the rebuilt binary re
 
 ## October 12 provenance citation fixes
 
-**Source only.** Both issues came from one Acme intake run that staged an 18-operation amendment. [Issue #143, multi-range citations](https://github.com/madeintandem/tiller/issues/143): the agent cited several ranges per operation (`review.md#L105-L134, #L136-L157`), which provenance rejected, so 13 operations lost their link to the feedback document. A citation may now list several ranges of one document after commas, with or without a repeated `#`; it links to the document once, anchored at its first range, and still inherits the intake revision pin. Citations spanning several documents stay unsupported. Because nothing edits a staged operation, `tiller amend` now warns, and `show amendment` marks `source_unresolved`, when a value written as a citation (a `.md` path with a `#` fragment) will not resolve. Free text stays silent. The intake skill states the accepted forms.
+**Source only.** Both issues came from one Acme intake run that staged an 18-operation amendment. Issue #143, multi-range citations: the agent cited several ranges per operation (`review.md#L105-L134, #L136-L157`), which provenance rejected, so 13 operations lost their link to the feedback document. A citation may now list several ranges of one document after commas, with or without a repeated `#`; it links to the document once, anchored at its first range, and still inherits the intake revision pin. Citations spanning several documents stay unsupported. Because nothing edits a staged operation, `tiller amend` now warns, and `show amendment` marks `source_unresolved`, when a value written as a citation (a `.md` path with a `#` fragment) will not resolve. Free text stays silent. The intake skill states the accepted forms.
 
-[Issue #144, staged-key diagnostics](https://github.com/madeintandem/tiller/issues/144): the same amendment produced 13 `unresolved_amendment_endpoint` diagnostics because each new feature and question named a new epic or feature staged in the same batch. While an amendment is proposed and the staging operation has no application events, such an endpoint is now pending: still unresolved and never given a fabricated identity, but not diagnosed. An approved amendment, or an interrupted application, missing its creation event is still diagnosed.
+Issue #144, staged-key diagnostics: the same amendment produced 13 `unresolved_amendment_endpoint` diagnostics because each new feature and question named a new epic or feature staged in the same batch. While an amendment is proposed and the staging operation has no application events, such an endpoint is now pending: still unresolved and never given a fabricated identity, but not diagnosed. An approved amendment, or an interrupted application, missing its creation event is still diagnosed.
 
 On a disposable project the installed 0.18.3 binary reported 2 endpoint and 3 reference diagnostics for the same staged batch; the rebuilt binary reported only the one deliberately malformed citation. Lint and the full Go suite passed.
 
 ## Local 0.18.3 distribution
 
-**October 11, authorized local distribution.** Commit `5025f2bbff9c12be845ff2886cf975560bf4a5c7` stamps **0.18.3**, carrying [linked prose references](#october-11-linked-prose-references) from merged [PR #142, safe prose reference links](https://github.com/madeintandem/tiller/pull/142). Schema **10**, orientation generation **51**, and eleven embedded skills are unchanged from the merged source. The stamp was committed to local `main`, not pushed; no release tag or GitHub Release was created.
+**October 11, authorized local distribution.** Commit `5025f2bbff9c12be845ff2886cf975560bf4a5c7` stamps **0.18.3**, carrying [linked prose references](#october-11-linked-prose-references) from merged PR #142, safe prose reference links. Schema **10**, orientation generation **51**, and eleven embedded skills are unchanged from the merged source. The stamp was committed to local `main`, not pushed; no release tag or GitHub Release was created.
 
 The darwin/arm64 executable was built from a clean detached checkout of the stamp commit with `CGO_ENABLED=0`, `-trimpath`, and `-ldflags '-s -w'`. Build metadata records that commit and `vcs.modified=false`. The retained candidate at `~/.local/share/tiller/distributions/0.18.3-5025f2bb/tiller` and the installation at `~/.local/bin/tiller` share SHA-256 `5085f8dcdcd01814984c263fff8fe32d80dcb0ce7f52d15656dc9ef3164fbaf7`. The outgoing 0.18.2 executable is retained at `~/.local/share/tiller/previous/0.18.2-756881c-tiller`.
 
@@ -420,9 +420,9 @@ The full uncached Go suite, lint, stamp-sensitive upgrade and serve tests, stamp
 
 ## October 11 linked prose references
 
-**Source only.** [Issue #95, external references in prose](https://github.com/madeintandem/tiller/issues/95), now enables absolute HTTPS Markdown links in the shared console renderer, opening a new tab with `noopener noreferrer`, an outbound indicator, and an accessible new-tab cue. Other external schemes and arbitrary relative links stay inert. Markdown images now render only their alt text; baseline browser inspection confirmed that remote images previously loaded automatically. Raw HTML remains escaped. Relative Markdown-to-file resolution and Mermaid rendering are not introduced.
+**Source only.** Issue #95, external references in prose, now enables absolute HTTPS Markdown links in the shared console renderer, opening a new tab with `noopener noreferrer`, an outbound indicator, and an accessible new-tab cue. Other external schemes and arbitrary relative links stay inert. Markdown images now render only their alt text; baseline browser inspection confirmed that remote images previously loaded automatically. Raw HTML remains escaped. Relative Markdown-to-file resolution and Mermaid rendering are not introduced.
 
-[Issue #120, clickable work references](https://github.com/madeintandem/tiller/issues/120), was already implemented for standalone immutable epic, feature, and task IDs, including formatted text and single-ID code spans. The combined change preserves that mechanism and its boundary tests instead of adding another parser. Commands, fenced code, paths, and authored links remain unchanged.
+Issue #120, clickable work references, was already implemented for standalone immutable epic, feature, and task IDs, including formatted text and single-ID code spans. The combined change preserves that mechanism and its boundary tests instead of adding another parser. Commands, fenced code, paths, and authored links remain unchanged.
 
 Orientation generation 51 points to one shared external-reference writing rule in `tiller guide orient`; decompose, specify, capture, intake, and amend inherit it. First mentions link to the canonical home or relevant page only when the HTTPS URL came from inputs or a live fetch returned a page identifying the reference. Failed fetches, search snippets, and guessed homepages do not qualify. Missing verification leaves the plain name. Adoption remains a separate binary installation followed by `tiller upgrade --project-only` and reviewed guidance changes in each intended checkout.
 
@@ -430,7 +430,7 @@ The console's 1,360 tests, embedded asset build, full uncached Go suite, and lin
 
 ## October 11 relationship parsing reuse
 
-**Source only.** [Issue #124, repeated relationship corpus parsing](https://github.com/madeintandem/tiller/issues/124), remained open after the October 7 read optimizations because those reduced filesystem verification, history parsing, tree loads, and Git calls without reusing Markdown parsing. Profiling a disposable CLI-created project with six epics, 36 features, 288 tasks, 36 contracts, 331 creation events, and 415 unique Markdown documents totaling 2.67 MB identified Markdown mention parsing as the main avoidable cost. The isolated document parsing and projection phase allocated 44.8 MB per read before reuse.
+**Source only.** Issue #124, repeated relationship corpus parsing, remained open after the October 7 read optimizations because those reduced filesystem verification, history parsing, tree loads, and Git calls without reusing Markdown parsing. Profiling a disposable CLI-created project with six epics, 36 features, 288 tasks, 36 contracts, 331 creation events, and 415 unique Markdown documents totaling 2.67 MB identified Markdown mention parsing as the main avoidable cost. The isolated document parsing and projection phase allocated 44.8 MB per read before reuse.
 
 Relationship reads now reuse content-digest parsing facts, not filesystem bytes or a graph. Every request still performs the confined corpus walk and current-file checks before SHA-256 lookup. Mention results contain only IDs and source lines; contracts and parse failures remain independent of paths and current ownership, with mutable contract storage copied for each request. Paths, ownership, resolution, validation, diagnostics, history, and ordering are projected anew. Each cache uses least-recently-used eviction with 2,048 entries and an 8 MiB conservatively accounted retained-data budget; oversized inputs or outputs bypass retention. Parsing stays outside cache locks, so concurrent cold misses can duplicate work. There is no persistent index, watcher, new dependency, schema change, or orientation refresh.
 
@@ -489,7 +489,7 @@ Lint, the uncached Go suite, the stamp-sensitive upgrade and serve tests, the do
 
 ## October 11 eval corrections
 
-[Issue #141](https://github.com/madeintandem/tiller/issues/141) reported three problems from mending drift on done features. A test binding could name only one file, so a contract that needed two wrote them as one joined string, which drift could not read (`ref_unreadable`). A done feature's eval bindings could not be corrected at all without leaving `stale_spec` on the eval leg permanently, because nothing re-pinned `verified_against.eval` and the mend-drift skill said so. And an `attest` event recorded the feature as `active` after a later sync had moved it to `done`.
+Issue #141 reported three problems from mending drift on done features. A test binding could name only one file, so a contract that needed two wrote them as one joined string, which drift could not read (`ref_unreadable`). A done feature's eval bindings could not be corrected at all without leaving `stale_spec` on the eval leg permanently, because nothing re-pinned `verified_against.eval` and the mend-drift skill said so. And an `attest` event recorded the feature as `active` after a later sync had moved it to `done`.
 
 ### Decisions
 
@@ -513,7 +513,7 @@ Lint, the uncached Go suite, the doc-version check, and the site build passed on
 
 ## October 10 worktree guidance
 
-Confirming the moved-surface repair in the Scratch project, the agent worked in a detached worktree and every `link` and `unlink` refused with `contributor_unset` until it set `TILLER_CONTRIBUTOR`: `.tiller/identity.yml` is per checkout and gitignored, so a new worktree has none, and the refusal pointed at `join` without saying why a joined repository had no identity here.
+Confirming the moved-surface repair in a scratch project, the agent worked in a detached worktree and every `link` and `unlink` refused with `contributor_unset` until it set `TILLER_CONTRIBUTOR`: `.tiller/identity.yml` is per checkout and gitignored, so a new worktree has none, and the refusal pointed at `join` without saying why a joined repository had no identity here.
 
 ### Decisions
 
@@ -533,7 +533,7 @@ Orientation, execute skill, and refusal tests pin the new text and, for both tas
 
 The darwin/arm64 executable was built from a clean detached checkout of the stamp commit with `CGO_ENABLED=0`, `-trimpath`, and `-ldflags '-s -w'`. Build metadata records that commit and `vcs.modified=false`. The retained candidate at `~/.local/share/tiller/distributions/0.17.8-5cc851e/tiller` and the installation at `~/.local/bin/tiller` (installed by remove then copy) share SHA-256 `da55fc47920b7cbfa892603411ac4fa9249269217e1dc651ffe1db6cf17a8589`. The outgoing 0.17.7 executable is retained at `~/.local/share/tiller/previous/0.17.7-0ca5be2f0baf/tiller`.
 
-Lint, the uncached Go suite, the doc-version check, and the site build passed on the stamp, and the verification arc on a binary built from it ran a migrate feature that moves its surface from the named sync remedy through link and unlink to epic `done`. The installed binary reports 0.17.8 on PATH; in a disposable project it wrote orientation generation 48 and eleven harness shims, and unlinked a deleted surface path. Managed projects still carry generation 47 until refreshed; Scratch's stranded `shared-core/core-split` needs only the link, the unlinks, and a sync.
+Lint, the uncached Go suite, the doc-version check, and the site build passed on the stamp, and the verification arc on a binary built from it ran a migrate feature that moves its surface from the named sync remedy through link and unlink to epic `done`. The installed binary reports 0.17.8 on PATH; in a disposable project it wrote orientation generation 48 and eleven harness shims, and unlinked a deleted surface path. Managed projects still carry generation 47 until refreshed; the scratch project's stranded `shared-core/core-split` needs only the link, the unlinks, and a sync.
 
 ## Local 0.17.7 distribution
 
@@ -553,7 +553,7 @@ Lint, the uncached Go suite, and the doc-version check passed on the stamp, and 
 
 ## October 10 moved surfaces
 
-A migrate feature in the Scratch project, `shared-core/core-split`, `git mv`d the code its surface recorded into a new module. Every task was done and acceptance passed, yet each `tiller sync` skipped the rollup: the completion record fingerprints every recorded surface path at the integration commit, a moved path resolves to nothing, and no command could drop a surface path, since `link --surface` only unions and an amendment re-pins prose alone.
+A migrate feature in a scratch project, `shared-core/core-split`, `git mv`d the code its surface recorded into a new module. Every task was done and acceptance passed, yet each `tiller sync` skipped the rollup: the completion record fingerprints every recorded surface path at the integration commit, a moved path resolves to nothing, and no command could drop a surface path, since `link --surface` only unions and an amendment re-pins prose alone.
 
 ### Decisions
 
@@ -581,7 +581,7 @@ Filter-memory and stylesheet regressions cover restore, URL precedence, remember
 
 ## October 10 grounded specification
 
-[Issue #140](https://github.com/madeintandem/tiller/issues/140): one feature's three tasks needed five post-approval `task.md` corrections, each a human `approve task --refresh-basis`, because `specify` wrote concrete claims about third-party plugin code (dialect, key pattern, entry point, a variable's role, a value's type) from a quick read. Tiller enforced the basis correctly; the gap was guidance.
+Issue #140: one feature's three tasks needed five post-approval `task.md` corrections, each a human `approve task --refresh-basis`, because `specify` wrote concrete claims about third-party plugin code (dialect, key pattern, entry point, a variable's role, a value's type) from a quick read. Tiller enforced the basis correctly; the gap was guidance.
 
 ### Decisions
 
@@ -597,7 +597,7 @@ Two skill regressions pinning the new specify and execute text failed before the
 
 ## October 9 readout continuity
 
-[Issue #139](https://github.com/madeintandem/tiller/issues/139): after a task-grain closeout, `tiller readout execute` named a ready task in an earlier-ordered epic while the closed task's feature still had an eligible, unheld sibling. The unclaimed pool ranked by global order alone, so nothing in the walk knew where the reader had been working.
+Issue #139: after a task-grain closeout, `tiller readout execute` named a ready task in an earlier-ordered epic while the closed task's feature still had an eligible, unheld sibling. The unclaimed pool ranked by global order alone, so nothing in the walk knew where the reader had been working.
 
 ### Decisions
 
@@ -693,7 +693,7 @@ Lint and the uncached Go suite passed on the stamp. The installed binary reports
 
 ## Review gate key fix
 
-**October 8, source only.** [Issue #138](https://github.com/madeintandem/tiller/issues/138): `tiller init` seeds the optional review gates as `code_review`, `security_review`, `performance_review`, and `accessibility_review`, while the CLI spec and two tests attested `code-review`, which silently recorded a second gate and left the declared one unattested. The underscore keys stay, since every seeded manifest already carries them, and the spec and tests now use them. By ruling, `tiller attest --gate` with a key the manifest does not declare warns rather than refuses: unknown gates remain preserved, and the success carries a warning naming the declared keys, in the human text and as `data.warnings` (commit `1937f9ce`).
+**October 8, source only.** Issue #138: `tiller init` seeds the optional review gates as `code_review`, `security_review`, `performance_review`, and `accessibility_review`, while the CLI spec and two tests attested `code-review`, which silently recorded a second gate and left the declared one unattested. The underscore keys stay, since every seeded manifest already carries them, and the spec and tests now use them. By ruling, `tiller attest --gate` with a key the manifest does not declare warns rather than refuses: unknown gates remain preserved, and the success carries a warning naming the declared keys, in the human text and as `data.warnings` (commit `1937f9ce`).
 
 ## Local 0.17.4 distribution
 
@@ -705,11 +705,11 @@ The doc-version and version-stamp checks, the upgrade and serve tests, the uncac
 
 ## Code review skill
 
-**October 8, source only.** An explicitly requested `code-review` skill, installed as `/tiller-code-review`, reviews one epic, feature, task, bug, chore, or tweak and turns only the findings the developer names into Tiller records. It is a pure skill: no CLI command, schema, store, or console change. The [design](plans/2026-10-08-code-review-design.md) settled 21 decisions one fork at a time, and the [implementation plan](plans/2026-10-08-code-review-implementation.md) built them in five tasks on commits `7ca2a4d3` through `9f5829a8`.
+**October 8, source only.** An explicitly requested `code-review` skill, installed as `/tiller-code-review`, reviews one epic, feature, task, bug, chore, or tweak and turns only the findings the developer names into Tiller records. It is a pure skill: no CLI command, schema, store, or console change. The [design](plans/2026-10-08-code-review-design.md) settled 21 decisions one fork at a time, and the implementation plan built them in five tasks on commits `7ca2a4d3` through `9f5829a8`.
 
 The review arm is read-only, like `design-brief`, and writes one file under `.tiller/reviews/`, a prose-only sibling of `.tiller/feedback/`. It covers the node's net change: in-flight branches against their merge-base, and merged work (decided by `merge-base --is-ancestor`, never by status, so merged-but-unsynced work is not missed) from the first parent of the first first-parent integration merge that contains it, falling back to commits carrying the unit's ID after a fast-forward, squash, or rebase. Findings come in four numbered sections: bugs graded blocker, important, medium, or minor by impact, with any acceptance or `preserve` criterion violation a blocker and every bug labeled traced or suspected; tweaks; chores; and plan changes. Severity lives only in review prose; no record field or order change was added. Findings already tracked or previously declined are marked and not renumbered.
 
-The disposition arm resolves the whole selection before writing anything, rechecks only selected rows when pinned code moved, logs bugs, tweaks, and chores as `proposed` shelf nodes through `tiller add --attach --source`, and logs plan changes by landing a distillation of only the selected rows through `tiller intake` as one `proposed` amendment. "Fix on its branch" returns an unmerged finding to its unit's owner through execute's requested-changes re-entry. Each disposition annotates its rows in place and makes one commit on the integration branch; approval stays with the human. The attest line prints the manifest's own gate key, which surfaced [issue #138](https://github.com/madeintandem/tiller/issues/138): `tiller init` seeds `code_review` while the specs and tests attest `code-review`.
+The disposition arm resolves the whole selection before writing anything, rechecks only selected rows when pinned code moved, logs bugs, tweaks, and chores as `proposed` shelf nodes through `tiller add --attach --source`, and logs plan changes by landing a distillation of only the selected rows through `tiller intake` as one `proposed` amendment. "Fix on its branch" returns an unmerged finding to its unit's owner through execute's requested-changes re-entry. Each disposition annotates its rows in place and makes one commit on the integration branch; approval stays with the human. The attest line prints the manifest's own gate key, which surfaced issue #138: `tiller init` seeds `code_review` while the specs and tests attest `code-review`.
 
 A fresh agent exercised both arms in a disposable project with planted defects: it found both, plus vacuous `true` acceptance bindings, and every disposition verb behaved as specified. The trial caught an empty diff for merged work, and a fresh whole-branch review caught wrong merge selection after fast-forwards and re-assembly, merged-but-unsynced work read as in flight, shelf-target attachment that `--attach` refuses, over-broad staging, and a handed-off row its owner could not fix. All were fixed with failing-first text pins, as were the review's ten minor findings.
 
@@ -735,7 +735,7 @@ Against a disposable brownfield project with one linked and confirmed as-is doc,
 
 ## Empty-tree route order
 
-**October 8, source only.** [Issue #137](https://github.com/madeintandem/tiller/issues/137): on a tree with no epics, the route named `decompose` ahead of every other arm, so a maintenance-only project with an owned, approved bug, or an intake amendment staged against an empty tree, was told to decompose. A brownfield trial surfaced it the day its baseline was confirmed. The empty-tree arm now runs last, just before caught-up: owned shelf work, a proposed amendment, and a shelf merge wait route first, while unclaimed shelf work still never enters the route. Its output is unchanged. Orientation generation **45** restates the order, and the orient skill and specs match.
+**October 8, source only.** Issue #137: on a tree with no epics, the route named `decompose` ahead of every other arm, so a maintenance-only project with an owned, approved bug, or an intake amendment staged against an empty tree, was told to decompose. A brownfield trial surfaced it the day its baseline was confirmed. The empty-tree arm now runs last, just before caught-up: owned shelf work, a proposed amendment, and a shelf merge wait route first, while unclaimed shelf work still never enters the route. Its output is unchanged. Orientation generation **45** restates the order, and the orient skill and specs match.
 
 Against a disposable greenfield project, the 0.17.2 source before the fix printed `Suggested skill: decompose` and `**Next:** decompose: no epics recorded yet.` for a bug that was approved and claimed. After the fix, an empty tree and a proposed unclaimed bug still suggest `decompose`; the approved, claimed bug gives `Suggested skill: execute` from `guide` and `Route: execute: bugs/blank-save (...) is ready` from `readout orient`. This is build 1 of the [brownfield zero-day design](plans/2026-10-08-brownfield-zero-day-design.md); the to-be-input check, the no-work-planned end state, and the derive-baseline forward-work pass remain.
 
@@ -814,7 +814,7 @@ Version remains **0.15.6**. No installation, publication, managed-project migrat
 
 ## First-class Tweaks
 
-**October 6, source only.** [Issue #134, first-class Tweaks](https://github.com/madeintandem/tiller/issues/134), adds a shelf peer to Chore: `tweak`, `TW-` IDs, and `.tiller/tweaks/<key>/tweak.md` plus `tweak.yml`. It shares ownership, pinned contracts, gates, independent review, attachments, shelf ordering/dependencies, carriers, transfer, and completion. The existing shelf console becomes **Fix** at `/fix`, combining Bugs, Chores, and Tweaks rather than adding another board.
+**October 6, source only.** Issue #134, first-class Tweaks, adds a shelf peer to Chore: `tweak`, `TW-` IDs, and `.tiller/tweaks/<key>/tweak.md` plus `tweak.yml`. It shares ownership, pinned contracts, gates, independent review, attachments, shelf ordering/dependencies, carriers, transfer, and completion. The existing shelf console becomes **Fix** at `/fix`, combining Bugs, Chores, and Tweaks rather than adding another board.
 
 Choice guidance distinguishes defects (Bug), housekeeping without code side effects (Chore), minor adjustments that may change code (Tweak), and substantive planned work (Task). Chore guidance is not a code-change prohibition. A button-text refinement is forward Tweak work; an agreed-label defect is a Bug. Done execution records remain history, never reopened to absorb new requests.
 
@@ -1237,7 +1237,7 @@ The separate documentation-site audit reported four vulnerable packages: Astro (
 
 ## Task-level ownership
 
-**September 19, source only.** [Issue #110, task-level ownership](https://github.com/madeintandem/tiller/issues/110), replaces feature claims with independent task, bug, and chore reservations. First start permanently fixes the scalar owner and records `started: true`; terminal attribution is immutable even when cancelled before start. New tasks are unclaimed. First task start atomically activates its approved feature and initializes the applicable aggregate identity without bypassing parent dependencies, bases, questions, or closed review rounds. Feature assumptions remain explicit through `approve feature --assume-question`. Features and epics have no owner or compatibility alias.
+**September 19, source only.** Issue #110, task-level ownership, replaces feature claims with independent task, bug, and chore reservations. First start permanently fixes the scalar owner and records `started: true`; terminal attribution is immutable even when cancelled before start. New tasks are unclaimed. First task start atomically activates its approved feature and initializes the applicable aggregate identity without bypassing parent dependencies, bases, questions, or closed review rounds. Feature assumptions remain explicit through `approve feature --assume-question`. Features and epics have no owner or compatibility alias.
 
 Ancestor contributors are sorted, distinct owners of started descendant tasks, including done and cancelled history. Reservations, shelf attachments, creators, and unrelated reviewers do not contribute. Personal work contains unfinished execution assignments rather than historical contributor workloads. Scalar owner filters do not match ancestors; explicit contributor filters do. CLI, generated board, and console share workflow classification and observed contract, basis, and branch-inclusion facts for closeout. The board's Shared closeout section and console queue name each applicable review unit once without assigning a coordinator.
 
@@ -1269,7 +1269,7 @@ Dependency refusals now offer only the integration wait when no aggregate branch
 
 ## Shared relationship reads
 
-**September 19.** [Issue #122, shared relationship queries and console navigation](https://github.com/madeintandem/tiller/issues/122), now uses one request-local index for dependency ordering, node/map relationships, amendment identity projection, and CLI/API traversal. Its 19-kind catalog owns canonical directions, inverse adjacency, endpoint capabilities, and source evidence. `tiller query` and `GET /api/query` share breadth-first traversal, repeated starts, direction unions, depth, and terminal filters that retain explanatory bridge vertices.
+**September 19.** Issue #122, shared relationship queries and console navigation, now uses one request-local index for dependency ordering, node/map relationships, amendment identity projection, and CLI/API traversal. Its 19-kind catalog owns canonical directions, inverse adjacency, endpoint capabilities, and source evidence. `tiller query` and `GET /api/query` share breadth-first traversal, repeated starts, direction unions, depth, and terminal filters that retain explanatory bridge vertices.
 
 The shared confined Markdown reader preserves search safety while supplying owned and loose documents, generated-source labels, and exact mention lines. Go extraction and the Markdown renderer share conformance fixtures, including footnotes and standalone code spans. Work surfaces, baseline descriptions, and classified acceptance bindings retain distinct coverage bases. Directory claims can answer child-file queries without claiming verified implementation coverage. External coordinates never become local file links; opaque bindings remain references. Historical amendment identities retain evidence and warnings instead of resolving old keys to today's holders.
 
@@ -1289,7 +1289,7 @@ The approved read-policy change lets node and map pages retain structural facts 
 
 Unresolved structural parents again project as absent, while dangling shelf/dependency rows retain authored references and questions retain target order. Revision evidence uses zero-time omission without discarding recorded subsecond precision. The console's All dependencies preset includes dependency, attachment, and carrier edges; turning it off restores all-kind selected-neighborhood inspection. Shared citation rendering keeps safe source-line links, copyable coordinates, revision evidence, and current-file disclosure consistent across map and backlinks.
 
-`DependencyOrder` now builds one dependency-only index and retains ranked task groups for existing-order consumers. Standalone subset ordering remains independent. An isolated benchmark with a prebuilt structural graph, 100 features, and five tasks per feature reduced map projection from 3.21 ms, 4.35 MB, and 43,997 allocations to 1.85 ms, 2.62 MB, and 21,959 allocations per operation. Node projection timing was broadly unchanged and its allocated bytes rose slightly. These are in-memory ordering measurements, not whole-request latency. Corpus parsing remains request-local; [issue #124, repeated relationship corpus parsing](https://github.com/madeintandem/tiller/issues/124), records the deferred profiling and cache-design work. A same-size edit with a restored mtime demonstrated why metadata alone cannot guarantee cache freshness.
+`DependencyOrder` now builds one dependency-only index and retains ranked task groups for existing-order consumers. Standalone subset ordering remains independent. An isolated benchmark with a prebuilt structural graph, 100 features, and five tasks per feature reduced map projection from 3.21 ms, 4.35 MB, and 43,997 allocations to 1.85 ms, 2.62 MB, and 21,959 allocations per operation. Node projection timing was broadly unchanged and its allocated bytes rose slightly. These are in-memory ordering measurements, not whole-request latency. Corpus parsing remains request-local; issue #124, repeated relationship corpus parsing, records the deferred profiling and cache-design work. A same-size edit with a restored mtime demonstrated why metadata alone cannot guarantee cache freshness.
 
 Disposable CLI/API checks proved missing/draft completeness, scoped warnings, visible global extraction loss, CLI/HTTP query parity, strict query refusals versus node/map degradation for permissions, NUL prose, and symlinks, and omission of unrecorded revision times. Embedded Chromium exercised actual three-kind arcs, preset reset with selection retained, exact source-line navigation, and wrapped pinned-source details in light and dark themes. The screenshot fixture was corrected from shared feature branches to task-owned branches; all six WebKit images were reshot and inspected. All 1,197 console tests and the console build passed. No release, installation, or managed-project refresh was performed.
 
@@ -1329,7 +1329,7 @@ The prior installed binary is retained at `~/.local/bin/tiller-0.12.1`, SHA-256 
 
 ## Task-scoped working branches
 
-**September 18.** [Issue #123, task-scoped branches at every review grain](https://github.com/madeintandem/tiller/issues/123) replaces shared feature workbenches with immutable task branch identities, defaulting to `tiller/<epic>/<feature>/<task>`. Task submission, unpublished-state warnings, and merge observation use that task's branch. Requested changes retain its branch and PR. Feature claims are unchanged.
+**September 18.** Issue #123, task-scoped branches at every review grain replaces shared feature workbenches with immutable task branch identities, defaulting to `tiller/<epic>/<feature>/<task>`. Task submission, unpublished-state warnings, and merge observation use that task's branch. Requested changes retain its branch and PR. Feature claims are unchanged.
 
 Feature and epic review remain explicit choices. Each has a separate aggregate, `tiller/reviews/features/<feature-key>` or `tiller/reviews/epics/<epic-key>`. The executing model creates branches, merges complete task tips including submission state, resolves mechanical conflicts, reruns checks, and maintains the aggregate review. Human decisions remain semantic conflicts, acceptance, and the final integration merge. Aggregate submission and sync require both each task's submitted head and current branch tip; intermediate assembly never completes work. Independent tasks start from integration; coarse dependent tasks start from the assembled aggregate.
 
@@ -1387,7 +1387,7 @@ Dry runs made several boundaries concrete. Initializing a project and selecting 
 
 Approval was separated from the physical act of typing a command. A developer can explicitly delegate a named start approval; an agent cannot infer that approval or attest a human gate. Remote-less projects gained branch-and-commit review references rather than invented PR numbers. Orientation became a briefing that names the next step and stops for the developer's direction.
 
-Milestones: [first CLI scaffold](https://github.com/madeintandem/tiller/commit/ae2f5ba), [checkout identity split](https://github.com/madeintandem/tiller/commit/47bf1dc), [delegated start approval](https://github.com/madeintandem/tiller/commit/dc4788c).
+Milestones: first CLI scaffold, checkout identity split, delegated start approval.
 
 ## Console and readouts
 
@@ -1409,7 +1409,7 @@ A deferred regression failed on the disappearing task link before implementation
 
 **September 13 Build header clipping.** The column's 10px top padding left a visible strip above its sticky heading. Moving that padding into the heading lets its background cover the scrollport's top edge while preserving unscrolled content positions. The rebuilt embedded console was checked with 24 synthetic done-feature cards at six scroll positions in light and dark themes, plus horizontal panning at a 1280px viewport. Header geometry and hit-testing showed no exposed strip; screenshots confirmed the rendering. The 13 Build CSS source-string assertions were removed rather than extended to pin another declaration. All 1,185 remaining console tests passed. Local 0.11.6 did not include this correction; local 0.12.0 does.
 
-Milestones: [console foundations](https://github.com/madeintandem/tiller/commit/5019131), [shared read-model correction closeout](https://github.com/madeintandem/tiller/commit/33c541c), [dependency-ordering authority](https://github.com/madeintandem/tiller/commit/08919e9), [readout command](https://github.com/madeintandem/tiller/commit/d734430).
+Milestones: console foundations, shared read-model correction closeout, dependency-ordering authority, readout command.
 
 ## Single tree and drift
 
@@ -1451,11 +1451,11 @@ Features are born unclaimed. Claim, release, takeover, reassignment, and owner r
 
 Questions became real work relationships with short scan titles and retained full statements. Open direct and inherited holds drive readiness and routing without duplicating mutable reverse edges. The route may select later legal work while naming an earlier hold. Approved unclaimed work with a genuinely unheld ready task is an execution opportunity, not a falsely caught-up state. Checked work is recovered before starting another ready task.
 
-Milestones: [shared pool and question-held routing](https://github.com/madeintandem/tiller/commit/fad080d), [claimable execution](https://github.com/madeintandem/tiller/commit/42a39bb), [question-aware claimable execution](https://github.com/madeintandem/tiller/commit/778ac2f).
+Milestones: shared pool and question-held routing, claimable execution, question-aware claimable execution.
 
 ## Release and distribution
 
-**August 22 onward.** The repository gained the MIT license, contributor and security guidance, contribution templates, DCO sign-off, CI, release automation, a Homebrew cask, an installer, and an Astro/Starlight documentation site. The site copies the owning Markdown sources rather than maintaining a second set of specifications. Trial-project names were neutralized as Acme and Lantern.
+**August 22 onward.** The repository gained the MIT license (later replaced by Apache 2.0), contributor and security guidance, contribution templates, DCO sign-off, CI, release automation, a Homebrew cask, an installer, and an Astro/Starlight documentation site. The site copies the owning Markdown sources rather than maintaining a second set of specifications. Trial-project names were neutralized as Acme and Lantern.
 
 Releases use a source version stamp and matching tag; the release workflow checks that they agree. Console assets and skills are embedded so installing Tiller does not require the managed project's runtime. Schema version, binary version, and orientation generation remain distinct: refreshing instructions is not a data migration, and compiling a local binary is not publishing a release.
 
@@ -1471,7 +1471,7 @@ Coarse submission records the reviewed feature's or epic's PR after its riding t
 
 The same delivery added real schema migrations and binary upgrade. `migrate` is the tree-side remedy; `upgrade` is the binary-side remedy. The first migrations were stamp-only, from schema 2 to 3 and then 3 to 4. Upgrades verify archive checksums before replacing the binary and refresh checkout guidance through the new executable. Homebrew-managed installations are left to Homebrew. The proposed launcher, per-project engine cache, schema fence, and CI status emitter were not required to ship these smaller, useful operations.
 
-Milestones: [migration registry](https://github.com/madeintandem/tiller/commit/5adbec2), [coarse submissions](https://github.com/madeintandem/tiller/commit/16a8b88), [binary upgrade](https://github.com/madeintandem/tiller/commit/6e1b0a3).
+Milestones: migration registry, coarse submissions, binary upgrade.
 
 ## Bugs and chores
 
@@ -1493,7 +1493,7 @@ The optional baseline ledger maps design docs to described paths and recoverable
 
 Baseline drift follows the same detect, propose, approve boundary. `stale_design` joins confirmed docs to tracked feature completions and missing paths; opt-in `shifted_design` compares the confirmed working-tree fingerprint. Unsafe paths or unavailable history remain uncovered rather than clean. Successful sync notices name touched docs without approving or rewriting them. The console exposes confirmation, provenance, drift, and repair commands read-only.
 
-Milestones: [root protections and onboarding](https://github.com/madeintandem/tiller/commit/b129d6f), [baseline ledger and confirmation](https://github.com/madeintandem/tiller/commit/bf43061), [baseline drift and console](https://github.com/madeintandem/tiller/commit/a5b9649).
+Milestones: root protections and onboarding, baseline ledger and confirmation, baseline drift and console.
 
 ## Publication and authorship
 
@@ -1517,23 +1517,23 @@ Three baseline defects were fixed with regressions. Reapproval had scanned done 
 
 The v0.11.2 release was stamped, tagged, and installed locally on September 6 without a push or GitHub release. Verification ran the uncached Go suite, 1,170 console tests, lint, the embedded-asset build, a real CLI smoke of `serve`, and a Playwright read of every tab title against the running binary.
 
-Issues: [#108](https://github.com/madeintandem/tiller/issues/108), [#109](https://github.com/madeintandem/tiller/issues/109), [#111](https://github.com/madeintandem/tiller/issues/111), [#112](https://github.com/madeintandem/tiller/issues/112), [#113](https://github.com/madeintandem/tiller/issues/113).
+Issues: #108, #109, #111, #112, #113.
 
 ## Pending acceptance is not a passed check
 
-**September 7, unreleased.** [Issue #114, false-green check results](https://github.com/madeintandem/tiller/issues/114), exposed a distinction the CLI had collapsed: recording a required gate's pending result is successful bookkeeping, but acceptance has not passed. `check` now agrees with default `eval`: pending required acceptance returns `passed: false` and exit `1`, and task or shelf work does not advance to `check`. The human output names outstanding required criteria and the human's attestation command without presenting optional criteria as blockers. The JSON shape and advisory merge/rollup policy are unchanged.
+**September 7, unreleased.** Issue #114, false-green check results, exposed a distinction the CLI had collapsed: recording a required gate's pending result is successful bookkeeping, but acceptance has not passed. `check` now agrees with default `eval`: pending required acceptance returns `passed: false` and exit `1`, and task or shelf work does not advance to `check`. The human output names outstanding required criteria and the human's attestation command without presenting optional criteria as blockers. The JSON shape and advisory merge/rollup policy are unchanged.
 
 ## Acceptance runner selection
 
-**September 7, unreleased.** [Issue #117, targeted test runners versus aggregate CI](https://github.com/madeintandem/tiller/issues/117), exposed a contract-authoring mistake: appending a spec path to an argument-ignoring CI wrapper reruns the whole pipeline and attributes unrelated failures to individual criteria. Specify now teaches the existing command-resolution rule, selector inspection, explicit targeted `binding.run` commands, and independent preparation. The ordinary full CI gate stays intact. This changes embedded guidance, not runtime inference or the schema; corrections to approved non-terminal contracts still require human accepted-basis review.
+**September 7, unreleased.** Issue #117, targeted test runners versus aggregate CI, exposed a contract-authoring mistake: appending a spec path to an argument-ignoring CI wrapper reruns the whole pipeline and attributes unrelated failures to individual criteria. Specify now teaches the existing command-resolution rule, selector inspection, explicit targeted `binding.run` commands, and independent preparation. The ordinary full CI gate stays intact. This changes embedded guidance, not runtime inference or the schema; corrections to approved non-terminal contracts still require human accepted-basis review.
 
 ## Execution handoffs and amendment navigation
 
-**September 7, unreleased.** Issues [#115, post-merge execute guidance](https://github.com/madeintandem/tiller/issues/115), [#116, feature closeout routing](https://github.com/madeintandem/tiller/issues/116), and [#118, consistent execution handoffs](https://github.com/madeintandem/tiller/issues/118) now share one workflow projection. It reads current required-gate configuration, authored contracts, recorded results, and local eligibility once per relevant feature. Machine checks, rubric preparation, human acceptance, formal review, and integration-branch sync remain distinct facts. Node advice sits beside lifecycle moves; task counts do not become feature-review counts. Eligible approved execution precedes unrelated planning approvals, after deliberate amendment review. New live tasks beneath a done rollup feature remain routable.
+**September 7, unreleased.** Issues #115, post-merge execute guidance, #116, feature closeout routing, and #118, consistent execution handoffs now share one workflow projection. It reads current required-gate configuration, authored contracts, recorded results, and local eligibility once per relevant feature. Machine checks, rubric preparation, human acceptance, formal review, and integration-branch sync remain distinct facts. Node advice sits beside lifecycle moves; task counts do not become feature-review counts. Eligible approved execution precedes unrelated planning approvals, after deliberate amendment review. New live tasks beneath a done rollup feature remain routable.
 
 Orientation generation 32 carries the matching execution protocol. Authorized work includes evidence commits on non-passing checks, verified draft or offline review preparation before human acceptance, same-review submission and publication recovery, and bounded post-merge closeout. Pure orient still briefs and stops. Required attestation-backed gates expose an existing mutation distinction: check resets them to pending, unlike settled criteria. Necessary mechanical checks therefore precede their human sign-off; a redundant recheck must not erase it. Schema 4, nine skills, strict coarse submission, advisory sync, and human merge authority remain unchanged.
 
-[Issue #119, amendment navigation](https://github.com/madeintandem/tiller/issues/119), gained one identity projection for forward links and node backlinks. Retained operations and immutable event targets establish created nodes, replacements, addition parents, and question-block intent. Additive event provenance records operation positions and resolved parents without adding amendment YAML fields or an applied-results ledger. Missing or contradictory history stays unresolved rather than attaching old work to a reused key. Epic and feature pages roll up descendant effects without labeling unchanged siblings directly amended. Proposed notices, counted amendment tabs, and a permanent Explore Filter entry preserve browsing after approval or withdrawal.
+Issue #119, amendment navigation, gained one identity projection for forward links and node backlinks. Retained operations and immutable event targets establish created nodes, replacements, addition parents, and question-block intent. Additive event provenance records operation positions and resolved parents without adding amendment YAML fields or an applied-results ledger. Missing or contradictory history stays unresolved rather than attaching old work to a reused key. Epic and feature pages roll up descendant effects without labeling unchanged siblings directly amended. Proposed notices, counted amendment tabs, and a permanent Explore Filter entry preserve browsing after approval or withdrawal.
 
 Verification passed the uncached Go suite, lint, 1,185 console tests, generation-fixture regeneration, and the embedded asset build. Real agents consumed the built guides against disposable Git repositories and bare remotes with a controlled host boundary. Five riders produced one draft; a fresh agent reused it after human acceptance, retained local formal submission through an actual rejected push, recovered publication, and handled requested changes without another PR or empty resubmission commit. The final merge produced five ancestry crossings and two clean rollups. Separate scenarios proved required-gate acceptance, offline submission, no-publish and unavailable-host boundaries, committed machine-failure evidence, read-only orient, integration-branch final-task closeout, and historical violations surviving later acceptance.
 
@@ -1541,7 +1541,7 @@ Chromium exercised the embedded console, including bidirectional amendment links
 
 ## v0.11.3 publication
 
-**September 7.** Release stamp commit `98bf558` was tagged and published as [v0.11.3](https://github.com/madeintandem/tiller/releases/tag/v0.11.3). The release workflow produced macOS and Linux archives for amd64 and arm64, SHA-256 checksums, and the updated Homebrew cask. Schema remains 4; orientation generation is 32 with nine embedded skills.
+**September 7.** Release stamp commit `98bf558` was tagged and published as v0.11.3. The release workflow produced macOS and Linux archives for amd64 and arm64, SHA-256 checksums, and the updated Homebrew cask. Schema remains 4; orientation generation is 32 with nine embedded skills.
 
 Stamped-version tests, the uncached Go suite, lint, GitHub CI, the release workflow, Go vulnerability scanning, and both npm audits passed. All four downloaded archives matched their checksums, declared targets, and clean release revision. Authenticated self-upgrade replaced the local binary, and an isolated installer run produced identical bytes. The installed binary reported 0.11.3 and emitted the expected generation-32 orientation and execute guide.
 
@@ -1594,16 +1594,4 @@ Schema remains 4, orientation generation remains 33, and nine skills remain embe
 
 Completed plans and their mocks no longer serve as active instructions. Unchecked boxes, old branch names, agent task assignments, and intermediate review failures in those records describe an execution at that time, not today's backlog. Current contracts stay in the specs; unfinished scope stays in build status or a retained active plan.
 
-- [Original dated plans and console mockups](https://github.com/madeintandem/tiller/tree/23bab6495bc2fc90cae8776862647937d0bb7a96/docs/plans), at the last remotely available snapshot before consolidation.
-- [Original specs with full decision logs](https://github.com/madeintandem/tiller/tree/23bab6495bc2fc90cae8776862647937d0bb7a96/docs/spec), at the same snapshot.
-- The `Release: stamp v0.11.1` commit `0b2ce1fa` on `main` additionally preserves the September 6 authorship and console-version changes.
-- The local pre-retirement commit `d056a15` preserves `docs/plans/2026-09-14-design-brief.md`, including its historical scratch-evidence locator, and the condensed `docs/plans/2026-08-07-amend-input-validation-corrections.md`. Recover either with `git show d056a15:<path>`; their unfinished scope remains in the maintained specs and build status.
-- The local pre-retirement commit `479fe61` preserves the last three dated plans: `docs/plans/2026-10-07-console-read-performance-implementation.md`, `docs/plans/2026-10-07-merged-review-recovery.md`, and `docs/plans/2026-10-08-review-findings-fixes.md`. Recover any of them with `git show 479fe61:<path>`. Their outcomes are recorded in [Local 0.16.4 distribution](#local-0164-distribution), [Merged aggregate review recovery](#merged-aggregate-review-recovery), and [October 8 review fixes](#october-8-review-fixes).
-
-To recover an exact plan cited by an older source comment or commit, use its original path at the pre-consolidation commit `0b2ce1fa`. For example:
-
-```sh
-git show 0b2ce1fa:docs/plans/2026-08-26-review-grain-design.md
-```
-
-The retired plans are not duplicated in an archive directory. Git already preserves every byte and the changes leading to it. Future completed plans follow the same rule: add the durable decision and outcome here, preserve real remaining work elsewhere, then retire the execution detail.
+The public repository begins at a single squashed commit of the October 25 tree. Commit SHAs, `git show` recovery commands, and dated plan paths cited here and in older source comments refer to the private pre-release history, which is not published. Future completed plans follow the same rule as before: add the durable decision and outcome here, preserve real remaining work elsewhere, then retire the execution detail; from here on, public Git history preserves the original.

@@ -34,10 +34,16 @@ DENYLIST = Denylist(
         (6, "5cbe46195beeb4e6e16f2100efbdb38bbcad5bce931f04d61126a73978e3682b"),
         (9, "5c8a89bb4958f63376d65024207cec1728ff59b74734304b5be21c42440626b3"),
     }),
-    words=frozenset({"4f0a1f5aef53e953cc28e5086b98eca5d40c8820325fce6a33f34b22c84bbefd"}),
+    words=frozenset({
+        "4f0a1f5aef53e953cc28e5086b98eca5d40c8820325fce6a33f34b22c84bbefd",
+        "e2be86b74d5544878ce5285d45bb4d998fb83f8c5ddd56eaea15787112b4a000",
+        "918bdc1ec8097cf1445933826216b35411419b91cfade684fa680bed56780e8d",
+        "ec47860233d36cad00db3ed18c8ed7d57690cb8689caa86cce93ef75d767e7f1",
+    }),
     pairs=frozenset({
         "9fcff232b96c68129abb7b5cb43a564e3c0970fe4788419ee3f55e194a5b85cc",
         "208da4bcf655b0d83f85fe062f4d31e75e791509f594a0ffa89ac9d401ea7786",
+        "dc78bdb4113c541f1ac10c18866371f1a617adef11ed8ed9ffd324d446fc198d",
     }),
 )
 

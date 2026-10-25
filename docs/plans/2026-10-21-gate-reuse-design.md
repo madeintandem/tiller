@@ -67,7 +67,7 @@ gates:
     required: true
     kind: command
     status: pass
-    run_by: allen
+    run_by: robin
     run_at: 2026-10-21T14:02:11Z
     against: { kind: git_commit, value: "git:4be1c0d" }
     code: "sha256:9f2c..."

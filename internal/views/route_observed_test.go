@@ -64,9 +64,9 @@ func TestOwnObservedTaskReachedThroughTheOwnedPassContinuesOnItsBranch(t *testin
 
 func TestObservedTaskOwnedByOtherIsNoMove(t *testing.T) {
 	tree, first, second := observedRouteTree(t)
-	next := nextFor(tree, "jc", observedOn(first.ID, "tiller/epic-0/work/first", "allen"))
+	next := nextFor(tree, "jc", observedOn(first.ID, "tiller/epic-0/work/first", "robin"))
 	require.Equal(t, []string{"claim_task"}, candidateKinds(next.Candidates))
-	require.Equal(t, []string{second.ID}, candidateNodeIDs(next.Candidates), "allen's task in flight is passed over")
+	require.Equal(t, []string{second.ID}, candidateNodeIDs(next.Candidates), "robin's task in flight is passed over")
 }
 
 func TestObservedTaskWithEmptyOwnerIsNoMove(t *testing.T) {
@@ -90,7 +90,7 @@ func TestEveryTaskObservedElsewhereLeavesLaterMoves(t *testing.T) {
 	tree.Epics["E-aaaaa0"].Status = "ready"
 	_, task := readyFeatureWithTask(t, tree, "F-aaaaa0", "epic-0/work", "epic-0")
 	draftFeatureUnder(t, tree, "F-aaaaa1", "epic-0/later", "epic-0")
-	next := nextFor(tree, "jc", observedOn(task.ID, "tiller/epic-0/work/first", "allen"))
+	next := nextFor(tree, "jc", observedOn(task.ID, "tiller/epic-0/work/first", "robin"))
 	require.Equal(t, []string{"specify"}, candidateKinds(next.Candidates))
 	require.Equal(t, []string{"F-aaaaa1"}, candidateNodeIDs(next.Candidates))
 }
@@ -122,7 +122,7 @@ func questionHeldSiblingTree(t *testing.T) (tree *store.Tree, elsewhere, held, s
 // remove their task from the moves; the holding question stays one.
 func TestObservationsAndQuestionHoldsBothRemoveTheirTasks(t *testing.T) {
 	tree, elsewhere, held, sibling := questionHeldSiblingTree(t)
-	next := nextFor(tree, "reader", observedOn(sibling.ID, "tiller/epic-1/approval/correction", "allen"))
+	next := nextFor(tree, "reader", observedOn(sibling.ID, "tiller/epic-1/approval/correction", "robin"))
 	require.Equal(t, []string{"claim_task", "answer_question"}, candidateKinds(next.Candidates))
 	require.Equal(t, []string{elsewhere.ID, "Q-gsssu6"}, candidateNodeIDs(next.Candidates))
 	require.Empty(t, candidatesFor(next.Candidates, held.ID))
@@ -135,7 +135,7 @@ func TestObservationsAndQuestionHoldsBothRemoveTheirTasks(t *testing.T) {
 func TestPoolSignpostLeavesOthersObservedTaskOut(t *testing.T) {
 	tree, first, second := observedRouteTree(t)
 	second.Blocked = true
-	in := observedOn(first.ID, "tiller/epic-0/work/first", "allen")
+	in := observedOn(first.ID, "tiller/epic-0/work/first", "robin")
 	order := gen.DependencyOrder(tree)
 	require.True(t, nextFor(tree, "jc", in).CaughtUp)
 	require.Equal(t, "There is 1 unclaimed task; the first in dependency order, epic-0/work/second (T-bbbbb0), is manually blocked",

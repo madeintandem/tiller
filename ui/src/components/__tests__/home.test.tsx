@@ -1996,10 +1996,10 @@ describe("Home pulse: Up next", () => {
   });
 
   it("names the reader in the header", async () => {
-    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/next": { ...emptyNext(), reader: "allen" } }));
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/next": { ...emptyNext(), reader: "robin" } }));
     renderHome(summary());
 
-    expect(await screen.findByText("Up next · for allen")).toBeInTheDocument();
+    expect(await screen.findByText("Up next · for robin")).toBeInTheDocument();
     expect(screen.queryByText(/Not personalized/)).not.toBeInTheDocument();
   });
 

@@ -20,8 +20,8 @@ import (
 // named it.
 
 // ownerArcFeedbackDoc is a small feedback artifact landed through the real
-// `tiller intake` command, the same mechanism that carried "Allen Marks" into
-// Lantern's manifest: a document outside the tree makes a case for new scope,
+// `tiller intake` command, the same mechanism that carried a fabricated
+// contributor into Lantern's manifest: a document outside the tree makes a case for new scope,
 // and the staged op cites the line it came from.
 const ownerArcFeedbackDoc = `# Field note
 
@@ -78,7 +78,7 @@ func TestEndToEndContributorRegistrationBootstrapAttributionAndRefusals(t *testi
 	// --- an intake-style amendment approve: the incident's own shape ---
 	//
 	// Land a feedback document through the real `tiller intake`, the same
-	// mechanism that carried "Allen Marks" into Lantern's manifest, stage the
+	// mechanism that carried a fabricated contributor into Lantern's manifest, stage the
 	// op it recommends, then approve BARE, no --contributor, no env, so the
 	// approve itself resolves the acting contributor through the same fallback
 	// chain the mutation above did.
@@ -104,19 +104,19 @@ func TestEndToEndContributorRegistrationBootstrapAttributionAndRefusals(t *testi
 	require.NotContains(t, approveOut, "minted nodes owned by")
 
 	// --- an unregistered --as refuses, naming the roster and the fix ---
-	unknownAsOut, _, code := execCLI(t, "join", "--as", "allen", "--json")
+	unknownAsOut, _, code := execCLI(t, "join", "--as", "robin", "--json")
 	require.Equal(t, 3, code, "an id absent from the roster is refused, never fabricated onto it")
 	require.Contains(t, unknownAsOut, "contributor_unknown")
-	require.Contains(t, unknownAsOut, "allen", "the refusal names the id that failed")
+	require.Contains(t, unknownAsOut, "robin", "the refusal names the id that failed")
 	require.Contains(t, unknownAsOut, "jc", "the refusal names the registered roster")
-	require.Contains(t, unknownAsOut, "tiller add contributor allen", "the refusal points at registering the id")
+	require.Contains(t, unknownAsOut, "tiller add contributor robin", "the refusal points at registering the id")
 
 	// --- an unregistered TILLER_CONTRIBUTOR refuses the same way on a bare join ---
-	t.Setenv("TILLER_CONTRIBUTOR", "allen")
+	t.Setenv("TILLER_CONTRIBUTOR", "robin")
 	envOut, _, code := execCLI(t, "join", "--json")
 	require.Equal(t, 3, code, "an id supplied by the environment is looked up on the roster exactly like --as")
 	require.Contains(t, envOut, "contributor_unknown")
-	require.Contains(t, envOut, "allen")
+	require.Contains(t, envOut, "robin")
 	require.Contains(t, envOut, "jc", "the refusal still names the registered roster, non-empty this time")
-	require.Contains(t, envOut, "tiller add contributor allen")
+	require.Contains(t, envOut, "tiller add contributor robin")
 }

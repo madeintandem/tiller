@@ -103,7 +103,7 @@ func TestEnumerateOwnWorkCheckedFirst(t *testing.T) {
 	}
 	checkedRow, _ := rowFor(t, nextFor(tree, "jc", workflow.Input{}), checked.ID)
 	require.Contains(t, checkedRow.Reason, "finish any outstanding checks")
-	require.Empty(t, candidatesOfKind(enumerate(tree, "allen", workflow.Input{}), "continue"),
+	require.Empty(t, candidatesOfKind(enumerate(tree, "robin", workflow.Input{}), "continue"),
 		"another reader's own work is never continued")
 }
 
@@ -128,10 +128,10 @@ func TestEnumerateExcludesOthersInFlightWork(t *testing.T) {
 	tree := treeWithDraftEpics(t, 1)
 	tree.Epics["E-aaaaa0"].Status = "ready"
 	_, task := readyFeatureWithTask(t, tree, "F-aaaaa0", "epic-0/work", "epic-0")
-	require.Empty(t, candidatesFor(enumerate(tree, "jc", observedOn(task.ID, "t/x", "allen")), task.ID))
+	require.Empty(t, candidatesFor(enumerate(tree, "jc", observedOn(task.ID, "t/x", "robin")), task.ID))
 
 	task.Owner = "jc"
-	require.Empty(t, candidatesFor(enumerate(tree, "jc", observedOn(task.ID, "t/x", "allen")), task.ID),
+	require.Empty(t, candidatesFor(enumerate(tree, "jc", observedOn(task.ID, "t/x", "robin")), task.ID),
 		"an owned task in flight on another contributor's branch is theirs to continue")
 }
 
@@ -215,7 +215,7 @@ func TestEnumerateResolveBlockerOnTheReadersHeldFeature(t *testing.T) {
 	require.Equal(t, "resolve the blocker on", blockers[0].Action)
 	require.Empty(t, blockers[0].Command)
 	require.Contains(t, blockers[0].Reason, "accepted basis changed")
-	require.Empty(t, candidatesOfKind(enumerate(tree, "allen", in), "resolve_blocker"))
+	require.Empty(t, candidatesOfKind(enumerate(tree, "robin", in), "resolve_blocker"))
 
 	holdClaimableNode(tree, "Q-aaaaa0", f.ID)
 	cands := enumerate(tree, "jc", in)

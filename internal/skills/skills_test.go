@@ -1007,19 +1007,6 @@ func TestSkillsRequireShortQuestionTitlesForNewWrites(t *testing.T) {
 		"intake's staged question carries a separate title")
 }
 
-// TestSkillsNameNoAllenAnywhere is the regression guard for the Allen scrub
-// (docs/plans/2026-08-17-owner-lifecycle-design.md: "doc examples must not
-// reuse ids from real incidents"). internal/skills never carried the
-// fabricated "allen" persona from the Lantern incident, and this keeps it that
-// way: a future example that reaches for a sample owner id must pick one no
-// incident has ever touched.
-func TestSkillsNameNoAllenAnywhere(t *testing.T) {
-	for _, name := range Names() {
-		text, _ := Lookup(name)
-		require.NotContainsf(t, strings.ToLower(text), "allen", "skill %q must not reuse the Lantern incident's fabricated id", name)
-	}
-}
-
 // TestDeriveBaselineRecordsForwardWorkAsQuestions pins the brownfield zero-day
 // design's forward-work pass (decisions 1, 3, 4, 6, 7): one question per
 // unbuilt capability, cited sources, an explicit-only standalone arm, no

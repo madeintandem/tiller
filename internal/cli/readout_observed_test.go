@@ -96,7 +96,7 @@ func TestReadoutInsideOwnTaskCheckoutIsNotMuted(t *testing.T) {
 // with nothing else left the readout and guide say so plainly (R4).
 func TestCaughtUpBehindOthersObservedTaskSaysNothingRemains(t *testing.T) {
 	_, branch := layTaskInFlightOnWorktree(t)
-	t.Setenv("TILLER_CONTRIBUTOR", "allen")
+	t.Setenv("TILLER_CONTRIBUTOR", "robin")
 
 	readout, stderr, code := execCLI(t, "readout", "orient")
 	require.Equal(t, 0, code, stderr)

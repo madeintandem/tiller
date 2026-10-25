@@ -1,4 +1,4 @@
-# Allen's field-run issues (#146 to #150): verification and resolution plan
+# Field-run issues (#146 to #150): verification and resolution plan
 
 Status: VERIFIED 2026-10-19 against main a5c604a4 (19 commits past the filing base ff1f1634). Corrections posted on each issue 2026-10-19. ALL RULINGS SETTLED 2026-10-19 (grill). NOT BUILT.
 

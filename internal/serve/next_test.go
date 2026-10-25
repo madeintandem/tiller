@@ -345,7 +345,7 @@ func TestNextHandlerContinuesReadersObservedTask(t *testing.T) {
 // Another contributor's task in flight is no move here; with nothing else
 // legal the reader is caught up.
 func TestNextHandlerOmitsOthersObservedTask(t *testing.T) {
-	got := observedNext(t, "allen")
+	got := observedNext(t, "robin")
 	require.True(t, got.CaughtUp)
 	require.Empty(t, got.Candidates)
 }
