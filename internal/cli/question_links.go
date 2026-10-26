@@ -1,8 +1,9 @@
 package cli
 
 // link and unlink on a question widen or narrow what an open question blocks
-// (docs/project-history.md, "October 25 cancel a question", decisions 7 and 8). The
-// only axis a question has is --blocks, and --blocks belongs to no other noun.
+// (docs/spec/cli-surface.md, "Proposal correction commands", the Questions
+// paragraphs). The only axis a question has is --blocks, and --blocks belongs
+// to no other noun.
 
 import (
 	"fmt"

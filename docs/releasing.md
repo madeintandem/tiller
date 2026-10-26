@@ -14,9 +14,9 @@ that doesn't match (`scripts/check-version-stamp.sh`).
 
 Publication requires an explicit maintainer decision. A local snapshot and
 green tests do not authorize a tag push, a release, or a visibility change.
-The latest published release is v0.18.4. The release Quickstart is prepared
-for 0.21.2 and holds until that release is published. Before publishing a newer release, update that Quickstart to the reviewed artifact's exact command
-contract and complete it using the installed artifact, not a source binary.
+These instructions match v0.21.2. Before publishing a newer release, update
+the release Quickstart to the reviewed artifact's exact command contract and
+complete it using the installed artifact, not a source binary.
 
 Install patched Node tooling first (CI uses Node 22.22.2 or newer in major 22),
 then rebuild notices and both asset surfaces:
@@ -69,9 +69,9 @@ go build -o /tmp/tiller-release-check ./cmd/tiller
 make test
 make lint
 git add internal/cli/root.go internal/cli/root_test.go README.md \
-  docs/plans/STATUS.md docs/releasing.md docs/spec/distribution.md \
-  docs/spec/skill-set.md docs/tiller-commands.md site/astro.config.mjs \
-  site/src/content/docs/quickstart.md site/src/content/docs/source-quickstart.md
+  docs/releasing.md docs/spec/distribution.md docs/spec/skill-set.md \
+  docs/tiller-commands.md site/src/content/docs/quickstart.md \
+  site/src/content/docs/source-quickstart.md site/src/content/docs/skills.md
 git commit -m "Release: stamp v$VERSION"
 
 # 2. Create the annotated tag and push the stamp commit plus tag.
@@ -159,35 +159,14 @@ from the last published tag, so the recipe validates the source stamp first and
 skips the pre-build hook phase. Real releases must retain the tag/stamp guard.
 Snapshot success does not establish clean-revision or published-release acceptance.
 
-## Go-public gate
+## Repository settings
 
-Keep conduct in CONTRIBUTING.md. Main requires build, lint, tests, console
-freshness, gitleaks, and DCO checks; the maintainer deliberately allows zero
-required approving reviews and admin bypass. Those checks do not promise
-independent review. GitHub Projects, wiki, and Discussions are disabled.
+Branch protection on main requires the build, lint, test, console freshness
+(`ui/dist` and generated notices match `ui/src`), gitleaks, and DCO checks.
+It requires no approving review, and admin bypass stays on, so those checks
+do not promise independent review. Keep conduct in CONTRIBUTING.md; GitHub
+Projects, the wiki, and Discussions stay off.
 
-Before changing visibility, review every hosted branch and tag, scan reachable
-history for secrets, run the current-tree privacy guard, and verify all four
-snapshot archives against checksums and required notices. Retain historical
-client names under the settled keep-history decision; never rewrite history
-or delete active dependency-update branches as a privacy shortcut. The launch
-revision must also pass hosted CI after its reviewed changes are published.
-Refresh active dependency-update branches from the corrected main revision
-before launch; do not treat an old branch head as reviewed launch source.
-
-After the human visibility decision and reviewed release/tap publication:
-
-1. On a clean Mac, install the cask. On clean supported Mac and Linux
-   environments, run the installer with tokens unset. Verify version,
-   platform, checksum, and runtime independence.
-2. In a clean Go environment, verify `go install ...@latest`, pkg.go.dev,
-   and anonymous source/release downloads.
-3. Complete the release Quickstart with that installed artifact, including
-   human gates, a real Git merge, sync, and the embedded console.
-4. Enable and verify private vulnerability reporting, secret scanning and
-   push protection, Dependabot alerts and security updates, and the reporting
-   path in SECURITY.md. Verify Pages and the homepage anonymously.
-
-Announce only after anonymous installation and signed-off contributor entry
-work. Private-repository API limitations or a local source smoke run do not
-establish these post-public results.
+Keep these security settings enabled: private vulnerability reporting (the
+path SECURITY.md describes), secret scanning with push protection, and
+Dependabot alerts and security updates.

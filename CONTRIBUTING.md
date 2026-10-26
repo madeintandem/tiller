@@ -66,12 +66,12 @@ copy. `cd site && npm ci && npm run dev` serves it at
   design and are fully changeable. When behavior changes, the spec that
   describes it changes in the same batch, and a spec that no longer matches
   what ships is a defect in the doc. Where the specs run ahead of the code,
-  [`docs/plans/STATUS.md`](./docs/plans/STATUS.md) says which is which.
-- **Plans track active work.** Dated implementation plans live in `docs/plans/`.
-  When work completes, fold its important decisions and outcome into
-  [project history](./docs/project-history.md), carry unfinished scope into the
-  current specs or build status, and retire the execution plan. Git keeps the
-  full record; the working tree should not carry competing accounts of what is next.
+  the [roadmap](./docs/roadmap.md) says which is which.
+- **Plans track active work.** Dated implementation plans live in `docs/plans/`
+  while they are active and are deleted when built. Before deleting one, move
+  its durable decisions into the owning spec's settled decisions and any
+  unfinished scope into the spec or the [roadmap](./docs/roadmap.md). Git keeps
+  the full record; the working tree should not carry competing accounts of what is next.
 - **Fast tests.** New tests run in parallel where they can, with `t.Parallel()` as the
   first statement (`internal/core/mutate` and `internal/testgit` do). A test
   that cannot (it calls `t.Setenv` or `t.Chdir`, or touches package-level

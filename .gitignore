@@ -27,7 +27,7 @@ logs/
 # Fetched and checksum-verified by site/scripts/fetch-pagefind-source.mjs.
 /site/public/pagefind-*-corresponding-source.tar.gz
 dist/
-# ui/dist is committed: go:embed ships it in the binary (docs/plans/2026-07-05-serve-pass-1-watching-console.md)
+# ui/dist is committed: go:embed ships it in the binary.
 !/ui/dist/
 build/
 # ui/src/views/build is the console's own Build VIEW (console v2 phase 3,
@@ -64,3 +64,6 @@ site/src/content/docs/cli.md
 
 # Subagent-driven-development scratch (ledgers, briefs, review packages)
 .superpowers/
+
+# Personal agent instructions, never committed
+CLAUDE.local.md

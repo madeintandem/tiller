@@ -6,19 +6,17 @@ Orientation for any coding agent or contributor working in this repo. Read this 
 
 Tiller is an opinionated SDLC workflow tool for humans and AI coding agents working together. It organizes what a software project needs to stay coherent: specifications, decomposition, planning, execution tracking, and documentation that stays in agreement with the code. The whole thing rests on one conviction: design, planning, specs, and docs should live with the code, in the repo, under git, not in a separate database or a tool you tab away to.
 
-Tiller is designed around three surfaces. A CLI and a set of skills plug into a coding agent's harness (Claude Code, Codex, Pi, and the like). A lightweight local web UI is the human-in-the-loop surface for watching progress, resolving issues, and exercising the gates; that console is still being built.
+Tiller is designed around three surfaces. A CLI and a set of skills plug into a coding agent's harness (Claude Code, Codex, Pi, and the like). A lightweight local web UI is the human-in-the-loop surface for watching progress, resolving issues, and exercising the gates.
 
 ## What we're building now
 
 v1 targets the execution half of a project: the stretch from "we have specs and a plan" through "it's merged and done." The longer aim is continuous coverage from the first discovery meeting all the way to production deployment, but v1 scopes deliberately to execution and leaves guided discovery for a later version.
 
-The five specs in `docs/spec/` describe the on-disk model, CLI, skills, console, and distribution. Read the relevant spec before working in an area it covers. It explains the current contract and marks designs that are not implemented; read it for context, not for permission. [Project history](docs/project-history.md) preserves the important decisions and completed work. [Build status](docs/plans/STATUS.md) is the short answer to what exists now and what remains open.
+The five specs in `docs/spec/` describe the on-disk model, CLI, skills, console, and distribution. Read the relevant spec before working in an area it covers. It explains the current contract and marks designs that are not implemented; read it for context, not for permission. The [roadmap](docs/roadmap.md) says what is built, what is designed but not built, and what is out of scope.
 
 ## How MiT uses it
 
-Made In Tandem builds software for clients, and Tiller is how we run human-plus-AI delivery. The first real engagement behind it was a client platform build, MiT's first multi-human, multi-agent project: two engineers working parallel streams, each with their own AI assistant. That shapes Tiller's priorities: parallel work without collisions, a human who stays product owner, system architect, reviewer, and acceptance tester, and agents that do the reasoning inside clear gates.
-
-That build, and a second single-developer product build, were the proving grounds, and the design is grounded in the real discovery and planning artifacts those projects produced. They appear throughout the specs, plans, fixtures, and code comments under neutral stand-in names: Acme (the platform) and Lantern (the app).
+Made In Tandem uses Tiller to run human-plus-AI delivery, with several engineers and their agents working in parallel while a human stays product owner, architect, reviewer, and acceptance tester.
 
 ## Guiding principles
 
@@ -42,9 +40,9 @@ These are the calls already made. They're the spine of the design. Weigh new dec
 ## Conventions for this repo
 
 - Specs are markdown in `docs/spec/`. Each one owns a slice of the surface and the others point at it rather than restating it: the artifact schema owns the on-disk model, the CLI surface owns the commands. That ownership is about keeping five documents from contradicting each other, not about ranking a document above the code.
-- Active build and implementation plans live in `docs/plans/`, dated and topic-named. Specs describe the current design; plans sequence work still to do. Once a plan is completed or superseded, fold its durable decisions and outcome into [project history](docs/project-history.md), preserve any unfinished scope in the current spec or build status, and remove the old execution record from the working tree. Git preserves the original.
+- Plans live in `docs/plans/`, dated and topic-named, while they are active, and are deleted when built. Specs describe the current design; plans sequence work still to do. Before deleting a plan, move its durable decisions into the owning spec's settled decisions and any unfinished scope into the spec or the [roadmap](docs/roadmap.md). Git preserves the original.
 - `AGENTS.md` is where repo context lives. `CLAUDE.md` is a pointer to it, so the same orientation serves every harness. Keep that pattern as sub-projects appear.
-- Specs are living documents and are fully changeable. Change them the way you change code: when the behavior changes, the doc that describes it changes in the same batch, and a spec that no longer matches what ships is a defect in the doc. Building something the spec did not anticipate is ordinary development, not a deviation to justify; write down what you built and why. The specs still run ahead of the code in places, describing surfaces not yet built, so a reader needs to know which is which: [docs/plans/STATUS.md](docs/plans/STATUS.md) is where that answer lives.
+- Specs are living documents and are fully changeable. Change them the way you change code: when the behavior changes, the doc that describes it changes in the same batch, and a spec that no longer matches what ships is a defect in the doc. Building something the spec did not anticipate is ordinary development, not a deviation to justify; write down what you built and why. The specs still run ahead of the code in places, describing surfaces not yet built, so a reader needs to know which is which: the [roadmap](docs/roadmap.md) is where that answer lives.
 - When you write docs here, write plainly: concrete, direct, prose over bullet-soup, and no em dashes.
 - Create GitHub issues only in `madeintandem/tiller`. Never create issues in other project repositories, including projects inspected while investigating Tiller.
 
@@ -63,16 +61,6 @@ These are the calls already made. They're the spine of the design. Weigh new dec
 
 Use faster agents for mechanical tasks and fix rounds, while keeping an independent task reviewer and the strongest available reviewer for larger blocks of work. When dependency order allows work to be done concurrently, spin up subagents in parallel.
 
-## Responding to me
-
-Everything the human reads from you (replies, reviews, reports, commit messages) follows the same discipline: concrete, direct, and as short as the content allows. Lead with outcomes, then only the detail that changes what the human does next. A long reply earns its length with decisions the human has to make, never with narration of your own process. Whenever possible, show instead of telling.
-
-Never make the human chase a reference. Re-ground every label on first use in each reply: "#27" is "issue #27 (siblings render in dependency order)"; "S2" is "S2, squash-merge detection". Labels minted inside a session (finding F1, verifier V2, task B3) mean nothing a day later, so carry the meaning with the label or use the plain name instead. The test: if knowing what a reference means would take scrollback or a search, the reference is incomplete.
-
-Avoid using jargon or clever turns of phrase, just state the facts. Call things in the code or in our work together by consistent names (entities, activities, actions taken, modules, libraries, events, tiller references, tools, etc). Don’t make me guess or look things up; in general, speak to me like a developer. Break up long paragraphs for scanability/readability in the terminal.
-
-If a table or bullet list will better communicate information, use that format.
-
 ## Current implementation state
 
-Read [build status](docs/plans/STATUS.md) for the current version, built surfaces, and open scope. Read [project history](docs/project-history.md) for why the design took its current shape and how to recover retired plans. Specs remain the maintained reference for each surface. Running code, committed implementation history, and current issue evidence take precedence when prose disagrees; an old plan's status line or unchecked box is not an active work queue.
+Read the [roadmap](docs/roadmap.md) for what is built and what remains open, and the [design history](docs/design-history.md) for why the design took its current shape. Specs remain the maintained reference for each surface. Running code takes precedence when prose disagrees.

@@ -51,8 +51,8 @@ if [ -n "$previous" ] && git -C "$root" rev-parse -q --verify "refs/tags/v$previ
 fi
 
 if [ "$#" -eq 0 ]; then
-  set -- README.md docs/plans/STATUS.md docs/releasing.md docs/spec/distribution.md \
-    docs/spec/skill-set.md docs/tiller-commands.md site/astro.config.mjs \
+  set -- README.md docs/releasing.md docs/spec/distribution.md \
+    docs/spec/skill-set.md docs/tiller-commands.md \
     site/src/content/docs/quickstart.md site/src/content/docs/source-quickstart.md \
     site/src/content/docs/skills.md
 fi

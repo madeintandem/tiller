@@ -1,9 +1,9 @@
 package cli
 
 // cancel question is the human closing an open question that no longer needs
-// a decision (docs/project-history.md, "October 25 cancel a question", decisions 1 to
-// 4). It shares the cancel verb with the work tree, and like answer it is a
-// human gate whose readout follows the confirmation.
+// a decision (docs/spec/cli-surface.md, "Proposal correction commands", the
+// Questions paragraphs). It shares the cancel verb with the work tree, and like
+// answer it is a human gate whose readout follows the confirmation.
 
 import (
 	"fmt"
