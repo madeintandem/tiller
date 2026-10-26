@@ -5,9 +5,9 @@ description: Run the current source build through project setup, human gates, ta
 
 From a repository to a tree you can see. The walkthrough uses a greenfield scratch project called Acme, with an existing-code path below; ids and commit hashes are illustrative.
 
-This page documents version **0.21.3**, schema **12**, orientation generation
-**57**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
-installs the v0.21.3 release instead of building from source.
+This page documents version **0.21.4**, schema **12**, orientation generation
+**58**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
+installs the v0.21.4 release instead of building from source.
 
 ## Build the matching source
 
@@ -21,7 +21,7 @@ cp /tmp/tiller-source /tmp/tiller-source-bin/tiller
 export PATH="/tmp/tiller-source-bin:$PATH"
 ```
 
-Verify the version is **0.21.3** before using the commands below. Use a disposable
+Verify the version is **0.21.4** before using the commands below. Use a disposable
 project; do not upgrade an existing team's checkout merely to try the walkthrough.
 
 ## Turn a repository into a tiller project

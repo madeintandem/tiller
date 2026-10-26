@@ -2,7 +2,7 @@
 
 **Scope.** This document defines the skills: the reasoning procedures an AI coding agent runs against the Tiller structure, their CLI choreography, and their stopping points. It is the counterpart to [cli-surface.md](./cli-surface.md). That document defines the operations that record or expose the agent's inputs; this one defines the reasoning, normally recorded through mutations, with the explicitly requested `design-brief` export and the `code-review` review arm as read-only exceptions. The CLI surface stays canonical for the commands themselves. Where this document and that one disagree about a command, the CLI surface wins and this one gets fixed.
 
-**Status.** Current reference for the eleven skills embedded in Tiller v0.21.3 (schema 12, orientation generation 58). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
+**Status.** Current reference for the eleven skills embedded in Tiller v0.21.4 (schema 12, orientation generation 58). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
 
 ---
 
