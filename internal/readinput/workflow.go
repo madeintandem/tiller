@@ -17,7 +17,7 @@ import (
 func Workflow(t *store.Tree) workflow.Input { return mutate.ObserveWorkflow(t) }
 
 // WorkflowObserved is Workflow plus the task execution observed on local
-// branches and worktrees (issue #149), for route guidance. Observation is a
+// branches and worktrees, for route guidance. Observation is a
 // pure read that degrades: on any discovery or stability error Observed
 // stays nil and routing proceeds on integration alone.
 func WorkflowObserved(t *store.Tree) workflow.Input {

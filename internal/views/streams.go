@@ -93,7 +93,7 @@ type QuestionItem struct {
 }
 
 // StreamsOf derives the per-contributor rollup from the loaded tree, deterministic
-// (owners in id order, a ranked-noun pair by DependencyOrder (issue #27),
+// (owners in id order, a ranked-noun pair by DependencyOrder,
 // everything else by reference).
 func StreamsOf(t *store.Tree) Streams {
 	return StreamsOfInput(t, workflow.Input{})

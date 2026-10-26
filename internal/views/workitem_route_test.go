@@ -81,7 +81,7 @@ func TestReadyShelfQueueLineCountsReadyButNotCarried(t *testing.T) {
 
 // epiclessShelfTree is shelfRouteTree with its epic and feature removed: the
 // state of a brownfield project the day its baseline is confirmed and a bug
-// is captured, before any epic exists (issue #137).
+// is captured, before any epic exists.
 func epiclessShelfTree() *store.Tree {
 	tree := shelfRouteTree()
 	tree.Epics = map[string]*store.Epic{}

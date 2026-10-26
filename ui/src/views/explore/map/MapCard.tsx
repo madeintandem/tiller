@@ -184,7 +184,7 @@ export default function MapCard({
       {/* The header holds still and the body under it scrolls. The card used
           to be one scrolling box with the close control absolutely positioned
           inside it, so a node carrying a long list of dependencies scrolled
-          its own close button off the top (review round 3). */}
+          its own close button off the top. */}
       <div
         className="map-dock-head"
         onPointerDown={onPointerDown}

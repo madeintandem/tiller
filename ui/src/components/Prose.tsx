@@ -146,7 +146,7 @@ const INLINE_COMPONENTS: Components = {
 };
 
 // ProseInline is Prose for a string that lives inside a line: the route
-// strip's reason clause (issue #96), where the walk's own wording carries a
+// strip's reason clause, where the walk's own wording carries a
 // backticked command that should read as a code span, not as literal
 // backticks. Same renderer, same three postures, a span instead of a div.
 export function ProseInline({ markdown }: { markdown: string }) {

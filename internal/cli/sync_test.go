@@ -318,7 +318,7 @@ func TestSyncTaskMergeDoesNotCrossItsSiblingCLI(t *testing.T) {
 	require.NoFileExists(t, filepath.Join(dir, sibling+".txt"))
 }
 
-// TestSyncHumanNamesCrossingsByRef pins the human sync rendering (issue #10):
+// TestSyncHumanNamesCrossingsByRef pins the human sync rendering:
 // each crossing line names its node by the shared reference convention, and a
 // task crossing, which carries only its id, borrows its parent feature's key
 // path through the tree humanSync resolves against, the one loaded BEFORE the
@@ -579,12 +579,12 @@ func TestSyncAcceptFastForwardRefusalCLI(t *testing.T) {
 		"branch that still resolves, for a node with something in review to cross.")
 }
 
-// layOrphanedStateCommitCLI is the field case issue #43 exists for, driven
+// layOrphanedStateCommitCLI is the field case the accept-fast-forward recovery exists for, driven
 // through the real command chain: the fixture task's branch is pushed and
 // its pushed tip merged with --no-ff into main, exactly like a normal PR
 // merge, and then the local branch gains one more commit that never reaches
 // the remote, a state commit left behind after the PR that carried the
-// earlier tip already merged (the same shape issue #42's own fixture
+// earlier tip already merged (the same shape the own fixture
 // produces, from the other side of one merge). It leaves the checkout on
 // main, the task in review, and the integration branch declared, and returns
 // the branch name.
@@ -614,7 +614,7 @@ func layOrphanedStateCommitCLI(t *testing.T, dir string) string {
 	return branch
 }
 
-// TestSyncAcceptFastForwardRecoveryRendersBranchDashFArmCLI is issue #43's
+// TestSyncAcceptFastForwardRecoveryRendersBranchDashFArmCLI is the
 // field case rendered end to end: a state commit left unpushed after its PR
 // already merged refuses --accept-fast-forward as not_contained, and the
 // refusal now prescribes the honest fix instead of leaving the human to

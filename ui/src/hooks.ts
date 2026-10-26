@@ -128,7 +128,7 @@ export function useFetch<T>(
 // browser tabs truncate from the right: "Wire the billing webhook · Tiller"
 // still reads as the feature when only its first few words are visible, and
 // a row of tabs that all began "Tiller · " would be indistinguishable, which
-// is exactly the complaint issue #108 opened with.
+// is exactly the original complaint.
 const TITLE_SUFFIX = " · Tiller";
 
 // titleOf builds the tab title for one page part.

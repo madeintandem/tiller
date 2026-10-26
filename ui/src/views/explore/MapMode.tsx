@@ -467,8 +467,8 @@ export default function MapMode({
   // It is keyed on the selection, never on the open set. Watching the open
   // set made this effect fire on its own writes: closing a branch above the
   // selected node re-opened it on the very next commit, so a collapse chevron
-  // did nothing and Collapse all left the selection's ancestry standing (fix
-  // round 2). The functional setter is what lets it read the current set
+  // did nothing and Collapse all left the selection's ancestry standing (a
+  // review fix). The functional setter is what lets it read the current set
   // without depending on it, and it also reads the set the restore effect
   // above queued in this same commit, which is the one moment the open set
   // exists but this render has not seen it. `ready` and `projectKey` are

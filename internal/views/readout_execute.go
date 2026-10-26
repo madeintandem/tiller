@@ -129,7 +129,7 @@ func executeStateNote(status string, green, current, recorded bool, surface stri
 // A riding task records its own ref, not a task PR. Name both that ref and the
 // resolved reviewed node, without inventing a PR before the parent records one.
 // A historical task PR remains authoritative, matching inReviewHumanWait, and
-// a task started at task grain rides nothing (issue #146).
+// a task started at task grain rides nothing.
 func executeTaskReviewNote(t *store.Tree, task *store.Task) string {
 	note := executeReviewNote(task.PR, task.ReviewRef)
 	if task.PR != nil {

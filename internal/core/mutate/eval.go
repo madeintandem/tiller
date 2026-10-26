@@ -32,7 +32,7 @@ import (
 // criterion and records the evals gate. EmitRubrics builds the rubric packet and
 // writes nothing. RecordRubricOutput names a file holding the agent's graded
 // RubricOutput for the criterion in Criterion, which it validates and records.
-// Progress is the optional gate lifecycle sink (issue #45), reaching only the
+// Progress is the optional gate lifecycle sink, reaching only the
 // default run mode: emit and record never shell a command gate. Follows the
 // same nil-is-silent convention as mutate.CheckInput.Progress. Rerun forces
 // every command and test criterion to run even where a passed record over

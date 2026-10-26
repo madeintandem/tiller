@@ -381,7 +381,7 @@ func TestEvaluateAmendmentOpSourcesIsNilForAHandAmendment(t *testing.T) {
 }
 
 // --- EvaluateAmendmentShape: show amendment's live read of resolveAmendment's
-// own two shape-only refusals (#57): a duplicate staged key and a
+// own two shape-only refusals: a duplicate staged key and a
 // staged-epic replacement. Neither predicate is gated on amendment.Source
 // (unlike EvaluateAmendmentOpSources): resolveAmendment itself runs both
 // checks unconditionally, on a hand-opened amendment exactly as on an

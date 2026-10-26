@@ -201,7 +201,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 				return unresolvedAmendmentRef(raw), "Conflicting creation events for staged key " + raw
 			}
 			// Before approval applies the staging operation, its node is
-			// expected not to exist; that is not a defect to report (#144).
+			// expected not to exist; that is not a defect to report.
 			if a.Status == store.AmendmentStatusProposed && len(applications[indices[0]]) == 0 {
 				return &AmendmentEndpoint{Raw: raw, Unresolved: true, Pending: true}, ""
 			}

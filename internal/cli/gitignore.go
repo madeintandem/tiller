@@ -15,7 +15,7 @@ type ignoreGroup struct {
 // upsert all groups without rewriting existing entries.
 //
 // Root anchors keep these patterns from hiding a project's nested directories.
-// Only artifacts/tiller/ belongs to Tiller, not the rest of artifacts/ (#104).
+// Only artifacts/tiller/ belongs to Tiller, not the rest of artifacts/.
 var tillerIgnoreGroups = []ignoreGroup{
 	{
 		comment: "# Tiller-generated, not source. Safe to delete; Tiller re-runs the gates and\n" +

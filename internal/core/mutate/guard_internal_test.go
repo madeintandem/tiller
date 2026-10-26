@@ -1,6 +1,6 @@
 package mutate
 
-// This file pins task 4's net 1 and net 4 (issue #40, the six test nets the
+// This file pins task 4's net 1 and net 4 (the six test nets the
 // #37-#39 reviews deferred). Both nets call guardParentState directly, and it
 // is unexported, so neither can live in transition_test.go or check_test.go
 // (package mutate_test): they belong in the mutate package's own test binary
@@ -126,8 +126,8 @@ func TestGuardParentStateAgreesWithRetiredAncestorAcrossTheMatrix(t *testing.T) 
 	}
 }
 
-// TestGuardParentStateDoneFeatureFallsThroughLikeReadyAndActive is net 4
-// (issue #40): guardParentState's own doc comment says ready, active, and
+// TestGuardParentStateDoneFeatureFallsThroughLikeReadyAndActive is net 4:
+// guardParentState's own doc comment says ready, active, and
 // done all fall through the guard the same way under a live epic ("a done
 // parent is the reopen story's business, not this arm's"), but nothing
 // called the guard directly over a done feature before this — every other

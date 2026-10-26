@@ -151,9 +151,9 @@ describe("closeAll", () => {
 });
 
 // mergeRestored (task 4's restore effect, Explore.tsx): extracted to its own
-// pure function in the fix round 3 specifically so this
+// pure function later specifically so this
 // precedence rule is pinned by a unit test directly, at a grain where
-// reachability is irrelevant - round 2's fix (holding auto-open until the
+// reachability is irrelevant - the settled gate (holding auto-open until the
 // restore has run) makes `live` provably empty at the one production call
 // site's own merge time, so no integration test could ever exercise a real
 // conflict there. A precedence rule guarded only by a comment about current

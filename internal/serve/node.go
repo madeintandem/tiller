@@ -340,7 +340,7 @@ func driftViews(t *store.Tree, n store.Node) ([]views.DriftBadgeView, *views.Nod
 }
 
 // unpushedReviewViewOf projects review.Facts onto the node page's additive
-// unpushed_review object (Task 15, issue #42), nil exactly when facts is
+// unpushed_review object (Task 15), nil exactly when facts is
 // nil, the identical projection internal/cli's own unpushedReviewView
 // applies for the CLI envelopes. The live-git computation itself is
 // review.ForTask (internal/core/review), called directly above with the

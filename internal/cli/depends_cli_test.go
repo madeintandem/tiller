@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the dependency write path at the CLI surface (issue #21):
+// These tests pin the dependency write path at the CLI surface:
 // --depends-on at add and tiller link after, with targets resolved
 // all-or-nothing and confirmations naming the graph by the reference
 // convention.

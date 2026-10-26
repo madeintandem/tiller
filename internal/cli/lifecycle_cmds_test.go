@@ -169,7 +169,7 @@ func taskYMLPath(t *testing.T, localKey string) string {
 }
 
 // setTaskStatus hand-lays a task status onto task.yml, the shape a pre-guard
-// tree can already hold on disk (issue #33's field trees do: a task approved
+// tree can already hold on disk (the field trees do: a task approved
 // before this guard existed). The guard must bite on what is there, not only
 // on what today's verbs can produce (mirrors mutate/transition_test.go's own
 // helper of the same name, one layer down).
@@ -191,7 +191,7 @@ func setTaskStatus(t *testing.T, localKey, from, to string) {
 	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }
 
-// TestTaskVerbsRefuseUnderUngatedFeature pins issue #33 at the surface an
+// TestTaskVerbsRefuseUnderUngatedFeature pins the guard at the surface an
 // agent reads: the exit code and the reason string. approve and start under a
 // pre-plan-gate feature are blocked business answers (exit 1) naming
 // parent_plan_ungated, and the batch form refuses the same way; after the
@@ -226,7 +226,7 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	// Both approves above were refused, so the task itself never reached
-	// ready; start's own refusal is pinned at the state issue #33's field
+	// ready; start's own refusal is pinned at the state the field
 	// trees can already hold on disk, a task already ready under a feature
 	// that has not yet taken the plan gate (setTaskStatus mirrors the
 	// identical fixture at mutate/transition_test.go's
@@ -244,7 +244,7 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 }
 
 // TestApproveTaskOnAnAlreadyReadyTaskStillRefusesUnderUngatedFeature pins task
-// 4's net 5 (issue #40), the v0.2.1 idempotent-retry behavior change no
+// 4's net 5, the v0.2.1 idempotent-retry behavior change no
 // earlier test caught: approve on a task already sitting at ready is
 // lifecycle.Legal's own safe-retry case (idempotent, "a verb whose target
 // equals the current state" — Legal finds the approve->ready row and matches
@@ -268,7 +268,7 @@ func TestApproveTaskOnAnAlreadyReadyTaskStillRefusesUnderUngatedFeature(t *testi
 	require.Equal(t, "ready", loadTestTree(t).Tasks[soleTaskID(t)].Status, "a refused approve must not move the task")
 }
 
-// TestTaskVerbsRefuseUnderCancelledFeature pins issue #35 at the agent's
+// TestTaskVerbsRefuseUnderCancelledFeature pins the guard at the agent's
 // surface: exit 1, the reason string, the remedy naming cancel task, and the
 // feature's key riding as its own structured field on both parent-guard
 // blocks (the id-and-key rule; the ungated block gains it here too).
@@ -292,7 +292,7 @@ func TestTaskVerbsRefuseUnderCancelledFeature(t *testing.T) {
 	// start requires ready, so the fixture is hand-advanced the same way
 	// TestTaskVerbsRefuseUnderUngatedFeature's own start assertion is (a task
 	// already ready under a feature is exactly the pre-existing-tree shape
-	// issue #33's and #35's field trees can already hold on disk).
+	// the and #35's field trees can already hold on disk).
 	setTaskStatus(t, "transcribe-the-schema", "proposed", "ready")
 
 	_, stderr3, code3 := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
@@ -325,7 +325,7 @@ func setEpicStatus(t *testing.T, epicKey, from, to string) {
 	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }
 
-// TestFeatureVerbsRefuseUnderRetiredEpic pins issue #36 at the feature grain,
+// TestFeatureVerbsRefuseUnderRetiredEpic pins the guard at the feature grain,
 // the agent's surface: exit 1, the reason string, and the epic's own state and
 // key riding as structured fields. Both of the epic's terminal states refuse
 // the same way (mutate.ParentEpicRetiredError documents why: cancel and
@@ -394,8 +394,8 @@ func TestTaskVerbsRefuseUnderLiveFeatureCancelledEpic(t *testing.T) {
 	require.Contains(t, stderrHuman, "tiller cancel task")
 }
 
-// TestStatusReportsHeldByRetiredFeature pins task 3's status-oracle wiring
-// (issue #36): a live task under a cancelled feature reads held at both the
+// TestStatusReportsHeldByRetiredFeature pins task 3's status-oracle wiring:
+// a live task under a cancelled feature reads held at both the
 // human line and the --json envelope, before any doing verb ever runs.
 func TestStatusReportsHeldByRetiredFeature(t *testing.T) {
 	laySpeccableFeature(t)
@@ -569,7 +569,7 @@ func assembleTaskForReviewCLI(t *testing.T, taskID, aggregate string) {
 }
 
 // TestSubmitConfirmationWarnsWhenTheStateCommitIsUnpushed is the field case
-// mechanically reproduced (issue #42, Lantern's T-m66b11): the recorded feature
+// mechanically reproduced (Lantern's T-m66b11): the recorded feature
 // branch is pushed and tracked, then a further local commit (the state
 // commit a submit's own writes would normally be folded into) never reaches
 // the remote before submit runs, submit's own "normal immediate condition"
@@ -1075,7 +1075,7 @@ func walkTaskToCheck(t *testing.T) string {
 	return tid
 }
 
-// TestSubmitWithoutPRRecordsBranchRefWhenNoRemote is the issue #15 offline path:
+// TestSubmitWithoutPRRecordsBranchRefWhenNoRemote is the offline path:
 // in a repo with no git remote, submit without --pr succeeds, moves the task to
 // in_review, and records the current branch and head commit as the review ref,
 // with pr left absent (never a faked number). The envelope carries the review
@@ -1441,7 +1441,7 @@ func TestRefreshBasisReportsWhatItRecordedNotAMove(t *testing.T) {
 }
 
 // TestRefreshBasisReportsWhatItRecordedOnABatch is the batch half of inherited
-// item 8, which round 1 found pinned only on the single-node path: a verifier
+// item 8, which review found pinned only on the single-node path: a verifier
 // reverted batch.go's act to its pre-commit `&views.GateAct{}` and the whole
 // uncached cli suite still passed, then drove the mutant binary and got back
 // "**Approval recorded** / Moved to ready: 2 of 2" for a command that moved
@@ -1484,7 +1484,7 @@ func TestRefreshBasisReportsWhatItRecordedOnABatch(t *testing.T) {
 }
 
 // TestRefreshBasisOnAFeatureWithNoProposedTasksIsNotAnApproval covers the other
-// batch arm round 1 named: `approve task --feature <key>` on a feature with
+// batch arm review named: `approve task --feature <key>` on a feature with
 // nothing proposed took a hardcoded empty act, so a --refresh-basis run there
 // printed the plain approval block for a command that approved nothing and
 // re-pinned nothing.
@@ -1785,7 +1785,7 @@ func TestApproveReviewGrainRefusesAnEmptyValue(t *testing.T) {
 	require.Equal(t, "draft", loadTestTree(t).Epics[soleEpicID(t)].Status, "the approval gate must not have silently crossed")
 }
 
-// TestApproveEpicReviewGrainLockedReasonMatchesConfigure pins round 3 of the
+// TestApproveEpicReviewGrainLockedReasonMatchesConfigure pins the
 // Review Grain follow-up (live verification, Task 10): the approve/transition
 // error path had no mapping for mutate.ReviewGrainLockedError, so classify
 // fell to its generic fallback, reason "error", exit 2, even though the
@@ -1796,7 +1796,7 @@ func TestApproveReviewGrainRefusesAnEmptyValue(t *testing.T) {
 // classification's own code, not configure's exit 1: this fix touches only
 // the reason string, not the rendering shape).
 //
-// An epic has no stored `active` status (round 2's own finding), so a
+// An epic has no stored `active` status (a review finding), so a
 // submitted epic-grain epic (its own PR or review ref already recorded via
 // `submit epic`) sits at `ready` exactly like an unsubmitted one; the cheap
 // honest route to that fixture is a direct yml rewrite, the same pattern the
@@ -1925,10 +1925,10 @@ func TestSubmitPassesOnceReviewedInCLI(t *testing.T) {
 	require.Equal(t, "in_review", soleTaskStatus(t, taskID))
 }
 
-// --- Micro-round ---
+// --- Follow-up ---
 
 // TestSubmitEpicCLINamesNoLiveTaskRatherThanTasksIncompleteWording is the
-// micro-round's CLI-level pin of item 6, which the final-review fix round
+// CLI-level pin of item 6, which the final-review fix
 // (commit 7657882) fixed only at the mutate layer
 // (mutate.FeatureNotSubmittableError.Error()): reportSubmitNodeError's own
 // rendering here still unconditionally printed "has a task not yet in_review
@@ -2210,7 +2210,7 @@ func TestCheckSubmitResumeBugCommands(t *testing.T) {
 
 // adoptAggregateFixture walks the shared feature to active at feature grain and
 // hand-builds a ref at its derived aggregate name holding one commit beyond
-// integration, the state issue #147's field run left behind.
+// integration, the state the field run left behind.
 func adoptAggregateFixture(t *testing.T) string {
 	t.Helper()
 	dir := initGatedGitRepo(t, "true")
@@ -2228,7 +2228,7 @@ func adoptAggregateFixture(t *testing.T) string {
 	return agg
 }
 
-// TestStartAdoptAggregateFlag pins issue #147's CLI surface: --adopt-aggregate
+// TestStartAdoptAggregateFlag pins the CLI surface: --adopt-aggregate
 // records the existing ref and reports the commits it holds beyond
 // integration, in JSON and in the human line.
 func TestStartAdoptAggregateFlag(t *testing.T) {
@@ -2284,7 +2284,7 @@ func TestStartAdoptAggregateHumanLineWithNoCommits(t *testing.T) {
 	require.NotContains(t, line, "commit(s)")
 }
 
-// staleTaskGrainCLIFixture is issue #146's timeline at the CLI: the task starts
+// staleTaskGrainCLIFixture is the timeline at the CLI: the task starts
 // and checks at task grain, then the feature's grain changes to feature, with
 // a remote configured. It returns the task id.
 func staleTaskGrainCLIFixture(t *testing.T) string {

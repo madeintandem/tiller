@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file holds the batch arms of the high-repetition verbs (issue #14, the
+// This file holds the batch arms of the high-repetition verbs (the
 // first full-arc dry run): approve over several nodes, and approve task
 // --feature. The contract is all-or-nothing
 // resolution, then per-node application: every address must resolve before
@@ -79,7 +79,7 @@ func runApproveTasksByFeature(cmd *cobra.Command, featureAddr string, in mutate.
 	// refuses a corrupt identity file or a bad --contributor before it mutates
 	// anything, but the zero-tasks arm used to return its "nothing to do"
 	// success before deps() ever ran, so that one arm alone let a corrupt
-	// .tiller/identity.yml through silently (issue #58). The resolved value
+	// .tiller/identity.yml through silently. The resolved value
 	// itself is unused here; applyTransitionBatch resolves it again
 	// independently when there are nodes to apply, which is deterministic
 	// within the same invocation, so this hoist exists purely to make the
@@ -157,7 +157,7 @@ func applyTransitionBatch(cmd *cobra.Command, command string, tree *store.Tree, 
 			sum.Unchanged++
 		}
 		results = append(results, batchEntry(true, transitionView(res)))
-		// The review-state warning (issue #42) only ever applies to submit,
+		// The review-state warning only ever applies to submit,
 		// which has no batch arm (approve is the only verb runTransitionBatch
 		// ever serves), so this passes nil unconditionally.
 		lines = append(lines, humanTransition(tree, command, in, res, gen.Ref(tree, n), nil))

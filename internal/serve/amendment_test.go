@@ -324,7 +324,7 @@ func corruptAmendmentTarget(t *testing.T, root, amendmentID, vanishedID string) 
 // .tiller/amendments/ directory (the store's own <id>-<key>.yml naming),
 // globbed rather than hardcoded to one key: corruptAmendmentTarget's own
 // fixture always opens under "iphone-only", but amendmentHandEditFixture
-// (#57) reuses amendmentSourceFixture's "review-intake" key instead, so a
+// reuses amendmentSourceFixture's "review-intake" key instead, so a
 // single fixed suffix would silently miss it.
 func amendmentDocPath(t *testing.T, root, amendmentID string) string {
 	t.Helper()

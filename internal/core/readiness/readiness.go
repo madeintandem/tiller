@@ -3,8 +3,8 @@
 // manifest are coherent enough to begin decomposition. Most of that is a thin
 // wrapper over store.Manifest's validation that shapes the result for
 // reporting, but Check also reads .tiller/orientation.md off disk itself and
-// compares its stamped generation against gen.OrientationGeneration()
-// (issue #41): that check is not a store.Manifest shape concern, since store
+// compares its stamped generation against gen.OrientationGeneration():
+// that check is not a store.Manifest shape concern, since store
 // cannot import gen without an import cycle (gen already imports store), so
 // it lives here instead. It holds no cobra dependency and never writes to
 // stdout; the CLI renders the Report into a JSON envelope.
@@ -195,7 +195,7 @@ func memberLabel(t *store.Tree, noun, id string) string {
 // when they disagree in either direction. A missing file, or one carrying no
 // stamp gen.OrientationStampGeneration recognizes, reports stale=false:
 // readiness names no new failure for a file it cannot read a generation out
-// of (issue #41's explicit carve-out), the same silence it already keeps
+// of (the explicit carve-out), the same silence it already keeps
 // about a missing orientation.md today.
 //
 // A behind artifact needs only offline project maintenance. An ahead artifact

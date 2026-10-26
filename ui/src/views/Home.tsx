@@ -121,7 +121,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // the body's grid (JC, 2026-08-31: three kinds past the cap read as three
   // full-width walls of rows; side by side the page is as tall as the
   // longest kind, not the sum). Member order within a kind stays exactly what
-  // the server served (issue #27's dependency order). total counts every
+  // the server served (the dependency order). total counts every
   // entry, never a run, so the badge and the empty check stay honest about
   // how many decisions are actually waiting.
   const groups = groupQueueByGravity(queueEntries);

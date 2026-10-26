@@ -53,7 +53,7 @@ func readGolden(t *testing.T, name string) string {
 
 // TestTreeDefaultGolden pins the default whole-project map: one line per node
 // carrying its local key segment and title, sized to the tree's own widest
-// label; the drill paths live under --files (issue #18).
+// label; the drill paths live under --files.
 func TestTreeDefaultGolden(t *testing.T) {
 	golden := readGolden(t, "tree_default.txt")
 	layMapTree(t)
@@ -103,7 +103,7 @@ func TestTreeJSONGolden(t *testing.T) {
 	require.Equal(t, golden, normalizeIDs(out))
 }
 
-// TestTreeNodePaths pins where the drill paths live after issue #18: the
+// TestTreeNodePaths pins where the drill paths live after the tree change: the
 // default map is for orienting and spends no columns on paths (real trees
 // averaged 144 columns with them and drowned a laptop terminal), while
 // --files is the drill view, where every node's footprint names its own
@@ -159,7 +159,7 @@ func TestTreeOutsideRepoExits3(t *testing.T) {
 	require.Equal(t, 3, code)
 }
 
-// TestTreeEpicsFollowDependencyOrder pins Task A1 (issue #27) end to end at the
+// TestTreeEpicsFollowDependencyOrder pins Task A1 end to end at the
 // CLI surface: `tiller tree`'s top-level epics come out in dependency order,
 // not key order. "alpha" records --depends-on "zeta", so key order (alpha
 // before zeta) and dependency order (zeta, the foundation, before alpha, what

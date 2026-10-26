@@ -124,7 +124,7 @@ func TestJoinRecordsIdentityAndWiresAgents(t *testing.T) {
 	require.Contains(t, out, "CLAUDE.md", "summary reports the redirect")
 }
 
-// TestJoinUpsertsTillerIgnoreLinesIntoExistingGitignore is issue #90: on a
+// TestJoinUpsertsTillerIgnoreLinesIntoExistingGitignore pins the fix: on a
 // repo that already has a .gitignore (every brownfield repo), init leaves the
 // file alone and join upserts the whole Tiller block, so identity.yml and the
 // cache are ignored there too, not only on a greenfield seed.
@@ -229,7 +229,7 @@ func TestJoinSecondOwnerKeepsFirst(t *testing.T) {
 // TestJoinIsIdempotent confirms re-running join with the same --as leaves the
 // roster, identity file, shims, AGENTS.md, .gitignore, and the generated
 // orientation.md byte-identical. writeGenerated now runs
-// unconditionally on every join (issue #41), so this is also the byte-stable
+// unconditionally on every join, so this is also the byte-stable
 // half of that guarantee: an already-current orientation.md is untouched by a
 // second join. join no longer touches the roster at all, so registration
 // happens once, before either join.
@@ -265,7 +265,7 @@ func TestJoinIsIdempotent(t *testing.T) {
 // TestJoinBareRejoinRefreshesStaleOrientation confirms a bare re-join, with
 // neither --as nor TILLER_CONTRIBUTOR set, falls back to the checkout's recorded
 // .tiller/identity.yml, rewrites a hand-aged orientation.md back to the
-// binary's current generation (issue #41, unconditional writeGenerated), and
+// binary's current generation (unconditional writeGenerated), and
 // echoes the identity it fell back to, so a re-join after a binary upgrade
 // needs no flag at all.
 func TestJoinBareRejoinRefreshesStaleOrientation(t *testing.T) {
@@ -323,7 +323,7 @@ func TestInstructionRefreshInstallsMissingRequestedSkills(t *testing.T) {
 	}
 }
 
-// TestJoinSelectsTrimmedEnvOwner is join's half of issue #58's trim symmetry
+// TestJoinSelectsTrimmedEnvOwner is join's half of the trim symmetry
 // pin: a padded TILLER_CONTRIBUTOR still selects the same registered contributor on a
 // bare join, matching the mutation side (identity_resolution_test.go's
 // TestMutationEchoesTrimmedEnvFallback) now that both share the same trimmed
@@ -476,7 +476,7 @@ func TestJoinRefusesUnknownAs(t *testing.T) {
 	require.Contains(t, out, "tiller add contributor nobody", "the refusal points at registering the id")
 }
 
-// TestJoinRefusesCorruptIdentityFile confirms issue #52 at bare join too:
+// TestJoinRefusesCorruptIdentityFile confirms the same fix at bare join too:
 // with neither --as nor TILLER_CONTRIBUTOR, a present but unparseable
 // .tiller/identity.yml refuses by name (identity_unreadable, exit 3) rather
 // than falling through to the contributor_unset text, which would otherwise

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for the batch verbs (issue #14): multi-node approve and approve task
+// Tests for the batch verbs: multi-node approve and approve task
 // --feature. The contract under test: resolution is
 // all-or-nothing (any bad address is exit 2 and NOTHING mutates), application is
 // per node in argument order (a blocked node does not stop the rest), exit 0
@@ -341,7 +341,7 @@ func TestApproveTaskByFeature(t *testing.T) {
 	require.Equal(t, 0, env.Data.Summary.Total)
 }
 
-// TestApproveTaskByFeatureZeroArmRefusesCorruptIdentity pins issue #58: the
+// TestApproveTaskByFeatureZeroArmRefusesCorruptIdentity pins the fix: the
 // zero-proposed-tasks arm of `approve task --feature` used to return its
 // "nothing to do" success before deps() ever ran, so a corrupt
 // .tiller/identity.yml was silently skipped on that arm alone while every

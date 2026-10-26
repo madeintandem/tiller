@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the human node-reference convention (issue #10): human output
+// These tests pin the human node-reference convention: human output
 // names a node by its key path with the id in parentheses, and a task's key
 // path is its own three-segment key. The degenerate "task T-x (T-x)" the old
 // key-else-id fallbacks produced must never render. Minted ids are random, so
@@ -61,7 +61,7 @@ func TestTaskRefsCarryTheirOwnKeyPath(t *testing.T) {
 }
 
 // TestBlockedLinesNameTheNodeByRef pins the illegal-transition report, which
-// before issue #10 named no node at all: it now carries the full reference of
+// before the reference change named no node at all: it now carries the full reference of
 // the node it refuses.
 func TestBlockedLinesNameTheNodeByRef(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)

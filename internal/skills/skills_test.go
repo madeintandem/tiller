@@ -463,7 +463,7 @@ func TestExecuteCarriesTheShelfWorkLoop(t *testing.T) {
 }
 
 // TestHandoffsDisambiguateApproveAccept pins the vocabulary line at the moment of
-// handoff (issue #12), corrected for a build with no accept verb: approve
+// handoff, corrected for a build with no accept verb: approve
 // green-lights a proposed plan to start and is the only gate verb, completed
 // work crosses to done on the human's merge as `tiller sync` observes it, and
 // the agent translates a colloquial "accept this" by the node's state rather
@@ -669,8 +669,8 @@ func TestEmbeddedHandoffsUseRunnableCommands(t *testing.T) {
 	require.Contains(t, execute, "tiller attest feature <F-id> --criterion <C-id> --status pass")
 }
 
-// TestCorrectionsRerunTheReadoutWithSince pins the readout's two sizes
-// (issue #94): a seam exit keeps the full block, and a correction inside a
+// TestCorrectionsRerunTheReadoutWithSince pins the readout's two sizes:
+// a seam exit keeps the full block, and a correction inside a
 // gate closes with `tiller readout <seam> --since <sha>`, naming the commit
 // the last block reported. Each skill that carries a correction loop says
 // the --since form at the sentence that used to say "rerun the readout",
@@ -1089,7 +1089,7 @@ func TestOrientRelaysTheRankedList(t *testing.T) {
 }
 
 // specify grounds the claims a plan rests on in the code they describe, and
-// leaves what only building reveals as an open fact (issue #140).
+// leaves what only building reveals as an open fact.
 func TestSpecifyGroundsClaimsAboutCodeItDoesNotOwn(t *testing.T) {
 	text, ok := Lookup("specify")
 	require.True(t, ok)
@@ -1108,7 +1108,7 @@ func TestSpecifyGroundsClaimsAboutCodeItDoesNotOwn(t *testing.T) {
 }
 
 // execute records a wrong factual claim in task.md as a departure rather
-// than editing accepted prose, and bounds that departure (issue #140).
+// than editing accepted prose, and bounds that departure.
 func TestExecuteRecordsFactualCorrectionsAsDepartures(t *testing.T) {
 	text, ok := Lookup("execute")
 	require.True(t, ok)
@@ -1127,7 +1127,7 @@ func TestExecuteRecordsFactualCorrectionsAsDepartures(t *testing.T) {
 }
 
 // specify settles questions at the plan gate and execute records mid-run
-// questions and builds around them (issue #152, item 1).
+// questions and builds around them (item 1).
 func TestSpecifySettlesQuestionsAndExecuteBuildsAroundThem(t *testing.T) {
 	specify, ok := Lookup("specify")
 	require.True(t, ok)
@@ -1181,7 +1181,7 @@ func TestSpecifySettlesQuestionsAndExecuteBuildsAroundThem(t *testing.T) {
 }
 
 // Skills that read task.md as a contract or correct it in place honor a
-// recorded execution departure (issue #140 review).
+// recorded execution departure (review).
 func TestReviewAndAmendHonorExecutionDepartures(t *testing.T) {
 	review, ok := Lookup("code-review")
 	require.True(t, ok)
@@ -1268,7 +1268,7 @@ tiller claim bug`, "tiller claim bug bugs/blank-on-reload")
 }
 
 // A done feature's eval leg is mended by a reviewed correct-eval amendment,
-// while the spec and surface legs keep their persistence wording (issue #141).
+// while the spec and surface legs keep their persistence wording.
 func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 	mend, ok := Lookup("mend-drift")
 	require.True(t, ok)

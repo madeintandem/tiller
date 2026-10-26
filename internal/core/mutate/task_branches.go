@@ -282,7 +282,7 @@ func (e *AggregateContentMissingError) Error() string {
 
 func guardAggregateTasks(tree *store.Tree, rev vcs.Revisions, noun, id, branch string, feature *store.Feature) error {
 	for _, task := range gen.OrderTasks(tree, tree.FeatureTasks[feature.ID], feature.Order) {
-		// A task-grain task never enters the aggregate (issue #146);
+		// A task-grain task never enters the aggregate;
 		// taskWithOwnOpenReview refuses it before this guard runs.
 		if task.Status != "in_review" || task.StartedGrain == store.ReviewGrainTask {
 			continue
@@ -313,7 +313,7 @@ func aggregateForTask(tree *store.Tree, feature *store.Feature) (branch, noun, i
 
 // taskAggregateBranch is the aggregate task rides: none when it started at
 // task grain, since such a task takes its own PR and the aggregate never
-// absorbs it (issue #146), else its feature's aggregate.
+// absorbs it, else its feature's aggregate.
 func taskAggregateBranch(tree *store.Tree, feature *store.Feature, task *store.Task) string {
 	if task.StartedGrain == store.ReviewGrainTask {
 		return ""
@@ -328,7 +328,7 @@ type TaskDependencyBlockedError struct {
 	AggregateUnrecorded                                                    bool
 	// DependencyStartedGrain is the grain the prerequisite started under when
 	// it recorded one. At task grain it takes its own PR and never enters the
-	// aggregate, so the only remedy is waiting for its merge (issue #146).
+	// aggregate, so the only remedy is waiting for its merge.
 	DependencyStartedGrain string
 }
 
@@ -403,7 +403,7 @@ func taskStartBase(tree *store.Tree, rev vcs.Revisions, feature *store.Feature, 
 		// the aggregate, so only that refusal may send anyone to build and
 		// adopt one; every other prerequisite still waits.
 		// A prerequisite started at task grain takes its own PR and never
-		// enters the aggregate, even one that holds its branch (issue #146).
+		// enters the aggregate, even one that holds its branch.
 		includable := aggregate != "" && dependency != nil && dependency.FeatureID == feature.ID && dependency.Status == "in_review"
 		if includable && dependency.StartedGrain != store.ReviewGrainTask {
 			included, err := TaskIncludedInAggregate(rev, dependency, aggregate)

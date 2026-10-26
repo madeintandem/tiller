@@ -68,7 +68,7 @@ func TestNodeProjectsReviewGrainAndSource(t *testing.T) {
 			wantSource: "feature",
 		},
 		{
-			// Fix round 1, Important 2 (the reviewer's named ambiguous case,
+			// Important 2 (the reviewer's named ambiguous case,
 			// verified by hand, previously unpinned by any test): an explicit
 			// feature-level override back to "task" under an epic-grain epic
 			// resolves grain "task" - the same value the hardcoded default

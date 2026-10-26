@@ -1,4 +1,4 @@
-// Browser tab titles (issue #108: every tab used to say "Tiller"). Each view
+// Browser tab titles (every tab used to say "Tiller"). Each view
 // sets its own title through useDocumentTitle; the shape is "<page> · Tiller"
 // with the distinguishing word first, since tabs truncate from the right.
 // Rendered through App with the same stubFetch-keyed-by-URL convention

@@ -87,7 +87,7 @@ func TestReaderRefusesASymlinkedLeaf(t *testing.T) {
 
 // A regular leaf replaced by another regular file between lstat and open, the
 // shape of an atomic rename by a concurrent writer, is ErrChanged as well as
-// ErrUnsafe, so a caller can tell it from symlink substitution (#151).
+// ErrUnsafe, so a caller can tell it from symlink substitution.
 func TestReaderMarksAReplacedRegularLeafAsChanged(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, dir, filepath.Join("cache", "generation"), "one")

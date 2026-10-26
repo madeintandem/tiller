@@ -263,7 +263,7 @@ func TestIsDirty(t *testing.T) {
 	assert.True(t, dirty, "an untracked, non-ignored file makes the tree dirty")
 }
 
-// TestDirtyUnder pins the scoped dirty-paths helper (issue #44): a modified
+// TestDirtyUnder pins the scoped dirty-paths helper: a modified
 // tracked file and an untracked file under the prefix both surface, sorted,
 // while a dirty file OUTSIDE the prefix never appears, and a clean prefix
 // answers empty.
@@ -441,7 +441,7 @@ func TestIsMergedInto_NonexistentBranchIsNotMerged(t *testing.T) {
 
 // newRepoWithBareRemote builds on newRepo with a bare "remote" repository
 // alongside it and main pushed and tracked, the scratch harness the review-
-// state warning (issue #42) needs: a real push boundary to advance ahead of
+// state warning needs: a real push boundary to advance ahead of
 // or stay even with, with no GitHub or network involved.
 func newRepoWithBareRemote(t *testing.T) (dir string, bareDir string, g *Git) {
 	t.Helper()
@@ -537,7 +537,7 @@ func TestUnpushedTip_UnresolvableBranchIsNoRemoteCounterpart(t *testing.T) {
 }
 
 // TestUnpushedTip_TagShadowsBranchName is the tag-shadow hazard the batch
-// review flagged (final review finding 1, issue #42): git's rev-parse
+// review flagged (final review finding 1): git's rev-parse
 // precedence resolves a bare name from refs/tags before refs/heads
 // (mutate/sync.go's own branchRef doc comment names the identical hazard for
 // observeMerge). A tag sharing the feature branch's name, pointing at the

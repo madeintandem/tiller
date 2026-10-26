@@ -313,9 +313,9 @@ func snapshotWholeTree(t *testing.T, root string) (files map[string][]byte, dirs
 
 // TestInitOnAVersionOneTreeRefusesWithoutRewritingAnything confirms a refused
 // init is a clean stop across the whole tree, not just the three files a
-// earlier version of this test happened to name. Before round 1's fix,
+// earlier version of this test happened to name. Before the fix,
 // writeGenerated (init.go) wrote orientation.md and only then called
-// store.Load; round 1 fixed that ordering but scaffold itself still ran its
+// store.Load; that ordering was fixed but scaffold itself still ran its
 // skeleton-directory MkdirAll loop and seeded a root .gitignore before ever
 // validating a pre-existing manifest, so a refused re-run over a real
 // version-1 tree still created five new directories and a new tracked
@@ -357,7 +357,7 @@ func TestInitRendersEmptyRosterAndNoOwnerEnvelope(t *testing.T) {
 	manifest := string(data)
 	require.Contains(t, manifest, "contributors: []", "the roster ships empty")
 	require.Contains(t, manifest, "tiller add contributor", "the owners comment points at add contributor, the only command that registers one")
-	// The seeded file is self-contained (issue #17): its breadcrumb points at
+	// The seeded file is self-contained: its breadcrumb points at
 	// the in-project orientation, never at the Tiller source repo's docs.
 	require.Contains(t, manifest, "Inline comments describe each block; .tiller/orientation.md covers where things live.")
 	require.NotContains(t, manifest, "docs/spec", "the seeded manifest never points outside the project")
@@ -440,7 +440,7 @@ func TestInitSucceedsWithoutOwner(t *testing.T) {
 // TestInitSeedsEvalsGateActive confirms init wires the acceptance contract into
 // check/sync by default at feature grain: the canonical evals required gate is
 // active on features only, so the contract gates the feature while tasks gate on
-// build and tests (issue #11). The project-specific build and tests gates stay
+// build and tests. The project-specific build and tests gates stay
 // commented templates the team fills in, and those templates keep task grain.
 func TestInitSeedsEvalsGateActive(t *testing.T) {
 	dir := t.TempDir()
@@ -492,7 +492,7 @@ func TestInitSeedsDefaultDriftChecks(t *testing.T) {
 }
 
 // The generated ignores must hide Tiller's root-local files without hiding
-// a project's own artifacts or nested directories of the same names (#104).
+// a project's own artifacts or nested directories of the same names.
 func TestInitSeedsGitignoreWithArtifacts(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)

@@ -202,7 +202,7 @@ func TestAddQuestionRefusesNonBlockableTargetsCLI(t *testing.T) {
 	require.Contains(t, stdout+stderr, "a question blocks an epic, a feature, or a task")
 }
 
-// TestShowQuestionJSONCarriesSourceAndBlocks pins issue #55 at the CLI
+// TestShowQuestionJSONCarriesSourceAndBlocks pins the question source and blocks at the CLI
 // surface: `show question --json` renders a question's Source citation and
 // its Blocks list, both already recorded on the ledger through add question's
 // own --source and --blocks flags but previously dropped from the read

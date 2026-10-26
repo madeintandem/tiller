@@ -141,7 +141,7 @@ func observeWorkflow(t *store.Tree, features, tasks map[string]bool) workflow.In
 		}
 		for _, task := range gen.OrderTasks(t, t.FeatureTasks[id], f.Order) {
 			// A task started at task grain owns its review like a task PR
-			// does; the aggregate never absorbs it (issue #146, R6).
+			// does; the aggregate never absorbs it (R6).
 			if task.Status != "in_review" || task.PR != nil || task.StartedGrain == store.ReviewGrainTask {
 				continue
 			}

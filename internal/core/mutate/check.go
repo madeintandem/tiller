@@ -33,7 +33,7 @@ import (
 // CheckInput carries the optional guard inputs check shares with start and submit:
 // an --assume-question recorded with its --reason lets a known-risk check proceed
 // past an open-question blocker (cli-surface.md, the active-basis guard). Progress
-// is the optional gate lifecycle sink (issue #45): nil runs silent, exactly as
+// is the optional gate lifecycle sink: nil runs silent, exactly as
 // check did before progress existed; the CLI supplies a stderr-writing one in
 // human mode and nil under --json, so the recorded evidence never carries it.
 //
@@ -89,7 +89,7 @@ type CheckResult struct {
 	Changed  bool
 	Warnings []string
 	// AggregateBranch is the recorded aggregate branch of a coarse-grain
-	// feature check, where the human's attest must be committed (issue #150).
+	// feature check, where the human's attest must be committed.
 	AggregateBranch string
 }
 

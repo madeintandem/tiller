@@ -1,7 +1,7 @@
 package gen
 
 // This file derives the held-by-retired-ancestor annotation the read surfaces
-// show before a human runs a doing verb that would refuse (issue #36,
+// show before a human runs a doing verb that would refuse (
 // "annotate, don't subtract"): legal_next and NextOwner stay pure lifecycle
 // projections, untouched by this file, while a caller that wants to say WHY
 // those verbs would refuse reads this derived predicate instead.
@@ -20,7 +20,7 @@ package gen
 // but that pre-gate seam is a one-hop dead end exactly when the epic itself
 // is retired, since the remedy it would name refuses ParentEpicRetiredError
 // the moment it runs. So the epic answer outranks the pre-gate arms there,
-// and only there (issue #38, JC's call 2026-08-03). A pre-gate feature under
+// and only there (JC's call 2026-08-03). A pre-gate feature under
 // a LIVE epic still holds nothing, guardParentState's own live route to the
 // gate. And a node that is itself terminal (done or cancelled) is never
 // held: a cancelled task under a cancelled feature already finished, it was
@@ -43,7 +43,7 @@ type Held struct {
 // nearest retired ancestor of n, cancelled feature before retired epic before
 // pre-gate for a task, exactly the order guardParentState's own checks run (a
 // feature's cancelled arm answers before the walk ever reaches the epic, and
-// the epic answer outranks a merely pre-gate parent, issue #38). nil when n
+// the epic answer outranks a merely pre-gate parent). nil when n
 // is itself terminal, when every ancestor is live, or when the immediate
 // parent is pre-gate (draft or specced) under a LIVE epic. Only a task and a
 // feature can come back held; an epic has no ancestor to retire under, and a
@@ -60,7 +60,7 @@ func RetiredAncestor(t *store.Tree, n store.Node) *Held {
 }
 
 // retiredAncestorOfTask mirrors guardParentState's own control flow over the
-// parent feature's status, reordered for issue #38: cancelled names the
+// parent feature's status, reordered so that cancelled names the
 // feature directly, the same early return guardParentState's own cancelled
 // check makes first. Otherwise the epic question runs next, exactly the way
 // the guard's own call to epicRetired now runs ahead of its pre-gate switch;

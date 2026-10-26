@@ -243,7 +243,7 @@ contributors: []
 	require.Equal(t, store.ReasonMutationStale, env.Reason)
 }
 
-// correctionFixture is the block issue #94 asked for, as views hands it to
+// correctionFixture is the block the readout correction asked for, as views hands it to
 // the renderer: the headline, both shas, two Changed lines, and the full
 // block's own queue and Next lines.
 func correctionFixture() views.Correction {

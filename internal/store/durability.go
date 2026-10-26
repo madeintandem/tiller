@@ -12,7 +12,7 @@ import (
 // after it, and the mutation lock, so a crash mid-write leaves either the old
 // file or the whole new one. Under `go test` the default flips to off, because
 // a fixture that performs a hundred atomic writes paid a hundred fsyncs and the
-// suite took twelve minutes on a busy disk (issue #87); the write seams take an
+// suite took twelve minutes on a busy disk; the write seams take an
 // injected sync function, so the tests that cover the wiring still run it.
 //
 // TILLER_FSYNC=on or TILLER_FSYNC=off overrides the default in either

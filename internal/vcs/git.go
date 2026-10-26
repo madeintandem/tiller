@@ -739,7 +739,7 @@ func (g *Git) CommitsBetween(base, tip string) ([]string, error) {
 // refs/heads (mutate/sync.go's own branchRef documents the identical hazard
 // for observeMerge, the precedent this follows): a tag sharing a feature
 // branch's name answers for the branch. UnpushedTip's merge-base arm and the
-// review-state warning's ShortSHA call (issue #42, internal/cli/unpushed_review.go)
+// review-state warning's ShortSHA call (internal/cli/unpushed_review.go)
 // are the two places this package's own callers ask git about a task's
 // recorded feature branch by name, so both go through this.
 //
@@ -832,7 +832,7 @@ func (g *Git) resolveUpstream(branch string) (upstream string, ok bool, err erro
 // ShortSHA reports ref's short commit sha, the same form Head reports for
 // HEAD specifically. It is how a caller names the exact commit an arbitrary
 // branch sits at, which UnpushedTip's own boolean answer does not carry: the
-// review-state warning (issue #42) needs to name the commit on a task's
+// review-state warning needs to name the commit on a task's
 // recorded feature branch, and that branch is not necessarily the one this
 // process has checked out (status, in particular, may run from anywhere in
 // the working tree), so Head, which only ever reads HEAD, cannot answer it.
@@ -848,7 +848,7 @@ func (g *Git) ShortSHA(ref string) (string, error) {
 // It parses `git worktree list --porcelain`, which names each worktree's
 // branch ref; ok=false when no worktree holds the branch.
 //
-// This is the read the accept-fast-forward remediation (issue #43) needs
+// This is the read the accept-fast-forward remediation needs
 // before it can prescribe a fix: `git branch -f` refuses outright when the
 // branch it would move is checked out anywhere, the primary worktree
 // included, so a caller has to know whether that command would work before

@@ -105,7 +105,7 @@ type TransitionInput struct {
 	// other verb and every tree noun ignores both.
 	Resolution  string
 	DuplicateOf string
-	// AdoptAggregate is start task --adopt-aggregate (issue #147): record the
+	// AdoptAggregate is start task --adopt-aggregate: record the
 	// existing local ref at the derived aggregate name instead of minting it.
 	// It is refused on any other noun and at task grain; every other verb
 	// ignores it.
@@ -334,7 +334,7 @@ var taskOnlyFeatureVerbs = map[string]string{
 // a state move. Every one of spec, start, and approve additionally refuses first
 // when the feature's own epic is cancelled or archived (epicRetired), since each
 // is a doing verb that moves the feature toward work an epic in either terminal
-// state can never see rolled up (issue #36).
+// state can never see rolled up.
 func transitionFeature(tree *store.Tree, deps Deps, owner store.Contributor, treeFeat *store.Feature, in TransitionInput) (TransitionResult, error) {
 	if treeFeat.Key == nil {
 		return TransitionResult{}, fmt.Errorf("mutate: feature %s has no canonical key", treeFeat.ID)
@@ -437,14 +437,14 @@ func transitionFeature(tree *store.Tree, deps Deps, owner store.Contributor, tre
 		if before == statusDraft {
 			// The epic arm runs ahead of validateSpec for the same reason it runs
 			// ahead of every other doing verb here: writing the whole of stage 2
-			// under a retired epic is work that can never roll up (issue #36).
+			// under a retired epic is work that can never roll up.
 			if err := epicRetired(tree, treeFeat.EpicKey, doc.ID, store.NounFeature, doc.Status); err != nil {
 				return TransitionResult{}, err
 			}
 		}
 		// A re-spec of a specced feature re-validates its stage-2 output, which
 		// can change after spec, so "no change" never vouches for an edit it
-		// did not check (issue #145).
+		// did not check.
 		if before == statusDraft || before == statusSpecced {
 			if err := validateSpec(tree, relDir, &doc, tree.FeatureTasks[treeFeat.ID]); err != nil {
 				return TransitionResult{}, err
@@ -459,20 +459,19 @@ func transitionFeature(tree *store.Tree, deps Deps, owner store.Contributor, tre
 			// The epic arm runs before approveFeaturePlan does any work: the plan
 			// gate moves the feature and its initial tasks in one batch, and a
 			// retired epic above it must refuse before that batch's first write,
-			// not partway through it (issue #36).
+			// not partway through it.
 			if err := epicRetired(tree, treeFeat.EpicKey, doc.ID, store.NounFeature, doc.Status); err != nil {
 				return TransitionResult{}, err
 			}
 			// The plan gate pins what is on disk now, which can differ from
-			// what spec validated, so it validates the same output first
-			// (issue #145).
+			// what spec validated, so it validates the same output first.
 			if err := validateSpec(tree, relDir, &doc, tree.FeatureTasks[treeFeat.ID]); err != nil {
 				return TransitionResult{}, err
 			}
 			// An open question that names the feature, its epic, or any live
 			// task holds the whole plan: the human is present at this gate,
 			// so the question is answered here and folded into the plan
-			// rather than left for an agent to wait on mid-run (issue #152).
+			// rather than left for an agent to wait on mid-run.
 			// It runs after validateSpec, since a broken spec has to be fixed
 			// regardless, and before approveFeaturePlan writes anything.
 			if blockers := gen.PlanQuestionBlockers(tree, treeFeat); len(blockers) > 0 {
@@ -575,7 +574,7 @@ const statusCancelled = "cancelled"
 // close of a done epic (done -> archive; artifact-schema.md, Epics States).
 // The guards below read it exactly like statusCancelled: no verb leaves either
 // one, sync's reopen arm reads done alone, and both terminal states name the
-// same remedy at the feature and task grain (issue #36).
+// same remedy at the feature and task grain.
 const statusArchived = "archived"
 
 // statusDone is the rollup status sync alone records at feature and task grain
@@ -711,7 +710,7 @@ func transitionTask(tree *store.Tree, deps Deps, owner store.Contributor, treeTa
 	// and that ordering is load-bearing now: the approve arm below calls
 	// guardParentState, which refuses a task whose parent feature is draft,
 	// specced, or cancelled, or whose parent feature is live but its epic is
-	// cancelled or archived (issue #36), and a feature returned to specced for
+	// cancelled or archived, and a feature returned to specced for
 	// rework (ready -> specced, return) is exactly the parent state a human
 	// re-pins a task's drifted basis under. Without this early return sitting
 	// ahead of that guard, refresh-basis would have no state left to run in.
@@ -772,7 +771,7 @@ func transitionTask(tree *store.Tree, deps Deps, owner store.Contributor, treeTa
 			return TransitionResult{}, err
 		}
 		// The task keeps the grain it started under through later grain
-		// changes (issue #146), so check, submit, and sync can follow it.
+		// changes, so check, submit, and sync can follow it.
 		target.StartedGrain = store.ResolvedReviewGrain(tree.Manifest, epicByKey(tree, feat.EpicKey), feat)
 		if in.AdoptAggregate {
 			if adoptedCommits, err = commitsBeyondIntegration(tree, rev, feat); err != nil {
@@ -821,7 +820,7 @@ func transitionTask(tree *store.Tree, deps Deps, owner store.Contributor, treeTa
 		}
 	}
 
-	// approve is a doing verb too: it is how issue #33's incident arc got its
+	// approve is a doing verb too: it is how the incident arc got its
 	// first foothold (proposed -> ready under a draft feature, confirmation
 	// routing straight into execute). The guard runs after legality, matching
 	// the order the start/submit arm above already keeps.
@@ -1307,7 +1306,7 @@ var proseStubMarkers = map[string]string{
 // feature`) that is illegal from done, breaking the promise that a refusal's
 // named remedy is always reachable. This mirrors gen.RetiredAncestor's own
 // terminal-self rule (gen/held.go's terminalStates; whole-branch review,
-// issue #36). It then refuses when the feature's accepted_against spec/eval revisions no
+// the retired-ancestor guard). It then refuses when the feature's accepted_against spec/eval revisions no
 // longer match the current feature.md/feature.eval.md git blobs, the active_basis
 // blocked answer the human clears with approve --refresh-basis. It then records an
 // --assume-question into the feature's assumption_basis (returning mutated=true so
@@ -1382,7 +1381,7 @@ func epicByKey(tree *store.Tree, key string) *store.Epic {
 // when the epic named by epicKey is cancelled or archived, and nil otherwise,
 // including when the key resolves to no epic at all. nodeID, noun, and state
 // name the feature or task the caller is guarding, since the refusal always
-// names the deepest actionable node, never the epic itself (issue #36).
+// names the deepest actionable node, never the epic itself.
 func epicRetired(tree *store.Tree, epicKey, nodeID, noun, state string) error {
 	epic := epicByKey(tree, epicKey)
 	if epic == nil {
@@ -1404,7 +1403,7 @@ func epicRetired(tree *store.Tree, epicKey, nodeID, noun, state string) error {
 // guardParentState is the structural arm ahead of every doing task verb, and
 // it reads the parent feature's status first, then walks one grain further to
 // the epic. Cancelled is terminal, so it answers first and names the way out:
-// cancel the task too, or re-add the feature (issue #35); its remedy is
+// cancel the task too, or re-add the feature; its remedy is
 // reachable and it is the deepest actionable node, so it must win even when
 // the epic above it is also retired (TestFeatureArmWinsOverEpicArmForTasks).
 // The epic question runs next, ahead of the pre-gate states: draft and
@@ -1413,7 +1412,7 @@ func epicRetired(tree *store.Tree, epicKey, nodeID, noun, state string) error {
 // when the epic itself is cancelled or archived, since the remedy it names
 // (`tiller spec feature` or approve) itself refuses ParentEpicRetiredError
 // the moment it runs. Rather than send the human down that dead end, the
-// epic answer outranks the pre-gate arms there, and only there (issue #38,
+// epic answer outranks the pre-gate arms there, and only there (
 // JC's call 2026-08-03: the deepest-actionable rule inverts exactly where the
 // nearer seam is a dead end). A pre-gate feature under a LIVE epic still
 // answers ParentPlanUngatedError, unchanged
@@ -1460,7 +1459,7 @@ func guardParentState(tree *store.Tree, feat *store.Feature, target *store.Task)
 // task grain). The parent-state arm runs first: a task under a draft, specced,
 // or cancelled feature refuses before any basis comparison, and so does a task
 // under a live feature whose own epic is cancelled or archived
-// (guardParentState's grandparent walk, issue #36). A draft or specced parent
+// (guardParentState's grandparent walk). A draft or specced parent
 // has no pins yet, so the comparison would pass vacuously; a cancelled parent
 // (feature or epic) may carry a full one, but is terminal, so its refusal
 // names the remedy instead of a basis to fix. The basis half then compares what the
@@ -1980,7 +1979,7 @@ func (e *BlockedByQuestionsError) Error() string {
 // (nothing specced) or specced (the human has not approved the plan). A
 // task's work only means something under a feature whose contract exists and
 // was accepted, so approve, start, check, and submit all answer with this
-// rather than letting the task loop run ahead of the feature (issue #33: the
+// rather than letting the task loop run ahead of the feature (the
 // Acme incident arc crossed a task to done under a draft, spec-less
 // feature without one surface saying a word). add task is deliberately not
 // guarded; the specify stage cuts tasks under a draft feature as part of
@@ -2005,7 +2004,7 @@ func (e *ParentPlanUngatedError) Error() string {
 // be a lie about half its arrivals. What the states share is the refusal;
 // what differs is the remedy, and a cancelled feature is terminal (no verb
 // leaves cancelled), so the remedy is retiring the task too, or re-adding the
-// feature (issue #35, the side door #33's gate left open).
+// feature (the side door #33's gate left open).
 type ParentCancelledError struct {
 	NodeID       string // the task the verb addressed
 	CurrentState string // the task's own state, unchanged by the refusal
@@ -2023,7 +2022,7 @@ func (e *ParentCancelledError) Error() string {
 // matters here, terminality (no verb leaves either, sync's reopen arm reads
 // done alone) and remedy (re-add the epic or place the work under a live one,
 // or cancel the work), so one answer carries both and EpicState says which
-// (issue #36; JC's call 2026-08-02 that archived refuses like cancelled).
+// (JC's call 2026-08-02 that archived refuses like cancelled).
 type ParentEpicRetiredError struct {
 	NodeID       string // the feature or task the verb addressed
 	Noun         string // store.NounFeature or store.NounTask

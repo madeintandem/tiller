@@ -169,8 +169,8 @@ func TestReviewAssumptionRefusals(t *testing.T) {
 	})
 }
 
-// TestReviewAssumptionRefusesAZeroRevisionOnAHandAuthoredAnswer pins fix
-// round 1's Minor 3: a hand-authored ledger entry can carry `status:
+// TestReviewAssumptionRefusesAZeroRevisionOnAHandAuthoredAnswer pins a review
+// Minor finding: a hand-authored ledger entry can carry `status:
 // answered` (questionAnswered reads that alone as answered) with no
 // answer_revision at all, predating the field or typed by hand the same way
 // question_test.go's own TestAnswerQuestionHandlesHandAuthoredStatuses
@@ -202,7 +202,7 @@ func TestReviewAssumptionRefusesAZeroRevisionOnAHandAuthoredAnswer(t *testing.T)
 		"a refused review stamps nothing")
 }
 
-// TestReviewAssumptionUpdatesTheInMemoryTree pins fix round 1's Minor 4: a
+// TestReviewAssumptionUpdatesTheInMemoryTree pins the Minor 4: a
 // caller holding one *store.Tree across both calls (Task 6's guard, Task 7's
 // detector, potentially in one process without an intervening store.Load)
 // must see the reviewed state immediately, not only after a fresh Load.
@@ -226,8 +226,8 @@ func TestReviewAssumptionUpdatesTheInMemoryTree(t *testing.T) {
 // cases: the whole rule is !entry.AnswerRevision.SameAs(question.
 // AnswerRevision), which the zero value and a genuine re-answer both trip,
 // and an open question never trips since its AnswerRevision stays the zero
-// value too. Two more subtests pin the reason SameAs exists at all (fix
-// round 1's Critical): plain struct equality on a RevisionRef compares
+// value too. Two more subtests pin the reason SameAs exists at all (a review
+// Critical finding): plain struct equality on a RevisionRef compares
 // ObservedAt's *Location pointer, not just the instant, so a ledger round
 // trip that changes only how a zero UTC offset is spelled must not read as a
 // content change, while an actual content change (a different Value) must.

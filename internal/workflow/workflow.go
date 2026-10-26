@@ -290,7 +290,7 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 			a.Reason += "; human decision: `tiller attest feature " + f.ID + " " + flag + " " + work.ID + " --status <pass|fail>`"
 		}
 		// A coarse review's attest is refused off its recorded aggregate
-		// branch; the handoff names where the human records it (issue #150).
+		// branch; the handoff names where the human records it.
 		if branch := aggregateBranchOf(review); grain != store.ReviewGrainTask && branch != "" {
 			a.Reason += "; record each decision on aggregate branch " + branch + " (in its worktree if checked out there), commit there, then submit"
 		}
@@ -587,7 +587,7 @@ func FeatureTasksReadyToSubmit(t *store.Tree, f *store.Feature) bool {
 			continue
 		}
 		live++
-		// A task PR, or a task started at task grain (issue #146, R6), is a
+		// A task PR, or a task started at task grain (R6), is a
 		// task-owned review the aggregate never absorbs; it holds the submit.
 		if tk.Status == "in_review" && (tk.PR != nil || tk.StartedGrain == store.ReviewGrainTask) {
 			return false
@@ -607,8 +607,8 @@ func UnmetDependency(t *store.Tree, f *store.Feature, owning *store.Epic) string
 	if unmet := unmetTarget(t, f.DependsOn); unmet != "" {
 		return unmet
 	}
-	// The owning epic's recorded depends_on gates its features the same way
-	// (issue #46): an epic-grain edge is recorded state, and a
+	// The owning epic's recorded depends_on gates its features the same way:
+	// an epic-grain edge is recorded state, and a
 	// draft under an epic whose prerequisites are unfinished is not
 	// whose-turn-is-now any more than a feature whose own edge is unmet. The
 	// old walk honored such an edge only by flow position, which held exactly

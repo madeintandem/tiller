@@ -982,7 +982,7 @@ func TestApproveAmendmentResolvesAStagedAddTaskKeyAsTheReplacement(t *testing.T)
 // blocks resolution needs epics resolvable too, just through a different map
 // entirely — b.staged at materialize time, not this one), so without a guard
 // at the replacement-resolution site specifically, the map's generic
-// staged[raw] != "" fallback would resolve the key anyway (#48).
+// staged[raw] != "" fallback would resolve the key anyway.
 func TestApproveAmendmentRefusesAStagedAddEpicKeyAsAReplacementWithNoWrites(t *testing.T) {
 	t.Parallel()
 	root, deps, featureID, taskID := lanternFixture(t)
@@ -1408,7 +1408,7 @@ func TestApproveAmendmentRefusesAHandEditedAddFeatureWithNoLiveOrStagedEpic(t *t
 }
 
 // TestApproveAmendmentAddFeatureEpicNounMismatchNeverRescuedByStagedParent
-// pins the fix-round finding: planAddFeature's stagedParent escape triggers
+// pins a review finding: planAddFeature's stagedParent escape triggers
 // only on *resolve.ErrNotFound, the same narrow gate resolveStageParentEpic
 // uses at stage time (amendment.go) — any other resolver error must
 // propagate unrescued. An id-shaped epic segment that resolves to a LIVE
@@ -1476,7 +1476,7 @@ func TestApproveAmendmentRefusesDuplicateStagedAddEpicKeysWithNoWrites(t *testin
 
 // TestApproveAmendmentLeavesAnEarlierMaterializedAddEpicUnwrittenWhenALaterOpFails
 // is the converse of TestApproveAmendmentSameBatchEpicCollisionAbortsBeforeItsFeature
-// above and the pin issue #50 names: that test fails on the FIRST op, so
+// above and the pin the amendment After test names: that test fails on the FIRST op, so
 // nothing before it ever ran. Here the FIRST op, a brand-new add-epic,
 // genuinely succeeds all the way through materialize (registered into
 // b.staged, its event appended, exactly as a batch that approved clean
@@ -2571,7 +2571,7 @@ func TestApproveAmendmentRefusesCancellingAndRevisingSameWorkWithNoWrites(t *tes
 }
 
 // TestApproveAmendmentRefusesAReviseWithNoContractOnDisk is the carried defect
-// from task 7's fix-round drive: a revise whose target has no contract file in
+// from task 7's drive: a revise whose target has no contract file in
 // the working tree used to reach phase 2's re-pin, where recordBasis hashes
 // feature.md and feature.eval.md through git and answered `vcs: git could not
 // resolve path .../feature.eval.md`, a raw environment error for a fact about
@@ -2845,7 +2845,7 @@ func TestApproveAmendmentAddQuestionUpdatedOutcomeNotesADroppedSource(t *testing
 		"a question's recorded source is fixed at creation; a later fold's own citation never overwrites it")
 }
 
-// --- checkOpSources: approve re-enforces per-op source citations (#54) ---
+// --- checkOpSources: approve re-enforces per-op source citations ---
 
 // TestApproveAmendmentRefusesAHandBlankedOpSourceWithNoWrites is the
 // failing-first pin for #54: StageOperation refuses a blank --source onto an

@@ -403,10 +403,10 @@ const (
 // function surfaces that error too rather than swallowing it, so each of its
 // callers can decide for itself whether a corrupt file refuses the command
 // (a mutation, join) or is quietly degraded (a read surface) instead of
-// masquerading as an absent one (issue #52).
+// masquerading as an absent one.
 //
-// The env branch returns the trimmed id, not the raw environment value
-// (issue #58): resolveJoinContributor (join.go) already trims its own copy of this
+// The env branch returns the trimmed id, not the raw environment value:
+// resolveJoinContributor (join.go) already trims its own copy of this
 // same TILLER_CONTRIBUTOR check, and store.ResolveContributor trims again before it ever
 // looks the id up on the roster, so a padded TILLER_CONTRIBUTOR was never stamped
 // wrong. It was only ever echoed wrong: the actor line and the JSON actor id

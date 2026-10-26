@@ -1248,7 +1248,7 @@ func TestJoinLiveReadErrorsDedupesIdenticalMessages(t *testing.T) {
 		"two genuinely distinct failures still join, preconditions first")
 }
 
-// --- show amendment: op-source validity (#57) ---
+// --- show amendment: op-source validity ---
 
 // TestShowAmendmentJSONRendersSourceMissingForABlankedOpSource is the
 // pre-flight pin #57 asks for: a hand-blanked per-op source citation on an

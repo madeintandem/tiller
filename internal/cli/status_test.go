@@ -61,7 +61,7 @@ func TestStatusSummaryContributorRoster(t *testing.T) {
 }
 
 // TestStatusSummaryReportsUncommittedTillerState pins the uncommitted-state
-// status line (issue #44): the field case was two attest commands that wrote
+// status line: the field case was two attest commands that wrote
 // feature.yml plus two event files, and the state sat uncommitted for a day
 // with no surface naming it. The line is a live git read scoped to .tiller/,
 // so it renders only once something under it is actually dirty, and the

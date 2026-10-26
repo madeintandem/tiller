@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the dependency write path (issue #21): depends_on was
+// These tests pin the dependency write path: depends_on was
 // modeled and rendered but nothing could record it, so decompose buried the
 // graph in epic prose. --depends-on at add and tiller link after are the two
 // writers; targets resolve all-or-nothing to stored node ids.

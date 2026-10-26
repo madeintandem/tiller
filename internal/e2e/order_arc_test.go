@@ -121,7 +121,7 @@ func TestOrderArcDrivesTreeRoutingAndOverride(t *testing.T) {
 	addFeature("epic-b/two", "Epic B, feature two")
 
 	// 0. Every epic is still draft, so the route's first answer is the
-	// decomposition gate, not the frontier (issue #93): no agent move is legal,
+	// decomposition gate, not the frontier: no agent move is legal,
 	// so bare guide names orient, and every readout lists both approvals in
 	// key order, the same list on every moment.
 	draftGuide := h.tiller("guide", "--json")

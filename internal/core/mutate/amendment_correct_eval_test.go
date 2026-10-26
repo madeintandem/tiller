@@ -17,7 +17,7 @@ import (
 
 // Approving a correct-eval: the gate proves a done feature's contract changed
 // only in its bindings, then re-pins verified_against.eval so the stale_spec
-// sweep stops reporting the reviewed edit forever (issue #141).
+// sweep stops reporting the reviewed edit forever.
 
 // verifiedEvalMD is the two-criterion contract the fixture feature crosses to
 // done with, so a correction has a criterion it can retire and one it keeps.
@@ -173,7 +173,7 @@ func TestApproveAmendmentCorrectEvalRetiresANamedCriterion(t *testing.T) {
 
 // A second correction reads the first one's committed blob as its base: the
 // completion record's eval leg is what the gate compares against, whatever
-// produced it (issue #141 Review Focus 1).
+// produced it (Review Focus 1).
 func TestApproveAmendmentCorrectEvalChainsOffACommittedCorrection(t *testing.T) {
 	t.Parallel()
 	root, deps, featureID := correctableFixture(t)
@@ -216,7 +216,7 @@ func requireRefusedWithNoWrites(t *testing.T, root string, deps mutate.Deps, a *
 
 // The first correction was approved but never committed, so its pin names a
 // blob git never stored. The second correction has no readable base, and the
-// refusal says to commit the first one (issue #141 Review Focus 5).
+// refusal says to commit the first one (Review Focus 5).
 func TestApproveAmendmentCorrectEvalRefusesAnUncommittedBase(t *testing.T) {
 	t.Parallel()
 	root, deps, featureID := correctableFixture(t)

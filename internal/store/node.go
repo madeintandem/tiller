@@ -274,8 +274,8 @@ type Task struct {
 	// canonical key and retained unchanged on resume.
 	Branch string `yaml:"branch,omitempty"`
 
-	// StartedGrain is the review grain this task resolved at its first start
-	// (issue #146). A task keeps it through later grain changes, so one started
+	// StartedGrain is the review grain this task resolved at its first start.
+	// A task keeps it through later grain changes, so one started
 	// at task grain still takes its own PR under a coarse feature. Tasks
 	// started before the field existed leave it empty and resolve through
 	// their parents (TaskReviewGrain).

@@ -7,7 +7,7 @@ package mutate
 // EvaluateAmendmentSource, Task 5's sibling for the one amendment-level fact
 // rather than the per-op ones, reused from approve's own
 // checkSource/evalSource the identical way; EvaluateAmendmentOpSources, the
-// per-op sibling of THAT one (#57), reused from approve's own checkOpSources
+// per-op sibling of THAT one, reused from approve's own checkOpSources
 // the same way again; and EvaluateAmendmentShape, the per-op sibling of the
 // other two hand-edit defect classes #57 names (a duplicate staged key, a
 // staged-epic replacement), reused from resolveAmendment's own extracted
@@ -291,7 +291,7 @@ func EvaluateAmendmentOpSources(amendment *store.Amendment) []OpSourceValidity {
 }
 
 // OpShapeFinding is one staged operation whose own SHAPE, independent of the
-// live tree, is a hand-edit defect resolveAmendment would refuse on (#57): a
+// live tree, is a hand-edit defect resolveAmendment would refuse on: a
 // DUPLICATE STAGED KEY (two add-epic/add-feature/add-task operations staging
 // the same key, resolveAmendment's own duplicateStagedKey predicate,
 // amendment_approve.go) or a STAGED-EPIC REPLACEMENT (a supersede or a
@@ -310,7 +310,7 @@ type OpShapeFinding struct {
 }
 
 // EvaluateAmendmentShape is show amendment's live read of resolveAmendment's
-// own two shape-only refusals (#57), the per-op siblings
+// own two shape-only refusals, the per-op siblings
 // EvaluateAmendmentOpSources' own class gets here: DUPLICATE STAGED KEY and
 // STAGED-EPIC REPLACEMENT. Both predicates it consults (duplicateStagedKey,
 // stagedEpicKey; amendment_approve.go) are doc-only, exactly like

@@ -33,7 +33,7 @@
 // client-side ordering code exists".
 //
 // Two distinct blocked-register conditions render as two distinct flags,
-// never folded into one (issue #39): blocked, the manual flag
+// never folded into one: blocked, the manual flag
 // (store.Feature.Blocked), and held, the nearest retired ancestor this
 // feature sits under. A card can carry both at once - a manually blocked
 // feature under a retired ancestor is two independent facts, not a
@@ -510,7 +510,7 @@ function FeatureCard({
         </span>
         <BugCountLink feature={feature} />
         {/* blocked (the manual flag) and held (a retired ancestor) are
-            distinct conditions that must never fold into one (issue #39):
+            distinct conditions that must never fold into one:
             two independent sibling spans, either or both present, rather
             than one flag trying to say two things. */}
         {feature.blocked === true && <span className="flag blocked">blocked</span>}

@@ -395,7 +395,7 @@ func guardFeatureCoarseSubmit(tree *store.Tree, deps Deps, treeFeat, doc *store.
 // taskWithOwnOpenReview finds task-grain review history that must finish
 // before a feature or epic can open a new coarse review: a pre-hardening task
 // PR, or a task that started at task grain, whose PR or remoteless review_ref
-// is its own and never enters the aggregate (issue #146).
+// is its own and never enters the aggregate.
 func taskWithOwnOpenReview(tree *store.Tree, f *store.Feature) *store.Task {
 	for _, tk := range gen.OrderTasks(tree, tree.FeatureTasks[f.ID], f.Order) {
 		if tk.Status == "in_review" && (tk.PR != nil || tk.StartedGrain == store.ReviewGrainTask) {
@@ -663,7 +663,7 @@ type TaskReviewOpenError struct {
 	PR           *int
 	ReviewBranch string
 	// StartedGrain is the grain the task started under, so the refusal can
-	// say why a task under a coarse grain carries its own PR (issue #146).
+	// say why a task under a coarse grain carries its own PR.
 	StartedGrain string
 }
 

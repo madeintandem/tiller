@@ -89,7 +89,7 @@ func TestCheckReadinessNextFollowsTheRoute(t *testing.T) {
 	require.NotContains(t, out, "Next: decompose")
 }
 
-// TestGuideRoutesAnOwnedBugOnAnEmptyTree is issue #137 at the CLI: a
+// TestGuideRoutesAnOwnedBugOnAnEmptyTree is the regression case at the CLI: a
 // maintenance-only project with no epics and a claimed, approved bug gets
 // execute from guide, not decompose.
 func TestGuideRoutesAnOwnedBugOnAnEmptyTree(t *testing.T) {
@@ -294,7 +294,7 @@ func TestGuideSkipsAClaimableTaskHeldByQuestion(t *testing.T) {
 
 // TestGuideNoArgRoutesByState walks the routing precedence through the real
 // CLI: a draft feature under a draft epic names the approve-epic wait through
-// orient (issue #93), and the same feature suggests specify once the epic is
+// orient, and the same feature suggests specify once the epic is
 // approved.
 func TestGuideNoArgRoutesByState(t *testing.T) {
 	dir := t.TempDir()

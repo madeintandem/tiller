@@ -148,7 +148,7 @@ func suggestFromNext(t *store.Tree, next views.Next) (skill, reason string) {
 // a claim, or the coarse review finish line.
 func executeReason(t *store.Tree, top views.NextCandidate) string {
 	// The reader's own task observed in flight is continued where it runs,
-	// never claimed or started again (issue #149). The branch names the task.
+	// never claimed or started again. The branch names the task.
 	if top.Branch != "" {
 		return "Your task is in flight on " + top.Branch + "; continue it there."
 	}

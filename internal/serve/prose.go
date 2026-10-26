@@ -75,7 +75,7 @@ func ProseHandler(root string) http.HandlerFunc {
 		}
 
 		// Registered identity comes from the address the caller asked for,
-		// never from where a symlink leads (issue #113): a registered document
+		// never from where a symlink leads: a registered document
 		// that has become a symlink is refused the way readiness refuses it,
 		// so the console cannot show one document's address with another's
 		// prose and human confirmation.

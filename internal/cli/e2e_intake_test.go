@@ -334,7 +334,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 
 	// The minted epic lands draft, so its decomposition gate is the human's
-	// move (issue #93) and both surfaces list it. Guide suggests the skill
+	// move and both surfaces list it. Guide suggests the skill
 	// for the highest agent move beside it, specifying the draft feature
 	// under the pre-existing approved epic, and never a feature under the
 	// draft epic.
@@ -519,7 +519,7 @@ func questionByStatement(t *testing.T, tree *store.Tree, statement string) *stor
 // its "sole" assumption, not a loosening of it.
 //
 // Like soleAmendmentEvent, every event this returns must also carry the
-// amendment on its own After["amendment"] (#50): Targets alone proves
+// amendment on its own After["amendment"]: Targets alone proves
 // linkage, not provenance, and the two are meant to never disagree (this
 // file's own materialize loop sets both in the same breath).
 func amendmentEventsByType(t *testing.T, tree *store.Tree, amendmentID, typ string) []events.Event {

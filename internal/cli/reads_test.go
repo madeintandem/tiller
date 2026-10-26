@@ -151,7 +151,7 @@ func TestShowFeatureEnrichedHuman(t *testing.T) {
 	require.Contains(t, out, "verified_against:")
 }
 
-// crossedNonGreenNowPassYML is the field case issue #44's qualifier closes: a
+// crossedNonGreenNowPassYML is the field case the qualifier closes: a
 // feature that crossed to done while its evals gate was red under advisory
 // enforcement (the recorded policy_violations entry), and the gate has since
 // gone green (a re-run, or a later attestation) without the violation record
@@ -216,7 +216,7 @@ func writeFeatureYML(t *testing.T, yml string) {
 }
 
 // TestShowPolicyViolationQualifierWhenGateNowPasses pins the violations
-// qualifier's positive case (issue #44): a policy_violations line naming a
+// qualifier's positive case: a policy_violations line naming a
 // gate whose CURRENT status in the same view is pass gains the suffix
 // dating the record to the crossing, so a reader is not left decoding
 // "evals: pass" next to "evals: fail" as a contradiction.
@@ -430,7 +430,7 @@ func TestStatusOneArgIsMisuse(t *testing.T) {
 }
 
 // TestLsFeatureByEpicKeyEqualsID confirms `ls features --epic <key>` lists the
-// same rows as `ls features --epic <id>` (issue #23's parity rule): a parent
+// same rows as `ls features --epic <id>` (the parity rule): a parent
 // filter resolves through ResolveParentFilters, so naming the parent either
 // way compares against the same stable identity.
 func TestLsFeatureByEpicKeyEqualsID(t *testing.T) {
@@ -475,7 +475,7 @@ func TestLsEmptyNamesFilters(t *testing.T) {
 	require.Equal(t, "No questions found.\n", out)
 }
 
-// TestLsEpicsFollowDependencyOrder pins Task A1 (issue #27) end to end at the
+// TestLsEpicsFollowDependencyOrder pins Task A1 end to end at the
 // CLI surface: `ls epics`' rows come out in dependency order, not key order.
 // "alpha" records --depends-on "zeta", so key order (alpha before zeta) and
 // dependency order (zeta, the foundation, before alpha, what rests on it)

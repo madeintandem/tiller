@@ -261,7 +261,7 @@ type SyncAttestRefusedData struct {
 // recovery is present only on a not_contained node, and only when the core
 // found an honest remedy (mutate.Recovery non-nil): the branch's pushed
 // remote-tracking tip is itself contained in the integration branch, so
-// there is a real fix rather than a guess (issue #43). Its absence is not a
+// there is a real fix rather than a guess. Its absence is not a
 // second reason the human has to interpret; it means exactly what the bare
 // refusal already meant before this field existed.
 type SyncAttestRefusedNode struct {

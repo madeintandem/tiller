@@ -150,7 +150,7 @@ type AmendmentOperationView struct {
 	Source        string              `json:"source,omitempty"`
 	SourceMissing bool                `json:"source_missing,omitempty"`
 	// SourceUnresolved marks a source written as a document citation that
-	// provenance cannot resolve (#143); it is kept as opaque text.
+	// provenance cannot resolve; it is kept as opaque text.
 	SourceUnresolved bool                            `json:"source_unresolved,omitempty"`
 	ShapeError       string                          `json:"shape_error,omitempty"`
 	Preconditions    []AmendmentPreconditionView     `json:"preconditions,omitempty"`
@@ -223,9 +223,9 @@ func loadAmendmentTree(cmd *cobra.Command, command, addr string) (*store.Tree, *
 // per-op ones (mutate.EvaluateAmendmentSource's own result, or nil).
 // opSourceMissing is nil for add and amend the same way, marking the flagged
 // indices; show amendment passes the set mutate.EvaluateAmendmentOpSources
-// computed (#57). opShape is the identical nil-unless-show contract for the
+// computed. opShape is the identical nil-unless-show contract for the
 // other two hand-edit defect classes, keyed by index to the reason token
-// mutate.EvaluateAmendmentShape found there (#57).
+// mutate.EvaluateAmendmentShape found there.
 func amendmentDataView(tree *store.Tree, a *store.Amendment, validity map[preKey]mutate.PreconditionValidity, sourceValidity *mutate.AmendmentSourceValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentData {
 	ops := make([]AmendmentOperationView, len(a.Operations))
 	for i, op := range a.Operations {
@@ -919,7 +919,7 @@ func parsePreconditions(raw []string) (map[string]string, error) {
 // staged, and what amends_design now reads, in whichever combination this
 // call performed.
 // unresolvedCitationNote names the citation forms provenance resolves, for a
-// staged source written as a citation that does not match them (#143).
+// staged source written as a citation that does not match them.
 const unresolvedCitationNote = "not a citation Tiller can resolve (path.md#Lstart-Lend, more ranges after commas)"
 
 func humanAmend(ref string, staged *mutate.StageResult, design *mutate.AmendsDesignResult) string {
@@ -961,7 +961,7 @@ func humanAmend(ref string, staged *mutate.StageResult, design *mutate.AmendsDes
 // the same order the evaluators ran in.
 //
 // internal/serve/node.go's joinAmendmentValidityErrors is this function's
-// console-side mirror, for the node page's own fillAmendmentValidity (#57):
+// console-side mirror, for the node page's own fillAmendmentValidity:
 // a faithful local copy rather than a shared export, since it is five lines
 // with no state and threading an import between cli and serve for it would
 // cost more than the duplication does. Change one, check the other.
@@ -990,7 +990,7 @@ func joinLiveReadErrors(errs ...error) string {
 // from approve's own), plus an intake-minted amendment's own Source, computed
 // the identical way through mutate.EvaluateAmendmentSource, plus
 // every operation's own hand-blanked-citation pre-flight, computed the
-// identical way through mutate.EvaluateAmendmentOpSources (#57), plus every
+// identical way through mutate.EvaluateAmendmentOpSources, plus every
 // operation's own shape pre-flight (a duplicate staged key, a staged-epic
 // replacement), computed the identical way through mutate.EvaluateAmendmentShape
 // (#57's own widened class).
@@ -1251,8 +1251,8 @@ func attributionClause(epics, questions int, owner string) string {
 // closing sentence says so precisely ("it names the attribution grains and
 // reports FEATURES as entering the pool").
 //
-// add-task is deliberately excluded, the fix for a review finding (OL3
-// round 1): the design's own prose also called a minted task "ownerless",
+// add-task is deliberately excluded, the fix for a review finding (OL3):
+// the design's own prose also called a minted task "ownerless",
 // but that is not reliably true. planAddTask (add.go), the same planner
 // materialize calls, stamps a fresh task with its PARENT FEATURE's current
 // owner, not always empty: under a feature the acting contributor has already

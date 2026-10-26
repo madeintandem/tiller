@@ -217,7 +217,7 @@ func TestCheckReadinessStillWorks(t *testing.T) {
 }
 
 // TestCheckReadinessReadyNamesDecompose confirms a ready project does not just
-// report "ready": it names the next move (issue #6). With design inputs present
+// report "ready": it names the next move. With design inputs present
 // and a coherent manifest, readiness passes (exit 0) and the human output routes
 // the user on to decompose.
 func TestCheckReadinessReadyNamesDecompose(t *testing.T) {
@@ -458,7 +458,7 @@ func fillSeededBuildAndTests(t *testing.T) {
 }
 
 // TestSeededGrainTaskGreensWhileContractGatesFeature is the seeded-default half
-// of the eval-grain decision (issue #11; the engine half is pinned in
+// of the eval-grain decision (the engine half is pinned in
 // core/mutate gate_scoping_test.go). Under the manifest exactly as `tiller init`
 // seeds it, with build and tests filled in as the template invites, a
 // mid-feature task greens on build and tests alone and records no evals gate,
@@ -530,7 +530,7 @@ func TestCheckBlockedOutputNamesFailureDetail(t *testing.T) {
 	})
 }
 
-// TestCheckGateProgress is issue #45: gate progress is human feedback, never
+// TestCheckGateProgress pins that gate progress is human feedback, never
 // evidence. In human mode each gate's started/finished lines land on stderr,
 // distinct from the stdout confirmation, so a healthy multi-minute gate is
 // distinguishable from a wedged one without contaminating anything recorded.

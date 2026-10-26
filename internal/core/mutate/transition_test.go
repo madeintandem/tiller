@@ -1494,7 +1494,7 @@ func laySpeccedPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 // layDraftPlan is laySpeccedPlan minus the spec drive: the epic and feature
 // exist, tasks are cut with real task.md prose, and the feature has never
 // crossed spec. This is the tree the specify stage stands in mid-act, and the
-// tree issue #33's incident arc started from.
+// tree the incident arc started from.
 func layDraftPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 	t.Helper()
 	root := writeOwnedRepo(t)
@@ -1515,7 +1515,7 @@ func layDraftPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 }
 
 // setTaskStatus hand-lays a task status onto task.yml, the shape a pre-guard
-// tree can already hold on disk (issue #33's field trees do); the guard must
+// tree can already hold on disk (the field trees do); the guard must
 // bite on what is there, not only on what today's verbs can produce.
 func setTaskStatus(t *testing.T, root, taskKey, from, to string) {
 	t.Helper()
@@ -1534,7 +1534,7 @@ func setTaskStatus(t *testing.T, root, taskKey, from, to string) {
 	require.NoError(t, os.WriteFile(path, out, 0o644))
 }
 
-// TestApproveTaskRefusesUnderDraftFeature pins the first hole of issue #33's
+// TestApproveTaskRefusesUnderDraftFeature pins the first hole of the
 // incident arc: approve task moved proposed->ready under a feature whose plan
 // was never written, and the confirmation routed straight into execute.
 func TestApproveTaskRefusesUnderDraftFeature(t *testing.T) {
@@ -1673,7 +1673,7 @@ func TestCheckTaskRefusesUnderDraftFeature(t *testing.T) {
 	require.Equal(t, "in_progress", load(t, root).Tasks[taskID].Status, "a refused check must not move the task")
 }
 
-// TestApproveTaskRefusesUnderCancelledFeature is issue #35's front door: a
+// TestApproveTaskRefusesUnderCancelledFeature is the front door: a
 // feature cancelled from draft leaves its proposed tasks with no plan gate to
 // ever cross, and approve used to pass because the parent was neither draft
 // nor specced.
@@ -1804,7 +1804,7 @@ func setEpicStatus(t *testing.T, root, epicKey, from, to string) {
 	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }
 
-// TestSpecFeatureRefusesUnderCancelledEpic is issue #36's front door at the
+// TestSpecFeatureRefusesUnderCancelledEpic is the front door at the
 // feature grain: cancel an epic and the features beneath it may not keep
 // moving toward work that can never roll up.
 func TestSpecFeatureRefusesUnderCancelledEpic(t *testing.T) {
@@ -1827,7 +1827,7 @@ func TestSpecFeatureRefusesUnderCancelledEpic(t *testing.T) {
 // TestSpecFeatureRefusesUnderArchivedEpic is the archived sibling of
 // TestSpecFeatureRefusesUnderCancelledEpic: archive is the epic's own terminal
 // close (done -> archived), and it refuses the same way cancelled does rather
-// than opening a third answer (issue #36; JC's call 2026-08-02 that archived
+// than opening a third answer (JC's call 2026-08-02 that archived
 // refuses like cancelled). Reaching archived for real needs a full rollup unit
 // fixtures cannot cheaply drive, so this hand-lays the status with
 // setEpicStatus, the same legacy-tree shape setTaskStatus already exercises
@@ -1918,7 +1918,7 @@ func TestFeatureArmWinsOverEpicArmForTasks(t *testing.T) {
 	require.ErrorAs(t, err, &pc, "the deepest actionable node names the refusal")
 }
 
-// TestEpicArmWinsOverPreGateArmForDraftFeatureTask pins issue #38: a task
+// TestEpicArmWinsOverPreGateArmForDraftFeatureTask pins that a task
 // under a DRAFT feature under a cancelled epic used to answer
 // ParentPlanUngatedError, naming `tiller spec feature` as the remedy, a
 // remedy that itself refuses ParentEpicRetiredError once run, a one-hop dead

@@ -374,7 +374,7 @@ func TestCheckFeatureRecordsNoStateChange(t *testing.T) {
 }
 
 // TestCheckFeatureSucceedsOnADoneFeatureUnderAnArchivedEpic pins the guard's
-// terminal-self exception (whole-branch review, issue #36): checkFeature runs
+// terminal-self exception (whole-branch review): checkFeature runs
 // no legality gate at all (unlike checkTask), so `tiller check feature` can
 // reach a feature whose status is already done, exactly the shape an archived
 // epic's ordinary content sits in once sync's rollup crossed it. Refusing that
@@ -431,7 +431,7 @@ func TestCheckTaskRefusesUnderRetiredEpicLiveFeature(t *testing.T) {
 // recordingCheckProgress is a minimal gates.Progress fake that records which
 // gates started and finished, in whatever order Check drives them, so a test
 // can pin that CheckInput.Progress actually reaches every command gate a
-// check run shells (issue #45's heartbeat sits behind this same threading).
+// check run shells (the heartbeat sits behind this same threading).
 type recordingCheckProgress struct {
 	started, finished []string
 }

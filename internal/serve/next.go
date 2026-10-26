@@ -22,7 +22,7 @@ func NextHandler(root string) http.HandlerFunc {
 	return api(root, func(_ *store.Tree, r *http.Request) (any, error) {
 		// Ranking reads the served checkout. Observations never change
 		// eligibility: the reader's own in-flight task is a move on its
-		// branch and anyone else's is no move here, as on the CLI (#149).
+		// branch and anyone else's is no move here, as on the CLI.
 		snapshot := executionSnapshot(r)
 		t := snapshot.Base
 		in := readinput.Workflow(t)

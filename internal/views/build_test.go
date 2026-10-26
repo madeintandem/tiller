@@ -19,7 +19,7 @@ import (
 // disagrees with key order at both grains, the identical "the dependency
 // leads though the dependent's key sorts first" shape streams_test.go's
 // streamsDependencyTree and streamsBlockedDependencyTree already pin for the
-// streams lenses (issue #27): alpha depends on zeta at epic grain, and
+// streams lenses: alpha depends on zeta at epic grain, and
 // alpha/alpha-feature depends on alpha/zeta-feature at feature grain.
 func buildOrderTree() *store.Tree {
 	zetaKey, alphaKey := "zeta", "alpha"
@@ -245,7 +245,7 @@ func TestBuildFeatureCountsOpenAttachedShelfWorkAcrossTasks(t *testing.T) {
 }
 
 // buildHeldTree lays a cancelled epic with one live feature under it,
-// mirroring streams_test.go's own streamsHeldTree fixture (issue #39):
+// mirroring streams_test.go's own streamsHeldTree fixture:
 // gen.RetiredAncestor answers non-nil for the live feature.
 func buildHeldTree() *store.Tree {
 	epicKey := "widgets"
@@ -269,7 +269,7 @@ func TestBuildBoardOfExcludesCancelledEpicWithLiveFeature(t *testing.T) {
 // buildManualBlockedTree lays one active feature carrying the manual
 // blocked flag (store.Feature.Blocked), under a live epic, so nothing
 // retired sits above it and Held stays nil: the manual flag and a held
-// ancestor are distinct facts a card never folds into one (issue #39).
+// ancestor are distinct facts a card never folds into one.
 func buildManualBlockedTree() *store.Tree {
 	epicKey := "widgets"
 	featKey := "widgets/blocked-feature"
@@ -287,7 +287,7 @@ func buildManualBlockedTree() *store.Tree {
 // TestBuildBoardOfManualBlockedFlagStaysInItsStatusColumn pins the manual
 // blocked flag (Blocked, wired straight through views.Blocked — no new
 // derivation) as a card condition orthogonal to status, mirroring
-// streams.go's BlockedItem register (issue #39): a blocked active feature
+// streams.go's BlockedItem register: a blocked active feature
 // still serves status "active" (so a status-filtered column still carries
 // it) and carries Blocked: true beside that status, distinct from Held,
 // which stays nil since nothing retired sits above this feature.

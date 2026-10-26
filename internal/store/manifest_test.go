@@ -205,7 +205,7 @@ func TestLoadRefusesAMissingSchemaVersionKey(t *testing.T) {
 // schema_version 0'"). refuseSchemaVersion checks the node's tag for this
 // case rather than trusting a decoded 0, so this gets the same "no
 // schema_version set" message as a fully absent key, not a false "stamped 0".
-// Round 3: it must also get the same neutral, non-destructive remedy as a
+// It must also get the same neutral, non-destructive remedy as a
 // missing key, for the identical reason (a genuine version-1 tree always
 // wrote the key with a value; an empty one is not evidence of an old tree).
 func TestLoadRefusesAnEmptySchemaVersionValue(t *testing.T) {

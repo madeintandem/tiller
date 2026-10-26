@@ -1,6 +1,6 @@
 package views_test
 
-// These tests pin issue #23 on the surviving parentage filters:
+// These tests pin the dependency-order rule on the surviving parentage filters:
 // ResolveParentFilters rewrites the caller's raw --epic or --feature value to
 // the stable identity Matches compares against, so a caller naming a parent by
 // its canonical key finds the same rows as naming it by id rather than
@@ -128,7 +128,7 @@ func epicOrderTree() *store.Tree {
 	}
 }
 
-// TestSortListItemsEpicsFollowDependencyOrderNotKey pins Task A1 (issue #27)
+// TestSortListItemsEpicsFollowDependencyOrderNotKey pins Task A1
 // on `ls epic`'s row order: DependencyOrder, not plain key ascending.
 func TestSortListItemsEpicsFollowDependencyOrderNotKey(t *testing.T) {
 	tree := epicOrderTree()

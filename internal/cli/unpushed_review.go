@@ -7,8 +7,8 @@ import (
 	"github.com/madeintandem/tiller/internal/views"
 )
 
-// This file is the review-state warning's one shared home on the CLI side
-// (issue #42): the field case where a submit-state commit sat unpushed on the
+// This file is the review-state warning's one shared home on the CLI side:
+// the field case where a submit-state commit sat unpushed on the
 // local branch, the human merged the PR without it, and the crossing became
 // unobservable because nothing said so at any of the surfaces that name a
 // task's review state. unpushedReviewWarning is the one wording every

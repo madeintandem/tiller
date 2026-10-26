@@ -4,7 +4,7 @@ package views
 // order, each with its own features in the shared feature order, each
 // feature's own tasks in the shared task order — the identical
 // gen.DependencyOrder computation `ls`, the tree, and the streams already
-// consult (issue #27), reshaped for the board's epic panel and six-column
+// consult, reshaped for the board's epic panel and six-column
 // layout instead of a flat list. The point of running it here rather than
 // leaving it to the client is the phase's own acceptance line: "no
 // client-side ordering code exists". Like every other file in this package,
@@ -85,7 +85,7 @@ type BuildEpic struct {
 // plus the task rollup
 // (TaskDone/TaskTotal), the open attached shelf-work count, the task list
 // itself in the shared task order, and the two blocked-register conditions
-// a card renders distinctly (issue #39: the manual flag and a held ancestor
+// a card renders distinctly (the manual flag and a held ancestor
 // are never folded into one flag). Ref
 // rides explicitly because the console (unlike the CLI's golden-pinned ls)
 // renders it, the same shadow-the-embedded-render-only-Ref idiom
@@ -111,7 +111,7 @@ type BuildFeature struct {
 	// Blocked is the manual blocked flag (store.Feature.Blocked, read
 	// through views.Blocked — no new derivation), orthogonal to the card's
 	// stored status the same way it is everywhere else this flag renders
-	// (streams.go's BlockedItem, issue #39): a blocked active feature is
+	// (streams.go's BlockedItem): a blocked active feature is
 	// still active, so it stays in its status column and only carries the
 	// flag. False omits the key rather than emitting "blocked": false.
 	Blocked bool `json:"blocked,omitempty"`

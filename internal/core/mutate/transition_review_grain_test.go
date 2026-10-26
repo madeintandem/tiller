@@ -119,8 +119,8 @@ func TestApproveWithoutReviewGrainLeavesItUntouched(t *testing.T) {
 		"a plain approve must not touch a previously configured grain")
 }
 
-// TestNonApproveVerbNeverWritesReviewGrainOntoTheEvent is final-review fix
-// round item 5: TransitionInput.ReviewGrain's own doc comment states "every
+// TestNonApproveVerbNeverWritesReviewGrainOntoTheEvent is final-review
+// item 5: TransitionInput.ReviewGrain's own doc comment states "every
 // other verb ignores this field", but transitionEvent's own guard used to
 // test only in.ReviewGrain != nil and the noun, never the verb, so setting
 // ReviewGrain alongside a non-approve verb still wrote review_grain onto

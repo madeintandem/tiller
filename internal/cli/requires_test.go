@@ -60,7 +60,7 @@ func setRequiresTiller(t *testing.T, dir, floor string) {
 	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }
 
-// TestCommandsWarnWhenBinaryIsBelowRequiresTiller is issue #88's acceptance:
+// TestCommandsWarnWhenBinaryIsBelowRequiresTiller is the acceptance:
 // a floor above the running binary produces one stderr line naming tiller
 // upgrade, the command still succeeds, stdout is untouched, and a --json
 // caller still gets a parseable envelope.

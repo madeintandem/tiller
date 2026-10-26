@@ -87,7 +87,7 @@
    Lighter than an arc, because the tree is the base layer and the dependency
    graph has to read as something laid over it: at the same ink they were the
    same line, and Work links drew one undifferentiated mesh where only
-   the curvature told parentage from a dependency (fix round 1). */
+   the curvature told parentage from a dependency. */
 .map-branch {
   fill: none;
   stroke: color-mix(in srgb, var(--ink-3) 55%, var(--paper));

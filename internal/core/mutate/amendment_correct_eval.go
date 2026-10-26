@@ -11,7 +11,7 @@ import (
 )
 
 // This file holds approval's judgment and apply for a correct-eval operation:
-// a reviewed correction of a done feature's eval bindings (issue #141). Staging
+// a reviewed correction of a done feature's eval bindings. Staging
 // lives in amendment_stage_correct_eval.go.
 //
 // A done feature's completion record pins the contract it was verified

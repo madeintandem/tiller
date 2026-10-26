@@ -318,8 +318,8 @@ func TestNodeProjectsNextOwner(t *testing.T) {
 	}
 }
 
-// TestNodeCarriesHeldByRetiredAncestor pins the NodeView bullet
-// (issue #36): the additive held object is gen.RetiredAncestor's answer
+// TestNodeCarriesHeldByRetiredAncestor pins the NodeView bullet:
+// the additive held object is gen.RetiredAncestor's answer
 // verbatim, present only when there is one, absent from the marshaled JSON
 // (never a null "held" key) for a node with nothing retired above it.
 func TestNodeCarriesHeldByRetiredAncestor(t *testing.T) {
@@ -521,7 +521,7 @@ func TestNodeCarriesRecordedOrderAndItsRefs(t *testing.T) {
 	}
 }
 
-// TestNodeProjectsQuestionSourceAndBlocks pins issue #55: a question's Source
+// TestNodeProjectsQuestionSourceAndBlocks pins that a question's Source
 // citation and its Blocks list live on store.Question (internal/store/node.go)
 // but were dropped from the read envelope entirely, so `show question --json`
 // could not say why a question exists (Source) or what it holds (Blocks) even

@@ -250,7 +250,7 @@ func TestTreeDeterministic(t *testing.T) {
 	require.Equal(t, Tree(tr), Tree(tr))
 }
 
-// TestTreeEpicsFollowDependencyOrderNotKey pins Task A1 (issue #27) at the
+// TestTreeEpicsFollowDependencyOrderNotKey pins Task A1 at the
 // `tiller tree` grain: the top-level epics come out in DependencyOrder, not
 // plain key order. "alpha" depends on "zeta", so key order (alpha before
 // zeta) and dependency order (zeta, the foundation, before alpha, what rests

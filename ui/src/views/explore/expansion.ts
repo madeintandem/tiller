@@ -64,7 +64,7 @@ export function toggle(x: Expansion, id: string, open: boolean): Expansion {
 // This earns its keep on the render side unconditionally; the write side
 // still depends on that effect's own dependency array actually keying off
 // the map alone (Explore.tsx's own persist-effect comment has the detail
-// and the fix-round finding that made this distinction matter).
+// and the review finding that made this distinction matter).
 export function autoOpen(x: Expansion, ids: readonly string[]): Expansion {
   let next: Map<string, boolean> | null = null;
   for (const id of ids) {
@@ -107,7 +107,7 @@ export function closeAll(): Expansion {
 // choice over an inferred one.
 //
 // Extracted to its own pure function rather than
-// left inline at its one call site: round 2's fix (holding auto-open until
+// left inline at its one call site: the settled gate (holding auto-open until
 // the restore has run) makes `live` provably empty every time that call
 // site actually invokes this, so no integration test can exercise a
 // genuine conflict there - a precedence rule with no test but a comment
@@ -119,7 +119,7 @@ export function closeAll(): Expansion {
 // Identity-stable when live is empty: returns STORED itself rather than a
 // copy, since there is nothing for live to override in that case. This is
 // the ordinary case at the one production call site (live is the session's
-// own expansion state, which round 2's fix keeps empty until this merge
+// own expansion state, which the settled gate keeps empty until this merge
 // runs), so the fast path is not a theoretical nicety.
 export function mergeRestored(stored: Expansion, live: Expansion): Expansion {
   if (live.size === 0) {

@@ -1,6 +1,6 @@
 package views_test
 
-// The approve-epic move (issue #93): right after decompose every epic is
+// The approve-epic move: right after decompose every epic is
 // draft awaiting `tiller approve epic`, and the route used to walk past that
 // gate to the frontier and name specify. These tests pin the move, its place
 // in plan order among the other moves, and the frontier's matching skip.
@@ -141,7 +141,7 @@ func TestPlanGateOutranksTheApproveEpicWait(t *testing.T) {
 // TestApproveEpicWaitOutranksTheFrontier pins plan order above the frontier:
 // an open frontier under an approved epic ranks after a decomposition that
 // waits, and a draft under the draft epic that is also dependency-gated is no
-// move of its own; the approval is (the blind spot issue #92 names).
+// move of its own; the approval is (the blind spot in claimable routing).
 func TestApproveEpicWaitOutranksTheFrontier(t *testing.T) {
 	tree := treeWithDraftEpics(t, 2)
 	tree.Epics["E-aaaaa1"].Status = "ready"

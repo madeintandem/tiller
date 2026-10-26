@@ -100,7 +100,7 @@ func TestMutationEchoesTheEnvFallback(t *testing.T) {
 	require.Contains(t, out, "acting as jc (TILLER_CONTRIBUTOR)")
 }
 
-// TestMutationEchoesTrimmedEnvFallback confirms issue #58's trim symmetry: a
+// TestMutationEchoesTrimmedEnvFallback confirms the trim symmetry: a
 // padded TILLER_CONTRIBUTOR resolves and echoes the trimmed id, not the padded raw
 // value. resolveJoinContributor (join.go) already trimmed its own copy of this
 // fallback; resolveContributorFallback (add.go), the tail every mutation shares,
@@ -149,7 +149,7 @@ func TestExplicitOwnerFlagPrintsNoEchoButJSONCarriesTheSource(t *testing.T) {
 	require.Equal(t, "--contributor", actorField["source"])
 }
 
-// TestMutationRefusesCorruptIdentityFile confirms issue #52: a present but
+// TestMutationRefusesCorruptIdentityFile confirms the fix: a present but
 // unparseable .tiller/identity.yml is no longer swallowed into contributor_unset.
 // With no --contributor and no TILLER_CONTRIBUTOR, a mutation refuses by name
 // (identity_unreadable, exit 3), naming the file and pointing at `tiller

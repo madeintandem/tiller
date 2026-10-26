@@ -48,7 +48,7 @@ describe("burstsOf", () => {
   });
 
   it("keeps a surface recording apart from a dependency edge, even back to back", () => {
-    // Fix round 2: `tiller link <feature> --depends-on X --surface Y` records
+    // `tiller link <feature> --depends-on X --surface Y` records
     // one link.feature event and one link.surface.feature event, adjacent in
     // the stream. They must render as two rows, not collapse into one just
     // because both came from the same command in the same call.
@@ -166,7 +166,7 @@ describe("burstPhrase", () => {
   });
 
   it("says surfaces recorded for link.surface.<grain>, not depends-on's linked", () => {
-    // Fix round 2: SetSurface mints link.surface.epic / link.surface.feature
+    // SetSurface mints link.surface.epic / link.surface.feature
     // (internal/core/mutate/surface.go) rather than sharing --depends-on's
     // link.epic / link.feature. Both grains report "surface", not the grain
     // word, since a reader scans for the fact that a surface got recorded;

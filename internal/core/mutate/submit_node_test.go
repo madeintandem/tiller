@@ -459,7 +459,7 @@ func rgSubmitRefusalWithoutWrites(t *testing.T, root string, deps mutate.Deps, n
 	return err
 }
 
-// --- Fix round 1 ---
+// --- Review fixes ---
 
 // TestSubmitFeatureRefusesOnATerminalFeature is IMPORTANT 1: a feature that
 // closed, done by rollup or cancelled by a human, has no review left to
@@ -635,7 +635,7 @@ func TestSubmitFeatureRefusesWhenResolvedGrainIsEpic(t *testing.T) {
 	require.Contains(t, err.Error(), "resolved review grain is epic; submit the epic's own PR")
 }
 
-// --- Final-review fix round ---
+// --- Final-review fixes ---
 
 // TestSubmitEpicNamesNoLiveTaskRatherThanTasksIncompleteWording is item 6: a
 // live feature under an epic-grain submit with zero tasks at all (draft,

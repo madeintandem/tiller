@@ -11,7 +11,7 @@ import (
 )
 
 // observedRouteTree lays two ready, unclaimed tasks in one ready epic, first
-// before second in recorded order (issue #149).
+// before second in recorded order.
 func observedRouteTree(t *testing.T) (tree *store.Tree, first, second *store.Task) {
 	t.Helper()
 	tree = treeWithDraftEpics(t, 1)
@@ -95,7 +95,7 @@ func TestEveryTaskObservedElsewhereLeavesLaterMoves(t *testing.T) {
 	require.Equal(t, []string{"F-aaaaa1"}, candidateNodeIDs(next.Candidates))
 }
 
-// questionHeldSiblingTree reproduces issue #139's shape: epic-0 orders first
+// questionHeldSiblingTree reproduces the shape: epic-0 orders first
 // and holds a ready unclaimed task; the reader closed out a task in
 // epic-1/approval, whose first remaining sibling is question-held and whose
 // second is eligible.

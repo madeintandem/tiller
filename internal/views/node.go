@@ -120,7 +120,7 @@ type NodeView struct {
 	// cancelled feature, or a cancelled-or-archived epic), nil when none
 	// (gen.RetiredAncestor). It is additive and orthogonal to LegalNext and
 	// NextOwner above, which stay pure lifecycle projections per the
-	// "annotate, don't subtract" decision (issue #36): the doing verbs
+	// "annotate, don't subtract" decision: the doing verbs
 	// already refuse under a retired ancestor (mutate.guardParentState);
 	// this field says why, before a human runs the verb that would refuse.
 	Held *HeldView `json:"held,omitempty"`
@@ -609,7 +609,7 @@ func ReviewRefOf(rr *store.ReviewRef) *ReviewRefView {
 // reviewGrainOf resolves the review grain in force for work under e or f
 // together with which of the three homes it came from, by consuming
 // store.ResolvedReviewGrainWithSource directly rather than re-deriving the
-// source from the same fields in a second switch (Fix round 1, Important 1:
+// source from the same fields in a second switch (Important 1:
 // the two used to be a parallel re-derivation that could silently fall out
 // of step if the store's own precedence ever changed without a matching edit
 // here). e or f may be nil (an epic's own call passes f nil; a feature with

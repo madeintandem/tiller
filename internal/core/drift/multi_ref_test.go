@@ -1,6 +1,6 @@
 package drift_test
 
-// A test binding's ref may be a list of files (issue #141). orphan_eval checks
+// A test binding's ref may be a list of files. orphan_eval checks
 // each path-shaped item on its own, so one missing file is one named item and a
 // whitespace-joined string stays a ref it will not guess at.
 

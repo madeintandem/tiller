@@ -44,7 +44,7 @@ func holdQueuePlanNode(tree *store.Tree, questionID, nodeID string) {
 // TestQueueHidesHeldFeaturePlan extends the suppress-not-exempt rule to a plan
 // an open question holds: `tiller approve feature` refuses while any open
 // question names the feature, its epic, or one of its live tasks, and a queue
-// whose commands fail when copied is worse than silence (issues #36, #37). The
+// whose commands fail when copied is worse than silence. The
 // question's own answer_question row is what takes the row's place.
 func TestQueueHidesHeldFeaturePlan(t *testing.T) {
 	tree, _, tasks := queuePlanTree("specced", "proposed", "proposed")

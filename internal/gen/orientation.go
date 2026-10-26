@@ -23,22 +23,22 @@ import (
 // The emitted header carries this generation for stale-guidance detection.
 // Increment it when the rules change, independently of binary patch versions.
 // Generation 48 ranks unclaimed execution by the reader's own task history
-// first and names the Continuity note (issue #139). Generation 49 executes
+// first and names the Continuity note. Generation 49 executes
 // started work in its own Git worktree by default, defers to the developer's
 // own checkout instructions, and assumes other agents share the repository.
-// Generation 51 adds the shared verified-URL external reference writing rule
-// (issue #95); generation 50 added reviewed done-feature eval binding correction.
+// Generation 51 adds the shared verified-URL external reference writing rule;
+// generation 50 added reviewed done-feature eval binding correction.
 // Generation 52 scopes the default worktree to the unit of work one review
 // covers, so a coarse feature or epic shares one worktree, and parallel tasks
 // within it get their own. Generation 53 has the human run a coarse review's
 // attest on its recorded aggregate branch, committed there before submit, and
-// records the grain a task started under (issues #146 to #150).
-// Generation 54 reuses a gate already passed on unchanged code and says when to rerun (issue #152).
+// records the grain a task started under (started grain).
+// Generation 54 reuses a gate already passed on unchanged code and says when to rerun.
 // Generation 55 ranked next replaces the route walk: the agent relays a ranked
 // list of every legal move and starts the top agent move.
 // Generation 56 refuses a plan gate while an open question holds the plan:
 // specify settles its questions before approve, and execute records a mid-run
-// question on the branch it builds and builds around it (issue #152).
+// question on the branch it builds and builds around it.
 // Generation 57 lets a human cancel a question that needs no decision and narrow what it blocks; an agent may only widen.
 const orientationSchemaGen = 57
 
@@ -52,7 +52,7 @@ func Orientation() string {
 // OrientationGeneration returns the schema generation orientation.md is
 // currently keyed to, the same value Orientation stamps into the header. It
 // is exported so a caller comparing an on-disk file against the running
-// binary (`tiller check readiness`, issue #41's stale-orientation gap) reads
+// binary (`tiller check readiness`, the stale-orientation gap) reads
 // the one number gen already owns rather than keeping a private copy that can
 // drift from it.
 func OrientationGeneration() int {

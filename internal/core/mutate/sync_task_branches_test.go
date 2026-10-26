@@ -85,8 +85,7 @@ func recordSyncAggregate(t *testing.T, root, grain string, recorded bool) string
 
 // rideSyncAggregate records grain as each fixture task's started grain. The
 // fixture starts its tasks before the grain is hand-set, and a task that kept
-// started_grain: task would take its own PR rather than ride the aggregate
-// (issue #146).
+// started_grain: task would take its own PR rather than ride the aggregate.
 func rideSyncAggregate(t *testing.T, featureDir, grain string) {
 	t.Helper()
 	paths, err := filepath.Glob(filepath.Join(featureDir, "tasks", "*", "task.yml"))

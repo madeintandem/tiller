@@ -115,7 +115,7 @@ func classify(err error) *ErrorBody {
 	// block, reason "review_grain_locked". The approve/transition path never
 	// added a matching arm to transitionBlockedView, so this same error
 	// surfacing from a re-approve (transitionEpic's or transitionFeature's own
-	// Changeability guard, round 1 and round 2 of the review-grain follow-up)
+	// Changeability guard)
 	// fell through every branch below to the generic misuse fallback, reason
 	// "error", exit 2. This checks for it ahead of that fallback so the
 	// reason matches configure's, without adopting configure's exit code or
@@ -370,7 +370,7 @@ func emitReportWithReadout(cmd *cobra.Command, command string, ok bool, data any
 // ("41", never "41.0" or "4.1e1") at any value a PR number or a similar
 // small integer in this codebase actually takes. Verified directly (a
 // throwaway program marshaling a *int through this exact path) rather than
-// assumed; flagged here because it went unnoticed in round 1's review and
+// assumed; flagged here because it went unnoticed in review and
 // is the kind of thing worth a reader knowing rather than rediscovering.
 func withReadout(data any, block string) any {
 	b, err := json.Marshal(data)

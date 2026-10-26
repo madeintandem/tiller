@@ -97,7 +97,7 @@ func sameDesignConfirmation(left, right *store.BaselineConfirmation) bool {
 // must advance that observation boundary even when the code bytes stayed equal.
 //
 // The decision reads the whole set of later overlapping crossings in feature-id
-// order, never the first one a map range happens to visit (issue #111). A known
+// order, never the first one a map range happens to visit. A known
 // same-HEAD crossing wins. When no crossing is known-same but a historical
 // comparison was unavailable, the human's current-state approval is recorded
 // rather than refused: drift reports unavailable history on its own, and an

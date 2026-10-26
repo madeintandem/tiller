@@ -1,6 +1,6 @@
 package views_test
 
-// These tests pin the correction block (issue #94): the lighter readout a
+// These tests pin the correction block: the lighter readout a
 // correction inside a gate renders through `tiller readout <seam> --since
 // <sha>`. Changed is derived from the event stream alone, one line per event
 // in stream order, so the block reports what Tiller recorded rather than

@@ -1,6 +1,6 @@
 package cli
 
-// The requires_tiller advisory (issue #88; distribution.md, "The optional
+// The requires_tiller advisory (distribution.md, "The optional
 // project.requires_tiller field"). project.requires_tiller records the minimum
 // binary a team expects. Every command probes it before running and prints
 // one stderr line naming `tiller upgrade` when this binary is below it. It is

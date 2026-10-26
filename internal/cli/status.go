@@ -76,7 +76,7 @@ func runStatusNode(cmd *cobra.Command, noun, node string) error {
 	view := views.NodeStatus(tree, n, readinput.WorkflowForNode(tree, n))
 	drift, line := statusBasisDrift(tree, n)
 	view.ActiveBasis = drift
-	// The review-state warning (issue #42): a live git read, so it is filled
+	// The review-state warning: a live git read, so it is filled
 	// in here rather than by views.NodeStatus, the same ActiveBasis posture
 	// this file already follows. review.ForTask itself narrows to a task in
 	// review with a recorded PR, so this is a harmless no-op lookup for every
@@ -129,7 +129,7 @@ func statusBasisDrift(tree *store.Tree, n store.Node) ([]string, string) {
 // question's full statement remains in the body because status on one subject
 // is a detail surface, not a scan. basis is the active-basis drift line
 // statusBasisDrift built, "" when there is none. unpushed is the review-state
-// warning's facts (issue #42), nil for every node that is not an in-review task
+// warning's facts, nil for every node that is not an in-review task
 // with an unpushed recorded PR branch; the same shared wording submit's own
 // confirmation renders (unpushedReviewWarning).
 func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedReviewFacts) string {
@@ -163,7 +163,7 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Blocked {
 		fmt.Fprint(&b, " (blocked)")
 	}
-	// The review-state warning (issue #42) sits directly under state, the
+	// The review-state warning sits directly under state, the
 	// status this task carries while the warning applies, in the identical
 	// wording submit's own confirmation renders (unpushedReviewWarning): a
 	// reader who lands on this oracle to see why a PR looks stalled meets the
@@ -172,7 +172,7 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 		fmt.Fprintf(&b, "\n  %s", unpushedReviewWarning(unpushed.Commit, unpushed.Branch))
 	}
 	// held sits between state and next: it says WHY the doing verbs below are
-	// about to refuse (gen.RetiredAncestor, issue #36), the read half of
+	// about to refuse (gen.RetiredAncestor), the read half of
 	// mutate.guardParentState's grandparent walk, never a replacement for
 	// legal_next or next_owner, which stay pure lifecycle projections either
 	// way (the "annotate, don't subtract" decision).
@@ -262,7 +262,7 @@ func runStatusSummary(cmd *cobra.Command) error {
 		return emitFailure(cmd, "status", err)
 	}
 	summary := views.Summary(tree)
-	// The uncommitted-state line (issue #44) is a live git read, the same
+	// The uncommitted-state line is a live git read, the same
 	// reason ActiveBasis and UnpushedReview are filled in here rather than by
 	// views: internal/views performs no I/O.
 	summary.UncommittedState = uncommittedTillerState(root)
@@ -270,7 +270,7 @@ func runStatusSummary(cmd *cobra.Command) error {
 }
 
 // uncommittedTillerState reports the repo-relative paths under .tiller/ that
-// carry an uncommitted change (issue #44), via vcs.DirtyUnder. A git that
+// carry an uncommitted change, via vcs.DirtyUnder. A git that
 // cannot answer (no repository, git missing) leaves the summary silent
 // rather than failing the read, the same posture statusBasisDrift already
 // takes for the identical reason: a read whose whole job is to report must
@@ -313,7 +313,7 @@ func renderStatusHuman(s ProjectSummary) string {
 	if len(s.OrderRefs) > 0 {
 		fmt.Fprintf(&b, "\nOrder: %s", strings.Join(s.OrderRefs, ", "))
 	}
-	// The uncommitted-state line (issue #44) prints only when something under
+	// The uncommitted-state line prints only when something under
 	// .tiller/ is actually dirty, the same show-only-what-is-there rule Order
 	// above already follows; it is informational, so it never gates.
 	if len(s.UncommittedState) > 0 {

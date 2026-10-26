@@ -97,7 +97,7 @@ function stubFetch(routes: Record<string, unknown>, errors: Record<string, strin
 // there resolves via Promise.resolve, so both land in the very same
 // microtask drain and Explore's own /api/tree and /api/status fetches
 // always settle together, in the same commit - the one arrangement that
-// happens to hide the fix-round's Critical bug (a same-commit restore and
+// happens to hide a Critical bug (a same-commit restore and
 // auto-open compose or clobber in whatever order they were declared, and
 // declaration order alone was enough to paper over it). Delaying one route
 // for real is what actually separates the two fetches into distinct
@@ -2395,7 +2395,7 @@ describe("Explore: expansion and split width persist across a remount (task 4)",
     const split = container.querySelector(".explore-split") as HTMLElement;
     expect(split.style.getPropertyValue("--explore-nav-w")).toBe("300px");
 
-    // Fix round: a first-ever visit must leave storage
+    // A first-ever visit must leave storage
     // genuinely untouched, not quietly write the untouched default map back
     // out as "[]" the moment the project key resolves. Settle well past
     // when that would have happened (the persist effect is a plain
@@ -2434,7 +2434,7 @@ describe("Explore: expansion and split width persist across a remount (task 4)",
   });
 });
 
-// Fix round (review of task 4): a Critical bug the reviewer confirmed with a
+// Review of task 4: a Critical bug the reviewer confirmed with a
 // throwaway probe - a deep link's auto-opened ancestry rendered, then
 // vanished ~30ms later the instant /api/status resolved after /api/tree,
 // because the restore effect replaced the map outright instead of composing
@@ -2470,11 +2470,11 @@ describe("Explore: restore composes with auto-open regardless of fetch arrival o
 
     // /api/tree (not delayed) lands first, but the split does not paint at
     // all until summarySettled (Explore.tsx), and the auto-open effect holds
-    // on that same flag (round 2's fix) - so by the time this line can find
+    // on that same flag - so by the time this line can find
     // anything, /api/status has already resolved and auto-open has already
     // had its one chance to run. An earlier version of this comment claimed
     // auto-open ran "well before /api/status resolved"; that was true only
-    // before round 2 closed the arrival-order race. What this test actually
+    // before the arrival-order race was closed. What this test actually
     // pins is the composed OUTCOME, not an ordering: the deep link's own
     // ancestry materializes regardless of which fetch happens to land first.
     expect(await screen.findByText("App Skeleton & Green CI Boot")).toBeInTheDocument();
@@ -2498,7 +2498,7 @@ describe("Explore: restore composes with auto-open regardless of fetch arrival o
     // instead of live-wins) - the same map comes out either way. The merge's
     // own precedence direction is pinned directly, at a grain where that
     // limitation does not apply, by mergeRestored's own unit tests
-    // (expansion.test.ts, fix round 3): a conflicting id resolves to live's
+    // (expansion.test.ts): a conflicting id resolves to live's
     // value in both directions, independent of whatever any integration
     // scenario can or cannot construct. The determinism-pin tests below
     // cover the other half of this rule - the hand-closed case, decided by
@@ -2530,9 +2530,9 @@ describe("Explore: restore composes with auto-open regardless of fetch arrival o
   });
 });
 
-// Round 2: a new gap surfaced on top of the five confirmed
+// A later gap surfaced on top of the five confirmed
 // earlier fixes - the hand-closed rule ("a branch closed by hand stays
-// closed even when selected", the plan's and issue #47's own settled
+// closed even when selected", the plan's and the own settled
 // words) was arrival-order dependent. Tree-first: auto-open ran before any
 // stored map had been merged in, found no entry for the hand-closed id, and
 // opened it - the restore's own compose then let that "true" survive over

@@ -147,7 +147,7 @@ function DriftedChip({
 }
 
 // HeldChip is the node-page's other always-blocked-register chip (task 3,
-// issue #36's "annotate, don't subtract"): one chip naming the nearest
+// the "annotate, don't subtract"): one chip naming the nearest
 // retired ancestor when node.held carries one, absent otherwise. Unlike
 // DriftedChip it never has a neutral reading to fall back to - a retired
 // ancestor either holds the node or it does not exist on the page at all -

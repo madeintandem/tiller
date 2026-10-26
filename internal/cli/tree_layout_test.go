@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the tree layout at real-tree scale (issue #18): the label
+// These tests pin the tree layout at real-tree scale: the label
 // column sizes itself to this tree's longest label instead of a fixture-sized
 // constant, titles truncate to the line budget while labels never do, the
 // prose paths live in the --files drill view rather than on every row, and

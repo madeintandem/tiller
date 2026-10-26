@@ -49,7 +49,7 @@ func TestConcurrentQuestionWritersRefuseInsteadOfLosingUpdates(t *testing.T) {
 	wg.Wait()
 
 	// The lock-free reader can miss a newly acquired lock, then see that
-	// writer's journal and return recovery_needed (#106). The clean load and
+	// writer's journal and return recovery_needed. The clean load and
 	// strict retries below distinguish that race from a retained journal.
 	lawfulFirstAttemptRefusals := []string{store.ReasonLocked, store.ReasonMutationStale, store.ReasonMutationRecovery}
 	successes := 0

@@ -1,5 +1,5 @@
 // The desk's pulse: the Just happened, In flight, and Up next columns and
-// their rows, moved out of Home.tsx whole (issue #96).
+// their rows, moved out of Home.tsx whole.
 
 import { Link } from "react-router-dom";
 import type { FetchState } from "../../hooks";

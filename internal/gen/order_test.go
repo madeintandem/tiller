@@ -1,6 +1,6 @@
 package gen
 
-// Tests for the dependency-ordering authority (issue #27, plan
+// Tests for the dependency-ordering authority (plan
 // 2026-07-23-console-chart-table-pass, Task A1). DependencyOrder is the one
 // place that walks recorded depends_on into a Kahn topological order; every
 // later read surface (tiller tree, ls, the console queue and
@@ -55,7 +55,7 @@ func taskOrderTree(tasks []*store.Task) *store.Tree {
 }
 
 // TestOrderTasksRanksSiblingsByDependency is the sibling-task case of the same
-// layered sort epics and features run (cli-surface.md, issue #27, tasks
+// layered sort epics and features run (cli-surface.md, tasks
 // un-exempted; artifact-schema.md, Tasks: Ordering). The fixture is chosen so
 // key order and dependency order disagree: "render" depends on "schema" but
 // sorts before it alphabetically, and "docs" carries no edge at all, so it

@@ -249,7 +249,7 @@ func gitOutput(t *testing.T, dir string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// layCorrectedDraftTree is the issue #94 correction loop on a scratch
+// layCorrectedDraftTree is the readout correction loop on a scratch
 // project: a decompose laydown committed (the sha the full block would have
 // reported), then one of each correction the decompose skill maps (rename,
 // link, add question, remove), committed again. It returns the repo root and

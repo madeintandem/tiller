@@ -139,7 +139,7 @@ func resolveJoinContributor(m *store.Manifest, root, as string) (store.Contribut
 		// TILLER_CONTRIBUTOR, then this checkout's .tiller/identity.yml. Every
 		// mutating command's own resolution (resolveActingContributorOrRefuse)
 		// consumes the same function, so join and a mutation refuse a
-		// present-but-corrupt identity file the same way (issue #52) instead
+		// present-but-corrupt identity file the same way instead
 		// of each mirroring its own copy of the handling. The one exception is
 		// a teammate's identity still spelled with the pre-schema-9 owner key:
 		// join selects that id and rewrites the file with the current key.

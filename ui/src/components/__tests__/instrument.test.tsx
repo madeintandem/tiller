@@ -264,7 +264,7 @@ describe("GateCard: derived state line", () => {
     expect(screen.getByText("1 criterion awaits your attestation")).toBeInTheDocument();
   });
 
-  // "Green is quiet, amber is yours" (mock note 5, round 4). The mock varies
+  // "Green is quiet, amber is yours" (mock note 5). The mock varies
   // this line's color inline in both directions, mock:427 slate and mock:468
   // amber; the state has to reach the DOM for the stylesheet to do it, and it
   // is the same dotStatus the dot beside it already paints with.

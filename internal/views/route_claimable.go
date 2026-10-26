@@ -83,7 +83,7 @@ func ownedExecutionCandidates(t *store.Tree, order *gen.Order, tasks []*store.Ta
 // PoolSignpost explains held unclaimed execution work without recommending a
 // command that the routing guards refuse. The executable pool itself contains
 // only eligible ready tasks; this diagnostic also keeps held work discoverable.
-// A task observed in flight (in.Observed, issue #149) is not held: it is a
+// A task observed in flight (in.Observed) is not held: it is a
 // move on its owner's branch, so it stays out of the count, and with nothing
 // else left the signpost is empty and the caller says nothing is due.
 func PoolSignpost(t *store.Tree, order *gen.Order, in workflow.Input) string {

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the question ledger's write half (issue #19): tiller add
+// These tests pin the question ledger's write half: tiller add
 // question mints a Q- id into decisions/open-questions.yml with resolved
 // blocks, and tiller answer question moves open to answered, recording the
 // answer and its revision. The read surfaces (ls, status, show) and the

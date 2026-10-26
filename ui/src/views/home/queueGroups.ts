@@ -2,10 +2,10 @@
 // in views/queue.go's own fixed build order, but the mock's desk displays
 // gravity order instead - amendment, attest, approval, answer, parked work,
 // then merge asks (the retired console mock,
-// round 3 notes: "Gravity order for multiple cards").
+// notes: "Gravity order for multiple cards").
 // groupQueueByGravity re-ranks the KIND
 // buckets only; the members within one kind stay in the exact order the API
-// served them (issue #27's dependency order for the homogeneous-noun kinds,
+// served them (the dependency order for the homogeneous-noun kinds,
 // due-first for questions), since that is the order a batch command must join
 // them in.
 //

@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// These tests cover issue #146: start persists the grain a task resolved, and a
+// These tests cover started grain: start persists the grain a task resolved, and a
 // task started at task grain keeps it through a later coarse setting. It takes
 // its own PR, merges, and syncs; the aggregate never absorbs it.
 

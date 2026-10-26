@@ -85,7 +85,7 @@ func nextFixture(t *testing.T) string {
 	gitRun(t, root, "add", "-A")
 	gitRun(t, root, "commit", "-m", "lay tree")
 
-	// The route's approve-epic wait (issue #93) fires for a draft epic with
+	// The route's approve-epic wait fires for a draft epic with
 	// live features, so the fixture approves its one epic to keep these
 	// tests proving the arms below that wait.
 	_, err = mutate.Transition(load(), deps, resolveNode(store.NounEpic, "form-engine"), mutate.TransitionInput{Verb: "approve"})

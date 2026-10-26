@@ -20,7 +20,7 @@ import (
 
 // treePipedWidth is the line budget when stdout is not a terminal, so piped
 // and redirected output (and the goldens) stays deterministic. At a terminal
-// the budget is the terminal's own width (issue #18: real trees average 144
+// the budget is the terminal's own width (real trees average 144
 // columns under the old fixed layout and drowned a 13-inch screen).
 const treePipedWidth = 120
 

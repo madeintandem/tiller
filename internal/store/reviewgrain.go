@@ -56,7 +56,7 @@ func validateStoredStartedGrain(path, grain string) error {
 // TaskReviewGrain is the review grain in force for task: the grain it started
 // under when start recorded one (source "started"), else its parents'
 // resolution (ResolvedReviewGrainWithSource). A task started at task grain
-// keeps task grain through a later coarse setting (issue #146). task may be
+// keeps task grain through a later coarse setting. task may be
 // nil, for work not yet started.
 func TaskReviewGrain(m *Manifest, e *Epic, f *Feature, task *Task) (grain, source string) {
 	if task != nil && task.StartedGrain != "" {

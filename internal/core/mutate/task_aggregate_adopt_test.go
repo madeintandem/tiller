@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// These tests cover issue #147: a hand-built aggregate at the derived name
+// These tests cover adopting an aggregate: a hand-built aggregate at the derived name
 // was refused as "X conflicts with X", and the only recovery deadlocked a
 // dependent task start. start task --adopt-aggregate records the existing
 // ref at exactly the derived name; nothing ever renames or deletes a ref.
@@ -75,8 +75,8 @@ func TestStartRefusesUnrecordedAggregateByName(t *testing.T) {
 	require.Empty(t, featureByKey(load(t, root), "pay/checkout").Branch)
 }
 
-// clearStartedGrain models a task started before task.yml recorded its grain
-// (issue #146): it resolves through its parents, so an aggregate may hold it.
+// clearStartedGrain models a task started before task.yml recorded its grain:
+// it resolves through its parents, so an aggregate may hold it.
 // A task that recorded task grain never enters one (started_grain_test.go).
 func clearStartedGrain(t *testing.T, root, taskKey string) {
 	t.Helper()

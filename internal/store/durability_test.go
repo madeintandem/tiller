@@ -8,7 +8,7 @@ import (
 )
 
 // The durability switch exists for one reason: a fixture that performs ~100
-// atomic writes pays ~100 fsyncs, and the suite took twelve minutes (#87).
+// atomic writes pays ~100 fsyncs, and the suite took twelve minutes.
 // Production binaries always sync. Under `go test` syncing is skipped unless
 // TILLER_FSYNC=on, and TILLER_FSYNC=off turns it off in a real binary for the
 // harnesses that drive one.

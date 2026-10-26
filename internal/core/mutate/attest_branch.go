@@ -6,7 +6,7 @@ import (
 )
 
 // guardAttestBranch refuses a feature attest run off the coarse aggregate
-// branch that carries the feature's acceptance state (issue #150). Attest
+// branch that carries the feature's acceptance state. Attest
 // writes the feature's own files, and those only travel with the review when
 // they are committed on the aggregate; an attest on integration would leave
 // state that never reaches the PR. It guards only a feature at feature or epic

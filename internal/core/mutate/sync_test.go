@@ -1532,8 +1532,8 @@ func TestSyncAcceptFastForwardRefusesWorkTheIntegrationBranchLacks(t *testing.T)
 	require.False(t, hasEvent(t, load(t, root), "sync.feature"))
 }
 
-// layOrphanedStateCommitGit is the field case issue #43 exists for, and the
-// mirror of issue #42's own trigger (internal/core/review's ForTask): featBranch is
+// layOrphanedStateCommitGit is the field case the accept-fast-forward recovery exists for, and the
+// mirror of the own trigger (internal/core/review's ForTask): featBranch is
 // pushed and its pushed tip merged with --no-ff into main, then the LOCAL
 // branch gains one more commit that never reaches the remote, a state commit
 // left behind after the PR that carried the earlier tip already merged. It
@@ -1561,7 +1561,7 @@ func layOrphanedStateCommitGit(t *testing.T, buildRun, testsRun string) (root, b
 }
 
 // TestSyncAcceptFastForwardPrescribesRecoveryWhenTheRemoteTipIsContained is the
-// honest half of issue #43: the local tip is not contained in main (an
+// honest half of that recovery: the local tip is not contained in main (an
 // unpushed state commit sits on top of it), but the tip the PR actually
 // carried IS contained, by ancestry, so the refusal has something real to
 // prescribe. Nothing holds featBranch checked out anywhere, so the
@@ -2342,8 +2342,8 @@ func setEpicReviewSurfaceOnDisk(t *testing.T, root, epicKey, branch string, pr i
 	require.NoError(t, os.WriteFile(p, out, 0o644))
 }
 
-// TestSyncReopenClearsTheConsumedReviewSurfaceOnAFeature is final-review fix
-// round item 2, the controller's ruling: a merge consumes the review
+// TestSyncReopenClearsTheConsumedReviewSurfaceOnAFeature is final-review
+// item 2, the controller's ruling: a merge consumes the review
 // surface it represents, so reopenFeature must clear PR and ReviewRef (the
 // events keep the full history) while leaving Branch, the deterministic
 // workbench name, alone. Before this fix all three fields survived a

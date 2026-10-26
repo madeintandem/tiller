@@ -131,12 +131,12 @@ func runInit(cmd *cobra.Command, name, key, kind string) error {
 	}
 	// A --design re-run over an existing manifest imports nothing (scaffold
 	// gates the copy on the manifest being written), so say so rather than
-	// leaving "skeleton ensured" to imply the docs arrived (issue #89).
+	// leaving "skeleton ensured" to imply the docs arrived.
 	if design != nil && !result.Created {
 		human += "\nDesign import skipped: .tiller/ was already initialized, and --design imports only on the init that scaffolds. Copy the docs under .tiller/design/ by hand."
 	}
 	// On a fresh scaffold, route the user forward through the onboarding arc so the
-	// output does not stop at "initialized" (issue #6). This is guidance text only:
+	// output does not stop at "initialized". This is guidance text only:
 	// init still reasons about nothing and never decomposes. A re-run over an
 	// existing project skips the arc, since the project is already past onboarding.
 	if result.Created {
@@ -465,7 +465,7 @@ func renderImportedFrom(design *designSource) string {
 // file, and the per-checkout settings file, rendered from tillerIgnoreGroups
 // so init and join share one list. join adds the last group (the skill shims)
 // when it installs them, and upserts every group into a .gitignore init left
-// alone (issue #90).
+// alone.
 var seededGitignore = renderIgnoreGroups(tillerIgnoreGroups[:3])
 
 // writeGenerated refreshes committed orientation and seeds a missing ignore file.

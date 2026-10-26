@@ -133,7 +133,7 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 	// precondition that does not itself require a write: the key's grammar,
 	// whether a PROPOSED amendment already holds it, and whether HEAD
 	// resolves. It must run BEFORE the artifact copy below, not just before
-	// the mint: fix round 1's own live repro was `tiller add amendment
+	// the mint: the own live repro was `tiller add amendment
 	// review-b` (a hand-opened amendment, no artifact ever landed for it,
 	// so the basename check above cannot catch this) then `tiller intake
 	// review-b.md` (whose default key also slugifies to "review-b") — the

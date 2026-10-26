@@ -340,7 +340,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 				continue
 			}
 			// A task started at task grain observes its own merge, never an
-			// aggregate it does not ride (issue #146).
+			// aggregate it does not ride.
 			ownGrain := tk.StartedGrain == store.ReviewGrainTask
 			if !ownGrain && aggregateRecovery(tree, aggregateID) != nil && (f.Status == statusDone || f.Status == statusCancelled || aggregateRoundDone(tree, aggregateID)) {
 				continue
@@ -1187,7 +1187,7 @@ type recoveryGit interface {
 // refusal: branch's tip is not contained in into (that is the whole reason
 // this is being asked), but its pushed remote-tracking counterpart might be,
 // which is the shape a state commit left unpushed before its PR merged
-// produces (issue #43's field case). It returns nil, nil whenever there is
+// produces (the field case). It returns nil, nil whenever there is
 // nothing honest to prescribe: no upstream resolves for branch (UnpushedTip's
 // own offline answer), or one resolves but into does not contain it either,
 // in which case nothing merged this branch by any reading and inventing a
@@ -1195,7 +1195,7 @@ type recoveryGit interface {
 //
 // rev is asserted against recoveryGit rather than widened onto the parameter
 // type; see that interface's own doc for why. UnpushedTip and WorktreeFor take
-// branch's bare name, matching how issue #42's own caller
+// branch's bare name, matching how the own caller
 // (internal/core/review's ForTask) and WorktreeFor's own doc comment already
 // use them.
 // The local tip's ShortSHA is asked about branchRef(branch) instead: ShortSHA

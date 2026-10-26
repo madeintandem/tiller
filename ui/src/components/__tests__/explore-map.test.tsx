@@ -993,7 +993,7 @@ describe("Explore: the map mode", () => {
     expect(localStorage.getItem("tiller.map.acme")).toBe(before);
   });
 
-  // Fix round 0: /api/status (Explore) and /api/map (MapMode) are independent
+  // /api/status (Explore) and /api/map (MapMode) are independent
   // fetches with no ordering guarantee, and the map's memory is keyed by the
   // project the status payload names. When the map wins that race the key is
   // not known yet, and materializing the open set right then would ignore
@@ -1038,7 +1038,7 @@ describe("Explore: the map mode", () => {
     expect(await screen.findByText(/map unavailable/i)).toBeInTheDocument();
   });
 
-  // Fix round 1, finding 1: /api/status can FAIL while /api/map succeeds.
+  // finding 1: /api/status can FAIL while /api/map succeeds.
   // summarySettled flips true on an error, so the map draws on its defaults
   // with no project key at all - and the topbar's refresh then re-runs every
   // fetch, which is the first moment this project's memory can be read.
@@ -1070,7 +1070,7 @@ describe("Explore: the map mode", () => {
     expect(JSON.parse(localStorage.getItem("tiller.map.acme") ?? "{}").open).toEqual(["E-1"]);
   });
 
-  // Fix round 1, finding 2: MapCanvas calls onViewport on every pointermove,
+  // finding 2: MapCanvas calls onViewport on every pointermove,
   // so an eager write meant a JSON.stringify plus a setItem per frame of a
   // pan. The viewport reaches storage once the pan settles.
   it("holds the viewport out of storage until the pan settles, and never writes an untouched default", async () => {

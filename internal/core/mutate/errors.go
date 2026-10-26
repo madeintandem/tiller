@@ -135,7 +135,7 @@ type AttestNotEligible struct {
 // Recovery is the honest remediation for a not_contained refusal: the branch's
 // pushed remote-tracking tip is contained in into while the local tip is not,
 // which is the shape a state commit left unpushed before its PR merged leaves
-// behind (issue #43's field case, and the review-state warning issue #42 names
+// behind (the field case, and the review-state warning names
 // from the other side). RemoteTip and LocalTip are short shas, the form every
 // other prescription in this file names a commit by; Upstream is the ref they
 // were measured against, branch's configured @{upstream} or origin/<branch>

@@ -267,7 +267,7 @@ func Item(tree *store.Tree, n store.Node) ListItem {
 
 // SortListItems orders rows canonically: bugs and chores by their shelf's own
 // ranking (gen.OrderWorkNodes: edges, then the soft order, then key), epics,
-// features, and tasks by DependencyOrder (issue #27), every other noun by key
+// features, and tasks by DependencyOrder, every other noun by key
 // with id fallback. A list here is one noun, so the whole slice ranks through
 // one comparator.
 func SortListItems(t *store.Tree, noun string, items []ListItem) {

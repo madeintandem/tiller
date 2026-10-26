@@ -18,7 +18,7 @@ func TestOrientationStampGenerationRoundTrips(t *testing.T) {
 
 // TestOrientationStampGenerationReadsAnAgedStamp confirms the parser reads a
 // stamp for a generation other than the current one, the aged-file case
-// `tiller check readiness` compares against (issue #41).
+// `tiller check readiness` compares against.
 func TestOrientationStampGenerationReadsAnAgedStamp(t *testing.T) {
 	aged := strings.Replace(Orientation(),
 		"orientation generation "+strconv.Itoa(orientationSchemaGen),
@@ -126,7 +126,7 @@ func TestOrientationExecutesInAWorktreeByDefault(t *testing.T) {
 }
 
 // A done feature's eval bindings are corrected through the amendment's
-// correct-eval operation, never by rewriting its criteria (issue #141).
+// correct-eval operation, never by rewriting its criteria.
 func TestOrientationCorrectsDoneEvalBindingsThroughAmend(t *testing.T) {
 	text := Orientation()
 	for _, want := range []string{

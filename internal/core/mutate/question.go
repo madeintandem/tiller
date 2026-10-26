@@ -1,6 +1,6 @@
 package mutate
 
-// This file is the question ledger's write half (issue #19): AddQuestion mints
+// This file is the question ledger's write half: AddQuestion mints
 // a Q- entry into .tiller/decisions/open-questions.yml, and AnswerQuestion
 // moves it open -> answered, recording the answer and its revision
 // (artifact-schema.md, "Decisions and open questions"; cli-surface.md, the add

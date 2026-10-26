@@ -8,7 +8,7 @@
 // present-non-empty -> exact selection, unknown keys ignored gracefully);
 // column counts from a stubbed payload; the four renderable card conditions
 // (ask, blocked, held, drift), including a card carrying blocked AND held
-// at once, since issue #39 requires them to render as two distinct flags
+// at once, since the board requires them to render as two distinct flags
 // rather than folding into one; the expand chevron's own click target
 // stopping propagation so the card underneath does not also navigate;
 // panel-collapse persistence; and the honest empty state.

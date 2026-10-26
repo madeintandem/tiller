@@ -1155,7 +1155,7 @@ func approvedTaskRoot(t *testing.T) string {
 	}
 	deps := mutate.Deps{Contributor: "jc", Clock: fixedClock{}, Mint: mint}
 	// nodeFixture's open question names the feature, and the plan gate refuses
-	// while one holds the plan (#152), so answer it before approving.
+	// while one holds the plan, so answer it before approving.
 	{
 		tree, err := store.Load(root)
 		require.NoError(t, err)
@@ -1402,7 +1402,7 @@ func TestNodePageDriftAbsentWithNoBadges(t *testing.T) {
 	require.False(t, ok, "drift is absent, never an empty array, when nothing was found")
 }
 
-// TestNodePageSurvivesABadDriftChecksManifest pins fix round 1's Important
+// TestNodePageSurvivesABadDriftChecksManifest pins the Important
 // finding: an unknown drift.checks entry (a manifest typo, drift.enabledSet's
 // own misuse refusal) must not take the WHOLE node page down. Before this fix
 // drift.ForNode's error rode the handler's return path unwrapped, so a single
@@ -1442,7 +1442,7 @@ type unpushedReviewFields struct {
 }
 
 // unpushedReviewFixture lays the node fixture under real git the way the
-// review-state warning's own field case does (issue #42,
+// review-state warning's own field case does (
 // TestSubmitConfirmationWarnsWhenTheStateCommitIsUnpushed's own fixture,
 // internal/cli/lifecycle_cmds_test.go): an initial commit, a bare remote, and
 // the fixture task's feature branch checked out from it, so a caller can push

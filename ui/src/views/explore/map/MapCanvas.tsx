@@ -283,7 +283,7 @@ export default function MapCanvas({
   // focuses the button a mousedown lands on, and answering that focus by
   // panning the map moved the card out from under the press: the release
   // then landed on shifted content and the chevron click was lost outright
-  // (dual-engine smoke, review round 3, which WebKit passed because it does
+  // (dual-engine smoke, which WebKit passed because it does
   // not focus a button on click at all).
   //
   // :focus-visible is the browser's own answer to this question and cannot be

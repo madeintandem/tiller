@@ -286,7 +286,7 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	// checkOpSources runs right after: checkSource judges the amendment's OWN
 	// citation, this judges each operation's, and a batch whose foundation
 	// document has drifted should hear about that before a narrower per-op
-	// gap (#54).
+	// gap.
 	if err := checkOpSources(doc); err != nil {
 		return ApproveResult{}, err
 	}
@@ -461,7 +461,7 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 				// only ever targets a feature or a task, so a staged epic's
 				// key is never a legal replacement in ANY position, and the
 				// arm below would otherwise resolve it anyway and accept a
-				// shape staging itself refuses at stage time (#48).
+				// shape staging itself refuses at stage time.
 				return nil, stagedEpicReplacementErr(i, raw)
 			case staged[raw] != "":
 				r.replaceKey = raw
@@ -489,7 +489,7 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 // (amendment.go) already enforces at stage time: a supersede or a cancel only
 // ever targets a feature or a task, so a staged epic can never be the
 // replacement, and letting the staged map's own add-epic bookkeeping rescue
-// one here would accept a shape staging itself refuses (#48). It is op-indexed
+// one here would accept a shape staging itself refuses. It is op-indexed
 // like reviseTargetIncompleteErr, below, because phase 1 resolves a whole
 // batch at once and the offending operation is not necessarily the one that
 // staged the epic.
@@ -815,7 +815,7 @@ func checkSource(tree *store.Tree, rev vcs.Revisions, doc *store.Amendment) erro
 	return sourceChangedErr(doc.Source.Revision, sd.Actual)
 }
 
-// checkOpSources is checkSource's per-operation counterpart (#54): when an
+// checkOpSources is checkSource's per-operation counterpart: when an
 // amendment is intake-minted (doc.Source set), StageOperation already refuses
 // a blank --source at stage time (sourcelessOpErr, amendment.go), but that
 // gate only runs on the ordinary staging path. A hand edit reaches

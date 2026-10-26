@@ -65,7 +65,7 @@ type TransitionView struct {
 	// "Specifying a feature"); every other transition leaves it absent.
 	Tasks []TransitionView `json:"tasks,omitempty"`
 
-	// UnpushedReview names the review-state warning (issue #42) when submit
+	// UnpushedReview names the review-state warning when submit
 	// just recorded a PR for a task whose own branch already holds a
 	// commit that PR cannot show a reviewer: the local tip is not on the
 	// remote. Only runTransition's submit arm ever sets it; every other
@@ -157,9 +157,9 @@ type SpecIncompleteData struct {
 
 // ParentPlanUngatedData is the BLOCKED data block for a doing task verb
 // refused because the parent feature's plan has not crossed the plan gate
-// (mutate.ParentPlanUngatedError; issue #33). MissingSeam carries the command
+// (mutate.ParentPlanUngatedError). MissingSeam carries the command
 // the human (or agent) runs next, the machine half of the human line.
-// FeatureKey rides beside Feature (the id) additively (issue #35): both
+// FeatureKey rides beside Feature (the id) additively: both
 // parent-guard blocks now carry the feature's canonical key as its own
 // structured field, the id-and-key rule the rest of the envelopes already keep.
 type ParentPlanUngatedData struct {
@@ -900,7 +900,7 @@ func epicOfFeature(tree *store.Tree, f *store.Feature) *store.Epic {
 // offlineReviewRefForTask raise when a remote is configured and the caller
 // still owes a PR: the PR is the review surface there, and a silent fallback
 // would hide a wrong invocation. A task names the grain it resolved and
-// where that came from (issue #146); feature, epic, and shelf submits pass an
+// where that came from; feature, epic, and shelf submits pass an
 // empty taskRef and keep the bare text.
 func prRequiredRefusal(cmd *cobra.Command, taskRef, source string) error {
 	msg := "this repo has a remote: submit with --pr <number> (the PR is the review surface)"
@@ -1211,7 +1211,7 @@ func reportSubmitNodeError(cmd *cobra.Command, tree *store.Tree, target store.No
 		}
 		// Mirrors taskBlk's own conditional branch shape immediately above:
 		// the no-live-task wording is the default, overridden when TaskID
-		// names an actual blocking task (micro-round fix; item 6 already
+		// names an actual blocking task (item 6 already
 		// fixed this message at the mutate layer, mutate.FeatureNotSubmittableError.Error(),
 		// but this CLI rendering kept the old unconditional wording).
 		human := fmt.Sprintf("Blocked: epic %s cannot submit: feature %s has no live task to review.",
@@ -1263,7 +1263,7 @@ func runTransition(cmd *cobra.Command, command, noun, node string, allowed []str
 		return reportTransitionError(cmd, command, tree, n, err)
 	}
 
-	// The review-state warning (issue #42) is only ever computed for submit:
+	// The review-state warning is only ever computed for submit:
 	// every other lifecycle verb's node is never left in_review with a fresh
 	// PR by its own transition, and gating on the command name here means the
 	// other eight verbs never pay for a git read that could not apply to
@@ -1479,7 +1479,7 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 		}
 		state := "is not specced"
 		if inc.CurrentState == "specced" {
-			// Re-spec and the plan gate re-validate a specced feature (#145).
+			// Re-spec and the plan gate re-validate a specced feature.
 			state = "is specced, but its specify output no longer passes"
 		}
 		return d, fmt.Sprintf("Blocked: feature %s %s; write %s%s (run `tiller guide specify` for the walkthrough).",
@@ -1520,7 +1520,7 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 	// id, not its key: gen.RefByID renders a display ref ("key (id)"), which is
 	// not a valid command argument, and the file offers no id-to-key helper for
 	// a render site holding only an id, so the id alone is the honest minimal
-	// choice for a copy-pasteable command (issue #35).
+	// choice for a copy-pasteable command.
 	var pc *mutate.ParentCancelledError
 	if errors.As(err, &pc) {
 		seam := "tiller cancel task " + pc.NodeID + " --reason \"<why>\""
@@ -1842,7 +1842,7 @@ func blockerViews(bs []gen.QuestionBlocker) []QuestionBlockerView {
 // in. The status is still named, as where
 // the node stands rather than where it went.
 //
-// unpushed carries submit's own review-state warning (issue #42) computed at
+// unpushed carries submit's own review-state warning computed at
 // runTransition's call site; every other verb passes nil, and the RefreshBasis
 // and no-change arms return before reaching it because neither is a shape
 // submit's own transition ever produces (submit is never idempotent-safe the

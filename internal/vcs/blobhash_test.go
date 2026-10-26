@@ -17,7 +17,7 @@ import (
 // basis pin recorded by an earlier binary keeps matching, that it applies the
 // path's checkin conversion without writing an object, and that the error
 // shape for a missing path is unchanged. WorktreeBlobMatches is the same
-// comparison with an in-process raw fast path (issue #87: one `git
+// comparison with an in-process raw fast path (one `git
 // hash-object` subprocess per compared file cost thousands of spawns).
 
 func gitIn(t *testing.T, dir string, args ...string) string {

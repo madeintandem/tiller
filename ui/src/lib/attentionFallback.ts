@@ -19,7 +19,7 @@
 // ones the stack itself chooses not to render), so this derivation and the
 // queue join can never both fire for the same node and disagree.
 //
-// Settle questions (issue #152, item 1): approve feature and approve task
+// Settle questions (item 1): approve feature and approve task
 // refuse while an open question holds the plan, and approve_tasks rows are
 // keyed to the feature, so a task page always reaches this fallback. The
 // recomputed approve is therefore never offered for a feature (the queue's
@@ -88,7 +88,7 @@ export function needsAttentionFallback(
   }
 
   if (PRE_WORK_STATUSES.has(node.status)) {
-    // A plan gate refuses while an open question holds the plan (issue #152),
+    // A plan gate refuses while an open question holds the plan,
     // so a feature or task the page knows is held names the question's answer
     // rather than an approve that exits 1 when copied. blocked_by_questions is
     // the node's own blocker set, ancestors included (views.blockingQuestions

@@ -45,7 +45,7 @@ type ProjectSummary struct {
 	OrderRefs []string `json:"-"`
 
 	// UncommittedState names the repo-relative paths under .tiller/ that git
-	// sees as modified or untracked (issue #44): the field case was two
+	// sees as modified or untracked: the field case was two
 	// attest commands that wrote feature.yml plus two event files, and the
 	// state sat uncommitted for a day with no surface naming it. It is
 	// informational only, additive JSON (omitempty): readiness and every
@@ -149,7 +149,7 @@ type NodeStatusView struct {
 	// so views can answer it directly.
 	Held *HeldView `json:"held,omitempty"`
 
-	// UnpushedReview names the review-state warning (issue #42) when this
+	// UnpushedReview names the review-state warning when this
 	// task's recorded feature branch holds a commit its PR does not yet show:
 	// the local tip is not on the remote a reviewer sees. Like ActiveBasis it
 	// is never set by NodeStatus below; the CLI fills it in after a live git
@@ -159,7 +159,7 @@ type NodeStatusView struct {
 }
 
 // UnpushedReviewView is the additive unpushed_review object the task status
-// oracle and the submit confirmation envelope both carry (issue #42): the
+// oracle and the submit confirmation envelope both carry: the
 // short sha sitting on the recorded feature branch's local tip, the branch
 // itself, and what it was compared against. It is absent (a nil pointer)
 // exactly when nothing is unpushed, so an unaffected caller's envelope is

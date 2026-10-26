@@ -401,7 +401,7 @@ func TestDecomposeReadoutRendersRealEpicSpecCountsWhenSupplied(t *testing.T) {
 	require.Equal(t, "1 of 2", labels["Epic specs written"])
 }
 
-// TestFrontierSkipsTerminalFeatures pins the behavior fix round 1, finding
+// TestFrontierSkipsTerminalFeatures pins the behavior finding
 // 1 was about, restated for the one-arm frontier: the walk is first-match-wins,
 // so an arm that matched a terminal feature would capture the route from every
 // live feature behind it and the agent would be sent at work that can never
@@ -448,10 +448,10 @@ func TestFrontierSkipsTerminalFeatures(t *testing.T) {
 // TestFrontierSkipsARetiredAncestor extends the same skip-not-stop rule
 // to a draft feature that is not itself terminal but sits under a cancelled
 // epic: `tiller spec feature` would refuse it with ParentEpicRetiredError
-// (transition.go's spec case, issue #36), so routing an agent there would
+// (transition.go's spec case), so routing an agent there would
 // send it at a command that fails when copied, the same failure mode
 // queueApproveFeatures and queueApproveTaskBatches now suppress on the queue
-// side (queue.go, issue #37). epic-0 is cancelled and holds a draft feature
+// side (queue.go). epic-0 is cancelled and holds a draft feature
 // that would otherwise lead the walk; epic-1 is live and holds the draft
 // feature the frontier should actually name.
 func TestFrontierSkipsARetiredAncestor(t *testing.T) {
@@ -797,7 +797,7 @@ func TestExecuteReadoutDoesNotCountATaskWithNoRequiredGatesAsGreen(t *testing.T)
 }
 
 // TestExecuteReadoutCarriesUnpushedReviewOntoItsEntity pins the review-state
-// warning's data-layer half (issue #42): a caller-computed UnpushedReview
+// warning's data-layer half: a caller-computed UnpushedReview
 // entry, matched to an in-review task by id, pairs with the branch the tree
 // already carries on the task itself (a pure read, no I/O
 // views is not allowed to perform) and lands on that task's own entity, never
@@ -1423,7 +1423,7 @@ func TestSyncReadoutIsCaughtUpWhenNothingIsLegal(t *testing.T) {
 
 // TestTopClaimIsTheDependencyRankedFirstFeature is the non-empty
 // sibling of the terminal above. Both features and their tasks are ready but
-// ownerless, so both are startable; the claimable arm (issue #92) names the
+// ownerless, so both are startable; the claimable arm names the
 // dependency-ranked first one rather than falling through to a caught-up pool
 // line, which no longer renders for a startable pool. The dependency
 // deliberately inverts feature-key order: alpha depends on zulu, making zulu
@@ -1650,7 +1650,7 @@ func TestAmendmentWaitIgnoresApprovedAndWithdrawnAmendments(t *testing.T) {
 	require.Empty(t, candidatesOfKind(nextFor(tree, "jc", workflow.Input{}).Candidates, "approve_amendment"))
 }
 
-// TestEpiclessTreeNamesTheAmendmentWaitBeforeDecompose pins issue #137's
+// TestEpiclessTreeNamesTheAmendmentWaitBeforeDecompose pins the
 // amendment half: an intake amendment staged against an empty tree is a
 // human wait the route must surface, not hide behind decompose.
 func TestEpiclessTreeNamesTheAmendmentWaitBeforeDecompose(t *testing.T) {
@@ -1680,10 +1680,10 @@ func TestEpiclessTreeIgnoresSettledAmendmentsAndRoutesDecompose(t *testing.T) {
 }
 
 // TestSpecifyReadoutSuppressesThePlanGateUnderARetiredAncestor mirrors
-// queueApproveFeatures' suppression (queue.go, issue #37) on this Next arm: a
+// queueApproveFeatures' suppression (queue.go) on this Next arm: a
 // specced feature under a cancelled epic is not named here, because the
 // copied command, `tiller approve feature`, now refuses with
-// ParentEpicRetiredError (issue #36), and a Next line recommending a command
+// ParentEpicRetiredError, and a Next line recommending a command
 // that fails when copied is the same bug the queue row was. The positive
 // sibling, the same feature under a live epic, is
 // TestSpecifyReadoutNamesThePlanGateAsNext above.
@@ -1925,7 +1925,7 @@ func TestSpecifyReadoutFallsBackToTheRouteWithNothingSpecced(t *testing.T) {
 // the feature frontier, the first live feature in dependency order whose turn
 // it is, not a planning layer between the tree and its features
 // (artifact-schema.md, One tree, no effort axis). The epic is approved here
-// because a draft epic is its own wait ahead of the frontier (issue #93,
+// because a draft epic is its own wait ahead of the frontier (
 // route_epic_gate_test.go).
 func TestDecomposeReadoutNamesTheFrontierAsNext(t *testing.T) {
 	tree := treeWithDraftEpics(t, 1)
@@ -2288,9 +2288,9 @@ func TestNothingDueIsCaughtUp(t *testing.T) {
 // check feature` once its own epic is cancelled or archived, since gen.FeatureActivity
 // reads only feature/task facts and answers awaiting_check regardless of the
 // epic, and the command now refuses with ParentEpicRetiredError
-// (whole-branch review, issue #36). This fixture's feature is also owner-less
+// (whole-branch review). This fixture's feature is also owner-less
 // and non-terminal, so it sits in the Unclaimed pool: the caught-up terminal
-// this tree reaches now names it in PoolSignpost's own sentence (issue #92),
+// this tree reaches now names it in PoolSignpost's own sentence,
 // by full reference, "F-aaaaaa" included, which is fine, since PoolSignpost's
 // whole point is honestly naming why a pool feature cannot start. Only the
 // specific suppressed check command must never appear.
@@ -2336,7 +2336,7 @@ func TestExecuteReadoutSummarizesEveryOutstandingReviewWithoutCompetingNextActio
 	require.Equal(t, "tiller check feature "+first.ID, topNext(t, r).Command)
 }
 
-// TestFrontierPrefersTheSoftOrderedEpicAcrossFlowLayers pins the issue #46
+// TestFrontierPrefersTheSoftOrderedEpicAcrossFlowLayers pins the
 // fix: eligibility comes from the dependency gate alone, and among eligible
 // drafts the recorded soft order outranks flow position. The fixture is the
 // Acme shape reduced to three epics: epic-0 holds a done feature, epic-1
@@ -2456,7 +2456,7 @@ func TestFrontierUnlistedEpicsKeepFlowOrderAmongThemselves(t *testing.T) {
 }
 
 // TestFrontierGatesOnTheOwningEpicsRecordedEdge pins the second half of the
-// issue #46 fix: an epic-grain depends_on edge gates the epic's features the
+// the frontier intent-first fix: an epic-grain depends_on edge gates the epic's features the
 // way a feature-grain edge gates the feature, so a soft order preferring the
 // dependent epic cannot rank around the recorded edge. epic-1 depends on
 // epic-0 (unfinished); epic-1's dependency-free draft is soft-preferred but
@@ -2545,7 +2545,7 @@ func TestFrontierGatesOnTheOwningEpicsEdgeWithoutASoftOrder(t *testing.T) {
 	require.True(t, nextFor(tree, "", workflow.Input{}).CaughtUp, "the gated draft is no move")
 }
 
-// grainNotesTree is issue #146's mixed-grain feature: the feature now resolves
+// grainNotesTree is the mixed-grain feature: the feature now resolves
 // to feature grain while task alfa is in flight, started at startedGrain.
 func grainNotesTree(t *testing.T, startedGrain string) *store.Tree {
 	t.Helper()

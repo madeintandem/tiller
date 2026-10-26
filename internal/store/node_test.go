@@ -115,7 +115,7 @@ func TestSupersedesAbsentOnTaskLoadsAsNil(t *testing.T) {
 }
 
 // TestShelfNounsIsBugThenChoreAndFresh pins the helper every shelf-noun
-// walk uses instead of its own literal (issue #96): bug then chore, the
+// walk uses instead of its own literal: bug then chore, the
 // order the literals used, and a fresh slice per call so no caller can
 // mutate a shared one.
 func TestShelfNounsIsBugThenChoreAndFresh(t *testing.T) {

@@ -1,6 +1,6 @@
 package gen
 
-// This file is the dependency-ordering authority (issue #27, plan
+// This file is the dependency-ordering authority (plan
 // 2026-07-23-console-chart-table-pass, Task A1): one computation, run once
 // per loaded tree, that every read surface here and in views (tiller tree,
 // ls, the console queue and streams) consults in place of the
@@ -386,7 +386,7 @@ func RankedNoun(noun string) bool {
 }
 
 // OrderTasks ranks one feature's sibling tasks through the same layered Kahn
-// computation Epics and Features rank on (cli-surface.md, issue #27;
+// computation Epics and Features rank on (cli-surface.md,
 // artifact-schema.md, Tasks: Ordering). Callers hand it the slice they already
 // hold (a tree's FeatureTasks group, or a filtered subset of one) and get a
 // new slice back; the input is not reordered in place. soft is the owning

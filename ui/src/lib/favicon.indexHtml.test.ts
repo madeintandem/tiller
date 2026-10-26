@@ -1,4 +1,4 @@
-// index.html links the console's favicon (issue #108): a row of tabs is
+// index.html links the console's favicon: a row of tabs is
 // easier to pick out with a mark than with the browser's default globe. Read
 // from the literal source the same way theme.indexHtml.test.ts does.
 

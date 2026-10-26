@@ -12,7 +12,7 @@ import (
 // layTaskInFlightOnWorktree claims and starts the fixture task, commits that
 // state on the task branch, and checks the branch out in a linked worktree
 // while the integration checkout still records the task ready and unclaimed:
-// the field shape behind issue #149.
+// the field shape behind the observed-task routing fix.
 func layTaskInFlightOnWorktree(t *testing.T) (taskID, branch string) {
 	t.Helper()
 	layFeatureReadyToStart(t)

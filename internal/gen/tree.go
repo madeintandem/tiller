@@ -19,7 +19,7 @@ import (
 // whole-project map the nodes are every epic; for a subtree they are the single
 // rooted node. The model is deterministic and fully ordered at every grain:
 // epics and features by DependencyOrder, a feature's tasks by OrderTasks over
-// their recorded depends_on (issue #27; artifact-schema.md, Tasks: Ordering).
+// their recorded depends_on (artifact-schema.md, Tasks: Ordering).
 // A consumer of this payload renders the slices as given and sorts nothing.
 type TreeModel struct {
 	Project string     `json:"project"`

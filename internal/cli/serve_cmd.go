@@ -5,8 +5,8 @@ package cli
 // listener is loopback; --host explicitly opts into unauthenticated plain-HTTP
 // network access. Any future write endpoints need a separate security design.
 //
-// Once the port is bound, serve opens the console in the developer's browser
-// (issue #109). Opening is a convenience, never a gate: a machine with no
+// Once the port is bound, serve opens the console in the developer's browser.
+// Opening is a convenience, never a gate: a machine with no
 // browser keeps serving and says so. Three words can turn it off, most
 // specific first: --open=false on the command line, `console: { open: false }`
 // in the hand-edited per-checkout .tiller/local.yml, and BROWSER=none in the

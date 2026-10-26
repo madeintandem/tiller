@@ -485,7 +485,7 @@ func soleFeatureStatus(t *testing.T) string {
 	return ""
 }
 
-// TestEndToEndOfflineLoopReachesDoneWithoutPR is the issue #15 offline loop,
+// TestEndToEndOfflineLoopReachesDoneWithoutPR is the offline loop,
 // end to end with no PR anywhere: in a repo with no git remote, submit without
 // --pr moves the TASK to in_review with the branch and head commit recorded as
 // the review ref, a local --no-ff merge of the task's recorded working branch
@@ -641,7 +641,7 @@ func TestEndToEndSquashMergeReachesDoneCLI(t *testing.T) {
 	require.True(t, hasEventCLI(t, tree, "sync.feature"))
 }
 
-// TestIncidentArcRefusesBeforeCode replays issue #33's field sequence at the CLI
+// TestIncidentArcRefusesBeforeCode replays the field sequence at the CLI
 // grain, the half this file can build without a hand-set fixture: add feature,
 // cut a task, approve it. The guard must stop the arc right there, before any
 // code exists, because a draft feature has no plan pinned to gate against. The
@@ -665,7 +665,7 @@ func TestIncidentArcRefusesBeforeCode(t *testing.T) {
 	require.NoError(t, err)
 	tree, err := store.Load(cwd)
 	require.NoError(t, err)
-	// Net 6 (issue #40): without this, an empty tree.Tasks would make the loop
+	// Net 6: without this, an empty tree.Tasks would make the loop
 	// below iterate zero times and pass vacuously, "proving" nothing moved
 	// when in fact nothing was ever checked at all.
 	require.NotEmpty(t, tree.Tasks, "the fixture must have laid the one task the refusal is about")

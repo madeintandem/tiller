@@ -274,7 +274,7 @@ func renderAttestationsHuman(b *strings.Builder, atts []AttestationView) {
 // advisory enforcement) and is never rewritten after the fact, so a gate that
 // has since gone green leaves the violation reading exactly as it did at the
 // crossing: "evals: fail" beside a gates block that now reads "evals: pass"
-// with nothing saying the two are consistent, not contradictory (issue #44).
+// with nothing saying the two are consistent, not contradictory.
 //
 // gates is the same view's own Gates map (NodeView carries both together), so
 // when a violation names a gate whose CURRENT status here is pass, the line

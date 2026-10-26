@@ -472,7 +472,7 @@ export interface NodeView {
   // cancelled feature, or a cancelled-or-archived epic), absent when none
   // (views.NodeView.Held, gen.RetiredAncestor). It is additive, orthogonal
   // to status and next_owner above, which stay pure lifecycle projections
-  // either way (the "annotate, don't subtract" decision, issue #36): the
+  // either way (the "annotate, don't subtract" decision): the
   // doing verbs already refuse under a retired ancestor
   // (mutate.guardParentState); this field says why, before anyone runs one.
   held?: HeldView;
@@ -731,7 +731,7 @@ export interface AmendmentSourcePageView {
 // (amends_design), and source, the amendment-level fingerprinted feedback
 // artifact an intake-minted amendment carries. Absent for a hand-opened
 // amendment. validity_error names the reason(s) live validity could not be
-// computed against the current tree (#57), the identical vocabulary the
+// computed against the current tree, the identical vocabulary the
 // CLI's own `show amendment --json` envelope already carries: present when
 // EITHER of the server's two fallible live reads fails — the batch cannot
 // even resolve (a vanished target, a hand-edited epic key), OR the
@@ -824,7 +824,7 @@ export interface NodePage {
   // grain (views.NodePage.DriftDetail). Fills and degrades together with
   // drift above, so the chip and its panel cannot disagree.
   drift_detail?: NodeDriftView;
-  // unpushed_review names the review-state warning (issue #42, Task 15,
+  // unpushed_review names the review-state warning (Task 15,
   // internal/views/nodepage.go's UnpushedReview) for a task in review whose
   // recorded feature branch holds a commit its PR does not yet show: the
   // node page's own warning-register attention box. Absent for every noun but a
@@ -1010,7 +1010,7 @@ export interface Facet {
 // open_work_items (all nonterminal bugs, chores, and tweaks attached directly or
 // through one of the feature's tasks), the task list itself in the shared
 // task order (always an array, never null, even for a feature with no tasks
-// yet), and the board's two distinct blocked-register conditions (issue #39:
+// yet), and the board's two distinct blocked-register conditions (
 // never folded into one flag) -
 // blocked, the manual flag (store.Feature.Blocked, read through
 // views.Blocked; false omits the key rather than emitting "blocked": false,

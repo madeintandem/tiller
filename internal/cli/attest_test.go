@@ -154,7 +154,7 @@ func TestAttestGate(t *testing.T) {
 
 // TestAttestUndeclaredGateWarns confirms a gate key the manifest does not
 // declare is still recorded but warns, naming the declared keys, so a
-// misspelling like code-review for the seeded code_review is visible (#138).
+// misspelling like code-review for the seeded code_review is visible.
 func TestAttestUndeclaredGateWarns(t *testing.T) {
 	key := layEvalFeature(t)
 	declareReviewGates(t)
@@ -217,7 +217,7 @@ func TestAttestUnknownCriterion(t *testing.T) {
 
 // TestAttestOffAggregateIsBlocked confirms a feature attest run off its coarse
 // aggregate branch is a branch refusal (exit 1) carrying the machine-readable
-// reason and the aggregate branch, not a bare failure (issue #150).
+// reason and the aggregate branch, not a bare failure.
 func TestAttestOffAggregateIsBlocked(t *testing.T) {
 	key := layEvalFeature(t)
 	path := filepath.Join(featureDir(t), "feature.yml")

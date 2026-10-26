@@ -56,12 +56,12 @@
 // /api/tree and /api/status are two independent fetches with no ordering
 // guarantee between them, and the hand-closed rule above ("stays closed
 // even when selected") has to hold no matter which one wins that race - two
-// review rounds hardened this: the restore composes with whatever this
+// review hardened this: the restore composes with whatever this
 // session has already materialized or the reader has already clicked
 // rather than replacing it outright; the auto-open effect itself
 // holds until /api/status has settled, so the restore always gets its one
 // chance to apply a stored hand-close before auto-open can ever open that
-// same branch (round 2 - without this, whichever fetch happened to resolve
+// same branch (without this, whichever fetch happened to resolve
 // first silently decided whether a remembered close survived). The split's
 // first real render also waits for /api/status to settle before it ever
 // paints, which is what makes both effects' declaration order actually
@@ -153,7 +153,7 @@ export default function Explore() {
   // selection (App.tsx:66-72).
   const summary = useFetch<ProjectSummary>(statusPath, { retainData: true });
   const projectKey = summary.data?.project.key;
-  // Round 2 fix: whether /api/status resolved to real project
+  // Whether /api/status resolved to real project
   // data or to an error, "settled" is the one signal the auto-open effect
   // below waits on before it may touch `expansion` at all - the same signal
   // the split's own first real paint waits on (used again near the return,
@@ -176,7 +176,7 @@ export default function Explore() {
   // settled, so this effect has always had its one chance to run by the
   // time the split is first painted at all.
   //
-  // Fix round 1: COMPOSE, never replace. A reviewer probe
+  // COMPOSE, never replace. A reviewer probe
   // confirmed that a flat setExpansion(stored) here could wipe out
   // whatever this session had already materialized or the reader had
   // already clicked, if either happened to land in an earlier commit.
@@ -186,7 +186,7 @@ export default function Explore() {
   // precedence toggle's own hand-closed rule already gives an explicit
   // choice over an inferred one; its own doc comment and unit tests carry
   // the contract now, not this call site. Kept as defense in depth after
-  // round 2's fix below (the auto-open effect no longer races ahead of
+  // the settled gate below (the auto-open effect no longer races ahead of
   // this one at all, so `prev` at merge time is ordinarily just this
   // session's own hand clicks, if any), rather than narrowed back to a
   // flat replace now that the one known race is closed a different way.
@@ -224,7 +224,7 @@ export default function Explore() {
   // the moment this update actually applies, rather than closing over a
   // stale `expansion` captured at render time.
   //
-  // Held until summarySettled (round 2 fix, re-review): /api/tree and
+  // Held until summarySettled (re-review): /api/tree and
   // /api/status are independent fetches with no ordering guarantee, and
   // this effect's OWN dependency (tree.data) can resolve before the restore
   // effect above's (projectKey) does. A re-review probe confirmed that
@@ -334,8 +334,8 @@ export default function Explore() {
   const splitRef = useRef<HTMLDivElement>(null);
 
   // Task 4's width persist: unconditional (no project key to wait on,
-  // matching the initializer above), but gated on `!dragging` (fix round,
-  // small finding) so a mouse drag writes once at its own end rather than
+  // matching the initializer above), but gated on `!dragging`
+  // (small finding) so a mouse drag writes once at its own end rather than
   // once per mousemove - the drag effect below updates navWidth on every
   // pointer move, and without this gate each of those intermediate pixels
   // would hit localStorage too. Keyboard nudges and the double-click reset
@@ -397,7 +397,7 @@ export default function Explore() {
     }
   }
 
-  // Fix round: the split's first REAL render
+  // The split's first REAL render
   // waits on summarySettled (computed above, alongside projectKey) - data
   // or error alike - mirroring Build.tsx:104-107's own "needsDefault &&
   // summary.data/error" gate for its default epic selection. Two things

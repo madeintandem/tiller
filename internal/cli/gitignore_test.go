@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// preAnchoringGitignoreText is the block init and join wrote before issue #104.
+// preAnchoringGitignoreText is the block init and join wrote before the artifacts anchoring.
 // Existing repositories must retain these bytes when the new patterns land.
 const preAnchoringGitignoreText = "# Tiller-generated, not source. Safe to delete; Tiller re-runs the gates and\n" +
 	"# regenerates the cache. Keep these out of your code diff.\n" +

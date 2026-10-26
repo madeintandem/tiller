@@ -80,7 +80,7 @@ type NodePage struct {
 	// serve handler together with Drift, and nil together with it on a
 	// ForNode error, so the chip and the panel it opens can never disagree.
 	DriftDetail *NodeDriftView `json:"drift_detail,omitempty"`
-	// UnpushedReview names the review-state warning (issue #42) for a task
+	// UnpushedReview names the review-state warning for a task
 	// in review whose recorded feature branch holds a commit its PR does not
 	// yet show: the identical additive object NodeStatusView.UnpushedReview
 	// already carries (views.UnpushedReviewView, summary.go), reused here
@@ -245,8 +245,7 @@ type Relationships struct {
 	Feature *RelatedNode `json:"feature,omitempty"`
 	// Features are an epic's children, in the order gen.Order ranks them
 	// (childFeatures below reads order.Features), not by key: siblings rank on
-	// the shared dependency sort with key order breaking ties (cli-surface.md,
-	// issue #27).
+	// the shared dependency sort with key order breaking ties (cli-surface.md).
 	Features []RelatedNode `json:"features,omitempty"`
 	// Tasks are a feature's task folders in the cached sibling dependency order.
 	Tasks []RelatedNode `json:"tasks,omitempty"`
@@ -549,7 +548,7 @@ func owningEpic(t *store.Tree, epicKey string) *RelatedNode {
 }
 
 // childFeatures gathers an epic's features by the layout link (the feature's
-// EpicKey), in DependencyOrder (issue #27).
+// EpicKey), in DependencyOrder.
 func childFeatures(t *store.Tree, order *gen.Order, e *store.Epic) []RelatedNode {
 	if e.Key == nil || *e.Key == "" {
 		return nil
@@ -567,7 +566,7 @@ func childFeatures(t *store.Tree, order *gen.Order, e *store.Epic) []RelatedNode
 // layout link names (the feature's EpicKey), projected through the complete
 // Node view rather than childFeatures' lightweight relationship row, so an
 // epic's approval review carries each feature's source, change type, surface,
-// and gates from one fetch. Ordered by DependencyOrder (issue #27), the same
+// and gates from one fetch. Ordered by DependencyOrder, the same
 // order childFeatures applies. Present for every epic page: a childless epic,
 // or one with a nil or empty key (the degenerate case that should not exist
 // for a folder-backed noun, so childFeatures' own guard never even tries to
@@ -598,7 +597,7 @@ type AmendmentPageView struct {
 	AmendsDesign []string                     `json:"amends_design,omitempty"`
 	Source       *AmendmentSourcePageView     `json:"source,omitempty"`
 	// ValidityError names the reason(s) live validity could not be computed
-	// against the current tree (#57), the SAME vocabulary the CLI's own
+	// against the current tree, the SAME vocabulary the CLI's own
 	// `show amendment --json` envelope already carries (validity_error,
 	// cli/amendment_cmds.go's runShowAmendment). Left empty by this pure
 	// projection; node.go's fillAmendmentValidity is the one place the git

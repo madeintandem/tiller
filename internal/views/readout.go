@@ -104,7 +104,7 @@ type Readout struct {
 	Next     Next             `json:"next"`
 	Baseline *BaselineReadout `json:"baseline,omitempty"`
 	// GrainNotes names each in-flight task that started at task grain under a
-	// feature now resolving to a coarse grain (issue #146): it takes its own
+	// feature now resolving to a coarse grain: it takes its own
 	// PR, which must merge before the coarse submit.
 	GrainNotes []string `json:"grain_notes,omitempty"`
 }
@@ -178,8 +178,8 @@ type ReadoutInput struct {
 	// renders its real tally.
 	AmendmentPreconditions map[string][]mutate.PreconditionValidity
 
-	// UnpushedReviews holds the review-state warning's caller-computed facts
-	// (issue #42), one entry per in-review task whose recorded feature branch
+	// UnpushedReviews holds the review-state warning's caller-computed facts,
+	// one entry per in-review task whose recorded feature branch
 	// carries a commit its PR does not yet show: the I/O (a live git compare
 	// against the branch's remote-tracking counterpart, vcs.Git.UnpushedTip)
 	// this package performs none of. Node is the task id executeContent
@@ -459,7 +459,7 @@ func ReadoutOfInput(t *store.Tree, m Moment, in ReadoutInput) Readout {
 // grainNotes is guidance only, never a refusal: for each feature resolving to
 // a coarse grain, every non-done task that started at task grain rides its own
 // PR (or, remoteless, its review ref), which must merge before the coarse
-// submit (issue #146). Tasks that never
+// submit. Tasks that never
 // recorded a started grain resolve through their parents and get no note.
 func grainNotes(t *store.Tree) []string {
 	ids := make([]string, 0, len(t.Features))
@@ -690,7 +690,7 @@ func headlineFor(m Moment) string {
 // would be the block narrating what the line directly above it already
 // said.
 //
-// Round 1 shipped every one of those Verification sections as a queue
+// An earlier version shipped every one of those Verification sections as a queue
 // tally (a count of what QueueOf still lists as pending), which read as
 // noise: `approve epic alpha` printed "Epics awaiting approval: 1" directly
 // above a Your Gate section naming that same epic, the identical fact
@@ -871,7 +871,7 @@ func questionReleaseChecks(t *store.Tree, act string, blocks []string, r *Readou
 }
 
 // attestContent answers "what remains unmet on the node," at the node
-// grain the design table actually asks for (round 1 fell back to tree
+// grain the design table actually asks for (an earlier version fell back to tree
 // grain because ReadoutInput carried no node identity at all; the
 // reviewer's finding was that the constraint was emitReportWithReadout's
 // signature, a plumbing choice, not a real limit, so this task added
@@ -914,7 +914,7 @@ func attestContent(t *store.Tree, in ReadoutInput, r *Readout) {
 // branch, a fast-forward strand it cannot tell from a branch that never
 // diverged) by walking git, and a tree read has no way to recover either
 // without walking git a second time, which views performs no I/O to do.
-// Round 1's in_review census is gone: it could not have named a reason, and
+// The old in_review census is gone: it could not have named a reason, and
 // mutate.Sync already has one for exactly the nodes it looked at.
 func syncContent(t *store.Tree, in ReadoutInput, r *Readout) {
 	act := in.Act
@@ -1311,7 +1311,7 @@ func firstInvertedPair(soft, rendered []string) (x, y string, found bool) {
 }
 
 // ObservedTask is a task execution observations show in flight on Branch,
-// owned there by Owner (issue #149).
+// owned there by Owner.
 type ObservedTask struct {
 	Task   *store.Task
 	Branch string
@@ -1334,7 +1334,7 @@ func inReviewHumanWait(t *store.Tree, task *store.Task) bool {
 		return true
 	}
 	epic := recapEpicByKey(t, feature.EpicKey)
-	// A task started at task grain keeps its own review (issue #146).
+	// A task started at task grain keeps its own review.
 	grain, _ := store.TaskReviewGrain(t.Manifest, epic, feature, task)
 	switch grain {
 	case store.ReviewGrainFeature:
@@ -1435,9 +1435,9 @@ func frontierFeatures(t *store.Tree, order *gen.Order) []*store.Feature {
 		}
 		// A retired ancestor epic suppresses the frontier here for the same
 		// reason it suppresses the queue's approve rows (queue.go's
-		// queueApproveFeatures and queueApproveTaskBatches, issue #37):
+		// queueApproveFeatures and queueApproveTaskBatches):
 		// `tiller spec feature` refuses draft -> specced under a cancelled or
-		// archived epic (transition.go's spec case, epicRetired, issue #36),
+		// archived epic (transition.go's spec case, epicRetired),
 		// so routing an agent at this feature would be sending it at a command
 		// that fails when copied. The walk keeps going rather than stopping,
 		// the same skip-not-stop shape the terminal-feature filter above it
@@ -1456,7 +1456,7 @@ func frontierFeatures(t *store.Tree, order *gen.Order) []*store.Feature {
 		//
 		// A draft epic is a decomposition the human has not approved yet, so
 		// its features are not a backlog to pull from: the frontier offers
-		// only features under an approved epic (issue #93), and the epic's
+		// only features under an approved epic, and the epic's
 		// approval is its own move instead. Same skip-not-stop shape as the
 		// filters above, and the same suggestion-only reach: `tiller spec
 		// feature` stays legal on any draft the human names. A feature whose
@@ -1489,7 +1489,7 @@ func frontierFeatures(t *store.Tree, order *gen.Order) []*store.Feature {
 // last tier rather than a co-equal one because layer depth is static
 // structure: once a candidate's dependencies are settled its depth is
 // history, not a live constraint, and preferring it would punish exactly the
-// epics whose foundations are complete (the Acme finding, issue #46).
+// epics whose foundations are complete (the Acme finding).
 type frontierRank struct {
 	epicOrd int
 	featOrd int

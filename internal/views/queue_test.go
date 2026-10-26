@@ -517,7 +517,7 @@ func TestQueueApproveAmendmentsLeadTheGroupOrder(t *testing.T) {
 	require.Equal(t, "approve_amendment", entries[0].Kind)
 }
 
-// These tests pin Task A1 (issue #27) on the queue: within a kind, epics and
+// These tests pin Task A1 on the queue: within a kind, epics and
 // features order by DependencyOrder rather than by reference, and that row
 // order is what a caller batching several rows into one CLI invocation
 // (`tiller approve epic <a> <b> <c>...`, cli-surface.md's high-repetition
@@ -601,7 +601,7 @@ func TestQueueApproveFeaturesFollowDependencyOrderNotRef(t *testing.T) {
 // queueFeatureChecks' suppress-not-exempt rule (gen.RetiredAncestor) to this
 // neighboring group: a specced feature under a cancelled epic offers no
 // approve_feature row, because `tiller approve feature` would now refuse with
-// ParentEpicRetiredError (issue #37), and a queue whose commands fail when
+// ParentEpicRetiredError, and a queue whose commands fail when
 // copied is worse than silence. A live epic ancestor is the positive sibling:
 // the same feature still queues normally.
 func TestQueueApproveFeaturesSuppressUnderRetiredAncestor(t *testing.T) {
@@ -645,7 +645,7 @@ func TestQueueApproveTaskBatchesFollowDependencyOrderNotRef(t *testing.T) {
 // half of the same suppress-not-exempt rule: proposed tasks under a ready
 // feature under a cancelled epic offer no approve_tasks row, because `tiller
 // approve task --feature` would refuse the same way at the first task it
-// reached (ParentEpicRetiredError, issue #37). A live epic ancestor is the
+// reached (ParentEpicRetiredError). A live epic ancestor is the
 // positive sibling.
 func TestQueueApproveTaskBatchesSuppressUnderRetiredAncestor(t *testing.T) {
 	epicKey, featKey, taskKey := "foundation", "foundation/widgets", "foundation/widgets/one"

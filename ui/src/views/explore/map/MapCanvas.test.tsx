@@ -443,7 +443,7 @@ describe("MapCanvas: the mind map", () => {
     // Chromium focuses the button a mousedown lands on. Reported, that focus
     // panned the map before the mouseup, so the release landed on shifted
     // content and the chevron click was lost outright (dual-engine smoke,
-    // review round 3: WebKit does not focus on click, so it passed there).
+    // review: WebKit does not focus on click, so it passed there).
     // The guard is the pointer's own, since jsdom cannot match
     // :focus-visible, which is the browser's answer to the same question.
     const onFocusCard = vi.fn();

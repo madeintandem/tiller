@@ -13,7 +13,7 @@ import (
 // transaction. A completed aggregate round gets a new ref identity; old refs,
 // terminal task identities, and audit events are never rewritten.
 //
-// adopt is start --adopt-aggregate (issue #147): instead of minting the
+// adopt is start --adopt-aggregate: instead of minting the
 // derived aggregate name it records an existing local ref at exactly that
 // name, after the same reservation checks. minted reports that this start
 // named an aggregate nothing recorded before, which taskStartBase needs so a

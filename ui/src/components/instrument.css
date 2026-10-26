@@ -353,7 +353,7 @@
   padding: 2px 7px;
 }
 
-/* "Green is quiet, amber is yours" (mock note 5, round 4). The mock varies
+/* "Green is quiet, amber is yours" (mock note 5). The mock varies
    this line's color inline in both directions, slate for the pre-check case
    (mock:427) and the in_review amber when a criterion is waiting on the human
    (mock:468); rendering both in the same bold ink made the quiet case shout
@@ -941,7 +941,7 @@
   margin-top: var(--space-4);
 }
 
-/* .instr-amendop-defect (#57): source_missing and shape_error, the two
+/* .instr-amendop-defect: source_missing and shape_error, the two
    per-op hand-edit-defect markers, reuse .instr-amendop-reason's own spacing
    and size (the identical "a fact worth its own quiet line" grammar) but
    paint through .instr .error's existing warning ink (line 19 of this file)

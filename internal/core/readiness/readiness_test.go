@@ -107,7 +107,7 @@ func TestCheckCurrentOrientationHasNoGap(t *testing.T) {
 
 // TestCheckMissingOrientationKeepsExistingAnswer confirms a project with no
 // orientation.md at all is not penalized for it: readiness names no new
-// failure for a missing file (issue #41 is explicit that this stays whatever
+// failure for a missing file (the design is explicit that this stays whatever
 // answer readiness already gives).
 func TestCheckMissingOrientationKeepsExistingAnswer(t *testing.T) {
 	m := loadRepo(t, completeManifest, true)

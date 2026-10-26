@@ -320,7 +320,7 @@ func TestNextHandlerServesTheUnplannedEndState(t *testing.T) {
 
 // observedNext serves /api/next over observationFixture's integration
 // checkout while the task branch's worktree records the task in flight under
-// owner (issue #149).
+// owner.
 func observedNext(t *testing.T, owner string) views.Next {
 	t.Helper()
 	t.Setenv("TILLER_CONTRIBUTOR", "jc")

@@ -226,13 +226,13 @@ func readGeneration(root string) (string, error) {
 // readableGeneration refuses reads while a mutation lock or recovery journal is
 // present. The lock-free existence checks are not atomic: another writer can
 // acquire the lock and checkpoint its journal between them, so the reader reports
-// mutation_recovery_needed for a mutation still in flight (#106). After that
+// mutation_recovery_needed for a mutation still in flight. After that
 // writer finishes, a retry can succeed without recovery if it cleared the journal;
 // a genuinely retained journal continues to refuse.
 func readableGeneration(root string) (string, error) {
 	generation, err := readGeneration(root)
 	if errors.Is(err, rootpath.ErrChanged) {
-		// A concurrent writer replaced the generation mid-read (#151).
+		// A concurrent writer replaced the generation mid-read.
 		return "", mutationEnvError(ReasonMutationStale,
 			"another Tiller mutation changed .tiller/.cache/generation while it was being read; retry")
 	}

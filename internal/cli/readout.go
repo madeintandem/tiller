@@ -185,7 +185,7 @@ func gatherReadoutInput(tree *store.Tree, m views.Moment, act *views.GateAct, ow
 	}
 
 	// The ranked Next list reads execution observed on local branches and
-	// worktrees (issue #149) and the reader's recent events on every moment,
+	// worktrees and the reader's recent events on every moment,
 	// gates' trailing readouts included; either read degrades to none.
 	next := readinput.ForNext(tree, owner, time.Now())
 	workflow := next.Workflow
@@ -257,7 +257,7 @@ func renderReadoutFor(root string, m views.Moment, act *views.GateAct, owner str
 	})
 }
 
-// renderCorrectionOf renders the correction block (issue #94) for
+// renderCorrectionOf renders the correction block for
 // `tiller readout <seam> --since <sha>`: it validates the sha, reads the
 // event files git names as added since it, reads the same git facts the
 // full block reads, and hands all of it to views.CorrectionOfInput. Unlike
@@ -441,7 +441,7 @@ func readoutAmendmentPreconditions(t *store.Tree) map[string][]mutate.Preconditi
 	return out
 }
 
-// readoutUnpushedReviews reads the review-state warning (issue #42) for every
+// readoutUnpushedReviews reads the review-state warning for every
 // in-review task that records a PR, the I/O ReadoutInput.UnpushedReviews's
 // own doc comment says views cannot do itself: whether a task's recorded
 // feature branch carries a commit its remote-tracking counterpart does not is

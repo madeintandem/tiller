@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestProseRegisteredDocIdentityNeverFollowsSymlinks pins issue #113: the
+// TestProseRegisteredDocIdentityNeverFollowsSymlinks pins the fix: the
 // ledger entry is chosen by the requested address, and a registered document
 // that has become a symlink is refused the way readiness refuses it, so the
 // console never shows one document's address with another's prose and

@@ -1,7 +1,7 @@
 package views
 
 // The correction block is the lighter readout a correction or other small
-// action inside a gate renders (issue #94): `tiller readout <seam> --since
+// action inside a gate renders: `tiller readout <seam> --since
 // <sha>`. A seam exit keeps the full block (readout.go); a rename, a remove,
 // an added feature, or a link applied while the developer refines a draft
 // used to re-emit that same full block, byte-identical but for the commit

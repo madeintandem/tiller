@@ -160,7 +160,7 @@ func TestRenderExecutionReviewGrainDoesNotRewriteNestedKey(t *testing.T) {
 		string(out))
 }
 
-// TestTaskReviewGrainPrefersStartedGrain pins issue #146's remedy: a task
+// TestTaskReviewGrainPrefersStartedGrain pins the remedy: a task
 // keeps the grain it started under, whatever its feature now resolves to.
 func TestTaskReviewGrainPrefersStartedGrain(t *testing.T) {
 	m := &Manifest{}

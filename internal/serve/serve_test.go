@@ -322,7 +322,7 @@ func TestEveryRouteAnswersThroughHandler(t *testing.T) {
 
 // TestTreeEndpointPinsThePayload pins /api/tree byte for byte over the
 // deterministic node fixture: the whole work tree, epics and features in
-// DependencyOrder (issue #27) and tasks in id order, each with its file
+// DependencyOrder and tasks in id order, each with its file
 // footprint and prose drill path, the same model `tiller tree --json` renders.
 // schema-engine leads form-loading here because form-loading's fixture setup
 // records --depends-on form-engine/schema-engine (node_test.go's nodeFixture):

@@ -2187,8 +2187,8 @@ criteria:
 	require.Equal(t, 0, rep.Compared)
 }
 
-// TestOrphanEvalCancelledFeatureWithUnstartedClockIsNeverExempt pins fix
-// round 2's finding: cancel is legal for a feature directly from "specced"
+// TestOrphanEvalCancelledFeatureWithUnstartedClockIsNeverExempt pins a review
+// finding: cancel is legal for a feature directly from "specced"
 // (lifecycle table.go), and validateSpec requires a real, well-formed eval
 // file before "specced" is ever reached, while approve is what starts the
 // preserve clock, only after. So "eval file present, clock never started,
@@ -2524,7 +2524,7 @@ func TestForNodeHonorsTheChecksList(t *testing.T) {
 	require.Contains(t, err.Error(), "unknown check")
 }
 
-// TestForNodeSkipsADisabledMarker pins fix round 1's Minor 1: the previous
+// TestForNodeSkipsADisabledMarker pins the Minor 1: the previous
 // suite proved ForNode's checks-list validation refuses an unknown NAME
 // (TestForNodeHonorsTheChecksList above), but nothing pinned the plain
 // enable/disable gate (the `if !enabled[marker] { continue }` line inside
@@ -2550,7 +2550,7 @@ func TestForNodeSkipsADisabledMarker(t *testing.T) {
 	require.Empty(t, us)
 }
 
-// TestForNodeAnsweredQuestionExcludesATerminalTask pins fix round 1's Minor
+// TestForNodeAnsweredQuestionExcludesATerminalTask pins the Minor
 // 2: answeredQuestionForNode filtered only on the PARENT FEATURE's status,
 // so a task whose own status is already done or cancelled still carried a
 // badge whenever its parent feature was non-terminal - asymmetric with

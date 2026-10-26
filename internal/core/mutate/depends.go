@@ -1,6 +1,6 @@
 package mutate
 
-// This file is the dependency write path (issue #21): depends_on was modeled
+// This file is the dependency write path: depends_on was modeled
 // on epics and features (artifact-schema.md), but nothing could record it,
 // so decomposition buried the graph
 // in epic prose. Two writers fix that: --depends-on at add time (threaded

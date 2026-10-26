@@ -760,7 +760,7 @@ func resolveStageReplacement(tree *store.Tree, staged []store.AmendmentOp, raw s
 	// resolution enforces this exact same exclusion a second time
 	// (stagedEpicReplacementErr, amendment_approve.go), rather than letting
 	// that bookkeeping resolve the key and leaving it to checkSupersessionGraph's
-	// unrelated noun check to catch by accident (#48).
+	// unrelated noun check to catch by accident.
 	for _, op := range staged {
 		if (op.Op == store.AmendmentOpAddFeature || op.Op == store.AmendmentOpAddTask) && op.Key == raw {
 			return raw, nil

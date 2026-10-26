@@ -39,7 +39,7 @@ func renderReadout(r views.Readout) string {
 				fmt.Fprintf(&b, " · %s", e.Note)
 			}
 			b.WriteString("\n")
-			// The review-state warning (issue #42) is its own dash-bulleted
+			// The review-state warning is its own dash-bulleted
 			// row directly under the node it is about, never folded onto the
 			// Ref/Note line above: the wording is a full sentence, the same
 			// one submit and status render verbatim (unpushedReviewWarning,
@@ -101,7 +101,7 @@ func renderReadout(r views.Readout) string {
 	return b.String()
 }
 
-// renderCorrection renders the correction block (issue #94), the lighter
+// renderCorrection renders the correction block, the lighter
 // sibling of renderReadout for `tiller readout <seam> --since <sha>`. Same
 // vocabulary, same two audiences, same wire format: the headline names the
 // commit under the full block's own rule and then the since sha, Changed

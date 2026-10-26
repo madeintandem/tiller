@@ -10,7 +10,7 @@ import (
 )
 
 // This file renders gate lifecycle events (gates.Progress) as plain-text lines
-// for a terminal reader (issue #45): a long native build or test suite prints
+// for a terminal reader: a long native build or test suite prints
 // nothing until it finishes today, which makes a healthy multi-minute run
 // indistinguishable from a wedged one. The lines are human feedback only. They
 // go to stderr, never stdout, and never reach the recorded evidence file:

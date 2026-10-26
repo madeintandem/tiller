@@ -259,7 +259,7 @@ func TestNodePageTaskUsesOperativeQuestionBlockersWithoutInheritingFeatureAssump
 }
 
 // TestNodePageEpicListsFeaturesByDependencyOrder pins the epic page: children
-// in DependencyOrder (issue #27), and the
+// in DependencyOrder, and the
 // prose pointer naming the epic's epic.md with content left empty for the
 // serving layer to fill. pageTree records form-loading --depends-on
 // schema-engine, so schema-engine (the dependency) leads even though
@@ -366,7 +366,7 @@ func TestNodePageQuestionResolvesLegacyKeyBlocks(t *testing.T) {
 }
 
 // TestNodePageQuestionFlatViewCarriesSourceAndBlocksAlongsideRelationships
-// pins issue #55's serve half: the flat node.source/node.blocks fields (what
+// pins the serve half: the flat node.source/node.blocks fields (what
 // the question's own record claims) ride the SAME page as
 // relationships.blocks (the resolved graph edge Relationships.Blocks already
 // carried), harmlessly, because they answer different questions
@@ -702,7 +702,7 @@ func decompositionDependencyTree() *store.Tree {
 }
 
 // TestNodePageEpicDecompositionFollowsDependencyOrderNotKey pins Task A1
-// (issue #27) on decompositionOf specifically: it shares the Order
+// on decompositionOf specifically: it shares the Order
 // computation with childFeatures (TestNodePageEpicListsFeaturesByDependencyOrder)
 // but is a separate call site, so it earns its own pin.
 func TestNodePageEpicDecompositionFollowsDependencyOrderNotKey(t *testing.T) {

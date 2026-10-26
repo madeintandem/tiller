@@ -1,6 +1,6 @@
 package gen
 
-// This file pins the held-by-retired-ancestor predicate (issue #36, "annotate,
+// This file pins the held-by-retired-ancestor predicate ("annotate,
 // don't subtract"): RetiredAncestor re-derives, from the loaded tree alone, the
 // identical parent-then-epic walk mutate.guardParentState runs ahead of the
 // doing task verbs, so the read surfaces can say WHY those verbs would refuse
@@ -38,7 +38,7 @@ func heldTaskFixture(epicStatus, featureStatus, taskStatus string) (*store.Tree,
 // the deepest actionable node). Past that, the epic question runs BEFORE the
 // pre-gate check (draft/specced): a pre-gate parent is otherwise a live route
 // to the gate, but that route is a dead end exactly when the epic itself is
-// retired, so the epic answer outranks it there (issue #38, JC's call
+// retired, so the epic answer outranks it there (JC's call
 // 2026-08-03). A pre-gate feature under a LIVE epic still holds nothing, and
 // a task that is itself terminal is never held.
 func TestRetiredAncestorTaskTruthTable(t *testing.T) {

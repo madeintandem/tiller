@@ -1,6 +1,6 @@
 package cli
 
-// This file wires the question ledger's write half (issue #19,
+// This file wires the question ledger's write half (
 // cli-surface.md "The verb set"): `tiller add question "<statement>"
 // --title "<short title>"` records an owned, date-gated open question on the
 // decisions ledger. `tiller answer question <Q-id> --answer "<text>"` records

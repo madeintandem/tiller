@@ -466,7 +466,7 @@ func sweepActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report) {
 
 // finishActiveBasisNode records Compared and Coverage for exactly one swept
 // node, from the combined outcome of every half-check it needed (drift-
-// review round 2, Important 1). A false result also appends the node's ONE
+// review, Important 1). A false result also appends the node's ONE
 // Uncovered row, built from whichever half(s) actually failed: a task whose
 // parent-walk AND own check both came back unreadable gets ONE row naming
 // both, not two identical-looking ones differing only in which half is

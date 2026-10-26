@@ -82,7 +82,7 @@ func TaskQuestionBlockers(tree *store.Tree, feature *store.Feature, task *store.
 // and the blockers of each of its tasks that is not cancelled, deduplicated by
 // question id in first-seen order so a question naming two tasks reads once.
 // A cancelled task is retired work, so a question pinned only to it holds
-// nothing (issue #152, decisions 1 and 7). Any feature assumption is moot here:
+// nothing (decisions 1 and 7). Any feature assumption is moot here:
 // a feature returned from ready to specced can still carry an assumption basis,
 // which drops the question from the feature's own blockers, but task blockers
 // ignore assumptions and name the feature as an ancestor, so an assumed

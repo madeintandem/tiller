@@ -48,7 +48,7 @@ type AttestResult struct {
 	Satisfied     bool
 	Changed       bool
 	// Warnings are advisory notes on a recorded attestation, today only an
-	// attested gate key the manifest does not declare (issue #138).
+	// attested gate key the manifest does not declare.
 	Warnings []string
 }
 

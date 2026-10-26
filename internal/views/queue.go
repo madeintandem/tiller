@@ -119,7 +119,7 @@ func QueueOf(t *store.Tree) Queue { return QueueOfInput(t, QueueInput{}) }
 // (proposed amendments first, then task and shelf approve gates, open
 // questions, cancelled shelf carriers, pending attestations, and parked
 // feature checks); within a group an epic, a feature, or a task orders by
-// DependencyOrder (issue #27, computed once here and threaded down) so a caller
+// DependencyOrder (computed once here and threaded down) so a caller
 // batching several rows into one CLI invocation (`tiller approve epic <a> <b>
 // <c>...`) applies a dependency before what rests on it just by joining
 // addresses in row order. Shelf groups use their recorded soft order and
@@ -223,9 +223,9 @@ func queueApproveFeatures(t *store.Tree, order *gen.Order) []QueueEntry {
 		}
 		// A retired ancestor epic suppresses the row rather than exempting the
 		// feature from it: `tiller approve feature` would now refuse with
-		// ParentEpicRetiredError (issue #36), and a queue whose commands fail
+		// ParentEpicRetiredError, and a queue whose commands fail
 		// when copied is worse than silence (queueFeatureChecks keeps the same
-		// rule below; issue #37 widened it to this group).
+		// rule below).
 		if gen.RetiredAncestor(t, f) != nil {
 			continue
 		}
@@ -270,7 +270,7 @@ func queueApproveTaskBatches(t *store.Tree, order *gen.Order) []QueueEntry {
 		// feature from it: `tiller approve task --feature` would now refuse the
 		// same way at the first task it reached (ParentEpicRetiredError, issue
 		// #36), and a queue whose commands fail when copied is worse than
-		// silence (queueFeatureChecks keeps the same rule below; issue #37
+		// silence (queueFeatureChecks keeps the same rule below;
 		// widened it to this group).
 		if gen.RetiredAncestor(t, f) != nil {
 			continue
@@ -472,7 +472,7 @@ func queueAddr(n store.Node) string {
 }
 
 // sortQueueByOrder orders one homogeneous-noun kind group (every entry an
-// epic, or every entry a feature) by DependencyOrder (issue #27): the
+// epic, or every entry a feature) by DependencyOrder: the
 // approve_epic, approve_feature, and approve_tasks (feature-grain) groups. A
 // caller batching several rows into one CLI invocation joins addresses in this
 // order, so a dependency always precedes what rests on it.
