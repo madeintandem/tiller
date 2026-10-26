@@ -1,5 +1,5 @@
 # Dependabot opens one grouped PR per ecosystem each month, so dependency
-# drift arrives as a small review instead of a periodic sweep (issue #97).
+# drift arrives as a small review instead of a periodic sweep.
 # Two things to know when one lands:
 #   - A ui/ PR fails the "ui/dist and generated notices match ui/src" CI gate until
 #     someone runs `make ui` on the branch and commits the rebuilt dist and notices. docs/releasing.md,
@@ -11,10 +11,9 @@
 # prompted by govulncheck. A module bump can still drag that line up when
 # the module requires a newer Go; read the go.mod diff on gomod PRs.
 # Every ecosystem waits ten days after a release before proposing it. That
-# is the same minimum release age npm enforces on the maintainer's machine
-# (`npm config get min-release-age`), so a PR here never names a version
-# local npm refuses to install, and a freshly published package gets ten
-# days of scrutiny before it can land.
+# is project policy: a freshly published package gets ten days of scrutiny
+# before it can land, and a contributor who sets npm's `min-release-age` to
+# the same ten days can install every version a PR here names.
 version: 2
 updates:
   - package-ecosystem: gomod

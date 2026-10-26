@@ -1,5 +1,6 @@
-// The Build board's six columns (ui-surface.md's Build entry: "six columns
-// for the six stored feature states"), and the two pure sequence operations
+// The Build board's six fixed columns (ui-surface.md's Build entry). Features
+// have no stored in_review state and stay active through review, so the In
+// review column normally stays empty. Also here: the two pure sequence operations
 // every column's cards run through - flatten the selected epics, then
 // filter by status. Neither step sorts anything: visibleCards preserves the
 // served epic-then-feature order verbatim (BuildBoardOf's own doc comment,
@@ -16,8 +17,8 @@ export interface BuildColumnDef {
   label: string;
 }
 
-// A fixed literal array, not derived from any payload: the six stored
-// feature states never change shape at runtime, and BuildEpic.feature_counts
+// A fixed literal array, not derived from any payload: the six column
+// statuses never change shape at runtime, and BuildEpic.feature_counts
 // is documented as keyed by exactly these six literal strings
 // (internal/views/build.go's own package comment), so no fold through
 // lib/states.ts's wider wire vocabulary is needed here the way the header
