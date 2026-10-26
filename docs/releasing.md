@@ -1,7 +1,7 @@
 # Releasing tiller
 
 A release is a tag. Push `vX.Y.Z` and `.github/workflows/release.yml` runs the
-suite, then GoReleaser, which produces 4 binaries (macOS and Linux, amd64 and
+suite, then GoReleaser, which produces four binaries (macOS and Linux, amd64 and
 arm64), `checksums.txt`, a GitHub Release with notes grouped by commit prefix,
 and an updated `Casks/tiller.rb` in
 [madeintandem/homebrew-tap](https://github.com/madeintandem/homebrew-tap).
@@ -93,8 +93,9 @@ Dependabot (`.github/dependabot.yml`) opens one grouped PR per ecosystem each
 month: Go modules, the console under `ui/`, the docs site under `site/`, and
 the actions the workflows pin. Its commits carry a `Signed-off-by` trailer,
 so the DCO job passes on them like any other. It waits ten days after a
-release before proposing it, matching the `min-release-age` the maintainer's
-npm enforces, so a version it names is one local npm will install. Review and
+release before proposing it. That is project policy: a new package version
+gets ten days of scrutiny before it can land, and contributors who set npm's
+`min-release-age` to the same ten days can install every version it names. Review and
 merge them like any other PR, with two exceptions.
 
 A `ui/` PR fails CI's "ui/dist and generated notices match ui/src" gate until

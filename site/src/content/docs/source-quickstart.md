@@ -58,6 +58,13 @@ exists; the evals gate is already active.
 
 `--kind` describes the relationship to code that predates Tiller adoption: `greenfield` for a new system, `brownfield` for this repository's existing system, or `legacy-migration` for a new system replacing an old reference system. It does not restrict later feature change types. A greenfield project's own shipped code can later be modified, replaced, or migrated without changing kind. `init` scaffolds `.tiller/` and writes `.tiller/orientation.md`, the generated page an agent reads first.
 
+Then put a design input in place, as the first **Next** step says. For this walkthrough one short page is enough:
+
+```sh
+mkdir -p .tiller/design
+printf '# Acme\n\nA small application with a health route.\n' > .tiller/design/overview.md
+```
+
 ### Bringing existing code
 
 Choose `--kind brownfield` to adopt the system in this repository, or `--kind legacy-migration`
@@ -214,7 +221,7 @@ queue: 0 bugs, 0 chores, 0 tweaks ready
 Run `tiller guide decompose` to load it.
 ```
 
-`tiller guide` with no argument prints your ranked next moves, the same list `tiller next` prints, then names the skill for the top agent move. Your agent reads the same list, so the two of you always agree on what comes next. Here the design inputs copied in step 1 are what make decompose due; with nothing under `.tiller/design/` beyond as-is docs, guide reports that no work is planned instead.
+`tiller guide` with no argument prints your ranked next moves, the same list `tiller next` prints, then names the skill for the top agent move. Your agent reads the same list, so the two of you always agree on what comes next. Here the design input you wrote after `init` is what makes decompose due; with nothing under `.tiller/design/` beyond as-is docs, guide reports that no work is planned instead.
 
 ## Hand it to your agent
 

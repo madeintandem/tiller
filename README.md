@@ -14,7 +14,7 @@ software project. The agent does the reasoning. The human approves at the
 gates. Everything it knows lives as files in your repo, under git, next to
 the code it describes.
 
-![The tiller console showing an Acme Platform project: three epics, their features and tasks, and what needs attention](docs/assets/console-home.png)
+![The tiller console showing an Acme Platform project: its counts and drift, the decisions that need a human, work in flight, and what is next](docs/assets/console-home.png)
 
 ## The opinions
 

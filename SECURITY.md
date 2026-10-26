@@ -15,7 +15,7 @@ that reproduces the problem all help.
 
 ## What to expect
 
-- An acknowledgement within 3 business days.
+- An acknowledgement within three business days.
 - A maintainer confirms the problem, works out severity with you, and aims to
   ship a fix in a patch release as soon as one is ready. We'll tell you when it
   ships and credit you in the release notes unless you'd rather we didn't.
@@ -45,8 +45,8 @@ the installer places the executable on PATH, and self-upgrade downloads
 checksum-verified GitHub release assets and retains verified previous binaries
 under `~/.local/share/tiller/previous/`. Homebrew-owned installs delegate to
 Homebrew, which may refresh metadata and install package dependencies. Tiller
-does not store release credentials; an explicitly supplied `GITHUB_TOKEN` can
-authenticate private-release requests.
+does not store release credentials. An explicitly supplied `GITHUB_TOKEN` is
+sent with release requests, which only raises GitHub's API rate limit.
 
 `tiller serve` defaults to the loopback address `127.0.0.1`. Its request boundary
 checks Host, a present Origin, and supplied browser fetch metadata before serving

@@ -10,7 +10,7 @@ What Tiller does today, what is designed but not built, and what it deliberately
 - **Plan changes.** Reviewed amendments and sourced intake, revision, cancellation, and supersession lineage, eval-binding corrections on done features, and identity-preserving moves of never-started feature subtrees.
 - **Existing code and drift.** Code-root and reference protection, baseline derivation and confirmation, work-node and baseline drift, and read-only repair guidance.
 - **Agent guidance.** Embedded skills for every stage of the workflow, a generated orientation file, gitignored skill shims written by `join`, and deterministic lifecycle readouts.
-- **Console.** A read-only local console (`tiller serve`) with Home, Build, Fix, Explore (tree, map, search, filters, relationships), Report, History, and node detail. Refresh is manual or on navigation.
+- **Console.** A read-only local console (`tiller serve`) with Home, Explore (tree, map, search, filters, relationships), Build, Fix, Report, History, and node detail. Refresh is manual or on navigation.
 - **Storage and distribution.** Journaled, lock-guarded mutation batches, schema migrations, checksum-verified `tiller upgrade`, release automation, an installer, a Homebrew cask, and the documentation site.
 
 ## Not built yet
@@ -19,7 +19,7 @@ These are retained scope, not a promised sequence.
 
 - **Console writes and live updates.** Write actions that map one-to-one onto CLI commands, an explicit state-commit action, a filesystem watcher or polling refresh, separate tree and host freshness, and a general uncommitted-state indicator. Report export (print, Markdown, static HTML) and an executive summary. Map filters and export, and layouts that hold up at narrow widths.
 - **CLI commands.** `doctor`, `block` and `unblock`, `commit state`, and `add design`, `add adr`, and `add evidence`. [The command reference](tiller-commands.md) marks which verbs ship.
-- **Distribution.** A launcher with a per-project engine cache and version pin, `upgrade --project`, update nudges, more harness discovery adapters, and lossless preservation of unknown YAML fields.
+- **Distribution.** A launcher with a per-project engine cache and version pin, an upgrade path that fetches the engine a project pins into that cache (a separate design from the shipped `upgrade --project-only`), update nudges, more harness discovery adapters, and lossless preservation of unknown YAML fields.
 - **Baseline coverage.** Automatic baseline routing for uncovered code roots, accepted-basis drift sweeps for shelf items, and completion fingerprints for submodules.
 - **Amendments and intake.** Automatic splitting of large intakes into several proposals, staged `order` and `link` operations, and the remaining [amendment input validation](spec/artifact-schema.md#deferred-amendment-input-validation).
 - **Search and reads.** Ranked prose search and Explore filters by activity phase or unowned work.

@@ -127,9 +127,12 @@ tiller readout execute
 
 With no remote, `submit` records the branch and head commit as a local review.
 This scratch project wires no build or tests gate, so the readout lists the
-task's required checks as incomplete. The human reviews `health.txt` and the
-recorded state, then performs the merge. The agent finishes feature acceptance
-on `main`:
+task's required checks as incomplete. Its **Needs attention** line, `4 review
+gates await your attestation`, counts the four optional review gates (code,
+security, performance, accessibility); `tiller queue --kind attest_gate` lists
+them with the `tiller attest` command for each, and they never block the merge.
+The human reviews `health.txt` and the recorded state, then performs the merge.
+The agent finishes feature acceptance on `main`:
 
 ```sh
 git checkout main
