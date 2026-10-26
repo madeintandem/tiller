@@ -2,7 +2,7 @@
 
 **Scope.** This document defines the skills: the reasoning procedures an AI coding agent runs against the Tiller structure, their CLI choreography, and their stopping points. It is the counterpart to [cli-surface.md](./cli-surface.md). That document defines the operations that record or expose the agent's inputs; this one defines the reasoning, normally recorded through mutations, with the explicitly requested `design-brief` export and the `code-review` review arm as read-only exceptions. The CLI surface stays canonical for the commands themselves. Where this document and that one disagree about a command, the CLI surface wins and this one gets fixed.
 
-**Status.** Current source reference for eleven embedded skills, schema 12 and orientation generation 57, at version stamp 0.21.2. Source availability does not establish installation, publication, managed-project migration, or checkout refresh. [STATUS.md](../plans/STATUS.md) owns observed verification and adoption evidence.
+**Status.** Current reference for the eleven skills embedded in Tiller v0.21.2 (schema 12, orientation generation 57). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
 
 ---
 
@@ -46,7 +46,7 @@ The third is the **node reference convention.** When a skill names a node to the
 
 The fourth is **developer authorship.** The developer owns and is responsible for the work. No agent identifies itself, a model, provider, or harness as an author or contributor in any output, including code, comments, docs, commit messages, PR titles and descriptions, issues, reviews, reports, and replies. Generated-by notices, agent signatures, badges, footers, and agent co-author trailers are prohibited. Use the developer's configured Git identity, never an agent author or committer identity or an invented human identity. Describe the work, its reasoning, and observed verification rather than the tool that produced it. Preserve necessary technical references, real human credits, and required third-party notices. Every skill inherits this rule from `.tiller/orientation.md`; `orient` introduces it and `execute` checks authored content and publication text, including template and host-tool defaults, before committing or posting. This is agent guidance, not CLI enforcement or a rewrite of existing history.
 
-The fifth is **external references.** The canonical writing rule is stated once in the **External references** section of `tiller guide orient`; decompose, specify, capture, intake, and amend point to that section rather than copying it. Generation 51's generated orientation points there as well. The rule governs provenance of authored links, not implementation craft, lifecycle approval, or a rewrite of accepted history. Adopt the candidate binary separately, then run `tiller upgrade --project-only` in each intended checkout, review and commit the generated guidance diff, and reload agent instructions. Source changes alone do not refresh installed guidance or managed projects.
+The fifth is **external references.** The canonical writing rule is stated once in the **External references** section of `tiller guide orient`; decompose, specify, capture, intake, and amend point to that section rather than copying it. The generated orientation points there as well. The rule governs provenance of authored links, not implementation craft, lifecycle approval, or a rewrite of accepted history.
 
 Guidance must be complete in the skill text the binary serves. The main file carries the trigger and Reasoning, Choreography, and Hand-off sections, including any lifecycle readout instructions. `design-brief` carries its complete seven-part output contract in that single file. No reference-file loader or extra dependency is introduced for this export.
 
@@ -89,7 +89,7 @@ Bounded epics may have interleaved features. A projected epic ordering cycle is 
 
 ## The skills
 
-One skill dispatches; eight carry lifecycle/operator seams; design-brief is an explicitly requested read-only export; code-review is an explicitly requested review whose disposition records only what the developer names. Generation 40 adds structural feasibility before placement, reviewed identity-preserving unstarted feature moves, eligibility-first execution preference, and advisory projected epic cycles. It retains product-driven planning and generation 38's independent task claims, immutable started ownership, transfer, Contributors versus assignments, shared closeout, relationship discovery, project independence, and human acceptance/final-merge boundaries. Source guidance is not evidence of agent compliance: controlled agents must consume the candidate binary's generated instructions in disposable projects. Refresh an existing checkout only on explicit maintenance direction, review the generated diff, and reload instructions.
+One skill dispatches; eight carry lifecycle/operator seams; design-brief is an explicitly requested read-only export; code-review is an explicitly requested review whose disposition records only what the developer names. Refresh an existing checkout's instructions only on explicit maintenance direction, review the generated diff, and reload instructions.
 
 | Skill | Activates when | Carries | Ends in |
 |---|---|---|---|
@@ -113,11 +113,7 @@ An explicit UI/UX brief or prototype-handoff request goes to `tiller guide desig
 
 Maintenance is an explicit developer operation, not permission to cross the ranked list's next lifecycle gate. Normal `tiller upgrade` updates the installed binary and the current checkout; `tiller upgrade --project-only` maintains that checkout offline with the running binary; `--binary-only` deliberately excludes it. Join is onboarding or deliberate identity selection, still the remedy for missing identity. Current-schema artifact refresh requires no identity; a real migration resolves a registered actor through ordinary precedence without rewriting identity. No maintenance operation automatically drains, cancels, approves, merges, or syncs work.
 
-For schema-6 ownership adoption, inspect with `tiller migrate --dry-run --json`; save the whole report or data.ownership_review outside source state and have the human fill every confirmed_owner for started unfinished tasks, bugs, chores, and tweaks. Keep all other snapshot fields unchanged. Apply once with `tiller migrate --ownership-review <file>` or `tiller upgrade --project-only --ownership-review <file>`. Stale/incomplete review refuses; schema-5 active branches/reviews/results remain intact. Pause team mutations, reconcile integration state and actual owners, retain a compatible binary/committed recovery baseline, and publish one reviewed migration through Git. Upgrade everyone, merge migrated state into each continuing work branch without discarding task progress, refresh each checkout, restart consoles/reload agents, then check schema/identity/owner/branch/legal next move. Do not migrate stale clones independently; after adoption preserve new work during recovery. September 21 is an intended window, not authorization or an acceptance waiver.
-
-Only schemas 2–4 crossing into schema 5 need old shared-branch drain. For old-schema drain, require a verified compatible binary and prepend its reported retained directory to PATH in a temporary session so child gates select it too. Leave that session and retry the upgraded executable explicitly afterward; never mutate migrated state with an older build. Phase failures preserve actual completed binary/source work. Inspect structured partial results; recovery-required journals must be recovered before project-only retry, never deleted. Other checkouts remain untouched, and existing serve/harness processes need restart/reload as appropriate. Older running processes cannot acquire this logic on replacement; retain a compatible build before first adoption if needed and run the new binary's project-only afterward.
-
-Schema 8→9 is a terminology migration: the committed roster becomes `contributors:` and local identity becomes `contributor:`, preserving IDs, selected identity, work claims/lifecycle, branches, reviews, evidence, and historical events. It needs no work drain or ownership review. Local identity is gitignored, so after pulling the migration each other checkout renames its own legacy `owner:` key with `tiller upgrade --project-only` (or a bare `tiller join`); other commands refuse the legacy key and name that remedy. Older migration requirements remain unchanged. Acting identity uses `--contributor` or `TILLER_CONTRIBUTOR`; task/bug/chore/tweak and question `owner` fields and ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
+A real schema migration can need a human-reviewed ownership mapping or drained work before it applies. The maintenance contract, including every refusal, is in [the CLI surface](./cli-surface.md#migrating-and-upgrading-migrate-upgrade); the team adoption procedure for older schemas is in [the distribution contract](./distribution.md#pre-release-ownership-adoption).
 
 **Reasoning.** Read the lay of the land, relay the ranked next list, and end the reply. `tiller status` gives the project summary; `tiller queue` gives exact attention entries; shelf lists show standing work in soft order; node status gives lifecycle moves and separate workflow advice. Every readout and bare guide carries `queue: N bugs, M chores ready`, with actual counts and singular nouns at one. Preserve the baseline startup gate, checked-before-other owned task ordering, task-before-shelf ordering, and checked shelf priority with bugs before chores before tweaks in each phase. Preserve dependency, ownership, question, basis, and retired-node diagnostics. Inside a tier, shared task-grain feature closeout and coarse finish lines rank ahead of claims and unrelated planning. Recommendation order is not proof of full mutation-guard parity.
 
@@ -504,7 +500,7 @@ An `add-epic` operation has one automatic ordering consequence when approval mat
 **Choreography.** Land the document if it is not landed, read it whole, map each finding to its rule, cite every op, write the narrative, then stop for the human.
 
 ```
-tiller intake docs/feedback/opus-review.md --contributor jc
+tiller intake docs/feedback/opus-review.md --contributor robin
 # lands .tiller/feedback/opus-review.md and opens amendment opus-review with source
 # set and nothing staged; read the landed document whole before mapping anything below
 
@@ -611,7 +607,7 @@ That agnosticism is a hard rule, not an aspiration. **A skill may use only what 
 
 This buys a backstop worth the discipline. Because a skill is just a file and `tiller` is just a CLI, the lowest-common-denominator harness, a local open-weights model with a shell and no skill system at all, can use Tiller completely: run `tiller`, read the skill. A richer harness gets description-triggered activation for free; a bare one loses nothing essential. To make the guidance reachable without depending on the harness at all, the CLI surfaces it directly, since `tiller guide` prints the skill for the current state, so the same reasoning a fancy harness auto-loads is one command away in any of them.
 
-Current source embeds ten neutral skills, including `design-brief`. Join installs catalog-derived discovery shims during onboarding; upgrade and project-only maintain them alongside orientation, harness managed regions, and required ignore entries. The shims delegate full bodies to `tiller guide`; stable generated ownership markers permit conservative obsolete-shim cleanup without deleting custom skills or extra files. Maintenance touches only this resolved checkout and can refresh current schema without identity. Schema-5 migration first requires old-schema in-flight work to drain with a verified compatible binary; teammates incorporate the reviewed migration and maintain their own checkouts. Do not hand-edit installed shims or generated orientation.
+Tiller embeds eleven neutral skills. Join installs eleven gitignored catalog-derived discovery shims during onboarding; upgrade and project-only maintain them alongside orientation, harness managed regions, and required ignore entries. The shims delegate full bodies to `tiller guide`; stable generated ownership markers permit conservative obsolete-shim cleanup without deleting custom skills or extra files. Maintenance touches only this resolved checkout and can refresh current schema without identity; teammates pull a reviewed migration and maintain their own checkouts. Do not hand-edit installed shims or generated orientation.
 
 ---
 
@@ -636,10 +632,22 @@ The refusals mirror the CLI's, because the skills are the reasoning layer over t
 
 ## Decisions settled so far
 
-Decision history is consolidated in [the founding model](../project-history.md#founding-model), [CLI dry runs](../project-history.md#first-cli-and-dry-runs), [readouts](../project-history.md#console-and-readouts), [ownership and routing](../project-history.md#ownership-and-routing), and [publication and authorship](../project-history.md#publication-and-authorship). The sections above are the current skill contracts.
+Each line is a settled decision; the sections above carry the current contracts, and the [design history](../design-history.md#harness-agnostic-skills) explains the reasoning.
+
+- Skills are opinionated about the shape and gating of the work and silent on implementation craft, which belongs to the project's own instruction files.
+- A skill never decides a gate: lifecycle skills drive to the edge of done and stop for the human.
+- A skill uses only a filesystem, a shell, and the `tiller` CLI; any harness packaging is a thin adapter over the neutral file.
+- `tiller guide` serves the complete skill text, so a harness without skill discovery loses nothing essential.
+- Specification, acceptance contract, and task breakdown are one just-in-time step behind one feature approval.
+- A lifecycle seam ends on the CLI-rendered readout, reproduced verbatim, with the agent's commentary in notes ahead of it.
+- The developer owns the work: no agent, model, provider, or harness is named as an author or contributor.
+- An authorized execute run commits, publishes, and submits its own work; Tiller stays record-only for Git and the PR host.
+- Review feedback is routed by what changes and the affected node's state, so not every correction becomes an amendment.
+- `capture` proposes one complete shelf contract and stops for human triage.
+- `derive-baseline` records unbuilt capabilities as questions rather than deciding to build them.
 
 ---
 
 ## What's next
 
-The human-facing counterpart is the [read-only console](./ui-surface.md). Additional harness discovery adapters and automatic uncovered-root baseline routing remain unbuilt; [STATUS.md](../plans/STATUS.md) tracks these alongside the wider product gaps.
+The human-facing counterpart is the [read-only console](./ui-surface.md). Additional harness discovery adapters and automatic uncovered-root baseline routing remain unbuilt; the [roadmap](../roadmap.md#not-built-yet) lists these alongside the wider product gaps.
