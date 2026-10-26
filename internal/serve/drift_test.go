@@ -129,7 +129,7 @@ func TestDriftEndpointReturnsInducedCandidate(t *testing.T) {
 	require.Contains(t, got.Disabled, "active_basis", "every other marker rides the footer as disabled")
 }
 
-// TestDriftEndpointRejectsUnknownCheck pins resolution 1's misuse mapping:
+// TestDriftEndpointRejectsUnknownCheck pins the misuse mapping:
 // drift.Run's one error, an unknown drift.checks entry, is returned to
 // api() unwrapped (serve.go's own comment at the route), so it rides the
 // wrapper's existing default path rather than a bespoke arm: the same 500

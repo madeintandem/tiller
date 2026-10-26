@@ -77,7 +77,7 @@ export default function Build() {
   // read rather than going quiet about it: a strip-every-flag-silently
   // outcome would read as "nothing is asking, nothing has drifted" when the
   // truth is "the console could not check," so the board bar carries a
-  // one-line notice for either overlay's own error (fix wave finding).
+  // one-line notice for either overlay's own error.
   const board = useFetch<BuildBoard>(buildPath);
   const summary = useFetch<ProjectSummary>(statusPath);
   const queue = useFetch<Queue>(queuePath);
@@ -323,7 +323,7 @@ function EpicPanel({
 // .explore-epic-bar are siblings under one wrapping .explore-epic, not the
 // bar nested inside the row's own link/button). A <div role="img"> inside a
 // <button> both breaks the button content model and folds the bar's own
-// aria-label into the button's accessible name (review finding 3): a
+// aria-label into the button's accessible name: a
 // childless epic's toggle used to announce "...no features yet" on top of
 // its own name, which is not what a screen reader user asked the button for.
 // The wrapping <div className="epic-row"> keeps the mock's visual (tick/
@@ -336,8 +336,7 @@ function EpicRow({ epic, on, onToggle }: { epic: BuildEpic; on: boolean; onToggl
   const label = epic.title ?? epic.key ?? epic.id;
   // renderedFeatureCount, not epic.features.length: a cancelled feature
   // never lands in any of the six columns, so the badge has to agree with
-  // what the columns actually hold rather than the epic's raw child count
-  // (review finding 1).
+  // what the columns actually hold rather than the epic's raw child count.
   const count = renderedFeatureCount(epic.features);
   return (
     <div className={on ? "epic-row on" : "epic-row"}>

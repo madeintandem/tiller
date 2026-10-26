@@ -71,8 +71,8 @@ func runGuideSkill(cmd *cobra.Command, name string) error {
 }
 
 // runGuideSuggest prints the ranked next list and names the skill for its
-// highest-ranked agent move, since the top item is often the human's
-// (ranked-next design, decision 6). A skill-less harness gets the same list
+// highest-ranked agent move, since the top item is often the human's.
+// A skill-less harness gets the same list
 // `tiller next` prints and the one skill that fits beneath it.
 func runGuideSuggest(cmd *cobra.Command) error {
 	tree, err := loadTree(cmd)

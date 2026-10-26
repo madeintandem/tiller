@@ -2308,7 +2308,7 @@ func TestSyncReopensADoneFeatureThatGainedATask(t *testing.T) {
 // feature.yml: review_grain, pr, the cheap way (rgSetFeatureStatus's own
 // idiom, submit_node_test.go) to stage the coarse-grain state a real
 // SubmitNode round would otherwise take a whole gated epic to reach, since
-// reopenFeature's own clearing rule (final-review fix round, item 2) is
+// reopenFeature's own clearing rule is
 // independent of how the surface got recorded.
 func setFeatureReviewSurfaceOnDisk(t *testing.T, root, epicKey, featKey, grain string, pr int) {
 	t.Helper()

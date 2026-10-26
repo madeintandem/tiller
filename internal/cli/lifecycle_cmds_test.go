@@ -1445,7 +1445,7 @@ func TestRefreshBasisReportsWhatItRecordedNotAMove(t *testing.T) {
 // reverted batch.go's act to its pre-commit `&views.GateAct{}` and the whole
 // uncached cli suite still passed, then drove the mutant binary and got back
 // "**Approval recorded** / Moved to ready: 2 of 2" for a command that moved
-// nothing (task-9-findings-round-1.md, Important 2).
+// nothing.
 //
 // The per-node confirmation lines stay right under that mutation, so the only
 // thing that goes wrong is the block a human reads, which is the harder failure
@@ -1502,7 +1502,7 @@ func TestRefreshBasisOnAFeatureWithNoProposedTasksIsNotAnApproval(t *testing.T) 
 	require.Contains(t, out, "Nodes re-pinned: 0", "and the count says plainly that it reached nothing")
 }
 
-// TestActiveBasisRefusalOfATaskNamesTheTask pins small item 5 of the round-1
+// TestActiveBasisRefusalOfATaskNamesTheTask pins small item 5 of the earlier
 // findings. A task's guard compares its PARENT feature's spec and contract
 // before its own task.md (mutate.guardTask), so a task verb can be refused for a
 // pin that is not the task's. The refusal named only the feature, which left
@@ -1552,7 +1552,7 @@ func layFeatureWithAssumedQuestionCLI(t *testing.T) (dir, questionID string) {
 // run against the same question is the idempotent no-change report. Both
 // runs print the human-gate readout block (approve is one of the four gates
 // that always do), and it must never claim "Moved to ready": this act moves
-// no lifecycle state at all (fix round 1, Important 1).
+// no lifecycle state at all.
 func TestApproveReviewedAssumptionStampsIt(t *testing.T) {
 	dir, qid := layFeatureWithAssumedQuestionCLI(t)
 	fid := featureIDByKey(t, cliFeatureKey)
@@ -1601,8 +1601,8 @@ func TestApproveReviewedAssumptionStampsIt(t *testing.T) {
 	require.NotContains(t, out, "Approval recorded", "the plain-approve headline is wrong for this act too")
 }
 
-// TestApproveReviewedAssumptionRefusesAnEmptyValue pins fix round 1's
-// Important 2: `--reviewed-assumption ""` read by non-empty-string alone
+// TestApproveReviewedAssumptionRefusesAnEmptyValue pins that
+// `--reviewed-assumption ""` read by non-empty-string alone
 // silently fell through to the ordinary transition arm and crossed the
 // approval gate (reviewer verified: a specced feature moved to ready on
 // this exact input, exit 0). Gating on whether the flag was passed at all

@@ -147,7 +147,7 @@
 // day boundary it happens to fall on, or one aggregate line under the page
 // head); this ships the aggregate, UNDER THE HEAD (RecapBody's own
 // FlatDroppedNote, beside .hist-sub and .recap-tally), not at the foot of the
-// timeline - task-21-review's own correction: a digest long enough for a
+// timeline: a digest long enough for a
 // group to get capped is long enough that a line living below the last row
 // is a line a reader scanning the top of 127 rows never reaches, which fails
 // the caps rule's whole purpose (a reader has to be ABLE to learn truncation
@@ -606,7 +606,7 @@ function burstTimeMs(burst: Burst): number {
 }
 
 // Time mode's own body: just the merged, day-bucketed timeline. The
-// aggregate cap line used to render at its foot; task-21-review moved it up
+// aggregate cap line used to render at its foot; it moved up
 // to RecapBody's own FlatDroppedNote, under the page head, so this component
 // is back to doing exactly one job.
 function FlatBody({ recap }: { recap: RecapModel }) {

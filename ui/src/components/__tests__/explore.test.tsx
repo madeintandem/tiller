@@ -196,7 +196,7 @@ function epicNode(overrides: Partial<TreeNode> = {}): TreeNode {
   };
 }
 
-// Foundation's own seven features, the exact Acme shape the round-3/4
+// Foundation's own seven features, the exact Acme shape the later
 // mock renders: one ready first-mover (App Skeleton) and six specced behind
 // it, in the served dependency order the identity spine implies.
 function foundationFeatures(): TreeNode[] {
@@ -1369,10 +1369,10 @@ describe("Navigator: a failed tree fetch surfaces its error honestly", () => {
 // NavSearch (Navigator.tsx, plan.md Phase 4 item 3): the unified bar's one
 // persistent input, re-dressing rather than replacing the existing
 // mode=search transition SearchMode's own pill already drives. It carried
-// zero coverage of its own before this fix wave (phase-4-review, Important
-// finding 4) - the one Phase 4 surface with none - despite being a router
-// navigation, not a pure render, and so the one thing in this file most in
-// need of a real MemoryRouter round-trip rather than a snapshot.
+// zero coverage of its own before a later fix - the one Phase 4 surface with
+// none - despite being a router navigation, not a pure render, and so the one
+// thing in this file most in need of a real MemoryRouter round-trip rather than
+// a snapshot.
 describe("Navigator: unified search bar (NavSearch)", () => {
   it("links Tweak search hits by their TW identity", async () => {
     const result: SearchResult = {
@@ -2199,7 +2199,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
     const { container } = renderExplore("/node/feature/F-ops1");
 
     await screen.findByRole("heading", { level: 1, name: "First Ops Feature" });
-    // Tab labels are Title Case (task-17-review fix wave, minor).
+    // Tab labels are Title Case.
     fireEvent.click(screen.getByRole("button", { name: /Dependencies/ }));
     // The dependency row's link leads with the target's title.
     fireEvent.click(await screen.findByRole("link", { name: "First Audit Feature" }));
@@ -2395,7 +2395,7 @@ describe("Explore: expansion and split width persist across a remount (task 4)",
     const split = container.querySelector(".explore-split") as HTMLElement;
     expect(split.style.getPropertyValue("--explore-nav-w")).toBe("300px");
 
-    // Fix round (minor finding): a first-ever visit must leave storage
+    // Fix round: a first-ever visit must leave storage
     // genuinely untouched, not quietly write the untouched default map back
     // out as "[]" the moment the project key resolves. Settle well past
     // when that would have happened (the persist effect is a plain
@@ -2530,8 +2530,8 @@ describe("Explore: restore composes with auto-open regardless of fetch arrival o
   });
 });
 
-// Round 2 (re-review): a new gap surfaced on top of the five confirmed
-// round-1 fixes - the hand-closed rule ("a branch closed by hand stays
+// Round 2: a new gap surfaced on top of the five confirmed
+// earlier fixes - the hand-closed rule ("a branch closed by hand stays
 // closed even when selected", the plan's and issue #47's own settled
 // words) was arrival-order dependent. Tree-first: auto-open ran before any
 // stored map had been merged in, found no entry for the hand-closed id, and

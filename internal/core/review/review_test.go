@@ -1,7 +1,7 @@
 package review_test
 
 // These tests pin ForTask directly at its new home (moved out of
-// internal/cli/unpushed_review.go per the review-fix wave), the composition
+// internal/cli/unpushed_review.go), the composition
 // every one of the four review-state surfaces (submit's confirmation,
 // status's oracle, the execute readout, and the node page) now shares. The
 // CLI's own end-to-end tests (lifecycle_cmds_test.go's

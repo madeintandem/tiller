@@ -63,7 +63,7 @@ func checkWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 	}, nil
 }
 
-// shelfWarnings is decision 12's advisory (design 2026-10-21-gate-reuse): a
+// shelfWarnings is an advisory: a
 // bug, chore, or tweak runs the gates whose on: list names task (gateNoun),
 // so a manifest that scopes every command gate elsewhere silently leaves shelf
 // work with no build or test gate at all.

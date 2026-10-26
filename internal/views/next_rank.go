@@ -10,10 +10,10 @@ import (
 	"github.com/madeintandem/tiller/internal/store"
 )
 
-// shortlistSize is how many ranked moves a surface lists (decision 1).
+// shortlistSize is how many ranked moves a surface lists.
 const shortlistSize = 5
 
-// The ranking tiers, best first (ranked-next design, decision 4).
+// The ranking tiers, best first.
 const (
 	tierUnblock  = 1 + iota // human decisions holding the current feature, and near deadlines
 	tierContinue            // the reader's own unfinished work
@@ -22,8 +22,8 @@ const (
 	tierRest                // everything else, in plan order
 )
 
-// deadlineDays is how far ahead a question's due date pulls it into tier 1
-// (decision 8). Overdue questions always qualify.
+// deadlineDays is how far ahead a question's due date pulls it into tier 1.
+// Overdue questions always qualify.
 const deadlineDays = 2
 
 // NextOf ranks every legal next move for the reader's checkout. It is pure:
@@ -63,7 +63,7 @@ func noPlannedWork(cands []NextCandidate) bool {
 
 // Shortlist is a copy of the top five, except that the reader's top
 // Continue node is always kept: when tier 1 alone fills five places without
-// it, its surviving row takes the last one (decision 4). That row is the
+// it, its surviving row takes the last one. That row is the
 // Continue row, or the better-ranked row dedupe kept for the same node.
 func (n Next) Shortlist() []NextCandidate {
 	if len(n.Candidates) <= shortlistSize {
@@ -93,7 +93,7 @@ func nodeIn(cands []NextCandidate, id string) bool {
 }
 
 // TopAgent is the highest-ranked move the agent makes, which is often not
-// the top move (decision 6).
+// the top move.
 func (n Next) TopAgent() (NextCandidate, bool) {
 	for _, c := range n.Candidates {
 		if c.Actor == actorAgent {

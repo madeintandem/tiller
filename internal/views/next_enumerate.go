@@ -69,7 +69,7 @@ var queueKindActions = map[string]string{
 
 // candidatesOf enumerates every legal next move for the reader's checkout:
 // each arm of the old route walk run to exhaustion instead of stopping at its
-// first match (ranked-next design, decision 2). An unconfirmed brownfield
+// first match. An unconfirmed brownfield
 // baseline is exclusive, as it is in the walk. Excluded throughout: work in
 // flight on another contributor's branch, question-held tasks (their
 // questions are candidates instead), and work behind an unmet dependency.
@@ -247,8 +247,8 @@ func queueEntryReason(entry QueueEntry, reader string) string {
 	return withoutLeadingRef(entry.Prose, entry.Ref)
 }
 
-// closeoutReason keeps a closeout or aggregate merge row to one line
-// (ranked-next decision 7): the closeout's phase, or what the merge waits on.
+// closeoutReason keeps a closeout or aggregate merge row to one line:
+// the closeout's phase, or what the merge waits on.
 // The Needs you card keeps the advice's full reason. Empty means no advice,
 // so the queue's own prose stands.
 func closeoutReason(kind string, node store.Node, advice *workflow.Advice, reader string) string {

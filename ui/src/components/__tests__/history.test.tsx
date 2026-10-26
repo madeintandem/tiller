@@ -75,7 +75,7 @@ function LocationProbe() {
 // this borrows verbatim). useNavigationType() reports the LAST navigation's
 // own kind ("POP" | "PUSH" | "REPLACE"), which is the one signal that
 // actually tells them apart, and the one this file's own WindowLink `replace`
-// prop (task-19 review, finding 3) needs pinned rather than left to ride on
+// prop needs pinned rather than left to ride on
 // the URL assertions alone.
 function NavigationTypeProbe() {
   const type = useNavigationType();
@@ -535,7 +535,7 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
     // The positive case beside the lone row's negative one above (add.epic
     // never asks, so its dot stays muted there). loadedRecap's project group
     // is an ALL-ask burst (3 of 3 add.question entries), which is exactly
-    // the shape task-19 review finding 2 caught: markAsks (burst.asks > 0 &&
+    // the shape a review caught: markAsks (burst.asks > 0 &&
     // burst.asks < entries.length) is FALSE when every entry asked, and the
     // per-row dot was wrongly gated on it too, painting a muted dot under an
     // accent head. The dot now states e.ask's own truth on every row,
@@ -625,7 +625,7 @@ describe("History view: day subheads under option (a)", () => {
     await screen.findByText(/2 events in the last 7 days/);
 
     // Asserted structurally rather than against a formatted date string
-    // (task-19 review fold-in: the .hist-sub fix above already dropped this
+    // (the .hist-sub fix above already dropped this
     // exact fragility - toMatch over a formatted instant rather than a
     // hardcoded one - and it crept back in here). The two entries are 5
     // days apart, so no real-world timezone can ever fold them into the
@@ -1277,12 +1277,11 @@ describe("History view: caps hold in flat mode without a new cap of its own", ()
 
     // One aggregate line, beside .hist-sub/.recap-tally under the page head
     // - not a line per group at whichever day boundary it happens to fall
-    // on, and not at the foot of the flat timeline either (task-21-review's
-    // own correction: a line below every row a long digest holds is a line
-    // a reader scanning the top never reaches, which fails the caps rule's
-    // whole purpose). It is a direct child of the page section, a sibling
-    // of .hist-sub and .recap-flat, never nested inside the timeline it
-    // describes.
+    // on, and not at the foot of the flat timeline either (own correction: a
+    // line below every row a long digest holds is a line a reader scanning the
+    // top never reaches, which fails the caps rule's whole purpose). It is a
+    // direct child of the page section, a sibling of .hist-sub and .recap-flat,
+    // never nested inside the timeline it describes.
     expect(container.querySelector(".recap-flat .recap-omitted")).toBeNull();
     const dropped = container.querySelector(".history-page > .recap-omitted");
     expect(dropped?.textContent).toBe("15 older not carried in this digest, across 1 group");

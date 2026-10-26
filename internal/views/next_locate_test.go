@@ -192,7 +192,7 @@ func TestLocateWithNoReaderIsEmpty(t *testing.T) {
 
 // A decompose-like burst of adds says where work was laid down, not where the
 // reader is working: an added feature touches its epic, an added epic touches
-// nothing, and neither sets the current feature or epic (fix round ruling 1).
+// nothing, and neither sets the current feature or epic.
 func TestLocateAddBurstSetsNoCurrentFeature(t *testing.T) {
 	tree, _, _ := locateTree(t)
 	evs := []events.Event{

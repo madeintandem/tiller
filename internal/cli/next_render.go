@@ -13,7 +13,7 @@ import (
 
 // This file renders a ranked next list as text. `tiller next` prints it and
 // the readout, bare guide, and the submit and check surfaces reuse it, so every
-// surface shows the same lines (ranked-next design, decision 11).
+// surface shows the same lines.
 
 // renderNextHeading is the line above a ranked list: who it is ranked for, or
 // the nudge to join when no reader resolved.
@@ -62,7 +62,7 @@ func renderNextText(n views.Next, all bool) string {
 	return renderNextHeading(n) + "\n" + renderNextLines(n, all)
 }
 
-// appendUpNext is the completing commands' short block (decision 9): human plus
+// appendUpNext is the completing commands' short block: human plus
 // a blank line, "**Up next:**", and the ranked lines for the acting
 // contributor, with no heading. It loads the tree afresh so the list reflects
 // the mutation that just landed. The returned Next is the uncut one; a nil Next

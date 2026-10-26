@@ -58,7 +58,7 @@
 // even when selected") has to hold no matter which one wins that race - two
 // review rounds hardened this: the restore composes with whatever this
 // session has already materialized or the reader has already clicked
-// rather than replacing it outright (round 1); the auto-open effect itself
+// rather than replacing it outright; the auto-open effect itself
 // holds until /api/status has settled, so the restore always gets its one
 // chance to apply a stored hand-close before auto-open can ever open that
 // same branch (round 2 - without this, whichever fetch happened to resolve
@@ -153,7 +153,7 @@ export default function Explore() {
   // selection (App.tsx:66-72).
   const summary = useFetch<ProjectSummary>(statusPath, { retainData: true });
   const projectKey = summary.data?.project.key;
-  // Round 2 fix (re-review): whether /api/status resolved to real project
+  // Round 2 fix: whether /api/status resolved to real project
   // data or to an error, "settled" is the one signal the auto-open effect
   // below waits on before it may touch `expansion` at all - the same signal
   // the split's own first real paint waits on (used again near the return,
@@ -176,7 +176,7 @@ export default function Explore() {
   // settled, so this effect has always had its one chance to run by the
   // time the split is first painted at all.
   //
-  // Fix round 1 (review): COMPOSE, never replace. A reviewer probe
+  // Fix round 1: COMPOSE, never replace. A reviewer probe
   // confirmed that a flat setExpansion(stored) here could wipe out
   // whatever this session had already materialized or the reader had
   // already clicked, if either happened to land in an earlier commit.
@@ -397,7 +397,7 @@ export default function Explore() {
     }
   }
 
-  // Fix round (review, Important finding): the split's first REAL render
+  // Fix round: the split's first REAL render
   // waits on summarySettled (computed above, alongside projectKey) - data
   // or error alike - mirroring Build.tsx:104-107's own "needsDefault &&
   // summary.data/error" gate for its default epic selection. Two things
@@ -493,7 +493,7 @@ export default function Explore() {
         // waits on summarySettled. The map does: its open set and viewport
         // are remembered per project, and materializing them before the key
         // has settled would ignore what this project had stored and then
-        // overwrite it (fix round 0). It takes that same gate as a prop
+        // overwrite it. It takes that same gate as a prop
         // rather than blanking this whole body, so the mode rail and the
         // map's own loading line stay put while /api/status is out. Map is
         // also the one mode that owns its pan and zoom, so its body drops

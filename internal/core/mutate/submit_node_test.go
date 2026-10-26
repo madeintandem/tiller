@@ -399,7 +399,7 @@ func TestStartTasksUnderEpicGrainShareTheEpicAggregate(t *testing.T) {
 func intPtr(n int) *int { return &n }
 
 // rgSetFeatureStatus hand-lays a feature status onto feature.yml, the
-// fix-round-1 twin of setEpicStatus (transition_test.go) for a feature: a
+// twin of setEpicStatus (transition_test.go) for a feature: a
 // terminal submit refusal has to bite on whatever status a tree already
 // holds on disk, whether or not a real rollup put it there.
 func rgSetFeatureStatus(t *testing.T, root, epicKey, featureKey, from, to string) {
@@ -497,8 +497,8 @@ func TestSubmitFeatureRefusesOnATerminalFeature(t *testing.T) {
 
 // TestSubmitEpicRefusesOnATerminalEpic is IMPORTANT 1's epic-grain twin:
 // done, cancelled, or archived, an epic has no review left to record.
-// done is included here even though Configure's own terminal set omits it
-// (fix round 2): Configure's omission is harmless only because its guard
+// done is included here even though Configure's own terminal set omits it:
+// Configure's omission is harmless only because its guard
 // has an independent PR-recorded arm that catches a done epic anyway (a
 // done epic almost always already carries a PR), but submit's terminal
 // guard is the ONLY thing standing between a closed node and a rewrite.

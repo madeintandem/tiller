@@ -554,9 +554,8 @@ func TestActiveBasisSweep(t *testing.T) {
 	require.NoError(t, err)
 	// feat-active and its task-a are the only two nodes the status filter
 	// admits (feat-done and task-b are both "done", excluded outright), so
-	// Compared counts exactly them (task-7-review-round-1.md, Important 3:
-	// Compared counts nodes whose comparisons completed, feat-done's pair
-	// never even attempted).
+	// Compared counts exactly them (Compared counts nodes whose comparisons
+	// completed, feat-done's pair never even attempted).
 	require.Equal(t, 2, rep.Compared)
 
 	cs := candidatesFor(rep, drift.MarkerActiveBasis)
@@ -573,7 +572,7 @@ func TestActiveBasisSweep(t *testing.T) {
 }
 
 // TestActiveBasisSweepReportsAKeylessFeatureAsUncoveredNotAPanic pins
-// task-7-review-round-1.md's Important 1: a store.Load-accepted tree whose
+// A store.Load-accepted tree whose
 // feature carries no key at all (a feature.yml that lost its key: line)
 // reaches BasisDrift's featureRelDir dereference of *f.Key; before the fix
 // that panicked, and it must not. It is Uncovered with reason
@@ -609,14 +608,13 @@ func TestActiveBasisSweepReportsAKeylessFeatureAsUncoveredNotAPanic(t *testing.T
 	require.Empty(t, candidatesFor(rep, drift.MarkerActiveBasis), "there is nothing to name as drifted; it could not be compared at all")
 }
 
-// TestActiveBasisNamesTaskOwnDriftBesideParentDrift pins task-7-review-
-// round-1.md's Important 2: BasisDrift's own task branch checks the parent
-// feature FIRST and short-circuits there, so when both a feature's spec and
-// its task's own spec have drifted, the parent-walk alone never names the
-// task, and the agent's cluster is incomplete until a human clears the
-// feature first. The sweep runs the task-own half (mutate.TaskOwnBasisDrift)
-// separately, so the task's own drift survives beside whatever the
-// parent-walk already found.
+// TestActiveBasisNamesTaskOwnDriftBesideParentDrift pins that BasisDrift's own
+// task branch checks the parent feature FIRST and short-circuits there, so when
+// both a feature's spec and its task's own spec have drifted, the parent-walk
+// alone never names the task, and the agent's cluster is incomplete until a
+// human clears the feature first. The sweep runs the task-own half
+// (mutate.TaskOwnBasisDrift) separately, so the task's own drift survives
+// beside whatever the parent-walk already found.
 func TestActiveBasisNamesTaskOwnDriftBesideParentDrift(t *testing.T) {
 	t.Run("task-only drift still names a task candidate", func(t *testing.T) {
 		root := scratchProjectGit(t)
@@ -677,8 +675,8 @@ func TestActiveBasisNamesTaskOwnDriftBesideParentDrift(t *testing.T) {
 	})
 }
 
-// TestActiveBasisUnreadableIsUncovered pins the basis_unreadable arm
-// (task-7-review-round-1.md, Minor 4): a pinned file git cannot read even
+// TestActiveBasisUnreadableIsUncovered pins the basis_unreadable arm:
+// a pinned file git cannot read even
 // though it still exists on disk (permission-denied rather than deleted) is
 // neither a candidate, since checkBasis has no drifted/missing file list to
 // report, nor silence: it is Uncovered with reason basis_unreadable.
@@ -715,7 +713,7 @@ func TestActiveBasisUnreadableIsUncovered(t *testing.T) {
 }
 
 // TestActiveBasisCandidateWithNoCommitAnchorHasNilSince pins the pre-anchor
-// case (task-7-review-round-1.md, Minor 4): a feature approved before Task 2
+// case: a feature approved before Task 2
 // added Commit to AcceptedAgainst (simulated here by zeroing it by hand)
 // still gets compared and still surfaces its drift; Since is nil because
 // there is nothing to date it by, not because the sweep failed to check it.
@@ -740,8 +738,8 @@ func TestActiveBasisCandidateWithNoCommitAnchorHasNilSince(t *testing.T) {
 	require.Nil(t, cs[0].Since, "a zero commit anchor is nil, not evidence the sweep failed to check the node")
 }
 
-// TestActiveBasisDetailDistinguishesDeletedFromChanged pins Minor 6
-// (task-7-review-round-1.md): a pinned file checkBasis recorded in Missing
+// TestActiveBasisDetailDistinguishesDeletedFromChanged pins that
+// a pinned file checkBasis recorded in Missing
 // was deleted, not merely edited, and the remedy differs (--refresh-basis
 // re-hashes the working tree, which it cannot do for a file that is not
 // there), so the Detail sentence says "deleted" rather than the generic
@@ -797,15 +795,14 @@ func TestActiveBasisDetailDistinguishesDeletedFromChanged(t *testing.T) {
 	})
 }
 
-// TestActiveBasisCoverageCountsNodesNotComparisons pins task-7-review-
-// round-2.md's Important 1: Coverage must count NODES, the same unit
-// Compared counts in, not the number of comparison CALLS a task's dual
-// check happens to make, and the two buckets must stay disjoint (one node
-// never lands in both "checked" and "unresolvable" in the same sweep). Three
-// feature+task pairs: A is entirely clean, B has the feature's own spec
-// drifted (a real candidate, deduped against the task's own parent-walk
-// hit), and C has the feature's file made unreadable (chmod), which makes
-// BOTH the feature and its task unresolvable, since a task's parent-walk
+// TestActiveBasisCoverageCountsNodesNotComparisons pins that Coverage must
+// count NODES, the same unit Compared counts in, not the number of comparison
+// CALLS a task's dual check happens to make, and the two buckets must stay
+// disjoint (one node never lands in both "checked" and "unresolvable" in the
+// same sweep). Three feature+task pairs: A is entirely clean, B has the
+// feature's own spec drifted (a real candidate, deduped against the task's own
+// parent-walk hit), and C has the feature's file made unreadable (chmod), which
+// makes BOTH the feature and its task unresolvable, since a task's parent-walk
 // reads the identical unreadable file before ever reaching its own pin.
 func TestActiveBasisCoverageCountsNodesNotComparisons(t *testing.T) {
 	if os.Geteuid() == 0 {
@@ -844,7 +841,7 @@ func TestActiveBasisCoverageCountsNodesNotComparisons(t *testing.T) {
 }
 
 // TestActiveBasisTaskWithDriftUnderAKeylessParentIsUncoveredNotClean pins
-// task-7-review-round-2.md's Important 2: a task with a REAL drifted pin
+// A task with a REAL drifted pin
 // whose parent feature carries no key must not read as clean just because
 // the parent cannot be resolved. Before the fix, TaskOwnBasisDrift's own
 // "return nil" guard for an unresolvable parent silently swallowed the
@@ -887,7 +884,7 @@ func TestActiveBasisTaskWithDriftUnderAKeylessParentIsUncoveredNotClean(t *testi
 }
 
 // TestActiveBasisKeylessTaskIsUncovered pins the other half of task-7-
-// review-round-2.md's Important 2: a task that itself carries no key (its
+// a task that itself carries no key (its
 // own task.yml lost its key: line) cannot have its own task.md located
 // either (store.TaskRelDir needs it), and must read as uncovered rather
 // than silently clean.
@@ -996,7 +993,7 @@ func TestAnsweredQuestionSweep(t *testing.T) {
 	wantStatement := tree.Questions[qAssumed].Statement
 	wantTitle := tree.Questions[qAssumed].Title
 	// This fixture answers on a dirty tree by construction (nothing above
-	// ever commits), the NORMAL case (drift-review): AnswerRevision is a
+	// ever commits), the NORMAL case: AnswerRevision is a
 	// sha256 worktree fingerprint here, not a git_commit, so cs[0].Since
 	// reads nil below rather than carrying that fingerprint dressed as a
 	// commit anchor. TestAnsweredQuestionSinceOnlyGitCommitKind covers the
@@ -1007,15 +1004,14 @@ func TestAnsweredQuestionSweep(t *testing.T) {
 	// questions the ledger no longer carries): the predicate skips a dangling
 	// reference silently (Task 5's contract), so this sweep has to notice it
 	// separately, which is exactly what is under test here. Two on the same
-	// feature must not collapse into one indistinguishable row
-	// (task-7-review-round-1.md, Minor 5).
+	// feature must not collapse into one indistinguishable row.
 	tree.Features[featAssumed].AssumptionBasis["Q-ghost-one"] = store.Assumption{Reason: "hand-edited"}
 	tree.Features[featAssumed].AssumptionBasis["Q-ghost-two"] = store.Assumption{Reason: "hand-edited"}
 
 	rep, err := drift.Run(tree, vcs.New(root))
 	require.NoError(t, err)
-	// Coverage buckets per FEATURE, matching Compared's own unit
-	// (task-7-review-round-1.md, Important 3): feat-reviewed is the only
+	// Coverage buckets per FEATURE, matching Compared's own unit:
+	// feat-reviewed is the only
 	// feature with no dangling entry, so it alone is "checked" and counted;
 	// feat-assumed carries dangling entries, so it is "unresolvable" and
 	// NOT counted, even though it also produced a real candidate on its
@@ -1038,7 +1034,7 @@ func TestAnsweredQuestionSweep(t *testing.T) {
 	// Since is nil here, not the sha256 fingerprint AnswerRevision actually
 	// holds: a fingerprint is not a commit a human or an agent can diff
 	// from, so questionSince emits Since only for a git_commit-kind answer
-	// revision (drift-review: Since-can-be-a-fingerprint), the same "nothing
+	// revision (Since can be a fingerprint), the same "nothing
 	// honest to date it by" reading a pre-anchor zero record already gets.
 	require.Nil(t, cs[0].Since)
 
@@ -1063,7 +1059,7 @@ func TestAnsweredQuestionSweep(t *testing.T) {
 	require.True(t, sawGhostTwo, "the row names which id is dangling")
 }
 
-// TestAnsweredQuestionSinceOnlyGitCommitKind pins drift-review's finding that
+// TestAnsweredQuestionSinceOnlyGitCommitKind pins the finding that
 // answered_question's Since could be a sha256 worktree fingerprint dressed up
 // as a commit anchor: Question.AnswerRevision is written by mutate's own
 // gateAgainst (check.go), which returns CurrentCommit() on a clean tree and a
@@ -1136,7 +1132,7 @@ func TestAnsweredQuestionSinceOnlyGitCommitKind(t *testing.T) {
 		require.NotNil(t, cs[0].Since, "a git_commit-kind answer revision is a real, diffable anchor")
 		// require.Equal over a *RevisionRef is reflect.DeepEqual over its
 		// embedded time.Time, the exact trap RevisionRef.SameAs exists to
-		// avoid (drift-review round 2, Minor 4): a ledger round trip can
+		// avoid: a ledger round trip can
 		// change ObservedAt's *Location pointer without changing the instant
 		// it names, which DeepEqual would read as a difference and SameAs
 		// correctly would not.
@@ -1227,7 +1223,7 @@ func TestStaleSpecSpecLegAndExemptionsAndUncovered(t *testing.T) {
 		require.Len(t, cs, 1)
 		require.Equal(t, featID, cs[0].ID)
 		// Files carries the full repo-relative path, the same namespace the
-		// surface leg's own entries use (task-8-review-round-1.md, Minor 7);
+		// surface leg's own entries use;
 		// Detail keeps the shorter basename for the prose sentence.
 		require.Contains(t, cs[0].Files, ".tiller/epics/form-engine/features/feat-done/feature.md")
 		require.Contains(t, cs[0].Detail, "feature.md")
@@ -1373,8 +1369,8 @@ func TestStaleSpecEpicGrainCandidateAndArchivedExemption(t *testing.T) {
 	require.Len(t, cs, 1, "the epic's own spec leg fires exactly like the feature grain's")
 	require.Equal(t, store.NounEpic, cs[0].Noun)
 	require.Equal(t, epicID, cs[0].ID)
-	// Files carries the full repo-relative path (task-8-review-round-1.md,
-	// Minor 7); Detail keeps the shorter basename.
+	// Files carries the full repo-relative path; Detail keeps the shorter
+	// basename.
 	require.Contains(t, cs[0].Files, ".tiller/epics/form-engine/epic.md")
 	require.Contains(t, cs[0].Detail, "epic.md")
 	require.NotNil(t, cs[0].Since)
@@ -1388,7 +1384,7 @@ func TestStaleSpecEpicGrainCandidateAndArchivedExemption(t *testing.T) {
 	require.Equal(t, 1, rep.Exempted[drift.MarkerStaleSpec])
 }
 
-// TestStaleSpecArchivedFromDraftEpicIsNeverExempt pins drift-review's finding
+// TestStaleSpecArchivedFromDraftEpicIsNeverExempt pins the finding
 // that sweepStaleSpec's epic arm bumped Exempted[stale_spec] for ANY archived
 // epic, including one that skipped done entirely, violating the "count only
 // when otherwise in scope" rule sweepMissingSurface's and sweepOrphanEval's
@@ -1495,7 +1491,7 @@ func TestMissingSurfaceFiresOnlyOnVanish(t *testing.T) {
 }
 
 // TestMissingSurfaceCancelledExemptionGatedOnCarryingASurface pins
-// task-8-review-round-1.md's Minor 4: a cancelled node that never carried a
+// A cancelled node that never carried a
 // surface is silently out of scope, symmetric with a non-cancelled
 // surfaceless node, rather than inflating the footer for a set it was never
 // in.
@@ -1521,7 +1517,7 @@ func TestMissingSurfaceCancelledExemptionGatedOnCarryingASurface(t *testing.T) {
 }
 
 // TestStaleSpecWholeSurfaceDirectoryVanishIsOneCandidateNotUncovered pins the
-// vanish rule's defining boundary (task-8-review-round-1.md, Important 1):
+// vanish rule's defining boundary:
 // stat-before-TreeHash is what keeps a fully vanished surface directory a
 // plain candidate naming every gone file, rather than a git failure reading
 // a tree that no longer resolves at HEAD. Inverting that order (TreeHash
@@ -1549,7 +1545,7 @@ func TestStaleSpecWholeSurfaceDirectoryVanishIsOneCandidateNotUncovered(t *testi
 }
 
 // TestStaleSpecSurfaceTreeHashFailureIsUncoveredWithItsOwnReason pins
-// task-8-review-round-1.md's Important 2: the surface leg's own hard
+// The surface leg's own hard
 // failures must report reason surface_unreadable, not spec_unreadable
 // (Task 10 groups by Reason, and the two are different questions to route to
 // a human). The failure is injected through treeHashFailsRev rather than a
@@ -1583,7 +1579,7 @@ func TestStaleSpecSurfaceTreeHashFailureIsUncoveredWithItsOwnReason(t *testing.T
 }
 
 // TestStaleSpecGreenfieldDoneFeatureWithNoSurfaceIsComparedAndClean pins
-// task-8-review-round-1.md's Important 3: the default, greenfield-create
+// The default, greenfield-create
 // path (no surface ever recorded) must compare clean, never uncovered.
 // verifiedAgainstEmpty keys on every VerifiedAgainst leg reading empty, not
 // Surfaces alone, so a real record whose only empty field is Surfaces (this
@@ -1615,7 +1611,7 @@ func TestStaleSpecGreenfieldDoneFeatureWithNoSurfaceIsComparedAndClean(t *testin
 }
 
 // TestStaleSpecSurfaceLegAccumulatesFoundAndFailedAcrossFingerprints pins
-// task-8-review-round-1.md's Minor 5: a two-surface feature where one
+// A two-surface feature where one
 // fingerprint fully vanished and the other is unreadable must report BOTH,
 // the vanished one as an actionable Candidate and the unreadable one as
 // Uncovered, rather than the failure silently discarding the finding. The
@@ -1675,7 +1671,7 @@ func TestStaleSpecSurfaceLegAccumulatesFoundAndFailedAcrossFingerprints(t *testi
 // --- inert markers ---
 //
 // TestInertMarkersContributeNothingYet lived here through Tasks 7 and 8: cheap
-// insurance (task-7-review-round-1.md, Minor 8) that a known marker name Run
+// insurance that a known marker name Run
 // validates against, but which has no sweep function wired into its dispatch
 // yet, contributes nothing silently when enabled, rather than crashing or
 // fabricating output. stale_spec and missing_surface left the set that test
@@ -1934,7 +1930,7 @@ criteria:
 		cov := rep.Coverage[drift.MarkerOrphanEval]
 		// No baseline is present on any criterion in this contract, so it
 		// contributes nothing beyond the four bindings themselves: "plus
-		// whatever the baseline contributes" (resolution 6) is zero here, by
+		// whatever the baseline contributes" is zero here, by
 		// construction.
 		require.Equal(t, 1, cov["checked"], "the path-shaped ref, present on disk")
 		require.Equal(t, 1, cov["unresolvable"], "the bare test name, an argument to the tests runner, not a path")
@@ -2040,17 +2036,16 @@ criteria:
 	require.Equal(t, 0, rep.Compared, "a hard failure on any one ref keeps the whole node out of Compared")
 }
 
-// TestOrphanEvalCancelledFeatureIsExemptWhenInScope pins task-9-review-
-// round-1.md's Finding 1: the schema's exemption paragraph binds every sweep
-// (artifact-schema.md, Drift control hooks: "a node is exempt from a sweep
-// only when a human recorded a decision that makes the drift expected"), and
-// Task 8's markers honor it, but orphan_eval's own brief never asked, so
-// sweepOrphanEval had no status filter at all. Without the fix, a cancelled
-// feature is swept exactly like a live one and produces an actionable-
-// looking candidate for a node a human already took off the table, one that
-// can never self-clear (cancelled is terminal). This is the reviewer's own
-// end-to-end reproduction, with the REAL cancel transition (legal from
-// ready), as the fixture recipe.
+// TestOrphanEvalCancelledFeatureIsExemptWhenInScope pins that the schema's
+// exemption paragraph binds every sweep (artifact-schema.md, Drift control
+// hooks: "a node is exempt from a sweep only when a human recorded a decision
+// that makes the drift expected"), and Task 8's markers honor it, but
+// orphan_eval's own brief never asked, so sweepOrphanEval had no status filter
+// at all. Without the fix, a cancelled feature is swept exactly like a live one
+// and produces an actionable- looking candidate for a node a human already took
+// off the table, one that can never self-clear (cancelled is terminal). This is
+// the reviewer's own end-to-end reproduction, with the REAL cancel transition
+// (legal from ready), as the fixture recipe.
 func TestOrphanEvalCancelledFeatureIsExemptWhenInScope(t *testing.T) {
 	root := scratchProjectGit(t)
 	setManifestChecks(t, root, []string{drift.MarkerOrphanEval})
@@ -2134,21 +2129,20 @@ func TestOrphanEvalCancelledFeatureExemptionGatedOnScope(t *testing.T) {
 	require.Empty(t, candidatesFor(rep, drift.MarkerOrphanEval))
 }
 
-// TestOrphanEvalKeylessFeatureIsUncoveredNotAPanic pins task-9-review-
-// round-1.md's Finding 3, copy-adapted from active_basis's own
+// TestOrphanEvalKeylessFeatureIsUncoveredNotAPanic pins the keyless case,
+// copy-adapted from active_basis's own
 // TestActiveBasisSweepReportsAKeylessFeatureAsUncoveredNotAPanic: gen.EvalPath
 // does not itself guard a *store.Feature against a nil key. path.Join's own
 // Clean silently absorbs the resulting empty key segment (path.Join ignores
-// empty elements), so the derived path is not malformed at all, just wrong:
-// it resolves one directory level too shallow, ".../features/feature.eval.md"
-// rather than ".../features/<key>/feature.eval.md", since the local
-// feature-key segment that should have named the last directory is simply
-// missing from it. reportOrphanEval guards f.Key == nil explicitly before
-// ever calling EvalPath. Without that guard the sweep would still degrade
-// safely (the shallow path simply fails to load, landing in
-// Uncovered{eval_unreadable} via a plain ENOENT), but with a misleading
-// Detail rather than an honest one; this pins the guard's own honest
-// message.
+// empty elements), so the derived path is not malformed at all, just wrong: it
+// resolves one directory level too shallow, ".../features/feature.eval.md"
+// rather than ".../features/<key>/feature.eval.md", since the local feature-key
+// segment that should have named the last directory is simply missing from it.
+// reportOrphanEval guards f.Key == nil explicitly before ever calling EvalPath.
+// Without that guard the sweep would still degrade safely (the shallow path
+// simply fails to load, landing in Uncovered{eval_unreadable} via a plain
+// ENOENT), but with a misleading Detail rather than an honest one; this pins
+// the guard's own honest message.
 func TestOrphanEvalKeylessFeatureIsUncoveredNotAPanic(t *testing.T) {
 	root := scratchProjectGit(t)
 	setManifestChecks(t, root, []string{drift.MarkerOrphanEval})
@@ -2207,7 +2201,7 @@ criteria:
 // file, without checking whether either clock actually started, would
 // wrongly exempt this node too. A node whose clock never started was never
 // in this marker's scope to begin with (the footer-honesty rule the
-// Exempted gate exists for, mirroring task-8-review-round-1.md's Minor 4),
+// Exempted gate exists for),
 // so Exempted must read zero here, not one.
 func TestOrphanEvalCancelledFeatureWithUnstartedClockIsNeverExempt(t *testing.T) {
 	root := scratchProjectGit(t)
@@ -2252,7 +2246,7 @@ func TestOrphanEvalCancelledFeatureWithUnstartedClockIsNeverExempt(t *testing.T)
 		"a node whose clock never started was never in this marker's scope; exempting on cancelled-plus-HasEval alone would wrongly count it")
 }
 
-// TestOrphanEvalMissingRefBucketsAsChecked pins drift-review's finding that
+// TestOrphanEvalMissingRefBucketsAsChecked pins the finding that
 // orphan_eval never buckets a missing criterion at all: orphanEvalCheckPath's
 // own doc comment claimed finishOrphanEval decided checked vs candidate for
 // it, but finishOrphanEval never bumped any Coverage bucket for a missing
@@ -2304,7 +2298,7 @@ criteria:
 
 // --- Compared: dedupes across markers, never marker-visits (Run's own aggregation) ---
 
-// TestComparedDedupesNodesAcrossMarkers pins drift-review's Important finding
+// TestComparedDedupesNodesAcrossMarkers pins the finding
 // that Compared counted marker-visits, not nodes: every marker's sweep bumped
 // it independently, so a node several enabled markers each fully compare in
 // one Run (a ready feature, say, swept by active_basis, answered_question,
@@ -2471,7 +2465,7 @@ func TestForNodeExemptNodeYieldsNothingForThatMarker(t *testing.T) {
 }
 
 // TestForNodeAnsweredQuestionReachesATaskThroughItsParentFeature pins
-// the resolution 1: a TASK page can carry an
+// that a TASK page can carry an
 // answered_question badge too, reading its PARENT feature's unreviewed
 // assumption through the identical walk-up UnreviewedAssumptions and
 // guardSubmitAssumptions both make for a submitting task

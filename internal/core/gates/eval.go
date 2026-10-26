@@ -294,15 +294,14 @@ func EvaluateCriteria(
 }
 
 // CriteriaCurrent reports whether a recorded criteria map still holds under the
-// reuse key (code identity plus config hash, design 2026-10-21-gate-reuse,
-// decision 7): every command or test criterion in ef that is runnable here and
-// recorded pass carries a non-empty code identity equal to code and the config
-// hash of the command it would resolve to now. A test binding resolves through
-// the manifest's tests runner, so moving the runner retires its pass even on
-// unchanged code. Criteria recorded other than pass, and manual or eval
-// bindings, are not keyed and do not decide. A check that holds the evals gate
-// out under --gate counts its record only when this holds, so it never stands
-// on a pass EvaluateCriteria would not reuse.
+// reuse key (code identity plus config hash): every command or test criterion
+// in ef that is runnable here and recorded pass carries a non-empty code
+// identity equal to code and the config hash of the command it would resolve to
+// now. A test binding resolves through the manifest's tests runner, so moving
+// the runner retires its pass even on unchanged code. Criteria recorded other
+// than pass, and manual or eval bindings, are not keyed and do not decide. A
+// check that holds the evals gate out under --gate counts its record only when
+// this holds, so it never stands on a pass EvaluateCriteria would not reuse.
 func CriteriaCurrent(ef *store.EvalFile, criteria map[string]store.Criterion, m *store.Manifest, code string) bool {
 	if ef == nil {
 		return true

@@ -177,7 +177,7 @@ func TestConfigureFeatureOmitsNextBlockOnceApproved(t *testing.T) {
 
 // TestConfigureFeatureNamesTheAnswerWhileAQuestionHoldsThePlan: a specced
 // feature still sits ahead of its approve, but an open question holding the
-// plan makes that approve refuse (issue #152, decision 1), so the **Next**
+// plan makes that approve refuse (issue #152), so the **Next**
 // block names the answer rather than a command that exits 1 when copied.
 func TestConfigureFeatureNamesTheAnswerWhileAQuestionHoldsThePlan(t *testing.T) {
 	laySpeccableFeature(t)

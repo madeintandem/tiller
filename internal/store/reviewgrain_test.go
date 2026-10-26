@@ -24,7 +24,7 @@ func TestResolvedReviewGrainMostSpecificWins(t *testing.T) {
 
 // TestResolvedReviewGrainWithSourceNamesTheWinningHome pins the one resolver
 // both ResolvedReviewGrain and the console's node header payload
-// (views.reviewGrainOf) consume (Fix round 1, Important 1): the grain half
+// (views.reviewGrainOf) consume: the grain half
 // must always agree with ResolvedReviewGrain's own answer, and source must
 // name whichever of the three homes (docs/spec/artifact-schema.md) actually
 // produced it, or "default" when none of the three is set.
@@ -70,7 +70,7 @@ func TestResolvedReviewGrainWithSourceNamesTheWinningHome(t *testing.T) {
 			name: "everything nil resolves to the hardcoded default", m: nil, e: nil, f: nil,
 			wantGrain: "task", wantSource: "default",
 		},
-		// The named ambiguous case (Fix round 1, Important 2): an explicit
+		// The named ambiguous case: an explicit
 		// feature-level "task" override under an epic-grain epic resolves to
 		// grain "task" - the SAME value the hardcoded default would also
 		// produce - but the source is still "feature", the explicit override

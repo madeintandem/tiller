@@ -1,6 +1,6 @@
 /* Prose (task B2): the typeset rendering of a node's markdown body, replacing
    ProseSection's pre-wrapped plain-text dump wherever a page opts in. Every
-   value below comes from the mock's round-4 epic detail pane (the retired
+   value below comes from the mock's epic detail pane (the retired
    console mock, the .detail block's inline- styled description div and its
    epic.eval.md span): the mock has no dedicated .prose class of its own (that
    pane is hand-authored HTML, not a markdown render), so this file reproduces
@@ -93,7 +93,7 @@
   margin-bottom: 0;
 }
 
-/* Inline code tint: the chart-table pass's round-4 mock's epic.eval.md span,
+/* Inline code tint: the chart-table pass's mock's epic.eval.md span,
    verbatim in shape (recessed background, small radius, padding 1px 5px,
    12px mono), repainted here onto the console-v2 role tokens (--recess,
    --radius-btn). Inline vs block is discriminated purely by DOM

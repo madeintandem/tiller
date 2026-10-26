@@ -100,8 +100,7 @@ func runApproveTasksByFeature(cmd *cobra.Command, featureAddr string, in mutate.
 		// BasisRefresh still rides along, because which act this was is a fact
 		// about the invocation and stays true when the invocation reached no
 		// node: hardcoding it false here printed "Approval recorded" over a
-		// `--refresh-basis` run that approved nothing
-		// (task-9-findings-round-1.md, Important 2).
+		// `--refresh-basis` run that approved nothing.
 		return emitReportWithReadout(cmd, "approve", true, data,
 			fmt.Sprintf("No proposed tasks on feature %s.", gen.Ref(tree, n)), 0,
 			gateMomentFor("approve"), tree.Root, &views.GateAct{BasisRefresh: in.RefreshBasis})
@@ -126,7 +125,7 @@ func applyTransitionBatch(cmd *cobra.Command, command string, tree *store.Tree, 
 	// (a blocked node is never appended: it never reached the target, so
 	// approveContent's "moved to ready" count must not count it), the
 	// batch's own "what just happened" for the readout that follows every
-	// per-node line (round-1 review findings 1 and 2, fixed the same way
+	// per-node line (fixed the same way
 	// the single-node path was: carry the mutation result forward instead
 	// of asking the block to re-derive it from a tree tally).
 	// BasisRefresh is a property of the invocation, not of any one node's

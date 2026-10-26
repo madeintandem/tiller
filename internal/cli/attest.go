@@ -88,7 +88,7 @@ func runAttest(cmd *cobra.Command, noun, node string, in mutate.AttestInput) err
 	}
 	// attest is one of the four human gates (gateMomentFor, readout_gate.go),
 	// so its confirmation carries the readout after it. act.Attested carries
-	// exactly what round-1 review found missing: n, res.TargetKind, and
+	// exactly what an earlier review found missing: n, res.TargetKind, and
 	// res.TargetID were already in scope here, but emitReportWithReadout's
 	// old signature had nowhere to put them, so attestContent
 	// (internal/views/readout.go) fell back to a tree-wide tally instead of

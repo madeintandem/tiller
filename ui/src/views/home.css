@@ -111,7 +111,7 @@
 /* The drift slot is the one stat tile that is also a link (DriftStat,
    home/HeaderBand.tsx): plain heading ink like its counted siblings, DELIBERATELY
    NOT the mock's own .stat.drift .n magenta (mock:278) - the needs-you
-   queue count is the console's one loud ink, and a round-1 review already
+   queue count is the console's one loud ink, and an earlier review already
    found a hover rule painting this numeral magenta and called it out as the
    exact false severity signal this file must not repaint (drift is a fact
    about the tree, never a queue row, ui-surface.md's own settled bullet).
@@ -129,12 +129,11 @@
   text-decoration: none;
 }
 
-/* The feature funnel (FunnelStrip, home/HeaderBand.tsx, settled decision 8 of the home
-   burst redesign): the six Build columns read as shape in place of the old
-   Features and Tasks stat tiles, so it spans roughly the width those two
-   tiles held. Each segment stacks its numeral over its label the same way a
-   .stat does, a thin hairline dividing one segment from the next so the row
-   reads as one strip rather than six separate tiles. */
+/* The feature funnel (FunnelStrip, home/HeaderBand.tsx): the six Build columns
+   read as shape in place of the old Features and Tasks stat tiles, so it spans
+   roughly the width those two tiles held. Each segment stacks its numeral over
+   its label the same way a .stat does, a thin hairline dividing one segment
+   from the next so the row reads as one strip rather than six separate tiles. */
 .funnel {
   min-width: 220px;
 }
@@ -423,7 +422,7 @@
 }
 
 /* The one batch command, after every row, captioned after-review rather
-   than as a headline (settled decision 1). Rendered only where
+   than as a headline. Rendered only where
    cli-surface.md has the batch verb (bands.ts's own BATCH_NOUN). The
    caption sits over the command and the command stays one line that
    scrolls sideways: seventeen keys wrapped into a three-line block that

@@ -34,9 +34,8 @@ type Node interface {
 
 // Surface is the existing code a node touches: empty for a greenfield create,
 // populated for a brownfield modify/replace/migrate (artifact-schema.md,
-// change_type and surface). Paths is the only axis: modules was cut (drift
-// design decision 9) for having no writer, no defined domain, and no resolver
-// short of reasoning about code.
+// change_type and surface). Paths is the only axis: modules was cut for having
+// no writer, no defined domain, and no resolver short of reasoning about code.
 type Surface struct {
 	Paths []string `yaml:"paths,omitempty"`
 }

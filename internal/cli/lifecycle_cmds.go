@@ -1295,7 +1295,7 @@ func runTransition(cmd *cobra.Command, command, noun, node string, allowed []str
 	human := humanTransition(tree, command, in, res, gen.Ref(tree, n), unpushed)
 	var data any = view
 	if command == "submit" {
-		// A completing command ends on the ranked list (decision 9).
+		// A completing command ends on the ranked list.
 		data, human = withUpNext(cmd, tree.Root, data, human)
 	}
 	return emitTransitionSuccess(cmd, command, tree.Root, gateMomentFor(command),
@@ -1685,9 +1685,9 @@ func specIncompleteDirClause(tree *store.Tree, featureID string) string {
 // The two-node case is written as two clauses because the refusal is answering
 // "why can this node not move", and the caller's own node is what they asked
 // about. Naming only the feature left `tiller start task <id>` answering with a
-// sentence that never mentions the task (task-9-findings-round-1.md, small item
-// 5), which reads as a refusal of some other command. The remedy still addresses
-// the feature, because that is the pin that has to be refreshed.
+// sentence that never mentions the task, which reads as a refusal of some other
+// command. The remedy still addresses the feature, because that is the pin that
+// has to be refreshed.
 func activeBasisBlockedLine(tree *store.Tree, n store.Node, ab *mutate.ActiveBasisError) string {
 	if ab.NodeID == n.NodeID() {
 		return fmt.Sprintf("%s %s: %s; %s.",

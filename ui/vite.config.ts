@@ -29,7 +29,7 @@ export default defineConfig({
       // history.css joined for the phone-width pass (whole-branch merge
       // gate finding): history.css.test.ts pins .hrow's 48rem flex-wrap
       // override and its position after the base rule, the same source-
-      // order property task 25's own fix wave test caught a real bug in.
+      // order property a later fix caught a real bug in.
       // home.css joined the same pass: home.css.test.ts pins .card-grid's
       // 430px minmax floor dropping to an unconstrained 1fr below 48rem,
       // the fix for the one full-page horizontal scroll this pass found.

@@ -186,7 +186,7 @@ func sideEffects(node store.Node, verb string, payload Payload) error {
 		// PR (the same PR receives the follow-up commits) and stales the gate
 		// results the new commits invalidate, so the next check re-runs them.
 		// Resume keeps a command gate only when its recorded code still matches
-		// the code at resume (gate-reuse design, decision 9).
+		// the code at resume.
 		StaleGatesUnlessCode(node, payload.CodeIdentity)
 	case "submit":
 		if payload.PR != nil {

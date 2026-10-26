@@ -4,7 +4,7 @@
 // Answer. The answer field is a Go *string under omitempty: absent means open,
 // present means answered, and null never crosses the wire.
 //
-// Fix wave (task-17-review, Important finding 3): an open question used to
+// An open question used to
 // carry its own copy of the answer command here too (JC's ask, 2026-07-26),
 // which task 17's attention stack now duplicates verbatim - the stack
 // renders this same node's own answer_question queue entry as its own loud

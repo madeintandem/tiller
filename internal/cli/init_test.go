@@ -313,7 +313,7 @@ func snapshotWholeTree(t *testing.T, root string) (files map[string][]byte, dirs
 
 // TestInitOnAVersionOneTreeRefusesWithoutRewritingAnything confirms a refused
 // init is a clean stop across the whole tree, not just the three files a
-// round-1 version of this test happened to name. Before round 1's fix,
+// earlier version of this test happened to name. Before round 1's fix,
 // writeGenerated (init.go) wrote orientation.md and only then called
 // store.Load; round 1 fixed that ordering but scaffold itself still ran its
 // skeleton-directory MkdirAll loop and seeded a root .gitignore before ever

@@ -5,12 +5,12 @@
 // query); a null path means "nothing to fetch yet", the idle state a search
 // box sits in before its first query.
 //
-// A second, independent way to refetch: the topbar's manual ↻ (round-1
-// review, Finding 4). api.ts's fetchGeneration is a plain module counter the
-// button bumps; this hook subscribes to it and folds the current value into
-// the SAME fetch effect's dependency array as path, so a bump re-runs the
-// identical effect a path change already runs, for every mounted useFetch at
-// once - one refetch mechanism, not two.
+// A second, independent way to refetch: the topbar's manual ↻. api.ts's
+// fetchGeneration is a plain module counter the button bumps; this hook
+// subscribes to it and folds the current value into the SAME fetch effect's
+// dependency array as path, so a bump re-runs the identical effect a path
+// change already runs, for every mounted useFetch at once - one refetch
+// mechanism, not two.
 //
 // That includes marking reads: if History is mounted on its default window, a
 // bump re-requests window=visit, the console's one horizon-advancing read.

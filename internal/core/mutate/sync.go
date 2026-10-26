@@ -1634,15 +1634,14 @@ func crossEpicDone(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 // this done rest on" for a done that is not there. The event stream keeps the
 // history; the node file states the present.
 //
-// PR and ReviewRef clear too (final-review fix round, item 2, controller
-// ruling): a merge consumes the review surface it represents, and a reopened
-// epic has nothing left for that surface to describe. Leaving them behind
-// left three things wrong at once: queueMergeEpics kept rendering a
-// permanent ghost "tiller sync" row for a PR that already merged (fix
-// item 1's own predicate change only narrows WHICH terminal statuses
-// suppress it, it does nothing for a node back at `ready`); the coarse
-// finish line (readout.go's coarseEpicFinishLine) never fired again for
-// this round of work, since hasRecordedReview still read true; and
+// PR and ReviewRef clear too: a merge consumes the review surface it
+// represents, and a reopened epic has nothing left for that surface to
+// describe. Leaving them behind left three things wrong at once:
+// queueMergeEpics kept rendering a permanent ghost "tiller sync" row for a PR
+// that already merged (fix item 1's own predicate change only narrows WHICH
+// terminal statuses suppress it, it does nothing for a node back at `ready`);
+// the coarse finish line (readout.go's coarseEpicFinishLine) never fired again
+// for this round of work, since hasRecordedReview still read true; and
 // Configure's Changeability guard (refuseReviewSurfaceLocked) kept
 // refusing `configure epic --review-grain` on a node whose actual review
 // window had reopened. Branch is deliberately left alone: it is the
@@ -1715,16 +1714,15 @@ func reopenEpic(tree *store.Tree, deps Deps, owner store.Contributor, e *store.E
 // as the current record. The next crossing writes whatever is true then, which
 // after a stale-all is loud rather than silent.
 //
-// PR and ReviewRef clear too (final-review fix round, item 2, controller
-// ruling), reopenEpic's own twin one grain down: a merge consumes the
-// review surface it represents, and a reopened feature has nothing left for
-// that surface to describe. Events keep the full history (submit.feature
-// still names every PR this node ever carried); the node file states only
-// the present, which is a feature back at work with no review recorded yet.
-// Branch is the one field this reopen does NOT clear, on purpose: it is the
-// deterministic workbench name derived from the feature's own key (or, at
-// epic grain, stamped from the epic's), not a review record, and the next
-// round of work under this feature reuses it exactly as `start` would
+// PR and ReviewRef clear too, reopenEpic's own twin one grain down: a merge
+// consumes the review surface it represents, and a reopened feature has nothing
+// left for that surface to describe. Events keep the full history
+// (submit.feature still names every PR this node ever carried); the node file
+// states only the present, which is a feature back at work with no review
+// recorded yet. Branch is the one field this reopen does NOT clear, on purpose:
+// it is the deterministic workbench name derived from the feature's own key
+// (or, at epic grain, stamped from the epic's), not a review record, and the
+// next round of work under this feature reuses it exactly as `start` would
 // recompute it fresh (branchFor is idempotent on a non-empty branch).
 func reopenFeature(tree *store.Tree, deps Deps, owner store.Contributor, f *store.Feature) (Reopening, error) {
 	relDir := featureRelDir(f)

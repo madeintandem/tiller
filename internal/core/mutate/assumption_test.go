@@ -269,11 +269,11 @@ func TestUnreviewedAssumptionsPredicate(t *testing.T) {
 		_, err := mutate.ReviewAssumption(tree, testDeps(), tree.Features["F-aaaaaa"], "Q-aaaaaa")
 		require.NoError(t, err)
 
-		// No writer re-answers a question with a fresh revision yet (drift
-		// design decision 4 leaves that for later); this mutates the loaded
-		// tree directly to simulate the world moving on again, so what is
-		// under test is the predicate's own comparison, not a claimed write
-		// path nothing in the binary produces today.
+		// No writer re-answers a question with a fresh revision yet (that is
+		// left for later); this mutates the loaded tree directly to simulate
+		// the world moving on again, so what is under test is the predicate's
+		// own comparison, not a claimed write path nothing in the binary
+		// produces today.
 		tree = load(t, root)
 		tree.Questions["Q-aaaaaa"].AnswerRevision = store.RevisionRef{Kind: store.KindGitCommit, Value: "git:deadbeef"}
 

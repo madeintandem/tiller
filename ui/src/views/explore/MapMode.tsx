@@ -36,11 +36,11 @@
 // /api/map are independent fetches with no ordering guarantee: without the
 // gate, a map payload that arrived first would materialize the default open
 // set against an unknown project, ignore what that project had stored, and
-// then overwrite it (fix round 0). An /api/status error flips the gate too,
+// then overwrite it. An /api/status error flips the gate too,
 // so a project whose status fetch fails still gets a map, on the defaults,
 // rather than a loading line that never clears.
 //
-// The memory itself is written under three rules (fix round 1, review), all
+// The memory itself is written under three rules, all
 // three of them Explore.tsx:274-326's own idiom applied to this mode: the
 // project key rides a ref so the persist effect fires on a change to what it
 // is WRITING and never on the mere arrival of a key; a restore latch means
@@ -88,7 +88,7 @@ const VIEWPORT_SETTLE_MS = 250;
 // absolutely positioned over the canvas with opaque buttons, so a fit that
 // used the whole frame height put the map's first rows underneath it: on
 // Acme at 1440x900 two feature cards were invisible until the reader
-// panned (fix round 1).
+// panned.
 const FIT_TOP = 48;
 const FIT_INSET = 16;
 
@@ -237,7 +237,7 @@ function panInto(v: Viewport, rect: Revealed, frame: { w: number; h: number }, r
 }
 
 // The open set the map takes when this project has nothing stored: nothing
-// at all (fix round 1, docs/spec/ui-surface.md). Acme's 17 epics carry 102
+// at all (docs/spec/ui-surface.md). Acme's 17 epics carry 102
 // features between them, and opening all of them fits into a laptop frame only
 // at k = 0.39, where a title is five pixels tall. Collapsed, every branch card
 // wears its own count, the whole project reads at 1:1, and one click opens the
@@ -312,7 +312,7 @@ export default function MapMode({
   // Only the second is remembered. Persisting the first would write the
   // untouched default open set into memory, and reconcileOpen only ever
   // drops ids, so an epic minted next week would render closed forever for
-  // whoever had followed that link (review round 1). It is seeded false
+  // whoever had followed that link. It is seeded false
   // because the trip centerOnRef is seeded with, the sel this mode mounted
   // on, is a link's and not a gesture.
   const centerAskedRef = useRef(false);
@@ -324,7 +324,7 @@ export default function MapMode({
     // Asking for the selection already on the URL is not a navigation. Most
     // clicks on a map land on empty canvas with nothing selected, and each
     // one of those replaced the location with the location it was already on,
-    // the same way Escape used to before it learned to check (fix round 2).
+    // the same way Escape used to before it learned to check.
     if (id === sel) {
       return;
     }
@@ -393,7 +393,7 @@ export default function MapMode({
       // written before the reader ever panned carries viewport: null, and
       // treating the record's mere existence as a place to be opened that
       // map at 1:1 on the origin, which is the middle of the root card with
-      // the rest of the tree off screen (fix round 2).
+      // the rest of the tree off screen.
       wantFitRef.current = stored.viewport === null;
     } else if (open === null) {
       setOpen(new Set());
@@ -450,7 +450,7 @@ export default function MapMode({
   // the feature holding it and never drew the card.
   //
   // setOpen, not changeOpen: this is not a gesture. Once the default is
-  // collapsed (fix round 1) every deep link opens something, so arming the
+  // collapsed every deep link opens something, so arming the
   // touch latch here would make merely following a link write memory, and
   // the involuntary pan the link came with would be frozen in as "where I
   // was". The branch this opens is remembered the moment the reader does

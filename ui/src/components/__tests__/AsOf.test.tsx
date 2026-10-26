@@ -101,7 +101,7 @@ describe("AsOf", () => {
     expect(screen.getByText("synced 2h ago")).toBeInTheDocument();
   });
 
-  // Round-1 review, Finding 4: the console has no polling, so the refresh
+  // The console has no polling, so the refresh
   // control is the asof line's only remedy for staleness. It calls
   // bumpFetchGeneration - hooks.test.ts proves that call actually refetches
   // mounted data; this only proves the button is wired to it.

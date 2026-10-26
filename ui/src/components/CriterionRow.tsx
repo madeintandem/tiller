@@ -8,7 +8,7 @@
 // statement, binding type, status chip, attested-by, and a criterion's own
 // required-ness has no slot left in it.
 //
-// Fix wave (task-17-review, Critical finding 1): the pass-1 row's per-
+// The pass-1 row's per-
 // criterion EVIDENCE link (CriterionStatusView.evidence, still served -
 // api.ts's own doc comment: populated by `tiller eval --record-rubric-
 // output`) was dropped in the rewrite with nothing standing in for it, so a

@@ -6,7 +6,7 @@
 // center of the mind map, which is drawn whatever the payload holds, and the
 // Bugs shelf card, the head of the branch the one bug in the fixture hangs
 // on. The default picture is three cards: the root, the closed epic, and the
-// closed Bugs branch, each wearing its count (fix round 1). Expand all is
+// closed Bugs branch, each wearing its count. Expand all is
 // what reaches six: the two features and the bug as well.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -462,8 +462,7 @@ describe("Explore: the map mode", () => {
     // on top of a real timer cannot cancel it: it fires 250ms later, during
     // whichever test is running by then, and writes this project's memory
     // underneath it. That is a stray `{"open":[],"viewport":{"x":0,"y":0,
-    // "k":1}}` failing the file's last test in 2 full-suite runs out of 4
-    // (re-review, review round 3).
+    // "k":1}}` failing the file's last test in 2 full-suite runs out of 4.
     stubFrame(400, 300);
     vi.useFakeTimers();
     try {

@@ -157,7 +157,7 @@ func TestIntakeRefusesBasenameCollision(t *testing.T) {
 }
 
 // TestIntakeKeyCollisionLeavesNoArtifactAndNoAmendment is the reviewer's own
-// live repro (fix round 1, Critical): a proposed amendment already holds the
+// live repro: a proposed amendment already holds the
 // key intake's default (or an explicit --key) would also use. Before the
 // fix, the artifact copied THEN AddAmendment refused amendment_exists,
 // orphaning the copy on disk with nothing referencing it — every retry,
@@ -192,7 +192,7 @@ func TestIntakeKeyCollisionLeavesNoArtifactAndNoAmendment(t *testing.T) {
 
 // TestIntakeRefusesUnknownOwnerLeavingNoArtifact covers the arc the intake
 // implementation's own Concerns section justified the owner pre-check with,
-// but never itself tested (fix round 1, Important): an --contributor naming
+// but never itself tested: an --contributor naming
 // nobody in the project's roster must refuse before the artifact copies,
 // leaving neither an artifact nor an amendment behind.
 func TestIntakeRefusesUnknownOwnerLeavingNoArtifact(t *testing.T) {
@@ -215,7 +215,7 @@ func TestIntakeRefusesInvalidKey(t *testing.T) {
 	out, _, code := execCLI(t, "intake", src, "--contributor", "jc", "--key", "Not A Key!", "--json")
 	require.Equal(t, 2, code)
 	// The reason is mutate.PrecheckAddAmendment's own "amendment_key_invalid"
-	// (fix round 1: intake no longer keeps a separate CLI-side "invalid_key"
+	// (intake no longer keeps a separate CLI-side "invalid_key"
 	// check that would have preempted this with a different reason for the
 	// identical defect `add amendment` itself already reports this way).
 	require.Contains(t, out, `"reason": "amendment_key_invalid"`)

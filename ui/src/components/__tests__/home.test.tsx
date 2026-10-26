@@ -474,7 +474,7 @@ describe("Home needs-you: decision bands", () => {
     expect(within(band).getByText(`tiller approve epic ${addrs}`)).toBeInTheDocument();
     expect(within(band).getByText(`approve all ${count} after review`)).toBeInTheDocument();
 
-    // And it sits AFTER the rows, never above them (settled decision 1: the
+    // And it sits AFTER the rows, never above them (the
     // batch command follows the review, it is not the band's headline).
     const foot = band.querySelector(".dband-foot") as HTMLElement;
     const lastRow = rows[rows.length - 1];
@@ -950,7 +950,7 @@ describe("DecisionCard", () => {
     expect(screen.getByText("Due Friday.")).toBeInTheDocument();
   });
 
-  // Round-1 review, Finding 2: the earlier disclosure row linked its title to
+  // The earlier disclosure row linked its title to
   // the node's own page; the rebuild's who-line dropped it. ui-surface.md:59
   // ("Each row opens the in-context review... with the action in reach")
   // still applies to a card that never collapses - restored via RefLink.
@@ -1122,7 +1122,7 @@ describe("Home needs-you: empty queue", () => {
     expect(screen.queryByText(/all clear/i)).not.toBeInTheDocument();
   });
 
-  // Round-1 review, Finding 3: restored, adapted to scope the "in review"
+  // Restored, adapted to scope the "in review"
   // absence to the all-clear block itself - a global queryByText would also
   // have to reckon with the default route fixture's own "no task is in
   // review" reason text, a fixture collision rather than a real ambiguity.
@@ -1145,13 +1145,12 @@ describe("Home needs-you: empty queue", () => {
     ).toBeInTheDocument();
   });
 
-  // The adjudicated all-clear rule's other half, restored (round-1 review,
-  // Finding 3): "nothing needs you" is a claim about the four lists that
-  // back the in-review enumeration, so it can only be made once all four
-  // have actually loaded. useFetch nulls data on error, but a still-PENDING
-  // list needs its own guard too, or an empty queue plus one slow /api/ls
-  // would flash the all-clear claim before the list it depends on has even
-  // answered.
+  // The adjudicated all-clear rule's other half, restored: "nothing needs you"
+  // is a claim about the four lists that back the in-review enumeration, so it
+  // can only be made once all four have actually loaded. useFetch nulls data on
+  // error, but a still-PENDING list needs its own guard too, or an empty queue
+  // plus one slow /api/ls would flash the all-clear claim before the list it
+  // depends on has even answered.
   it("holds at loading, never a premature all-clear, while a list fetch is pending", async () => {
     const routes = baseRoutes({ "/api/queue": { entries: [] } });
     const pendingPath = "/api/ls?noun=feature";
@@ -1414,7 +1413,7 @@ describe("Home recap signal", () => {
     expect(link.textContent).toBe("History · 167 events since your last visit");
   });
 
-  // The next three, restored (round-1 review, Finding 3): RecapSignal itself
+  // The next three, restored: RecapSignal itself
   // did not change in this rebuild, but its own tests were dropped from the
   // file along with the old DecisionCard block they used to sit near.
   it("states volume only, never the ask count the queue beside it already lists", async () => {
@@ -1512,7 +1511,7 @@ describe("Home pulse: Just happened", () => {
     expect(screen.getByRole("link", { name: "Full history →" })).toHaveAttribute("href", "/history?window=24h");
   });
 
-  // Round-1 review, Finding 1 (Critical): burstPhrase's own subject carries
+  // BurstPhrase's own subject carries
   // no numeral ("tasks done", not "4 tasks done" - History renders the count
   // in its own separate column), so a naive reshape of its grammar onto the
   // pulse's one-line .prow silently dropped the count on every multi-entry
@@ -1655,7 +1654,7 @@ describe("Home pulse: In flight", () => {
     expect(container.querySelectorAll(".contributor-group")).toHaveLength(2);
   });
 
-  // Round-1 review, Finding 5: the prior version of this test split active
+  // The prior version of this test split active
   // and gates_in_review across two DIFFERENT contributors, so it could pass even
   // if a single owner's own rows rendered in the wrong order - it only ever
   // proved that both kinds of row appeared SOMEWHERE. One owner carrying all

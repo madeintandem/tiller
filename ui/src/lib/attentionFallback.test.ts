@@ -1,8 +1,7 @@
 // Ported from lib/attention.test.ts (deleted at d5c5e13; `git show
 // d5c5e13^:ui/src/lib/attention.test.ts` has the original), unchanged in
 // substance: this is the same derivation, reconstructed as a fallback
-// behind the queue join rather than the primary source (task-17-review
-// fix wave, Important finding 4).
+// behind the queue join rather than the primary source.
 
 import { describe, expect, it } from "vitest";
 

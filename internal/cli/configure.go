@@ -222,7 +222,7 @@ func configureNextGate(tree *store.Tree, res mutate.ConfigureResult) string {
 		}
 		if hasMove(moves, "approve") {
 			// An open question holding the plan refuses the approve (issue
-			// #152, decision 1), so name each answer instead of a command
+			// #152), so name each answer instead of a command
 			// that would exit 1 when copied.
 			if blockers := gen.PlanQuestionBlockers(tree, f); len(blockers) > 0 {
 				answers := make([]string, len(blockers))

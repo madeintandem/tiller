@@ -8,7 +8,7 @@
 // know which view's request just landed, and this way "synced" states
 // exactly what this browser tab actually has in hand, never a guess.
 //
-// The refresh control (round-1 review, Finding 4, shipped after the first
+// The refresh control (shipped after the first
 // pass held it back): the console has no polling, so without a remedy the
 // asof line was a pure staleness signal with nothing the reader could do
 // about it. ↻ calls api.ts's bumpFetchGeneration(), which hooks.ts's

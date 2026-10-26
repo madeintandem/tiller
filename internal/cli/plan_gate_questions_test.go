@@ -12,7 +12,7 @@ import (
 
 // TestApproveFeatureHeldHumanLine pins the approve variant of the
 // open_question_blocker line: it names `tiller answer question`, folds the
-// answers into the plan, and never offers --assume-question (decision 8).
+// answers into the plan, and never offers --assume-question.
 func TestApproveFeatureHeldHumanLine(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")

@@ -124,7 +124,7 @@ func TestStatusOutsideRepoExits3(t *testing.T) {
 }
 
 // TestStatusRefusesAVersionOneTree pins the schema_version refusal at the CLI
-// surface (task-5 fix round 1, minor 6): internal/store's own tests cover
+// surface: internal/store's own tests cover
 // LoadManifest directly, but nothing before this asserted the exit code or the
 // --json envelope's reason for a real command, only a hand-run transcript in a
 // report. status is the read-only command every reason above was verified
@@ -299,10 +299,10 @@ func TestStatusReportsActiveBasisDriftAtBothGrains(t *testing.T) {
 	require.Contains(t, out, "active_basis: feature.md")
 	// The grain assertion has to be about the grain. An earlier version of this
 	// line asserted the substring "feature", which "feature.md" one assertion up
-	// already satisfies, so it pinned nothing (task-9-findings-round-1.md,
-	// Important 3). What is load-bearing is that a task's line names the FEATURE
-	// whose pin moved and hands over that feature's command: refreshing the
-	// task's own pin would not clear a feature's drift.
+	// already satisfies, so it pinned nothing. What is load-bearing is that a
+	// task's line names the FEATURE whose pin moved and hands over that
+	// feature's command: refreshing the task's own pin would not clear a
+	// feature's drift.
 	require.Contains(t, out, "on feature "+cliFeatureKey,
 		"a task's drift line names the grain that owns the pin")
 	require.Contains(t, out, "tiller approve feature "+cliFeatureKey+" --refresh-basis")

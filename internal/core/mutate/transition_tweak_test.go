@@ -174,8 +174,7 @@ func TestCancelTweakAsDuplicateNamesSurvivor(t *testing.T) {
 	// The event's own after.duplicate_of must carry the SAME resolved id
 	// as the node record above, not the raw "tweaks/alpha" key the caller
 	// named: an audit trail built purely from the event ledger must never
-	// disagree with the node record about what duplicate_of means
-	// (round-1 review finding).
+	// disagree with the node record about what duplicate_of means.
 	evs, err := events.List(load(t, root))
 	require.NoError(t, err)
 	last := evs[len(evs)-1]

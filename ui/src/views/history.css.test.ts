@@ -12,7 +12,7 @@
 // the same reason it already covers those two.
 //
 // The second describe block below pins SOURCE POSITION, not just existence:
-// task 25's own fix wave found that an override @media block sitting BEFORE
+// a later fix found that an override @media block sitting BEFORE
 // the base rule it means to override loses the cascade at every viewport (a
 // @media wrapper adds no specificity of its own, so source order alone
 // breaks the tie) - existence-only regexes stay green through that bug the

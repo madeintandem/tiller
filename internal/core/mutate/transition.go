@@ -258,7 +258,7 @@ func transitionEpic(tree *store.Tree, deps Deps, owner store.Contributor, treeEp
 	// status, so a submitted epic-grain epic (its own PR or review ref
 	// already recorded via `submit epic`) sits at `ready` exactly like an
 	// unsubmitted one, and without this check a re-approve here would
-	// silently overwrite a grain the rule says is locked (round 2 finding).
+	// silently overwrite a grain the rule says is locked.
 	// It never fires on the initial draft->ready approve, since a draft epic
 	// cannot yet carry a PR, a review ref, or a terminal status.
 	if in.Verb == "approve" && in.ReviewGrain != nil {
@@ -959,7 +959,7 @@ func transitionEvent(deps Deps, owner store.Contributor, in TransitionInput,
 	// ReviewGrain) says ever consumes it ("every other verb ignores this
 	// field"); the in.Verb == "approve" clause makes that true by
 	// construction here rather than merely by every current caller's
-	// discipline (final-review fix round, item 5). Every real path already
+	// discipline. Every real path already
 	// sets in.ReviewGrain only alongside Verb: "approve" (the CLI's own
 	// approve command, lifecycle_cmds.go), so this is a defensive guard
 	// rather than a behavior change for any caller in this build.
@@ -995,7 +995,7 @@ func payloadFor(in TransitionInput) lifecycle.Payload {
 
 // stampResumeCode reads the current code identity into in for a resume, so the
 // engine can keep the command gates whose recorded code still matches (gate-reuse
-// design, decision 9). Every other verb leaves in alone. It is read from the
+// design). Every other verb leaves in alone. It is read from the
 // worktree the caller runs in, the same identity check records. The identity
 // only narrows what resume stales, so failing to read it (an unreadable file,
 // say) never refuses the resume: it leaves no identity, and every gate goes
@@ -1682,8 +1682,7 @@ func gitBlobRef(rev vcs.Revisions, relPath string, at time.Time) (store.Revision
 //
 // The returned ref's ObservedAt is wall-clock time.Now(), not a caller-
 // supplied instant the way gitBlobRef's own `at` parameter is: a caller meaning
-// to PERSIST this ref must stamp its own ObservedAt over this one
-// (task-8-review-round-1.md, Minor 9).
+// to PERSIST this ref must stamp its own ObservedAt over this one.
 func WorktreeBlobRef(rev vcs.Revisions, root, relPath string) (store.RevisionRef, error) {
 	ref, err := gitBlobRef(rev, relPath, time.Now().UTC())
 	if err == nil {
@@ -1825,7 +1824,7 @@ func BasisDrift(tree *store.Tree, n store.Node, rev vcs.Revisions) error {
 		// featureRelDir dereferences *f.Key unconditionally, so reaching it
 		// here would panic rather than answer; guarded the same way the task
 		// branch below already guards its own parent lookup for the
-		// identical gap (drift-review round 1, Important 1).
+		// identical gap.
 		if node.Key == nil {
 			return &BasisPathError{Noun: store.NounFeature, NodeID: node.ID}
 		}
@@ -1845,7 +1844,7 @@ func BasisDrift(tree *store.Tree, n store.Node, rev vcs.Revisions) error {
 
 // BasisPathError reports that BasisDrift could not even locate the working-
 // tree file to compare a node's basis against, because the node itself
-// carries no key (drift-review round 1, Important 1: a feature.yml that lost
+// carries no key (a feature.yml that lost
 // its key: line still loads, per checkKeyNamesItsFolder's own reading, but
 // featureRelDir cannot build a path from a nil key). It is deliberately not
 // an ActiveBasisError: there is nothing to compare, a different fact from
@@ -1864,8 +1863,8 @@ func (e *BasisPathError) Error() string {
 }
 
 // TaskOwnBasisDrift answers whether tk's OWN task.md pin has drifted,
-// independent of its parent feature's own basis (drift-review round 1,
-// Important 2: checkTaskBasis, the task-own-pin half of the comparison
+// independent of its parent feature's own basis.
+// CheckTaskBasis, the task-own-pin half of the comparison
 // BasisDrift's own task branch already makes, exported thin rather than
 // duplicated). BasisDrift's task branch checks the parent feature FIRST and
 // returns as soon as THAT drifts, which is right for a guard refusing one
@@ -1879,8 +1878,8 @@ func (e *BasisPathError) Error() string {
 // already reported.
 //
 // A parent it cannot resolve, and a task with no key of its own, both answer
-// BasisPathError rather than nil (drift-review round 2, Important 2). The
-// round-1 version read nil for either gap, mirroring checkTaskBasis's own
+// BasisPathError rather than nil. The
+// earlier version read nil for either gap, mirroring checkTaskBasis's own
 // combined guard (tk.AcceptedAgainst == nil || tk.Key == nil, unchanged
 // below) and BasisDrift's own task branch (feat == nil || feat.Key == nil,
 // also unchanged): both of those read nil correctly for THEIR callers

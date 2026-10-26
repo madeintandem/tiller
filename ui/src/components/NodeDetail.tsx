@@ -195,16 +195,15 @@ function DriftCandidateRow({ row, pageNodeId }: { row: CandidateView; pageNodeId
 
 // ---------------------------------------------------------------------------
 // The attention stack (task 17, item 5; ui-surface.md's amended uniform-
-// shell bullet, 2026-08-10, further amended 2026-08-11 by the task-17-review
-// fix wave): every item asking a person for something on this node renders
-// as its own box, all at once, rather than the earlier pass's single
-// derived strip. The loud register is this node's own queue entries (the
-// overlay join, Build's own second: views/build/overlays.ts's
-// askLabelsFrom is the precedent, filtered by node id rather than scoped to
-// one noun), a reconstructed next-owner fallback for the one gap the queue
-// itself leaves silent (needsAttentionFallback, lib/attentionFallback.ts),
-// and the warning register, unpushed_review, the one caution this page
-// carries today.
+// shell bullet, 2026-08-10, further amended 2026-08-11): every item asking a
+// person for something on this node renders as its own box, all at once, rather
+// than the earlier pass's single derived strip. The loud register is this
+// node's own queue entries (the overlay join, Build's own second:
+// views/build/overlays.ts's askLabelsFrom is the precedent, filtered by node id
+// rather than scoped to one noun), a reconstructed next-owner fallback for the
+// one gap the queue itself leaves silent (needsAttentionFallback,
+// lib/attentionFallback.ts), and the warning register, unpushed_review, the one
+// caution this page carries today.
 // ---------------------------------------------------------------------------
 
 // entriesForNode is the overlay join itself, a one-liner beside Build's
@@ -231,9 +230,9 @@ function entriesForNode(queue: Queue | null, node: NodeView): QueueEntry[] {
 //   button that applies") is a specific, reasoned decision - "the page
 //   offers no write at all: the copyable `tiller approve amendment <addr>`
 //   lives on the queue card" - that this stack's generic "every item
-//   asking" wording does not override (task-17-review fix wave, Important
-//   finding 2, flagged to JC). An amendment's own node page stays exactly
-//   what that bullet says: a review surface with no write on it anywhere.
+//   asking" wording does not override. An amendment's own node page stays
+//   exactly what that bullet says: a review surface with no write on it
+//   anywhere.
 function asksFrom(entries: QueueEntry[]): QueueEntry[] {
   return entries.filter((e) => e.kind !== "attest_gate" && e.kind !== "approve_amendment");
 }
@@ -266,8 +265,7 @@ function AskBox({ entry, showCommand = true }: { entry: QueueEntry; showCommand?
   return (
     <div className={`abox${entry.actor === "agent" ? " warn" : ""}`}>
       <span className="kind">{qualifier !== "" ? `${kind} ${qualifier}` : kind}{entry.actor && ` · ${entry.actor}`}</span>
-      {/* whyLine returns "" for a kind KIND_LABEL does not name either
-          (fold-in minor, phase-4-review fix wave): an empty .why div still
+      {/* whyLine returns "" for a kind KIND_LABEL does not name either: an empty .why div still
           painted its own margin/line-height, a blank beat between the kind
           and the command for a kind this box cannot explain. Dropping the
           div rather than rendering it empty matches DecisionCard's own
@@ -332,21 +330,20 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
   // and is silent about this node ENTIRELY - including an attest_gate or
   // approve_amendment entry asksFrom itself declines to render as a box: a
   // node the queue already has something to say about is never also handed
-  // a second, vaguer guess (task-17-review fix wave, Important finding 4).
+  // a second, vaguer guess.
   //
-  // "loaded" is its own condition, not entries.length alone (phase-4-review
-  // fix wave, Important finding 1): views/NodeDetail.tsx's own queue fetch
-  // is best-effort, so `queue` reads null for two different states -
-  // not-yet-loaded and load-failed - and entriesForNode's `queue?.entries ??
-  // []` folds both of those into the SAME empty list a genuinely loaded,
-  // genuinely silent queue produces. Gating on entries.length alone made an
-  // amendment's own page (next_owner human, a PRE_WORK_STATUSES status -
-  // needsAttentionFallback's own eligible shape, which carries no
-  // noun-of-amendment guard of its own) flash the forbidden approve command
-  // spec:205 refuses on every load tick before the queue landed, and keep
-  // flashing it forever on a failed read. Requiring `queue !== null` first
-  // means the fallback only ever answers once the queue has actually had
-  // its say.
+  // "loaded" is its own condition, not entries.length alone:
+  // views/NodeDetail.tsx's own queue fetch is best-effort, so `queue` reads
+  // null for two different states - not-yet-loaded and load-failed - and
+  // entriesForNode's `queue?.entries ?? []` folds both of those into the SAME
+  // empty list a genuinely loaded, genuinely silent queue produces. Gating on
+  // entries.length alone made an amendment's own page (next_owner human, a
+  // PRE_WORK_STATUSES status - needsAttentionFallback's own eligible shape,
+  // which carries no noun-of-amendment guard of its own) flash the forbidden
+  // approve command spec:205 refuses on every load tick before the queue
+  // landed, and keep flashing it forever on a failed read. Requiring `queue !==
+  // null` first means the fallback only ever answers once the queue has
+  // actually had its say.
   const workflow = observed ? undefined : page.workflow;
   const fallback =
     !observed && workflow === undefined && queue !== null && entries.length === 0
@@ -508,7 +505,7 @@ function backlinksTab(page: NodePage): NodeTab {
   };
 }
 
-// Every tab label below is Title Case (fix wave, task-17-review minor: the
+// Every tab label below is Title Case (the
 // mock's own tab row is Title Case throughout - "Spec", "Contract",
 // "Tasks", "History", the retired console mock
 // - and the initial pass left everything but Contract lowercase, one

@@ -181,13 +181,12 @@ func TestLoadRefusesSchemaSixBeforeReadingMoveProposals(t *testing.T) {
 }
 
 // TestLoadRefusesAMissingSchemaVersionKey pins that an absent key is named as
-// absent, and that this case is NOT the destructive old-tree remedy (round-3
-// finding): a genuine version-1 tree always carried the key (the pre-refactor
-// manifest struct declared SchemaVersion int, and every version-1 fixture in
-// this codebase's history wrote schema_version: 1), so a missing key is not
-// evidence of an old tree. It could just as well be a current-format project
-// that lost the line to a hand-edit or a bad merge, so this must never say to
-// remove anything.
+// absent, and that this case is NOT the destructive old-tree remedy: a genuine
+// version-1 tree always carried the key (the pre-refactor manifest struct
+// declared SchemaVersion int, and every version-1 fixture in this codebase's
+// history wrote schema_version: 1), so a missing key is not evidence of an old
+// tree. It could just as well be a current-format project that lost the line to
+// a hand-edit or a bad merge, so this must never say to remove anything.
 func TestLoadRefusesAMissingSchemaVersionKey(t *testing.T) {
 	root := writeManifestFixture(t, "project: { name: P, key: p, kind: greenfield }\n")
 	_, err := Load(root)
@@ -201,8 +200,8 @@ func TestLoadRefusesAMissingSchemaVersionKey(t *testing.T) {
 
 // TestLoadRefusesAnEmptySchemaVersionValue pins the sibling of the missing-key
 // case: the key is present but carries no value, which yaml.v3 resolves as a
-// null and decodes into the Go zero value, 0, with no error at all (round-2
-// finding: "schema_version: with an empty value still prints 'is stamped
+// null and decodes into the Go zero value, 0, with no error at all
+// ("schema_version: with an empty value still prints 'is stamped
 // schema_version 0'"). refuseSchemaVersion checks the node's tag for this
 // case rather than trusting a decoded 0, so this gets the same "no
 // schema_version set" message as a fully absent key, not a false "stamped 0".
@@ -239,8 +238,8 @@ func TestLoadRefusesANonIntegerSchemaVersion(t *testing.T) {
 	assert.NotContains(t, ee.Msg, "remove .tiller/", "an unparseable value must never get the destructive old-tree remedy")
 }
 
-// TestLoadRefusesAQuotedSchemaVersionWithoutDestructiveAdvice is the round-2
-// Important finding, reproduced directly: a hand-edit or any YAML formatter
+// TestLoadRefusesAQuotedSchemaVersionWithoutDestructiveAdvice reproduces
+// the finding directly: a hand-edit or any YAML formatter
 // that quotes scalars turns `schema_version: 3` into `schema_version: "3"`, a
 // string yaml.v3 will not decode into int even though the number is right
 // there. Before this fix that fell into the same branch as "banana" and

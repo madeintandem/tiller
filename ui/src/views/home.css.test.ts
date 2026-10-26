@@ -14,7 +14,7 @@
 // test.css.include carve-out grew to cover home.css for the same reason.
 //
 // The second describe block pins SOURCE POSITION, not just existence, the
-// same property task 25's own fix wave found a real bug in: an override
+// same property a later fix found a real bug in: an override
 // @media block sitting BEFORE the base rule it means to override loses the
 // cascade at every viewport (a @media wrapper adds no specificity of its
 // own), and an existence-only regex stays green through that the whole

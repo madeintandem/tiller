@@ -313,7 +313,7 @@ func writeReport(cmd *cobra.Command, command string, ok bool, data any, human st
 // from data already in scope there (the resolved node, the mutation
 // result) and threaded through to renderReadoutFor so the Verification
 // section can prove the act rather than describe the tree a second time
-// (round-1 review finding 1 and 2: a gate call site already has the node
+// (a gate call site already has the node
 // and the result in scope, runAttest's n/res.TargetID/res.TargetKind named
 // in the finding, so the plumbing carries them rather than a content
 // function falling back to a tree-wide tally). nil for a gate content
@@ -344,7 +344,7 @@ func emitReportWithReadout(cmd *cobra.Command, command string, ok bool, data any
 		// brief's own rule, rather than silently dropped where nothing would
 		// ever surface a real regression here. Covered by
 		// TestEmitReportWithReadoutOmitsTheBlockOnALoadFailure
-		// (readout_gate_test.go): round-1 review found this path right but
+		// (readout_gate_test.go): an earlier review found this path right but
 		// unguarded, a throwaway test written, confirmed, then deleted.
 		fmt.Fprintf(cmd.ErrOrStderr(), "tiller: readout for %s not available: %v\n", command, err)
 		return emitReport(cmd, command, ok, data, human, code)

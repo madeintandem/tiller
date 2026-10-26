@@ -100,8 +100,7 @@ type Readout struct {
 	Checks   []ReadoutCheck  `json:"checks"`
 	NeedsYou []ReadoutAction `json:"needs_you"`
 	// Next is the ranked list of the reader's legal moves, uncut: the block
-	// renders its shortlist and counts the rest (ranked-next design,
-	// decision 6).
+	// renders its shortlist and counts the rest.
 	Next     Next             `json:"next"`
 	Baseline *BaselineReadout `json:"baseline,omitempty"`
 	// GrainNotes names each in-flight task that started at task grain under a
@@ -202,7 +201,7 @@ type ReadoutInput struct {
 	// command returns and nothing records "which one of several possible
 	// facts this call was about" on disk.
 	//
-	// Round-1 review found the gate content functions read the tree
+	// an earlier review found the gate content functions read the tree
 	// exactly the way the seams do (a post-mutation snapshot, no
 	// memory of the call that just ran), so Verification answered "what is
 	// still true of the tree" instead of "what this act did or unblocked,"
@@ -752,7 +751,7 @@ func approveContent(t *store.Tree, in ReadoutInput, r *Readout) {
 	// because `approve task --feature <key> --refresh-basis` on a feature with
 	// nothing proposed reaches here with an empty Nodes: falling through would
 	// leave the headline reading "Approval recorded" for a command that
-	// approved nothing (task-9-findings-round-1.md, Important 2). The count is
+	// approved nothing. The count is
 	// what keeps the headline from over-claiming on that path: it names what
 	// the act reached, including zero.
 	if act.BasisRefresh {
@@ -925,8 +924,8 @@ func syncContent(t *store.Tree, in ReadoutInput, r *Readout) {
 	// headlineFor's "Crossings recorded" is the moment's name, not an
 	// observation, and a sync that observed nothing is the ordinary case: it
 	// runs on every serve refresh and on demand. Printed unchanged it sat
-	// directly under a confirmation line saying no crossings were recorded
-	// (task-9-findings-round-1.md, small item 3). The headline says which way
+	// directly under a confirmation line saying no crossings were recorded.
+	// The headline says which way
 	// the run came out; the checks below still carry the counts.
 	if len(act.Crossed) == 0 {
 		r.Headline = "No crossings to record"

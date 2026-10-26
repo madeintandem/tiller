@@ -416,7 +416,7 @@ summary.hrow {
    Inter 14px from body (nothing between it and body sets a font), whose
    "0" glyph is both a different typeface AND a third larger, so its 16ch
    landed 25-35px right of the head row's own dot column (found on real
-   pixels, task-19-fix-wave review: no screenshot up to that point showed
+   pixels: no screenshot up to that point showed
    an OPEN burst). Nothing below leaks this font change visibly: every
    text-bearing descendant already sets its own font-family explicitly
    (.recap-entry-title, the .mono .recap-entry-key spans, .recap-more's

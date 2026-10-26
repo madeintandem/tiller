@@ -41,14 +41,14 @@ const reasonDriftFound = "drift_found"
 // markerOrder is the schema's own fixed marker order (artifact-schema.md,
 // "Drift control hooks"; the same order drift.Run's own sweep and the
 // manifest's example drift.checks list use), exported by the engine as
-// drift.KnownMarkers (task-10-review-round-1.md, Finding 3) so this file's
+// drift.KnownMarkers so this file's
 // human and footer rendering walks the identical order the engine validates
 // drift.checks against, rather than a second, driftable copy of it.
 var markerOrder = drift.KnownMarkers
 
 // DriftView is the JSON data block `tiller drift` emits, clean or found
 // alike: the pure report projection plus Reason, populated only on the
-// blocked path (resolution 1). There is deliberately no
+// blocked path. There is deliberately no
 // second, differently-shaped type for findings: exit 1 here means the sweep
 // completed and is reporting what it found, not that the command was
 // refused, so a caller already parsing the clean shape needs nothing new to
@@ -188,8 +188,7 @@ func writeUncoveredRow(b *strings.Builder, u views.UncoveredView) {
 // orphan_eval. Summing across markers as if those units matched
 // would misstate both. Counted nouns follow the house "(s)" convention
 // (sync.go's "done crossing(s)", "node(s) still in review"; show.go's
-// "surface(s)"), the same one this file's earlier draft departed from
-// (task-10-review-round-1.md, Finding 2).
+// "surface(s)"), the same one this file's earlier draft departed from.
 func writeDriftFooter(b *strings.Builder, v views.DriftReportView, found bool) {
 	checksRun := len(markerOrder) - len(v.Disabled)
 	compared := fmt.Sprintf("%d node(s)", v.Compared)
@@ -269,7 +268,7 @@ func coverageLine(marker string, buckets map[string]int) string {
 // criteria for orphan_eval, doc(s) for baseline markers, and node(s) for
 // work-node markers (drift.Report's Coverage contract).
 // "criteria" is left unpluralized: it is already the irregular plural of
-// "criterion", and the house "(s)" convention (Finding 2) applies to a
+// "criterion", and the house "(s)" convention applies to a
 // regular noun's own suffix, which "criteria" has none of; the schema's own
 // worked example ("3 criteria checked") uses it the same invariant way.
 func coverageUnit(marker string) string {

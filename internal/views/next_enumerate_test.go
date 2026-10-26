@@ -377,9 +377,9 @@ func TestEnumerateEmptyTree(t *testing.T) {
 	require.Empty(t, enumerate(tree, "jc", workflow.Input{}))
 }
 
-// Closeout and aggregate merge rows keep their reason to one line (ranked-next
-// decision 7): the row names the closeout phase or the merge wait, and the
-// Needs you card keeps the advice's full reason.
+// Closeout and aggregate merge rows keep their reason to one line: the row
+// names the closeout phase or the merge wait, and the Needs you card keeps the
+// advice's full reason.
 func TestEnumerateCloseoutReasonsStayOneLine(t *testing.T) {
 	t.Run("recovered review", func(t *testing.T) {
 		tree, f, in := workflowFeature(t, store.ReviewGrainFeature)

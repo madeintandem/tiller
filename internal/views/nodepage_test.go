@@ -1162,8 +1162,8 @@ func TestDriftBadgesOfEveryOtherMarkerNeverRefuses(t *testing.T) {
 	}
 }
 
-// TestDriftBadgesOfDedupesToOneBadgePerMarker pins resolution 3: "ONE chip
-// ... regardless of how many markers touch the node", which starts from ONE
+// TestDriftBadgesOfDedupesToOneBadgePerMarker pins one chip
+// regardless of how many markers touch the node, which starts from ONE
 // badge per marker even when a single ForNode call produced more than one
 // candidate for it (a task whose active_basis drifted at both its own grain
 // and its parent feature's, TestActiveBasisNamesTaskOwnDriftBesideParentDrift's

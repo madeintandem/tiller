@@ -67,7 +67,7 @@ export default function DecisionCard({ entry }: { entry: QueueEntry }) {
       <span className="kind">{KIND_LABEL[entry.kind] ?? entry.kind}{entry.actor && ` · ${entry.actor}`}</span>
       <WhoLine entry={entry} />
       {/* whyLine's own default case answers "" for a kind neither it nor
-          KIND_LABEL names (fold-in minor, phase-4-review fix wave): an empty
+          KIND_LABEL names: an empty
           .why paragraph still painted its own margin/line-height, a blank
           beat between who and the command. Dropped rather than rendered
           empty; NodeDetail.tsx's AskBox carries the identical guard. */}
@@ -78,7 +78,7 @@ export default function DecisionCard({ entry }: { entry: QueueEntry }) {
 }
 
 // WhoLine names the node the entry is about, and it is the card's one path
-// to that node's own page (round-1 review, Finding 2: the earlier disclosure
+// to that node's own page (the earlier disclosure
 // row linked its title to /node/{noun}/{id}, and the rebuild dropped it -
 // ui-surface.md:59's "Each row opens the in-context review... with the
 // action in reach" still holds for a card that never collapses). RefLink

@@ -81,7 +81,7 @@ func TestConfigureFeatureRecordsGrainAndEvent(t *testing.T) {
 // TestConfigureFeatureRecordsGrainAndEvent: a successful set persists
 // review_grain on disk and records exactly one configure.epic event carrying
 // before ""/after the set value, and a same-value re-set is Changed false
-// with no new event (fix round 2: the epic arm had no success test at all,
+// with no new event (the epic arm had no success test at all,
 // before or after fix round 1's feature-arm no-op parity).
 func TestConfigureEpicRecordsGrainAndEvent(t *testing.T) {
 	t.Parallel()

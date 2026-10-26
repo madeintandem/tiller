@@ -136,14 +136,12 @@ function QuestionCard({ row }: { row: ListRow }) {
       {isOpen ? (
         // Hand-built, not deduped away like QuestionBody.tsx's own copy was
         // (that page's node-level command IS a queue entry's own
-        // entry.command, so it could just render the wire value; task-17-
-        // review fix wave, Important finding 3). This pane renders
-        // ListRow, which carries no command field of its own, so there is
-        // no wire value to reuse - this string is a deliberate byte-for-
+        // entry.command, so it could just render the wire value). This pane
+        // renders ListRow, which carries no command field of its own, so there
+        // is no wire value to reuse - this string is a deliberate byte-for-
         // byte mirror of internal/views/queue.go:257's own construction
         // (queueAnswerQuestions, `tiller answer question ` + q.ID + `
-        // --answer "..."`), kept in sync by hand rather than re-derived
-        // (fold-in minor, phase-4-review fix wave).
+        // --answer "..."`), kept in sync by hand rather than re-derived.
         <>
           <CopyCmd cmd={`tiller answer question ${row.id} --answer "..."`} accent />
           <CopyCmd cmd={`tiller cancel question ${row.id} --reason "..."`} />

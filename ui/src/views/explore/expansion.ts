@@ -106,7 +106,7 @@ export function closeAll(): Expansion {
 // precedence toggle's own hand-closed rule already gives an explicit
 // choice over an inferred one.
 //
-// Extracted to its own pure function (fix round 3, re-review) rather than
+// Extracted to its own pure function rather than
 // left inline at its one call site: round 2's fix (holding auto-open until
 // the restore has run) makes `live` provably empty every time that call
 // site actually invokes this, so no integration test can exercise a

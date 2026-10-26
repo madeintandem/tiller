@@ -326,7 +326,7 @@ describe("NodeDetail feature tabs", () => {
     expect(screen.getByRole("button", { name: "Spec" })).toBeInTheDocument();
     // The evals tab's DISPLAY label reads "Contract" now (task 17's own
     // decision); its wire key and the `tab` search param stay "evals". Every
-    // tab label is Title Case (fix wave, task-17-review minor: the mock's
+    // tab label is Title Case (the mock's
     // own tab row is Title Case throughout, not just Contract).
     expect(screen.getByRole("button", { name: "Contract · 2" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tasks · 1" })).toBeInTheDocument();
@@ -631,10 +631,10 @@ describe("NodeDetail question page: no tab row", () => {
 
     expect(container.querySelector(".mode-nav")).toBeNull();
     expect(screen.queryByRole("button", { name: "Spec" })).not.toBeInTheDocument();
-    // QuestionBody itself renders no answer command in any state now (fix
-    // wave, task-17-review Important finding 3): the attention stack owns
-    // that command, covered by instrument.test.tsx's own "the stack owns a
-    // question's answer command, never duplicated by the body" test.
+    // QuestionBody itself renders no answer command in any state now: the
+    // attention stack owns that command, covered by instrument.test.tsx's own
+    // "the stack owns a question's answer command, never duplicated by the
+    // body" test.
   });
 });
 

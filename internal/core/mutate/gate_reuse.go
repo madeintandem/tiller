@@ -15,7 +15,7 @@ import (
 // a command gate that already passed over the same code identity under the
 // same resolved command stands in for a fresh run. Only a pass is reused, an
 // empty code identity never matches, and reuse reads only gate records in the
-// loaded tree (decision 4), never a cache, another branch, or history.
+// loaded tree, never a cache, another branch, or history.
 
 // reuseSource is one gates block a check may reuse a recorded pass from. An
 // empty nodeID is the checked node's own record; any other id names the node
@@ -71,7 +71,7 @@ func newGateRun(rev vcs.Revisions, against store.RevisionRef, owner store.Contri
 
 // held reports whether gate name sits outside this invocation's --gate set:
 // it is never shelled, only reused or reported, with a pass that cannot be
-// reused marked stale (decision 10, notRunOutcome).
+// reused marked stale (notRunOutcome).
 func (run gateRun) held(name string) bool {
 	return run.only != nil && !run.only[name]
 }
@@ -177,7 +177,7 @@ type gateResult struct {
 	notRun    bool
 }
 
-// gatesGreen is the advance rule (decision 10): every required gate's
+// gatesGreen is the advance rule: every required gate's
 // resulting record is a pass, and a command-backed one's is over the current
 // code identity, so a partial --gate run never advances work on a sibling's
 // stale pass. A gate held out with no current record is not green. With no
@@ -220,7 +220,7 @@ func reusedGates(outcomes []GateOutcome, block map[string]store.Gate, at time.Ti
 // ridingSources returns one reuse source per task riding feature featureID,
 // sorted by task id so the first matching pass is deterministic. A feature
 // check reuses a task's pass when the aggregate's code identity equals the code
-// that task checked (design decision 4); the match is still keyed on the
+// that task checked; the match is still keyed on the
 // resolved command, so a command that names the node never crosses grains.
 func ridingSources(tree *store.Tree, featureID string) []reuseSource {
 	tasks := append([]*store.Task(nil), tree.FeatureTasks[featureID]...)
@@ -236,7 +236,7 @@ func ridingSources(tree *store.Tree, featureID string) []reuseSource {
 // c this check, when reuse is allowed: not forced off by --rerun, not opted out
 // by the manifest's `reuse: false`, and a current code identity to compare
 // (an empty one never matches). The copy keeps the original run's run_by,
-// run_at, against, and evidence (decision 15), is marked reused_at now, takes
+// run_at, against, and evidence, is marked reused_at now, takes
 // the manifest's current required flag, and names its source node in
 // reused_from when the pass came from another node; a pass reused from the
 // node's own record keeps whatever reused_from it already carried.

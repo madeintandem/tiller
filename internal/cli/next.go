@@ -9,7 +9,7 @@ import (
 )
 
 // This file implements `tiller next`: the ranked list of the legal moves for
-// this checkout, best first (ranked-next design, decision 11). It is read-only.
+// this checkout, best first. It is read-only.
 
 func newNextCmd() *cobra.Command {
 	var all bool

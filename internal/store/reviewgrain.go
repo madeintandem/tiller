@@ -90,7 +90,7 @@ func ResolvedReviewGrain(m *Manifest, e *Epic, f *Feature) string {
 // ResolvedReviewGrain and the console's node header payload
 // (views.reviewGrainOf, internal/views/node.go) consume, so a future
 // precedence change (a new home, a reordering) cannot land in one without the
-// other silently falling out of step (Fix round 1, Important 1: the two used
+// other silently falling out of step (the two used
 // to be a parallel re-derivation, one switch computing the grain and a second
 // switch in views guessing at the source from the same fields).
 //

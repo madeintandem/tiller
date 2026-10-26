@@ -101,7 +101,7 @@ func TestApproveFeatureBrokenSpecReportedFirst(t *testing.T) {
 
 // TestRefreshBasisIgnoresQuestions: --refresh-basis on a live feature is a
 // correction move, so an open question on one of its tasks must not refuse it
-// (the correction a mid-run answer needs, decision 6).
+// (the correction a mid-run answer needs).
 func TestRefreshBasisIgnoresQuestions(t *testing.T) {
 	t.Parallel()
 	root := layEpicFeature(t)

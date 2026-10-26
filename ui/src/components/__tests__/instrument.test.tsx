@@ -200,7 +200,7 @@ describe("CriterionRow: attested-by (task 17 item 6's fifth field)", () => {
   });
 });
 
-// Fix wave (task-17-review, Critical finding 1): the pass-1 row's per-
+// The pass-1 row's per-
 // criterion evidence link (CriterionStatusView.evidence, still served -
 // populated by `tiller eval --record-rubric-output`) rendered nowhere after
 // the rewrite. AskBox's own why sentence for an attest_criterion ask says
@@ -388,7 +388,7 @@ describe("GateCard: only required criteria gate the evals state line", () => {
   });
 });
 
-// Plan decision 9: once Go has recorded the evals gate, its stored status is
+// Once Go has recorded the evals gate, its stored status is
 // the readiness fact submit judges. The criteria projection only details the
 // label, and stands in only when no gate status was ever recorded.
 describe("GateCard: a recorded evals gate status is the readiness fact", () => {
@@ -1025,8 +1025,7 @@ describe("NodeDetail: the attention stack", () => {
     expect(container.querySelector(".attn")).toBeNull();
   });
 
-  // Fix wave (task-17-review, Important finding 2, flagged to JC):
-  // ui-surface.md's amendment bullet (2026-08-06) is a specific, reasoned
+  // // Ui-surface.md's amendment bullet (2026-08-06) is a specific, reasoned
   // decision the stack's generic "every item asking" wording does not
   // override - "the page offers no write at all: the copyable `tiller
   // approve amendment <addr>` lives on the queue card." A proposed
@@ -1048,7 +1047,7 @@ describe("NodeDetail: the attention stack", () => {
     ).not.toBeInTheDocument();
   });
 
-  // Fix wave (task-17-review, Important finding 3): QuestionBody no longer
+  // QuestionBody no longer
   // renders its own copy of the answer command (views/node/QuestionBody.tsx);
   // the attention stack renders the question's own answer_question queue
   // entry as its own loud box instead, so exactly one copy of the command
@@ -1078,7 +1077,7 @@ describe("NodeDetail: the attention stack", () => {
   });
 });
 
-// Fix wave (task-17-review, Important finding 4): the pre-task-17 strip's
+// The pre-task-17 strip's
 // third trigger, a plain human next-owner naming no verb the queue tracks
 // at all, was a real behavior drop - a ready epic (only legal verb:
 // cancel) rendered NOTHING on its own page after the rewrite. Restored as
@@ -1107,7 +1106,7 @@ describe("NodeDetail: the human-next-owner fallback", () => {
     };
   }
 
-  // Also stands as the phase-4-review fix wave's own "ordinary node +
+  // Also stands as the "ordinary node +
   // loaded-empty queue -> fallback still renders" pin below: `queueOf([])`
   // is a genuinely LOADED, genuinely silent queue (`{entries: []}`, never
   // `null`), the one case the null/failed-queue tests directly below this
@@ -1124,7 +1123,7 @@ describe("NodeDetail: the human-next-owner fallback", () => {
     ).toBeInTheDocument();
   });
 
-  // Phase-4-review fix wave, Important finding 1: the fallback used to fire
+  // The fallback used to fire
   // whenever entries.length was 0, which was ALSO true whenever the queue
   // itself had not loaded yet or had failed - entriesForNode's own
   // `queue?.entries ?? []` folded "not loaded", "failed", and "loaded but
@@ -1221,7 +1220,7 @@ describe("NodeDetail: the human-next-owner fallback", () => {
   });
 });
 
-// Fix wave (task-17-review, minor): a structural pin that the header and the
+// A structural pin that the header and the
 // attention stack sit OUTSIDE the tab row entirely - rendering exactly once
 // no matter which tab is active, never inside a tab panel that would make
 // either one disappear or duplicate on a switch (ui-surface.md: "the header
@@ -1874,7 +1873,7 @@ describe("NodeDetail active-basis drift", () => {
 // total statusColor mapping (lib/states.ts) - this suite passes "blocked" and
 // "draft" straight through, the identical two registers GateCard's derived
 // state already rides (deriveFlatGateState's stale case is "draft", the
-// exact neutral register the brief's resolution 3 names), never a new token.
+// exact neutral register), never a new token.
 // ---------------------------------------------------------------------------
 
 describe("NodeDetail: the Drifted chip", () => {

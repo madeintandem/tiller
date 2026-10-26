@@ -176,7 +176,7 @@ func TestDriftCleanAssertsCoverage(t *testing.T) {
 	// clock yet (the feature is ready, not done). stale_spec and
 	// missing_surface never touch a ready, surfaceless feature at all, so
 	// neither bucket exists in the map, unlike being present with a zero
-	// count (round-1 review, Finding 1: this exact shape was previously
+	// count (This exact shape was previously
 	// asserted nowhere, so a regression to any of it still passed make test).
 	require.Equal(t, map[string]int{"checked": 2}, env.Data.Coverage["active_basis"])
 	require.Equal(t, map[string]int{"checked": 1}, env.Data.Coverage["answered_question"])
@@ -192,8 +192,8 @@ func TestDriftCleanAssertsCoverage(t *testing.T) {
 	require.NotContains(t, strings.ToLower(human), "no drift",
 		"exit 0 asserts coverage; it must never read as a bare absence-of-news line")
 
-	// The same three coverage lines, rendered with their own unit named
-	// (round-1 review, Finding 1): node(s) for the two node-grained markers,
+	// The same three coverage lines, rendered with their own unit named:
+	// node(s) for the two node-grained markers,
 	// criteria (left unpluralized on purpose, Finding 2) for orphan_eval.
 	require.Contains(t, human, "Coverage:")
 	require.Contains(t, human, "active_basis: 2 node(s) checked")
@@ -233,7 +233,7 @@ func TestDriftCandidatesExitOne(t *testing.T) {
 	require.NotContains(t, abRows[0], "ref", "id and key ride as separate fields; ref is a human-only label, never a composed one")
 
 	// The record's commit anchor rides as a structured kind/value/observed_at
-	// object (resolution 4), not a composed string: approve
+	// object, not a composed string: approve
 	// pinned this feature's basis at HEAD, so Since is populated.
 	since, ok := abRows[0]["since"].(map[string]any)
 	require.True(t, ok, "since projects structurally: %v", abRows[0]["since"])
@@ -254,7 +254,7 @@ func TestDriftCandidatesExitOne(t *testing.T) {
 // case's sibling: here nothing is found, one node just could not be
 // compared). It asserts NO candidates, one uncovered row, and STILL exit 1,
 // because a run that could not check must never look like a run that found
-// nothing. This is decision 11's whole point; it is not weakened here.
+// nothing. This is the point of that fixture; it is not weakened here.
 func TestDriftUncoveredAloneExitsOne(t *testing.T) {
 	dir := initDriftGitRepo(t, allDriftChecks)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
@@ -352,7 +352,7 @@ func TestDriftEndToEndArc(t *testing.T) {
 	require.Contains(t, humanErr, driftFeatureKey)
 }
 
-// TestDriftExemptedFooter closes round-1 review's Finding 1: the Exempted
+// TestDriftExemptedFooter closes the The Exempted
 // loop in writeDriftFooter had no coverage in either output mode. The
 // fixture is the reviewer's own recipe: a feature carries a recorded surface
 // path (`tiller link --surface`) and is then cancelled, which
@@ -392,7 +392,7 @@ func TestDriftExemptedFooter(t *testing.T) {
 	require.Contains(t, human, "Exempted: missing_surface: 1")
 }
 
-// TestDriftContextLinesRender closes round-1 review's Finding 1: the
+// TestDriftContextLinesRender closes the The
 // `context:` lines in writeCandidateRow had no coverage. It induces the ONE
 // active_basis shape that populates Context at all (activeBasisDetail): one
 // pinned file DELETED (feature.eval.md, which lands in both Files and the

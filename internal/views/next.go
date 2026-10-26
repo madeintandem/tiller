@@ -24,8 +24,7 @@ type NextNode struct {
 }
 
 // NextCandidate is one legal next move for the reader's checkout: who makes
-// it, what it does, to which node, and the command or skill that does it
-// (ranked-next design, decision 2).
+// it, what it does, to which node, and the command or skill that does it.
 type NextCandidate struct {
 	Actor    string           `json:"actor"`
 	Kind     string           `json:"kind"`

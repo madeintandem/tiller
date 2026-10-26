@@ -114,10 +114,10 @@ func TestResumeWithUnreadableCodeStalesEverything(t *testing.T) {
 	}
 }
 
-// TestResumeKeepsGatesOnUnchangedCode pins the resume rule (gate-reuse design,
-// decision 9): a resume over the same code identity keeps the passed command
-// gates, so the check after it reuses them, and an edit after the resume
-// reruns them. It drives real git, because the code identity decides.
+// TestResumeKeepsGatesOnUnchangedCode pins the resume rule: a resume over the
+// same code identity keeps the passed command gates, so the check after it
+// reuses them, and an edit after the resume reruns them. It drives real git,
+// because the code identity decides.
 func TestResumeKeepsGatesOnUnchangedCode(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

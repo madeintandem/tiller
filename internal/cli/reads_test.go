@@ -551,7 +551,7 @@ func TestLsNeverTruncatesAReference(t *testing.T) {
 	require.NotContains(t, out, "…")
 }
 
-// TestShowOmitsTheEvalLegWhereTheGrainHasNone pins small item 5 of the round-1
+// TestShowOmitsTheEvalLegWhereTheGrainHasNone pins small item 5 of the earlier
 // findings' also-fix list at the grain that exposed it. The acceptance contract
 // enters the tree at feature grain (artifact-schema.md, Gates), so a task's
 // accepted_against carries a spec leg and nothing else, and the renderer printed

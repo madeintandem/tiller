@@ -404,7 +404,7 @@ func TestApply_ReturnPreWorkOnly(t *testing.T) {
 
 // TestApply_ResumeStalesOnlyMismatchedGates asserts resume re-enters work, keeps
 // the recorded PR, and stales only the gates whose recorded code no longer
-// matches the code at resume (gate-reuse design, decision 9): a command gate
+// matches the code at resume: a command gate
 // over the same code stays pass, a command gate over other code or with no
 // recorded code goes stale, and an attestation gate always goes stale. An empty
 // resume code is the stub and no-git case, where nothing matches and everything

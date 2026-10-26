@@ -420,7 +420,7 @@
   grid-template-columns: 44px 1fr 84px 130px;
   gap: var(--space-6);
   align-items: baseline;
-  /* Fix wave (task-17-review, minor): matches .instr-gate-head's own
+  /* Matches .instr-gate-head's own
      horizontal padding (12px var(--space-8)) so a criterion row lines up
      under its own card header instead of sitting --space-8 minus
      --space-3 (10px) left of it. */
@@ -441,7 +441,7 @@
   display: block;
 }
 
-/* Fix wave (task-17-review, Critical finding 1): the per-criterion evidence
+/* The per-criterion evidence
    link, restored as the statement cell's own second line rather than a
    sixth grid column - .instr-evid already supplies the color, the dotted
    underline, and the wrap-anywhere rule; these two properties are the only
@@ -517,7 +517,7 @@
   font-size: 11px;
 }
 
-/* Provenance is one line at caption weight (round-4 note 3), so its PR link
+/* Provenance is one line at caption weight, so its PR link
    out reads as a quiet link the same way the relationship hub's source path
    does: the mock's own marker for one is a dotted underline (.evid, mock:166),
    never a second ink. */

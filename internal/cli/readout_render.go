@@ -188,11 +188,11 @@ func renderBaseline(b *strings.Builder, baseline *views.BaselineReadout) {
 	}
 }
 
-// renderReadoutNext closes a block on the ranked list (ranked-next design,
-// decision 6): the **Next:** label on its own line, then the shortlist, the
-// count of moves left out, and any hint, the same lines `tiller next` prints.
-// A caught-up checkout still gets the label, followed by the caught-up text,
-// so the block always ends on what comes next.
+// renderReadoutNext closes a block on the ranked list: the **Next:** label on
+// its own line, then the shortlist, the count of moves left out, and any hint,
+// the same lines `tiller next` prints. A caught-up checkout still gets the
+// label, followed by the caught-up text, so the block always ends on what comes
+// next.
 func renderReadoutNext(n views.Next) string {
 	return "\n**Next:**\n" + renderNextLines(n, false) + "\n"
 }

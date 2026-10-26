@@ -172,13 +172,13 @@ function board(): BuildBoard {
           }),
         ],
       }),
-      // A dedicated epic for the cancelled-feature counting fixture (review
-      // finding 1), same isolation reasoning as "ops" above: kept out of
-      // active_epics and every other test's explicit selection. feature_counts
-      // mirrors what buildEpicOf actually produces server-side - every
-      // feature increments its own literal status key, cancelled included,
-      // so the fixture carries "cancelled": 1 the same way a real payload
-      // would rather than only the six column keys.
+      // A dedicated epic for the cancelled-feature counting fixture, same
+      // isolation reasoning as "ops" above: kept out of active_epics and every
+      // other test's explicit selection. feature_counts mirrors what
+      // buildEpicOf actually produces server-side - every feature increments
+      // its own literal status key, cancelled included, so the fixture carries
+      // "cancelled": 1 the same way a real payload would rather than only the
+      // six column keys.
       epic({
         id: "E-5",
         key: "reporting",
@@ -218,7 +218,7 @@ function LocationProbe() {
 }
 
 // The URL alone cannot distinguish replace from push - both leave the same
-// final location (review finding 2). useNavigationType() reports the LAST
+// final location. useNavigationType() reports the LAST
 // navigation's own kind ("POP" | "PUSH" | "REPLACE"), which is the one
 // signal that actually tells them apart.
 function NavigationTypeProbe() {
@@ -343,7 +343,7 @@ describe("Build selection: the four URL cases", () => {
     await waitFor(() => {
       expect(loc()).toContain("epics=intake%2Cform-engine");
     });
-    // The URL alone is satisfied identically by a push (review finding 2);
+    // The URL alone is satisfied identically by a push;
     // this is the assertion that actually pins replace-not-push.
     expect(navType()).toBe("REPLACE");
   });
@@ -473,7 +473,7 @@ describe("Build columns", () => {
   });
 });
 
-// ---------- A cancelled feature: counted but never rendered (review finding 1) ----------
+// ---------- A cancelled feature: counted but never rendered ----------
 
 describe("Build counting agrees with what actually renders", () => {
   it("the board bar, the panel badge, and the mix bar all agree with the rendered cards, excluding a cancelled feature", async () => {
@@ -505,7 +505,7 @@ describe("Build counting agrees with what actually renders", () => {
   });
 });
 
-// ---------- The epic row's accessible name (review finding 3) ----------
+// ---------- The epic row's accessible name ----------
 
 describe("Build epic row accessibility", () => {
   it("StateBar sits outside the toggle button, so the button's own name is its label and count only", async () => {
@@ -725,7 +725,7 @@ describe("Build card conditions", () => {
   });
 });
 
-// ---------- Overlay-failure notice (fix wave) ----------
+// ---------- Overlay-failure notice ----------
 // A failed /api/queue or /api/drift read already degrades every card to
 // carrying no ask/drift flag (best-effort, above); on its own that reads
 // identically to a clean board with nothing to flag. The board bar names
@@ -853,7 +853,7 @@ describe("Build card expand vs navigate", () => {
     expect(within(card as HTMLElement).getByText("no tasks yet")).toBeInTheDocument();
   });
 
-  // Fix wave (phase 3 review): a keydown bubbles from whatever is actually
+  // A keydown bubbles from whatever is actually
   // focused, so the card's own onKeyDown used to see Enter no matter which
   // descendant fired it and navigate the card away underneath a focused
   // chevron - or race a focused task row's own Link navigation. The target

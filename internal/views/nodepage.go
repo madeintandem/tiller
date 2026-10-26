@@ -118,8 +118,8 @@ type DriftBadgeView struct {
 // so a task whose active_basis drifted at BOTH its own grain and its parent
 // feature's (drift's own TestActiveBasisNamesTaskOwnDriftBesideParentDrift,
 // a two-candidate shape for one marker) still folds to the ONE active_basis
-// badge the resolution 3 asks the chip for ("ONE chip...
-// regardless of how many markers touch the node"). Order follows
+// badge the chip is meant to show (one chip
+// regardless of how many markers touch the node). Order follows
 // drift.KnownMarkers, the schema's own fixed order every other drift
 // projection in this package already renders in (drift.go's own
 // DriftReportOf), so the chip's title attribute (built by the console

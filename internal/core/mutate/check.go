@@ -38,9 +38,9 @@ import (
 // human mode and nil under --json, so the recorded evidence never carries it.
 //
 // Rerun is `check --rerun`: every command gate runs for real this invocation,
-// even one whose recorded pass could be reused (design 2026-10-21-gate-reuse,
-// decision 3), for a suspected flake or an environment change. Gates is
-// `check --gate <name>`, the gates this invocation may run (decision 10).
+// even one whose recorded pass could be reused, for a suspected flake or an
+// environment change. Gates is `check --gate <name>`, the gates this invocation
+// may run.
 type CheckInput struct {
 	AssumeQuestion string
 	Reason         string
@@ -78,8 +78,7 @@ type GateOutcome struct {
 // CheckResult is the outcome of a check: the resulting node state, the gate
 // outcomes in name order, whether every required gate is green (Passed), and
 // whether the node file changed. Warnings carries advisory lines the check
-// still succeeded under, such as shelf work no command gate applies to
-// (design 2026-10-21-gate-reuse, decision 12).
+// still succeeded under, such as shelf work no command gate applies to.
 type CheckResult struct {
 	Noun     string
 	ID       string
@@ -307,7 +306,7 @@ func gateAgainst(rev vcs.Revisions) (store.RevisionRef, error) {
 // inside gates.EvaluateCriteria: --rerun or the evals gate's `reuse: false` turns
 // it off for every criterion, and the gate record carries the run's code identity.
 //
-// run.only is `check --gate` (decision 10). A name outside the gates this
+// run.only is `check --gate`. A name outside the gates this
 // grain evaluates is refused (unknown_gate) before anything runs. A runnable
 // command gate, or evals, outside the set is held: it is never shelled, and is
 // evaluated reuse-only. When the reuse rule above would reuse it (the same

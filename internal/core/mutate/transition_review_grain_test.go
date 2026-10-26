@@ -427,7 +427,7 @@ func setEpicReviewRefOnDisk(t *testing.T, root, epicKey string) {
 }
 
 // TestApproveEpicAlreadyReadyRefusesOnceReviewSurfaceRecorded pins the
-// Changeability rule (round 2) on the epic's own re-approve grain hook: an
+// Changeability rule on the epic's own re-approve grain hook: an
 // epic-grain epic has no stored `active` status, so a submitted epic (its
 // own PR or review ref already recorded via `submit epic`) sits at `ready`
 // exactly like an unsubmitted one. Before this fix, transitionEpic's

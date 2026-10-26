@@ -62,7 +62,7 @@ func TestClassifyMapsTypedErrors(t *testing.T) {
 }
 
 // TestClassifyPrefersATopLevelReasonerOverAWrappedResolveError pins the
-// fix round-1 finding: mutate's parentUnknownErr (an add-feature op whose
+// fix: mutate's parentUnknownErr (an add-feature op whose
 // epic segment is neither live nor staged earlier on this amendment)
 // answers its own Reason()/ExitCode(), but also carries the live resolver's
 // bare *resolve.ErrNotFound through Unwrap so a Go-level errors.As can still

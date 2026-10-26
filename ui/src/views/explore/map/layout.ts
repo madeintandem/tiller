@@ -411,7 +411,7 @@ export function layoutMap(view: MapTreeView, open: ReadonlySet<string>): MapLayo
   // moves the root on screen. World coordinates used to be re-derived from
   // the drawing's own extent per layout, which meant every chevron click slid
   // the whole map sideways under the reader and Expand all could push the
-  // root card out of the frame entirely (fix round 2). Negative coordinates
+  // root card out of the frame entirely. Negative coordinates
   // are fine: the viewport is a world point and a zoom, and the transform
   // both canvas layers carry moves that point to the frame's top left
   // whatever its sign.

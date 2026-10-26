@@ -1770,8 +1770,7 @@ func TestFrontierCountsADoneOrCancelledDependencyAsSatisfied(t *testing.T) {
 
 // TestReadoutIsCaughtUpWhenEveryDraftIsGated pins the strict gate through
 // the readout: drafts exist but every one waits on unfinished work, and work
-// blocked by an unmet dependency is not a legal move (ranked-next design,
-// decision 2).
+// blocked by an unmet dependency is not a legal move.
 func TestReadoutIsCaughtUpWhenEveryDraftIsGated(t *testing.T) {
 	tree := treeWithDraftEpics(t, 1)
 	tree.Epics["E-aaaaa0"].Status = "ready"
@@ -2258,7 +2257,7 @@ func TestTopMoveNamesTheInReviewTask(t *testing.T) {
 	require.Equal(t, "T-aaaaa0", top.Node.ID)
 }
 
-// TestABlockedFrontierIsNoMove pins decision 2: work behind an unmet
+// TestABlockedFrontierIsNoMove pins that work behind an unmet
 // dependency is not a legal move, so a tree whose only draft waits on work
 // in flight is caught up rather than naming the gated draft.
 func TestABlockedFrontierIsNoMove(t *testing.T) {

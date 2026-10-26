@@ -10,7 +10,7 @@ import (
 )
 
 // RecentWindow is how far back a deliberate act still places the reader's
-// work (ranked-next design, decision 12). Callers read events this far back.
+// work. Callers read events this far back.
 const RecentWindow = 14 * 24 * time.Hour
 
 // maxLocalizedTargets caps the targets an event may name and still say where

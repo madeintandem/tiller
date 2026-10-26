@@ -1345,7 +1345,7 @@ func doneFeatureWithVanishedSurfaceRoot(t *testing.T) (root, featureID string) {
 	return root, featureID
 }
 
-// TestNodePageDriftBadgeStaleSpecNeverRefuses pins the resolution 5, first
+// TestNodePageDriftBadgeStaleSpecNeverRefuses pins the first
 // example: a done feature whose recorded surface file is gone carries a
 // stale_spec badge, and stale_spec never refuses a verb (artifact-schema.md
 // names only active_basis as "the one marker whose condition also refuses
@@ -1364,7 +1364,7 @@ func TestNodePageDriftBadgeStaleSpecNeverRefuses(t *testing.T) {
 	require.Equal(t, []driftBadgePayload{{Marker: "stale_spec", Refusing: false}}, got.Drift)
 }
 
-// TestNodePageDriftBadgeActiveBasisRefuses pins resolution 5's second
+// TestNodePageDriftBadgeActiveBasisRefuses pins the second
 // example: an approved feature whose feature.md is edited after approval
 // carries an active_basis badge, and active_basis always refuses (start,
 // check, and submit all refuse on it), so the badge's refusing bit reads

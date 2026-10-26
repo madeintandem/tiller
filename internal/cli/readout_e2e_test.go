@@ -448,7 +448,7 @@ func TestReadoutAcrossTheArc(t *testing.T) {
 		"- 8 review gates await your attestation · `tiller queue --kind attest_gate`")
 	require.Equal(t, 1, strings.Count(execute, "**Needs attention**"))
 	// Everything above the ranked Next list is counts only. The list itself
-	// names its few moves with their commands (ranked-next design, decision 2).
+	// names its few moves with their commands.
 	counts, _ := splitAtNext(t, execute)
 	for _, qid := range bulkQuestionIDs {
 		require.NotContains(t, counts, qid, "question identities stay behind the queue seam")

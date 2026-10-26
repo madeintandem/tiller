@@ -445,7 +445,7 @@ func layApprovedPlanAheadOfADraftFeature(t *testing.T) {
 //
 // The seam both name is execute, which is also the answer that does not send an
 // agent to open work downstream while an approved task sits ready (the
-// reader's own work ranks first, ranked-next design decision 4).
+// reader's own work ranks first).
 func TestGuideAndTheReadoutRouteOneTreeOneWay(t *testing.T) {
 	layApprovedPlanAheadOfADraftFeature(t)
 	// The execute arm names only work the acting contributor holds (views.routableTask),
@@ -599,7 +599,7 @@ gates:
     build: { kind: command, run: "true", on: [feature, task] }
 `
 
-// layForeignTaskAndOwnFrontier lays the tree the round-1 lens built: dana holds
+// layForeignTaskAndOwnFrontier lays the tree the earlier lens built: dana holds
 // one in_progress task under epic platform, and jc owns four draft features
 // under epic reporting with nothing specified. It returns the repo root, and the
 // checkout carries no identity, so each test declares whose checkout it is.
@@ -653,7 +653,7 @@ func layForeignTaskAndOwnFrontier(t *testing.T) string {
 	return dir
 }
 
-// TestAForeignTaskDoesNotSuppressTheActingOwnersFrontier is the round-1 lens's
+// TestAForeignTaskDoesNotSuppressTheActingOwnersFrontier is the earlier lens's
 // case, and the cost of putting execute ahead of the frontier: the execute arm
 // took the first ready-or-in_progress task tree-wide with no eligibility filter
 // at all, so one task held by somebody else answered the route for everybody.
@@ -800,8 +800,7 @@ func TestAQuestionBlockedTaskDoesNotHoldTheRoute(t *testing.T) {
 		require.NotContains(t, surface, "This answered statement must not hold")
 	}
 
-	// The readout lists the holding questions and the legal task as moves
-	// (ranked-next design, decision 6).
+	// The readout lists the holding questions and the legal task as moves.
 	out, _, code := execCLI(t, "readout", "orient")
 	require.Equal(t, 0, code)
 	_, next := splitAtNext(t, out)
@@ -826,7 +825,7 @@ func TestAQuestionBlockedTaskDoesNotHoldTheRoute(t *testing.T) {
 	require.NotContains(t, suggestion["reason"], "platform/auth/wire-the-form")
 }
 
-// TestAnUnscopedRouteClaimsNoOwnership pins the round-2 finding with the case
+// TestAnUnscopedRouteClaimsNoOwnership pins the earlier finding with the case
 // the coordinator drove: TILLER_CONTRIBUTOR naming somebody who is not in the roster
 // at all. The execute arm matches nothing for them, which is correct, so the
 // route falls to the frontier, and the frontier arm tests ownership against
@@ -907,7 +906,7 @@ func TestGuidePrintsTheListFirst(t *testing.T) {
 	require.NotEmpty(t, candidates)
 }
 
-// TestGuideSuggestsTheTopAgentMoveBelowHumanMoves pins decision 6: the top
+// TestGuideSuggestsTheTopAgentMoveBelowHumanMoves pins that the top
 // ranked move is often the human's, so the skill comes from the highest agent
 // move beneath it. A second feature awaiting the reader's approval ranks above
 // the reader's own claimed task, and the suggestion is still execute.

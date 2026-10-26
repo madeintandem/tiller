@@ -10,7 +10,7 @@
 import { BUILD_COLUMNS } from "../build/columns";
 
 // Derived from BUILD_COLUMNS rather than restated: the funnel is DEFINED as
-// the shape Build's own six columns read (settled decision 8), so the two
+// the shape Build's own six columns read, so the two
 // cannot be allowed to drift apart. BUILD_COLUMNS is the fixed literal the
 // board owns; this is its status sequence, in column order.
 export const FEATURE_FUNNEL: string[] = BUILD_COLUMNS.map((c) => c.status);

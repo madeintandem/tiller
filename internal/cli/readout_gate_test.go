@@ -202,8 +202,8 @@ func TestAttestEmitsTheReadout(t *testing.T) {
 //
 // The fixture used to submit the FEATURE, which is a task-only verb now (a PR
 // always represents a task), so the run crossed nothing and the test passed on a
-// headline that named crossings there were none of
-// (task-9-findings-round-1.md, small item 3). The zero-crossing headline has its
+// headline that named crossings there were none of.
+// The zero-crossing headline has its
 // own test below.
 func TestSyncEmitsTheReadout(t *testing.T) {
 	dir := initGatedGitRepo(t, "true")
@@ -237,8 +237,7 @@ func TestSyncEmitsTheReadout(t *testing.T) {
 // TestSyncReadoutDoesNotClaimCrossingsItDidNotRecord pins the headline against
 // the ordinary case: sync runs on every serve refresh and on demand, so most
 // runs observe nothing, and "Crossings recorded" printed directly under "no
-// merged branches to record" is the block contradicting the line above it
-// (task-9-findings-round-1.md, small item 3).
+// merged branches to record" is the block contradicting the line above it.
 func TestSyncReadoutDoesNotClaimCrossingsItDidNotRecord(t *testing.T) {
 	initGatedGitRepo(t, "true")
 	driveFeatureToReadyCLI(t)
@@ -254,7 +253,7 @@ func TestSyncReadoutDoesNotClaimCrossingsItDidNotRecord(t *testing.T) {
 // rule directly: "A readout that fails to derive must be logged and omitted
 // rather than failing the command, since the gate already succeeded, and
 // turning a reporting problem into a transition failure would be worse than
-// a missing block." Round-1 review found this path behaved correctly but
+// a missing block." an earlier review found this path behaved correctly but
 // carried no test at all: the reviewer wrote a throwaway one, confirmed it,
 // and deleted it. root here is an empty directory with no .tiller at all,
 // so renderReadoutFor's own store.Load fails the way a real gate's post-

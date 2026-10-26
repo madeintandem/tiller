@@ -245,7 +245,7 @@ a:hover {
   color: var(--ink-3);
 }
 
-/* The manual refresh (AsOf.tsx, round-1 review Finding 4): a plain-text
+/* The manual refresh (AsOf.tsx): a plain-text
    button reset so it reads as part of the same quiet mono line the mock
    draws ("synced 4m ago · ↻"), only brightening on hover/focus to say it is
    the one clickable character in that line. The glyph is sized up from the

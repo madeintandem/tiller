@@ -222,8 +222,8 @@ func readoutDesignDocPresence(tree *store.Tree) map[string]bool {
 // than each carrying its own copy of the git/readiness/contracts/epic-specs
 // gathering. act is the gates' own "what just happened" payload
 // (readout_gate.go), nil for the seam path, so a gate's Verification section
-// can prove the act rather than re-describe the tree (round-1 review finding
-// 1): views.ReadoutInput.Act carries the reasoning in full.
+// can prove the act rather than re-describe the tree: views.ReadoutInput.Act
+// carries the reasoning in full.
 func renderReadoutOf(tree *store.Tree, m views.Moment, act *views.GateAct, owner string) string {
 	return renderReadout(views.ReadoutOfInput(tree, m, gatherReadoutInput(tree, m, act, owner)))
 }

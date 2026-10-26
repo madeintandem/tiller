@@ -467,7 +467,7 @@ func layIntakeE2EShape(t *testing.T) string {
 	// Approving the feature's plan also rides its one initial task to ready
 	// (artifact-schema.md, Features: States), and a ready task in hand
 	// outranks the frontier on every surface (the reader's own work ranks
-	// first, ranked-next design decision 4). Left alone, that pre-existing task, not
+	// first). Left alone, that pre-existing task, not
 	// the epic this arc mints, would be what `tiller guide` and `readout
 	// orient` name at the end, which a live run against the real binary
 	// caught: the same fixture minus this cancel routed to

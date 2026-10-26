@@ -49,7 +49,7 @@ func TestSetSurfaceUnions(t *testing.T) {
 
 // TestSetSurfaceRecordsItsOwnEventType pins the event type SetSurface writes:
 // link.surface.epic / link.surface.feature, distinct from depends_on's
-// link.epic / link.feature (fix round 2, drift design). A consumer that
+// link.epic / link.feature (drift design). A consumer that
 // groups or phrases a row off Type alone, without parsing the payload, needs
 // the two facts to carry different types: the recap's burst collapsing
 // (ui/src/lib/bursts.ts) and a node's own timeline

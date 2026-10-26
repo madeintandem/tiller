@@ -1424,7 +1424,7 @@ func TestSubmitPassesOnceReviewedIn(t *testing.T) {
 	require.Equal(t, "in_review", res.Status)
 }
 
-// TestSubmitActiveBasisOutranksUnreviewedAssumption pins the resolution 2: the
+// TestSubmitActiveBasisOutranksUnreviewedAssumption pins that the
 // assumption guard runs AFTER guardTask's existing basis check, so when a
 // task's own basis has ALSO drifted, the human gets the active_basis refusal
 // first and corrects one thing at a time, the same idiom

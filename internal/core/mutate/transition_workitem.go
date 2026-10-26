@@ -73,7 +73,7 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		// after map below (transitionEvent reads in.DuplicateOf directly):
 		// the ledger and the record must never disagree about what
 		// duplicate_of means when the caller named the survivor by key or
-		// any other non-bare-id reference (round-1 review finding).
+		// any other non-bare-id reference.
 		resolved, err := validateWorkResolution(tree, target, in)
 		if err != nil {
 			return TransitionResult{}, err
@@ -187,7 +187,7 @@ func guardExecutionClaim(noun, id, key, status string, started bool, holder, act
 // survivor, the others must not name one (the design's Resolution). On a
 // duplicate resolution it returns the survivor's own resolved (canonical)
 // id, so the caller records and reports the very same value the caller
-// named by key, partial reference, or bare id (round-1 review finding: the
+// named by key, partial reference, or bare id (the
 // event and the node record must agree on what duplicate_of means). It
 // returns "" alongside a nil error for every other resolution, since there
 // is no survivor to resolve.

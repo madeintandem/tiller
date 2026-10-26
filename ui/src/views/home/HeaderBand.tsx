@@ -62,11 +62,10 @@ export default function HeaderBand({
   );
 }
 
-// FunnelStrip replaces the old Features and Tasks stat tiles (settled
-// decision 8, home burst redesign): Build's own six columns - draft,
-// specced, ready, active, in_review, done - read as shape instead of a
-// second StateBar mix, every segment a /build link so the strip doubles as
-// navigation. A zero segment stays in place (dim class) rather than
+// FunnelStrip replaces the old Features and Tasks stat tiles: Build's own six
+// columns - draft, specced, ready, active, in_review, done - read as shape
+// instead of a second StateBar mix, every segment a /build link so the strip
+// doubles as navigation. A zero segment stays in place (dim class) rather than
 // disappearing, so the six-column shape never shifts as a project moves
 // through it. The caption's feature count is the raw node count (retired
 // statuses included), the same total the retired clause explains.

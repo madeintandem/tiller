@@ -114,7 +114,7 @@ func TestLinkBothFlagsInOneInvocation(t *testing.T) {
 	require.Regexp(t, `"paths": \[\s*"app/models"\s*\]`, out, "the surface leg landed alongside it")
 
 	// The two facts record under two DISTINCT event types, not one shared
-	// link.feature (fix round 2, drift design): a consumer that groups or
+	// link.feature (drift design): a consumer that groups or
 	// phrases a row off Type alone, without parsing the payload, needs to be
 	// able to tell a dependency edge from a surface recording apart.
 	tree := loadTestTree(t)

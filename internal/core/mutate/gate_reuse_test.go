@@ -300,7 +300,7 @@ func checkGatedFeature(t *testing.T, root string, deps mutate.Deps) mutate.Check
 	return res
 }
 
-// TestFeatureCheckReusesRidingTaskRun pins decision 4: a feature check whose
+// TestFeatureCheckReusesRidingTaskRun pins that a feature check whose
 // code identity equals a riding task's checked code reuses that task's pass
 // instead of rerunning it, and the reused record names the task it came from.
 func TestFeatureCheckReusesRidingTaskRun(t *testing.T) {
@@ -373,7 +373,7 @@ func TestFeatureCheckDoesNotReuseNodeNamedCommand(t *testing.T) {
 	require.Equal(t, "T-aaaaaa\nF-aaaaaa\n", string(data))
 }
 
-// TestCheckGateRunsOnlyNamed pins decision 10: `check --gate tests` shells
+// TestCheckGateRunsOnlyNamed pins that `check --gate tests` shells
 // tests and never build. A build with no current record reports not run; one
 // whose recorded pass is current reports reused.
 func TestCheckGateRunsOnlyNamed(t *testing.T) {
@@ -719,7 +719,7 @@ func TestCheckEventRecordsReused(t *testing.T) {
 	require.Equal(t, []any{"build", "tests"}, evs[1].After["reused"])
 }
 
-// TestCheckWarnsShelfWithoutCommandGates pins decision 12: a bug runs the
+// TestCheckWarnsShelfWithoutCommandGates pins that a bug runs the
 // gates whose on: list names task, so a manifest that scopes build and tests
 // to features alone leaves it ungated, and check says so.
 func TestCheckWarnsShelfWithoutCommandGates(t *testing.T) {

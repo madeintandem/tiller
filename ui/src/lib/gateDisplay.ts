@@ -122,7 +122,7 @@ export interface DerivedEvalsGateState extends DerivedGateState {
 
 // deriveEvalsGateState is the evals gate's one readiness reading, shared by the
 // node header chip and GateCard so the two never disagree. Once Go has recorded
-// the gate, its stored status is the fact submit judges (plan decision 9): pass
+// the gate, its stored status is the fact submit judges: pass
 // reads done and anything else does not, whatever the per-criterion statuses
 // say now (a required criterion added since the last check, or a stored stale
 // over an all-optional contract). The required-criteria projection, which

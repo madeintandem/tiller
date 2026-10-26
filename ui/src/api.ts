@@ -242,7 +242,7 @@ function markFetchSucceeded(): void {
   }
 }
 
-// The topbar's manual refresh (round-1 review, Finding 4: the console has no
+// The topbar's manual refresh (the console has no
 // polling, so without this the asof line was a staleness signal with no
 // remedy - the mock draws the control, and JC's ruling is that it ships).
 // One counter, bumped by the topbar's click handler; hooks.ts's useFetch

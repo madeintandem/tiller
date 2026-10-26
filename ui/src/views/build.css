@@ -164,9 +164,9 @@
   opacity: 1;
 }
 
-/* Keyless-epic cosmetics (fix wave), gated behind
+/* Keyless-epic cosmetics, gated behind
    @supports selector(:has(...)) rather than applied unconditionally - this
-   file's first use of :has(), and task-22 review Important finding 1 caught
+   file's first use of :has(), and a review caught
    the first pass shipping it unscoped: `.epic-row:not(:has(...)):hover`
    rewrote the base hover selector directly, so a browser without :has()
    support drops the WHOLE selector as invalid and loses the hover cue on

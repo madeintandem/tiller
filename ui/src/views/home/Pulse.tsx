@@ -74,7 +74,7 @@ function JustHappenedBody({ recap }: { recap: Recap }) {
 // from the event's verb would be exactly the narration ui-surface.md's
 // "mechanical, never narrative" rule forbids.
 //
-// Round-1 review, Finding 1 (Critical): burstPhrase's own subject carries no
+// BurstPhrase's own subject carries no
 // numeral ("tasks done", not "4 tasks done") - History renders the count in
 // its own separate .recap-burst-count column, which this row has no
 // equivalent of, so a multi-entry burst here read as a bare noun phrase with
@@ -275,7 +275,7 @@ function BlockedWhy({ item }: { item: BlockedItem }) {
 // or recomputes. The header names who it is ranked for, by roster display
 // name the way In flight names people; with no identity the list is plan
 // order and a muted line says so. It may overlap Needs you,
-// which stays the complete inventory; there is no "show all" (decision 11).
+// which stays the complete inventory; there is no "show all".
 export function UpNextColumn({ state }: { state: FetchState<NextAnswer> }) {
   const personName = usePersonName();
   const reader = state.data?.reader ?? "";
@@ -299,7 +299,7 @@ function UpNextBody({ next }: { next: NextAnswer }) {
       )}
       {next.candidates.length === 0 && <EmptyNote>Caught up: nothing is legal to do right now.</EmptyNote>}
       {next.candidates.map((c, i) => (
-        // A node never appears twice (decision 10), but a move such as
+        // A node never appears twice, but a move such as
         // decompose names no node, so the index breaks the tie.
         <NextRow key={`${c.kind}:${c.node?.id ?? i}`} candidate={c} />
       ))}

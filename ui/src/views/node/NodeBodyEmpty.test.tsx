@@ -79,7 +79,7 @@ function questionPage(overrides: Partial<NodePage> = {}): NodePage {
   };
 }
 
-// Fix wave (task-17-review, Important finding 3): "offers the answer command
+// The test "offers the answer command
 // on an open question, byte-identical to the queue's" DELETED - QuestionBody
 // itself never renders the answer command in any state now. Task 17's
 // attention stack renders the identical answer_question queue entry as its

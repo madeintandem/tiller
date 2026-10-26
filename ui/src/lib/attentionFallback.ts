@@ -5,7 +5,7 @@
 // this reconstructs, verbatim in logic - only the export name and this
 // file's own framing changed).
 //
-// Fix wave (task-17-review, Important finding 4): the queue join alone does
+// The queue join alone does
 // not cover every state a plain human next-owner can sit at. The two states
 // it DOES cover in the ordinary case - a needs_attestation criterion on a
 // required gate (attest_criterion), and a pre-work approval (approve_epic /
@@ -88,11 +88,11 @@ export function needsAttentionFallback(
   }
 
   if (PRE_WORK_STATUSES.has(node.status)) {
-    // A plan gate refuses while an open question holds the plan (issue #152,
-    // decision 1), so a feature or task the page knows is held names the
-    // question's answer rather than an approve that exits 1 when copied.
-    // blocked_by_questions is the node's own blocker set, ancestors included
-    // (views.blockingQuestions over gen's blocker predicates), sorted by ref.
+    // A plan gate refuses while an open question holds the plan (issue #152),
+    // so a feature or task the page knows is held names the question's answer
+    // rather than an approve that exits 1 when copied. blocked_by_questions is
+    // the node's own blocker set, ancestors included (views.blockingQuestions
+    // over gen's blocker predicates), sorted by ref.
     const question = relationships?.blocked_by_questions?.[0];
     if ((node.noun === "feature" || node.noun === "task") && question !== undefined) {
       return {

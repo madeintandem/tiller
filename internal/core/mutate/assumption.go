@@ -5,13 +5,12 @@ package mutate
 // answered, the node's assumption_basis entry for that question is out of
 // date until a human reviews the answer in. ReviewAssumption is the
 // dedicated clearing act `approve <noun> <node> --reviewed-assumption
-// <Q-id>` drives, kept deliberately apart from --refresh-basis (drift design
-// decision 4, docs/spec/cli-surface.md) so an
-// unrelated basis refresh can never silently assert an answer was
-// considered. UnreviewedAssumptions is the one predicate behind both the
-// submit guard (Task 6) and the answered_question drift marker (Task 7),
-// living here once so the verb that refuses and the report that nags can
-// never disagree about what "unreviewed" means.
+// <Q-id>` drives, kept deliberately apart from --refresh-basis
+// (docs/spec/cli-surface.md) so an unrelated basis refresh can never silently
+// assert an answer was considered. UnreviewedAssumptions is the one predicate
+// behind both the submit guard (Task 6) and the answered_question drift marker
+// (Task 7), living here once so the verb that refuses and the report that nags
+// can never disagree about what "unreviewed" means.
 
 import (
 	"fmt"
@@ -30,7 +29,7 @@ import (
 // timeline) can group and phrase by without parsing the payload, and
 // "a recorded answer was reviewed in" is neither a dependency edge nor a
 // surface recording, the same lesson surface.go's header already draws for
-// its own pair (fix round 2, drift design: two facts do not share one type).
+// its own pair (drift design: two facts do not share one type).
 const eventReviewAssumption = "review.assumption"
 
 // UnreviewedAssumption names one assumption_basis entry whose question has

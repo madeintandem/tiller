@@ -348,7 +348,7 @@ func featureTerminal(status string) bool {
 // are all done, its gates still record their old pass, and the no-op check
 // only stops an identical resubmit). A real next round only becomes
 // submittable again after sync's reopenEpic moves status back to ready, so
-// refusing done here costs nothing legitimate (fix round 2).
+// refusing done here costs nothing legitimate.
 var terminalEpicStatuses = map[string]bool{statusDone: true, statusCancelled: true, statusArchived: true}
 
 func epicTerminal(status string) bool {

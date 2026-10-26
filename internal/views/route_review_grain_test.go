@@ -173,7 +173,7 @@ func TestNextSkipsACoarseInReviewTaskWithAnUnrecordedGrainPR(t *testing.T) {
 	require.Empty(t, candidatesOfKind(next.Candidates, "merge_task"), "an unrecorded aggregate is no one's merge")
 }
 
-// Fix round 1 (code review findings 1 and 2).
+// Fix round 1.
 
 // TestNextCoarseFinishLineSuppressedUnderARetiredAncestorEpic is finding 1:
 // a feature-grain feature whose own epic has been cancelled must not answer

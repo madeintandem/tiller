@@ -17,7 +17,7 @@ import (
 //
 // The live-git computation itself, once this file's own
 // unpushedReviewForTask, now lives in internal/core/review (review.ForTask,
-// moved out in the review-fix wave that followed this task): the console's
+// moved out later): the console's
 // node page (internal/serve/node.go) needs the identical read, and
 // internal/serve cannot import internal/cli (internal/cli already imports
 // internal/serve for the `serve` command, so the reverse import would

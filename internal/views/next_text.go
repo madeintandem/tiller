@@ -7,7 +7,7 @@ import (
 )
 
 // CaughtUpText is what every surface says when no move is legal (ranked-next
-// design, decision 11).
+// design).
 const CaughtUpText = "Caught up: nothing is legal to do right now."
 
 // NextLine is one move as every text surface prints it: the actor, the

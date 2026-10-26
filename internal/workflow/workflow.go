@@ -608,7 +608,7 @@ func UnmetDependency(t *store.Tree, f *store.Feature, owning *store.Epic) string
 		return unmet
 	}
 	// The owning epic's recorded depends_on gates its features the same way
-	// (issue #46's fix wave): an epic-grain edge is recorded state, and a
+	// (issue #46): an epic-grain edge is recorded state, and a
 	// draft under an epic whose prerequisites are unfinished is not
 	// whose-turn-is-now any more than a feature whose own edge is unmet. The
 	// old walk honored such an edge only by flow position, which held exactly

@@ -74,7 +74,7 @@ var KnownMarkers = knownMarkers
 // answered_question's own second case, where the answer revision is a
 // sha256 worktree fingerprint rather than a git_commit (questionSince
 // withholds it rather than rendering a fingerprint as if it were a diffable
-// commit, drift-review's Since-can-be-a-fingerprint finding).
+// commit: a Since can be a fingerprint).
 type Candidate struct {
 	Marker   string
 	Noun     string
@@ -104,10 +104,10 @@ type DesignFeature struct {
 
 // Uncovered is one node a marker's sweep could not compare, with the reason
 // it could not (an unhashable path, a done node with no completion record, a
-// dangling reference) and a Detail naming the specific thing (drift-review
-// round 1, Minor 5: two dangling question ids on one feature must not read as
-// one indistinguishable row), never silently folded into a clean report
-// (artifact-schema.md: "a clean answer asserts coverage").
+// dangling reference) and a Detail naming the specific thing (two dangling
+// question ids on one feature must not read as one indistinguishable row),
+// never silently folded into a clean report (artifact-schema.md: "a clean
+// answer asserts coverage").
 type Uncovered struct {
 	Marker string
 	Noun   string
@@ -115,7 +115,7 @@ type Uncovered struct {
 	Key    string
 
 	// Reason is scoped PER MARKER, not a single flat, globally-unique
-	// vocabulary (task-9-review-round-1.md, Minor 2): two different markers
+	// vocabulary: two different markers
 	// can and do emit the identical token for two different failures, so a
 	// consumer aggregating across markers (a report footer, a later Task 10
 	// grouping) must key on the PAIR (Marker, Reason), never on Reason alone.
@@ -164,8 +164,8 @@ type Uncovered struct {
 // that implied by the two lists alone. A marker's map may count in whatever
 // unit suits its own sweep, but it documents that unit where it is built:
 // active_basis, answered_question, stale_spec, and missing_surface all count
-// NODES (an epic, a feature, or a task), the same unit Compared counts in
-// (drift-review round 1, Important 3), so a reader of one marker's bucket
+// NODES (an epic, a feature, or a task), the same unit Compared counts in,
+// so a reader of one marker's bucket
 // does not have to guess whether it agrees with the total. orphan_eval is
 // the one exception, documented at sweepOrphanEval: it counts CRITERIA, the
 // finer grain its own existence checks actually operate at, since one
@@ -183,7 +183,7 @@ type Uncovered struct {
 // every enabled marker has finished). Before this dedup, a real 5-node
 // scratch tree printed "Compared 9 node(s)": every marker bumped
 // independently, inflating the total by one for every marker that touched a
-// node (drift-review, the Compared-counts-marker-visits finding).
+// node (the Compared-counts-marker-visits finding).
 //
 // A node counts as compared when AT LEAST ONE enabled marker completed its
 // own comparison of it, clean or a candidate either way, since the
@@ -384,8 +384,8 @@ func bumpCoverage(rep *Report, marker, bucket string) {
 // several markers calling this for the IDENTICAL node in one Run grows the
 // set only once, so Run can read Compared's final value from the set's size
 // rather than from a counter that summed one bump per marker-visit
-// (Report.Compared's own doc comment; drift-review, the Compared-counts-
-// marker-visits finding).
+// (Report.Compared's own doc comment; the Compared-counts-marker-visits
+// finding).
 func markCompared(rep *Report, noun, id string) {
 	if rep.comparedNodes == nil {
 		rep.comparedNodes = map[string]bool{}
@@ -424,22 +424,21 @@ var activeBasisTaskStatuses = map[string]bool{"ready": true, "in_progress": true
 // deterministic across runs.
 //
 // A task gets a SECOND, separate check: reportTaskOwnBasis, after its
-// parent-walk result (reportActiveBasis) is already recorded (drift-review
-// round 1, Important 2). BasisDrift's own task branch checks the parent
-// feature first and stops there as soon as it drifts, which is right for a
-// guard refusing one thing at a time but wrong for a sweep that wants to
-// name every drifted node: without the second call, a task whose OWN spec
-// drifted stays invisible whenever its parent feature ALSO drifted.
+// parent-walk result (reportActiveBasis) is already recorded. BasisDrift's own
+// task branch checks the parent feature first and stops there as soon as it
+// drifts, which is right for a guard refusing one thing at a time but wrong for
+// a sweep that wants to name every drifted node: without the second call, a
+// task whose OWN spec drifted stays invisible whenever its parent feature ALSO
+// drifted.
 //
 // Compared and Coverage are both decided here, ONCE PER NODE, from the
-// COMBINED result of every half-check that node needed (drift-review round
-// 2, Important 1): a feature has one half, a task has two, and either way
-// this loop is the only place that bumps them. Earlier this task bumped
-// Coverage inside classifyBasisDrift itself, once per CALL rather than once
-// per NODE, so a clean task (two calls, both succeeding) counted twice in
-// "checked" while Compared counted it once, and a task under an unreadable
-// parent could land in both "checked" (its own pin, read fine) and
-// "unresolvable" (its parent's, not read at all) at the same time. Neither
+// COMBINED result of every half-check that node needed: a feature has one half,
+// a task has two, and either way this loop is the only place that bumps them.
+// Earlier this task bumped Coverage inside classifyBasisDrift itself, once per
+// CALL rather than once per NODE, so a clean task (two calls, both succeeding)
+// counted twice in "checked" while Compared counted it once, and a task under
+// an unreadable parent could land in both "checked" (its own pin, read fine)
+// and "unresolvable" (its parent's, not read at all) at the same time. Neither
 // mistake is possible once the decision is made exactly once, here, from the
 // AND of both halves.
 func sweepActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report) {
@@ -471,7 +470,7 @@ func sweepActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report) {
 // Uncovered row, built from whichever half(s) actually failed: a task whose
 // parent-walk AND own check both came back unreadable gets ONE row naming
 // both, not two identical-looking ones differing only in which half is
-// named (drift-review round 2, Minor 3, resolved by merging rather than by
+// named (resolved by merging rather than by
 // adding a field: Coverage and Compared are already strictly per-node after
 // this fix, and a per-node Uncovered list matches that same "one row per
 // node" shape without a new field for later markers to have to carry too).
@@ -514,7 +513,7 @@ func reportActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report, n store.No
 
 // reportTaskOwnBasis calls mutate.TaskOwnBasisDrift, the task-own-pin half
 // BasisDrift's own task branch would also reach if its parent check had not
-// already failed (drift-review round 1, Important 2). Running it separately,
+// already failed. Running it separately,
 // AFTER the parent-walk result (reportActiveBasis) is already recorded, is
 // what keeps a task's own drift from being masked whenever its parent
 // feature has ALSO drifted. Deduping by the same key means the ordinary
@@ -528,14 +527,14 @@ func reportTaskOwnBasis(t *store.Tree, rev vcs.Revisions, rep *Report, tk *store
 // classifyBasisDrift folds one BasisDrift-shaped comparison's outcome into
 // rep's Candidates and reports back whether THIS HALF completed, plus, if it
 // did not, the human detail naming what failed. It no longer touches
-// Coverage or Compared itself (drift-review round 2, Important 1: those are
+// Coverage or Compared itself (those are
 // decided once per NODE, by the caller, from the combined result of every
 // half a node needs, never once per comparison CALL). A nil error or a
 // (possibly deduped) *ActiveBasisError both count as this half completing:
 // the comparison itself ran either way, and only the duplicate Candidate
 // ROW is what dedupe exists to suppress. Anything else is a git or
 // filesystem fault reading an existing, in-principle-hashable path (or,
-// since drift-review round 1's Important 1, a node with no key to build a
+// since a node with no key to build a
 // path from at all), which did not complete. swept is the node the
 // comparison was run FOR, used to build the detail sentence: there is no
 // more specific "reported" node in that case, unlike a *ActiveBasisError,
@@ -576,7 +575,7 @@ func classifyBasisDrift(t *store.Tree, rep *Report, swept store.Node, err error,
 // candidate, plus any Context. A pinned file checkBasis recorded in Missing
 // was deleted, not merely edited, and the remedy differs: --refresh-basis
 // re-hashes the working tree, which it cannot do for a file that is not
-// there (drift-review round 1, Minor 6). A file that drifted but is still
+// there. A file that drifted but is still
 // present rides as "changed"; when both kinds appear together, the deleted
 // ones lead the sentence and the merely-changed ones ride beside it as
 // Context, so neither fact is lost.
@@ -699,7 +698,7 @@ func activeBasisForNode(t *store.Tree, rev vcs.Revisions, rep *Report, n store.N
 
 // answeredQuestionTerminalStatuses are the feature statuses OUT of the
 // sweep, written as the excluded set because "non-terminal" is everything
-// but these two and naming the short list is what the resolution 4 asks for
+// but these two and naming the short list is what the schema asks for
 // explicitly (artifact-schema.md, the answered_question bullet: "Sweeps
 // non-terminal nodes; the done case is deliberately out, because its fix is an
 // amendment, a human judgment").
@@ -715,7 +714,7 @@ var answeredQuestionTerminalStatuses = map[string]bool{"done": true, "cancelled"
 // Compared and Coverage are both incremented inside reportAnsweredQuestion
 // itself, once per feature and only once every entry on it has been read,
 // which is what lets that function decide whether the whole node counts as
-// checked or unresolvable (drift-review round 1, Important 3).
+// checked or unresolvable.
 func sweepAnsweredQuestion(t *store.Tree, rev vcs.Revisions, rep *Report) {
 	for _, id := range sortedFeatureIDs(t) {
 		f := t.Features[id]
@@ -736,7 +735,7 @@ func sweepAnsweredQuestion(t *store.Tree, rev vcs.Revisions, rep *Report) {
 // noticed.
 //
 // Coverage and Compared count this FEATURE once, not once per entry
-// (drift-review round 1, Important 3: "answered_question's Coverage buckets
+// ("answered_question's Coverage buckets
 // per FEATURE, not per entry, so units match Compared"): a feature carrying
 // even one dangling reference is "unresolvable" as a whole and is not
 // counted in Compared, even when one of its OTHER entries also produced a
@@ -777,7 +776,7 @@ func reportAnsweredQuestion(t *store.Tree, f *store.Feature, rep *Report) {
 			Question: u.QuestionID,
 			Detail:   fmt.Sprintf("%s %s (%s) was answered and has not been reviewed in", u.QuestionID, u.Title, u.Statement),
 			// Since dates when the ANSWER landed, not when the plan was
-			// approved (drift-review round 1, Minor 7, ruled): the drift
+			// approved: the drift
 			// began the moment the question was answered, and the question's
 			// own AnswerRevision is already a recorded commit ref for that
 			// moment. The feature's own approval anchor dates the plan
@@ -801,7 +800,7 @@ func reportAnsweredQuestion(t *store.Tree, f *store.Feature, rep *Report) {
 // dirty, is the normal case, not the exception. A sha256 fingerprint is not a
 // commit a human or an agent can diff from the way every other marker's short
 // git sha is, so it is withheld here rather than rendered as if it were one
-// (drift-review: Since-can-be-a-fingerprint). Checking Kind rather than Value
+// (Since can be a fingerprint). Checking Kind rather than Value
 // also folds in the pre-anchor case for free: a hand-authored ledger entry
 // carrying status: answered with no answer_revision at all
 // (mutate.ReviewAssumption's own doc comment) has Kind == "" too, the same
@@ -842,7 +841,7 @@ func sortedAssumptionIDs(basis store.AssumptionBasis) []string {
 // A task also gates on its OWN terminal status (done or cancelled),
 // symmetric with activeBasisForNode's own task branch, which checks the
 // swept node's own status (activeBasisTaskStatuses) beside the parent walk
-// it makes (fix round 1, Minor 2): a task that has already finished or been
+// it makes: a task that has already finished or been
 // cancelled has no submit left for an unreviewed assumption to ever refuse,
 // so a badge on its own page would name a fact its own page can do nothing
 // about, however live the parent feature's assumption still is for every
@@ -894,10 +893,9 @@ func statPath(root, rel string) (present bool, err error) {
 // construction").
 //
 // Exempt on SupersededBy's presence alone, including a dangling id that no
-// longer resolves to a live feature (task-8-review-round-1.md, Minor 6,
-// ruled). The principled line: Uncovered means the MARKER could not do its
-// own job, the way a dangling assumption_basis qid breaks
-// answered_question's own comparison (reportAnsweredQuestion's own
+// longer resolves to a live feature. The principled line: Uncovered means the
+// MARKER could not do its own job, the way a dangling assumption_basis qid
+// breaks answered_question's own comparison (reportAnsweredQuestion's own
 // unknown_question arm, one marker up); exemption means a human recorded a
 // decision, and the decision here is the supersession record's PRESENCE, not
 // whether its target still resolves. Noticing a dangling superseded_by id is
@@ -928,9 +926,9 @@ func staleSpecFeatureExempt(f *store.Feature) bool {
 // cancelled arms already avoid one section over: count the exemption only
 // when the node would otherwise have qualified.
 //
-// Coverage counts NODES here, the same unit Compared counts in (drift-review
-// round 1, Important 3, generalized to every marker in this package): a done
-// feature or epic is one unit whether its comparison spans one leg or three.
+// Coverage counts NODES here, the same unit Compared counts in (generalized to
+// every marker in this package): a done feature or epic is one unit whether its
+// comparison spans one leg or three.
 func sweepStaleSpec(t *store.Tree, rev vcs.Revisions, rep *Report) {
 	for _, id := range sortedFeatureIDs(t) {
 		f := t.Features[id]
@@ -962,15 +960,14 @@ func sweepStaleSpec(t *store.Tree, rev vcs.Revisions, rep *Report) {
 // verifiedAgainstEmpty reports whether v was never populated at all: every
 // leg's Value is empty and Surfaces was never even initialized to the empty
 // list recordVerified/recordEpicVerified always write at a real crossing.
-// Checking every field, not Surfaces alone, matters (task-8-review-round-1.md,
-// Important 3): a record could in principle carry real spec/commit values yet
-// still read Surfaces == nil (a hand-authored fixture missing just that key,
-// or a future writer that drops it), and keying only on Surfaces would
-// misdescribe that node as carrying no completion record at all, when most of
-// one is actually there. Eval is checked too for symmetry even though an
-// epic's own Eval is always zero regardless: that fact alone can never flip
-// this answer, since Spec, Commit, and Surfaces still all have to agree for
-// the whole expression to read empty.
+// Checking every field, not Surfaces alone, matters: a record could in
+// principle carry real spec/commit values yet still read Surfaces == nil (a
+// hand-authored fixture missing just that key, or a future writer that drops
+// it), and keying only on Surfaces would misdescribe that node as carrying no
+// completion record at all, when most of one is actually there. Eval is checked
+// too for symmetry even though an epic's own Eval is always zero regardless:
+// that fact alone can never flip this answer, since Spec, Commit, and Surfaces
+// still all have to agree for the whole expression to read empty.
 func verifiedAgainstEmpty(v store.VerifiedAgainst) bool {
 	return v.Spec.Value == "" && v.Eval.Value == "" && v.Commit.Value == "" && v.Surfaces == nil
 }
@@ -978,7 +975,7 @@ func verifiedAgainstEmpty(v store.VerifiedAgainst) bool {
 // staleSpecItem is one file staleSpecFinding names twice over: path is
 // always the full repo-relative path (what Files carries), and label is what
 // the Detail sentence names it by, which for the spec/eval leg is a shorter
-// basename (task-8-review-round-1.md, Minor 7: the two are allowed to
+// basename (the two are allowed to
 // differ, and here they do, on purpose).
 type staleSpecItem struct {
 	path  string
@@ -1009,7 +1006,7 @@ func itemLabels(items []staleSpecItem) []string {
 //
 // vanished and changed each carry one staleSpecItem per file. Every entry's
 // path is the full repo-relative path regardless of which leg produced it
-// (task-8-review-round-1.md, Minor 7: Task 10 groups and resolves Files
+// (Task 10 groups and resolves Files
 // entries uniformly, so a spec/eval leg basename mixed among surface leg full
 // paths would be a namespace Task 10 could not resolve without first knowing
 // which leg produced which entry). Only the label, used for the Detail
@@ -1020,8 +1017,7 @@ func itemLabels(items []staleSpecItem) []string {
 // files across the repo. context carries the surface leg's tree-hash-moved
 // note, which rides only when vanished or changed is also non-empty: the
 // tree-hash difference has nothing to ride beside when nothing vanished or
-// changed, so on its own it is not reported at all (drift-design-
-// decisions.md, decision 8; the vanish-only rule).
+// changed, so on its own it is not reported at all (the vanish-only rule).
 type staleSpecFinding struct {
 	vanished []staleSpecItem
 	changed  []staleSpecItem
@@ -1092,13 +1088,13 @@ func reportStaleSpecEpic(t *store.Tree, rev vcs.Revisions, rep *Report, e *store
 // side is hashed the way `git add` would store it, checkin conversion and clean
 // filters applied, so a CRLF checkout under text=auto or an LFS file that was
 // not edited compares equal to its committed blob. It reads the path to compare
-// straight off recorded.Path, the exact relPath recordVerified hashed
-// (task-8-review-round-1.md, Minor 8). A recorded ref with no Value is skipped
+// straight off recorded.Path, the exact relPath recordVerified hashed.
+// A recorded ref with no Value is skipped
 // (an epic's Eval leg is always zero; a pre-Task-2 record may carry no spec pin
 // at all), since there is nothing to compare it against. ok is false only when
 // the file exists but could not be hashed for some reason other than absence;
-// the caller reports that as Uncovered, with its own reason
-// (task-8-review-round-1.md, Important 2), rather than guessing which way the
+// the caller reports that as Uncovered, with its own reason,
+// rather than guessing which way the
 // comparison would have gone.
 func staleSpecFileLeg(rev vcs.Revisions, root string, recorded store.RevisionRef, find *staleSpecFinding) (ok bool, unreadableDetail string) {
 	if recorded.Value == "" {
@@ -1120,8 +1116,8 @@ func staleSpecFileLeg(rev vcs.Revisions, root string, recorded store.RevisionRef
 
 // staleSpecSurfacesLeg walks every recorded surface fingerprint, accumulating
 // into find whatever it can determine and returning every hard-failure
-// detail it hits along the way rather than stopping at the first one
-// (task-8-review-round-1.md, Minor 5): a two-surface feature where
+// detail it hits along the way rather than stopping at the first one:
+// a two-surface feature where
 // fingerprint A is fully vanished and fingerprint B is unreadable must still
 // report A as an actionable candidate, not lose it behind B's failure. The
 // caller lands the node in Uncovered too when the returned failures is
@@ -1133,8 +1129,8 @@ func staleSpecFileLeg(rev vcs.Revisions, root string, recorded store.RevisionRef
 // Missing inventory entries are checked BEFORE the hash read (TreeHash for a
 // git_tree fingerprint, BlobHash for a git_blob) is ever called for a given
 // fingerprint, and a fingerprint with any missing entries never reaches that
-// hash read at all. This ordering is the vanish rule's whole defining boundary
-// (task-8-review-round-1.md, Important 1): a directory whose every recorded
+// hash read at all. This ordering is the vanish rule's whole defining boundary:
+// a directory whose every recorded
 // file is gone is a plain candidate naming every one of them, nothing
 // uncovered, because a hash read on a path that no longer resolves at HEAD
 // would otherwise read as a hard failure rather than the total vanish it
@@ -1200,7 +1196,7 @@ func staleSpecUncovered(rep *Report, n store.Node, reason, detail string) {
 // finishStaleSpec records Compared/Coverage for one node whose spec and eval
 // legs both completed, and, when find carries anything, appends one
 // Candidate. failures is the surfaces leg's own accumulated hard-failure
-// detail (task-8-review-round-1.md, Minor 5): non-empty lands the node in
+// detail: non-empty lands the node in
 // "unresolvable" rather than "checked" and out of Compared, but a Candidate
 // still gets appended alongside it whenever find is non-empty, since a
 // failure on one fingerprint must never discard a real finding another
@@ -1238,7 +1234,7 @@ func finishStaleSpec(rep *Report, n store.Node, find staleSpecFinding, failures 
 // staleSpecDetail renders one human sentence from a non-empty finding, plus
 // any Context, naming files by their Detail label (staleSpecItem.label), not
 // their Files path: the two are allowed to differ, and here they do for the
-// spec/eval leg (task-8-review-round-1.md, Minor 7). A vanished file leads
+// spec/eval leg. A vanished file leads
 // the sentence, since it is the reason a candidate exists at all; a merely
 // changed spec/eval file rides beside it as Context once something has also
 // vanished (activeBasisDetail's own pattern, one marker over). When nothing
@@ -1320,8 +1316,8 @@ var missingSurfaceFeatureOutOfScope = map[string]bool{"done": true}
 var missingSurfaceEpicOutOfScope = map[string]bool{"done": true, "archived": true}
 
 // sweepMissingSurface walks every feature, then every epic, in id order. A
-// cancelled node is exempt and counted only when it carries a surface
-// (task-8-review-round-1.md, Minor 4): the marker's whole scope is nodes
+// cancelled node is exempt and counted only when it carries a surface:
+// the marker's whole scope is nodes
 // CARRYING a surface, so a cancelled node that never recorded one was never
 // in that scope to begin with, and counting it anyway would inflate the
 // footer for a set it never joined, asymmetrically with the silent
@@ -1471,7 +1467,7 @@ func (f orphanEvalFinding) empty() bool { return len(f.missing) == 0 }
 // A cancelled feature is exempt and counted in Exempted, but ONLY when it is
 // otherwise in this marker's scope (an eval file plus a started clock), the
 // identical gating sweepMissingSurface already applies to its own cancelled
-// check (task-8-review-round-1.md, Minor 4, drift.go's own
+// check (drift.go's own
 // sweepMissingSurface): the marker's whole scope is nodes it would otherwise
 // have compared, so a cancelled feature that never carried an eval file, or
 // carried one but never got approved, was never in that scope to begin with,
@@ -1490,7 +1486,7 @@ func (f orphanEvalFinding) empty() bool { return len(f.missing) == 0 }
 // several independently-checkable refs, and a preserve criterion can
 // independently contribute a second check for its baseline artifact, so the
 // bucket that keeps the path-shaped rule's conservatism honest (task-9-
-// brief.md, resolution 3) has to count at that finer grain. Compared still
+// brief.md) has to count at that finer grain. Compared still
 // counts NODES, matching every other marker: one bump per feature, in
 // finishOrphanEval, after every criterion on it has been read.
 func sweepOrphanEval(t *store.Tree, rep *Report) {

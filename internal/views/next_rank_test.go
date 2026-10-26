@@ -412,7 +412,7 @@ func TestRankHoldThroughTheCurrentEpic(t *testing.T) {
 }
 
 // Tier 4 ranks by whole elapsed days, the grain its copy speaks in: two
-// features touched minutes apart today keep plan order (fix round ruling 2).
+// features touched minutes apart today keep plan order.
 func TestRankSameDayTouchesKeepPlanOrder(t *testing.T) {
 	tree := readyEpics(t, 3)
 	current, _ := readyFeatureWithTask(t, tree, "F-aaaaa0", "epic-0/current", "epic-0")
@@ -436,7 +436,7 @@ func TestRankSameDayTouchesKeepPlanOrder(t *testing.T) {
 }
 
 // A human decision placed by locality keeps what it waits on after the tier
-// reason; an agent move keeps the tier reason alone (fix round ruling 3).
+// reason; an agent move keeps the tier reason alone.
 func TestRankHumanLocalityReasonsKeepTheirBase(t *testing.T) {
 	tree := readyEpics(t, 2)
 	current, currentTask := readyFeatureWithTask(t, tree, "F-aaaaa0", "epic-0/current", "epic-0")
