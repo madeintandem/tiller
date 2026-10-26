@@ -222,8 +222,6 @@ An epic keyed `tweaks`, which a binary that predates the Tweaks shelf could crea
 
 The migration that introduced contributors renamed the shared manifest roster from `owners:` to `contributors:` and checkout-local identity from `owner:` to `contributor:`. It preserves contributor IDs and names, the selected local identity, claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. Roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters are unchanged. Historical events with `owner:` remain readable without rewriting their bytes.
 
-
-
 ### Pre-release schema boundaries
 
 These apply only to projects created before the current schema line; a project started on a current build never meets them. Both migrations preserve history, PRs, review refs, Git refs, accepted bases, and evidence.
