@@ -1,9 +1,8 @@
 package mutate
 
 // Configure is the record-only setter for Review Grain
-// (docs/plans/2026-08-26-review-grain-design.md, "The setting" and
-// "Authorization"). It writes exactly one field, review_grain, at one of its
-// three homes: the manifest's execution block (the project default), an
+// (docs/spec/cli-surface.md). It writes exactly one field, review_grain, at one
+// of its three homes: the manifest's execution block (the project default), an
 // epic.yml, or a feature.yml. It never touches the lifecycle engine, never
 // moves a node's status, and never records a PR or a review ref; it is a
 // sibling to the approve verbs' own --review-grain flag, not a replacement
@@ -35,7 +34,7 @@ import (
 )
 
 // Event type discriminators for configure, one per home review_grain lives
-// at (docs/plans/2026-08-26-review-grain-design.md, "The setting").
+// at (docs/spec/cli-surface.md).
 const (
 	eventConfigureProject = "configure.project"
 	eventConfigureEpic    = "configure.epic"
@@ -285,8 +284,8 @@ func configureFeature(tree *store.Tree, deps Deps, owner store.Contributor, tree
 // configureFeature share: a node's grain may change only until its own
 // review surface exists, either because submit already recorded a PR or a
 // review ref on it, or because the node itself is terminal and has nothing
-// left to submit (docs/plans/2026-08-26-review-grain-design.md,
-// "Changeability"). It returns nil when neither condition holds.
+// left to submit (docs/spec/cli-surface.md). It returns nil when neither
+// condition holds.
 func refuseReviewSurfaceLocked(noun, id, key, status string, pr *int, ref *store.ReviewRef, terminal bool) error {
 	switch {
 	case pr != nil:
@@ -302,8 +301,7 @@ func refuseReviewSurfaceLocked(noun, id, key, status string, pr *int, ref *store
 
 // ReviewGrainLockedError refuses `configure epic` or `configure feature`
 // because the node's own review surface already exists
-// (docs/plans/2026-08-26-review-grain-design.md, "Changeability": "The grain
-// on a node may change until that node's own review surface exists"). Like
+// (docs/spec/cli-surface.md). Like
 // the other blocked answers in this package it is exit 1, rendered through
 // the CLI's emitReport as an ok:false data block, and it deliberately does
 // not implement ExitCode, because the report sets that.

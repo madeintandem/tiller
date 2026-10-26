@@ -1,5 +1,5 @@
 // Explore's tree expansion, lifted out of each row's own useState (task 1,
-// docs/plans/2026-08-14-explore-tree-state.md): a branch's openness stops
+// docs/spec/ui-surface.md): a branch's openness stops
 // being derived from the current selection at render time and becomes an
 // explicit record of what the reader (or a selection landing inside it) has
 // opened, kept until something closes it. That inversion is what lets a

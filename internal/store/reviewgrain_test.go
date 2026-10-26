@@ -26,9 +26,8 @@ func TestResolvedReviewGrainMostSpecificWins(t *testing.T) {
 // both ResolvedReviewGrain and the console's node header payload
 // (views.reviewGrainOf) consume (Fix round 1, Important 1): the grain half
 // must always agree with ResolvedReviewGrain's own answer, and source must
-// name whichever of the three homes (docs/plans/2026-08-26-review-grain-
-// design.md, "The setting") actually produced it, or "default" when none of
-// the three is set.
+// name whichever of the three homes (docs/spec/artifact-schema.md) actually
+// produced it, or "default" when none of the three is set.
 func TestResolvedReviewGrainWithSourceNamesTheWinningHome(t *testing.T) {
 	cases := []struct {
 		name       string

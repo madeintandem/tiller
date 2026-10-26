@@ -64,7 +64,7 @@ func TestBuildBoardOfOrdersEpicsAndFeaturesByDependencyNotKey(t *testing.T) {
 // order (store.ProjectOrder.Epics at epic grain, store.Epic.Order at
 // feature grain) that lists the key-losing sibling first. gen.
 // DependencyOrder's own tie stack puts the soft order ahead of the key
-// fallback (docs/plans/2026-08-08-soft-order-design.md), one tier this
+// fallback (docs/spec/cli-surface.md), one tier this
 // package's other fixture, buildOrderTree, never exercises: a fixture built
 // only from depends_on edges cannot tell "BuildBoardOf reads the shared
 // order" from "BuildBoardOf reads the shared order's key-only fallback",

@@ -40,7 +40,7 @@
 // route renders inside the same layout as this navigator, so a row click
 // swaps only the reading pane.
 //
-// Restyle (Phase 4, task 16, docs/plans/2026-08-09-console-v2-mocks.html's
+// Restyle (Phase 4, task 16, the retired console mock's
 // EXPLORE navigator): chevrons sit left of the dot (not trailing), indent
 // guide lines run down each nested tier via .explore-feats/.explore-tasks's
 // own border-left, rows are denser, and both an epic's and a feature's child
@@ -189,7 +189,7 @@ function ResourceStatus({ label, state }: { label: string; state: FetchState<unk
 }
 
 // TreeActions puts the whole tree under one click either way (task 2,
-// docs/plans/2026-08-14-explore-tree-state.md): "Open all" and "Close all",
+// docs/spec/ui-surface.md): "Open all" and "Close all",
 // deliberately worded apart from a chevron's own load-bearing
 // "Expand"/"Collapse" aria-label (Chevron, below) so none of the existing
 // name-pattern queries for those can ever match these two. "Hide cancelled"

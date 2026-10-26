@@ -8,9 +8,7 @@ package mutate
 // changes is that the PR (or, remote-less, the review ref) is recorded on
 // the reviewed node itself rather than on each task, once every task under
 // it is ready and the reviewed node's own required gates have already been
-// run and recorded green (docs/plans/2026-08-26-review-grain-design.md,
-// "What a coarse grain changes": "check feature and eval feature must be
-// green, so the PR ships with the contract already verified"). The status
+// run and recorded green (docs/spec/cli-surface.md). The status
 // the reviewed node carries never moves: a feature or epic still crosses to
 // done only through sync observing the human's merge, the same as today; the
 // merge and the sync that follows it finish the story this function starts.
@@ -362,12 +360,11 @@ func epicTerminal(status string) bool {
 // half of what submit needs before its coarse grain can close over the
 // feature, at either grain that calls it (submitFeature directly,
 // submitEpic once per live child). Work under any review grain still rides
-// each task's own lifecycle end to end (docs/plans/2026-08-26-review-grain-
-// design.md, "Never changes, at any grain"), so a task still in progress, or
-// a feature with no live task at all, both answer false. blockerID is empty
-// only in the second case; otherwise it and blockerKey/blockerStatus name
-// the first live task short of in_review, in gen.OrderTasks order, so a
-// refusal always names the same next thing to clear.
+// each task's own lifecycle end to end (docs/spec/cli-surface.md), so a task
+// still in progress, or a feature with no live task at all, both answer false.
+// blockerID is empty only in the second case; otherwise it and
+// blockerKey/blockerStatus name the first live task short of in_review, in
+// gen.OrderTasks order, so a refusal always names the same next thing to clear.
 func featureTasksSubmittable(tree *store.Tree, f *store.Feature) (ok bool, blockerID, blockerKey, blockerStatus string) {
 	live := 0
 	for _, tk := range gen.OrderTasks(tree, tree.FeatureTasks[f.ID], f.Order) {

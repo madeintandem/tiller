@@ -14,9 +14,9 @@ import (
 
 // This file implements `tiller add epic|feature|task`, the structural verbs the
 // decompose skill uses to lay a draft tree down (cli-surface.md, Decomposition),
-// plus `tiller add bug|chore|tweak`, which proposes a shelf node instead (docs/plans/
-// 2026-08-28-bugs-and-chores-design.md). It is a thin shell: it validates the
-// address shape, resolves the acting contributor, hands a clean request to
+// plus `tiller add bug|chore|tweak`, which proposes a shelf node instead
+// (docs/spec/cli-surface.md). It is a thin shell: it validates the address
+// shape, resolves the acting contributor, hands a clean request to
 // internal/core/mutate, and renders the new-node envelope. All reasoning,
 // minting, file writing, and event recording live in the core.
 

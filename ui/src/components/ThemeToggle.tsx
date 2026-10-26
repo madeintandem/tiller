@@ -1,9 +1,8 @@
 // The topbar's Auto/Light/Dark segmented control (Phase 0 task 3). Visual
-// shape from the mock's own .theme-toggle (docs/plans/2026-08-09-console-v2-
-// mocks.html:642-646, styles at :237-244); all attribute/localStorage
-// semantics live in lib/theme.ts, which main.tsx's pre-paint boot call also
-// uses, so the control and the no-flash apply can never disagree on what
-// "auto" or a garbage stored value mean.
+// shape from the mock's own .theme-toggle (the retired console mock, styles at
+// :237-244); all attribute/localStorage semantics live in lib/theme.ts, which
+// main.tsx's pre-paint boot call also uses, so the control and the no-flash
+// apply can never disagree on what "auto" or a garbage stored value mean.
 
 import { useState } from "react";
 

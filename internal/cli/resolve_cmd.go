@@ -21,9 +21,9 @@ type resolveView struct {
 }
 
 // newResolveCmd builds `resolve <bug|chore|tweak> <node> --by <target> | --clear`,
-// the carrier pointer's one writer (docs/plans/2026-08-28-bugs-and-chores-
-// design.md, Resolution). Approve class: human, or agent on an explicit
-// instruction naming the node and the carrier.
+// the carrier pointer's one writer (docs/spec/cli-surface.md).
+// Approve class: human, or agent on an explicit instruction naming the node and
+// the carrier.
 func newResolveCmd() *cobra.Command {
 	var by string
 	var clear bool

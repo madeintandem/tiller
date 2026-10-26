@@ -1,10 +1,10 @@
 package cli
 
-// These tests pin the shelf nouns' read surface (docs/plans/2026-08-28-bugs-
-// and-chores-design.md, Verbs): `ls bugs`/`ls chores` list the shelves the
-// same way any other plural noun lists, `show bug <addr>` resolves by id or
-// key, and `status bug <addr>` answers the typed oracle. Task 4 lands `add
-// bug`; until then the shelf files are laid directly.
+// These tests pin the shelf nouns' read surface (docs/spec/cli-surface.md): `ls
+// bugs`/`ls chores` list the shelves the same way any other plural noun lists,
+// `show bug <addr>` resolves by id or key, and `status bug <addr>` answers the
+// typed oracle. Task 4 lands `add bug`; until then the shelf files are laid
+// directly.
 
 import (
 	"os"

@@ -11,7 +11,7 @@ import (
 	"github.com/madeintandem/tiller/internal/vcs"
 )
 
-// This file holds command gate reuse (docs/plans/2026-10-21-gate-reuse-design.md):
+// This file holds command gate reuse (docs/spec/cli-surface.md):
 // a command gate that already passed over the same code identity under the
 // same resolved command stands in for a fresh run. Only a pass is reused, an
 // empty code identity never matches, and reuse reads only gate records in the

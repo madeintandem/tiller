@@ -6,7 +6,7 @@ import (
 )
 
 // Review grain values: the grain at which a review PR opens
-// (docs/plans/2026-08-26-review-grain-design.md, The setting).
+// (docs/spec/artifact-schema.md).
 const (
 	ReviewGrainTask    = "task"
 	ReviewGrainFeature = "feature"
@@ -15,9 +15,9 @@ const (
 
 // ValidReviewGrain reports whether grain is a legal review-grain value for
 // noun, one of NounEpic, NounFeature, or "project"
-// (docs/plans/2026-08-26-review-grain-design.md, The setting: three homes,
-// each with its own home). All three grains may be explicit on a feature,
-// including an epic-grain override retained by a reviewed feature move.
+// (docs/spec/artifact-schema.md). All three grains may be explicit on a
+// feature, including an epic-grain override retained by a reviewed feature
+// move.
 func ValidReviewGrain(noun, grain string) bool {
 	switch noun {
 	case NounEpic, NounFeature, "project":
@@ -68,8 +68,7 @@ func TaskReviewGrain(m *Manifest, e *Epic, f *Feature, task *Task) (grain, sourc
 // ResolvedReviewGrain returns the review grain in force for work under e and
 // f: the feature's explicit setting if it has one, else the epic's, else the
 // manifest's project default, else task
-// (docs/plans/2026-08-26-review-grain-design.md, The setting: "One knob,
-// three homes, inheritance downward, most specific explicit setting wins").
+// (docs/spec/artifact-schema.md).
 // m, e, and f may all be nil or zero; ResolvedReviewGrain performs no
 // validation, the setters that write these fields own that.
 //
@@ -84,7 +83,7 @@ func ResolvedReviewGrain(m *Manifest, e *Epic, f *Feature) string {
 
 // ResolvedReviewGrainWithSource is ResolvedReviewGrain's own precedence walk,
 // widened to also name which of the three homes
-// (docs/plans/2026-08-26-review-grain-design.md, "The setting") actually
+// (docs/spec/artifact-schema.md) actually
 // produced the resolved value: "feature", "epic", "project" (the manifest's
 // execution.review_grain), or "default" when none of the three is set and
 // the value is the hardcoded task fallback. This is the ONE resolver both

@@ -82,9 +82,9 @@ func loadWorkItemFile(tree *store.Tree, w store.WorkNode) (store.WorkNode, strin
 }
 
 // resolveAttachTarget resolves the node a bug or chore points at: an epic,
-// a feature, or a task, by id or key (docs/plans/2026-08-28-bugs-and-chores-
-// design.md, Attachment). A bare key is an epic's, one slash a feature's,
-// two a task's; an id names its class by prefix. Anything else refuses.
+// a feature, or a task, by id or key (docs/spec/cli-surface.md). A
+// bare key is an epic's, one slash a feature's, two a task's; an id names its
+// class by prefix. Anything else refuses.
 func resolveAttachTarget(tree *store.Tree, raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

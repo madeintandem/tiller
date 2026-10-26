@@ -104,7 +104,7 @@ func FeatureBoardStatus(t *store.Tree, f *store.Feature) string {
 }
 
 // Feature activity values: the derived, display-only rollup phase of an active
-// feature (docs/plans/2026-07-31-feature-rollup-visibility-design.md). Like the
+// feature (docs/spec/cli-surface.md). Like the
 // epic's derived status above, the phase is computed on every read and never
 // stored; feature.yml keeps the stored "active" either way.
 const (

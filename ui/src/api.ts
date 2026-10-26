@@ -434,7 +434,7 @@ export interface NodeView {
   // review_grain is the review grain in force for work under this node
   // (views.NodeView.ReviewGrain): "task", "feature", or "epic", present for
   // an epic and a feature, the two review-grain homes besides the project
-  // default (docs/plans/2026-08-26-review-grain-design.md, "The setting").
+  // default (docs/spec/ui-surface.md).
   // review_grain_source names which of the three homes it actually came
   // from: "feature", "epic", "project" (the manifest's own default), or
   // "default" when none of the three is set and the value is the hardcoded

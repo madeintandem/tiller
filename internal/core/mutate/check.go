@@ -613,10 +613,8 @@ func onIncludes(on store.StringList, noun string) bool {
 }
 
 // gateNoun is the noun a manifest gate's on: list is matched against. A bug
-// or chore runs the task-grade gates (docs/plans/2026-08-28-bugs-and-chores-
-// design.md, Lifecycle, contract, gates: "the same command-backed build and
-// tests gates a task runs"), so both read as task here; every tree noun is
-// itself.
+// or chore runs the task-grade gates (docs/spec/cli-surface.md), so both read
+// as task here; every tree noun is itself.
 func gateNoun(noun string) string {
 	if store.IsWorkNoun(noun) {
 		return store.NounTask

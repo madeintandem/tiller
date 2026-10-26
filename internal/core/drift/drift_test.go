@@ -301,7 +301,7 @@ func setEpicStatus(t *testing.T, root, epicKey, status string) {
 // setFeatureSupersededBy hand-writes one feature's superseded_by field. No
 // verb sets this field yet: internal/views/nodepage.go reads it alone today,
 // and the amend command that would write it is out of this plan's scope
-// (docs/plans/2026-07-28-drift-design-decisions.md records the gap). A
+// (see docs/spec/cli-surface.md). A
 // superseded feature is therefore a hand-authored fixture on purpose here,
 // the same idiom clearFeatureCommitAnchor already uses for the identical kind
 // of gap one field over.

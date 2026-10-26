@@ -60,12 +60,12 @@ type NodeView struct {
 	// ReviewGrain is the review grain in force for work under this node
 	// (store.ResolvedReviewGrain): "task", "feature", or "epic". Present for
 	// an epic and a feature, the two review-grain homes the design names
-	// besides the project default (docs/plans/2026-08-26-review-grain-design.md,
-	// "The setting"); absent for every other noun, none of which owns work of
-	// its own to resolve a grain for. ReviewGrainSource names which of the
-	// three homes the resolved value actually came from: "feature", "epic",
-	// "project" (the manifest's execution.review_grain), or "default" when
-	// none of the three is set and the value is the hardcoded task fallback.
+	// besides the project default (docs/spec/cli-surface.md); absent for every
+	// other noun, none of which owns work of its own to resolve a grain for.
+	// ReviewGrainSource names which of the three homes the resolved value
+	// actually came from: "feature", "epic", "project" (the manifest's
+	// execution.review_grain), or "default" when none of the three is set and
+	// the value is the hardcoded task fallback.
 	ReviewGrain       string                `json:"review_grain,omitempty"`
 	ReviewGrainSource string                `json:"review_grain_source,omitempty"`
 	DependsOn         []string              `json:"depends_on,omitempty"`
@@ -141,7 +141,7 @@ type NodeView struct {
 
 	// Order is the recorded soft order of this node's own children: an
 	// epic's feature sequence or a feature's task sequence (store.Epic.Order,
-	// store.Feature.Order; docs/plans/2026-08-08-soft-order-design.md). This
+	// store.Feature.Order; docs/spec/cli-surface.md). This
 	// is carriage only: the field states what was recorded, verbatim and
 	// possibly partial, never the full computed sibling order
 	// gen.DependencyOrder already renders through

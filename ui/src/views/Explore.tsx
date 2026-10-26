@@ -20,7 +20,7 @@
 // its children's. The old /explore/:noun/:id selection route is retired; App
 // redirects it to /node/:noun/:id so pre-change bookmarks keep landing.
 //
-// Tree expansion (task 1, docs/plans/2026-08-14-explore-tree-state.md) is
+// Tree expansion (task 1, docs/spec/ui-surface.md) is
 // owned here rather than by each navigator row: an explicit map
 // (views/explore/expansion.ts) of which branches are held open, materialized
 // by autoOpen whenever the selection changes - before paint, via

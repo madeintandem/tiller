@@ -882,7 +882,7 @@ func shellWord(path string) string {
 // result, the rollup parked until `tiller check feature` runs. It renders on
 // every outcome, because the run that crosses a feature's last task is exactly
 // the one that used to read as finished while the feature stranded silently
-// (docs/plans/2026-07-31-feature-rollup-visibility-design.md, The incident).
+// (docs/spec/cli-surface.md).
 // The id is used in the command rather than the key: check addresses features
 // by either, and the id is what every other queue command carries.
 func humanSyncChecksDue(tree *store.Tree, res mutate.SyncResult) string {

@@ -1,8 +1,7 @@
-// The mind map's layout, pure (docs/plans/2026-08-30-explore-map-design.md,
-// "The layout", amended 2026-08-31): the project at the center, epics
-// alternating sides in wire order, children stacked beside their parent
-// further out, Bugs and Chores as two last branches, branch connectors as the
-// only lines at rest, dependency arcs lifted to the visible ancestor and
+// The mind map's layout, pure (docs/spec/ui-surface.md): the project at the
+// center, epics alternating sides in wire order, children stacked beside their
+// parent further out, Bugs and Chores as two last branches, branch connectors
+// as the only lines at rest, dependency arcs lifted to the visible ancestor and
 // deduped.
 import { describe, expect, it } from "vitest";
 import type { MapNodeView, MapTreeView } from "../../../api";

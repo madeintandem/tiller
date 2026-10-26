@@ -8,8 +8,8 @@ import (
 )
 
 // decomposeReason says why decompose is due on a tree with no epics: its
-// to-be design docs await decomposition (docs/plans/2026-10-08-brownfield-zero-day-design.md,
-// decision 2). Callers check that a design doc exists.
+// to-be design docs await decomposition (docs/spec/cli-surface.md). Callers
+// check that a design doc exists.
 func decomposeReason(t *store.Tree) string {
 	n := len(t.ToBeDesign)
 	return fmt.Sprintf("no epics recorded yet; %d to-be design %s %s decomposition, starting with .tiller/design/%s",

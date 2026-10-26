@@ -626,8 +626,7 @@ func newReturnCmd() *cobra.Command {
 // review. It is task-grade only because a PR always represents a task, a
 // bug, or a chore: the review that asked for changes is that node's own PR,
 // and a task's feature simply stays active (artifact-schema.md, "A PR always
-// represents a task"; docs/plans/2026-08-28-bugs-and-chores-design.md, a bug
-// or chore records its own PR).
+// represents a task"; docs/spec/cli-surface.md).
 func newResumeCmd() *cobra.Command {
 	var reason string
 	cmd := &cobra.Command{
@@ -718,10 +717,9 @@ func newArchiveCmd() *cobra.Command {
 
 // submitNouns are submit's legal target nouns, in the order the design docs
 // introduce them one grain at a time: a task's own PR, then the two
-// coarse-grain siblings review grain adds (docs/plans/2026-08-26-review-grain-
-// design.md, "What a coarse grain changes"), then the two shelf nouns, which
-// always record their own PR or review ref with no grain check
-// (docs/plans/2026-08-28-bugs-and-chores-design.md).
+// coarse-grain siblings review grain adds (docs/spec/cli-surface.md), then the
+// two shelf nouns, which always record their own PR or review ref with no grain
+// check (docs/spec/cli-surface.md).
 var submitNouns = []string{store.NounTask, store.NounFeature, store.NounEpic, store.NounBug, store.NounChore, store.NounTweak}
 
 // newSubmitCmd builds `submit <task|feature|epic|bug|chore|tweak> <node> [--pr
@@ -734,7 +732,7 @@ var submitNouns = []string{store.NounTask, store.NounFeature, store.NounEpic, st
 // the resolved review grain actually names that noun. `submit bug` and
 // `submit chore` move the same way `submit task` does (check->in_review),
 // but carry no review grain at all: a shelf node always records its own PR
-// or review ref (docs/plans/2026-08-28-bugs-and-chores-design.md).
+// or review ref (docs/spec/cli-surface.md).
 //
 // Every noun shares the same remote-less fallback: a repo with no git remote
 // (a dry run, local exploration) has nowhere to open a PR, so submit without
@@ -742,10 +740,10 @@ var submitNouns = []string{store.NounTask, store.NounFeature, store.NounEpic, st
 // through offlineReviewRef. With a remote configured, omitting --pr is
 // ordinarily a misuse (exit 2), never a silent fallback; the one exception is
 // a task whose resolved review grain is feature or epic, where the task
-// itself carries no PR at all, remote or not (docs/plans/2026-08-26-review-
-// grain-design.md, line 37): there the remote-less fallback is still legal,
-// and an explicit --pr is refused instead, since the design's own "never a
-// PR" leaves no reading under which a coarse-grain task would carry one.
+// itself carries no PR at all, remote or not (docs/spec/cli-surface.md): there
+// the remote-less fallback is still legal, and an explicit --pr is refused
+// instead, since the design's own "never a PR" leaves no reading under which a
+// coarse-grain task would carry one.
 func newSubmitCmd() *cobra.Command {
 	var pr int
 	var reason, assume, recoveryHead, recoveryResult string
@@ -977,9 +975,8 @@ func offlineReviewRef(cmd *cobra.Command) (*store.ReviewRef, error) {
 // taskRef, as for a shelf node, keeps offlineReviewRef's bare text), but
 // a coarse resolved grain (the task's feature or its epic) accepts the
 // fallback anyway, because a coarse-grain task never carries a PR of its own
-// at all, remote or not (docs/plans/2026-08-26-review-grain-design.md, line
-// 37; the execute skill's own promise): the feature or epic PR is the review
-// surface, and the task records a review ref instead.
+// at all, remote or not (docs/spec/cli-surface.md): the feature or epic PR is
+// the review surface, and the task records a review ref instead.
 func offlineReviewRefForTask(cmd *cobra.Command, grain, source, taskRef string) (*store.ReviewRef, error) {
 	root, err := repoRoot()
 	if err != nil {

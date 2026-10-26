@@ -1,9 +1,9 @@
 // The Explore tree's expansion map, persisted so a reload restores the
-// branches the reader had open (task 4, docs/plans/2026-08-14-explore-tree-
-// state.md), the same selectionStorage.ts idiom this module mirrors: a
-// per-project key, because every project serves on the same default port and
-// thus the same browser origin, so a flat key would leak one project's open
-// branches into another project's tab.
+// branches the reader had open (task 4, docs/spec/ui-surface.md), the same
+// selectionStorage.ts idiom this module mirrors: a per-project key, because
+// every project serves on the same default port and thus the same browser
+// origin, so a flat key would leak one project's open branches into another
+// project's tab.
 //
 // The stored value is a JSON array of the map's own [id, boolean] entries
 // (Array.from(expansion.entries())), not a re-encoding into some other

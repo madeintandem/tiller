@@ -1,13 +1,12 @@
 package serve_test
 
-// These tests pin GET /api/map (task-3-brief.md, docs/plans/2026-08-30-
-// explore-map-design.md): views.MapOf served fresh over the real console
-// Handler, mux and all, the same posture build_test.go's own header states
-// for /api/build. TestMapEndpointServesNodesAndEdges rides
-// buildServerWithOpenWork, the fixture that actually attaches a bug to a
-// feature (form-engine/schema-engine) and a chore to a task
-// (form-engine/schema-engine/parse-the-schema). buildServer alone
-// (nodeFixture with no work items) carries neither, so it cannot pin the
+// These tests pin GET /api/map (task-3-brief.md, docs/spec/ui-surface.md):
+// views.MapOf served fresh over the real console Handler, mux and all, the same
+// posture build_test.go's own header states for /api/build.
+// TestMapEndpointServesNodesAndEdges rides buildServerWithOpenWork, the fixture
+// that actually attaches a bug to a feature (form-engine/schema-engine) and a
+// chore to a task (form-engine/schema-engine/parse-the-schema). buildServer
+// alone (nodeFixture with no work items) carries neither, so it cannot pin the
 // attached_to edges this test exists to prove.
 
 import (

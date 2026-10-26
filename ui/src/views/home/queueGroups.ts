@@ -1,7 +1,7 @@
 // The desk's card grouping (task C1): /api/queue serves entries kind by kind
 // in views/queue.go's own fixed build order, but the mock's desk displays
 // gravity order instead - amendment, attest, approval, answer, parked work,
-// then merge asks (docs/plans/2026-07-23-console-chart-table-mocks.html,
+// then merge asks (the retired console mock,
 // round 3 notes: "Gravity order for multiple cards").
 // groupQueueByGravity re-ranks the KIND
 // buckets only; the members within one kind stay in the exact order the API

@@ -102,13 +102,12 @@ func TestWriteSuccessEnvelopeShape(t *testing.T) {
 }
 
 // TestMutatingEnvelopeCarriesTheActorField pins the design's generic rule
-// (docs/plans/2026-08-12-owner-registration-design.md, "The fallback
-// speaks"): a mutating command's --json envelope always carries a top-level
-// additive "actor" field naming who resolveActingContributor picked and which
-// source won, via the same map-merge mechanism withReadout uses for
-// "readout". "add epic" stands in as the representative mutating command:
-// every addContributorFlag verb funnels through the same emitReport/emitSuccess
-// tail this exercises.
+// (docs/spec/cli-surface.md): a mutating command's --json envelope always
+// carries a top-level additive "actor" field naming who
+// resolveActingContributor picked and which source won, via the same map-merge
+// mechanism withReadout uses for "readout". "add epic" stands in as the
+// representative mutating command: every addContributorFlag verb funnels
+// through the same emitReport/emitSuccess tail this exercises.
 func TestMutatingEnvelopeCarriesTheActorField(t *testing.T) {
 	initOwnedRepo(t)
 	out, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc", "--json")

@@ -6,10 +6,10 @@ import (
 	"github.com/madeintandem/tiller/internal/store"
 )
 
-// MapNode is one card on the Explore map (docs/plans/2026-08-30-explore-map-
-// design.md, "The graph"): the node's identity and state, its container
-// (the id the card nests inside; empty for an epic or a shelf node), and
-// the count of open questions naming it, which it renders as a badge.
+// MapNode is one card on the Explore map (docs/spec/ui-surface.md): the node's
+// identity and state, its container (the id the card nests inside; empty for an
+// epic or a shelf node), and the count of open questions naming it, which it
+// renders as a badge.
 type MapNode struct {
 	Noun         string              `json:"noun"`
 	ID           string              `json:"id"`

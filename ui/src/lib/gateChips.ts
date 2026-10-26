@@ -1,5 +1,5 @@
 // gateChipsFor derives the node header's compact gate-chip row (the mock's
-// .gate-chip, docs/plans/2026-08-09-console-v2-mocks.html:1002-1004;
+// .gate-chip, the retired console mock;
 // task-17-brief.md item 4: "meta row with owner, claim, branch, PR, and gate
 // chips from node.gates"). One chip per RECORDED gate only - node.gates,
 // never a gate that merely has an authored contract and has not run - in a

@@ -81,17 +81,16 @@
 // rejected: it costs a spec change and a page that reshuffles every visit, and
 // it buys nothing once the page is 42 rows.
 //
-// PHASE 5 (this pass): the console-v2 mock (docs/plans/2026-08-09-console-v2-
-// mocks.html:1132-1177) draws History as a flat day-grouped timeline. The
-// served payload and the spec group by (epic, stream) instead, and that
-// reconciliation was made deliberately, not by this file: option (a), keep
-// the served groups as sections and restyle their rows, day subheads only
-// WITHIN a group where it helps a reader (task-19-brief.md). So a
-// RecapGroupBlock renders its section head (restyled, not removed) and then
-// either a flat burst list (its bursts all fall on one calendar day) or a
-// sequence of `.day`/`.day-h` subheads, one per calendar day its bursts
-// touch, each holding that day's own bursts - never both at once, so a
-// reader never has to ask which regime a given group is in (dayGroupsOf
+// PHASE 5 (this pass): the console-v2 mock (the retired console mock) draws
+// History as a flat day-grouped timeline. The served payload and the spec group
+// by (epic, stream) instead, and that reconciliation was made deliberately, not
+// by this file: option (a), keep the served groups as sections and restyle
+// their rows, day subheads only WITHIN a group where it helps a reader
+// (task-19-brief.md). So a RecapGroupBlock renders its section head (restyled,
+// not removed) and then either a flat burst list (its bursts all fall on one
+// calendar day) or a sequence of `.day`/`.day-h` subheads, one per calendar day
+// its bursts touch, each holding that day's own bursts - never both at once, so
+// a reader never has to ask which regime a given group is in (dayGroupsOf
 // below, and its own doc comment, states the exact rule).
 //
 // The row itself moved from a numeral-led column grammar to the mock's own

@@ -1,7 +1,7 @@
-// The map's per-project memory (docs/plans/2026-08-30-explore-map-design.md,
-// "Persistence"): which cards are open and where the viewport sits, keyed
-// by project so two projects never share a picture; a restored open set is
-// reconciled against the live tree so a removed node never lingers.
+// The map's per-project memory (docs/spec/ui-surface.md): which cards are open
+// and where the viewport sits, keyed by project so two projects never share a
+// picture; a restored open set is reconciled against the live tree so a removed
+// node never lingers.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { MapTreeView } from "../../../api";
 import { mapStorageKey, readMapState, reconcileOpen, writeMapState } from "./mapStorage";

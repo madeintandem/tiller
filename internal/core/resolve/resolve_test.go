@@ -358,7 +358,7 @@ func TestResolve_ErrorsAreDistinct(t *testing.T) {
 
 // The resolver answers a shelf node by id, by its canonical key (bugs/<k>),
 // and by the bare local key alone, since the noun already names the shelf
-// (docs/plans/2026-08-28-bugs-and-chores-design.md, Verbs).
+// (docs/spec/cli-surface.md).
 func TestResolveShelfNounsByIDCanonicalAndLocalKey(t *testing.T) {
 	key := "bugs/blank-on-reload"
 	tree := &store.Tree{

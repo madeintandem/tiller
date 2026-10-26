@@ -11,9 +11,9 @@ import (
 // planRemovalShelfReferences scrubs every surviving shelf node: removed ids
 // leave depends_on, and attached_to, resolved_by, and duplicate_of clear to
 // absent when they named a removed node, since unapproved proposal material
-// never shipped and nothing was found in it (docs/plans/2026-08-28-bugs-
-// and-chores-design.md, Attachment). It returns the ids whose provenance
-// fields were cleared so the caller can say so.
+// never shipped and nothing was found in it (docs/spec/cli-surface.md). It
+// returns the ids whose provenance fields were cleared so the caller can say
+// so.
 func planRemovalShelfReferences(tree *store.Tree, removed map[string]struct{}, changed map[string]struct{}) ([]store.PlannedWrite, []string, error) {
 	var writes []store.PlannedWrite
 	var detached []string

@@ -7,9 +7,8 @@ import (
 
 // ActivityCarried is the derived display phase of a shelf node whose
 // resolved_by names a live carrier: it has left the queue and sync will
-// cross it when the carrier lands (docs/plans/2026-08-28-bugs-and-chores-
-// design.md, Resolution). Derived on read, never stored, like
-// FeatureActivity's phases.
+// cross it when the carrier lands (docs/spec/cli-surface.md).
+// Derived on read, never stored, like FeatureActivity's phases.
 const ActivityCarried = "carried"
 
 // ActivityCarrierCancelled is the same node once its carrier can no longer

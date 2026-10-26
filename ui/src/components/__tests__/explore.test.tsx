@@ -1,5 +1,5 @@
 // Vitest/RTL coverage for task C2, Explore rebuilt as navigator plus reading
-// pane (docs/plans/2026-07-23-console-chart-table-mocks.html, "Explore,
+// pane (the retired console mock, "Explore,
 // refreshed with #27 order"). Written red-first per the branch's TDD
 // discipline.
 //
@@ -51,7 +51,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-  // Task 4 (docs/plans/2026-08-14-explore-tree-state.md) makes Explore
+  // Task 4 (docs/spec/ui-surface.md) makes Explore
   // persist the expansion map and the split width to localStorage, keyed by
   // project ("acme" throughout this file's fixtures) and flat
   // respectively - without this clear, a later test in this file would
@@ -978,7 +978,7 @@ describe("Navigator: sticky expansion (an unrelated selection does not close wha
   // the CURRENT selection at render time, so a branch that opened only
   // because a selection landed inside it collapsed the instant the selection
   // moved elsewhere - nothing pinned that before this test. The inversion
-  // (docs/plans/2026-08-14-explore-tree-state.md) makes expansion an explicit
+  // (docs/spec/ui-surface.md) makes expansion an explicit
   // record of what has been opened, so navigation alone never closes a
   // branch; only a hand toggle (or close-all, task 2) does.
   it("keeps a deep-linked epic's branch open after selecting a node under a different epic", async () => {
@@ -1038,7 +1038,7 @@ describe("Navigator: sticky expansion (an unrelated selection does not close wha
   });
 });
 
-// Task 2 (docs/plans/2026-08-14-explore-tree-state.md): "Open all" and
+// Task 2 (docs/spec/ui-surface.md): "Open all" and
 // "Close all" put the whole tree under one click either way, consuming
 // Task 1's openAll/closeAll directly. The exact accessible names below
 // ("Open all", "Close all") are deliberately distinct vocabulary from a
@@ -1134,7 +1134,7 @@ describe("Navigator: open-all and close-all controls", () => {
   });
 });
 
-// Task 3 (docs/plans/2026-08-14-explore-tree-state.md): the resizable
+// Task 3 (docs/spec/ui-surface.md): the resizable
 // split. jsdom carries no layout engine, so getBoundingClientRect on any
 // element returns all zeros by default and no assertion here can observe a
 // real pixel - the brief's own "assert the wiring, not pixels" line. The
@@ -2279,7 +2279,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
   });
 });
 
-// Task 4 (docs/plans/2026-08-14-explore-tree-state.md): both the expansion
+// Task 4 (docs/spec/ui-surface.md): both the expansion
 // map and the split width survive a reload. A MemoryRouter remount (unmount,
 // then a fresh render) is this suite's stand-in for a real reload, the same
 // idiom build.test.tsx's own persistence tests use for the epic selection

@@ -1,9 +1,8 @@
-// The map's per-project memory in localStorage (docs/plans/2026-08-30-
-// explore-map-design.md, "Persistence"), the same posture Explore's
-// expansion memory takes (views/explore/expansionStorage.ts): a URL names a
-// node, not a viewport. Every read and write is wrapped, since storage can
-// be missing, full, or blocked, and the map must render correctly with no
-// stored value.
+// The map's per-project memory in localStorage (docs/spec/ui-surface.md), the
+// same posture Explore's expansion memory takes
+// (views/explore/expansionStorage.ts): a URL names a node, not a viewport.
+// Every read and write is wrapped, since storage can be missing, full, or
+// blocked, and the map must render correctly with no stored value.
 import type { MapTreeView } from "../../../api";
 import { containers } from "./layout";
 

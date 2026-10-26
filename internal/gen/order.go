@@ -21,14 +21,13 @@ package gen
 // recorded soft order (listed ids precede unlisted ones; intent, not
 // constraint, so it never gates), then, inside an epic cycle group only, the
 // flow-derived rank described below, and finally canonical key ascending as the
-// last resort (docs/plans/2026-08-08-soft-order-design.md, "The rule: one
-// precedence stack, render and routing alike"). A cycle never errors here: its
+// last resort (docs/spec/cli-surface.md). A cycle never errors here: its
 // members emit as one batch at the layer the cycle's external dependencies
 // allow, and anything depending into the cycle emits after it. Within the
 // batch, an epic cycle's members emit by the minimum featureFlow index of their
 // own features (an epic with no features last, key-ascending among such peers),
 // since the feature graph stays acyclic and honest even where the epic lift
-// cycles (docs/plans/2026-08-08-soft-order-design.md, phase 1); a feature or
+// cycles (docs/spec/cli-surface.md); a feature or
 // task cycle's members emit key-ascending, there being no finer grain to
 // consult. The old rule sank a cycle, and everything downstream of it, into one
 // key-ascending tail after every acyclic node, which let a dependent render
@@ -104,7 +103,7 @@ type Order struct {
 	// the owning epic's already-settled global rank first (an orphan feature
 	// ranks after every ranked epic's own features), then, among two
 	// features under the same epic, that epic's recorded soft order, then
-	// key (docs/plans/2026-08-08-soft-order-design.md, "Sort integration").
+	// key (docs/spec/cli-surface.md).
 	// It is a second pass over the same graph the base flow below computes;
 	// the base flow's own plain tie is what epicFlowRank and Cycles() read,
 	// kept separate so feature-level soft order cannot leak into the rank
@@ -124,7 +123,7 @@ type Order struct {
 // lower tier. Reported member order is per grain, following the same
 // tiebreak stack each grain's own pass runs on: an epic group ranks by the
 // root soft order first, then by its own features' flow order
-// (docs/plans/2026-08-08-soft-order-design.md, phase 1), then key ascending;
+// (docs/spec/cli-surface.md), then key ascending;
 // a task group ranks by its owning feature's recorded soft order first, then
 // key ascending, both from the tied pass OrderTasks runs; a feature group
 // ranks by key ascending alone, because Cycles() reports the base flow
@@ -245,7 +244,7 @@ func dependencyOrder(t, resolveAgainst *store.Tree) *Order {
 	// The epic pass's own ties carry the soft order stack: a listed epic
 	// precedes an unlisted one at the layer grain, and inside a cycle batch a
 	// listed epic still outranks the flow-derived rank
-	// (docs/plans/2026-08-08-soft-order-design.md, "Sort integration").
+	// (docs/spec/cli-surface.md).
 	epicLayer := softTie(t.ProjectOrder.Epics, keyTie(epicKeyOf))
 	epicCycleTie := softTie(t.ProjectOrder.Epics, flowThenKey)
 	var epicCycles [][]string
@@ -393,7 +392,7 @@ func RankedNoun(noun string) bool {
 // new slice back; the input is not reordered in place. soft is the owning
 // feature's recorded task order (Feature.Order): listed ids precede unlisted
 // ones within a dependency layer, and a recorded depends_on edge still
-// outranks it (docs/plans/2026-08-08-soft-order-design.md). nil is legal and
+// outranks it (docs/spec/cli-surface.md). nil is legal and
 // falls straight through to key order, the same as an empty list.
 // The complete tree resolves legacy keys before this slice limits ordering.
 //
@@ -490,7 +489,7 @@ func (o *Order) Tasks(featureID string) []*store.Task {
 // feature edges degraded epic rank to key order while the feature grain
 // stayed fully acyclic). Where depends_on leaves the choice open, ties break
 // by the owning epic's global rank, then that epic's own soft order, then
-// key (docs/plans/2026-08-08-soft-order-design.md).
+// key (docs/spec/cli-surface.md).
 func (o *Order) FeatureFlow() []string {
 	return append([]string(nil), o.featureFlow...)
 }

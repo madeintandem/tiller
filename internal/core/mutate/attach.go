@@ -8,12 +8,12 @@ import (
 	"github.com/madeintandem/tiller/internal/store"
 )
 
-// Attachment is a shelf node's attached_to (docs/plans/2026-08-28-bugs-and-
-// chores-design.md, Attachment). It is provenance, so it is legal at every
-// state, including done and cancelled, and it never runs the dependency-change
-// lock; the target is an epic, a feature, or a task. Link sets it and Unlink
-// clears it, each in the same planned batch as any dependency change the call
-// also requested, so one refused axis leaves the other unwritten.
+// Attachment is a shelf node's attached_to (docs/spec/cli-surface.md). It is
+// provenance, so it is legal at every state, including done and cancelled, and
+// it never runs the dependency-change lock; the target is an epic, a feature,
+// or a task. Link sets it and Unlink clears it, each in the same planned batch
+// as any dependency change the call also requested, so one refused axis leaves
+// the other unwritten.
 
 // requireAttachmentNoun refuses --attach or --detach on a noun that carries no
 // attachment. It runs before the node resolves, so the refusal names the

@@ -1,9 +1,8 @@
-/* Explore rebuilt as navigator plus reading pane (task C2, docs/plans/
-   2026-07-23-console-chart-table-mocks.html, "Explore, refreshed with #27
-   order"). Every value here rides tokens.css's
-   custom properties, the chart-table pass's own palette, the same layering
-   choice C1's home.css and C3's instrument.css already established: this
-   file re-scopes the shared utility classes (.muted, .mono, .error) it
+/* Explore rebuilt as navigator plus reading pane (task C2, the retired console
+   mock, "Explore, refreshed with #27 order"). Every value here rides
+   tokens.css's custom properties, the chart-table pass's own palette, the same
+   layering choice C1's home.css and C3's instrument.css already established:
+   this file re-scopes the shared utility classes (.muted, .mono, .error) it
    still reaches for under .explore, so Home and Node Detail keep riding
    their own re-scoped copies untouched.
 
@@ -190,7 +189,7 @@
   min-height: 0;
 }
 
-/* The dragging class (task 3, docs/plans/2026-08-14-explore-tree-state.md):
+/* The dragging class (task 3, docs/spec/ui-surface.md):
    applied to .explore-split for the duration of a mouse drag (Explore.tsx's
    own dragging state), never persisted. Without it, a fast drag across the
    reading pane's own prose selects text under the pointer along the way -
@@ -658,18 +657,17 @@
    nothing about the header is standing chrome the way Explore's own heading
    and mode pills are). Task 25 review fix (2026-08-11): this rule used to
    carry max-width: 720px, which read as "the prose reading measure" but was
-   actually clamping it - the mock's own reading pane (docs/plans/2026-08-09-
-   console-v2-mocks.html:491, .reading) is fluid with no max-width of its
-   own, and every measure lives on the CONTENT instead (prose.css's .prose at
-   72ch, instrument.css's .attn/.criteria at 880px). A pane cap tighter than
-   those content measures silently clamped them to whatever the pane had
-   left, which is exactly what happened here: the scrollbar sat at 720px
-   instead of the split's true edge, and .attn/.criteria never reached their
-   own 880px. The pane itself now fills the split's remaining width so the
-   scrollbar lands at the window edge, same as the mock; flex/min-height/
-   overflow-y are unchanged. Right padding now matches the mock's own
-   .reading (40px) - it used to read 0, the one geometry value this rule
-   never actually took from the mock it cites. */
+   actually clamping it - the mock's own reading pane (the retired console mock,
+   .reading) is fluid with no max-width of its own, and every measure lives on
+   the CONTENT instead (prose.css's .prose at 72ch, instrument.css's
+   .attn/.criteria at 880px). A pane cap tighter than those content measures
+   silently clamped them to whatever the pane had left, which is exactly what
+   happened here: the scrollbar sat at 720px instead of the split's true edge,
+   and .attn/.criteria never reached their own 880px. The pane itself now fills
+   the split's remaining width so the scrollbar lands at the window edge, same
+   as the mock; flex/min-height/ overflow-y are unchanged. Right padding now
+   matches the mock's own .reading (40px) - it used to read 0, the one geometry
+   value this rule never actually took from the mock it cites. */
 .explore-detail {
   padding: 22px 40px 40px 32px;
   min-width: 0;

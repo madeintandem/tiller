@@ -1,10 +1,9 @@
-// MapMode is Explore's fourth mode (docs/plans/2026-08-30-explore-map-
-// design.md, "The frame"): the fetch, the open set (default collapsed,
-// remembered per project), the viewport (remembered per project), the
-// selection (the URL's sel param, so a link lights the same node for a
-// teammate), the corner toolbar, the canvas, and the docked card.
-// Escape deselects; clicking empty canvas deselects; so does clicking the
-// selected card again.
+// MapMode is Explore's fourth mode (docs/spec/ui-surface.md): the
+// fetch, the open set (default collapsed, remembered per project), the viewport
+// (remembered per project), the selection (the URL's sel param, so a link
+// lights the same node for a teammate), the corner toolbar, the canvas, and the
+// docked card. Escape deselects; clicking empty canvas deselects; so does
+// clicking the selected card again.
 //
 // Four moves belong to the mode rather than to the canvas under it, because
 // each of them needs the layout and the frame at once. A map with nothing
@@ -238,12 +237,11 @@ function panInto(v: Viewport, rect: Revealed, frame: { w: number; h: number }, r
 }
 
 // The open set the map takes when this project has nothing stored: nothing
-// at all (fix round 1, docs/plans/2026-08-30-explore-map-design.md, "The map
-// opens collapsed"). Acme's 17 epics carry 102 features between them, and
-// opening all of them fits into a laptop frame only at k = 0.39, where a
-// title is five pixels tall. Collapsed, every branch card wears its own
-// count, the whole project reads at 1:1, and one click opens the branch the
-// reader came for.
+// at all (fix round 1, docs/spec/ui-surface.md). Acme's 17 epics carry 102
+// features between them, and opening all of them fits into a laptop frame only
+// at k = 0.39, where a title is five pixels tall. Collapsed, every branch card
+// wears its own count, the whole project reads at 1:1, and one click opens the
+// branch the reader came for.
 //
 // What Expand all reaches: every epic that has features, plus each shelf
 // branch that carries anything, features left closed. Only containers are

@@ -15,10 +15,10 @@ import (
 )
 
 // configureTargets are the three legal `configure` targets, in the order the
-// design doc names them (docs/plans/2026-08-26-review-grain-design.md,
-// "Authorization"): the project default, an epic, and a feature. A bare
-// `tiller configure --review-grain <g>` refuses rather than defaulting to the
-// widest scope, and this is the exact list its refusal names.
+// design doc names them (docs/spec/cli-surface.md): the project default, an
+// epic, and a feature. A bare `tiller configure --review-grain <g>` refuses
+// rather than defaulting to the widest scope, and this is the exact list its
+// refusal names.
 var configureTargets = []string{"project", store.NounEpic, store.NounFeature}
 
 // newConfigureCmd builds `configure <project|epic|feature> [key] --review-

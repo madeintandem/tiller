@@ -1,12 +1,11 @@
 /* Console v2's design-token layer (Phase 0, task 2): the madeintandem role-
    token system, adapted for the console's own jobs, replacing the chart-
-   table pass's prefixed token layer (task B1, docs/plans/2026-07-23-console-
-   chart-table-mocks.html) wholesale rather than aliasing alongside it. Every
-   value in the :root block below comes verbatim from the mock's own token
-   block (docs/plans/2026-08-09-console-v2-mocks.html:59-136), itself
-   adapted from the madeintandem site's global.css: role-named surfaces
-   (paper, panel, recess) and inks (ink, ink-2, ink-3, heading) rather than
-   the old layer's literal-hue names, a single --accent in place of its old
+   table pass's prefixed token layer (task B1, the retired console mock)
+   wholesale rather than aliasing alongside it. Every value in the :root block
+   below comes verbatim from the mock's own token block (the retired console
+   mock), itself adapted from the madeintandem site's global.css: role-named
+   surfaces (paper, panel, recess) and inks (ink, ink-2, ink-3, heading) rather
+   than the old layer's literal-hue names, a single --accent in place of its old
    magenta token, and the same seven-state chart palette carried forward as
    --st-<state> / --st-<state>-t pairs.
 

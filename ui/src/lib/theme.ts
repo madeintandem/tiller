@@ -5,7 +5,7 @@
 // header comment). This module is the one place that reads/writes it, so
 // both the pre-paint boot call (main.tsx) and the control itself (
 // ThemeToggle.tsx) apply the exact same semantics as the mock's own
-// applyTheme (docs/plans/2026-08-09-console-v2-mocks.html:1190-1197):
+// applyTheme (the retired console mock):
 // "auto" removes the attribute and lets prefers-color-scheme decide, a
 // specific pick sets it.
 //

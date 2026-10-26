@@ -1,7 +1,7 @@
 package e2e
 
 // This file is the soft order's end-to-end arc test (Task 11,
-// docs/plans/2026-08-08-soft-order-implementation.md): the same built-binary,
+// docs/spec/cli-surface.md): the same built-binary,
 // subprocess harness smoke_test.go and concurrency_test.go already use
 // (harness, requireOK, buildTiller), driving `tiller order` through render
 // (`tiller tree`) and routing (`tiller guide`, `tiller readout orient`) at
@@ -14,9 +14,9 @@ package e2e
 // one arc a developer or an agent actually runs, end to end.
 //
 // The fixture is two epics, two features each, no edges at first
-// (docs/plans/2026-08-08-soft-order-implementation.md, task-11-brief.md,
-// Step 1). Four states are asserted in sequence, each against the exact text
-// or sequence the unit suites already proved in isolation:
+// (docs/spec/cli-surface.md). Four states are asserted in sequence, each
+// against the exact text or sequence the unit suites already proved in
+// isolation:
 //
 //  1. Baseline: no order recorded, so the tree and the route both read plain
 //     key order (epic-a leading).
@@ -29,10 +29,9 @@ package e2e
 //     key-first one").
 //  4. A recorded dependency (epic-a depends on epic-b) plus a soft order
 //     that agrees with key order but contradicts that edge: the dependency
-//     layer outranks the soft order (docs/plans/2026-08-08-soft-order-design.md,
-//     "one precedence stack"), so the tree and the route both stay on
-//     epic-b, and the readout's "Dependency order" line names the
-//     contradiction by exact text rather than staying quiet about it.
+//     layer outranks the soft order (docs/spec/cli-surface.md), so the tree and
+//     the route both stay on epic-b, and the readout's "Dependency order" line
+//     names the contradiction by exact text rather than staying quiet about it.
 import (
 	"encoding/json"
 	"fmt"

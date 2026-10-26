@@ -1,7 +1,7 @@
 package views
 
 // The readout is the one consistent block Tiller hands the developer at a
-// seam boundary or a human gate (docs/plans/2026-07-25-agent-readout-design.md):
+// seam boundary or a human gate (docs/spec/cli-surface.md):
 // what happened, what the agent checked, what needs the human, what comes
 // next. It exists so the developer's experience does not depend on which AI
 // harness drove the work: every harness renders the same Readout, derived
@@ -9,7 +9,7 @@ package views
 // one section (NeedsYou) a whole tree read can answer on its own. Task 3 (this
 // file's bulk) adds the fact selection for all four seams the pass-1 CLI
 // drives (internal/skills: orient, decompose, specify, execute), each keyed to
-// the per-moment table in docs/plans/2026-07-25-agent-readout-design.md.
+// the per-moment table in docs/spec/cli-surface.md.
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ import (
 // Moment names the seam or gate a readout speaks for. The renderer keys its
 // fact selection off this, because what a decompose needs to prove is not what
 // an execute needs to prove (see the per-moment table in
-// docs/plans/2026-07-25-agent-readout-design.md).
+// docs/spec/cli-surface.md).
 type Moment string
 
 const (
@@ -420,7 +420,7 @@ func ReadoutOf(t *store.Tree, m Moment) Readout {
 // baseline review comes from its ledger, without inventing a queue kind.
 // The headline's artifact is the commit only when the tree is both
 // named and clean; an uncommitted tree leaves the human nothing to review
-// (docs/plans/2026-07-25-agent-readout-design.md, "The block"), so Artifact
+// (docs/spec/cli-surface.md), so Artifact
 // stays empty rather than naming a commit the working tree has since moved
 // past.
 func ReadoutOfInput(t *store.Tree, m Moment, in ReadoutInput) Readout {
@@ -676,14 +676,14 @@ func headlineFor(m Moment) string {
 
 // approveContent, answerContent, attestContent, and
 // syncContent fill in the human-gate moments' checks.
-// The design doc's per-moment table (docs/plans/2026-07-25-agent-readout-
-// design.md) gives each a "produced" and a "verification" column, but Task 3
-// only ever wrote content functions for the seams; the switch above
-// fell through to the zero-value Readout for every gate until this task,
-// which is the empty-block gap task-6-brief.md's own author could not see
-// (gate content was never assigned to a task) and this task's own brief
-// flags directly: these moments are what a developer sees on every approve,
-// answer, attest, and sync they run, more often than any seam.
+// The design doc's per-moment table (docs/spec/cli-surface.md) gives each a
+// "produced" and a "verification" column, but Task 3 only ever wrote content
+// functions for the seams; the switch above fell through to the zero-value
+// Readout for every gate until this task, which is the empty-block gap
+// task-6-brief.md's own author could not see (gate content was never assigned
+// to a task) and this task's own brief flags directly: these moments are what a
+// developer sees on every approve, answer, attest, and sync they run, more
+// often than any seam.
 //
 // None of them populates Entities. The design's settled decision is that
 // "existing confirmation lines are unchanged and the readout follows them,"
@@ -1235,12 +1235,11 @@ func dependencyOrderCheck(t *store.Tree, order *gen.Order) *ReadoutCheck {
 // precedence stack) placed one ahead of the other despite the soft list
 // asking the other way. Rendered inversion is the definition of overridden,
 // because soft order is the top tiebreak below the layers
-// (docs/plans/2026-08-08-soft-order-design.md, "The rule: one precedence
-// stack"), so anything that outranks it in the final render can only be a
-// recorded edge. Detector, not a gate: soft order never gates, so this names
-// the fact and touches nothing else in the tree. It consumes the order
-// gen.DependencyOrder already computed rather than walking the graph again;
-// refX is the soft-listed-earlier of the pair, refY the one dependencies
+// (docs/spec/cli-surface.md), so anything that outranks it in the final render
+// can only be a recorded edge. Detector, not a gate: soft order never gates, so
+// this names the fact and touches nothing else in the tree. It consumes the
+// order gen.DependencyOrder already computed rather than walking the graph
+// again; refX is the soft-listed-earlier of the pair, refY the one dependencies
 // rendered ahead of it. found is false once no scope has one.
 func overriddenSoftOrder(t *store.Tree, order *gen.Order) (refX, refY string, found bool) {
 	if x, y, ok := firstInvertedPair(t.ProjectOrder.Epics, order.Epics()); ok {
@@ -1748,7 +1747,7 @@ func gateHasEvidence(g store.Gate) bool {
 // evidence" distinctive check (task-3-brief.md, Step 5): a required gate
 // marked pass with nothing behind it is the hollow pass this task exists to
 // catch, the same mechanical-over-narrated thesis the whole readout rests on
-// (docs/plans/2026-07-25-agent-readout-design.md, "The problem"). A task
+// (docs/spec/cli-surface.md). A task
 // with no required gates at all, whether it carries no gates or only
 // optional ones, returns false rather than passing vacuously
 // (task-3-report.md finding 4): a required build-and-tests gate is the

@@ -11,7 +11,7 @@ import (
 )
 
 // These tests pin SetOrder, the soft order's one writer
-// (docs/plans/2026-08-08-soft-order-design.md): a recorded statement of
+// (docs/spec/cli-surface.md): a recorded statement of
 // intended sequence that arranges rendering and steers routing, and never
 // gates a legal action.
 

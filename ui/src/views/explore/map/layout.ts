@@ -1,11 +1,10 @@
 // The Explore map's layout, a balanced horizontal mind map, pure and
-// dependency-free (docs/plans/2026-08-30-explore-map-design.md, "The layout",
-// amended 2026-08-31). The project is the root at the center; its children
-// (epics in wire order, then the Bugs and Chores branches when their shelf
-// holds anything) are seated right or left by sidesOf, beside what they
-// depend on unless that side has run too far ahead; every child stacks
-// beside its parent further out on the same side; a branch is as tall as its
-// open descendants and sits at the vertical center of its stack. Branch
+// dependency-free (docs/spec/ui-surface.md). The project is the root at the
+// center; its children (epics in wire order, then the Bugs and Chores branches
+// when their shelf holds anything) are seated right or left by sidesOf, beside
+// what they depend on unless that side has run too far ahead; every child
+// stacks beside its parent further out on the same side; a branch is as tall as
+// its open descendants and sits at the vertical center of its stack. Branch
 // connectors are the only lines at rest; dependency arcs are computed here
 // too, lifted to the visible ancestor, deduped, and routed by where their
 // two cards sit, but the canvas draws them only for a selection or on the

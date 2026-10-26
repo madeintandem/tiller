@@ -1,13 +1,12 @@
 // CriterionRow renders one authored acceptance criterion as the contract's
-// own grid row (task-17-brief.md item 6, the mock's own .crow: docs/plans/
-// 2026-08-09-console-v2-mocks.html:1047-1053): id, statement, the binding's
-// TYPE alone - never its ref or run detail, which the compact grid has no
-// column for; that fact still reads on the gate's own flat evidence line and
-// in AmendmentBody's precondition rows, this row's job narrowed to exactly
-// the brief's own five fields - and a status chip. required never renders
-// here either: the exhaustive field list is id, statement, binding type,
-// status chip, attested-by, and a criterion's own required-ness has no slot
-// left in it.
+// own grid row (task-17-brief.md item 6, the mock's own .crow: the retired
+// console mock): id, statement, the binding's TYPE alone - never its ref or run
+// detail, which the compact grid has no column for; that fact still reads on
+// the gate's own flat evidence line and in AmendmentBody's precondition rows,
+// this row's job narrowed to exactly the brief's own five fields - and a status
+// chip. required never renders here either: the exhaustive field list is id,
+// statement, binding type, status chip, attested-by, and a criterion's own
+// required-ness has no slot left in it.
 //
 // Fix wave (task-17-review, Critical finding 1): the pass-1 row's per-
 // criterion EVIDENCE link (CriterionStatusView.evidence, still served -

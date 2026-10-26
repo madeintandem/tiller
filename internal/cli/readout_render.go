@@ -14,7 +14,7 @@ import (
 // backticks, and dash bullets. No headings, because the block sits inside the
 // agent's own message and would fight its structure; no tables, because they
 // render inconsistently across harnesses
-// (docs/plans/2026-07-25-agent-readout-design.md, "The block").
+// (docs/spec/cli-surface.md).
 //
 // renderReadout lives in package cli, not internal/gen, because
 // internal/views already imports internal/gen: a gen renderer consuming a

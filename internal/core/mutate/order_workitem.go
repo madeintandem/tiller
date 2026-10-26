@@ -13,8 +13,8 @@ import (
 
 // applyShelfOrder is the shelf grain of SetOrder: a read-modify-write of
 // .tiller/<shelf>/order.yml, whole-list replace or clear, one
-// order.<shelf> event (docs/plans/2026-08-28-bugs-and-chores-design.md,
-// Queue, routing, and dependencies). The shelf has no parent to name.
+// order.<shelf> event (docs/spec/cli-surface.md). The shelf has no parent to
+// name.
 func applyShelfOrder(tree *store.Tree, deps Deps, owner store.Contributor, noun string, ids []string) (SetOrderResult, error) {
 	relYml := store.ShelfOrderRelPath(noun)
 	var doc store.ShelfOrder

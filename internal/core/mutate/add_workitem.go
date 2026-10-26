@@ -150,8 +150,7 @@ func renderWorkItemMD(noun, title string) string {
 }
 
 // renderBugMD is the contract stub triage reads: reproduction, expected,
-// actual, fixed-when (docs/plans/2026-08-28-bugs-and-chores-design.md,
-// Two nouns, one body).
+// actual, fixed-when (docs/spec/cli-surface.md).
 func renderBugMD(title string) string {
 	return fmt.Sprintf("# %s\n\n"+
 		"Proposed bug created by `tiller add bug`. Write the contract here before\n"+

@@ -43,13 +43,12 @@ func (e *WorkTerminalError) Error() string {
 	return fmt.Sprintf("mutate: %s %s is %s; nothing is left to resolve", e.Noun, e.ID, e.Status)
 }
 
-// Resolve sets or clears the carrier pointer (docs/plans/2026-08-28-bugs-
-// and-chores-design.md, Resolution). It moves no status: the node keeps
-// proposed or ready, takes the derived carried phase, and sync crosses it
-// when the carrier's done lands. The carrier is a live epic, feature, or
-// task; a cancelled or archived one refuses, since its merge will never
-// come. It sits in the approve delegation class: human, or agent on an
-// explicit instruction naming the node and the carrier.
+// Resolve sets or clears the carrier pointer (docs/spec/cli-surface.md). It
+// moves no status: the node keeps proposed or ready, takes the derived carried
+// phase, and sync crosses it when the carrier's done lands. The carrier is a
+// live epic, feature, or task; a cancelled or archived one refuses, since its
+// merge will never come. It sits in the approve delegation class: human, or
+// agent on an explicit instruction naming the node and the carrier.
 func Resolve(tree *store.Tree, deps Deps, in ResolveInput) (ResolveResult, error) {
 	owner, err := store.ResolveContributor(tree.Manifest, deps.Contributor)
 	if err != nil {

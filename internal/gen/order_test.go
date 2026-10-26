@@ -643,7 +643,7 @@ func TestDependencyOrderLessFallsBackForUnrankedNoun(t *testing.T) {
 }
 
 // TestEpicCycleMembersRenderByFeatureFlow pins the phase 1 rule of the soft
-// order design (docs/plans/2026-08-08-soft-order-design.md): a multi-member
+// order design (docs/spec/cli-surface.md): a multi-member
 // epic cycle group emits its members by the minimum featureFlow index of
 // their own features, not by key, because the feature graph stays acyclic
 // and honest when the epic lift cycles (the Acme field case: audit-engine
@@ -727,12 +727,12 @@ func TestDependencyOrderIsDeterministic(t *testing.T) {
 	require.Equal(t, a.Features("form-engine"), b.Features("form-engine"))
 }
 
-// The tests below pin the soft order stack (docs/plans/2026-08-08-soft-order-
-// design.md): recorded depends_on first (never violated), then the recorded
-// soft order (listed ids precede unlisted, informing render and routing
-// without ever gating), then, inside an epic cycle group only, the
-// flow-derived rank phase 1 established, and finally key. Every test drives
-// DependencyOrder or OrderTasks, the public surface, never softTie directly.
+// The tests below pin the soft order stack (docs/spec/cli-surface.md): recorded
+// depends_on first (never violated), then the recorded soft order (listed ids
+// precede unlisted, informing render and routing without ever gating), then,
+// inside an epic cycle group only, the flow-derived rank phase 1 established,
+// and finally key. Every test drives DependencyOrder or OrderTasks, the public
+// surface, never softTie directly.
 
 // TestSoftOrderBreaksEpicLayerTies: two independent epics; soft order
 // inverts their key order.

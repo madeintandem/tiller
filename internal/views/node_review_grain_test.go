@@ -1,16 +1,15 @@
 package views_test
 
-// Task 8 of the Review Grain build (docs/plans/2026-08-26-review-grain-design.md,
-// "Surfaces": the console's own quiet badge). These tests pin the node header
-// payload's two new additive fields: review_grain, the RESOLVED grain in force
-// for work under an epic or a feature (store.ResolvedReviewGrain), and
-// review_grain_source, naming which of the three homes (docs/plans/2026-08-26-
-// review-grain-design.md, "The setting": feature, epic, project) it actually
+// Task 8 of the Review Grain build (docs/spec/cli-surface.md). These tests pin
+// the node header payload's two new additive fields: review_grain, the RESOLVED
+// grain in force for work under an epic or a feature
+// (store.ResolvedReviewGrain), and review_grain_source, naming which of the
+// three homes (docs/spec/cli-surface.md) it actually
 // came from, or "default" when none of the three is set and the value is the
-// hardcoded task fallback. Both are present for an epic and a feature, the
-// two review-grain homes the design names besides the project default; a
-// task, a question, and an amendment carry neither, since none of them owns
-// work of its own to resolve a grain for.
+// hardcoded task fallback. Both are present for an epic and a feature, the two
+// review-grain homes the design names besides the project default; a task, a
+// question, and an amendment carry neither, since none of them owns work of its
+// own to resolve a grain for.
 
 import (
 	"encoding/json"
@@ -152,9 +151,7 @@ func TestNodeOmitsReviewGrainForNounsWithNoWorkUnderThem(t *testing.T) {
 }
 
 // TestNodeProjectsPRAndReviewRefAtCoarserGrain pins the softened schema rule
-// (docs/plans/2026-08-26-review-grain-design.md, Schema and the PR record: "a
-// PR represents exactly one node, the task at task grain, the feature or
-// epic at coarser grain"): an epic or a feature carries its OWN recorded pr
+// (docs/spec/cli-surface.md): an epic or a feature carries its OWN recorded pr
 // or review_ref when it is itself the reviewed node, the identical fields a
 // task has always carried, reused rather than a second shape.
 func TestNodeProjectsPRAndReviewRefAtCoarserGrain(t *testing.T) {

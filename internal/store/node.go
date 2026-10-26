@@ -126,7 +126,7 @@ type Epic struct {
 	// Order is the recorded soft order of this epic's features: intent, not
 	// constraint. It arranges rendering and steers routing recommendations
 	// wherever depends_on leaves the choice open, and it never gates
-	// (docs/plans/2026-08-08-soft-order-design.md). Written only by
+	// (docs/spec/artifact-schema.md). Written only by
 	// mutate.SetOrder; ids, a partial list legal.
 	Order []string `yaml:"order,omitempty"`
 
@@ -134,7 +134,7 @@ type Epic struct {
 	// which the review PR opens for work under it (task | feature at feature
 	// grain; task | feature | epic at epic grain). Absent means inherit; the
 	// resolver in reviewgrain.go owns precedence
-	// (docs/plans/2026-08-26-review-grain-design.md, The setting).
+	// (docs/spec/artifact-schema.md).
 	ReviewGrain string `yaml:"review_grain,omitempty"`
 
 	// Branch is the epic aggregate review branch, recorded at the first
@@ -143,8 +143,7 @@ type Epic struct {
 
 	// PR and ReviewRef are the epic's review record, set only when the epic
 	// itself is the reviewed node: a PR represents exactly one node, and at
-	// epic grain that node is the epic (docs/plans/2026-08-26-review-grain-design.md,
-	// Schema and the PR record, softening "a PR always represents a task").
+	// epic grain that node is the epic (docs/spec/artifact-schema.md).
 	// PR is the number when the repository has a remote; ReviewRef is the
 	// branch-plus-head fallback when it does not. Both stay nil at task and
 	// feature grain.
@@ -195,7 +194,7 @@ type Feature struct {
 	// Order is the recorded soft order of this feature's tasks: intent, not
 	// constraint. It arranges rendering and steers routing recommendations
 	// wherever depends_on leaves the choice open, and it never gates
-	// (docs/plans/2026-08-08-soft-order-design.md). Written only by
+	// (docs/spec/artifact-schema.md). Written only by
 	// mutate.SetOrder; ids, a partial list legal.
 	Order []string `yaml:"order,omitempty"`
 

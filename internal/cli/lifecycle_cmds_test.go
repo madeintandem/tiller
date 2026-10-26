@@ -1184,7 +1184,7 @@ func TestResumeRefusesTheFeatureNoun(t *testing.T) {
 }
 
 // TestSubmitFeatureUnderDefaultGrainIsWrongGrainMisuse pins submit's new
-// split (docs/plans/2026-08-26-review-grain-design.md): `submit feature` is
+// split (docs/spec/cli-surface.md): `submit feature` is
 // now a legitimate coarse-grain command (mutate.SubmitNode), so the feature
 // noun no longer refuses categorically the way resume's still does. Under
 // the default (unconfigured) task grain it still refuses as misuse (exit 2),
@@ -1254,8 +1254,7 @@ func TestSubmitFeatureCLIRefusesBeforeTasksAreInReview(t *testing.T) {
 // resolves to feature or epic grain), `submit task` accepts the remote-less
 // review ref even though the repo has a remote, because the task itself
 // never carries a PR at that grain: the feature or epic PR is the review
-// surface (docs/plans/2026-08-26-review-grain-design.md, line 37; the
-// execute skill's own promise). The task still moves check->in_review
+// surface (docs/spec/cli-surface.md). The task still moves check->in_review
 // exactly as task grain does, recording a review ref instead of a PR.
 func TestSubmitTaskUnderCoarseGrainAcceptsARemotelessReviewRefWithARemote(t *testing.T) {
 	dir := initGatedGitRepo(t, "true")
@@ -1657,9 +1656,8 @@ func TestApproveReviewedAssumptionExclusiveWithMultipleNodes(t *testing.T) {
 }
 
 // TestApproveEpicWithReviewGrainRecordsIt pins the approve-time review-grain
-// flag at epic grain (docs/plans/2026-08-26-review-grain-design.md, "The
-// setting"): approve's own --review-grain records the epic's review grain in
-// the same act as the start gate.
+// flag at epic grain (docs/spec/cli-surface.md): approve's own --review-grain
+// records the epic's review grain in the same act as the start gate.
 func TestApproveEpicWithReviewGrainRecordsIt(t *testing.T) {
 	laySpeccableFeature(t)
 

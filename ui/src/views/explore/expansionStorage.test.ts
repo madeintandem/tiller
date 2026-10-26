@@ -1,5 +1,5 @@
 // Vitest coverage for the Explore tree's expansion persistence (task 4,
-// docs/plans/2026-08-14-explore-tree-state.md), mirroring
+// docs/spec/ui-surface.md), mirroring
 // selectionStorage.test.ts's own read/write/round-trip template for the
 // sibling per-project storage module.
 

@@ -1,11 +1,9 @@
 package selfupdate_test
 
 // These tests pin the filesystem half of internal/selfupdate
-// (docs/plans/2026-08-26-upgrade-lite-implementation.md, Task 2: verify,
-// extract, swap, detect; design context in docs/spec/distribution.md,
-// Update): naming the release asset for this OS and arch, verifying a
-// downloaded archive's checksum against checksums.txt, extracting the
-// tiller member from the tar.gz, swapping it onto a target path without
+// (docs/spec/distribution.md): naming the release asset for this OS and arch,
+// verifying a downloaded archive's checksum against checksums.txt, extracting
+// the tiller member from the tar.gz, swapping it onto a target path without
 // ever truncating that path in place, resolving the running executable
 // (with a test seam), and detecting a Homebrew-managed install. install.sh
 // is the semantic reference for the checksum and extraction steps (its

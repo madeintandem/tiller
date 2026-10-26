@@ -20,8 +20,8 @@ import (
 // means something read against a batch that would otherwise have applied.
 //
 // It replays the field case intake itself was built for
-// (docs/plans/2026-08-11-intake-design.md), at the one-batch shape a later
-// field case forced it to grow into (docs/plans/2026-08-12-intake-same-batch-parenting.md):
+// (docs/spec/cli-surface.md), at the one-batch shape a later
+// field case forced it to grow into (docs/spec/cli-surface.md):
 // an Acme-shaped review lands on a tree that already has an epic and a
 // feature in flight, and the explosion stages every op kind the design's
 // mapping rules distinguish, plus the same-batch epic parenting the Acme

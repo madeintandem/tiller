@@ -1,14 +1,12 @@
-// MapCanvas is the Explore map's drawing (docs/plans/2026-08-30-explore-map-
-// design.md, "The layout", "Interaction", "Node anatomy", amended
-// 2026-08-31): a frame div that owns every gesture (drag on empty canvas
-// pans, the wheel zooms about the pointer, a resize is measured off it) and
-// two layers stacked inside it. Below, an SVG holding the wires alone, the
-// layout's branch connectors and its dependency arcs, in a group the
-// viewport transforms. Above, a plain HTML layer holding one one-row card
-// per box, absolutely positioned in world units, transformed by the very
-// same expression. Nothing either layer draws is a function of the frame's
-// measured size, so the two cannot come apart: the measure exists only to
-// tell MapMode what to fit and travel against.
+// MapCanvas is the Explore map's drawing (docs/spec/ui-surface.md): a frame div
+// that owns every gesture (drag on empty canvas pans, the wheel zooms about the
+// pointer, a resize is measured off it) and two layers stacked inside it.
+// Below, an SVG holding the wires alone, the layout's branch connectors and its
+// dependency arcs, in a group the viewport transforms. Above, a plain HTML
+// layer holding one one-row card per box, absolutely positioned in world units,
+// transformed by the very same expression. Nothing either layer draws is a
+// function of the frame's measured size, so the two cannot come apart: the
+// measure exists only to tell MapMode what to fit and travel against.
 //
 // The cards used to be foreignObject content inside that SVG, which WebKit
 // gets wrong twice over: it mispositions a mirrored row inside one (a

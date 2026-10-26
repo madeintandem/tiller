@@ -156,7 +156,7 @@ func (r *Resolver) byKey(noun, key string) []store.Node {
 		}
 		// A shelf node answers to its canonical key (bugs/<k>) and, since
 		// the noun already names the shelf, to the bare local key alone
-		// (docs/plans/2026-08-28-bugs-and-chores-design.md, Verbs).
+		// (docs/spec/cli-surface.md).
 		for _, w := range r.tree.WorkNodesOf(noun) {
 			k := w.NodeKey()
 			if k != nil && (*k == key || *k == store.ShelfCanonicalKey(noun, key)) {

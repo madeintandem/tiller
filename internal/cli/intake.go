@@ -13,10 +13,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file implements `tiller intake <file>` (docs/plans/2026-08-11-intake-design.md;
-// .superpowers/sdd/2026-08-11-intake-implementation/task-4-brief.md). intake is
-// the front door for a recurring input decompose and add never fit: an
-// external feedback document (a code review, a product critique, user
+// This file implements `tiller intake <file>` (docs/spec/cli-surface.md).
+// intake is the front door for a recurring input decompose and add never fit:
+// an external feedback document (a code review, a product critique, user
 // research) that implies a batch of heterogeneous changes to a living tree.
 // It does exactly two things, both mechanical: it lands the document as a
 // fingerprinted source artifact under .tiller/feedback/, and it opens a

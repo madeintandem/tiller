@@ -16,7 +16,7 @@ import (
 // These tests pin the surface write path (cli-surface.md, the link row):
 // surface.paths is the existing code an epic or a feature touches, and until
 // SetSurface existed nothing could write it. Unioning mirrors --depends-on
-// exactly (docs/plans/2026-07-28-drift-design-decisions.md, decision 5),
+// exactly (docs/spec/cli-surface.md),
 // because surface is machine-owned state on the same .yml side of the
 // prose/state split depends.go's own header argues from.
 

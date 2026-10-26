@@ -38,9 +38,8 @@ type transition struct {
 
 // workItemRows is the task's row set, shared by the two shelf nouns: a bug
 // or a chore is a sub-class of task and carries its lifecycle verbatim
-// (docs/plans/2026-08-28-bugs-and-chores-design.md, Lifecycle, contract,
-// gates). The carried crossing (resolved_by, sync) is not a row here: sync
-// sets done directly on it, as it does for a rollup.
+// (docs/spec/cli-surface.md). The carried crossing (resolved_by, sync) is not a
+// row here: sync sets done directly on it, as it does for a rollup.
 var workItemRows = []transition{
 	{From: "proposed", Verb: "approve", To: "ready"},
 	{From: "proposed", Verb: "cancel", To: "cancelled"},

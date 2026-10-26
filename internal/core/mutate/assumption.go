@@ -6,7 +6,7 @@ package mutate
 // date until a human reviews the answer in. ReviewAssumption is the
 // dedicated clearing act `approve <noun> <node> --reviewed-assumption
 // <Q-id>` drives, kept deliberately apart from --refresh-basis (drift design
-// decision 4, docs/plans/2026-07-28-drift-design-decisions.md) so an
+// decision 4, docs/spec/cli-surface.md) so an
 // unrelated basis refresh can never silently assert an answer was
 // considered. UnreviewedAssumptions is the one predicate behind both the
 // submit guard (Task 6) and the answered_question drift marker (Task 7),

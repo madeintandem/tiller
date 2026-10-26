@@ -11,13 +11,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// transitionWorkItem is transitionTask for a shelf node (docs/plans/2026-08-28-
-// bugs-and-chores-design.md, Lifecycle, contract, gates). The shape is the
+// transitionWorkItem is transitionTask for a shelf node
+// (docs/spec/cli-surface.md). The shape is the
 // task's, minus what a task inherits from its parent feature: there is no
-// parent-state walk, no feature basis, and no question hold, because a
-// shelf node has no ancestors. The claim it needs is its own (Task 6), and
-// the branch it records at start is cut from the integration branch, never a
-// workbench. cancel carries a resolution.
+// parent-state walk, no feature basis, and no question hold, because a shelf
+// node has no ancestors. The claim it needs is its own (Task 6), and the branch
+// it records at start is cut from the integration branch, never a workbench.
+// cancel carries a resolution.
 func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, treeNode store.WorkNode, in TransitionInput) (TransitionResult, error) {
 	noun := treeNode.Noun()
 	target, ymlRel, snapshot, err := loadWorkItemFile(tree, treeNode)

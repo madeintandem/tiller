@@ -1,9 +1,9 @@
 // InstrSection is the node instrument's section frame: the mock's own 11px
-// letterspaced eyebrow (.flist .fh, docs/plans/2026-07-23-console-chart-table-
-// mocks.html) over whatever the section holds. instrument.css already carried
-// a faithful copy of that head as .instr-fh, but only the task ledger reached
-// for it; every other section on the page was still spending the pass-1 <h2>,
-// 60px of chrome for the same 35px job.
+// letterspaced eyebrow (.flist .fh, the retired console mock) over whatever the
+// section holds. instrument.css already carried a faithful copy of that head as
+// .instr-fh, but only the task ledger reached for it; every other section on
+// the page was still spending the pass-1 <h2>, 60px of chrome for the same 35px
+// job.
 //
 // The rule this component exists to make cheap: A SECTION THAT HOLDS NOTHING
 // IS NOT DRAWN. The mock's draft-state instrument shows no empty Tasks list,

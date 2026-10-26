@@ -244,9 +244,7 @@ func (e *AmendmentPreconditionsStaleError) Error() string {
 // preconditions rather than after, so a caller whose whole batch traces to a
 // feedback document that has since moved learns that first, ahead of working
 // through a stale-precondition report against a foundation that already
-// changed under it (docs/plans/2026-08-11-intake-design.md: "The fingerprint
-// also makes post-approval edits to the document visible as the same class of
-// fact drift already reports elsewhere"). Every structural graph and
+// changed under it (docs/spec/cli-surface.md). Every structural graph and
 // target-state gate follows preconditions so a staged target_status guard keeps
 // its richer exit-1 stale answer when the target moved. The revise check comes
 // last for the mirror-image reason: a human who staged an eval_revision guard
@@ -1674,7 +1672,7 @@ func applyAmendment(tree *store.Tree, deps Deps, owner store.Contributor, rev vc
 // order they were staged, before anything can need to point at them.
 //
 // Ownership follows add.go's own rule with no separate handling here
-// (docs/plans/2026-08-17-owner-lifecycle-design.md, "What this supersedes"):
+// (docs/spec/cli-surface.md):
 // an add-epic arm mints an epic owned by the approver (planAddEpic stamps
 // whatever owner it is called with, and that is owner here, the acting
 // approver, not each op's original proposer); an add-feature arm mints a

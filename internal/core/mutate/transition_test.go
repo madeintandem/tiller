@@ -2297,7 +2297,7 @@ func setFeatureBranchOnDisk(t *testing.T, root, epicKey, featKey, branch string)
 // TestResumeFeatureIsMisuse pins the noun rule that falls out of a PR always
 // representing a task, or, at a coarse review grain, the coarser node itself
 // (artifact-schema.md, "A PR always represents a task", softened by
-// docs/plans/2026-08-26-review-grain-design.md, "Schema and the PR record").
+// docs/spec/cli-surface.md).
 // resume has no coarser-grain meaning of its own at any review grain, so
 // naming a feature on it is still a caller that lost track of what it is
 // operating on, the checksum class the grammar reserves exit 2 for

@@ -1,5 +1,5 @@
 // Vitest coverage for the lifted expansion map (task 1,
-// docs/plans/2026-08-14-explore-tree-state.md): every exported function,
+// docs/spec/ui-surface.md): every exported function,
 // including the three rules the rest of the tree depends on verbatim -
 // autoOpen skips an id held closed by hand, openAll overrides a held-closed
 // entry, and closeAll returns to the empty map rather than an all-false one

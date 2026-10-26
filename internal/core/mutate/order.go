@@ -1,6 +1,6 @@
 package mutate
 
-// This file owns soft-order writes (docs/plans/2026-08-08-soft-order-design.md):
+// This file owns soft-order writes (docs/spec/cli-surface.md):
 // SetOrder replaces explicit intent, while amendment approval may only append
 // epics it successfully creates.
 //

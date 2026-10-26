@@ -1,9 +1,7 @@
 package selfupdate_test
 
 // These tests pin the network half of internal/selfupdate
-// (docs/plans/2026-08-26-upgrade-lite-implementation.md, Task 1: The release
-// client; design context in docs/spec/distribution.md, Update, and
-// docs/plans/2026-08-26-review-grain-design.md, tiller upgrade, lite):
+// (docs/spec/distribution.md):
 // resolving a GitHub release by tag or as the latest,
 // and fetching one named asset either through the token-authenticated API
 // endpoint or the public browser download URL, mirroring install.sh's two

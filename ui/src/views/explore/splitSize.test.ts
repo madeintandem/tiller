@@ -1,5 +1,5 @@
 // Vitest coverage for the resizable split's clamp (task 3,
-// docs/plans/2026-08-14-explore-tree-state.md): the one pure rule the
+// docs/spec/ui-surface.md): the one pure rule the
 // divider's drag, keyboard, and double-click handlers all fold every
 // candidate width through before it ever reaches state, and the one rule
 // Task 4's persistence restore folds a stored value through too. Total on

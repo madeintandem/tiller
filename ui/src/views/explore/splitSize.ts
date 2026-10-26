@@ -1,13 +1,12 @@
-// The resizable split's one clamp (task 3, docs/plans/2026-08-14-explore-
-// tree-state.md): every candidate navigator width, wherever it comes from -
-// a mouse drag's pointer offset, a keyboard nudge, a double-click reset, or
-// (Task 4) a value pulled back out of localStorage - folds through here
-// before it ever reaches state, so `navWidth` in Explore.tsx is always a
-// finite number inside [NAV_WIDTH_MIN, NAV_WIDTH_MAX] no matter what
-// produced the candidate. Pure and React-free by design, the same posture
-// expansion.ts (task 1) took for the same reason: the rule is testable with
-// no render involved, and every caller (a pointermove handler, a keydown
-// handler, a storage reader) shares the identical one.
+// The resizable split's one clamp (task 3, docs/spec/ui-surface.md): every
+// candidate navigator width, wherever it comes from - a mouse drag's pointer
+// offset, a keyboard nudge, a double-click reset, or (Task 4) a value pulled
+// back out of localStorage - folds through here before it ever reaches state,
+// so `navWidth` in Explore.tsx is always a finite number inside [NAV_WIDTH_MIN,
+// NAV_WIDTH_MAX] no matter what produced the candidate. Pure and React-free by
+// design, the same posture expansion.ts (task 1) took for the same reason: the
+// rule is testable with no render involved, and every caller (a pointermove
+// handler, a keydown handler, a storage reader) shares the identical one.
 //
 // Two failure bands, not one: NaN, +/-Infinity, and any negative number are
 // not a real width at all - they mean the arithmetic that produced the

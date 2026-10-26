@@ -24,7 +24,7 @@ func observationWorkBranch(m *store.Manifest, w store.WorkNode) string {
 }
 
 // syncWorkItems is the third pass of Sync, after features and epics
-// (docs/plans/2026-08-28-bugs-and-chores-design.md, Resolution). For every
+// (docs/spec/cli-surface.md). For every
 // shelf node, id order, bugs then chores:
 //
 //   - a node with a live carrier crosses on the carrier's done, basis

@@ -169,18 +169,17 @@ function HeldChip({ held }: { held: HeldView | undefined }) {
 }
 
 // ReviewGrainChip is the Review Grain build's own badge (task-8-brief.md,
-// docs/plans/2026-08-26-review-grain-design.md, "Surfaces"): the resolved
+// docs/spec/ui-surface.md): the resolved
 // review grain in force for work under an epic or a feature
 // (node.review_grain, views.NodeView.ReviewGrain), rendered only when it
 // differs from "task", the value every tree carries by default and needs no
 // badge to explain. Scoped to epic and feature pages alone: a task owns no
 // home of its own to override with, and its in_review status already reads
 // as riding the grain node's PR wherever that matters
-// (docs/plans/2026-08-26-review-grain-design.md, "What a coarse grain
-// changes"). It borrows Chip's quiet "draft" register, the same neutral
-// bucket DriftedChip's own non-refusing badge already uses, deliberately
-// never the accent: a coarser grain is a calibration a human chose, not a
-// caution the page is raising.
+// (docs/spec/ui-surface.md). It borrows Chip's quiet "draft" register, the same
+// neutral bucket DriftedChip's own non-refusing badge already uses,
+// deliberately never the accent: a coarser grain is a calibration a human
+// chose, not a caution the page is raising.
 function ReviewGrainChip({ node }: { node: NodeView }) {
   if (node.noun !== "epic" && node.noun !== "feature") {
     return null;

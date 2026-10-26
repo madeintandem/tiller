@@ -1,10 +1,9 @@
-// MapCard is the detail for the selected node (docs/plans/2026-08-30-
-// explore-map-design.md, "Interaction"): kind pill, title, chip, key, the
-// container it sits in, contributors or owner, the questions holding it, the node's
-// dependencies and dependents (each a button that selects that node on the
-// map), a shelf node's found-in and carried-by targets, and the one plain
-// Open link to the node page, which is the drill-in. The map itself never
-// navigates on a click.
+// MapCard is the detail for the selected node (docs/spec/ui-surface.md): kind
+// pill, title, chip, key, the container it sits in, contributors or owner, the
+// questions holding it, the node's dependencies and dependents (each a button
+// that selects that node on the map), a shelf node's found-in and carried-by
+// targets, and the one plain Open link to the node page, which is the drill-in.
+// The map itself never navigates on a click.
 //
 // It is a column: a header carrying the kind line and the close control, and
 // a body under it that scrolls when a node has more to say than the card has

@@ -1,8 +1,7 @@
 package views_test
 
 // These tests pin Task 6 of the serve read-model correction batch
-// (docs/plans/2026-07-09-serve-read-model-correction-design.md, verification
-// point 6's payload half): NodeView projects a node's source provenance, its
+// (docs/spec/cli-surface.md): NodeView projects a node's source provenance, its
 // work surface, and whichever review target the store recorded. The store
 // already carries these fields (Task 1 put Source on epic and feature); this
 // pins that views.Node actually copies them through, and stays silent when a
@@ -81,12 +80,12 @@ func TestNodeProjectsSourceSurfaceAndReviewTargets(t *testing.T) {
 				require.NotNil(t, v.Surface)
 				require.Equal(t, "tiller/form-engine/certification-form-loading", v.Branch)
 				// A PR represents exactly one node, the reviewed grain's own
-				// (docs/plans/2026-08-26-review-grain-design.md, Schema and the
-				// PR record): this fixture sets no ReviewGrain and records no
-				// PR or ReviewRef of its own, so it projects neither, and its
-				// Branch stays the task-grain workbench rather than a review
-				// surface. node_review_grain_test.go pins the coarser-grain
-				// case where a feature DOES carry its own PR/ReviewRef.
+				// (docs/spec/cli-surface.md): this fixture sets no ReviewGrain
+				// and records no PR or ReviewRef of its own, so it projects
+				// neither, and its Branch stays the task-grain workbench rather
+				// than a review surface. node_review_grain_test.go pins the
+				// coarser-grain case where a feature DOES carry its own
+				// PR/ReviewRef.
 				require.Nil(t, v.PR)
 				require.Nil(t, v.ReviewRef)
 				require.NotContains(t, raw, `"pr":`)

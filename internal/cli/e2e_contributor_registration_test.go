@@ -8,7 +8,7 @@ import (
 )
 
 // This file is the contributor-registration-and-attribution design's own end-to-end
-// net (docs/plans/2026-08-12-owner-registration-design.md), replaying the
+// net (docs/spec/cli-surface.md), replaying the
 // Lantern incident the design closes at the real CLI rather than through the
 // unit-level pins Tasks 1 and 2 already left in join_test.go,
 // identity_resolution_test.go, and amendment_cmds_test.go. Those pins prove

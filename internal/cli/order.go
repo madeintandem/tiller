@@ -1,7 +1,7 @@
 package cli
 
 // This file wires `tiller order <epic|feature|task> <node> [<node> ...]`
-// (docs/plans/2026-08-08-soft-order-design.md), the soft order's one command.
+// (docs/spec/cli-surface.md), the soft order's one command.
 // It is a thin shell over internal/core/mutate.SetOrder, built the same way
 // link.go shells mutate.Link: flags in, a
 // SetOrderInput out, and the standard success/error envelope on the result.

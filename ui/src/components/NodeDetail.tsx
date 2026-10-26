@@ -290,7 +290,7 @@ function remoteFrom(upstream: string): string {
 }
 
 // WarnBox is the unpushed-review caution, the warning register's one tenant
-// today (mock: docs/plans/2026-08-09-console-v2-mocks.html:1013-1017). Server
+// today (the retired console mock). Server
 // gating (internal/views/nodepage.go's own doc comment on UnpushedReview)
 // guarantees a PR is recorded whenever this field is present, so the why
 // sentence names it directly rather than guarding a fallback the field can
@@ -447,7 +447,7 @@ function dependencyTabCount(relationships: NodePage["relationships"]): number | 
 }
 
 // contractCount is the Contract tab's own count (the mock's own "Contract ·
-// 6": docs/plans/2026-08-09-console-v2-mocks.html:1022), the authored
+// 6": the retired console mock), the authored
 // contract's criteria length once it loaded well-formed. undefined for a
 // malformed contract (nothing to count, and undefined bypasses the
 // countable-tab zero-hides rule below rather than reading as a wrong zero -
@@ -511,7 +511,7 @@ function backlinksTab(page: NodePage): NodeTab {
 
 // Every tab label below is Title Case (fix wave, task-17-review minor: the
 // mock's own tab row is Title Case throughout - "Spec", "Contract",
-// "Tasks", "History", docs/plans/2026-08-09-console-v2-mocks.html:1021-1024
+// "Tasks", "History", the retired console mock
 // - and the initial pass left everything but Contract lowercase, one
 // register split across one row). Keys and the `tab` search param stay the
 // original lowercase wire vocabulary; only the DISPLAY label changed.

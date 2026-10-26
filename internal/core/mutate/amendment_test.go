@@ -604,9 +604,8 @@ func TestStageOperationAddFeatureRescuedBySameBatchStagedEpic(t *testing.T) {
 // TestStageOperationAddFeatureRefusesBeforeItsEpicIsStaged pins the ordering
 // half of the same allowance: an add-feature naming an epic that is neither
 // live nor staged EARLIER on this amendment finds nothing to rescue it and
-// refuses by name, the message naming both misses (docs/plans/
-// 2026-08-12-intake-same-batch-parenting task-1: "no such epic in the tree,
-// and none staged earlier on this amendment").
+// refuses by name, the message naming both misses (docs/spec/cli-surface.md: "no such epic in the tree, and none
+// staged earlier on this amendment").
 func TestStageOperationAddFeatureRefusesBeforeItsEpicIsStaged(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)

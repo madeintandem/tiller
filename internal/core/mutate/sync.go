@@ -139,7 +139,7 @@ type Awaiting struct {
 // from the post-crossing in-memory tree, so the run that crosses a feature's
 // last task names the feature in the same breath — the exact run that used to
 // read as finished while the feature stranded silently
-// (docs/plans/2026-07-31-feature-rollup-visibility-design.md, The incident).
+// (docs/spec/cli-surface.md).
 type CheckDue struct {
 	Noun string
 	ID   string
@@ -464,8 +464,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 
 	// The shelf pass runs last, so a carried bug or chore reads the carrier
 	// status the two passes above just wrote rather than the one this run
-	// started with (docs/plans/2026-08-28-bugs-and-chores-design.md,
-	// Resolution).
+	// started with (docs/spec/cli-surface.md).
 	workCrossings, workAwaiting, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested)
 	if err != nil {
 		return SyncResult{}, err
@@ -809,7 +808,7 @@ const (
 	basisRollup        = "rollup"
 	basisHumanAttested = "human_attested"
 	// carried: a shelf node crossed because its resolved_by carrier's own done
-	// landed (docs/plans/2026-08-28-bugs-and-chores-design.md, Resolution); sync
+	// landed (docs/spec/cli-surface.md); sync
 	// writes it and nothing else does.
 	basisCarried = "carried"
 )
@@ -1905,7 +1904,7 @@ func violationEvidenceRef(g store.Gate) string {
 // a recorded result. It delegates to gen.FeatureActivity, the same predicate
 // status, queue, and readout render, so a surface showing "awaiting
 // sync" and this walk crossing the feature are one function
-// (docs/plans/2026-07-31-feature-rollup-visibility-design.md). The "checked,
+// (docs/spec/cli-surface.md). The "checked,
 // not necessarily green" reading of advisory enforcement lives there now.
 func featureRollupReady(tree *store.Tree, f *store.Feature) bool {
 	return gen.FeatureActivity(tree, f) == gen.FeatureActivityAwaitingSync

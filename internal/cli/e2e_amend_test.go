@@ -23,7 +23,7 @@ import (
 // fails here rather than agreeing with a fixture that asserted it into place.
 //
 // It replays the field case the amendment surface was built for (the Lantern
-// reshape, docs/plans/2026-08-06-amend-full-state-spec.md): an approved feature
+// reshape, docs/spec/cli-surface.md): an approved feature
 // is under way, one task sits at check, and a design change arrives that
 // re-scopes the feature and replaces that task with a different one. The reshape
 // runs through one amendment and one human gate, and the questions the tree has

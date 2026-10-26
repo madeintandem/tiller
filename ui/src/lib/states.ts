@@ -100,8 +100,8 @@ export function statusColor(status: string): string {
 // same way and folding through the same table, so a chip's word and its dot
 // can never name two different states. Each --st-<state>-t is tokens.css's
 // own darkened (light theme) / lightened (dark theme) twin of its fill,
-// verbatim from the mock (docs/plans/2026-08-09-console-v2-mocks.html:87-
-// 124) - the contrast trade lives there now, not in this file.
+// verbatim from the mock (the retired console mock) - the contrast trade lives
+// there now, not in this file.
 export function statusTextColor(status: string): string {
   return `var(--st-${foldStatus(status)}-t)`;
 }

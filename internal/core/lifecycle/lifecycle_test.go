@@ -95,9 +95,9 @@ var specTransitions = []specTransition{
 	{store.NounTask, "in_review", "sync", "done"},
 	{store.NounTask, "in_review", "cancel", "cancelled"},
 
-	// Bug and chore: the task's rows verbatim (docs/plans/2026-08-28-bugs-and-
-	// chores-design.md, Lifecycle, contract, gates). The carried crossing is
-	// not a row: sync sets done directly, the way a rollup does.
+	// Bug and chore: the task's rows verbatim (docs/spec/cli-surface.md). The
+	// carried crossing is not a row: sync sets done directly, the way a rollup
+	// does.
 	{store.NounBug, "proposed", "approve", "ready"},
 	{store.NounBug, "proposed", "cancel", "cancelled"},
 	{store.NounBug, "ready", "start", "in_progress"},

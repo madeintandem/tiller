@@ -1,6 +1,6 @@
-// Vitest/RTL coverage for task C3, the acceptance instrument (docs/plans/
-// 2026-07-23-console-chart-table-mocks.html, "Round four — the acceptance
-// instrument"). Written red-first per the branch's TDD discipline.
+// Vitest/RTL coverage for task C3, the acceptance instrument (the retired
+// console mock, "Round four — the acceptance instrument"). Written red-first
+// per the branch's TDD discipline.
 //
 // The required scenarios from the task brief: the contract renders every
 // criterion with its binding before any check has run; a needs_attestation
@@ -1554,12 +1554,12 @@ describe("NodeDetail: Source is absent from the body", () => {
 // above the title, so same-named nodes read apart" and "names every noun the
 // same way, a question included," both asserting .instr-noun's text. The
 // amended header bullet (ui-surface.md, 2026-08-10) no longer names a noun
-// eyebrow at all, and the mock draws none either (docs/plans/2026-08-09-
-// console-v2-mocks.html's node pane, no eyebrow element above .crumbs). No
-// direct replacement: the breadcrumb-chain tests above and the refline test
-// below cover the "tell same-titled nodes apart" job the eyebrow used to do
-// alone - the crumb chain names ancestry and the refline's own canonical key
-// path is a second, address-level disambiguator the eyebrow never was.
+// eyebrow at all, and the mock draws none either (the retired console mock's
+// node pane, no eyebrow element above .crumbs). No direct replacement: the
+// breadcrumb-chain tests above and the refline test below cover the "tell
+// same-titled nodes apart" job the eyebrow used to do alone - the crumb chain
+// names ancestry and the refline's own canonical key path is a second,
+// address-level disambiguator the eyebrow never was.
 describe("NodeDetail header facts", () => {
   it("renders a feature's surface paths on its own page", () => {
     const { container } = withRouter(
@@ -2089,13 +2089,13 @@ describe("NodeDetail: the Held chip", () => {
   });
 });
 
-// Task 8 of the Review Grain build (docs/plans/2026-08-26-review-grain-design.md,
-// "Surfaces"): a quiet chip-style badge naming the resolved review grain in
-// force for work under an epic or a feature, rendered only when it differs
-// from task, the value every tree carries by default and needs no badge to
-// explain. It borrows Chip's quiet "draft" register (the same neutral bucket
-// DriftedChip's own non-refusing badge already uses), never the accent: a
-// coarser grain is a calibration, not a caution.
+// Task 8 of the Review Grain build (docs/spec/ui-surface.md): a quiet
+// chip-style badge naming the resolved review grain in force for work under an
+// epic or a feature, rendered only when it differs from task, the value every
+// tree carries by default and needs no badge to explain. It borrows Chip's
+// quiet "draft" register (the same neutral bucket DriftedChip's own
+// non-refusing badge already uses), never the accent: a coarser grain is a
+// calibration, not a caution.
 describe("NodeDetail: the review grain badge", () => {
   it("renders on a feature page when the resolved grain is feature", () => {
     withRouter(

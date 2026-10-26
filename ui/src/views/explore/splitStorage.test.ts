@@ -1,5 +1,5 @@
 // Vitest coverage for the Explore split's width persistence (task 4,
-// docs/plans/2026-08-14-explore-tree-state.md), mirroring panelStorage.test.ts's
+// docs/spec/ui-surface.md), mirroring panelStorage.test.ts's
 // own read/write/round-trip template for the sibling flat-key module.
 
 import { afterEach, describe, expect, it } from "vitest";

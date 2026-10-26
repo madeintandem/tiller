@@ -45,7 +45,7 @@ type Tree struct {
 	// per-amendment children index to keep beside it.
 	Amendments map[string]*Amendment
 	// Bugs and Chores are the two shelves, keyed by id like every other
-	// map (docs/plans/2026-08-28-bugs-and-chores-design.md, Where they live).
+	// map (docs/spec/artifact-schema.md).
 	Bugs   map[string]*Bug
 	Chores map[string]*Chore
 	Tweaks map[string]*Tweak

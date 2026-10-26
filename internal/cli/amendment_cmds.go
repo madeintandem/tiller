@@ -15,17 +15,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file implements the five amendment verbs (docs/spec/cli-surface.md,
-// "Large changes: amendments"; the driver doc,
-// docs/plans/2026-08-06-amend-full-state-spec.md): `tiller add amendment`,
-// `tiller amend`, `tiller show amendment`, `tiller approve amendment`
-// (wired into lifecycle_cmds.go's shared `approve` command), and `tiller
-// withdraw amendment`. It is a thin shell over internal/core/mutate's
-// AddAmendment, StageOperation, StageAmendsDesign, ApproveAmendment, and
-// WithdrawAmendment, the same division of labor add.go and lifecycle_cmds.go
-// keep for the epic/feature/task verbs: this file validates flag shape,
-// resolves the address, hands a clean request to the core, and renders the
-// outcome.
+// This file implements the five amendment verbs (docs/spec/cli-surface.md):
+// `tiller add amendment`, `tiller amend`, `tiller show amendment`, `tiller
+// approve amendment` (wired into lifecycle_cmds.go's shared `approve` command),
+// and `tiller withdraw amendment`. It is a thin shell over
+// internal/core/mutate's AddAmendment, StageOperation, StageAmendsDesign,
+// ApproveAmendment, and WithdrawAmendment, the same division of labor add.go
+// and lifecycle_cmds.go keep for the epic/feature/task verbs: this file
+// validates flag shape, resolves the address, hands a clean request to the
+// core, and renders the outcome.
 //
 // add amendment and amend (staging) are agent-runnable, resolving the acting
 // owner the same way every other mutation does. approve amendment and

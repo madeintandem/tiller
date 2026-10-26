@@ -1,8 +1,8 @@
 package mutate
 
-// This file holds the mutate layer for amendments (docs/spec/cli-surface.md,
-// "Large changes: amendments"; artifact-schema.md, Amendments), the CLI's
-// `tiller add amendment`, `tiller amend`, and `tiller withdraw amendment`.
+// This file holds the mutate layer for amendments (docs/spec/cli-surface.md),
+// the CLI's `tiller add amendment`, `tiller amend`, and `tiller withdraw
+// amendment`.
 //
 // It builds on Task 1's store shapes rather than reinventing them:
 // store.Amendment / store.AmendmentOp are the on-disk record, and
@@ -361,9 +361,8 @@ func amendmentNotOpenErr(doc *store.Amendment) error {
 }
 
 // sourcelessOpErr refuses an operation staged with no citation onto an
-// intake-minted amendment (docs/plans/2026-08-11-intake-design.md, "What it
-// refuses": "An explosion op citing no source lines: every op traces or the
-// batch does not stage"). The message is pinned verbatim by task-1-brief.md.
+// intake-minted amendment (docs/spec/cli-surface.md). The message is pinned
+// verbatim by task-1-brief.md.
 func sourcelessOpErr() error {
 	return &usageError{
 		reason: "source_required",
@@ -387,7 +386,7 @@ func sourcelessOpErr() error {
 // is the guard approve validates before applying anything. StageOperation
 // requires a non-blank Source only when the amendment being staged onto is
 // itself intake-minted (its own Source is set); a hand amendment leaves it
-// optional (docs/plans/2026-08-11-intake-design.md).
+// optional (docs/spec/cli-surface.md).
 type StageInput struct {
 	Op            string
 	Target        string

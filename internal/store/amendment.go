@@ -88,7 +88,7 @@ type Amendment struct {
 
 	// Source names the feedback document this amendment was exploded from, when
 	// it was minted by `tiller intake` rather than staged by hand
-	// (docs/plans/2026-08-11-intake-design.md). It is nil for every amendment
+	// (docs/spec/artifact-schema.md). It is nil for every amendment
 	// `tiller add amendment` opens; nothing in this build sets it yet
 	// (intake, a later task, is the one writer). Its presence is what
 	// StageOperation's per-op citation refusal keys on: every operation on an
@@ -104,13 +104,12 @@ func (a *Amendment) Noun() string       { return NounAmendment }
 func (a *Amendment) NodeStatus() string { return a.Status }
 
 // AmendmentSource is the fingerprinted feedback artifact an intake-minted
-// amendment was exploded from (docs/plans/2026-08-11-intake-design.md, "The
-// document lands as a source artifact"). Path is the artifact's repo-relative
-// location, landed under .tiller/feedback/ by intake; Revision is its content
-// fingerprint at intake time, a "git:<blob-sha>" token in the same compact
-// idiom BaseRevision already uses (a bare string rather than a RevisionRef:
-// like BaseRevision, this pins one artifact snapshot, not a field this package
-// needs to disambiguate by kind or path).
+// amendment was exploded from (docs/spec/artifact-schema.md). Path is the
+// artifact's repo-relative location, landed under .tiller/feedback/ by intake;
+// Revision is its content fingerprint at intake time, a "git:<blob-sha>" token
+// in the same compact idiom BaseRevision already uses (a bare string rather
+// than a RevisionRef: like BaseRevision, this pins one artifact snapshot, not a
+// field this package needs to disambiguate by kind or path).
 type AmendmentSource struct {
 	Path     string `yaml:"path,omitempty"`
 	Revision string `yaml:"revision,omitempty"`
@@ -139,7 +138,7 @@ type AmendmentSource struct {
 // applying anything (artifact-schema.md, Amendments). Source cites the feedback
 // this operation traces to, free text by convention "path#Lstart-Lend" (also
 // "path#Lstart-end"); relationship reads accept both without rewriting the source.
-// It is legal on every op kind (docs/plans/2026-08-11-intake-design.md), so
+// It is legal on every op kind (docs/spec/artifact-schema.md), so
 // validateAmendmentOp carries no per-kind rule for it. An intake-minted
 // amendment (Amendment.Source set) requires every one of its ops to carry one;
 // StageOperation enforces that, not this struct or ValidateAmendment, because

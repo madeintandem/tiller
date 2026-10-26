@@ -8,7 +8,7 @@ import (
 )
 
 // These tests pin the tiller order command at the CLI surface
-// (docs/plans/2026-08-08-soft-order-design.md): a thin shell over
+// (docs/spec/cli-surface.md): a thin shell over
 // mutate.SetOrder, echoing refs per the reference convention exactly as
 // link.go's own confirmation does. All-or-nothing resolution, replace
 // semantics, and every refusal live in mutate; these tests pin the shell

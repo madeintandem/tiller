@@ -1,7 +1,7 @@
 /* The console shell: the topbar, the content container, and the few shared
    primitives the views still compose. Rebuilt onto the chart-table pass's
-   palette (styles/tokens.css, docs/plans/2026-07-23-console-chart-table-
-   mocks.html) rather than the pass-1 placeholder skin it carried before.
+   palette (styles/tokens.css, the retired console mock) rather than the pass-1
+   placeholder skin it carried before.
 
    Pass 1 sized this layer for a plain functional read: a 16px/1.55 body in
    the system UI face, a steel-blue --accent on every link, a near-white

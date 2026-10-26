@@ -36,7 +36,7 @@ func eventOfType(evs []events.Event, typ string) *events.Event {
 // TestApproveEpicRecordsReviewGrain pins approve epic --review-grain: the
 // value lands on epic.yml in the same act as the draft->ready move, and the
 // approve.epic event's After map carries it alongside status
-// (docs/plans/2026-08-26-review-grain-design.md, "The setting").
+// (docs/spec/cli-surface.md).
 func TestApproveEpicRecordsReviewGrain(t *testing.T) {
 	t.Parallel()
 	root := writeOwnedRepo(t)

@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file wires `tiller readout <seam>` (docs/plans/2026-07-25-agent-readout-design.md),
+// This file wires `tiller readout <seam>` (docs/spec/cli-surface.md),
 // the command a harness runs at a seam boundary to get the one block it
 // reproduces verbatim in its reply, and a developer runs themselves to read
 // the same thing in a terminal. It is a thin caller: every fact views cannot

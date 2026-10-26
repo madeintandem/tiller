@@ -11,7 +11,7 @@ import (
 // ProjectOrder is the machine-owned root soft order (.tiller/order.yml): the
 // recorded epic sequence. The file is absent until tiller order first writes
 // it, and hand-editing it is the same machine-owned-state violation as any
-// other .yml edit. See docs/plans/2026-08-08-soft-order-design.md.
+// other .yml edit. See docs/spec/artifact-schema.md.
 type ProjectOrder struct {
 	Epics []string `yaml:"epics,omitempty"`
 }

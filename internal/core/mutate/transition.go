@@ -95,13 +95,13 @@ type TransitionInput struct {
 	SyncMatch string
 	// ReviewGrain is set only by approve: the epic or feature plan gate's own
 	// --review-grain flag, recording the node's review grain in the same act
-	// as the gate (docs/plans/2026-08-26-review-grain-design.md, "The
-	// setting"). Nil means the caller named no grain, leaving whatever the
-	// node already carries untouched; every other verb ignores this field.
+	// as the gate (docs/spec/cli-surface.md). Nil means the caller named no
+	// grain, leaving whatever the node already carries untouched; every other
+	// verb ignores this field.
 	ReviewGrain *string
 	// Resolution and DuplicateOf are cancel's own fields on a bug or chore:
 	// wontfix, invalid, or duplicate, and on duplicate the surviving node
-	// (docs/plans/2026-08-28-bugs-and-chores-design.md, Resolution). Every
+	// (docs/spec/cli-surface.md). Every
 	// other verb and every tree noun ignores both.
 	Resolution  string
 	DuplicateOf string
@@ -245,14 +245,13 @@ func transitionEpic(tree *store.Tree, deps Deps, owner store.Contributor, treeEp
 	var reviewGrainGuards []store.PlannedWrite
 
 	// approve's own --review-grain records the epic's review grain in the
-	// same act as the gate (docs/plans/2026-08-26-review-grain-design.md,
-	// "The setting"). This runs before lifecycle.Apply so an illegal value
-	// refuses before any write, whether or not the gate itself moves status
-	// (a re-approve of an already-ready epic still records a changed grain).
-	// reviewGrainBefore captures what the field held prior to the overwrite,
-	// so the event recorded below can carry it on the Before side; it stays
-	// "" whenever ReviewGrain is nil, which transitionEvent's own guard
-	// leaves unread.
+	// same act as the gate (docs/spec/cli-surface.md). This runs before
+	// lifecycle.Apply so an illegal value refuses before any write, whether or
+	// not the gate itself moves status (a re-approve of an already-ready epic
+	// still records a changed grain). reviewGrainBefore captures what the field
+	// held prior to the overwrite, so the event recorded below can carry it on
+	// the Before side; it stays "" whenever ReviewGrain is nil, which
+	// transitionEvent's own guard leaves unread.
 	//
 	// The Changeability refusal (refuseReviewSurfaceLocked, configure.go)
 	// runs here too, ahead of the overwrite: an epic has no stored `active`
@@ -306,10 +305,8 @@ func transitionEpic(tree *store.Tree, deps Deps, owner store.Contributor, treeEp
 // taskOnlyFeatureVerbs are the verbs a feature can never take through THIS
 // engine because they are about a PR, and record-only submit aside, a PR
 // still always represents a task or, at a coarse review grain, the feature
-// or epic that is the reviewed node (docs/plans/2026-08-26-review-grain-
-// design.md, "Schema and the PR record", softening artifact-schema.md's
-// earlier "a PR always represents a task"). Each remaining entry maps to
-// the move the caller meant.
+// or epic that is the reviewed node (docs/spec/cli-surface.md). Each remaining
+// entry maps to the move the caller meant.
 //
 // submit is deliberately absent now: it carries its own feature-grain and
 // epic-grain meaning, served by mutate.SubmitNode (submit_node.go), which
@@ -605,9 +602,9 @@ func approveFeaturePlan(tree *store.Tree, deps Deps, owner store.Contributor, tr
 	doc *store.Feature, relDir, ymlRel string, snapshot store.FileSnapshot, in TransitionInput, rev vcs.Revisions) (TransitionResult, error) {
 
 	// approve's own --review-grain records the feature's review grain in the
-	// same act as the plan gate (docs/plans/2026-08-26-review-grain-design.md,
-	// "The setting"). Validated ahead of recordBasis so an illegal value
-	// refuses before any write, including the tasks the gate is about to move.
+	// same act as the plan gate (docs/spec/cli-surface.md). Validated ahead of
+	// recordBasis so an illegal value refuses before any write, including the
+	// tasks the gate is about to move.
 	if in.ReviewGrain != nil {
 		if !store.ValidReviewGrain(store.NounFeature, *in.ReviewGrain) {
 			return TransitionResult{}, &usageError{
