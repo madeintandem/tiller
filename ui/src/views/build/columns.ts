@@ -1,6 +1,7 @@
 // The Build board's six fixed columns (ui-surface.md's Build entry). Features
-// have no stored in_review state and stay active through review, so the In
-// review column normally stays empty. Also here: the two pure sequence operations
+// have no stored in_review state; the server derives the In review column
+// (gen.FeatureBoardStatus) for a feature whose work waits on review. Also
+// here: the two pure sequence operations
 // every column's cards run through - flatten the selected epics, then
 // filter by status. Neither step sorts anything: visibleCards preserves the
 // served epic-then-feature order verbatim (BuildBoardOf's own doc comment,

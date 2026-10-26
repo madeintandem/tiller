@@ -326,8 +326,8 @@ func TestListUnresolvedParentCannotMatchRawParentIdentity(t *testing.T) {
 
 // TestListFeatureColumnFollowsWorkInFlight pins the console-only column on a
 // feature row, the field Home's funnel counts so it agrees with Build: a
-// ready feature reads ready until a task under it is in flight, then active,
-// while its stored status stays ready.
+// ready feature reads ready until a task under it is in flight, and in_review
+// once its only task is in review, while its stored status stays ready.
 func TestListFeatureColumnFollowsWorkInFlight(t *testing.T) {
 	root := nextFixture(t)
 	srv := httptest.NewServer(serve.ListHandler(root))
@@ -344,5 +344,5 @@ func TestListFeatureColumnFollowsWorkInFlight(t *testing.T) {
 	require.Contains(t, got.Nodes, row{Key: "form-engine/schema-engine", Status: "ready", Column: "ready"})
 	setTaskPR(t, root, "schema-engine", "transcribe-the-schema", 11)
 	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=features", &got))
-	require.Contains(t, got.Nodes, row{Key: "form-engine/schema-engine", Status: "ready", Column: "active"})
+	require.Contains(t, got.Nodes, row{Key: "form-engine/schema-engine", Status: "ready", Column: "in_review"})
 }

@@ -169,3 +169,38 @@ func TestFeatureBoardStatusShowsReadyWorkInFlightAsActive(t *testing.T) {
 		})
 	}
 }
+
+func TestFeatureBoardStatusShowsFinishedWorkAwaitingReviewAsInReview(t *testing.T) {
+	pr := 12
+	for _, tc := range []struct {
+		name    string
+		feature string
+		tasks   [3]string
+		pr      *int
+		ref     *store.ReviewRef
+		want    string
+	}{
+		{"task PRs open, rest merged", "active", [3]string{"in_review", "done", "done"}, nil, nil, "in_review"},
+		{"every task in review", "active", [3]string{"in_review", "in_review", "in_review"}, nil, nil, "in_review"},
+		{"cancelled task ignored", "active", [3]string{"in_review", "cancelled", "done"}, nil, nil, "in_review"},
+		{"one task still checking", "active", [3]string{"in_review", "check", "done"}, nil, nil, "active"},
+		{"one task not started", "active", [3]string{"in_review", "ready", "done"}, nil, nil, "active"},
+		{"all done awaiting check", "active", [3]string{"done", "done", "done"}, nil, nil, "active"},
+		{"all done, feature PR recorded", "active", [3]string{"done", "done", "done"}, &pr, nil, "in_review"},
+		{"all done, feature review ref recorded", "active", [3]string{"done", "done", "done"}, nil, &store.ReviewRef{Branch: "feature/loading"}, "in_review"},
+		{"feature PR with work left", "active", [3]string{"done", "in_progress", "done"}, &pr, nil, "active"},
+		{"every task cancelled", "active", [3]string{"cancelled", "cancelled", "cancelled"}, nil, nil, "active"},
+		{"ready feature, riding tasks in review", "ready", [3]string{"in_review", "in_review", "done"}, nil, nil, "in_review"},
+		{"done feature", "done", [3]string{"done", "done", "done"}, &pr, nil, "done"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tree := candidateTree()
+			feature := tree.Features["F-loadng"]
+			feature.Status, feature.PR, feature.ReviewRef = tc.feature, tc.pr, tc.ref
+			for i, id := range []string{"T-aaaa01", "T-bbbb02", "T-mmmm03"} {
+				tree.Tasks[id].Status = tc.tasks[i]
+			}
+			require.Equal(t, tc.want, FeatureBoardStatus(tree, feature))
+		})
+	}
+}

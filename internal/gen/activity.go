@@ -91,16 +91,46 @@ func featureHasTaskInFlight(t *store.Tree, f *store.Feature) bool {
 
 // FeatureBoardStatus is the status column a feature occupies on a status
 // board: its stored status, except that a ready feature with a task in flight
-// reads "active". Under feature-grain review the start that flips the feature
-// to active is committed on the unmerged review branch, while the console
-// observes its tasks' execution from their branches, so the served feature
-// can still read ready with work underway. Display-only, like EpicActivity:
-// the stored status is never replaced.
+// reads "active", and a working feature whose tasks are all in review or done
+// reads "in_review". Under feature-grain review the start that flips the
+// feature to active is committed on the unmerged review branch, while the
+// console observes its tasks' execution from their branches, so the served
+// feature can still read ready with work underway. Features have no stored
+// review state, so "in_review" marks the stretch where the agents are finished
+// and the work waits on a human merge. Display-only, like EpicActivity: the
+// stored status is never replaced.
 func FeatureBoardStatus(t *store.Tree, f *store.Feature) string {
-	if f.Status == "ready" && featureHasTaskInFlight(t, f) {
-		return "active"
+	working := f.Status == "active" || (f.Status == "ready" && featureHasTaskInFlight(t, f))
+	if !working {
+		return f.Status
 	}
-	return f.Status
+	if featureAwaitsReview(t, f) {
+		return ReviewState
+	}
+	return "active"
+}
+
+// featureAwaitsReview reports whether every non-cancelled task under the
+// feature is in review or done, with at least one task still in review or the
+// feature's own PR or review ref recorded. All tasks done with no feature
+// review recorded is the rollup's awaiting_check or awaiting_sync phase, agent
+// work that stays active.
+func featureAwaitsReview(t *store.Tree, f *store.Feature) bool {
+	tasks, inReview := 0, false
+	for _, tk := range t.Tasks {
+		if tk.FeatureID != f.ID || tk.Status == "cancelled" {
+			continue
+		}
+		switch tk.Status {
+		case ReviewState:
+			inReview = true
+		case "done":
+		default:
+			return false
+		}
+		tasks++
+	}
+	return tasks > 0 && (inReview || f.PR != nil || f.ReviewRef != nil)
 }
 
 // Feature activity values: the derived, display-only rollup phase of an active

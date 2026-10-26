@@ -40,7 +40,8 @@ func observedOr(observed, t *store.Tree) *store.Tree {
 
 // approvedProgress buckets an approved epic's features by their board column,
 // the column Build draws: the start that activates a feature is recorded on
-// its task's branch, so a ready feature with a task in flight is in progress.
+// its task's branch, so a ready feature with a task in flight is in progress,
+// and a feature waiting on review is still in progress until it merges.
 func approvedProgress(t *store.Tree, epic *store.Epic) ReportEpic {
 	re := ReportEpic{Title: epic.Title}
 	for _, f := range t.Features {
@@ -50,7 +51,7 @@ func approvedProgress(t *store.Tree, epic *store.Epic) ReportEpic {
 		switch gen.FeatureBoardStatus(t, f) {
 		case "done":
 			re.Done++
-		case "active":
+		case "active", gen.ReviewState:
 			re.InProgress++
 		case "draft", "specced", "ready":
 			re.NotStarted++
