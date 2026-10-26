@@ -356,9 +356,7 @@ tiller approve task foundation/app-scaffold/document-local-setup
 
 The new task stays `proposed` until that final human approval. `order` is a preference for rendering and recommendations; it never gates the tasks. Direct `link` and `unlink` refuse real dependency changes once the affected work is locked, with `dependency_change_locked`; the one exception is a started task adding (never removing) an edge to a done task. Amendment is not an escape hatch: it has no link, unlink, or order operation, and `revise` only re-pins prose. In-place edge edits on unchanged started work are unsupported. Genuine replacement may use cancellation/supersession and fresh eligible work with its own prerequisites; never manufacture replacement merely to evade a lock. A fresh proposed task under an active feature can still receive its own legal sibling prerequisites.
 
-For a structural placement correction, first inspect installed help and affected node/descendant history, parents, dependencies, effective question holds, and review grain. Direct `rename --key` applies to a draft, task-free feature; changing parents additionally requires draft source and destination epics. Outside that window an eligible unstarted draft, specced, or ready feature uses `tiller amend <amendment> --move-feature <feature> --to <epic>/<key> --reason "<why>"`. Inspect and commit the proposal, then stop for human amendment approval. Started descendants refuse; do not replace unchanged work just to relocate it. A pure move preserves identity and acceptance history and does not approve a specced plan.
-
-Features from different bounded epics may interleave. Projected epic ordering cycles are advisory, while actual prerequisite cycles, including explicit epic and mixed feature/epic completion deadlocks, remain blocking. Keep true prerequisites rather than changing them solely for a cleaner grouped map.
+To move a feature to another epic, a draft, task-free feature takes a direct `rename --key`. Otherwise stage `tiller amend <amendment> --move-feature <feature> --to <epic>/<key> --reason "<why>"`, inspect and commit the proposal, then stop for human amendment approval. The [skills page](/tiller/skills/#how-skills-route-correction-feedback) has the eligibility rules and what an epic ordering cycle means.
 
 ### Work and merge
 
@@ -430,7 +428,7 @@ Use `epic` for an epic-grain review; omit `--pr` only without a remote. Tiller v
 
 ## Share a feature without sharing ownership
 
-Another registered developer may claim a different ready task under the same feature. Approval never assigns it to the approver or a sibling’s owner. Use `release task` or human-directed `reassign task <ref> --to <owner> --reason "<why>"` only before start. First start fixes ownership permanently, even after resume, review, cancellation, or completion. Features/epics display Contributors from started tasks, not an exclusive owner. Claimed ready work is an assignment, not yet contribution.
+Another registered developer may claim a different ready task under the same feature. Approval never assigns it to the approver or a sibling's owner. Use `release task` or human-directed `reassign task <ref> --to <owner> --reason "<why>"` only before start. First start fixes ownership permanently, even after resume, review, cancellation, or completion. Features/epics display Contributors from started tasks, not an exclusive owner. Claimed ready work is an assignment, not yet contribution.
 
 Any registered developer may perform authorized aggregate assembly/checks/submission at feature or epic grain. Coordinate one updater at a time through Git. Shared checks, acceptance, and publication appear once per reviewed unit; the last task finisher surfaces that step without becoming its owner. At task grain, after every task is done, complete feature acceptance and ordinary sync on integration.
 
@@ -440,7 +438,7 @@ For an exceptional started-work handoff, the human must explicitly name work and
 tiller transfer task foundation/app-scaffold/wire-the-build --to dana --reason "Dana will complete the remaining implementation"
 ```
 
-Use a real registered recipient and unfinished started work. The original is cancelled with its owner/history intact; the returned replacement is ready, unstarted, same-scope, and has a fresh ID/key/basis and no branch/review/green evidence. Start the returned ref as its recipient. Questions, pauses, dependencies, and carriers remain operative; started unfinished dependents or scope drift refuse before writes. Close an old task/shelf PR without merging and open a replacement; at coarse grain update the existing unmerged aggregate PR and rerun affected checks/acceptance. Git/host follow-through is separate from Tiller’s state transaction. Already-merged work requires sync and forward work instead.
+Use a real registered recipient and unfinished started work. The original is cancelled with its owner/history intact; the returned replacement is ready, unstarted, same-scope, and has a fresh ID/key/basis and no branch/review/green evidence. Start the returned ref as its recipient. Questions, pauses, dependencies, and carriers remain operative; started unfinished dependents or scope drift refuse before writes. Close an old task/shelf PR without merging and open a replacement; at coarse grain update the existing unmerged aggregate PR and rerun affected checks/acceptance. Git/host follow-through is separate from Tiller's state transaction. Already-merged work requires sync and forward work instead.
 
 ## Capture a bug
 

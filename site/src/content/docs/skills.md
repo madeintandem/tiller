@@ -189,6 +189,8 @@ tiller add amendment app-reshape --title "Reshape application setup"            
 
 Every route changes machine state only through `tiller` and edits only human-owned Markdown. The agent reads the result back, commits the correction, reruns the current seam's readout, and stops at the applicable gate. Done or cancelled feature and task prose is the terminal boundary. It never gets rewritten or refreshed to make old accepted work read like a later decision.
 
+A `move-feature` amendment qualifies for a draft, specced, or ready feature whose tasks are all proposed or ready. Both parents must be draft or ready, and an epic staged earlier in the same amendment may be the destination. Started descendants, an affected open coarse review, or a change to the prerequisites or question holds the feature inherits all refuse. The move preserves status, authored content, accepted provenance, claims, and review grain; it does not approve a specced plan or a draft destination. Abandoned or replaced scope still uses cancellation and supersession.
+
 Feature interleaving across bounded epics is allowed when real prerequisites permit it. A projected epic ordering cycle is a nonblocking advisory with feature/edge evidence, not an execution deadlock. Actual cycles, including explicit epic and mixed feature/epic completion obligations, still block. Do not remove valid prerequisites to tidy grouped rendering.
 
 ## Request a code review

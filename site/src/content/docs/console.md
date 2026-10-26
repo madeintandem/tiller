@@ -108,14 +108,14 @@ The board is read-only, like everything else. No drag. A card is a thing you rea
 
 ## Fix
 
-Fix is the dedicated shelf-work lens, 6 columns in task vocabulary: Proposed, Ready, In progress, Check, In review, Closed. A bug, chore, or tweak card carries its noun as a chip, with the owner and the attached node as a quiet kicker.
+Fix is the dedicated shelf-work lens, six columns in task vocabulary: Proposed, Ready, In progress, Check, In review, Closed. A bug, chore, or tweak card carries its noun as a chip, with the owner and the attached node as a quiet kicker.
 
 <img class="dark:sl-hidden" src="/tiller/console-fix-light.webp" width="1440" height="780" alt="The Fix lens: six columns from Proposed to Closed, with first-class Bug, Chore, and Tweak work under the shared lifecycle, light theme" />
 <img class="light:sl-hidden" src="/tiller/console-fix-dark.webp" width="1440" height="780" alt="The Fix lens: six columns from Proposed to Closed, with first-class Bug, Chore, and Tweak work under the shared lifecycle, dark theme" />
 
 No card is draggable and the board offers no write interaction of its own.
 
-Open work keeps shelf order. Nonterminal rows preserve the bug shelf sequence followed by the chore and tweak shelf sequences, then render in the column for their raw status, so the board reads in the same order you'd work the queue from the terminal. Closed is one terminal history, combining `done` and `cancelled` without replacing either raw status, newest terminal event first, showing the 5 newest by default with the full history one click away.
+Open work keeps shelf order. Nonterminal rows preserve the bug shelf sequence followed by the chore and tweak shelf sequences, then render in the column for their raw status, so the board reads in the same order you'd work the queue from the terminal. Closed is one terminal history, combining `done` and `cancelled` without replacing either raw status, newest terminal event first, showing the five newest by default with the full history one click away.
 
 A noun filter (bugs, chores, tweaks, or all) and an attachment filter, including an Unattached state, ride the URL the way Build's epic selection does, and the browser remembers them, with the Show older items switch, per project, so coming back to Fix restores the filters you left it with. A feature filter matches work attached directly to it and to its child tasks; an epic filter matches direct attachments plus everything under its descendant features and tasks.
 
@@ -143,14 +143,15 @@ The map draws the whole project as a mind map. The project sits at the center. E
 
 Every card is sized to the map's density. A branch card carries a chevron, its kind, and a count in muted mono when it's closed. A leaf card (a task, bug, chore, or tweak) carries a state dot and its title, with the hold badge at the end when a question holds it. The fuller detail moves to the floating card once you select it.
 
-Branch lines, project to epic, epic to feature, feature to task, are the only lines at rest. Click a card to inspect its recorded neighborhood. Dependency arcs connect direct prerequisites and dependents; the rest of the transitive dependency chain stays at full strength without adding an arc for every hop. Shelf work also exposes where it was found, what carries it, and any recorded shelf dependencies. Clicking the selected card again clears selection and returns the map to its resting state.
-
-Click a card to open its inspector at the map's top right. It separates Depends on from Required
-by, with each counterpart's status, and groups the node's other links: documents, sources, shelf
-links, questions, amendments, and declared code scope. Inspect on map selects a related item;
-Open follows it to its page. Why linked? shows the exact recorded source of a link when you ask.
-The Map key explains each line style, and clicking a key entry filters the map to that kind of
-link. Clicking the selected card again, clicking empty canvas, or pressing Escape deselects it.
+Branch lines, project to epic, epic to feature, feature to task, are the only lines at rest.
+Click a card to select it and open its inspector at the map's top right. The map lights arcs to
+its direct prerequisites and dependents, and for shelf work, where it was found and what carries
+it. The inspector separates Depends on from Required by, with each counterpart's status, and
+groups the node's other links: documents, sources, shelf links, questions, amendments, and
+declared code scope. Inspect on map selects a related item; Open follows it to its page. Why
+linked? shows the exact recorded source of a link when you ask. The Map key explains each line
+style, and clicking a key entry filters the map to that kind of link. Clicking the selected card
+again, clicking empty canvas, or pressing Escape deselects it and returns the map to rest.
 
 A corner toolbar carries Expand all, Collapse all, the overlay controls, and Fit. The map opens
 collapsed, every epic and shelf branch closed with its count showing, fitted to the frame. Expand
@@ -167,7 +168,7 @@ and the [UI surface spec](/tiller/spec/ui-surface/) cover the map's full behavio
 
 ## Report
 
-Report is the page to show a client. It answers how the project is going over time with numbers and charts only: no node lists, no links into Explore, and no people. A strip of five figures leads (features done of total, items shipped in the last 7 days, median cycle time, open bugs, open questions), followed by five charts: a feature burn-up against approved scope, weekly throughput split into feature work, fixes, and upkeep, bugs reported against fixed, lead and cycle time per completed feature, and a progress bar for each approved epic. Weeks start on Monday in the time zone of the machine running `tiller serve`, and the current week is drawn partial so it does not read as a slump. Draft epics are proposals and are not counted as scope. If your checkout is not on the integration branch, an amber notice says the numbers include unmerged work. The page is live in the console; it has no export.
+Report is the page to show a client. It answers how the project is going over time with numbers and charts only: no node lists, no links into Explore, and no people. A strip of five figures leads (features done of total, items shipped in the last seven days, median cycle time, open bugs, open questions), followed by five charts: a feature burn-up against approved scope, weekly throughput split into feature work, fixes, and upkeep, bugs reported against fixed, lead and cycle time per completed feature, and a progress bar for each approved epic. Weeks start on Monday in the time zone of the machine running `tiller serve`, and the current week is drawn partial so it does not read as a slump. Draft epics are proposals and are not counted as scope. If your checkout is not on the integration branch, an amber notice says the numbers include unmerged work. The page is live in the console; it has no export.
 
 ## History
 
@@ -183,7 +184,7 @@ The visit horizon belongs to History alone. Opening it on its default window is 
 
 Every node-owned drill, queue item, History entry, and search result lands on the same node page, one consistent surface instead of a layout per type. It renders inside Explore's shell, with the browse navigator standing at its left, opened to the node's own position in the tree.
 
-No gate crossing happens blind. Opening a queue item lands you on the node it asks about, with what the action would change rendered in full: a decomposition as the tree of proposed nodes with their change types and provenance, an amendment as its staged operations, a feature as its spec and eval criteria. The exact command sits beside it, copyable. In this build the console never writes. You run the command in your terminal, and the page picks up the result on its next refresh.
+No gate crossing happens blind. Opening a queue item lands you on the node it asks about, with what the action would change rendered in full: a decomposition as the tree of proposed nodes with their change types and provenance, an amendment as its staged operations, a feature as its spec and eval criteria. The exact command sits beside it, copyable. The console never writes. You run the command in your terminal, and the page picks up the result on its next refresh.
 
 ### The header
 
@@ -213,7 +214,7 @@ Tabbed nodes have a separate Backlinks tab; questions and amendments show the sa
 
 Open a document citation to reach its exact file and line. Known work, question, and amendment sources open their node pages. Unknown references and code/external coordinates never become broken node links. Dependencies, effective question holds, attachments, and amendment operation panels keep their existing roles rather than being repeated as backlinks.
 
-Backlinks come with the node-page response, not a second client-side scan or query. Incomplete extraction stays visible rather than claiming there are no references, and a response for a previous selection never supplies the next node's backlinks.
+Incomplete extraction is shown, never read as zero references. The [UI surface spec](/tiller/spec/ui-surface/) defines how backlinks are gathered and counted.
 
 ### Review at the grain that fits
 

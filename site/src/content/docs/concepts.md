@@ -18,7 +18,7 @@ An epic is a bounded delivery increment, not the permanent home of a subsystem. 
 Features express honestly acceptable outcomes; their own contracts must be satisfiable at that boundary. Keep one unfinished feature when no sensible split exists rather than presenting incomplete behavior as complete. Tasks may be technical implementation units. True execution prerequisites belong in `depends_on`; preferred sibling sequence belongs in `tiller order`. Eventual architectural integration alone does not establish a prerequisite, and zero cross-epic edges is valid for independent work.
 
 <figure class="diagram-figure">
-<svg class="diagram" viewBox="0 0 980 310" role="img" aria-label="Epic, feature, and task side by side, each with a prose file that grows more detailed from left to right and a state file tiller owns; the task carries implementation detail while Review Grain decides whether the task, feature, or epic owns the pull request.">
+<svg class="diagram" viewBox="0 0 980 310" role="img" aria-label="Epic, feature, and task side by side, each with a prose file that grows more detailed from left to right and a state file tiller owns; the task carries implementation detail while Review grain decides whether the task, feature, or epic owns the pull request.">
   <defs><marker id="d2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
   <text x="20" y="26" class="h">Epic</text><text x="20" y="44" class="muted small">a narrative</text>
   <text x="360" y="26" class="h">Feature</text><text x="360" y="44" class="muted small">narrative, specification, contract</text>
@@ -75,7 +75,7 @@ Everything above a task still completes by rollup. A feature is done when its ta
 Completion is history, not a permanent ban on continuation. New work serving the same bounded outcome can be added beneath a done epic or feature; a distinct outcome or delivery phase warrants a new increment, even in the same subsystem. Additions keep their ordinary specification and approval gates. The addition itself does not immediately change the parent's stored status: normal sync reopens the rollup, clears current parent completion/review fields, and stales feature gates as appropriate. Completed tasks and terminal feature/task prose remain accepted history. Cancelled or archived ancestors are not executable continuation targets.
 
 <figure class="diagram-figure">
-<svg class="diagram" viewBox="0 0 960 350" role="img" aria-label="Three lanes, epic, feature, and task, each a ribbon of states from left to right. The human-only crossings are approve epic, approve feature, and the reviewed pull request merge. Tasks always enter in_review; Review Grain decides whether their review is owned by the task, feature, or epic. Done flows upward by rollup.">
+<svg class="diagram" viewBox="0 0 960 350" role="img" aria-label="Three lanes, epic, feature, and task, each a ribbon of states from left to right. The human-only crossings are approve epic, approve feature, and the reviewed pull request merge. Tasks always enter in_review; Review grain decides whether their review is owned by the task, feature, or epic. Done flows upward by rollup.">
   <defs>
     <marker id="d1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker>
     <marker id="d1b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow-accent"/></marker>
@@ -126,7 +126,7 @@ Completion is history, not a permanent ban on continuation. New work serving the
   <text x="765" y="208" text-anchor="middle" class="small muted">rollup over tasks</text>
   <polyline points="693,147 693,114 483,114 483,85" class="line dashed" marker-end="url(#d1a)"/>
   <text x="590" y="108" text-anchor="middle" class="small muted">rollup over features</text>
-  <text x="12" y="322" class="small muted">Review Grain moves PR ownership, not lifecycle states.</text>
+  <text x="12" y="322" class="small muted">Review grain moves PR ownership, not lifecycle states.</text>
   <text x="12" y="340" class="small muted">Dashed arrows remain rollups; magenta marks human crossings.</text>
 </svg>
 <figcaption>The lifecycle ribbon stays task-shaped at every review grain. Tasks enter review one by one; the configured task, feature, or epic owns the PR whose merge lets sync record their crossings.</figcaption>
@@ -215,7 +215,7 @@ Tiller can't make an agent follow the process and doesn't pretend to. On one mac
 
 Identity lives in the repo. A committed roster in `.tiller/tiller.yml` says who may hold work, and `tiller add contributor` and `tiller remove contributor`, deliberate human acts, maintain it. A gitignored `.tiller/identity.yml`, written by `tiller join --as <id>`, says who this checkout is. There's no global config and no machine default; a fresh clone carries the roster and runs its own `join`.
 
-New tasks are unclaimed regardless of who creates or approves them. `tiller claim task <key>` reserves that task only; bugs, chores, and tweaks use the same individual claim verbs. Before start, release returns your reservation to the pool and human-directed reassign changes it. Another reservation requires its actual holder in `--from` and explicit human handoff, never opportunistic identity switching. First start permanently fixes the unit’s owner. Resume, checks, review, cancellation, and completion never reopen ownership; all terminal owners are immutable, including cancellation before start. Features and epics have no owner/claim, and nothing cascades.
+New tasks are unclaimed regardless of who creates or approves them. `tiller claim task <key>` reserves that task only; bugs, chores, and tweaks use the same individual claim verbs. Before start, release returns your reservation to the pool and human-directed reassign changes it. Another reservation requires its actual holder in `--from` and explicit human handoff, never opportunistic identity switching. First start permanently fixes the unit's owner. Resume, checks, review, cancellation, and completion never reopen ownership; all terminal owners are immutable, including cancellation before start. Features and epics have no owner/claim, and nothing cascades.
 
 The first successful task start atomically activates its ready feature and records task/applicable aggregate branch identities. Dependencies, bases, questions, retired ancestors, and review-round guards still apply. Feature-only assumptions use `tiller approve feature <ref> --assume-question <Q-id> --reason <text>` on explicit human instruction, without a lifecycle move or silent task inheritance. Judgment verbs keep their existing actor and human-gate rules; recorded identity is workflow discipline, not authentication.
 
@@ -244,9 +244,7 @@ Approval creates an accepted basis and structural history. It doesn't freeze cos
 
 Amendment cannot link, unlink, or order. `revise` re-pins non-terminal prose, not dependencies; it does not unlock started work. An in-place hard-edge edit on unchanged started work remains unsupported, even where a refusal hints at amendment. A genuine replacement can carry prerequisites on fresh eligible work, never a replacement manufactured just to evade a lock. A fresh task under an active feature can still receive legal sibling prerequisites.
 
-Unchanged unstarted features can move through a reviewed `move-feature` amendment without replacing their identities. Before discussing placement, inspect installed command help, every descendant's execution/review history, both parents, effective prerequisites/question holds, and review grain. Draft, specced, and ready features with proposed/ready tasks may qualify; ready claims survive. Both parents must be draft or ready, with an earlier staged epic allowed as destination. Started descendants, affected open coarse reviews, and changed effective inherited prerequisites or question holds refuse. The move preserves status, authored content, accepted provenance, and review grain; it does not approve a specced plan or draft destination. Stage and inspect the proposal, then stop for human amendment approval. Genuine abandoned/replaced scope still uses cancellation/supersession.
-
-Epics remain bounded delivery outcomes, but their features can interleave. A projected epic ordering cycle is a nonblocking advisory about grouped rendering, with the implicated features and edges shown. Actual prerequisite cycles still block, including explicit epic dependencies and mixed feature/epic completion deadlocks. Keep valid prerequisites rather than deleting them to make containers sort neatly.
+An unchanged, unstarted feature can move to another epic through a reviewed `move-feature` amendment that keeps its identity, and features from different epics may interleave when their real prerequisites allow it. [How skills route correction feedback](/tiller/skills/#how-skills-route-correction-feedback) has the eligibility rules for a move and what an epic ordering cycle means.
 
 An amendment may stage an epic and then its features in one batch. A new feature's tasks follow materialization and ordinary specification. Approval appends new epics to root soft order, not to whatever position the narrative suggests; intended placement needs a separate explicit `tiller order`, whose supplied sibling list replaces the prior list and may be partial. Post-approval hard links remain legal only while the dependent is eligible. A planning request authorizes the proposal, not its approval or an unsolicited broader replan.
 
@@ -278,7 +276,7 @@ Approving a feature plan pins its spec and contract, and each task's spec, as `a
 
 Choose a **Bug** for a defect: observed behavior violates an agreed expectation. Choose a **Chore** for housekeeping without code side effects, such as documentation or administrative upkeep. Choose a **Tweak** for a minor adjustment that may change code. Choose a **Task** under a feature for substantive planned work. These are choice guidelines, not file-diff restrictions: Tiller does not enforce a no-code rule for Chores.
 
-For example, changing a completed button from “Save” to “Save changes” to improve the wording is a Tweak, even when the label lives in application code. If the button text violates its agreed requirement, record a Bug instead. A new button or a broader interaction redesign belongs in planned Task work.
+For example, changing a completed button from "Save" to "Save changes" to improve the wording is a Tweak, even when the label lives in application code. If the button text violates its agreed requirement, record a Bug instead. A new button or a broader interaction redesign belongs in planned Task work.
 
 Keep changes forward-only. Never reopen or rewrite done work to express a new request. Add a new Bug, Chore, Tweak, or Task with attachment or source context as appropriate; the completed record stays history. Adding planned descendants may recompute feature and epic rollups, but it does not reopen merge-backed done execution nodes.
 
@@ -307,57 +305,13 @@ tiller sync
 
 ## Existing-code baseline
 
-A brownfield or legacy-migration project starts from code that predates Tiller. Its baseline is an
-as-is ledger and a human confirmation gate, not another work-node lifecycle. The optional
-`.tiller/design/baseline.yml` records each design-relative Markdown path, the code it `describes`,
-recoverable source blobs in `derived_from`, and an optional `confirmed` block. Markdown stays
-human-owned. Frontmatter does not register a doc as as-is state.
-
-Brownfield explains this repository's existing system; legacy-migration explains the reference
-system a new system will replace. Both require at least one confirmed doc before ordinary startup
-routing resumes. Greenfield has no confirmed-baseline gate. Kinds do not restrict feature change
-types: all can later create, modify, replace, or migrate code. Every code root still requires an
-explicit surface or reference mode. Work-node surfaces cannot overlap reference code, but design
-docs may describe paths equal to or beneath any declared valid root, including an external
-reference tree. Merely containing a root does not make a described path valid.
-
-`link design` records paths and provenance; it never confirms. A real describes change clears
-confirmation, an idempotent retry preserves it, and provenance-only changes do not invalidate it.
-Removing the final describes path removes the ledger entry, not its prose. `approve design`
-confirms named docs atomically against current working-tree fingerprints and one project HEAD,
-without editing or hashing their prose. It is the human's decision, and there is no `--all`.
-Dirty code, additions, and removals count. Project HEAD is a history anchor, not a claim that
-the observed code is committed, not `project.adopted`, and not an external repository's HEAD.
-
-The [artifact schema](/tiller/spec/artifact-schema/#baseline-ledger-designbaselineyml) defines
-which files a described path covers, path safety, and fingerprint details.
-
-The shared guide, orient, and readout route chooses `derive-baseline` before ordinary no-tree or
-work routing when either existing-code kind has no confirmation. The skill reads docs first,
-derives undocumented code, or translates existing sources at module grain. In-repo sources move
-only when ownership moves; otherwise use a pointer page rather than duplicate live specs.
-External imports preserve their originals. Commit exact inputs and record project-HEAD blob
-provenance before retiring agreed sources. Missing adoption history is stated, not invented.
-
-The baseline readout exposes every recorded source path plus blob mapping and every doc's
-described paths and confirmation facts. It is a review map, not proof that all source meaning
-survived. Dropped, merged, or unplaceable material belongs to the agent's separate run notes;
-`Open questions` counts the current project state. Pending docs lead to one HUMAN review action,
-not another derivation or a false empty-Queue claim that nobody needs the human. One accepted doc
-releases the baseline route; remaining pending docs are not a global blocker. Readiness still
-reports each independent gap, including `missing_design_doc` in every kind. A ledger alone does
-not count as design input.
-
-`stale_design` joins confirmed docs to done features that crossed after confirmation on overlapping
-paths; vanished described paths also need review. It is enabled in fresh projects.
-`shifted_design` is opt-in and compares the confirmation with working-tree code, including dirty
-bytes, additions, removals, and external reference trees. Unconfirmed docs and failed comparisons
-are uncovered, never clean. Existing manifests keep their recorded checks list.
-
-At a feature crossing, sync names overlapping docs but writes no baseline state. The console
-shows each registered doc's confirmation, provenance, and drift facts. `mend-drift` reads the
-bounded tracked-work diff where one exists, or the broader working-tree evidence where it does
-not, proposes the prose correction, and stops for the human's named-doc confirmation.
+A brownfield or legacy-migration project starts from code that predates Tiller, so routing sends
+the agent to `derive-baseline` first: it writes as-is design docs for the existing code and records
+what each one describes. A human confirms each doc with `tiller approve design`, and ordinary
+decomposition and work routing resume once one doc is confirmed. After that, drift watches the
+confirmed docs against the code they describe, and `mend-drift` proposes the prose repair. The
+[skills page](/tiller/skills/#establish-an-existing-code-baseline) covers what the skill does, and the
+[artifact schema](/tiller/spec/artifact-schema/#baseline-ledger-designbaselineyml) defines the ledger.
 
 ## Managed-project independence
 
