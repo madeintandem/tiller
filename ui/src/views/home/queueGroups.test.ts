@@ -134,7 +134,7 @@ describe("groupQueueByGravity", () => {
   // no entry for this kind until this pin, which sorted it dead last under
   // the unrecognized-kind fallback - the opposite of the settled rule, and
   // reachable the moment Home's card grid started consuming this function's
-  // order directly (task-10-brief.md).
+  // order directly.
   it("sorts approve_amendment ahead of attest, the previous leader", () => {
     const groups = groupQueueByGravity([
       entry({ kind: "attest_gate", id: "T-1" }),

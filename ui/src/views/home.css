@@ -1,17 +1,16 @@
-/* Home rebuilt to the console v2 mock's own anatomy (task-10-brief.md, Phase
-   2): the header band, the needs-you card grid, and the three-column pulse,
-   the retired console mock's `<main class="view home">`
-   block (mock:651-748) and its "HOME" CSS banner (mock:253-335). Class names
-   below are lifted straight from the mock (.home, .home-head, .home-id,
-   .stats/.stat, .needs, .card-grid/.dcard, .pulse/.pcol/.prow/.pfoot,
-   .contributor-group) rather than translated through a project-local
-   prefix the way the earlier "desk" pass named its own pieces: this is a full
-   anatomy rebuild, not a coat of paint over the old structure, so there is no
-   old internal naming worth preserving the way History's root-only rename
-   kept its recap-* internals. Where the console already has a shared,
-   tested primitive for a piece of the mock's raw HTML/CSS (StateBar for the
-   mock's own hand-rolled .mixbar, SectionHead for its .sect-head, CopyCmd for
-   its .copy-cmd), this file reuses that component and its own CSS in
+/* Home rebuilt to the console v2 mock's own anatomy: the header band, the
+   needs-you card grid, and the three-column pulse, the retired console mock's
+   `<main class="view home">` block (mock:651-748) and its "HOME" CSS banner
+   (mock:253-335). Class names below are lifted straight from the mock (.home,
+   .home-head, .home-id, .stats/.stat, .needs, .card-grid/.dcard,
+   .pulse/.pcol/.prow/.pfoot, .contributor-group) rather than translated through
+   a project-local prefix the way the earlier "desk" pass named its own pieces:
+   this is a full anatomy rebuild, not a coat of paint over the old structure,
+   so there is no old internal naming worth preserving the way History's
+   root-only rename kept its recap-* internals. Where the console already has a
+   shared, tested primitive for a piece of the mock's raw HTML/CSS (StateBar for
+   the mock's own hand-rolled .mixbar, SectionHead for its .sect-head, CopyCmd
+   for its .copy-cmd), this file reuses that component and its own CSS in
    tokens.css rather than re-implementing the mock's markup a second time. */
 
 .home {

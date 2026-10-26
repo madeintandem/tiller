@@ -468,7 +468,7 @@ func TestQueueIsAlwaysAnArray(t *testing.T) {
 }
 
 // TestQueueApproveAmendmentsListsOnlyProposedNoSuppression pins the new
-// approve_amendment group (task-5-brief.md): every proposed amendment
+// approve_amendment group: every proposed amendment
 // queues, id-ascending (an amendment carries no dependency edges among
 // itself and any other amendment to rank by), and nothing suppresses a row
 // the way a retired ancestor suppresses approve_feature and
@@ -503,7 +503,7 @@ func TestQueueApproveAmendmentsListsOnlyProposedNoSuppression(t *testing.T) {
 
 // TestQueueApproveAmendmentsLeadTheGroupOrder pins where the new group sits
 // among the others: first, mirroring Route's own priority (a proposed
-// amendment outranks even the plan gate there, task-5-brief.md), so the
+// amendment outranks even the plan gate there), so the
 // queue's group order does not disagree with it.
 func TestQueueApproveAmendmentsLeadTheGroupOrder(t *testing.T) {
 	tree := queueOrderEpicsTree()

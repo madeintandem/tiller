@@ -1,7 +1,6 @@
 package views
 
-// This file is the Build view's server projection (task-12-brief.md, phase 3
-// of the console v2 redesign, plan 2026-08-10): epics in the shared epic
+// This file is the Build view's server projection: epics in the shared epic
 // order, each with its own features in the shared feature order, each
 // feature's own tasks in the shared task order — the identical
 // gen.DependencyOrder computation `ls`, the tree, and the streams already
@@ -20,7 +19,7 @@ package views
 //     for the panel's mix bar" — exactly what feature_counts would also have
 //     to be, since the panel's feature-count badge is just that
 //     composition's sum. Shipping both is two spellings of one fact, which
-//     task-12-brief.md's Bounds section calls out by name and asks to be
+//     the Bounds section calls out by name and asks to be
 //     collapsed, so BuildEpic carries it once, as FeatureCounts (the plan's
 //     own field name for it), keyed by each feature's board column
 //     (gen.FeatureBoardStatus) rather than the client's seven-state legend bucket: bucket folding and

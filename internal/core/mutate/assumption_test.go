@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// These tests pin the assumption-review write path (task-5-brief.md):
+// These tests pin the assumption-review write path:
 // ReviewAssumption is the dedicated `approve --reviewed-assumption <Q-id>`
 // clearing act, and UnreviewedAssumptions is the one predicate Task 6's
 // submit guard and Task 7's drift detector both call.
@@ -25,7 +25,7 @@ import (
 // refusal and the predicate's "an open question is never listed" case both
 // need. Built from layEpicFeature/writeStage2Output/driveTo
 // (transition_test.go) plus AddQuestion (question_test.go's own machinery),
-// the existing fixtures task-5-brief.md points at.
+// the existing fixtures.
 func layFeatureWithOpenAssumedQuestion(t *testing.T) string {
 	t.Helper()
 	root := layEpicFeature(t)
@@ -49,8 +49,7 @@ func layFeatureWithOpenAssumedQuestion(t *testing.T) string {
 // layFeatureWithAssumedQuestion is layFeatureWithOpenAssumedQuestion plus the
 // answer: the feature carries assumption_basis[Q-aaaaaa] and Q-aaaaaa is
 // answered, so the entry's stamp is immediately stale, the shape
-// ReviewAssumption and UnreviewedAssumptions both exist to close
-// (task-5-brief.md's fixture sketch).
+// ReviewAssumption and UnreviewedAssumptions both exist to close.
 func layFeatureWithAssumedQuestion(t *testing.T) string {
 	t.Helper()
 	root := layFeatureWithOpenAssumedQuestion(t)
@@ -79,7 +78,7 @@ func layInProgressTaskUnderAssumedFeature(t *testing.T) string {
 	return root
 }
 
-// TestReviewAssumptionStampsTheAnswerRevision is task-5-brief.md's happy-path
+// TestReviewAssumptionStampsTheAnswerRevision is the happy-path
 // sketch verbatim: reviewing in stamps exactly the question's current answer
 // revision, and never erases the human's recorded reason for proceeding.
 func TestReviewAssumptionStampsTheAnswerRevision(t *testing.T) {
@@ -223,7 +222,7 @@ func TestReviewAssumptionUpdatesTheInMemoryTree(t *testing.T) {
 	require.Empty(t, after, "the in-memory feature must agree with disk immediately, with no fresh Load")
 }
 
-// TestUnreviewedAssumptionsPredicate covers task-5-brief.md's four named
+// TestUnreviewedAssumptionsPredicate covers the four named
 // cases: the whole rule is !entry.AnswerRevision.SameAs(question.
 // AnswerRevision), which the zero value and a genuine re-answer both trip,
 // and an open question never trips since its AnswerRevision stays the zero
@@ -334,7 +333,7 @@ func TestUnreviewedAssumptionsPredicate(t *testing.T) {
 // predicate with a task walks up to its parent feature and reports the
 // feature as the carrying node, never the task. Task 6's remedy message
 // depends on this: a reader handed a task command for a feature's entry gets
-// a refusal loop (task-6-brief.md).
+// a refusal loop.
 func TestUnreviewedAssumptionsWalksTaskUpToParentFeature(t *testing.T) {
 	t.Parallel()
 	root := layFeatureWithAssumedQuestion(t)
@@ -364,7 +363,7 @@ func TestUnreviewedAssumptionsIgnoresNodesWithNoBasis(t *testing.T) {
 }
 
 // TestUnreviewedAssumptionsSkipsADanglingQuestionReference pins the drift
-// engine's own contract (task-7-brief.md): a hand-edited assumption_basis
+// engine's own contract: a hand-edited assumption_basis
 // entry naming a question the ledger no longer carries is Uncovered there,
 // never silently reported as unreviewed drift by this predicate, and never a
 // crash either.

@@ -1,4 +1,4 @@
-// The Build board's own selection state (task-13-brief.md item 3): which
+// The Build board's own selection state: which
 // epics' features the board's columns show, riding the `?epics=` URL param
 // rather than component state, so a board configuration is a link (the
 // phase acceptance line: "a pasted board URL reproduces the selection").

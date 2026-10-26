@@ -25,8 +25,7 @@ type DepShape struct {
 // An edge naming a target id absent from t.Features still counts toward
 // Edges (the dependency was recorded) but never toward CrossEpic: its
 // target's epic is unknown, not confirmed different, and counting it cross
-// would manufacture a signal the tree never recorded (task-2-brief.md, Step
-// 3).
+// would manufacture a signal the tree never recorded.
 //
 // EpicsWithNoCrossEpic counts epics untouched by a cross-epic edge at either end.
 // Both independent work and work with missing edges can have that shape; only

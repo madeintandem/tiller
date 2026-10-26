@@ -804,7 +804,7 @@ func amendmentPageTree() *store.Tree {
 	}
 }
 
-// TestNodePageAmendmentBlock pins the flat amendment page (task-5-brief.md):
+// TestNodePageAmendmentBlock pins the flat amendment page:
 // the NodeView carries the amendment's own title (the one field its own
 // switch arm in Node() has to fill), the prose ref names the flat
 // .tiller/amendments/ narrative path with content left for serve to fill,
@@ -908,7 +908,7 @@ func TestNodePageNonAmendmentPagesCarryNoAmendmentKey(t *testing.T) {
 // --- Task 5 (intake build): the amendment page's own Source -----------------
 
 // TestNodePageAmendmentCarriesSourceStructurally pins the one amendment-level
-// addition task-5-brief.md asks the page projection to carry: an
+// addition the page projection carries: an
 // intake-minted amendment's own Source, Path and Revision structural, Live
 // left nil, the same typed-nil-slot the serve handler fills (mirroring every
 // precondition's own Live, AmendmentPreconditionPageView's own doc comment).
@@ -1128,7 +1128,7 @@ func TestDriftBadgesOfActiveBasisAlwaysRefuses(t *testing.T) {
 	task := &store.Task{ID: "T-1", Status: "done"}
 	badges = DriftBadgesOf([]drift.Candidate{candidate(drift.MarkerActiveBasis, store.NounFeature, "F-1")}, task)
 	require.Equal(t, []DriftBadgeView{{Marker: drift.MarkerActiveBasis, Refusing: true}}, badges,
-		"active_basis refuses regardless of the PAGE node's own status: task-12-brief.md resolution 1 says 'anywhere'")
+		"active_basis refuses regardless of the PAGE node's own status: it reads 'anywhere'")
 }
 
 func TestDriftBadgesOfAnsweredQuestionRefusesOnlyAtASubmittableTask(t *testing.T) {
@@ -1179,8 +1179,7 @@ func TestDriftBadgesOfDedupesToOneBadgePerMarker(t *testing.T) {
 }
 
 // TestDriftBadgesOfOrdersBySchemaNotArrival pins the title attribute's own
-// need (task-12-brief.md, Step 2: "its title attribute listing the
-// markers"): badges render in drift.KnownMarkers' fixed schema order, never
+// need: badges render in drift.KnownMarkers' fixed schema order, never
 // the incidental order candidates happened to arrive in.
 func TestDriftBadgesOfOrdersBySchemaNotArrival(t *testing.T) {
 	feat := &store.Feature{ID: "F-1", Status: "done"}

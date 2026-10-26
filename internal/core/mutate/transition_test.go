@@ -1013,8 +1013,7 @@ func TestApproveTaskPinsItsOwnBasisAndRefreshRepins(t *testing.T) {
 }
 
 // gitDeps is testDeps with an explicit real git window, so a test exercising
-// the commit anchor documents its git dependency at the call site (task-2-brief,
-// "Commit anchors on both basis records").
+// the commit anchor documents its git dependency at the call site.
 func gitDeps(root string) mutate.Deps {
 	d := testDeps()
 	d.Rev = vcs.New(root)
@@ -1100,7 +1099,7 @@ func TestNewCommitsAloneDoNotTripActiveBasis(t *testing.T) {
 }
 
 // TestApproveFailsLoudlyWhenHeadCannotResolve pins the error-propagation half
-// of the commit anchor (task-2-brief.md, "Error handling"): CurrentCommit
+// of the commit anchor: CurrentCommit
 // failing means approve fails loudly with the propagated environment error,
 // not a record with a zero anchor. A repo whose .git has been removed cannot
 // resolve HEAD, the same failure a repo that was never a git repo at all
@@ -1425,11 +1424,11 @@ func TestSubmitPassesOnceReviewedIn(t *testing.T) {
 	require.Equal(t, "in_review", res.Status)
 }
 
-// TestSubmitActiveBasisOutranksUnreviewedAssumption pins task-6-brief.md's
-// resolution 2: the assumption guard runs AFTER guardTask's existing basis
-// check, so when a task's own basis has ALSO drifted, the human gets the
-// active_basis refusal first and corrects one thing at a time, the same
-// idiom TestLegalityIsSettledBeforeTheGuards already uses above for the
+// TestSubmitActiveBasisOutranksUnreviewedAssumption pins the resolution 2: the
+// assumption guard runs AFTER guardTask's existing basis check, so when a
+// task's own basis has ALSO drifted, the human gets the active_basis refusal
+// first and corrects one thing at a time, the same idiom
+// TestLegalityIsSettledBeforeTheGuards already uses above for the
 // verb-versus-guard ordering.
 func TestSubmitActiveBasisOutranksUnreviewedAssumption(t *testing.T) {
 	t.Parallel()

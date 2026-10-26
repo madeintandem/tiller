@@ -76,8 +76,8 @@ func TestRenderReadoutAlwaysCarriesTheShelfQueueLine(t *testing.T) {
 	require.Less(t, strings.Index(got, "queue: 2 bugs"), strings.Index(got, "**Next:**"))
 }
 
-// TestRenderReadoutEmitsNoTableAndNoHeading holds the two hard format rules
-// (task-4-brief.md, Step 1): the block sits inside the agent's own chat
+// TestRenderReadoutEmitsNoTableAndNoHeading holds the two hard format rules:
+// the block sits inside the agent's own chat
 // message, so a heading would fight its structure, and a table renders
 // inconsistently across harnesses.
 func TestRenderReadoutEmitsNoTableAndNoHeading(t *testing.T) {

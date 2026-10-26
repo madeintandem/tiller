@@ -74,7 +74,7 @@ function epicPage(overrides: Partial<NodePage> = {}): NodePage {
   };
 }
 
-// task-1-brief.md's tab shell decomposes EpicBody into per-tab panels; this
+// the tab shell decomposes EpicBody into per-tab panels; this
 // suite has only ever exercised the Features section, so it moves straight
 // to EpicFeaturesPanel with no assertion changes (import/wrapper only, per
 // the brief's adaptation rule).

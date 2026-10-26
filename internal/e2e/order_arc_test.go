@@ -24,9 +24,8 @@ package e2e
 //     epic-b first, and routing follows it to epic-b's own first feature,
 //     not the key-first one.
 //  3. `tiller order epic --clear` erases the list: the tree and the route
-//     both fall back to key order, the contrast case task-7-brief.md's own
-//     brief names ("without the soft order the same fixture routes to the
-//     key-first one").
+//     both fall back to key order, the contrast case the brief names ("without
+//     the soft order the same fixture routes to the key-first one").
 //  4. A recorded dependency (epic-a depends on epic-b) plus a soft order
 //     that agrees with key order but contradicts that edge: the dependency
 //     layer outranks the soft order (docs/spec/cli-surface.md), so the tree and
@@ -193,7 +192,7 @@ func TestOrderArcDrivesTreeRoutingAndOverride(t *testing.T) {
 		"the render matches the recorded soft order exactly, so nothing is overridden")
 
 	// 3. --clear erases the recorded list; key order returns, the contrast
-	// case task-7-brief.md's own brief names.
+	// case the brief names.
 	requireOK(t, h.tiller("order", "epic", "--clear", "--contributor", "jc"), "order epic clear")
 
 	cleared := h.tiller("tree", "--json")

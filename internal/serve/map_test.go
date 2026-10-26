@@ -1,6 +1,6 @@
 package serve_test
 
-// These tests pin GET /api/map (task-3-brief.md, docs/spec/ui-surface.md):
+// These tests pin GET /api/map:
 // views.MapOf served fresh over the real console Handler, mux and all, the same
 // posture build_test.go's own header states for /api/build.
 // TestMapEndpointServesNodesAndEdges rides buildServerWithOpenWork, the fixture

@@ -816,7 +816,7 @@ func TestInitDesignJunkOnlySourceIsEmpty(t *testing.T) {
 	require.Equal(t, 2, code, "a junk-only source is an empty source (misuse)")
 }
 
-// --- importDocs (the importDesign generalization task-4-brief.md asks for) ---
+// --- importDocs (the importDesign generalization) ---
 
 // TestImportDocsCopiesASingleFileToItsBasenameUnderDestDir pins the new branch
 // importDesign's rename to importDocs adds: a srcPath naming a plain file

@@ -48,7 +48,7 @@ var markerOrder = drift.KnownMarkers
 
 // DriftView is the JSON data block `tiller drift` emits, clean or found
 // alike: the pure report projection plus Reason, populated only on the
-// blocked path (resolution 1, task-10-brief.md). There is deliberately no
+// blocked path (resolution 1). There is deliberately no
 // second, differently-shaped type for findings: exit 1 here means the sweep
 // completed and is reporting what it found, not that the command was
 // refused, so a caller already parsing the clean shape needs nothing new to
@@ -112,7 +112,7 @@ func runDrift(cmd *cobra.Command) error {
 
 // humanDrift is the plain-text render for a terminal reader: one section per
 // marker that carries candidates, then an Uncovered section, then the
-// footer (cli-surface.md's drift paragraph; task-10-brief.md, resolution 2).
+// footer (cli-surface.md's drift paragraph).
 // Clean output states what was compared rather than asserting a bare
 // "no drift", because exit 0 is itself an assertion of coverage.
 func humanDrift(v views.DriftReportView, found bool) string {
@@ -283,11 +283,11 @@ func coverageUnit(marker string) string {
 }
 
 // shortSHA renders a projected revision anchor as a short sha for a terminal
-// reader, the human renderer's own business (task-10-brief.md, resolution
-// 4); the JSON payload carries r's value verbatim through
-// views.RevisionRefView, untouched by this. A nil anchor (no commit to date
-// the candidate by) and a non-git kind (sha256) both pass through as "" or
-// unchanged respectively, since only a git value is a sha to shorten at all.
+// reader, the human renderer's own business; the JSON payload carries r's value
+// verbatim through views.RevisionRefView, untouched by this. A nil anchor (no
+// commit to date the candidate by) and a non-git kind (sha256) both pass
+// through as "" or unchanged respectively, since only a git value is a sha to
+// shorten at all.
 func shortSHA(r *views.RevisionRefView) string {
 	if r == nil {
 		return ""

@@ -11,7 +11,7 @@ import (
 // This file tests `tiller intake <file>` (intake.go): the artifact lands
 // under .tiller/feedback/, its fingerprint travels onto the minted
 // amendment's Source, the basename-collision refusal is pinned verbatim, and
-// the integration seam with task-1-brief.md's per-op source rule is proven
+// the integration seam with the per-op source rule is proven
 // end to end (an intake-minted amendment refuses a sourceless staged op).
 
 // writeFeedbackDoc writes a scratch feedback document OUTSIDE the tiller repo
@@ -133,9 +133,9 @@ func TestIntakeRefusesNonRegularFile(t *testing.T) {
 	require.Contains(t, out, `"reason": "invalid_source"`)
 }
 
-// TestIntakeRefusesBasenameCollision pins the exact refusal message
-// task-4-brief.md quotes verbatim: re-intake of a document sharing a basename
-// with one already landed is a new intake, not an overwrite.
+// TestIntakeRefusesBasenameCollision pins the exact refusal message: re-intake
+// of a document sharing a basename with one already landed is a new intake, not
+// an overwrite.
 func TestIntakeRefusesBasenameCollision(t *testing.T) {
 	initOwnedRepo(t)
 	src := writeFeedbackDoc(t, "review.md", "first body\n")
@@ -226,7 +226,7 @@ func TestIntakeRefusesInvalidKey(t *testing.T) {
 }
 
 // TestIntakeHumanOutputNamesTheNextStep pins the house confirmation voice's
-// forward pointer: `tiller guide intake` for the explosion (task-4-brief.md).
+// forward pointer: `tiller guide intake` for the explosion.
 func TestIntakeHumanOutputNamesTheNextStep(t *testing.T) {
 	initOwnedRepo(t)
 	src := writeFeedbackDoc(t, "review.md", "body\n")
@@ -241,8 +241,8 @@ func TestIntakeHumanOutputNamesTheNextStep(t *testing.T) {
 
 // TestIntakeThenAmendWithoutSourceRefusesPerTask1Rule is the acceptance's own
 // proof that tasks 1 and 4 meet: a sourceless op staged onto an
-// intake-minted amendment is refused by StageOperation's own rule
-// (task-1-brief.md), exercised here for the first time end to end (task 1's
+// intake-minted amendment is refused by StageOperation's own rule,
+// exercised here for the first time end to end (task 1's
 // own tests could only manufacture the doc.Source != nil shape by a disk-level
 // poke, since nothing before this task ever set it for real).
 func TestIntakeThenAmendWithoutSourceRefusesPerTask1Rule(t *testing.T) {
@@ -280,7 +280,7 @@ func TestIntakeThenAmendWithSourceStages(t *testing.T) {
 	require.Len(t, ops, 1)
 }
 
-// TestIntakeSourceHonestyArc is task-5-brief.md's own acceptance, pinned end
+// TestIntakeSourceHonestyArc is the acceptance, pinned end
 // to end in one test: intake lands the artifact and mints the amendment,
 // `show amendment` reads the fresh document valid, editing it makes show say
 // stale, approve refuses naming both hashes, restoring the file makes

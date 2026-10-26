@@ -1,9 +1,8 @@
 // gateChipsFor derives the node header's compact gate-chip row (the mock's
-// .gate-chip, the retired console mock;
-// task-17-brief.md item 4: "meta row with owner, claim, branch, PR, and gate
-// chips from node.gates"). One chip per RECORDED gate only - node.gates,
-// never a gate that merely has an authored contract and has not run - in a
-// fixed display order: every other gate alphabetically, evals always
+// .gate-chip, the retired console mock; "meta row with owner, claim, branch,
+// PR, and gate chips from node.gates"). One chip per RECORDED gate only -
+// node.gates, never a gate that merely has an authored contract and has not run
+// - in a fixed display order: every other gate alphabetically, evals always
 // trailing, since it is the acceptance gate the Contract tab details further
 // and reads last, after the mechanical CI gates a reader checks first.
 //

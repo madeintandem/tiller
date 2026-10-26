@@ -238,7 +238,7 @@ type AnsweredQuestionView struct {
 // documents the walk-up), never the task submit was run on. Remedy is the
 // exact runnable command(s) that clear every question named, addressing that
 // carrying feature: a reader handed a task command for a feature's entry gets
-// a refusal loop (task-6-brief.md, resolution 3).
+// a refusal loop.
 type AnsweredQuestionData struct {
 	Noun      string                 `json:"noun"`
 	ID        string                 `json:"id"`
@@ -1723,7 +1723,7 @@ func activeBasisDrifted(ab *mutate.ActiveBasisError) string {
 // It branches on ab.Missing because --refresh-basis re-records the pin from the
 // working tree: on a file that is gone there is nothing to hash, so the command
 // fails instead of clearing the drift, and a message naming it alone walks the
-// reader into that failure (task-9-brief.md, inherited item 5). Restoring the
+// reader into that failure. Restoring the
 // file first is what makes the named move work.
 //
 // The command itself comes from views.ActiveBasisOf rather than being composed
@@ -1769,9 +1769,9 @@ func answeredQuestionHandles(qs []mutate.UnreviewedAssumption) string {
 
 // answeredQuestionAddr is the address the reviewed-assumption remedy names:
 // the key of the feature that carries the stale entry, falling back to its
-// id. AssumptionBasis lives on Feature alone (task-5-brief.md's settled
-// fact), so aq.NodeID always resolves through tree.Features, unlike
-// basisAddr's ActiveBasisError sibling, which must also handle a task grain.
+// id. AssumptionBasis lives on Feature alone, so aq.NodeID always resolves
+// through tree.Features, unlike basisAddr's ActiveBasisError sibling, which
+// must also handle a task grain.
 func answeredQuestionAddr(t *store.Tree, aq *mutate.AnsweredQuestionError) string {
 	if f, ok := t.Features[aq.NodeID]; ok {
 		if k := views.Key(f); k != "" {
@@ -1783,7 +1783,7 @@ func answeredQuestionAddr(t *store.Tree, aq *mutate.AnsweredQuestionError) strin
 
 // answeredQuestionRemedy is the exact runnable command(s) that clear every
 // question the refusal names, addressing the feature that carries each entry,
-// never the task submit was run on (task-6-brief.md, resolution 3).
+// never the task submit was run on.
 // --reviewed-assumption reviews one question at a time by deliberate design
 // (mutate.ReviewAssumption's own doc comment: a dedicated act, never a
 // batch), so more than one stale entry means more than one command, joined
@@ -1839,7 +1839,7 @@ func blockerViews(bs []gen.QuestionBlocker) []QuestionBlockerView {
 // ahead of the legality check, which is what lets it run on a node in progress,
 // in review, or done (cli-surface.md, "Specifying a feature"). On a done task
 // the old line read "task ... is now done", a crossing this command has no part
-// in (task-9-brief.md, inherited item 8). The status is still named, as where
+// in. The status is still named, as where
 // the node stands rather than where it went.
 //
 // unpushed carries submit's own review-state warning (issue #42) computed at

@@ -3,10 +3,10 @@
 // destination, so Home's two questions read on one line, "what needs you" in
 // magenta on the left and "what happened" in slate on the right.
 //
-// The link reads "History" and targets /history (the view renamed 2026-08-10,
-// task-6-brief.md): this is chrome that names the view to the reader, so it
-// updates with it, even though the component and its wire fetch below keep
-// the recap name (RecapSignal.tsx, /api/recap/peek) unchanged.
+// The link reads "History" and targets /history (the view renamed 2026-08-10):
+// this is chrome that names the view to the reader, so it updates with it, even
+// though the component and its wire fetch below keep the recap name
+// (RecapSignal.tsx, /api/recap/peek) unchanged.
 //
 // Three rules hold it honest.
 //

@@ -1,12 +1,10 @@
-// AmendmentBody: the amendment node page's own flat body (task-6-brief.md's
-// binding, ui-surface.md's "an amendment ... stays flat, no tab row at
-// all"). Required scenarios: the narrative prose, the operations list (op
-// said as a word, target as RefLink where resolvable, reason and
-// superseded-by where present), preconditions rendered with their validity
-// as a WORD beside the value (valid/stale/unknown, never color alone), and
-// triggered_by/amends_design as quiet mono lines. No button anywhere applies
-// anything: an amendment's one write command lives on the queue card, not
-// this page.
+// AmendmentBody: the amendment node page's own flat body. Required scenarios:
+// the narrative prose, the operations list (op said as a word, target as
+// RefLink where resolvable, reason and superseded-by where present),
+// preconditions rendered with their validity as a WORD beside the value
+// (valid/stale/unknown, never color alone), and triggered_by/amends_design as
+// quiet mono lines. No button anywhere applies anything: an amendment's one
+// write command lives on the queue card, not this page.
 
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";

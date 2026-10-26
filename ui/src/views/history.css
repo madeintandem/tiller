@@ -237,7 +237,7 @@
 
 /* The trailing hairline: the same rule-line the day subheads below draw
    (.day-h::after), so a section head reads as part of the same eyebrow
-   family (task-19-brief.md, "restyled to the house eyebrow idiom") instead
+   family instead
    of the pre-restyle treatment. It, not the count, carries the flex:1 now -
    the count and chevron trail it at their own natural width. */
 .recap-group-head .head-rule {
@@ -381,7 +381,7 @@ summary.hrow {
 }
 
 /* The origin label (task 21, flat mode only): the same treatment as the
-   address slot above, since task-21-brief.md asks to reuse it. A separate
+   address slot above, which it reuses. A separate
    class keeps the different facts and cardinalities clear: origin identifies
    the merged row's epic and renders on a multi-entry row too, while
    .recap-burst-key is the lone target's own address. */

@@ -318,7 +318,7 @@ func TestNodeProjectsNextOwner(t *testing.T) {
 	}
 }
 
-// TestNodeCarriesHeldByRetiredAncestor pins task-3-brief.md's NodeView bullet
+// TestNodeCarriesHeldByRetiredAncestor pins the NodeView bullet
 // (issue #36): the additive held object is gen.RetiredAncestor's answer
 // verbatim, present only when there is one, absent from the marshaled JSON
 // (never a null "held" key) for a node with nothing retired above it.

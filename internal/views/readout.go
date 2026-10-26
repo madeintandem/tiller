@@ -112,8 +112,7 @@ type Readout struct {
 
 // entityCap bounds the named list. The console pass established what happens
 // when a surface renders every row; the readout must not reintroduce it in the
-// terminal, so the list names a few and says how many it withheld
-// (task-3-brief.md, Step 3).
+// terminal, so the list names a few and says how many it withheld.
 const entityCap = 3
 
 // ReadoutInput carries the facts ReadoutOf cannot derive from the tree alone,
@@ -266,7 +265,7 @@ type GateAct struct {
 	// approveContent below reads it, because the plain-approve account is
 	// wrong for this arm in both of its parts: the headline said "Approval
 	// recorded" and the check said "Moved to ready", for a command whose
-	// contract is that nothing moved (task-9-brief.md, inherited item 8).
+	// contract is that nothing moved.
 	BasisRefresh bool
 
 	// AssumptionReviewed is set when the approve that ran was
@@ -274,9 +273,8 @@ type GateAct struct {
 	// beside a plain transition and --refresh-basis. Like BasisRefresh, it
 	// changes no lifecycle state (mutate.ReviewAssumption's own doc
 	// comment), so the plain-transition account below ("Moved to ready") is
-	// exactly as wrong for it as it was for BasisRefresh
-	// (task-9-brief.md, inherited item 8; fix round 1 on task 5 found the
-	// same gap here): approveContent takes its own early-return branch for
+	// exactly as wrong for it as it was for BasisRefresh:
+	// approveContent takes its own early-return branch for
 	// it instead of falling into the Nodes tally.
 	AssumptionReviewed *GateActAssumptionReviewed
 
@@ -680,7 +678,7 @@ func headlineFor(m Moment) string {
 // "produced" and a "verification" column, but Task 3 only ever wrote content
 // functions for the seams; the switch above fell through to the zero-value
 // Readout for every gate until this task, which is the empty-block gap
-// task-6-brief.md's own author could not see (gate content was never assigned
+// the author could not see (gate content was never assigned
 // to a task) and this task's own brief flags directly: these moments are what a
 // developer sees on every approve, answer, attest, and sync they run, more
 // often than any seam.
@@ -688,10 +686,8 @@ func headlineFor(m Moment) string {
 // None of them populates Entities. The design's settled decision is that
 // "existing confirmation lines are unchanged and the readout follows them,"
 // and for a gate specifically those lines already are the per-node account
-// of what transitioned, exactly the per-moment table's "produced" column
-// (task-6-brief.md's own global constraint: "on a batch approve those lines
-// are the per-node record of what transitioned and what was already in the
-// target state; a summary cannot replace them"). Repeating that in Entities
+// of what transitioned, exactly the per-moment table's "produced" column.
+// Repeating that in Entities
 // would be the block narrating what the line directly above it already
 // said.
 //
@@ -748,10 +744,9 @@ func approveContent(t *store.Tree, in ReadoutInput, r *Readout) {
 	// --refresh-basis is a different act under the same verb: it re-records
 	// accepted_against and returns before the legality check, so the node it
 	// names is wherever it already was. The headline and the checks below are
-	// both about a move, so this arm writes its own (task-9-brief.md,
-	// inherited item 8). Nothing was approved, so there is no "what did this
-	// unblock" to answer either: legalNext on an unmoved node lists the same
-	// moves it listed a second ago.
+	// both about a move, so this arm writes its own. Nothing was approved, so
+	// there is no "what did this unblock" to answer either: legalNext on an
+	// unmoved node lists the same moves it listed a second ago.
 	//
 	// It sits AHEAD of the zero-node return, and emits its count even at zero,
 	// because `approve task --feature <key> --refresh-basis` on a feature with
@@ -1056,7 +1051,7 @@ func blockedByAnOpenQuestion(t *store.Tree, nodeID string) bool {
 	return node != nil && len(questionBlockersForNode(t, node)) > 0
 }
 
-// decomposeContent fills in decompose's readout (task-3-brief.md, Step 3):
+// decomposeContent fills in decompose's readout:
 // every draft epic named with its feature count, plus the readiness gate and
 // DependencyShape's edge count as the completeness bar made mechanical
 // (internal/views/depcheck.go).
@@ -1583,7 +1578,7 @@ func flowFeatures(t *store.Tree, order *gen.Order) []*store.Feature {
 
 // specifyContent fills in specify's readout: every specced feature awaiting
 // approval, named with its criteria count, plus the two checks
-// task-3-brief.md's Step 5 names as specify's distinctive ones. "Each
+// the Step 5 names as specify's distinctive ones. "Each
 // self-satisfiable" (the design doc's third verification item, the
 // contract-grain rule specify/SKILL.md spells out) is a judgment about
 // whether a criterion can be proven by the feature that carries it, not a
@@ -1662,7 +1657,7 @@ func proposedAmendments(t *store.Tree) []*store.Amendment {
 	return out
 }
 
-// amendContent fills in amend's readout (task-5-brief.md): every proposed
+// amendContent fills in amend's readout: every proposed
 // amendment named with its staged operation count, plus the two checks that
 // distinguish this moment from every other one: how many operations are
 // staged tree-wide (a plain tree read, no I/O needed), and how each staged
@@ -1744,7 +1739,7 @@ func gateHasEvidence(g store.Gate) bool {
 
 // gatesGreenWithEvidence reports whether every required gate on a task is
 // pass AND backed by recorded evidence, execute's "gates green with
-// evidence" distinctive check (task-3-brief.md, Step 5): a required gate
+// evidence" distinctive check: a required gate
 // marked pass with nothing behind it is the hollow pass this task exists to
 // catch, the same mechanical-over-narrated thesis the whole readout rests on
 // (docs/spec/cli-surface.md). A task

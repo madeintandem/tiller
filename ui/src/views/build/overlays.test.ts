@@ -1,7 +1,7 @@
-// Vitest coverage for the board's two condition overlays (task-13-brief.md
-// item 4): the ask flag joins /api/queue onto cards by node id, scoped to
-// feature-noun entries only; the drift flag does the identical join against
-// /api/drift's per-marker candidate groups.
+// Vitest coverage for the board's two condition overlays: the ask flag joins
+// /api/queue onto cards by node id, scoped to feature-noun entries only; the
+// drift flag does the identical join against /api/drift's per-marker candidate
+// groups.
 
 import { describe, expect, it } from "vitest";
 

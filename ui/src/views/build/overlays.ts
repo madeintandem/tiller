@@ -1,4 +1,4 @@
-// The board's two condition overlays (task-13-brief.md item 4), each a join
+// The board's two condition overlays, each a join
 // by node id against a payload /api/build deliberately excludes: the queue,
 // for the ask flag (server-side reasoning: BuildFeature carries no queue
 // data, the same reason StreamsOf carries none for /api/board), and

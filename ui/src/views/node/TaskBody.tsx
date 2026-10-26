@@ -6,7 +6,7 @@
 // its implementation spec, its gates and evidence, and its PR", and the same
 // order the feature body reads in, spec before what was checked against it.
 //
-// task-1-brief.md's tab shell split this file into the panels the task tab
+// the tab shell split this file into the panels the task tab
 // set names - spec/gates, moved here JSX for JSX from the one body function
 // they used to share. It carried a third piece too, TaskFeaturePanel, the
 // parent-feature climb, mounted as an interim bridge inside the Dependencies

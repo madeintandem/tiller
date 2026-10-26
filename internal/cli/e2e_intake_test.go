@@ -13,7 +13,7 @@ import (
 )
 
 // This file is intake's end-to-end net, built on e2e_amend_test.go's own
-// conventions (task-9-brief.md): no hand-set fixtures, every field an
+// conventions: no hand-set fixtures, every field an
 // assertion reads is written by the real command flow through execCLI, and
 // the successful arc is followed by its refusal sibling in the same test,
 // because "the refused approve wrote nothing and the retry succeeds" only

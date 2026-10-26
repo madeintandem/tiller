@@ -1,7 +1,6 @@
 package views_test
 
-// These tests pin ranked next's grain-aware moves (task-5-brief.md,
-// docs/spec/cli-surface.md): a coarse-grain feature's own
+// These tests pin ranked next's grain-aware moves: a coarse-grain feature's own
 // finish line (gates, then submit) ranks ahead of the generic in_review wait,
 // an in_review task under an unrecorded coarse-grain PR is not a human wait
 // at all, and once that PR IS recorded the wait names the reviewed node's

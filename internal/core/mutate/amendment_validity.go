@@ -1,11 +1,11 @@
 package mutate
 
 // This file is the mutate layer's LIVE reads for `tiller show amendment` and
-// the console's node page: EvaluateAmendmentPreconditions, Task 4's export
-// (task-4-brief.md), reused from approve's own comparison
+// the console's node page: EvaluateAmendmentPreconditions, Task 4's export,
+// reused from approve's own comparison
 // (amendment_approve.go's evalPrecondition) rather than a second copy of it;
 // EvaluateAmendmentSource, Task 5's sibling for the one amendment-level fact
-// rather than the per-op ones (task-5-brief.md), reused from approve's own
+// rather than the per-op ones, reused from approve's own
 // checkSource/evalSource the identical way; EvaluateAmendmentOpSources, the
 // per-op sibling of THAT one (#57), reused from approve's own checkOpSources
 // the same way again; and EvaluateAmendmentShape, the per-op sibling of the
@@ -171,8 +171,8 @@ func EvaluateAmendmentPreconditions(tree *store.Tree, deps Deps, amendment *stor
 	return out, nil
 }
 
-// AmendmentSourceValidity is the amendment-level twin of PreconditionValidity
-// (task-5-brief.md): an intake-minted amendment's own Source, as it reads
+// AmendmentSourceValidity is the amendment-level twin of PreconditionValidity:
+// an intake-minted amendment's own Source, as it reads
 // against the live tree right now, in the identical valid/stale vocabulary
 // (PreconditionValid/PreconditionStale). It carries no PreconditionUnknown
 // case: unlike a staged op's own precondition, which may target a key that

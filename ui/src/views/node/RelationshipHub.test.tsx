@@ -122,7 +122,7 @@ describe("RelationshipHub", () => {
   });
 });
 
-// `only` is the node-detail tab shell's addition (task-1-brief.md): the
+// `only` is the node-detail tab shell's addition: the
 // Dependencies tab wants exactly depends_on/depended_on_by, nothing else,
 // regardless of what other groups the payload carries.
 describe("RelationshipHub only", () => {

@@ -1355,7 +1355,7 @@ func TestRefreshBasisOnDoneFeatureIsABlockedAnswer(t *testing.T) {
 // than clearing anything.
 //
 // The refusal used to name --refresh-basis as the move on both arms, walking a
-// human straight into that failure (task-9-brief.md, inherited item 5). This
+// human straight into that failure. This
 // drives the failure first, so the message's advice is grounded in what the
 // command actually does, then confirms the restore-then-refresh sequence the
 // message now names is the one that works.
@@ -1417,7 +1417,7 @@ func TestActiveBasisRefusalNamesARunnableCommand(t *testing.T) {
 // alone (mutate's own refresh arms return before the legality check), so a
 // confirmation reading "is now in_progress" and a block reading "Approval
 // recorded / Moved to ready: 1 of 1" both describe a transition that did not
-// happen (task-9-brief.md, inherited item 8).
+// happen.
 func TestRefreshBasisReportsWhatItRecordedNotAMove(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
 	tid := soleTaskID(t)
@@ -1862,7 +1862,7 @@ func TestApproveReviewGrainWorkInFlightMatchesConfigureBlockedAnswer(t *testing.
 // plus driving the one task to check, the state submit is legal from
 // (lifecycle/table.go: submit's only row is {From: "check"}): the CLI mirror
 // of the core package's layInProgressTaskUnderAssumedFeature
-// (transition_test.go), built the same way, task-6-brief.md's own fixture.
+// (transition_test.go), built the same way.
 func layInProgressTaskUnderAssumedFeatureCLI(t *testing.T) (dir, taskID, questionID string) {
 	t.Helper()
 	dir, questionID = layFeatureWithAssumedQuestionCLI(t)
@@ -1874,7 +1874,7 @@ func layInProgressTaskUnderAssumedFeatureCLI(t *testing.T) (dir, taskID, questio
 }
 
 // TestQuestionSubmitRefusesUnreviewedAnsweredAssumptionCLI is the CLI rendering of
-// task-6-brief.md's core refusal (mutate.TestSubmitRefusesUnreviewedAnsweredAssumption):
+// the core refusal (mutate.TestSubmitRefusesUnreviewedAnsweredAssumption):
 // the blocked JSON data block carries the structured question (id and
 // statement) and a remedy addressing the feature that CARRIES the entry,
 // never the task submit was run on, and the human line names both nodes so a

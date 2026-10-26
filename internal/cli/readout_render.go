@@ -9,8 +9,8 @@ import (
 
 // renderReadout turns a derived readout into the markdown the agent
 // reproduces verbatim into its chat reply and the terminal prints when a
-// developer runs the command themselves; both audiences read the same text
-// (task-4-brief.md). The vocabulary is deliberately small: bold labels,
+// developer runs the command themselves; both audiences read the same text.
+// The vocabulary is deliberately small: bold labels,
 // backticks, and dash bullets. No headings, because the block sits inside the
 // agent's own message and would fight its structure; no tables, because they
 // render inconsistently across harnesses

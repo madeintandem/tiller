@@ -32,7 +32,7 @@ func writeFile(t *testing.T, dir, name, content string) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644))
 }
 
-// This file pins task-6-brief.md's contract: the human gates (approve,
+// This file pins the contract: the human gates (approve,
 // answer question, attest, sync) print their existing confirmation
 // unchanged, then the moment's readout block; every other command (add, spec,
 // start feature/task, return, resume, cancel, archive, submit) is untouched.

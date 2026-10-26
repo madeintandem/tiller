@@ -1,9 +1,8 @@
-// The epic panel's collapsed state (task-13-brief.md: "Panel collapsed
-// state: localStorage, key in the house style (`tiller-build-panel` shape;
-// see `tiller-theme`)"): one flat key, read/written the same normalize-on-
-// read shape lib/theme.ts's THEME_STORAGE_KEY establishes, rather than
-// RailSection.tsx's per-section-id prefix scheme - Build has exactly one
-// panel, so there is no id to key it by.
+// The epic panel's collapsed state (localStorage, key in the house style:
+// the `tiller-build-panel` shape, see `tiller-theme`): one flat key,
+// read/written the same normalize-on- read shape lib/theme.ts's
+// THEME_STORAGE_KEY establishes, rather than RailSection.tsx's per-section-id
+// prefix scheme - Build has exactly one panel, so there is no id to key it by.
 
 export const BUILD_PANEL_STORAGE_KEY = "tiller-build-panel";
 

@@ -408,8 +408,8 @@
    the retired console mock: id, statement, binding
    type, status chip, one row per criterion, replacing the earlier pass's
    stacked .instr-crit row (dot + statement + a bindchip pill beneath it) now
-   that the compact grid carries the same five fields task-17-brief.md item 6
-   names and nothing more. */
+   that the compact grid carries the same five fields
+   and nothing more. */
 
 .criteria {
   max-width: 880px;

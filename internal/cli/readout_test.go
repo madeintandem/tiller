@@ -14,13 +14,11 @@ import (
 )
 
 // layDraftEpicTree lays a repo with two draft epics: the shape a `tiller
-// readout decompose` fires against right after `tiller add epic`
-// (task-5-brief.md's scratchProjectWithDraftEpics; this repo's actual scratch
-// helpers are initOwnedRepo and execCLI, reads_test.go's layReadTree is the
-// established pattern this follows). readout reads git facts through
+// readout decompose` fires against right after `tiller add epic`.
+// readout reads git facts through
 // internal/vcs, so it needs a real git repo with at least one commit for
 // Head() to resolve; initOwnedRepo has carried its own git init and initial
-// commit since the drift build's commit-anchor task (task-2-brief.md), so
+// commit since the drift build's commit-anchor task, so
 // there is no second git setup to do here anymore.
 func layDraftEpicTree(t *testing.T) {
 	t.Helper()
@@ -36,7 +34,7 @@ func layDraftEpicTree(t *testing.T) {
 
 // TestReadoutCommandPrintsTheBlockForASeam pins the human render for
 // decompose: the moment's own headline, the Verification section, and the
-// needs-you section every readout carries (task-5-brief.md, Step 1).
+// needs-you section every readout carries.
 func TestReadoutCommandPrintsTheBlockForASeam(t *testing.T) {
 	layDraftEpicTree(t)
 	out, _, code := execCLI(t, "readout", "decompose")
@@ -110,12 +108,11 @@ func TestAmendReadoutRechecksRevisionPreconditionsAfterProseChanges(t *testing.T
 		"an amendment readout must still validate current working-tree bytes")
 }
 
-// TestReadoutCommandPrintsTheAmendSeamHonestlyEmpty pins the zero case
-// task-5-brief.md calls out: with nothing proposed anywhere in the tree, the
-// block still renders sanely rather than blank or broken, and NeedsYou has
-// nothing to say. "Preconditions: 0 valid, 0 stale" is a real answer, not
-// "not evaluated": the CLI caller always runs
-// mutate.EvaluateAmendmentPreconditions this pass
+// TestReadoutCommandPrintsTheAmendSeamHonestlyEmpty pins the zero case: with
+// nothing proposed anywhere in the tree, the block still renders sanely rather
+// than blank or broken, and NeedsYou has nothing to say. "Preconditions: 0
+// valid, 0 stale" is a real answer, not "not evaluated": the CLI caller always
+// runs mutate.EvaluateAmendmentPreconditions this pass
 // (readoutAmendmentPreconditions returns a non-nil, possibly empty map), so a
 // genuine zero renders rather than the nil-means-never-ran fallback. The
 // fixture is a bare repo with no epics at all, not layAmendmentTree's own
@@ -180,7 +177,7 @@ func TestReadoutUsesQueueInputToSuppressABasisDriftedFeatureCheck(t *testing.T) 
 // TestReadoutJSONCarriesTheSameTextAsHuman pins the design's central promise:
 // the terminal's human text and the --json "readout" field are the same
 // string, so a harness reading --json reproduces exactly what a developer
-// running the bare command would have read themselves (task-5-brief.md).
+// running the bare command would have read themselves.
 func TestReadoutJSONCarriesTheSameTextAsHuman(t *testing.T) {
 	layDraftEpicTree(t)
 	human, _, code := execCLI(t, "readout", "decompose")

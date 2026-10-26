@@ -52,9 +52,9 @@ func parseWellFormedAmendment(t *testing.T) Amendment {
 	return a
 }
 
-// TestAmendment_RoundTrip pins every field of the on-disk shape task-1-brief.md
-// specifies verbatim: it parses, every operation's fields land where expected,
-// and marshaling it back out and re-parsing yields the same value.
+// TestAmendment_RoundTrip pins every field of the on-disk shape: it parses,
+// every operation's fields land where expected, and marshaling it back out and
+// re-parsing yields the same value.
 func TestAmendment_RoundTrip(t *testing.T) {
 	a := parseWellFormedAmendment(t)
 
@@ -236,7 +236,7 @@ func TestValidateAmendment_NilIsRefused(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestValidateAmendment_AddEpic pins add-epic's own shape (task-2-brief.md):
+// TestValidateAmendment_AddEpic pins add-epic's own shape:
 // a bare epic key, no parent segment, and no target the way revise/supersede/
 // cancel need one. It requires a non-blank Key exactly as add-feature and
 // add-task do.
@@ -330,7 +330,7 @@ func TestValidateAmendment_AddQuestion(t *testing.T) {
 	}
 }
 
-// TestAmendmentOp_SourceRoundTrip pins AmendmentOp.Source (task-1-brief.md):
+// TestAmendmentOp_SourceRoundTrip pins AmendmentOp.Source:
 // free text under the "source" key, round-tripping through yaml unchanged.
 func TestAmendmentOp_SourceRoundTrip(t *testing.T) {
 	raw := `id: A-d6w3f9
@@ -357,9 +357,9 @@ operations:
 }
 
 // TestAmendmentOp_SourceLegalOnEveryOpKind pins that validateAmendmentOp
-// carries no per-kind rule for source (task-1-brief.md: "legal on every op
-// kind"): the worked example, with a source citation stapled onto each of its
-// five differently-shaped operations, still validates clean.
+// carries no per-kind rule for source: the worked example, with a source
+// citation stapled onto each of its five differently-shaped operations, still
+// validates clean.
 func TestAmendmentOp_SourceLegalOnEveryOpKind(t *testing.T) {
 	a := parseWellFormedAmendment(t)
 	for i := range a.Operations {
@@ -368,7 +368,7 @@ func TestAmendmentOp_SourceLegalOnEveryOpKind(t *testing.T) {
 	require.NoError(t, ValidateAmendment(&a))
 }
 
-// TestAmendment_SourceRoundTrip pins Amendment.Source (task-1-brief.md): nil
+// TestAmendment_SourceRoundTrip pins Amendment.Source: nil
 // when the amendment carries none (every hand-staged amendment `tiller add
 // amendment` opens today), and Path/Revision round-tripping through yaml when
 // present, the shape a later task's `tiller intake` writes.

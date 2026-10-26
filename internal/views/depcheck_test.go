@@ -43,7 +43,7 @@ func TestDependencyShapeCountsAnUnresolvableTargetAsAnEdgeNotACrossing(t *testin
 	// depcheck.go's guard: a DependsOn entry naming an id absent from
 	// t.Features still gets recorded (the dependency was written down), but
 	// must not inflate CrossEpic, since an unresolved target's epic is
-	// unknown rather than confirmed different (task-2-brief.md, Step 3). A
+	// unknown rather than confirmed different. A
 	// regression that miscounted a dangling edge as cross-epic would pass
 	// every other test here, since none of them exercise a missing target.
 	tree := treeWithDraftEpics(t, 1)

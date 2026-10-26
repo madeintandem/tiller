@@ -1,6 +1,5 @@
-// Vitest coverage for the epic panel's collapsed-state persistence
-// (task-13-brief.md: "Panel collapsed state: localStorage, key in the house
-// style"), mirroring lib/theme.test.ts's own read/write/normalize coverage
+// Vitest coverage for the epic panel's collapsed-state persistence,
+// mirroring lib/theme.test.ts's own read/write/normalize coverage
 // for the sibling THEME_STORAGE_KEY this file's own doc comment cites.
 
 import { afterEach, describe, expect, it } from "vitest";

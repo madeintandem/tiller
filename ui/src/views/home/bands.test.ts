@@ -1,4 +1,4 @@
-// Vitest coverage for the burst desk's band composition (task-6-brief.md),
+// Vitest coverage for the burst desk's band composition,
 // written before bands.ts exists. bandRuns folds any kind group over ROW_CAP
 // into a band run and merges the adjacent uncompressed groups around it into
 // one cards run so they still share a single grid (settled decisions 2-4).

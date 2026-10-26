@@ -208,12 +208,11 @@ func resolveAll(tree *store.Tree, noun string, raws []string) ([]store.Node, err
 // exercises them today. The block prints once, after every per-node line
 // and the mixed-outcome summary, never once per node: a batch approve's
 // lines already are the per-node record, and one readout at the end is "the
-// block follows them," not "the block follows each of them" (task-6-brief.md's
-// global constraint). It renders only when the batch is fully ok: a blocked
-// node has already been reported as such in its own line, and this
-// function's own error return covers the exit code, so there is nothing a
-// readout would add over a failed batch that the existing per-node blocked
-// lines have not already said.
+// block follows them," not "the block follows each of them". It renders only
+// when the batch is fully ok: a blocked node has already been reported as such
+// in its own line, and this function's own error return covers the exit code,
+// so there is nothing a readout would add over a failed batch that the existing
+// per-node blocked lines have not already said.
 func emitBatch(cmd *cobra.Command, command string, data BatchData, lines []string, m views.Moment, root string, act *views.GateAct) error {
 	ok := data.Summary.Blocked == 0
 	var block string

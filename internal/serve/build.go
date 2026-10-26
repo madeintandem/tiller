@@ -3,8 +3,7 @@ package serve
 // This file serves GET /api/build: the Build view's board (views.BuildBoard,
 // internal/views/build.go), epics and their own features and tasks already
 // in the shared dependency order, so the client filters the served sequence
-// into columns and rows and never sorts anything itself (task-12-brief.md,
-// phase 3 acceptance: "no client-side ordering code exists"). Queue and
+// into columns and rows and never sorts anything itself. Queue and
 // drift both ride their own endpoints and are deliberately absent from this
 // payload; the client overlays both by node id, the same posture /api/board
 // (StreamsOf) already takes toward queue data. See build.go's own package

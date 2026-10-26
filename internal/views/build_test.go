@@ -1,6 +1,6 @@
 package views
 
-// These tests pin views.BuildBoardOf (build.go, task-12-brief.md): the Build
+// These tests pin views.BuildBoardOf (build.go): the Build
 // view's server projection. They ride hand-built in-memory trees, the same
 // house style streams_test.go and nodepage_test.go's siblingTree already use
 // for this package's other order-sensitive projections, rather than driving
@@ -412,19 +412,19 @@ func buildOrphanFeatureTree() *store.Tree {
 }
 
 // TestBuildBoardOfOrphanFeatureIsInvisible pins the DOCUMENTED behavior for a
-// feature whose EpicKey names no epic in the tree (task-23-brief.md item 6,
-// carrying forward Task 12's own note to Task 14, progress.md: "orphan
-// features (EpicKey naming no epic) are invisible on the board - same blind
-// spot as gen.Tree, consistent not regressive, but this repo's history with
-// silently-invisible nodes says check it"). buildEpicOf reaches a tree's
-// features only through order.Features(epicKey), scoped to a REAL epic's own
-// key; an orphan's own group in gen.Order's featuresByEpic map is never
-// looked up by anyone, because no epic carries its key. So the orphan is not
-// merely uncounted, it renders on no epic's card list, in no epic's
-// FeatureCounts, and nowhere else on the board - the identical blind spot
-// gen.Tree's own epicNode walk shares (both call order.Features(key) the same
-// way), so this is not a Build-specific regression, but it is a conscious
-// choice from here forward: change it only on purpose, not by accident.
+// feature whose EpicKey names no epic in the tree (carrying forward Task 12's
+// own note to Task 14, progress.md: "orphan features (EpicKey naming no epic)
+// are invisible on the board - same blind spot as gen.Tree, consistent not
+// regressive, but this repo's history with silently-invisible nodes says check
+// it"). buildEpicOf reaches a tree's features only through
+// order.Features(epicKey), scoped to a REAL epic's own key; an orphan's own
+// group in gen.Order's featuresByEpic map is never looked up by anyone, because
+// no epic carries its key. So the orphan is not merely uncounted, it renders on
+// no epic's card list, in no epic's FeatureCounts, and nowhere else on the
+// board - the identical blind spot gen.Tree's own epicNode walk shares (both
+// call order.Features(key) the same way), so this is not a Build-specific
+// regression, but it is a conscious choice from here forward: change it only on
+// purpose, not by accident.
 func TestBuildBoardOfOrphanFeatureIsInvisible(t *testing.T) {
 	board := BuildBoardOf(buildOrphanFeatureTree())
 	require.Len(t, board.Epics, 1, "the orphan claims no epic row of its own")

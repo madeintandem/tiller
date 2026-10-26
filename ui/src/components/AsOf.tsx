@@ -24,7 +24,7 @@
 // holding older data than this line implies; the line only ever claims that
 // SOMETHING just landed, never that everything on screen did.
 //
-// The in-flight guard (task-22-brief.md item 3): a bare click handler fired
+// The in-flight guard: a bare click handler fired
 // one generation bump per click with nothing stopping a rapid double-click
 // from firing two, superseded safely but request-spam-shaped. `refreshing`
 // goes true the moment this component's own click bumps the generation, and

@@ -241,9 +241,9 @@ func TestAddAmendmentDedupsAmendsDesignPreservingOrder(t *testing.T) {
 }
 
 // TestAddAmendmentSetsSourceWhenProvided pins intake's own write path: Source
-// rides in on AmendmentInput (task-4-brief.md's folded-into-AmendmentInput
-// choice), lands on the result, and round-trips through the written yml, the
-// same way Implements/TriggeredBy/AmendsDesign already do one field over.
+// rides in on AmendmentInput, lands on the result, and round-trips through the
+// written yml, the same way Implements/TriggeredBy/AmendsDesign already do one
+// field over.
 func TestAddAmendmentSetsSourceWhenProvided(t *testing.T) {
 	t.Parallel()
 	root := writeOwnedRepo(t)
@@ -260,7 +260,7 @@ func TestAddAmendmentSetsSourceWhenProvided(t *testing.T) {
 
 // TestAddAmendmentLeavesSourceNilForAHandAmendment pins the existing behavior
 // unaffected: `tiller add amendment` never sets Source, so StageOperation's
-// per-op citation refusal (task-1-brief.md) never fires on a hand-opened
+// per-op citation refusal never fires on a hand-opened
 // amendment.
 func TestAddAmendmentLeavesSourceNilForAHandAmendment(t *testing.T) {
 	t.Parallel()
@@ -523,8 +523,8 @@ func TestStageOperationAddFeatureHappyPath(t *testing.T) {
 	require.Equal(t, "replace", res.Op.ChangeType)
 }
 
-// TestStageOperationAddEpicHappyPath pins add-epic's own staging shape
-// (task-2-brief.md): a bare key and title, no parent to resolve, unlike
+// TestStageOperationAddEpicHappyPath pins add-epic's own staging shape:
+// a bare key and title, no parent to resolve, unlike
 // add-feature and add-task.
 func TestStageOperationAddEpicHappyPath(t *testing.T) {
 	t.Parallel()
@@ -797,7 +797,7 @@ func TestStageOperationAddQuestionResolvesLiveBlocks(t *testing.T) {
 }
 
 // TestStageOperationAddQuestionResolvesStagedBlockKey pins the same-batch
-// allowance (task-3-brief.md): a blocks entry naming the key of an
+// allowance: a blocks entry naming the key of an
 // add-feature staged EARLIER on this same amendment is recorded as the raw
 // key, unresolved, the same shape resolveStageReplacement already gives a
 // supersede's by (TestStageOperationSupersedeByStagedAddFeatureKey).
@@ -906,7 +906,7 @@ func TestStageOperationAppendsAcrossMultipleCalls(t *testing.T) {
 
 // --- StageOperation: source ---
 
-// TestStageOperationRoundTripsSource pins StageInput.Source (task-1-brief.md):
+// TestStageOperationRoundTripsSource pins StageInput.Source:
 // it lands on the staged op verbatim and survives a reload off disk, on a
 // hand amendment that carries no Source of its own.
 func TestStageOperationRoundTripsSource(t *testing.T) {
@@ -928,7 +928,7 @@ func TestStageOperationRoundTripsSource(t *testing.T) {
 }
 
 // TestStageOperationSourceOptionalWithoutAmendmentSource pins the acceptance
-// criterion's second half (task-1-brief.md): "a sourceless hand amendment
+// criterion's second half: "a sourceless hand amendment
 // stages exactly as before." stageFixture's own AddAmendment never sets
 // Source, so a sourceless op stages clean.
 func TestStageOperationSourceOptionalWithoutAmendmentSource(t *testing.T) {
@@ -946,7 +946,7 @@ func TestStageOperationSourceOptionalWithoutAmendmentSource(t *testing.T) {
 }
 
 // TestStageOperationRefusesSourcelessOpWhenAmendmentCarriesSource pins the
-// staging rule's exact refusal (task-1-brief.md): an intake-minted amendment
+// staging rule's exact refusal: an intake-minted amendment
 // (Source set) refuses an op with a blank Source, with the exact message text
 // the brief pins verbatim.
 func TestStageOperationRefusesSourcelessOpWhenAmendmentCarriesSource(t *testing.T) {

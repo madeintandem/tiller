@@ -1,5 +1,5 @@
 // DecisionCard is the desk's needs-you card, rebuilt to the console v2 mock's
-// anatomy (task-10-brief.md, .dcard): one QUEUE ENTRY per card, its command
+// anatomy: one QUEUE ENTRY per card, its command
 // always visible - the brief's own words, "every command rendered" - rather
 // than the earlier pass's one-kind-per-card batch with a click-to-reveal
 // disclosure. Home supplies cards already in gravity order (queueGroups.ts's

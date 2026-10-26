@@ -324,8 +324,7 @@ func writeReport(cmd *cobra.Command, command string, ok bool, data any, human st
 // The block follows the existing confirmation rather than replacing it: on a
 // batch approve those lines are the per-node record of what transitioned and
 // what was already in the target state, and a summary cannot stand in for
-// them (task-6-brief.md's global constraint, restated in the design doc's
-// "Existing confirmation lines are unchanged and the readout follows them").
+// them.
 // A not-ok report (a blocked business answer) carries no readout at all: the
 // gate did not complete, so there is nothing new for a fresh tree read to
 // say that the existing blocked envelope has not already said.

@@ -1,6 +1,4 @@
-// History (renamed from Recap 2026-08-10, task-6-brief.md item 3; ui-
-// surface.md still calls this lens "Recap" and the wire below deliberately
-// kept that name too - see api.ts's recapPath/RecapWindow) is the recency
+// History (renamed from Recap 2026-08-10) is the recency
 // lens: a mechanical render of /api/recap, the digest of Tiller events since
 // your last visit, with a window override (visit, 24h, 7d) for the
 // Monday-morning case. Every fact here is lifted straight from the recorded
@@ -85,8 +83,8 @@
 // History as a flat day-grouped timeline. The served payload and the spec group
 // by (epic, stream) instead, and that reconciliation was made deliberately, not
 // by this file: option (a), keep the served groups as sections and restyle
-// their rows, day subheads only WITHIN a group where it helps a reader
-// (task-19-brief.md). So a RecapGroupBlock renders its section head (restyled,
+// their rows, day subheads only WITHIN a group where it helps a reader.
+// So a RecapGroupBlock renders its section head (restyled,
 // not removed) and then either a flat burst list (its bursts all fall on one
 // calendar day) or a sequence of `.day`/`.day-h` subheads, one per calendar day
 // its bursts touch, each holding that day's own bursts - never both at once, so
@@ -181,9 +179,9 @@ const WINDOWS: RecapWindow[] = ["visit", "24h", "7d"];
 
 // The grouping mode, client-only (no server param exists, or needs to: the
 // payload stays grouped by (epic, stream) either way, and which render mode
-// reads it is entirely this file's own decision - task-21-brief.md's own
-// bound, "no server changes"). Epic leads the array as the default, the same
-// position "visit" holds in WINDOWS above.
+// reads it is entirely this file's own decision - the bound, "no server
+// changes"). Epic leads the array as the default, the same position "visit"
+// holds in WINDOWS above.
 type GroupMode = "epic" | "time";
 const GROUP_MODES: GroupMode[] = ["epic", "time"];
 
@@ -460,8 +458,7 @@ function RecapGroupBlock({ group, showStream }: { group: RecapGroup; showStream:
         {/* The rule-line: the same trailing hairline the day subheads below
             draw (mock's .day-h::after), so a section head reads as part of
             the same eyebrow family rather than a leftover pre-restyle
-            treatment (task-19-brief.md's "restyled to the house eyebrow
-            idiom"). Decorative only - the count beside it already carries
+            treatment. Decorative only - the count beside it already carries
             the number a reader scans for. */}
         <span className="head-rule" aria-hidden="true" />
         <span className="recap-group-count muted">
@@ -537,10 +534,10 @@ interface DayGroup<T> {
 // The caller decides what an empty-vs-populated result MEANS: RecapGroupBlock
 // renders no day subheads at all when this returns a single bucket ("day
 // subheads appear within a multi-day group and NOT for a single-day group",
-// task-19-brief.md's own stated rendering rule), while FlatBody always
+// the stated rendering rule), while FlatBody always
 // renders its bucket(s) - time mode has no OTHER section head to fall back
 // on, so the day boundary is the page's one structural element and earns its
-// place even at n=1 (task-21-brief.md). This function only ever answers "how
+// place even at n=1. This function only ever answers "how
 // many distinct calendar days did these items touch, and which fell on
 // which"; it does not know or care which of those two readings applies.
 function dayGroupsOf<T>(items: T[], atOf: (item: T) => string): DayGroup<T>[] {
@@ -577,7 +574,7 @@ interface FlatBurst {
 }
 
 // The flat mode's own composition: burstsOf still runs once PER SERVED
-// GROUP, unchanged (the anti-merge rule task-21-brief.md pins - two epics'
+// GROUP, unchanged (the anti-merge rule - two epics'
 // same-type-same-actor runs can never fold into one row just because the
 // reader asked for time order), and this only merges and orders the
 // resulting ROWS. Newest first, by each burst's own instant (burstAt);
@@ -744,7 +741,7 @@ function BurstRow({
   );
 
   // The origin slot: reuses the same mono/muted ref treatment
-  // .recap-burst-key already paints (task-21-brief.md's own instruction),
+  // .recap-burst-key already paints,
   // under its own class since it carries a different fact (which group, not
   // which leaf key) at a different cardinality (every row, not just a lone
   // one).

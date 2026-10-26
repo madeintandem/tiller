@@ -1,6 +1,4 @@
-// Vitest coverage for the board's own ordering guarantee (task-13-brief.md's
-// phase acceptance line: "no client-side ordering code exists" and "column
-// counts match `tiller ls feature --status <s>` per selected epic"):
+// Vitest coverage for the board's own ordering guarantee:
 // visibleCards flattens the selection in served order, columnCards is a
 // pure status filter over it, and BUILD_COLUMNS names the fixed six.
 

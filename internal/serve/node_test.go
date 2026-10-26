@@ -1345,12 +1345,11 @@ func doneFeatureWithVanishedSurfaceRoot(t *testing.T) (root, featureID string) {
 	return root, featureID
 }
 
-// TestNodePageDriftBadgeStaleSpecNeverRefuses pins task-12-brief.md's
-// resolution 5, first example: a done feature whose recorded surface file is
-// gone carries a stale_spec badge, and stale_spec never refuses a verb
-// (artifact-schema.md names only active_basis as "the one marker whose
-// condition also refuses verbs"), so the badge's own refusing bit reads
-// false regardless of the drift.
+// TestNodePageDriftBadgeStaleSpecNeverRefuses pins the resolution 5, first
+// example: a done feature whose recorded surface file is gone carries a
+// stale_spec badge, and stale_spec never refuses a verb (artifact-schema.md
+// names only active_basis as "the one marker whose condition also refuses
+// verbs"), so the badge's own refusing bit reads false regardless of the drift.
 func TestNodePageDriftBadgeStaleSpecNeverRefuses(t *testing.T) {
 	root, featureID := doneFeatureWithVanishedSurfaceRoot(t)
 	enableDriftChecks(t, root, "stale_spec")
@@ -1387,8 +1386,8 @@ func TestNodePageDriftBadgeActiveBasisRefuses(t *testing.T) {
 	require.Equal(t, []driftBadgePayload{{Marker: "active_basis", Refusing: true}}, got.Drift)
 }
 
-// TestNodePageDriftAbsentWithNoBadges pins the omitempty contract
-// (task-12-brief.md's resolution 2): a page with nothing to report carries
+// TestNodePageDriftAbsentWithNoBadges pins the omitempty contract:
+// a page with nothing to report carries
 // no "drift" key at all, never an empty array, the same absent-not-null
 // convention active_basis already keeps
 // (TestNodePageBasisIsAbsentWhereThereIsNoPin, one section up). nodeServer's

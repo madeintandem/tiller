@@ -118,7 +118,7 @@ func TestLoad_EvalPresence(t *testing.T) {
 }
 
 // amendmentFixtureID names the one amendment under testdata/tree's
-// .tiller/amendments/, the same worked example task-1-brief.md pins verbatim.
+// .tiller/amendments/, the same worked example.
 const amendmentFixtureID = "A-d6w3f9"
 
 // An amendment is a flat file pair under .tiller/amendments/, not a

@@ -1,6 +1,6 @@
 // The amendment's own flat body (ui-surface.md: "An amendment or a design
 // doc ... stays flat", never the multi-panel tab set the epic/feature/task
-// bodies get; task-6-brief.md's binding spells out the content in order):
+// bodies get):
 // the narrative prose, the staged operations list, then the two design-doc
 // lists as quiet mono lines. NodeDetail's own generic layers
 // (RelationshipHub, HistorySection) render below this unconditionally for

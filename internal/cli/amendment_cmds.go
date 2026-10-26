@@ -39,7 +39,7 @@ import (
 // mutation uses.
 
 // AmendmentData is the shared --json data block every amendment-returning
-// command carries (task-4-brief.md, Envelopes): identity, the human-owned
+// command carries: identity, the human-owned
 // lists, and the staged operations, each target structured as id and key
 // separately, never a composed label. add amendment and amend leave every
 // operation's preconditions structural (name and the staged expected value
@@ -47,7 +47,7 @@ import (
 // Status/Actual/Note, computed once by mutate.EvaluateAmendmentPreconditions
 // rather than a second comparison here, and Source's own LIVE
 // Status/Actual/Note the same way, computed once by
-// mutate.EvaluateAmendmentSource (task-5-brief.md's sibling binding).
+// mutate.EvaluateAmendmentSource.
 type AmendmentData struct {
 	ID           string                   `json:"id"`
 	Key          string                   `json:"key,omitempty"`
@@ -63,8 +63,7 @@ type AmendmentData struct {
 }
 
 // AmendmentSourceView is the fingerprinted feedback artifact an intake-minted
-// amendment was exploded from (store.AmendmentSource; task-4-brief.md's
-// acceptance: "the fingerprint round-trips through `show amendment --json`").
+// amendment was exploded from (store.AmendmentSource).
 // A decoupled JSON view rather than the store shape reused directly, the same
 // separation AmendmentRefView keeps: store.AmendmentSource carries only yaml
 // tags, and this package's JSON surface is snake_case throughout (base_revision,
@@ -134,8 +133,7 @@ func amendmentSourceView(s *store.AmendmentSource, live *mutate.AmendmentSourceV
 // only on add-question, resolved through amendmentRefView the same way
 // Target/By/SupersededBy already are: a live feature or task's id and key,
 // or a staged key naming an add op on this same amendment marked Staged, so
-// `show amendment --json` can finally display what a staged question blocks
-// (task-5-brief.md's review, ASSIGNED to task-8-brief.md).
+// `show amendment --json` can finally display what a staged question blocks.
 type AmendmentOperationView struct {
 	Index         int                 `json:"index"`
 	Op            string              `json:"op"`
@@ -355,7 +353,7 @@ func lookupEpicFeatureOrTask(tree *store.Tree, rawID string) store.Node {
 }
 
 // renderAmendmentHuman is the plain-text render for `show amendment`, the
-// full batch beside which a human reviews the git diff (task-4-brief.md):
+// full batch beside which a human reviews the git diff:
 // title, status, the identity lists, then every staged operation with its
 // target refs in the reference convention and its preconditions' LIVE
 // validity. validityErr is non-empty only when the live read itself could
@@ -984,14 +982,13 @@ func joinLiveReadErrors(errs ...error) string {
 	return strings.Join(out, "; ")
 }
 
-// runShowAmendment is show.go's amendment arm: the full render task-4-brief.md
-// asks for, title through every staged operation's LIVE precondition
-// validity, computed once by mutate.EvaluateAmendmentPreconditions rather
-// than a second comparison here (single-sourcing the logic is the brief's own
-// instruction; views purity is not at stake in this package, but the
-// evaluation itself must never diverge from approve's own), plus an
-// intake-minted amendment's own Source, computed the identical way through
-// mutate.EvaluateAmendmentSource (task-5-brief.md's sibling binding), plus
+// runShowAmendment is show.go's amendment arm: the full render, title through
+// every staged operation's LIVE precondition validity, computed once by
+// mutate.EvaluateAmendmentPreconditions rather than a second comparison here
+// (single-sourcing the logic is the brief's own instruction; views purity is
+// not at stake in this package, but the evaluation itself must never diverge
+// from approve's own), plus an intake-minted amendment's own Source, computed
+// the identical way through mutate.EvaluateAmendmentSource, plus
 // every operation's own hand-blanked-citation pre-flight, computed the
 // identical way through mutate.EvaluateAmendmentOpSources (#57), plus every
 // operation's own shape pre-flight (a duplicate staged key, a staged-epic
@@ -1214,8 +1211,7 @@ func amendmentStaleData(e *mutate.AmendmentPreconditionsStaleError) AmendmentSta
 }
 
 // humanAmendmentStale renders the blocked stale-precondition answer, one
-// stale operation per line (task-4-brief.md: "renders each stale op on its
-// own line"). Note is rendered in place of Actual when present
+// stale operation per line. Note is rendered in place of Actual when present
 // (StalePrecondition's own doc comment): Actual alone would mislead for a
 // comparison that could not even run (an add op's staged key, a target with
 // no recorded anchor), where Note carries the reason instead.
@@ -1280,8 +1276,8 @@ func poolClause(features int) string {
 }
 
 // humanApproveAmendment names every applied operation by ref, the batch
-// confirmation a human reviews before the gate readout follows it
-// (task-4-brief.md). tree is the pre-approve tree (still holding every node
+// confirmation a human reviews before the gate readout follows it.
+// tree is the pre-approve tree (still holding every node
 // that existed before this call), used to resolve a replacement that
 // pre-dates this batch; a replacement this SAME batch just materialized
 // resolves against res.Applied instead, since a brand new node's key never

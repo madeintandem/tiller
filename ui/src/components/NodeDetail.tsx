@@ -2,7 +2,7 @@
 // the console v2 mock's own node pane): the reusable node page CONTENT,
 // taking one already-fetched NodePage and rendering it whole - the
 // breadcrumb header, the attention stack, the drift panel the Drifted chip
-// discloses, and (task-1-brief.md's tab shell) the type-aware body, its
+// discloses, and the type-aware body, its
 // relationship hub, and its history timeline, tabbed per noun. Today the
 // /node/:noun/* route (views/NodeDetail.tsx, which owns the fetch) is its one
 // consumer; task C2's Explore reading pane mounts this exact same instrument
@@ -14,15 +14,14 @@
 // this component is mounted at its own route or reused from anywhere else,
 // identity shows up once, never zero, never twice.
 //
-// The tab row is per-noun (ui-surface.md's node detail, task-1-brief.md's
-// settled sets): feature and epic place their optional Fix tab
-// after their composition-child tab; task places it after Gates. Bugs,
-// chores, and tweaks have their own task-shaped Spec/Gates/Dependencies/History factory,
-// deliberately separate from task-only panels. A question and an amendment
-// stay flat, no tab row at all, so their old body-then-hub-then-history order
-// renders exactly as it always did. Every tabbed
-// noun's default tab is spec, and the active one rides the `?tab=` search
-// param (react-router's useSearchParams, replace rather than push: a tab
+// The tab row is per-noun (ui-surface.md's node detail): feature and epic place
+// their optional Fix tab after their composition-child tab; task places it
+// after Gates. Bugs, chores, and tweaks have their own task-shaped
+// Spec/Gates/Dependencies/History factory, deliberately separate from task-only
+// panels. A question and an amendment stay flat, no tab row at all, so their
+// old body-then-hub-then-history order renders exactly as it always did. Every
+// tabbed noun's default tab is spec, and the active one rides the `?tab=`
+// search param (react-router's useSearchParams, replace rather than push: a tab
 // switch is not a history entry a reader would expect the back button to
 // undo, the same judgment call Explore's own `?mode=` switch made the other
 // way, since a mode switch IS meant to be one). An unrecognized `tab` value
@@ -519,9 +518,9 @@ function backlinksTab(page: NodePage): NodeTab {
 function featureTabs(page: NodePage): NodeTab[] {
   const tasks = page.relationships.tasks ?? [];
   const tabs: NodeTab[] = [{ key: "spec", label: "Spec", render: () => <FeatureSpecPanel page={page} /> }];
-  // The evals tab hides outright when the node carries no contract at all
-  // (task-17-brief.md item 6); its DISPLAY label reads "Contract" now, wire
-  // key and `tab` param unchanged (the decision this task adopted).
+  // The evals tab hides outright when the node carries no contract at all; its
+  // DISPLAY label reads "Contract" now, wire key and `tab` param unchanged (the
+  // decision this task adopted).
   if (page.eval !== null) {
     tabs.push({
       key: "evals",

@@ -192,8 +192,7 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 }
 
 // statIntakeSource validates <file> before any write: it must exist, be
-// readable, and be a regular file (task-4-brief.md: "refuses a missing/
-// unreadable file or a non-regular file"). A directory, a symlink to nowhere,
+// readable, and be a regular file. A directory, a symlink to nowhere,
 // or a permission-denied path are all refused the same way, since none of
 // them is a document intake can land.
 func statIntakeSource(path string) error {
@@ -236,8 +235,7 @@ func intakeDefaultKey(basename string) string {
 }
 
 // intakeArtifactExistsErr refuses landing over a basename intake already
-// placed under .tiller/feedback/. The message is pinned verbatim by
-// task-4-brief.md.
+// placed under .tiller/feedback/. The message is pinned verbatim.
 func intakeArtifactExistsErr() error {
 	return &usageError{
 		reason: "artifact_exists",

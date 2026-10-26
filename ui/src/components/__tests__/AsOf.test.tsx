@@ -115,8 +115,7 @@ describe("AsOf", () => {
 
     expect(bump).toHaveBeenCalledTimes(1);
   });
-
-  // task-22-brief.md item 3: the refresh button had no guard, one bump per
+  // The refresh button had no guard: one bump per
   // click with nothing stopping a rapid double-click from firing two. The
   // button disables itself the instant the first click bumps the
   // generation, so a second click landing before any read has completed

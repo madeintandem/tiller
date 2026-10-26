@@ -520,7 +520,7 @@ func layActiveFeature(t *testing.T, root string, deps mutate.Deps, epicKey, feat
 	return featureID, taskID
 }
 
-// TestActiveBasisSweep is task-7-brief.md's own sketch, written out fully.
+// TestActiveBasisSweep is written out fully.
 // An approved feature whose feature.md is edited after approval is a
 // candidate; the sweep dedupes the parent-feature report a task guard
 // repeats; a DONE feature with an edited spec is NOT an active_basis
@@ -965,7 +965,7 @@ func layFeatureWithAssumedQuestion(t *testing.T, root string, deps mutate.Deps, 
 	return featureID, questionID
 }
 
-// TestAnsweredQuestionSweep is task-7-brief.md's own sketch, written out
+// TestAnsweredQuestionSweep is written out
 // fully. A non-terminal feature with an answered, unreviewed assumption is a
 // candidate carrying the question id, short title, and full statement;
 // reviewing it in clears it; a DANGLING question id in assumption_basis is
@@ -1171,11 +1171,11 @@ func TestAnsweredQuestionSinceOnlyGitCommitKind(t *testing.T) {
 
 // --- stale_spec ---
 
-// TestStaleSpecVanishFiresModifyDoesNot is task-8-brief.md's own sketch,
-// written out fully. A done feature's recorded surface losing one file is the
-// candidate the vanish rule exists for; the same file merely edited first is
-// not, since on any active codebase that would be true of every done node
-// within days (artifact-schema.md, Drift control hooks).
+// TestStaleSpecVanishFiresModifyDoesNot is written out fully. A done feature's
+// recorded surface losing one file is the candidate the vanish rule exists for;
+// the same file merely edited first is not, since on any active codebase that
+// would be true of every done node within days (artifact-schema.md, Drift
+// control hooks).
 func TestStaleSpecVanishFiresModifyDoesNot(t *testing.T) {
 	root, featID := scratchDoneFeatureWithSurface(t)
 	setManifestChecks(t, root, []string{drift.MarkerStaleSpec})
@@ -1206,8 +1206,8 @@ func TestStaleSpecVanishFiresModifyDoesNot(t *testing.T) {
 	require.NotNil(t, cs[0].Since, "the completion record's commit anchor says since when")
 }
 
-// TestStaleSpecSpecLegAndExemptionsAndUncovered is task-8-brief.md's own
-// sketch, written out fully as three subtests.
+// TestStaleSpecSpecLegAndExemptionsAndUncovered is written out fully as three
+// subtests.
 func TestStaleSpecSpecLegAndExemptionsAndUncovered(t *testing.T) {
 	t.Run("editing feature.md under a done feature is a spec-leg candidate", func(t *testing.T) {
 		root, featID := scratchDoneFeatureWithSurface(t)
@@ -1333,7 +1333,7 @@ func TestStaleSpecSpecLegAndExemptionsAndUncovered(t *testing.T) {
 		// No real arc reaches done without sync writing a completion record,
 		// so a done node carrying none at all is hand-authored here on
 		// purpose: it is the exact case the no_completion_record reason
-		// exists for (task-8-brief.md, resolution 4).
+		// exists for.
 		setFeatureStatus(t, root, "form-engine", "hand-done", "done")
 
 		rep, err := drift.Run(loadTree(t, root), vcs.New(root))
@@ -1422,10 +1422,10 @@ func TestStaleSpecArchivedFromDraftEpicIsNeverExempt(t *testing.T) {
 
 // --- missing_surface ---
 
-// TestMissingSurfaceFiresOnlyOnVanish is task-8-brief.md's own sketch,
-// written out fully. A ready replace-feature whose recorded surface path is
-// deleted from the working tree is a candidate; while the path exists, no
-// candidate; a cancelled feature with a vanished path is exempt and counted.
+// TestMissingSurfaceFiresOnlyOnVanish is written out fully. A ready
+// replace-feature whose recorded surface path is deleted from the working tree
+// is a candidate; while the path exists, no candidate; a cancelled feature with
+// a vanished path is exempt and counted.
 func TestMissingSurfaceFiresOnlyOnVanish(t *testing.T) {
 	root := scratchProjectGit(t)
 	setManifestChecks(t, root, []string{drift.MarkerMissingSurface})
@@ -1769,7 +1769,7 @@ func carryApprovedFeatureToDoneGit(t *testing.T, root string, deps mutate.Deps, 
 	require.NoError(t, err)
 }
 
-// TestOrphanEvalPolarityClock is task-9-brief.md's own sketch, written out
+// TestOrphanEvalPolarityClock is written out
 // fully. An APPROVED (not done) feature's preserve criterion naming a
 // deleted baseline artifact is a candidate: preserve names what exists
 // before the work, so it is checked from accepted_against onward. The same
@@ -1782,7 +1782,7 @@ func carryApprovedFeatureToDoneGit(t *testing.T, root string, deps mutate.Deps, 
 // for it (the clock starting must not by itself manufacture one); deleting
 // it afterward is what finally makes it one, merged into the SAME one
 // candidate per node the preserve leg already produced, anchored to the
-// earlier of the two clocks (task-9-brief.md, resolution 5).
+// earlier of the two clocks.
 func TestOrphanEvalPolarityClock(t *testing.T) {
 	root := scratchProjectGit(t)
 	setManifestChecks(t, root, []string{drift.MarkerOrphanEval})
@@ -1882,12 +1882,11 @@ criteria:
 		"a candidate mixing both clocks anchors to accepted_against, the earlier of the two, even once verified_against also exists")
 }
 
-// TestOrphanEvalCoverageIsStated is task-9-brief.md's own sketch, written out
+// TestOrphanEvalCoverageIsStated is written out
 // fully as two subtests. The stated coverage numbers are corrected from the
 // brief's own draft, which put out_of_scope at 1: that is arithmetically
 // impossible once a command binding AND a manual binding are both
-// out_of_scope in the same contract (task-9-brief.md, resolution 6, "compute
-// exactly").
+// out_of_scope in the same contract.
 func TestOrphanEvalCoverageIsStated(t *testing.T) {
 	t.Run("one criterion of each kind yields the exact stated coverage", func(t *testing.T) {
 		root := scratchProjectGit(t)
@@ -1987,9 +1986,7 @@ criteria:
 // own reason, ref_unreadable, deliberately distinct from eval_unreadable (the
 // whole-file load/validate failure orphan_eval's other Uncovered arm
 // carries), and a sibling criterion's own genuine miss on the SAME node
-// still survives beside it rather than being swallowed (task-8-brief.md's
-// found-and-failed accumulation, mirrored here per the engine contract
-// task-9-brief.md invokes by name).
+// still survives beside it rather than being swallowed.
 func TestOrphanEvalRefStatFailureIsUncoveredNotAMissingCandidate(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root ignores directory permission bits, so this repro needs a non-root process")
@@ -2387,14 +2384,13 @@ func TestComparedDedupesNodesAcrossMarkers(t *testing.T) {
 			"not 8, the sum of every marker's own bump the pre-fix code produced")
 }
 
-// --- ForNode (task-12-brief.md: the node page's per-node drift badges) ----
+// --- ForNode ----
 //
 // ForNode shares every report/finish helper Run's own sweep calls rather than
-// a second implementation of any marker's comparison (task-12-brief.md's own
-// resolution: "sharing the marker functions with Run, never duplicating
-// them"), so these tests assert candidate/uncovered SHAPE at one node, not a
-// second proof of what each marker's comparison decides; that proof already
-// lives in the sweep tests above.
+// a second implementation of any marker's comparison, so these tests assert
+// candidate/uncovered SHAPE at one node, not a second proof of what each
+// marker's comparison decides; that proof already lives in the sweep tests
+// above.
 
 // TestForNodeYieldsCandidatesForADriftedNode pins the same active_basis
 // fixture TestActiveBasisSweep already drives (an approved feature edited
@@ -2475,7 +2471,7 @@ func TestForNodeExemptNodeYieldsNothingForThatMarker(t *testing.T) {
 }
 
 // TestForNodeAnsweredQuestionReachesATaskThroughItsParentFeature pins
-// task-12-brief.md's own resolution 1: a TASK page can carry an
+// the resolution 1: a TASK page can carry an
 // answered_question badge too, reading its PARENT feature's unreviewed
 // assumption through the identical walk-up UnreviewedAssumptions and
 // guardSubmitAssumptions both make for a submitting task

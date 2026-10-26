@@ -1,4 +1,4 @@
-// The feature body (task-1-brief.md: the node detail tab shell), decomposed
+// The feature body, decomposed
 // into the three panels the feature tab set names - spec/evals/tasks, the
 // other two of its five tabs (dependencies, history) live in NodeDetail.tsx,
 // the same as every other noun's: the spec prose; the gate cards (the

@@ -1,6 +1,6 @@
 package views_test
 
-// TestNodeStatusCarriesHeldByRetiredAncestor pins task-3-brief.md's status
+// TestNodeStatusCarriesHeldByRetiredAncestor pins the status
 // oracle bullet (issue #36): NodeStatusView.Held carries gen.RetiredAncestor's
 // answer verbatim, the same additive fact NodeView.Held carries for `show`,
 // present only when there is one.

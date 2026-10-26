@@ -1,8 +1,7 @@
-// Build is the state of the work as a board (console v2 phase 3,
-// task-13-brief.md): an epic-selection panel on the left deciding what
-// shows, six columns for the six stored feature states, features as the
-// cards. This is the real view, replacing the Phase 1 stub that only kept
-// the router honest ahead of it (task-6-brief.md item 2).
+// Build is the state of the work as a board (console v2 phase 3): an
+// epic-selection panel on the left deciding what shows, six columns for the six
+// stored feature states, features as the cards. This is the real view,
+// replacing the Phase 1 stub that only kept the router honest ahead of it.
 //
 // The payload (GET /api/build, views.BuildBoard) lists non-cancelled
 // epics; SELECTION - which epics' features actually populate the

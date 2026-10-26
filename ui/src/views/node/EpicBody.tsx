@@ -20,7 +20,7 @@
 // Dependencies tab's hub skips them (NodeDetail's claimedGroups, unchanged
 // by this split).
 //
-// task-1-brief.md's tab shell splits this file into the three panels the
+// the tab shell splits this file into the three panels the
 // epic tab set names on its own - spec/evals/features - moved here JSX for
 // JSX from the one body function they used to share; the other two of an
 // epic's five tabs (dependencies, history) live in NodeDetail.tsx, same as

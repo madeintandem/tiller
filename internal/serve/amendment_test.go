@@ -1,6 +1,6 @@
 package serve_test
 
-// These tests pin the amendment's own node page (task-6-brief.md): the noun
+// These tests pin the amendment's own node page: the noun
 // joins /api/node's validated set, its prose narrative reads from disk the
 // same way every other node's does, and its staged operations' preconditions
 // carry LIVE validity (valid/stale/unknown) computed server-side through the
@@ -43,7 +43,7 @@ import (
 // STALE), plus an add-task naming a brand-new key with a target_status
 // precondition that cannot compare against anything yet (UNKNOWN, since the
 // staged key has no live node until approve materializes it). That is every
-// LIVE validity state task-6-brief.md's binding names, in one fixture.
+// LIVE validity state the binding names, in one fixture.
 func amendmentFixture(t *testing.T) (root, amendmentID, featureID string) {
 	t.Helper()
 	root = t.TempDir()
@@ -388,7 +388,7 @@ func amendmentSourceFixture(t *testing.T, body string) (root, amendmentID, relPa
 }
 
 // TestNodePageAmendmentSourceLiveValid pins the fresh-artifact side of the
-// honesty arc (task-5-brief.md): an intake-minted amendment whose document
+// honesty arc: an intake-minted amendment whose document
 // has not moved reads Source.Live.Status "valid", Actual matching the
 // recorded revision.
 func TestNodePageAmendmentSourceLiveValid(t *testing.T) {

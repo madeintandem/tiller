@@ -106,7 +106,7 @@ type NodePage struct {
 // decides the chip's palette register (ui-surface.md, the node-page chip
 // sentence). An Uncovered row from the same drift.ForNode call never becomes
 // a badge (a badge asserts drift; an uncovered node asserts the check could
-// not run, task-12-brief.md's own resolution 2), so this type carries no
+// not run), so this type carries no
 // reason field the way UncoveredView does.
 type DriftBadgeView struct {
 	Marker   string `json:"marker"`
@@ -118,7 +118,7 @@ type DriftBadgeView struct {
 // so a task whose active_basis drifted at BOTH its own grain and its parent
 // feature's (drift's own TestActiveBasisNamesTaskOwnDriftBesideParentDrift,
 // a two-candidate shape for one marker) still folds to the ONE active_basis
-// badge task-12-brief.md's resolution 3 asks the chip for ("ONE chip...
+// badge the resolution 3 asks the chip for ("ONE chip...
 // regardless of how many markers touch the node"). Order follows
 // drift.KnownMarkers, the schema's own fixed order every other drift
 // projection in this package already renders in (drift.go's own
@@ -590,7 +590,7 @@ func decompositionOf(t *store.Tree, order *gen.Order, e *store.Epic) *Decomposit
 // staged order, the two design-doc lists that name why the amendment exists
 // (TriggeredBy) and what its approval keeps current (AmendsDesign), and
 // Source, the amendment-level fingerprinted feedback artifact an
-// intake-minted amendment carries (task-5-brief.md). The op-level Source and
+// intake-minted amendment carries. The op-level Source and
 // Blocks fields are AmendmentOperationPageView's own turf, below.
 type AmendmentPageView struct {
 	Operations   []AmendmentOperationPageView `json:"operations"`
@@ -705,10 +705,9 @@ type AmendmentPreconditionLiveView struct {
 }
 
 // AmendmentSourcePageView is an intake-minted amendment's own provenance
-// artifact, additive on the amendment page (task-5-brief.md: "source {path,
-// revision, live {status, actual}}"): Path and Revision are the structural
-// fingerprint intake recorded, carried here with no live comparison, the
-// same pure-projection posture AmendmentPreconditionPageView's own doc
+// artifact, additive on the amendment page: Path and Revision are the
+// structural fingerprint intake recorded, carried here with no live comparison,
+// the same pure-projection posture AmendmentPreconditionPageView's own doc
 // comment states; Live is the typed nil slot the serve handler fills with
 // mutate.EvaluateAmendmentSource's own read, mirroring how it fills every
 // precondition's Live and NodePage's own ActiveBasis/Eval. Nil whole for a

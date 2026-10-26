@@ -1,19 +1,18 @@
-// Vitest/RTL coverage for the console v2 Home rebuild (task-10-brief.md,
-// Phase 2), against the real fetch surface (ProjectSummary as a prop the way
-// App.tsx already supplies it; every other request Home's own useFetch calls
-// issue), stubbing global fetch keyed by URL the same way this file always
-// has, since MSW is not in this harness.
+// Vitest/RTL coverage for the console v2 Home rebuild, against the real fetch
+// surface (ProjectSummary as a prop the way App.tsx already supplies it; every
+// other request Home's own useFetch calls issue), stubbing global fetch keyed
+// by URL the same way this file always has, since MSW is not in this harness.
 //
 // The rebuild changed the needs-you column's own shape from one card per
 // QUEUE KIND (a batch, disclosure rows, a "N more" reveal) to one card per
-// QUEUE ENTRY with its command always visible (task-10-brief.md: "every
-// command rendered"), so DecisionCard's own tests below test the new shape
-// directly rather than the old grouped one; the header band's stat tiles
-// moved from .desk-stat to the mock's own .stat; the reserved .desk-stat-asof
-// slot is gone (the freshness line lives in the topbar now, AsOf.test.tsx).
-// What survives unchanged: the all-clear rule, the recap signal, and above
-// all the horizon guard - Home must never request the marking recap window,
-// pinned below and extended to the new pulse's own just-happened fetch.
+// QUEUE ENTRY with its command always visible, so DecisionCard's own tests
+// below test the new shape directly rather than the old grouped one; the header
+// band's stat tiles moved from .desk-stat to the mock's own .stat; the reserved
+// .desk-stat-asof slot is gone (the freshness line lives in the topbar now,
+// AsOf.test.tsx). What survives unchanged: the all-clear rule, the recap
+// signal, and above all the horizon guard - Home must never request the marking
+// recap window, pinned below and extended to the new pulse's own just-happened
+// fetch.
 //
 // Task 8 (home burst redesign, settled decisions 8/9) replaces the header
 // band's Features and Tasks stat tiles with a six-segment feature funnel

@@ -640,7 +640,7 @@ describe("App routing: node pages live under the Explore shell", () => {
   });
 
   // Task 6: an amendment is not a tree node (it does not join the navigator
-  // at all, task-6-brief.md's own binding), but its page still reaches the
+  // at all), but its page still reaches the
   // console the same way every other noun's does: through this same shell,
   // this same splat route, no bespoke wiring anywhere.
   it("reaches an amendment page inside the Explore shell, with no navigator entry for it", async () => {

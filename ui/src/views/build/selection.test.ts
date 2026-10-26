@@ -1,5 +1,5 @@
-// Vitest coverage for the Build board's `?epics=` URL semantics
-// (task-13-brief.md's exact table), written before Build.tsx consumes it:
+// Vitest coverage for the Build board's `?epics=` URL semantics,
+// written before Build.tsx consumes it:
 // absent, present-empty, and present-non-empty are three distinct states,
 // and collapsing any two of them is the bug this table exists to prevent.
 

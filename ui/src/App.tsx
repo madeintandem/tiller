@@ -116,7 +116,7 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home summary={summary} summaryError={summaryError} />} />
-          {/* The epic-selection board (console v2 phase 3, task-13-brief.md);
+          {/* The epic-selection board (console v2 phase 3);
               Build.tsx owns its own /api/status fetch for the default
               selection rather than taking summary as a prop, the same
               every-view-fetches-its-own posture Explore and History already

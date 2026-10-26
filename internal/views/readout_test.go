@@ -573,7 +573,7 @@ func TestSpecifyReadoutKeepsAmendmentAheadOfSeveralPlans(t *testing.T) {
 }
 
 // TestSpecifyReadoutReportsContractsValidAndCriteriaBoundByType pins specify's
-// two distinctive checks (task-3-brief.md, Step 5) against a batch of four
+// two distinctive checks against a batch of four
 // specced features: one whose contract validates with a mix of binding
 // types, one whose contract is malformed (no statement), one whose contract
 // was never read at all (in.Contracts carries no entry), and one whose
@@ -716,7 +716,7 @@ func TestExecuteReadoutNamesTasksInRankedOrder(t *testing.T) {
 }
 
 // TestExecuteReadoutReportsGatesGreenWithEvidenceAndReviewRef pins execute's
-// two distinctive checks (task-3-brief.md, Step 5) against four in_review
+// two distinctive checks against four in_review
 // tasks: two carry a required gate that is pass and backed by evidence, one
 // carries a required gate that is pass with no evidence at all (the hollow
 // pass the check exists to catch), and one carries a required gate that is
@@ -872,7 +872,7 @@ func TestExecuteReadoutOmitsUnpushedReviewWithoutAnEntry(t *testing.T) {
 	require.Nil(t, r.Entities[0].Unpushed)
 }
 
-// --- amend's own content (task-5-brief.md) ---------------------------------
+// --- amend's own content ---------------------------------
 
 // TestAmendReadoutListsProposedAmendmentsWithOpCounts pins amendContent's
 // Produced list and its "Operations staged" check: every proposed amendment
@@ -929,11 +929,10 @@ func TestAmendReadoutCapsItsEntityListAndSaysHowMany(t *testing.T) {
 	require.Equal(t, 2, r.Withheld)
 }
 
-// TestAmendReadoutIsHonestWithNoProposedAmendments pins the zero case
-// task-5-brief.md calls out directly: no Produced section (empty Entities,
-// zero Withheld), no NeedsYou action, and the terminal Next line still closes
-// the block, the same honest-empty rendering every other moment's content
-// function leaves when it finds nothing to name.
+// TestAmendReadoutIsHonestWithNoProposedAmendments pins the zero case: no
+// Produced section (empty Entities, zero Withheld), no NeedsYou action, and the
+// terminal Next line still closes the block, the same honest-empty rendering
+// every other moment's content function leaves when it finds nothing to name.
 func TestAmendReadoutIsHonestWithNoProposedAmendments(t *testing.T) {
 	tree := treeWithDraftEpics(t, 0)
 
@@ -1568,7 +1567,7 @@ func TestTaskInHandOutranksThePlanGate(t *testing.T) {
 func strPtr(s string) *string { return &s }
 
 // TestAmendmentWaitOutranksThePlanGate pins the amendment wait's own place in
-// Route (task-5-brief.md): a proposed amendment sits ahead of the plan gate,
+// Route: a proposed amendment sits ahead of the plan gate,
 // because a staged reshape can invalidate the very plan a human is about to
 // approve (a supersede or a cancel naming the specced feature the plan gate
 // would otherwise name next).
@@ -1805,7 +1804,7 @@ func TestOrientReadoutStaysQuietOnAnHonestGraph(t *testing.T) {
 }
 
 // TestRouteFollowsRootSoftOrderOverKeyOrder pins the routing half of the soft
-// order stack at the views level (task-7-brief.md): two independent draft
+// order stack at the views level: two independent draft
 // features under two independent epics, neither depending on the other, so
 // the recorded graph picks between them not at all and the tiebreak decides.
 // With no root order recorded the tiebreak falls all the way to key, which
@@ -1852,7 +1851,7 @@ func TestRouteFollowsRootSoftOrderOverKeyOrder(t *testing.T) {
 }
 
 // TestDependencyOrderCheckNamesAnOverriddenSoftOrder pins the readout half of
-// the same stack (task-7-brief.md): epic-0 depends on epic-1, so the
+// the same stack: epic-0 depends on epic-1, so the
 // recorded edge (never violated) forces epic-1 to render first regardless of
 // what the root soft order asks for. Listing epic-0 first in that soft order
 // is therefore a request the dependency layer overrides, and the "Dependency

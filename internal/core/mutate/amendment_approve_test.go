@@ -1022,7 +1022,7 @@ func TestApproveAmendmentRefusesAStagedAddEpicKeyAsAReplacementWithNoWrites(t *t
 }
 
 // TestApproveAmendmentMaterializesAnAddEpic pins add-epic's own materialize
-// arm (task-2-brief.md): the epic lands draft, carrying the op's Source as its
+// arm: the epic lands draft, carrying the op's Source as its
 // own node provenance, with its add.epic event tagged with the amendment
 // exactly as add-feature's and add-task's own materialized events are.
 func TestApproveAmendmentMaterializesAnAddEpic(t *testing.T) {
@@ -1243,7 +1243,7 @@ func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
 // TestApproveAmendmentMaterializesAnAddFeatureWithSource is add-epic's own
 // TestApproveAmendmentMaterializesAnAddEpic, one grain down: materialize's
 // AmendmentOpAddFeature arm builds FeatureInput without forwarding r.op.Source
-// (a gap this test found rather than one task-2-brief.md wired deliberately,
+// (a gap this test found rather than one wired deliberately,
 // unlike add-epic's own arm, which task 2 built to carry Source through by
 // name). FeatureInput has carried a Source field since before intake existed
 // (`tiller add feature --source` is live, add.go), so the fix is one field on
@@ -1300,7 +1300,7 @@ func TestApproveAmendmentMintsUnclaimedTasks(t *testing.T) {
 	require.Equal(t, "jc", load(t, root).Tasks[unclaimedTaskID].Owner)
 }
 
-// --- same-batch parenting at materialize (task-2-brief.md) ---
+// --- same-batch parenting at materialize ---
 
 // TestApproveAmendmentMaterializesAFeatureUnderASameBatchStagedEpic pins
 // materialize's own same-batch parenting allowance: an add-epic staged
@@ -1719,7 +1719,7 @@ func TestApproveAmendmentPreconditionArms(t *testing.T) {
 		require.Equal(t, taskID, stale.Stale[0].Actual, "the refusal names the node that holds the key")
 	})
 
-	// key_absent is the one precondition kind add-epic applies (task-2-brief.md),
+	// key_absent is the one precondition kind add-epic applies,
 	// and an epic key is a live node's key exactly as a feature's or a task's
 	// is: keyHolder has to see epics too, or this precondition would report a
 	// held epic key as free.
@@ -2025,8 +2025,7 @@ func TestApproveAmendmentRefusesAnAddWhoseKeyIsAlreadyHeld(t *testing.T) {
 }
 
 // TestApproveAmendmentRefusesAnAddEpicWhoseKeyIsAlreadyHeld is add-epic's own
-// arm of the recovery contract's second case (task-2-brief.md's acceptance:
-// "a same-key existing epic refuses at approve with key_exists"), mirroring
+// arm of the recovery contract's second case, mirroring
 // TestApproveAmendmentRefusesAnAddWhoseKeyIsAlreadyHeld one grain up: epics
 // are roots, so the collision here is with the fixture's own epic rather than
 // with a re-interrupted batch.
@@ -2047,7 +2046,7 @@ func TestApproveAmendmentRefusesAnAddEpicWhoseKeyIsAlreadyHeld(t *testing.T) {
 }
 
 // TestApproveAmendmentMaterializesAnAddQuestion pins add-question's own
-// materialize arm (task-3-brief.md): the question lands open on the shared
+// materialize arm: the question lands open on the shared
 // ledger, carrying the op's Source as its own provenance and its Blocks
 // resolved to the existing feature's id, with its add.question event tagged
 // with the amendment exactly as the other materialized add kinds' events are.
@@ -2090,7 +2089,7 @@ func TestApproveAmendmentMaterializesAnAddQuestion(t *testing.T) {
 }
 
 // TestApproveAmendmentAddQuestionBlocksAFeatureAddedInTheSameBatch is the
-// acceptance's heart (task-3-brief.md): a question can block a node the SAME
+// acceptance's heart: a question can block a node the SAME
 // amendment adds. The add-feature materializes first (materialize's own
 // two-pass order), so by the time the add-question op folds, its staged-key
 // Blocks entry resolves to the feature's freshly minted id, the same
@@ -2162,7 +2161,7 @@ func TestApproveAmendmentAddQuestionBlocksAnEpicAddedInTheSameBatch(t *testing.T
 }
 
 // TestApproveAmendmentAddQuestionDuplicateStatementUnionsBlocksAgainstALiveQuestion
-// pins one arm of the acceptance's duplicate rule (task-3-brief.md): a
+// pins one arm of the acceptance's duplicate rule: a
 // staged add-question naming a statement that already exists LIVE on the
 // ledger is not a batch lying about what it did (unlike add-epic/
 // add-feature/add-task's own key_exists refusal); it follows AddQuestion's
@@ -2699,7 +2698,7 @@ func TestApproveAmendmentAppliesAReviseOnAFeatureWhoseContractIsPresent(t *testi
 	require.Equal(t, blobOf(t, root, lanternSpecRel), load(t, root).Features[featureID].AcceptedAgainst.Spec.Value)
 }
 
-// --- checkSource: intake's provenance honesty at approve (task-5-brief.md) ---
+// --- checkSource: intake's provenance honesty at approve ---
 
 // sourceFixture lays a real feedback artifact under .tiller/feedback/ and an
 // amendment whose Source cites its git-blob fingerprint, the shape `tiller
@@ -2738,7 +2737,7 @@ func TestApproveAmendmentAcceptsAFreshIntakeSource(t *testing.T) {
 }
 
 // TestApproveAmendmentRefusesAChangedIntakeSourceWithNoWrites pins the
-// drift-idiom message task-5-brief.md names verbatim: an edit to the
+// drift-idiom message: an edit to the
 // feedback document between intake and approve refuses with both hashes
 // named, and nothing is written.
 func TestApproveAmendmentRefusesAChangedIntakeSourceWithNoWrites(t *testing.T) {
@@ -2760,7 +2759,7 @@ func TestApproveAmendmentRefusesAChangedIntakeSourceWithNoWrites(t *testing.T) {
 }
 
 // TestApproveAmendmentRefusesAVanishedIntakeSourceWithNoWrites is the
-// distinct refusal task-5-brief.md's acceptance calls for: a deleted
+// distinct refusal the acceptance calls for: a deleted
 // artifact has no live hash to report, so it reads differently than an
 // edited one rather than folding into the same message with a blank value.
 func TestApproveAmendmentRefusesAVanishedIntakeSourceWithNoWrites(t *testing.T) {

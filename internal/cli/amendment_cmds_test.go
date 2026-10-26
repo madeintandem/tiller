@@ -630,7 +630,7 @@ func TestAmendStagesAddFeatureAndAddTask(t *testing.T) {
 	require.Len(t, ops, 2, "the amendment now carries both staged operations")
 }
 
-// TestAmendStagesAddEpic pins add-epic's own CLI arm (task-2-brief.md): a
+// TestAmendStagesAddEpic pins add-epic's own CLI arm: a
 // bare key and title, no --change-type (epics carry none) and no parent
 // resolution, unlike add-feature and add-task one grain down.
 func TestAmendStagesAddEpic(t *testing.T) {
@@ -651,7 +651,7 @@ func TestAmendStagesAddEpic(t *testing.T) {
 }
 
 // TestAmendApproveMaterializesAnAddEpicWithItsSourceCitation is the CLI-level
-// arc for add-epic's own acceptance criterion (task-2-brief.md): stage then
+// arc for add-epic's own acceptance criterion: stage then
 // approve lands a draft epic whose node page (show epic --json) carries the
 // citation as its source line, the same generic Source rendering every epic
 // already gets (views/node.go), now reachable through the amendment batch.
@@ -735,8 +735,8 @@ func TestAmendAddQuestionRequiresStatementAndOneLineTitle(t *testing.T) {
 }
 
 // TestAmendApproveMaterializesAnAddQuestionWithItsSourceCitation is the
-// CLI-level arc for add-question's own acceptance criterion
-// (task-3-brief.md): stage then approve lands the question open on the
+// CLI-level arc for add-question's own acceptance criterion:
+// stage then approve lands the question open on the
 // shared ledger, carrying the op's Source and its Blocks resolved to the
 // live task's id. Read back through the loaded tree rather than `show
 // question --json`: views.Node's Question case does not yet surface source
@@ -834,7 +834,7 @@ func TestShowAmendmentJSONResolvesAnEpicBlockTarget(t *testing.T) {
 }
 
 // TestAmendApproveAddQuestionBlocksAFeatureAddedInTheSameAmendment is the
-// CLI-level arc for the acceptance's heart (task-3-brief.md): a question can
+// CLI-level arc for the acceptance's heart: a question can
 // block a feature the same amendment stages.
 func TestAmendApproveAddQuestionBlocksAFeatureAddedInTheSameAmendment(t *testing.T) {
 	layAmendmentTree(t)
@@ -904,9 +904,9 @@ func TestAmendAmendsDesignRidesAloneAndBesideAnOp(t *testing.T) {
 
 // --- amend: --source ---
 
-// TestAmendSourceStagesOntoTheOpAndPersists pins the interface task-1-brief.md
-// pins: `tiller amend <addr> --<op> ... --source "<citation>"` stages the
-// citation onto that op, and it survives a reload off disk.
+// TestAmendSourceStagesOntoTheOpAndPersists pins the interface: `tiller amend
+// <addr> --<op> ... --source "<citation>"` stages the citation onto that op,
+// and it survives a reload off disk.
 func TestAmendSourceStagesOntoTheOpAndPersists(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
@@ -1085,11 +1085,11 @@ func TestShowAmendmentHumanOmitsCitationForAWhitespaceOnlySource(t *testing.T) {
 
 // --- show amendment: live validity ---
 
-// TestShowAmendmentRendersLiveValidity is the fixture task-4-brief.md asks
-// for: one operation carrying a precondition that holds against the live
-// tree (target_status, matching the feature's actual draft status) beside
-// one that does not (key_absent naming the key the feature itself already
-// holds), and asserts show renders each with its own LIVE status.
+// TestShowAmendmentRendersLiveValidity is the fixture: one operation carrying a
+// precondition that holds against the live tree (target_status, matching the
+// feature's actual draft status) beside one that does not (key_absent naming
+// the key the feature itself already holds), and asserts show renders each with
+// its own LIVE status.
 func TestShowAmendmentRendersLiveValidity(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
@@ -1125,7 +1125,7 @@ func TestShowAmendmentRendersLiveValidity(t *testing.T) {
 }
 
 // TestShowAmendmentRendersUnknownForAStagedKey is the third of the three LIVE
-// validity states task-4-brief.md names: an add-task's own staged key is not
+// validity states: an add-task's own staged key is not
 // a live node until approve materializes it, so a precondition that needs a
 // target (anything but key_absent) cannot be compared yet. That is not a
 // stale verdict, nothing has changed; it is simply not knowable until apply.

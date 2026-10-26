@@ -38,7 +38,7 @@ import (
 
 // Event kinds for the amendment verbs. They are named literally rather than in
 // the dotted style the rest of the event stream uses (add.epic, link.feature),
-// because task-2-brief.md pins these three tokens exactly.
+// because these three tokens are pinned exactly.
 const (
 	eventAmendmentOpened    = "amendment_opened"
 	eventAmendmentStaged    = "amendment_staged"
@@ -56,7 +56,7 @@ const (
 var amendmentKeyRe = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 // The precondition names a staged operation's map may carry (artifact-schema.md,
-// Amendments; task-2-brief.md). Each is a guard approve validates against the
+// Amendments). Each is a guard approve validates against the
 // live tree before applying anything; what each one compares is set out where
 // it is evaluated (amendment_approve.go's evalPrecondition).
 const (
@@ -96,10 +96,7 @@ var knownPreconditionNames = func() map[string]bool {
 // (artifact-schema.md, Amendments; Provenance). Source is nil for every hand
 // `tiller add amendment`; `tiller intake` (a later task) is the one caller
 // that sets it, riding along unconditionally the same inert way
-// Implements/TriggeredBy/AmendsDesign already do (task-4-brief.md: "AddAmendment
-// gains nothing" beyond a field that rides through with no new validation —
-// AddAmendment's own amendmentKeyRe/openAmendmentKeyExists checks are the only
-// logic this function has ever run, and Source adds none). Folding Source in
+// Implements/TriggeredBy/AmendsDesign already do. Folding Source in
 // here, rather than a second mutation call after AddAmendment returns, is what
 // keeps the amendment_opened event singular: the brief's own "keep one event,
 // not two" is only satisfiable if the whole amendment (Source included) lands
@@ -188,9 +185,7 @@ func AddAmendment(tree *store.Tree, deps Deps, in AmendmentInput) (AmendmentResu
 	// model: the AT- and EV- classes are separate non-node identifiers).
 	ev.ID = deps.mintRaw("EV")
 	ev.After = map[string]any{"status": store.AmendmentStatusProposed, "key": in.Key}
-	// The artifact path rides the SAME event intake mints (task-4-brief.md:
-	// "the amendment-add event the existing AddAmendment emits, plus the
-	// artifact path in its After ... keep one event, not two"), present only
+	// The artifact path rides the SAME event intake mints, present only
 	// when this call is intake's own (in.Source set); a hand `add amendment`
 	// carries no source key at all, so this event's After is unchanged from
 	// before Source existed.
@@ -274,8 +269,7 @@ func PrecheckAddAmendment(tree *store.Tree, deps Deps, key string) (store.Revisi
 
 // openAmendmentKeyExists reports whether a PROPOSED amendment already carries
 // key. An approved or withdrawn amendment is terminal and no longer an open
-// proposal, so its key is free to reuse (task-2-brief.md's ambiguity
-// resolution: duplicate-key refusal applies only among proposed amendments).
+// proposal, so its key is free to reuse.
 func openAmendmentKeyExists(tree *store.Tree, key string) bool {
 	for _, a := range tree.Amendments {
 		if a.Status == store.AmendmentStatusProposed && a.Key != nil && *a.Key == key {
@@ -362,7 +356,7 @@ func amendmentNotOpenErr(doc *store.Amendment) error {
 
 // sourcelessOpErr refuses an operation staged with no citation onto an
 // intake-minted amendment (docs/spec/cli-surface.md). The message is pinned
-// verbatim by task-1-brief.md.
+// verbatim.
 func sourcelessOpErr() error {
 	return &usageError{
 		reason: "source_required",
@@ -568,7 +562,7 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 	case store.AmendmentOpAddEpic:
 		// An epic is a root: unlike add-feature and add-task, there is no
 		// parent to resolve and no key to split, so this arm is the shortest
-		// of the three add kinds (task-2-brief.md).
+		// of the three add kinds.
 		if in.By != "" {
 			return store.AmendmentOp{}, supersedeByMisplacedErr()
 		}
@@ -744,10 +738,8 @@ func resolveStageTarget(tree *store.Tree, raw string) (string, error) {
 // --superseded-by. Either name may address an existing feature or task (id or
 // key, resolved to its id), or the key of an add-feature/add-task operation
 // already staged earlier on this same amendment, whose id does not exist yet
-// and is resolved only when approve materializes it (task-2-brief.md: "A
-// staged by or superseded_by may name either an existing node id OR the key of
-// an add op already staged on this amendment"). Deliberately not add-epic: see
-// the loop below.
+// and is resolved only when approve materializes it. Deliberately not add-epic:
+// see the loop below.
 func resolveStageReplacement(tree *store.Tree, staged []store.AmendmentOp, raw string) (string, error) {
 	n, isEpic := classifyStageTarget(tree, raw)
 	if isEpic {
@@ -823,7 +815,7 @@ func blocksUnknownTargetErr(raw string) error {
 // exist yet and is resolved only when approve materializes it — the same
 // same-batch allowance resolveStageReplacement gives a supersede's by and
 // resolveStageBlockTarget gives a question's blocks, extended here to the
-// one remaining grain (task-1-brief.md, same-batch parenting).
+// one remaining grain.
 //
 // It mirrors resolveStageBlockTarget's own dispatch: resolve against the live
 // tree first, and only on *resolve.ErrNotFound fall through to the staged

@@ -791,9 +791,8 @@ func transitionTask(tree *store.Tree, deps Deps, owner store.Contributor, treeTa
 	// paragraph): a task whose parent feature carries an answered, unreviewed
 	// assumption may not ship until a human reviews it in. This runs as its own
 	// step after guardTask, not folded inside it, so a task whose basis has ALSO
-	// drifted gets the active_basis refusal first, one refusal at a time
-	// (task-6-brief.md, resolution 2: guardTask returns before this line ever
-	// runs when its own checks already failed). start never calls this, and
+	// drifted gets the active_basis refusal first, one refusal at a time.
+	// start never calls this, and
 	// checkTask's own guardTask call (check.go) never does either, so the
 	// assumption hatch stays usable exactly as cli-surface.md describes.
 	if in.Verb == "submit" {
@@ -1598,8 +1597,7 @@ func refuseTerminalBasisRefresh(node store.Node) error {
 // moved, leaving the lifecycle state exactly where it was. It is the whole body
 // of approve feature --refresh-basis, lifted out of transitionFeature so an
 // amendment's revise operation re-pins through this one code path rather than a
-// second copy of it that could quietly disagree about the staling
-// (task-3-brief.md: "reuse that code path, do not duplicate it").
+// second copy of it that could quietly disagree about the staling.
 //
 // The contract is loaded first and only to be judged: a feature.eval.md that is
 // present but malformed is a misuse the caller must fix before a basis is
@@ -2075,8 +2073,7 @@ func (e *SpecIncompleteError) Error() string {
 // present and edited is cleared by approve <noun> <node> --refresh-basis, which
 // re-records the pin from the working tree. A file that is GONE cannot be
 // hashed, so that same command fails rather than clearing anything, and the
-// human's first move is to restore the file (task-9-brief.md, inherited item 5;
-// TestRefreshBasisOnADeletedPinFailsAndTheRefusalSaidSo).
+// human's first move is to restore the file.
 //
 // Like the other blocked answers it is exit 1, rendered through emitReport as a
 // data block.
@@ -2098,7 +2095,7 @@ func (e *ActiveBasisError) Error() string {
 // reviewed in (cli-surface.md, the guard paragraph: "submit alone adds the
 // assumption review"). Noun and NodeID name the node that CARRIES the
 // assumption_basis entry, always a feature (AssumptionBasis is feature-only,
-// task-5-brief.md's settled fact), which for a task's submit is its parent
+// the settled fact), which for a task's submit is its parent
 // feature and never the task itself, the same not-always-the-acted-on-node
 // shape ActiveBasisError documents above for the identical walk-up
 // (UnreviewedAssumptions' assumptionFeatureFor). Questions is the

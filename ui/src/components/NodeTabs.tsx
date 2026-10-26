@@ -1,7 +1,6 @@
-// NodeTabs is the node detail body's tab shell (task-1-brief.md, "The tab
-// shell and per-noun panels"): an underline rail over the per-noun panel
-// set (spec/evals/tasks/dependencies/history for a feature, and so on),
-// reusing Explore's own mode-switch chrome (explore.css's .mode-nav /
+// NodeTabs is the node detail body's tab shell: an underline rail over the
+// per-noun panel set (spec/evals/tasks/dependencies/history for a feature, and
+// so on), reusing Explore's own mode-switch chrome (explore.css's .mode-nav /
 // .mode-nav a.active) rather than inventing a second tab idiom - the
 // console's visual system is locked, and this change is structural, not
 // visual. Explore's own version of this row is built from <Link>, since a

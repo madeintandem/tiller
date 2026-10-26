@@ -82,8 +82,8 @@ func UnreviewedAssumptions(tree *store.Tree, n store.Node) []UnreviewedAssumptio
 			// A dangling reference (a hand-edited assumption_basis naming a
 			// question the ledger no longer carries) has no answer to
 			// compare against, so it is not this predicate's business: the
-			// drift engine's own sweep reports it as Uncovered
-			// (task-7-brief.md), never silently folded into "unreviewed".
+			// drift engine's own sweep reports it as Uncovered,
+			// never silently folded into "unreviewed".
 			continue
 		}
 		entry := feat.AssumptionBasis[qid]
@@ -101,7 +101,7 @@ func UnreviewedAssumptions(tree *store.Tree, n store.Node) []UnreviewedAssumptio
 // review actually reads: n itself when it is a feature, or n's parent
 // feature when it is a task, since AssumptionBasis sits on the Feature
 // struct alone (internal/store/node.go) and store.Task carries no field of
-// its own (task-5-brief.md's settled fact). An epic or a question carries no
+// its own. An epic or a question carries no
 // assumption_basis at all and resolves to nil, the same as a task whose
 // FeatureID names nothing the tree loaded.
 func assumptionFeatureFor(tree *store.Tree, n store.Node) *store.Feature {

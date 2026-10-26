@@ -27,15 +27,14 @@ import (
 // here and handed to views.ReadoutOfInput, which does the actual derivation.
 // renderReadout (readout_render.go) turns the result into the markdown text
 // that becomes both the human line and the --json "readout" field, one
-// rendering for both audiences (task-5-brief.md's central promise, pinned by
-// TestReadoutJSONCarriesTheSameTextAsHuman).
+// rendering for both audiences.
 //
 // renderReadoutOf and renderReadoutFor, below runReadout, are that same
 // gathering-and-rendering path factored for a second caller: the four human
 // gates (readout_gate.go) render their own block after their existing
 // confirmation, through emitReportWithReadout (envelope.go), rather than
 // through this command. Task 5 left the logic inline in runReadout because
-// it had only the one caller; task 6 is the second caller task-5-brief.md
+// it had only the one caller; task 6 is the second caller
 // anticipated ("reuse that helper rather than writing a second copy"), so
 // this is that factoring.
 
@@ -98,13 +97,13 @@ func runReadout(cmd *cobra.Command, seam, since string) error {
 	}
 
 	// loadTree is the same store-loading, error-mapping path every other read
-	// command in this package takes (ls.go's runLs, task-5-brief.md), so a
+	// command in this package takes (ls.go's runLs), so a
 	// missing manifest or a malformed node file refuses the same way here as
 	// everywhere else. This is the one place in the readout* files that must
 	// actually refuse on a load failure (exit 2/3): renderReadoutFor below
 	// degrades on the identical failure instead, because a human gate that
 	// reaches it has already completed its own write and must not be turned
-	// into a failure by a reporting problem (task-6-brief.md).
+	// into a failure by a reporting problem.
 	tree, err := loadTree(cmd)
 	if err != nil {
 		return emitFailure(cmd, "readout", err)
@@ -232,11 +231,8 @@ func renderReadoutOf(tree *store.Tree, m views.Moment, act *views.GateAct, owner
 // renderReadoutFor loads the tree fresh from root and renders m's block: the
 // path every human gate calls (envelope.go's emitReportWithReadout), so a
 // gate's block and a `tiller readout <seam>` a developer runs right after it
-// are the identical rendering with no second copy of the gathering logic
-// (task-6-brief.md's "Context the brief cannot know": "Task 5 landed...
-// reuse that helper rather than writing a second copy. If it is not
-// currently factored for reuse, factor it"; it was not, so this and
-// renderReadoutOf above are that factoring). It reloads from disk rather
+// are the identical rendering with no second copy of the gathering logic.
+// It reloads from disk rather
 // than taking the caller's in-memory tree because every gate call site has
 // only tree.Root in hand by the time it reports success (batch.go's
 // applyTransitionBatch), and a fresh read is

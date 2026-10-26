@@ -1,4 +1,4 @@
-// Vitest/RTL coverage for the /drift page (task-11-brief.md, Step 3): the
+// Vitest/RTL coverage for the /drift page: the
 // console's read of the exact sweep `tiller drift` renders. Written before
 // Drift.tsx exists, per the branch's TDD discipline (home.test.tsx's own
 // stubFetch-keyed-by-URL convention; no MSW in this harness).
@@ -167,7 +167,7 @@ describe("Drift page: the KNOWN NUANCE, files render as text, never a link", () 
 
     // Neither shape is a link: a basename does not say which directory it
     // lives in, and guessing a root for the repo-relative form would be
-    // worse than not linking at all (task-11-brief.md's own KNOWN NUANCE).
+    // worse than not linking at all.
     expect(basename.closest("a")).toBeNull();
     expect(repoRelative.closest("a")).toBeNull();
   });

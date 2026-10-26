@@ -202,7 +202,7 @@ func TestSortListItemsTasksFollowDependencyThenKeyOrder(t *testing.T) {
 
 // questionListTree lays one task a question can block, an answered question
 // naming that task plus a dangling target, and an open question that carries
-// only a due hint, the exact shapes task-15-brief.md's three additive
+// only a due hint, the exact shapes the three additive
 // question-row fields (answer, due, blocks_refs) need to prove: an answered
 // question with an answer and a resolvable blocking edge, an open question
 // with a due date and no answer, and a blocking edge that does not resolve.
@@ -292,7 +292,7 @@ func TestItemQuestionUsesPersistedAndBoundedLegacyTitles(t *testing.T) {
 }
 
 // TestItemQuestionFieldsAreOmittedFromOtherNouns pins the envelope rule
-// (additive, omitempty per task-15-brief.md): a task row, which carries none
+// (additive, omitempty): a task row, which carries none
 // of the three question-only fields, marshals with none of their keys
 // present, so an existing caller's payload is byte-identical to before this
 // task.

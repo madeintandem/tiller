@@ -14,7 +14,7 @@
 // holds graph edges a reader has to keep walking (dependencies, supersession,
 // question blocks), not the identity chain the header already states.
 //
-// `only` is the node-detail tab shell's addition (task-1-brief.md): the
+// `only` is the node-detail tab shell's addition: the
 // Dependencies tab wants exactly depends_on/depended_on_by, nothing else, so
 // it passes `only` to get that narrow a read rather than the whole unclaimed
 // set every other caller (today, just the flat question page) still gets by
@@ -56,8 +56,7 @@ function rowsOf(value: RelatedNode | RelatedNode[] | undefined): RelatedNode[] {
   return Array.isArray(value) ? value : [value];
 }
 
-// dependencyCount is the Dependencies tab's own label count (task-1-brief.md's
-// settled formula: "dependencies · 6 = depends_on + depended_on_by summed"),
+// dependencyCount is the Dependencies tab's own label count,
 // read straight from the payload rather than from whatever the hub itself
 // renders, so the count stays exact regardless of which other groups a given
 // call scopes in or out.

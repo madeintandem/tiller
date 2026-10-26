@@ -94,7 +94,7 @@
 }
 
 /* ---------- Mode switch: an underline rail ---------- */
-/* Node Detail's own tab row (task-1-brief.md, NodeTabs) rides these same
+/* Node Detail's own tab row rides these same
    classes: a tab is a button rather than a Link (it is not its own history
    entry), so every rule below also targets .mode-nav button, with the plain
    button chrome it would otherwise carry (border, background, pointer)

@@ -1,4 +1,4 @@
-// The pulse's Just happened column (task-10-brief.md): a bounded taste of
+// The pulse's Just happened column: a bounded taste of
 // fetchRecap("24h")'s own groups, rendered as "the same collapsed-burst rows
 // History draws" (ui-surface.md's own words for this section). Bursting runs
 // PER GROUP, over each group's own already-newest-first entries

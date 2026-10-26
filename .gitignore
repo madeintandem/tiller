@@ -30,8 +30,8 @@ dist/
 # ui/dist is committed: go:embed ships it in the binary.
 !/ui/dist/
 build/
-# ui/src/views/build is the console's own Build VIEW (console v2 phase 3,
-# task-13-brief.md), not a build-output directory the generic build/ pattern
+# ui/src/views/build is the console's own Build VIEW (console v2 phase 3), not a
+# build-output directory the generic build/ pattern
 # above means to catch - it collided by name coincidence only.
 !/ui/src/views/build/
 out/

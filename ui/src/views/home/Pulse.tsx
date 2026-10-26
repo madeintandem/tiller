@@ -143,7 +143,7 @@ function InFlightBody({ streams }: { streams: Streams }) {
         <div className="contributor-group" key={o.contributor.id}>
           <div className="og-name"><PersonName id={o.contributor.id} name={o.contributor.name} /></div>
           {/* Render order is the brief's own: active, then gates in review,
-              then the blocked register (task-10-brief.md). Settled decision
+              then the blocked register. Settled decision
               6: only the blocked register caps, at ROW_CAP, with an "N more"
               foot carrying the full remaining count; active and in-review
               rows are motion and are never capped. */}

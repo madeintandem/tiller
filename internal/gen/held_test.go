@@ -31,7 +31,7 @@ func heldTaskFixture(epicStatus, featureStatus, taskStatus string) (*store.Tree,
 	return tree, task
 }
 
-// TestRetiredAncestorTaskTruthTable pins the task-3-brief.md table over a
+// TestRetiredAncestorTaskTruthTable pins the table over a
 // task: a cancelled feature is checked before the epic, exactly the order
 // guardParentState's own switch runs, so a feature cancellation wins over an
 // epic retirement one below it (its remedy, cancel the task, is reachable,

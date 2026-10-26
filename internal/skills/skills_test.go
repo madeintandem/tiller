@@ -305,12 +305,12 @@ func TestLookupReturnsEachSkill(t *testing.T) {
 // TestSkillsHaveFivePartAnatomy confirms each skill carries the frontmatter
 // trigger plus the reasoning, choreography, and hand-off sections
 // (skill-set.md, "The anatomy of a skill"). Readout is the fifth part, added
-// alongside the `tiller readout <seam>` verb (task-7-brief.md): the section
+// alongside the `tiller readout <seam>` verb: the section
 // that tells the agent to reproduce the seam's block verbatim rather than
 // compose its own account of what happened. It is pinned separately below,
 // scoped to readoutSeams, because mend-drift's product is a drafted fix for
 // the human to approve, not a seam block the CLI renders, so it carries no
-// Readout section (task-13-brief.md, Step 1).
+// Readout section.
 func TestSkillsHaveFivePartAnatomy(t *testing.T) {
 	for _, name := range Names() {
 		text, _ := Lookup(name)
@@ -332,8 +332,8 @@ func TestSkillsHaveFivePartAnatomy(t *testing.T) {
 // concrete facts TestSkillsHaveFivePartAnatomy's bare-section check cannot:
 // each of the four readout-bearing skills' Choreography names the exact
 // `tiller readout <seam>` command for ITS OWN seam (not a copy-pasted one from
-// another skill), and each names where the agent's own account goes
-// (task-7-brief.md, Step 1). mend-drift is scoped out the same way
+// another skill), and each names where the agent's own account goes.
+// mend-drift is scoped out the same way
 // TestSkillsHaveFivePartAnatomy scopes it out; TestMendDriftHasNoReadoutSection
 // pins its absence explicitly.
 func TestSkillsCarryAReadoutSectionAndEndTheirChoreographyWithIt(t *testing.T) {
@@ -385,9 +385,9 @@ func TestReadoutSkillsEndOnTheRankedList(t *testing.T) {
 // readoutSeams names (internal/cli/readout.go), and extending it to mend-drift
 // is no part of this task's scope. mend-drift's edge of done is a drafted fix
 // left for the human's approval, not a rendered seam block, so its structure
-// stays frontmatter, Reasoning, Choreography, Hand-off (task-13-brief.md, Step
-// 1). Asserting the absence explicitly, rather than only omitting a positive
-// check, keeps a future stray "## Readout" heading here from going unnoticed.
+// stays frontmatter, Reasoning, Choreography, Hand-off. Asserting the absence
+// explicitly, rather than only omitting a positive check, keeps a future stray
+// "## Readout" heading here from going unnoticed.
 func TestMendDriftHasNoReadoutSection(t *testing.T) {
 	text, ok := Lookup("mend-drift")
 	require.True(t, ok)
@@ -944,8 +944,7 @@ func TestIntakeDescriptionCarriesTheStop(t *testing.T) {
 }
 
 // TestIntakeNamesItsOwnRefusals pins the two refusal messages intake mints
-// itself (task-4-brief.md's artifact_exists, task-1-brief.md's
-// source_required), quoted verbatim so the agent recognizes them rather than
+// itself, quoted verbatim so the agent recognizes them rather than
 // treating them as a generic amend staging failure.
 func TestIntakeNamesItsOwnRefusals(t *testing.T) {
 	text, ok := Lookup("intake")

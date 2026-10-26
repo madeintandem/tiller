@@ -168,8 +168,7 @@ function HeldChip({ held }: { held: HeldView | undefined }) {
   );
 }
 
-// ReviewGrainChip is the Review Grain build's own badge (task-8-brief.md,
-// docs/spec/ui-surface.md): the resolved
+// ReviewGrainChip is the Review Grain build's own badge: the resolved
 // review grain in force for work under an epic or a feature
 // (node.review_grain, views.NodeView.ReviewGrain), rendered only when it
 // differs from "task", the value every tree carries by default and needs no

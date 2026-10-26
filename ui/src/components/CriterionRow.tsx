@@ -1,5 +1,5 @@
 // CriterionRow renders one authored acceptance criterion as the contract's
-// own grid row (task-17-brief.md item 6, the mock's own .crow: the retired
+// own grid row (the mock's own .crow: the retired
 // console mock): id, statement, the binding's TYPE alone - never its ref or run
 // detail, which the compact grid has no column for; that fact still reads on
 // the gate's own flat evidence line and in AmendmentBody's precondition rows,
@@ -15,10 +15,8 @@
 // criterion's own recorded rubric output rendered nowhere on the page -
 // AskBox's own why sentence ("Review the graded evidence, then sign it
 // off") pointed at a fact this row no longer showed. It is back, folded
-// into the statement cell as a second line (task-17-brief.md's five-field
-// list still holds: this is the SAME statement fact, evidenced, not a sixth
-// column) rather than the .cst cell, which has no room for an arbitrary-
-// length path beside the status chip.
+// into the statement cell as a second line rather than the .cst cell, which has
+// no room for an arbitrary- length path beside the status chip.
 //
 // The chip's word is "attested · <owner>" whenever a recorded attestation
 // targets this criterion AND the criterion's own live status is pass

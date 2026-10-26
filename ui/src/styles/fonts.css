@@ -5,7 +5,7 @@
    the token layer (Task 2) references these families. No Google/CDN URL:
    the console must not phone out from localhost. */
 
-/* Dedup (task-22-brief.md item 5): every weight a family below claimed
+/* Dedup: every weight a family below claimed
    used to point at its own file, but madeintandem-com's own vendoring
    fetched a single VARIABLE font binary per subset and re-saved it under
    each weight's filename - inter-400.woff2 and inter-500.woff2 were

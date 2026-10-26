@@ -712,7 +712,7 @@ export interface FeatureMovePageView {
 }
 
 // An intake-minted amendment's own provenance artifact (views.
-// AmendmentSourcePageView), additive on the amendment page (task-5-brief.md):
+// AmendmentSourcePageView), additive on the amendment page:
 // path and revision are the structural fingerprint intake recorded; live is
 // the current-tree read, filled by the serve handler the same way a
 // precondition's own live is (nil until it runs). Absent whole for a
@@ -827,10 +827,9 @@ export interface NodePage {
   // unpushed_review names the review-state warning (issue #42, Task 15,
   // internal/views/nodepage.go's UnpushedReview) for a task in review whose
   // recorded feature branch holds a commit its PR does not yet show: the
-  // node page's own warning-register attention box (task-17-brief.md item
-  // 5). Absent for every noun but a task, and for a task that is not in
-  // review, records no PR, has no recorded feature branch, or whose branch
-  // already sits pushed even with its upstream.
+  // node page's own warning-register attention box. Absent for every noun but a
+  // task, and for a task that is not in review, records no PR, has no recorded
+  // feature branch, or whose branch already sits pushed even with its upstream.
   unpushed_review?: UnpushedReviewView;
 }
 
@@ -1399,7 +1398,7 @@ export interface Recap {
 // The windows /api/recap accepts; anything else is a 400.
 //
 // Kept "Recap" on 2026-08-10 when the view that renders it renamed to
-// History (task-6-brief.md item 3): the view's own name is a presentation
+// History: the view's own name is a presentation
 // choice, this type names the wire's request shape, and the two are free to
 // disagree.
 export type RecapWindow = "visit" | "24h" | "7d";
@@ -1659,7 +1658,7 @@ export function eventsPath(limit?: number): string {
 }
 
 // Kept "recap" on 2026-08-10 when the view that calls this renamed to
-// History (task-6-brief.md item 3, views/History.tsx): the route and this
+// History (views/History.tsx): the route and this
 // function name the wire, which did not rename with it.
 export function recapPath(window?: RecapWindow): string {
   return window === undefined ? "/api/recap" : `/api/recap?window=${window}`;

@@ -1,4 +1,4 @@
-/* Build: the epic-selection board (console v2 phase 3, task-13-brief.md),
+/* Build: the epic-selection board (console v2 phase 3),
    replacing the Phase 1 stub wholesale. Pixel spec: the retired console mock's
    BUILD banner (~line 315) and its markup (~line 728), adapted rather than
    copied verbatim in two places -
@@ -164,7 +164,7 @@
   opacity: 1;
 }
 
-/* Keyless-epic cosmetics (fix wave, task-22-brief.md item 4a), gated behind
+/* Keyless-epic cosmetics (fix wave), gated behind
    @supports selector(:has(...)) rather than applied unconditionally - this
    file's first use of :has(), and task-22 review Important finding 1 caught
    the first pass shipping it unscoped: `.epic-row:not(:has(...)):hover`

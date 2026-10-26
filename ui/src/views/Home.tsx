@@ -1,7 +1,6 @@
 // Home is the desk: a header band (identity plus stat tiles) over the
 // needs-you card grid, with the pulse - past, present, future - beneath it
-// (console v2 phase 2 rebuild, task-10-brief.md; ui-surface.md's "Home gains
-// the pulse and seats the board streams"). Every fetch here is Home's own
+// (console v2 phase 2 rebuild). Every fetch here is Home's own
 // (App.tsx owns /api/status and passes it down, its header badge already
 // needing it), so a slow or failed section never blanks its neighbors: the
 // same per-panel resilience the page has carried since the first desk pass.

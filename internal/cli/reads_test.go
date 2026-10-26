@@ -517,7 +517,7 @@ func titleColumns(t *testing.T, out string) []int {
 
 // TestLsSizesItsLabelColumnToTheWidestReference pins the fix for the fixed
 // 44-column label budget, which was sized when the widest row a list could hold
-// was a two-segment feature key (task-9-brief.md, inherited item 1). A task's
+// was a two-segment feature key. A task's
 // canonical reference is three segments plus the id parenthetical
 // (cli-surface.md, Human references), which overruns 44 on ordinary keys, and an
 // overrunning row pushed its own title right while every shorter row stayed put.

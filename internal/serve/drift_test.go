@@ -1,6 +1,6 @@
 package serve_test
 
-// This file pins GET /api/drift (task-11-brief.md): the exact
+// This file pins GET /api/drift: the exact
 // views.DriftReportOf projection `tiller drift` itself renders, served fresh
 // per request over the real read API, so the CLI and the console cannot
 // disagree about what a sweep found. TestEveryRouteAnswersThroughHandler
@@ -66,7 +66,7 @@ func driftServeRoot(t *testing.T, checks string) *store.Tree {
 }
 
 // TestDriftEndpointReturnsInducedCandidate is the happy-path handler test
-// task-11-brief.md's Step 1 asks for: a project with one induced candidate
+// the Step 1 asks for: a project with one induced candidate
 // returns it. The induced candidate is missing_surface's own vanish rule (a
 // feature's tiller link --surface path that no longer exists in the working
 // tree), the lightest-weight candidate to construct since it needs no git

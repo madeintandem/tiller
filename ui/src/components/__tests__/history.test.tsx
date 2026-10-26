@@ -1,5 +1,5 @@
 // Vitest/RTL coverage for the History view (the recap-page pass, then the
-// phase-5 restyle to the console-v2 mock, task-19-brief.md - the file and its
+// phase-5 restyle to the console-v2 mock) - the file and its
 // row anatomy follow the mock, the wire types and fixtures below (Recap,
 // RecapEntry, RecapGroup) did not).
 //

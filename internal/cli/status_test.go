@@ -254,8 +254,7 @@ func layApprovedFeatureWithTask(t *testing.T) string {
 // TestStatusReportsActiveBasisDriftAtBothGrains pins the reporting half of the
 // active-basis rule. cli-surface.md ("Specifying a feature") says status, serve,
 // and drift report active_basis while start, check, and submit refuse it; the
-// refusals landed in task 7 and the status report is this task's
-// (task-9-brief.md, inherited item 6).
+// refusals landed in task 7 and the status report is this task's.
 //
 // The bar is agreement with the refusal, not merely the presence of a line: each
 // leg below reads status and then runs the verb the guard sits in front of, so a
@@ -341,7 +340,7 @@ func TestStatusReportsActiveBasisDriftAtBothGrains(t *testing.T) {
 // the reporting surface. A pinned file that is gone is drift (mutate.checkBasis),
 // so status must report it, and the move it names has to be one that works:
 // --refresh-basis re-records from the working tree and cannot hash a file that is
-// not there (task-9-brief.md, inherited item 5).
+// not there.
 func TestStatusReportsADeletedPinAsDriftNamingARestore(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
 	featDir := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading")

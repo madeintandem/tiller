@@ -30,8 +30,8 @@ func soleFeatureIDM(t *testing.T, root string) string {
 // carrying a precondition that holds against the live tree (target_status,
 // matching the feature's actual draft status) beside one that does not
 // (key_absent naming the key the feature itself already holds), and asserts
-// each comes back with its own LIVE status: exactly the fixture task-4-brief
-// asks show's rendering test to cover.
+// each comes back with its own LIVE status: exactly the fixture show's
+// rendering test needs.
 func TestEvaluateAmendmentPreconditionsReportsValidAndStale(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
@@ -134,7 +134,7 @@ func TestEvaluateAmendmentPreconditionsHandlesAStagedAddEpic(t *testing.T) {
 
 // TestEvaluateAmendmentPreconditionsHandlesAStagedAddQuestion pins the
 // identical regression one grain over: resolveAmendment must treat
-// add-question's own blank Target as "nothing to resolve" too (task-3-brief.md),
+// add-question's own blank Target as "nothing to resolve" too,
 // or show amendment on a batch carrying a staged question would error instead
 // of rendering. A question carries no key, so nothing here stages a
 // key_absent precondition against one; the empty result itself is the
@@ -196,7 +196,7 @@ func TestEvaluateAmendmentPreconditionsPropagatesResolutionFailure(t *testing.T)
 }
 
 // --- EvaluateAmendmentSource: show amendment's live read of Task 5's one
-// amendment-level fact (task-5-brief.md), amendment_approve_test.go's own
+// amendment-level fact, amendment_approve_test.go's own
 // sourceFixture reused here since both files' tests need the identical
 // intake-minted shape (a real feedback artifact, an amendment whose Source
 // cites its current fingerprint). ---

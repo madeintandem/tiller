@@ -141,7 +141,7 @@ func NodeHandler(root string) http.HandlerFunc {
 // intake-minted amendment's own Source.Live slot, with their current-tree
 // reads: mutate.EvaluateAmendmentPreconditions and mutate.EvaluateAmendmentSource,
 // the identical comparisons `tiller show amendment` renders (single-sourced,
-// per task-4-brief.md's own instruction and task-5-brief.md's sibling
+// per the instruction and the sibling
 // binding for Source). mutate.Deps{} is the same bare zero value
 // runShowAmendment itself passes; its rev() method builds a real git window
 // on demand from the tree's own root, so nothing here needs injecting.
@@ -326,8 +326,7 @@ func basisPayload(t *store.Tree, n store.Node) *views.ActiveBasisView {
 // the same failure there would take all of it down for one manifest typo.
 //
 // The uncovered rows ForNode returns used to be dropped here for want of a
-// detail area (task-12-brief.md, resolution 2, recorded that omission as
-// deliberate); the drift panel is that area now (JC's ask, 2026-08-06), so
+// detail area; the drift panel is that area now (JC's ask, 2026-08-06), so
 // they ride the detail payload beside the candidates. The badge contract is
 // unchanged: an uncovered row still never becomes a badge, so a node with
 // only uncovered rows stays chipless and its detail reaches the reader

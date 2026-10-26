@@ -69,7 +69,7 @@ var KnownMarkers = knownMarkers
 // (artifact-schema.md, Drift control hooks). Since is the record's commit
 // anchor and is nil in two cases, neither of which is evidence the sweep
 // could not check the node: a pre-anchor record (a zero
-// AcceptedAgainst.Commit, task-7-brief.md's global-constraints note), where
+// AcceptedAgainst.Commit), where
 // the comparison ran but has nothing to date itself by; and
 // answered_question's own second case, where the answer revision is a
 // sha256 worktree fingerprint rather than a git_commit (questionSince
@@ -170,8 +170,8 @@ type Uncovered struct {
 // the one exception, documented at sweepOrphanEval: it counts CRITERIA, the
 // finer grain its own existence checks actually operate at, since one
 // feature's contract can hold several independently-checkable refs and the
-// coverage counts are what keep the path-shaped rule's conservatism honest
-// (task-9-brief.md, resolution 3). Compared still counts nodes even there.
+// coverage counts are what keep the path-shaped rule's conservatism honest.
+// Compared still counts nodes even there.
 //
 // Compared is the total count of DISTINCT NODES every enabled marker fully
 // compared in this one Run, deduped across markers as well as within one:
@@ -215,7 +215,7 @@ type Report struct {
 }
 
 // unknownDriftCheckError is Run's one misuse-grade refusal: an unknown name
-// in drift.checks (task-7-brief.md, resolution 1). The drift package cannot
+// in drift.checks. The drift package cannot
 // import mutate's unexported usageError, so this defines the same shape
 // store.EnvError and mutate's usageError both already carry
 // (internal/store/manifest.go's EnvError is the pattern this follows): an
@@ -249,7 +249,7 @@ func isKnownMarker(name string) bool {
 // every known marker is later reported in Disabled. That is the same
 // reading whether drift: is an empty list or the whole block is absent (an
 // old, hand-built manifest), because store.DriftBlock.Checks is nil in both
-// cases (task-7-brief.md, resolution 2).
+// cases.
 func enabledSet(checks []string) (map[string]bool, error) {
 	enabled := make(map[string]bool, len(checks))
 	for _, c := range checks {
@@ -368,9 +368,7 @@ func ForNode(t *store.Tree, rev vcs.Revisions, n store.Node) ([]Candidate, []Unc
 // bumpCoverage records one count in Coverage[marker][bucket], initializing
 // either map on first use. Coverage exists so a marker states what it did
 // with the nodes it looked at (checked cleanly, or could not be read) rather
-// than leaving that implied by the Candidates/Uncovered lists alone
-// (task-9-brief.md's Coverage contract, whose bucket shape every marker in
-// this package shares).
+// than leaving that implied by the Candidates/Uncovered lists alone.
 func bumpCoverage(rep *Report, marker, bucket string) {
 	m := rep.Coverage[marker]
 	if m == nil {
@@ -415,8 +413,7 @@ func nodeKey(n store.Node) string {
 // ready and active features and approved non-terminal tasks." The filter
 // lives here rather than inside mutate.BasisDrift/checkBasis, because
 // accepted_against is never cleared at done or cancelled, and an unfiltered
-// sweep would misfile stale_spec's business under this marker instead
-// (task-7-brief.md, resolution 3).
+// sweep would misfile stale_spec's business under this marker instead.
 var activeBasisFeatureStatuses = map[string]bool{"ready": true, "active": true}
 var activeBasisTaskStatuses = map[string]bool{"ready": true, "in_progress": true, "check": true, "in_review": true}
 
@@ -702,15 +699,15 @@ func activeBasisForNode(t *store.Tree, rev vcs.Revisions, rep *Report, n store.N
 
 // answeredQuestionTerminalStatuses are the feature statuses OUT of the
 // sweep, written as the excluded set because "non-terminal" is everything
-// but these two and naming the short list is what task-7-brief.md's
-// resolution 4 asks for explicitly (artifact-schema.md, the
-// answered_question bullet: "Sweeps non-terminal nodes; the done case is
-// deliberately out, because its fix is an amendment, a human judgment").
+// but these two and naming the short list is what the resolution 4 asks for
+// explicitly (artifact-schema.md, the answered_question bullet: "Sweeps
+// non-terminal nodes; the done case is deliberately out, because its fix is an
+// amendment, a human judgment").
 var answeredQuestionTerminalStatuses = map[string]bool{"done": true, "cancelled": true}
 
 // sweepAnsweredQuestion walks non-terminal features alone, never tasks.
 // assumption_basis lives on Feature only (mutate.AssumptionBasis is
-// feature-only, task-5-brief.md's settled fact), and
+// feature-only), and
 // mutate.UnreviewedAssumptions always walks a task up to its parent feature
 // regardless of which node it is handed (assumptionFeatureFor), so a task
 // hit would only duplicate its parent feature's own entry. Sweeping features
@@ -731,7 +728,7 @@ func sweepAnsweredQuestion(t *store.Tree, rev vcs.Revisions, rep *Report) {
 
 // reportAnsweredQuestion folds one feature's WHOLE assumption_basis into
 // rep. It reads the feature's own AssumptionBasis keys directly
-// (task-7-brief.md, resolution 4) rather than relying on
+// rather than relying on
 // mutate.UnreviewedAssumptions alone, because that predicate deliberately
 // skips a dangling question reference in silence (Task 5's contract: "not
 // this predicate's business... the drift engine's own sweep reports it as
@@ -1177,8 +1174,8 @@ func staleSpecSurfacesLeg(rev vcs.Revisions, root string, surfaces []store.Surfa
 		if "git:"+hash != sf.Value {
 			// For a tree, per-file hashes are not recorded, so this cannot
 			// name which file under the path moved: "N recorded files
-			// changed" would be unearned precision (task-8-brief.md,
-			// resolution 2). A blob fingerprint IS one file, so it names it.
+			// changed" would be unearned precision. A blob fingerprint IS one
+			// file, so it names it.
 			changed := fmt.Sprintf("content changed under %s", sf.Path)
 			if sf.Kind == store.KindGitBlob {
 				changed = fmt.Sprintf("content changed at %s", sf.Path)
@@ -1247,8 +1244,7 @@ func finishStaleSpec(rep *Report, n store.Node, find staleSpecFinding, failures 
 // vanished (activeBasisDetail's own pattern, one marker over). When nothing
 // vanished, the changed files stand as the whole sentence on their own,
 // because unlike the surface leg, content drift on a done node's own spec or
-// eval file IS itself a real stale_spec finding, not merely context
-// (task-8-brief.md, resolution 2).
+// eval file IS itself a real stale_spec finding, not merely context.
 func staleSpecDetail(find staleSpecFinding) (string, []string) {
 	var detail string
 	var context []string
@@ -1432,7 +1428,7 @@ func missingSurfaceForNode(t *store.Tree, rep *Report, n store.Node) {
 // acceptedAgainstEmpty reports whether a is the zero value: no approval has
 // ever recorded a basis. It is BasisRefs's own version of
 // verifiedAgainstEmpty, the zero-struct test orphan_eval's preserve clock
-// needs and nothing before it did (task-9-brief.md, resolution 1). BasisRefs
+// needs and nothing before it did. BasisRefs
 // carries no Surfaces field to check (accepted_against pins a spec and an
 // eval blob only; surface fingerprints are a done-time concept), so every leg
 // here is a RevisionRef and the zero check is Value alone on each.
@@ -1442,7 +1438,7 @@ func acceptedAgainstEmpty(a store.BasisRefs) bool {
 
 // orphanEvalItem is one criterion's missing ref: the criterion id (so
 // Detail, and Task 10's later grouping, can name which criterion it belongs
-// to without re-opening the eval file, task-9-brief.md's resolution 5) and
+// to without re-opening the eval file) and
 // which polarity clock it was checked under, since a candidate that mixes
 // both clocks anchors Since to whichever one is earlier (orphanEvalSince).
 type orphanEvalItem struct {
@@ -1456,7 +1452,7 @@ type orphanEvalItem struct {
 // and even two independent checks on one preserve criterion (its binding and
 // its baseline), still describe one drifted node, the same one-candidate-
 // per-node shape staleSpecFinding gives a multi-leg comparison one marker
-// over (task-9-brief.md, resolution 5).
+// over.
 type orphanEvalFinding struct {
 	missing []orphanEvalItem
 }
@@ -1470,8 +1466,7 @@ func (f orphanEvalFinding) empty() bool { return len(f.missing) == 0 }
 // zero (never approved), sits outside this marker's sweep set entirely, the
 // same way a draft feature sits outside active_basis's own status filter:
 // there is nothing yet a human has agreed the contract should be checked
-// against (artifact-schema.md, the orphan_eval bullet; task-9-brief.md,
-// resolution 1).
+// against (artifact-schema.md, the orphan_eval bullet).
 //
 // A cancelled feature is exempt and counted in Exempted, but ONLY when it is
 // otherwise in this marker's scope (an eval file plus a started clock), the
@@ -1602,8 +1597,8 @@ func reportOrphanEval(t *store.Tree, rep *Report, f *store.Feature) {
 // item; otherwise it counts unresolvable, whether the item is a bare test
 // name or id (an argument to the tests runner, not a path), and a binding
 // with no ref and only run set counts unresolvable once (a run string is no
-// more a path than a command's is). Grepping for either would be guessing
-// (task-9-brief.md, resolutions 2 and 3). It returns one detail per ref that
+// more a path than a command's is). Grepping for either would be guessing.
+// It returns one detail per ref that
 // could not be read.
 func orphanEvalCheckBinding(rep *Report, root string, c store.EvalCriterion, find *orphanEvalFinding) (failures []string) {
 	switch c.Binding.Type {
@@ -1692,7 +1687,7 @@ func orphanEvalCheckPath(rep *Report, root, criterionID, ref, clock, advice stri
 // the rest, so Compared and the Uncovered row are decided from the WHOLE
 // accumulated outcome, matching finishStaleSpec one marker over), and, when
 // find carries any missing ref, appends ONE Candidate naming every one of
-// them (task-9-brief.md, resolution 5), never one Candidate per criterion.
+// them, never one Candidate per criterion.
 func finishOrphanEval(rep *Report, f *store.Feature, find orphanEvalFinding, failures []string) {
 	if len(failures) > 0 {
 		rep.Uncovered = append(rep.Uncovered, Uncovered{
@@ -1718,8 +1713,7 @@ func finishOrphanEval(rep *Report, f *store.Feature, find orphanEvalFinding, fai
 
 // orphanEvalDetail renders one human sentence naming every missing ref, each
 // labeled by its own criterion id so a reader can tell which criterion it
-// belongs to without re-opening the eval file (task-9-brief.md, resolution
-// 5).
+// belongs to without re-opening the eval file.
 func orphanEvalDetail(find orphanEvalFinding) string {
 	parts := make([]string, len(find.missing))
 	for i, m := range find.missing {
@@ -1745,10 +1739,10 @@ func orphanEvalFiles(find orphanEvalFinding) []string {
 // precedes a done crossing in the lifecycle (a feature cannot reach done
 // without having been approved first), so accepted_against's commit is
 // always the earlier of the two whenever both exist, and the earliest
-// anchor is what bounds the whole diff a human would read (task-9-brief.md,
-// resolution 5). Either leg's own zero anchor (a pre-Task-2 record) reads as
-// nil, the same "nothing to date it by, not a failed check" rule basisSince
-// and staleSpecSince both already give one marker over.
+// anchor is what bounds the whole diff a human would read. Either leg's own
+// zero anchor (a pre-Task-2 record) reads as nil, the same "nothing to date it
+// by, not a failed check" rule basisSince and staleSpecSince both already give
+// one marker over.
 func orphanEvalSince(f *store.Feature, find orphanEvalFinding) *store.RevisionRef {
 	var sawPreserve, sawIntroduce bool
 	for _, m := range find.missing {

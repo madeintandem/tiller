@@ -1,6 +1,6 @@
 package serve_test
 
-// These tests pin GET /api/build (task-12-brief.md): the Build view's board
+// These tests pin GET /api/build: the Build view's board
 // (views.BuildBoard, internal/views/build.go) served fresh over the real
 // console Handler, mux and all, so a dropped or typo'd route registration
 // fails here rather than against a handler production never reaches (the

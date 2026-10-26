@@ -19,7 +19,7 @@ import (
 // command flow an agent or a human would run, never a fixture that hand-sets
 // a pin or a completion record the real commands are supposed to populate
 // (the one deliberate exception, markFeatureDone below, is exactly the "hand-
-// write a done feature" fixture task-10-brief.md's own decision 11 asks for).
+// write a done feature" fixture the drift design asks for).
 
 // allDriftChecks enables every marker the schema plants, for a test that
 // wants the full sweep and needs to confirm no OTHER marker also fires.
@@ -110,7 +110,7 @@ func layDriftFeature(t *testing.T, dir string) {
 
 // markFeatureDone hand-edits one feature's status to done directly on disk,
 // leaving verified_against absent, since `add` never writes one: this is the
-// task-10-brief.md decision-11 fixture, "hand-write a done feature with no
+// "hand-write a done feature with no
 // verified_against into an otherwise clean tree", a node that reached done
 // some way other than a real sync crossing and so carries no completion
 // record for stale_spec to compare against. It is the one place in this file
@@ -233,7 +233,7 @@ func TestDriftCandidatesExitOne(t *testing.T) {
 	require.NotContains(t, abRows[0], "ref", "id and key ride as separate fields; ref is a human-only label, never a composed one")
 
 	// The record's commit anchor rides as a structured kind/value/observed_at
-	// object (resolution 4, task-10-brief.md), not a composed string: approve
+	// object (resolution 4), not a composed string: approve
 	// pinned this feature's basis at HEAD, so Since is populated.
 	since, ok := abRows[0]["since"].(map[string]any)
 	require.True(t, ok, "since projects structurally: %v", abRows[0]["since"])
@@ -301,7 +301,7 @@ func TestDriftDisabledFooter(t *testing.T) {
 		"checks left out of drift.checks, in the schema's own order")
 }
 
-// TestDriftEndToEndArc is the one e2e arc (task-10-brief.md, decision 6): a
+// TestDriftEndToEndArc is the one e2e arc: a
 // scratch project that starts clean (exit 0), then a single tree carries
 // BOTH an induced active_basis candidate (an edit to the approved feature's
 // spec) and an induced uncovered node (a second feature hand-set to done

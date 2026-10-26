@@ -1,12 +1,11 @@
 package views
 
 // This file projects drift.Report onto the read envelope `tiller drift` and
-// Task 11's serve endpoint both render (cli-surface.md, the drift paragraph;
-// task-10-brief.md, resolution 3). It is a pure struct mapping: drift.Run
-// already did every git read and filesystem stat the sweep needed, so this
-// reshapes what it found and does no I/O of its own, matching this package's
-// own rule (node.go's package comment: "no reasoning, no mutation, no
-// rendering").
+// Task 11's serve endpoint both render (cli-surface.md, the drift paragraph).
+// It is a pure struct mapping: drift.Run already did every git read and
+// filesystem stat the sweep needed, so this reshapes what it found and does no
+// I/O of its own, matching this package's own rule (node.go's package comment:
+// "no reasoning, no mutation, no rendering").
 
 import (
 	"strings"
@@ -236,8 +235,7 @@ func uncoveredViewOf(t *store.Tree, u drift.Uncovered) UncoveredView {
 // of which is evidence the sweep failed to compare the node. It reuses
 // revisionRefOf (eval.go), the same structural kind/value/
 // path/observed_at projection every other revision-bearing field in this
-// package already uses (task-10-brief.md, resolution 4: "as existing views
-// do for revision-bearing fields"); short-sha rendering is left to the human
+// package already uses; short-sha rendering is left to the human
 // renderer alone, never to this pure projection.
 func sinceViewOf(r *store.RevisionRef) *RevisionRefView {
 	if r == nil {

@@ -1,4 +1,4 @@
-/* Drift is a report, not a new surface grammar (task-11-brief.md): rows
+/* Drift is a report, not a new surface grammar: rows
    reuse Explore's own list chrome directly (explore.css's rule-list and
    explore-result-* classes, styles.css's .mono/.muted/.error/.none). This
    file adds only what that flat, single-line row shape never needed: the

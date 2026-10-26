@@ -345,7 +345,7 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 	// statements in one batch are perfectly legal and unrelated. A question's
 	// own notion of "duplicate" is its statement, and foldQuestion's
 	// idempotency rule (question.go) already handles that correctly without
-	// this map's help (task-3-brief.md: "reason it through, don't assume").
+	// this map's help.
 	//
 	// This map DOES include store.AmendmentOpAddEpic, unlike
 	// resolveStageReplacement's own staged-key loop (amendment.go): the
@@ -915,7 +915,7 @@ func evalSource(tree *store.Tree, rev vcs.Revisions, source *store.AmendmentSour
 
 // sourceChangedErr refuses approve when an intake-minted amendment's own
 // feedback document has been edited since intake staged it. The message is
-// pinned by task-5-brief.md, "the drift-idiom message", both hashes named so
+// the drift-idiom message, both hashes named so
 // a human can tell at a glance whether the edit was theirs.
 func sourceChangedErr(recorded, live string) error {
 	return &usageError{
@@ -1215,8 +1215,8 @@ func targetAnchor(n store.Node) (value, note string) {
 // and a cancelled node still occupies its own, so a key it holds is not
 // absent and materializing over it would collide on the write rather than
 // honor the precondition. Epics joined this lookup alongside features and
-// tasks once add-epic gave key_absent something epic-shaped to guard
-// (task-2-brief.md): an epic's key is a live node's key exactly as a
+// tasks once add-epic gave key_absent something epic-shaped to guard:
+// an epic's key is a live node's key exactly as a
 // feature's or a task's is, and the three namespaces never collide (an
 // epic's key is always one segment, a feature's two, a task's three), so
 // widening this check can only ever add a match, never take one away.
@@ -1803,8 +1803,8 @@ func (b *batch) materialize(tree *store.Tree, deps Deps, owner store.Contributor
 
 	// Second pass: every staged add-question op, in staged order, run only
 	// AFTER every add-epic/add-feature/add-task above has already
-	// materialized. This ordering is the acceptance's heart
-	// (task-3-brief.md): it is what lets a question block a node the same
+	// materialized. This ordering is the acceptance's heart:
+	// it is what lets a question block a node the same
 	// amendment adds, since a Blocks entry naming a staged key resolves
 	// through b.staged, which the loop above just populated — the same
 	// same-batch allowance resolveStageReplacement gives a supersede's by

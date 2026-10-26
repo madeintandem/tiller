@@ -13,7 +13,7 @@ import (
 )
 
 // TestFirstInvertedPairNamesTheLowestIndexPairFirst pins the "first such
-// pair" rule (task-7-brief.md) beyond the two-element scopes
+// pair" rule beyond the two-element scopes
 // TestDependencyOrderCheckNamesAnOverriddenSoftOrder and its sibling in
 // readout_test.go exercise, where the rule and an adjacent-inversion
 // reading cannot be told apart. soft = [P, Q, R, S], rendered = [Q, S, P]

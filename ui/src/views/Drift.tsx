@@ -6,7 +6,7 @@
 // and --json output both render, so the two surfaces cannot disagree about
 // what a sweep found.
 //
-// This page is a report, not a new surface grammar (task-11-brief.md): rows
+// This page is a report, not a new surface grammar: rows
 // reuse Explore's own list chrome (explore.css's rule-list and
 // explore-result-* classes) rather than inventing a layout, and drift.css
 // adds only what that flat, single-line row shape never needed, the
@@ -195,8 +195,7 @@ function coverageLine(marker: string, buckets: Record<string, number>): string {
 // DriftFooter always renders (compared, disabled, exempted, coverage): on a
 // clean sweep, it is the WHOLE visible page, so its Compared line has to
 // state the coverage assertion outright rather than leaving a reader to
-// infer "nothing rendered" means "nothing to see" (task-11-brief.md: "Empty
-// state states what was compared, mirroring the CLI's coverage assertion").
+// infer "nothing rendered" means "nothing to see".
 function DriftFooter({ report, found }: { report: DriftReportView; found: boolean }) {
   const exempted = exemptedEntries(report);
   const coverage = coverageEntries(report);

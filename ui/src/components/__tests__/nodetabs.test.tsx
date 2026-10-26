@@ -1,4 +1,4 @@
-// Vitest/RTL coverage for task-1-brief.md, the node detail tab shell: NodeTabs
+// Vitest/RTL coverage for the node detail tab shell: NodeTabs
 // itself (a controlled pill row: one button per tab, the active one's panel
 // the only content in the document, an unrecognized `active` degrading to the
 // first tab rather than a blank page), plus NodeDetail's own per-noun wiring

@@ -1,5 +1,5 @@
-// Vitest/RTL coverage for the Build board (console v2 phase 3,
-// task-13-brief.md), the epic-selection view replacing the Phase 1 stub.
+// Vitest/RTL coverage for the Build board (console v2 phase 3),
+// the epic-selection view replacing the Phase 1 stub.
 // Fetch stubbing follows home.test.tsx / drift.test.tsx's stubFetch-keyed-
 // by-URL convention (no MSW in this harness).
 //

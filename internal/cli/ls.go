@@ -179,7 +179,7 @@ func renderListHuman(r ListResult, f lsFilters) string {
 // id. A task's canonical reference is three segments plus that id
 // (cli-surface.md, Human references) and runs past 44 on ordinary keys, which
 // left a long row pushing its own title right while every shorter row stayed at
-// 44 (task-9-brief.md, inherited item 1).
+// 44.
 //
 // tree's other half, truncating titles into a line budget, is not adopted and
 // `ls` has no budget at all: a tree renders nested rows whose indent competes

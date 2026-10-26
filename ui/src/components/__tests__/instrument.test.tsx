@@ -69,7 +69,7 @@ function withRouter(ui: ReactElement) {
 }
 
 // CriterionRow was rewritten for task 17 (console v2, node page rebuild) to
-// the mock's own compact .crow grid (task-17-brief.md item 6's exhaustive
+// the mock's own compact .crow grid (the exhaustive
 // field list: id, statement, binding TYPE, status chip, attested-by). Three
 // things the old stacked row carried are gone from this row on purpose, not
 // stranded: the binding's ref/run DETAIL (only its type now, the grid has no
@@ -1259,7 +1259,7 @@ describe("NodeDetail: eval contract error state", () => {
 
     withRouter(<NodeDetail page={page} />);
 
-    // task-1-brief.md's tab shell: the eval warning lives on the evals tab,
+    // the tab shell: the eval warning lives on the evals tab,
     // whose DISPLAY label reads "Contract" now (task 17's own decision; the
     // wire key and `tab` param stay "evals"). A malformed contract is not
     // null, so the tab still renders (never hide a malformed contract).
@@ -1283,7 +1283,7 @@ describe("NodeDetail: feature tasks render in ledger (payload) order", () => {
 
     withRouter(<NodeDetail page={page} />);
 
-    // task-1-brief.md's tab shell: the task list lives on the tasks tab.
+    // the tab shell: the task list lives on the tasks tab.
     fireEvent.click(screen.getByRole("button", { name: /^Tasks/ }));
 
     const first = screen.getByText("Wire Redis and Sidekiq");
@@ -1339,7 +1339,7 @@ describe("NodeDetail epic: identity renders once, decomposition ordered as serve
   it("renders the decomposition in served order with a mixed-child StateBar", () => {
     const { container } = withRouter(<NodeDetail page={epicPage()} />);
 
-    // task-1-brief.md's tab shell: the decomposition lives on the features
+    // the tab shell: the decomposition lives on the features
     // tab, not the default spec one.
     fireEvent.click(screen.getByRole("button", { name: /^Features/ }));
 
@@ -1867,12 +1867,11 @@ describe("NodeDetail active-basis drift", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The Drifted chip (task-12-brief.md; ui-surface.md's node-page chip
-// sentence): one chip in the header beside the state, regardless of how many
-// markers touch the node, whose palette register states whether any of them
-// actually refuses a verb right now. The register itself (which class/token
-// a refusing vs. non-refusing badge paints) is Chip's own existing total
-// statusColor mapping (lib/states.ts) - this suite passes "blocked" and
+// The Drifted chip: one chip in the header beside the state, regardless of how
+// many markers touch the node, whose palette register states whether any of
+// them actually refuses a verb right now. The register itself (which
+// class/token a refusing vs. non-refusing badge paints) is Chip's own existing
+// total statusColor mapping (lib/states.ts) - this suite passes "blocked" and
 // "draft" straight through, the identical two registers GateCard's derived
 // state already rides (deriveFlatGateState's stale case is "draft", the
 // exact neutral register the brief's resolution 3 names), never a new token.
@@ -2043,7 +2042,7 @@ describe("NodeDetail: the drift panel", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The Held chip (task-3-brief.md; issue #36's "annotate, don't subtract"):
+// The Held chip:
 // one chip in the header naming the nearest retired ancestor, present only
 // when node.held carries one. It earns the blocked palette register the same
 // way the Drifted chip's refusing badges do (nodepage.go:114-139's rule:
