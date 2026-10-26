@@ -2,7 +2,7 @@
 
 **Scope.** This document defines how Tiller reaches a developer and a project: how it is built, installed, updated, versioned, migrated, wired into a coding harness, adopted, and documented. It layers over the [artifact schema](./artifact-schema.md), canonical for the on-disk model, and the [CLI command surface](./cli-surface.md), canonical for commands. Where this document disagrees with either, they win and this one is fixed.
 
-**Status.** Current source reference at version stamp 0.21.2, schema 12, orientation generation 57, and eleven embedded skills. Source availability does not establish a built, installed, or published artifact or a migrated managed project. The latest published release is v0.18.4. [STATUS.md](../plans/STATUS.md) records observed evidence; installation, publication, and adoption remain separately authorized.
+**Status.** Current reference at version stamp 0.21.2, schema 12, orientation generation 57, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
 
 ---
 
@@ -97,7 +97,7 @@ For a verified Homebrew cask or legacy formula, upgrade delegates only to that i
 
 The delegated child alone receives `HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1` and `HOMEBREW_NO_INSTALL_CLEANUP=1`, preventing implicit dependent upgrades and broad cleanup. Never run an unqualified `brew upgrade`, overwrite the Cellar/Caskroom, add sudo, change credentials, or bypass security policy. Brew may still refresh metadata or install genuine dependencies of the selected package; this is not a promise that no other package files change. Current-binary inspection catches known blockers before delegation, but future target rules may be unavailable until brew finishes. Brew can therefore change the machine before target compatibility is known; failures report that boundary without manual-swap fallback or project rollback.
 
-`GITHUB_TOKEN`, when set, authenticates self-managed release lookups and asset downloads while releases are private. This does not make private assets public or supply a Homebrew authentication bypass. Release-service failure is a real default-upgrade failure, not proof that the binary is current; offer offline `--project-only` explicitly.
+`GITHUB_TOKEN`, when set, authenticates self-managed release lookups and asset downloads, which avoids anonymous API rate limits. It does not supply a Homebrew authentication bypass. Release-service failure is a real default-upgrade failure, not proof that the binary is current; offer offline `--project-only` explicitly.
 
 ### Retention and drain recovery
 
@@ -125,11 +125,10 @@ Exit 0 means every requested stage completed or was genuinely inapplicable. A su
 
 The CLI reports completed phases, actual paths and generations, blockers, warnings, and the exact failed phase and recovery. Known partial results survive nonzero child envelopes through the [CLI envelope contract](./cli-surface.md#output-and-exit-codes). After success, review/commit the reported diff with ordinary Git. Other branches, worktrees, teammates, and projects must incorporate it and run `tiller upgrade --project-only` themselves. Restart existing serve processes and reload harness instructions as needed; disk refresh does not reload user processes.
 
-Generation 39 updates product-driven planning guidance across decomposition, specification, amendment, and intake, not schema or scheduling behavior. Updated skill bodies come from the running binary through named guides and existing thin shims. Refresh shared orientation and copied discovery descriptions in each intended checkout with that binary's `tiller upgrade --project-only`, review the generated diff, and reload agent instructions. Binary installation and instruction refresh do not replan accepted work, rewrite authored contracts, or authorize migration or restructuring of another project.
 
-### First-release adoption
+### Upgrading from an older binary
 
-An already-running v0.12.2 or older process cannot acquire this logic during replacement: it still calls join and can return early when already current. Its one-time installation offers no new preflight or automatic-retention guarantee. Keep a compatible old executable before that install if any checkout needs it, then run the newly installed binary's `tiller upgrade --project-only`. The locally retained `~/.local/bin/tiller-0.12.1` from v0.12.2 adoption is historical local state, not a portable installer guarantee. Locally ahead-of-published builds may use their normal local distribution path, followed by offline project-only maintenance. Older binaries do not support the new flags, and join never migrates implicitly.
+An already-running older process cannot acquire the current upgrade logic during its own replacement: it may still call join and return early when already current. Keep a compatible old executable before that install if any checkout needs it, then run the newly installed binary's `tiller upgrade --project-only`. Older binaries do not support the current flags, and join never migrates implicitly.
 
 The deferred `upgrade --project` spelling belongs to an unbuilt project-pinned engine cache, not to `--project-only`. The launcher, cache, and opt-out update nudge remain unbuilt.
 
@@ -158,7 +157,7 @@ Two rules organize that list:
 
 ### Generated-board retirement
 
-The generated `.tiller/board.md` and its generation command are retired. Live project status comes from the existing CLI reads and local console, not a replacement file. Board retirement shipped at schema 7 and orientation generation 41, which removed the obsolete instructions. This changes no ownership, acceptance, merge-observation, or lifecycle policy and requires no work drain or source-schema conversion.
+The generated `.tiller/board.md` and its generation command are retired. Live project status comes from the existing CLI reads and local console, not a replacement file. This changes no ownership, acceptance, merge-observation, or lifecycle policy and requires no work drain or source-schema conversion.
 
 Deploy the changed binary separately, then run `tiller upgrade --project-only` in each continuing checkout to refresh orientation and skill discovery instructions. Review the diff, reload agent instructions, and restart any console that should use the new binary. Keep orientation committed.
 
@@ -217,13 +216,12 @@ A Class 3 migration is a coordinated team event. One person runs upgrade on the 
 
 **Rejected CI-emitter design.** `tiller ci-status` and Tiller-backed branch protection are retired, not deferred, optional, or candidates for a renamed integration. Making a CI runner interpret Tiller's exit code would still couple merge eligibility to Tiller and its state. Schema stamps, version floors, schema fences, drift markers, readiness, and recorded gates belong to the local Tiller workflow, not managed-project CI validation. The [project-independence contract](#managed-project-independence) defines the independent alternative.
 
-**Schema discipline.** Before `1.0`, breaking changes are accepted while dogfooding; every boundary with real trees on both sides gets a forward migration. After `1.0`, schema bumps should be rare, announced, and batched into major releases. Schema 1 has no migration path and requires re-init. The supported 2-to-3 and 3-to-4 migrations are stamp-only, recorded as events, with no data transforms or epoch advance. Schema 5 adds task branches and aggregate namespaces; schema 6 adds task-level started ownership and the reviewed active-owner conversion below. Schema 7 adds the persisted `move-feature` amendment operation and its review preconditions. The 6-to-7 migration changes only the manifest stamp and records a migration event, preserving existing work, authored content, accepted revision paths, and approved amendment history without advancing the epoch. Ordinary commands refuse schema 6 until migration, and schema-6 binaries refuse schema 8 before writes rather than partially interpreting move proposals. Supported older migrations compose through schema 8; the legacy drain requirement applies only when crossing into schema 5, and ownership conversion only when crossing into schema 6. Upgrade and migrate refresh only the current resolved checkout and never select or create checkout identity; they only rename a legacy schema-9 identity key.
+**Schema discipline.** Before `1.0`, breaking changes are accepted when needed, and every boundary with real trees on both sides gets a forward migration. After `1.0`, schema bumps should be rare, announced, and batched into major releases. Schema 1 has no migration path and requires re-init. Supported older migrations compose forward to the current schema. Most boundaries are stamp-only or additive: the migration changes the manifest stamp (adding a field where one is new), records a migration event, preserves work, events, ownership, reviews, and active execution, and needs no work drain or ownership review. Older binaries refuse a newer stamp rather than silently dropping fields during YAML mutation, and ordinary commands refuse an older stamp until migration. Two boundaries carry extra requirements: crossing into schema 5 drains in-flight work, and crossing into schema 6 converts active ownership under human review (both below). Upgrade and migrate refresh only the current resolved checkout and never select or create checkout identity; they only rename a legacy identity key (next paragraphs).
 
-Schema 8 adds first-class Tweaks and makes older binaries refuse rather than silently omit that shelf. The 7-to-8 migration changes the manifest schema stamp only, preserves existing Bug/Chore records and active work, and needs neither work drain nor an ownership review. An epic keyed `tweaks`, which an older binary could create, refuses migration with `migration_reserved_epic_key` (exit 3) because its feature refs would read as Tweak refs: rename a draft one with the older binary (`tiller rename epic tweaks --key <new-key>`), commit, and retry; an epic past draft has no rename path, so that project stays on its older binary. Orientation generation 42 adds Tweak routing and work-choice guidance. Install a compatible binary before project maintenance; review and commit the refreshed instructions, reload agents, and restart consoles.
+An epic keyed `tweaks`, which a binary that predates the Tweaks shelf could create, refuses migration with `migration_reserved_epic_key` (exit 3) because its feature refs would read as Tweak refs: rename a draft one with the older binary (`tiller rename epic tweaks --key <new-key>`), commit, and retry; an epic past draft has no rename path, so that project stays on its older binary. Install a compatible binary before project maintenance; review and commit the refreshed instructions, reload agents, and restart consoles.
 
-Schema 9 renames the shared manifest roster from `owners:` to `contributors:` and checkout-local identity from `owner:` to `contributor:`. The schema-8-to-9 migration preserves contributor IDs and names, the selected local identity, task/bug/chore/tweak claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. Schema 8 needs neither a work drain nor an ownership review; older migrations retain their existing requirements. New roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
+The migration that introduced contributors renamed the shared manifest roster from `owners:` to `contributors:` and checkout-local identity from `owner:` to `contributor:`. It preserves contributor IDs and names, the selected local identity, claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. Roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters are unchanged. Historical events with `owner:` remain readable without rewriting their bytes.
 
-The additive 11-to-12 migration stamps schema 12 for the question `cancel_reason` field and changes nothing else; it preserves work, events, ownership, and active reviews without a drain. Older binaries decode the question ledger loosely and rewrite all of it on any add or answer, so the version bump makes them refuse the project rather than drop the field. The additive 10-to-11 migration stamps schema 11 for the task `started_grain` field and changes nothing else; it preserves work, events, ownership, and active reviews without a drain. Schema 10 added typed aggregate `recovered_review` and historical policy provenance. The additive 9-to-10 migration changes only the manifest stamp and records its migration event; it preserves work, historical event bytes, ownership, reviews, and active execution without a drain. It never reconstructs missing review history. Older binaries refuse the newer stamp rather than silently dropping recovery data during YAML mutation. Orientation generation 44 describes explicit recovery authorization, caller-supplied host association, recording and ordinary sync on integration, actual state publication, and readback. Orientation generation 45 moves the empty-tree decompose rule below every rule that can apply to a tree with no epics. Generation 46 makes decompose due on an empty tree only when a to-be design doc exists and names the no-work-planned end state otherwise. Binary delivery and managed-project adoption remain separate authorized steps.
 
 
 ### Reviewed schema-6 ownership adoption
@@ -295,9 +293,9 @@ The hard rule stays inline, where it is always in the harness's loaded context, 
 
 `tiller upgrade` refreshes this checkout's orientation after binary selection and migration. `tiller upgrade --project-only` refreshes it offline with the running binary, without joining or changing identity. Join's onboarding and standalone migrate reuse the same refresh. Readiness names a stamped generation mismatch: behind the binary, use project-only; ahead of the binary, use upgrade. Refresh refuses to overwrite higher on-disk generations rather than downgrading them. Byte-identical outputs are not rewritten.
 
-The source orientation generation is 57, with schema 12 and eleven embedded skills. Generation 57 teaches the question exits: a human cancels a question that needs no decision with `tiller cancel question` and narrows it with `tiller unlink question --blocks`, an agent may only widen with `tiller link question --blocks`, and an agent that judges a question moot or too wide names the exact command in Notes. Generation 56 refuses `approve feature` and `approve task` while an open question holds the plan: specify ends with a final pass that records each decision only the human can make, and execute records a mid-run question on the branch it builds, holds the work it names, and builds around it rather than stopping (issue #152). Generation 55 replaces the single route walk with ranked next: `tiller next`, bare guide, and every readout's **Next:** list the legal moves for this checkout ranked by where the reader has been working, the orient skill relays the list and starts the top agent move unless the developer redirects, and the Order and Continuity notes are retired. Generation 54 has execute run the project's suite through `tiller check` and rely on its reuse of a gate already passed on unchanged code, rerunning only for a suspected flake or environment change (issue #152). Generation 53 has the human run a coarse review's attest on its recorded aggregate branch, in the worktree that holds it, and commit it there before submit; the readout and `check` handoffs name that branch. Generation 52 scopes the default worktree to the unit of work one review covers: a task at task grain, the whole feature or epic at coarse grain, and each bug, chore, or tweak, with temporary worktrees of their own for tasks built in parallel within a unit. Generation 51 pointed to the canonical **External references** writing rule in `tiller guide orient`; decompose, specify, capture, intake, and amend inherit that same section. Generation 50 sent a done feature's eval binding corrections through the amendment's reviewed `correct-eval` operation. Generation 49 executed started work in its own Git worktree by default, deferred to the developer's own checkout instructions, joined inside each new worktree, and assumed other agents share the repository; generation 48 ranked unclaimed execution by the reader's own task history first and named the Continuity note; generation 47 added explicitly requested node code reviews; generations 45 and 46 changed empty-tree routing, and generation 44 added explicitly authorized merged aggregate review recovery while retaining bounded live status and skill routing. Recovery collects/verifies historical host identity externally, records local immutable evidence on integration, then performs ordinary sync and actual state publication/readback; it never sends an agent back to commit on a merged branch. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline/design-brief guidance, project independence, and human acceptance/final-merge/fast-forward boundaries remain unchanged. Older generated instructions must not overwrite a higher orientation generation.
+The orientation generation is 57, with schema 12 and eleven embedded skills. The generation moves only when the rules the generated file states change, and older generated instructions must not overwrite a higher orientation generation. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline and design-brief guidance, project independence, and the human acceptance, final-merge, and fast-forward boundaries are stable across generations.
 
-Use the reviewed project-only ownership migration above for schema-5 active work; only schemas 2–4 crossing schema 5 require old-work drain. Review and commit source and generated changes separately from binary installation outcomes. Current-schema refresh is identity-free, real migration needs a registered actor, and neither selects checkout identity. Every continuing branch/checkout must incorporate the published migration and refresh its own artifacts. Do not hand-edit installed shims or generated orientation.
+Use the reviewed project-only ownership migration above for schema-5 active work; only schemas 2 through 4 crossing schema 5 require old-work drain. Review and commit source and generated changes separately from binary installation outcomes. Current-schema refresh is identity-free, real migration needs a registered actor, and neither selects checkout identity. Every continuing branch/checkout must incorporate the published migration and refresh its own artifacts. Do not hand-edit installed shims or generated orientation.
 
 Skill trigger descriptions live in embedded frontmatter; registry descriptions supply thin discovery shims and `tiller guide` supplies full bodies. Shims carry `<!-- tiller:generated-skill-shim -->` as stable ownership evidence; conservative legacy recognition never treats a directory prefix alone as permission to delete user files. Ambiguous legacy ownership is a named warning. Verify generated instructions by running the candidate binary's `tiller init` or `tiller upgrade --project-only` in a disposable project, then exercise the resulting guidance with controlled agents. This validates the candidate's generated surface without installing it or changing another project's generated files.
 
@@ -355,8 +353,8 @@ cd acme
 tiller init --name "Acme" --key acme --kind brownfield
                                                # scaffold with an empty roster, an explicit surface root,
                                                # and an optional observation of this repository's HEAD
-tiller add contributor jc --name "JC Grubbs"         # register yourself on the committed contributors roster (a human act)
-tiller join --as jc                            # select that identity for this checkout: write the gitignored
+tiller add contributor robin --name "Robin Hale"    # register yourself on the committed contributors roster (a human act)
+tiller join --as robin                         # select that identity for this checkout: write the gitignored
                                                # .tiller/identity.yml, wire the harness
 tiller status                                  # the scaffold exists; readiness still needs design inputs
 # reconcile existing docs against code, then move them under .tiller/design/
@@ -372,8 +370,8 @@ A teammate joining a project that already exists:
 git clone …                              # .tiller/, the pointer block, and orientation.md arrive with the repo
 brew install --cask madeintandem/tap/tiller
 cd acme
-tiller add contributor bob --name "Bob Chen"   # only if bob is not already on the roster; a human runs this once
-tiller join --as bob                     # wire this machine: install skills, reconcile the block, select identity
+tiller add contributor dana --name "Dana Whitfield"   # only if dana is not already on the roster; a human runs this once
+tiller join --as dana                    # wire this machine: install skills, reconcile the block, select identity
 tiller check readiness
 ```
 
@@ -395,7 +393,7 @@ Contributors and any required reference declaration still need completing before
 imported docs. Init leaves an existing `.gitignore` alone; join upserts the shared Tiller patterns.
 The baseline ledger, named-doc confirmation gate, and the `derive-baseline` startup move are built. Fresh imports
 refuse a root-level `baseline.yml`, including case variants, before scaffold writes; import prose,
-not another project's confirmations. Current source uses schema 12, eleven skills, and orientation generation 57.
+not another project's confirmations. The current build uses schema 12, eleven skills, and orientation generation 57.
 Fresh scaffolds include `stale_design` in drift checks; `shifted_design` remains opt-in. Init reruns, join, and migrate
 never rewrite an existing manifest's checks list or confirm its baseline. Empty or invalid modes that
 older binaries tolerated now need a human manifest correction; no migration rewrites them, and
@@ -408,7 +406,7 @@ older binaries tolerated now need a human manifest correction; no migration rewr
 
 ## Documentation
 
-Tiller's docs live in the git repo, like everything else Tiller believes in, and v1 keeps them lean because the audience is internal until an open-source-readiness phase says otherwise.
+Tiller's docs live in the git repo, like everything else Tiller believes in, and v1 keeps them lean.
 
 The **machine-readable** surface is the specs in `docs/spec/`, generated `orientation.md`, `tiller guide`, and `tiller status --json` with `--help`. The **human-readable** surface provides:
 
@@ -426,14 +424,14 @@ The visuals are designed here as an inventory and produced downstream, the way t
 5. **The onboarding flow:** install, init, add contributor, join, decompose. "Productive in minutes," drawn.
 
 
-The documentation site is built. Public tutorials and broader open-source-readiness work remain separate scope.
+The documentation site is built; further tutorials are not.
 
 ---
 
 
 ## Decisions settled so far
 
-Completed decisions live in [release and distribution history](../project-history.md#release-and-distribution), [review grain and upgrades](../project-history.md#review-grain-and-upgrades), [ownership and routing](../project-history.md#ownership-and-routing), and [publication and authorship](../project-history.md#publication-and-authorship). The sections above retain the current contracts and distinct future designs.
+The design reasoning behind these contracts is in the [design history](../design-history.md). The sections above retain the current contracts and distinct future designs.
 
 
 ---
@@ -441,4 +439,4 @@ Completed decisions live in [release and distribution history](../project-histor
 
 ## What's next
 
-Unbuilt distribution scope remains the multi-engine launcher and cache, `upgrade --project`, the opt-out update nudge, additional harness discovery adapters and selection, lossless unknown-field preservation, and schema fences. [STATUS.md](../plans/STATUS.md) tracks implementation coverage; none is implied by the shipped self-update, stamp-only migration, or Claude Code wiring. The CI emitter is rejected by design and is not future scope.
+Unbuilt distribution scope remains the multi-engine launcher and cache, `upgrade --project`, the opt-out update nudge, additional harness discovery adapters and selection, lossless unknown-field preservation, and schema fences. The [roadmap](../roadmap.md#not-built-yet) tracks implementation coverage; none is implied by the shipped self-update, stamp-only migration, or Claude Code wiring. The CI emitter is rejected by design and is not future scope.

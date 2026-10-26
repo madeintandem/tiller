@@ -2,7 +2,7 @@
 
 **Scope.** This document defines the on-disk representation: every file Tiller reads or writes, its shape, and the rules that bind them together. It is the foundation the CLI and the local web server operate over. Both are operations on what's defined here. The CLI command surface, the skill set, and the `tiller serve` UI each get their own document.
 
-**Status.** Current reference for the on-disk model, maintained alongside the shipped behavior. Where the two disagree, the code is authoritative and this document gets corrected with the change. Unbuilt design is labeled explicitly; [STATUS.md](../plans/STATUS.md) tracks remaining scope. [Project history](../project-history.md) records the decisions and completed work behind this contract.
+**Status.** Current reference for the on-disk model, maintained alongside the shipped behavior. Where the two disagree, the code is authoritative and this document gets corrected with the change. Unbuilt design is labeled explicitly; The [roadmap](../roadmap.md#not-built-yet) tracks remaining scope, and the [design history](../design-history.md) records the decisions behind this contract.
 
 ---
 
@@ -180,8 +180,8 @@ project:
   requires_tiller: ">= 1.0"   # optional, advisory: the minimum binary the team expects; Tiller warns on drift
 
 contributors:                       # the humans who hold work; each developer's agent acts as that developer
-  - { id: jc,    name: JC Grubbs }
-  - { id: sam, name: Sam }
+  - { id: robin, name: Robin Hale }
+  - { id: dana, name: Dana Whitfield }
 
 inputs:                       # provenance: what the decomposition was generated from
   docs:
@@ -250,7 +250,7 @@ The obsolete manifest `claiming` configuration is absent from schema 6 and fresh
 `.tiller/identity.yml` records who you are on this checkout. `tiller join --as <id>` writes it, it is git-ignored, and it is never committed. A fresh clone carries the `contributors` roster but no identity file, so every checkout runs its own `join`. This is the per-checkout half of identity; the committed `contributors` roster in `tiller.yml` is the shared half.
 
 ```yaml
-contributor: jc                     # the id you joined as; must match a contributors entry
+contributor: robin                     # the id you joined as; must match a contributors entry
 ```
 
 | Field | Purpose |
@@ -314,7 +314,7 @@ docs:
           value: "git:31fd9c2"
           inventory: [app/editor/model.go, app/editor/view.go]
           observed_at: "2026-09-05T18:30:00Z"
-      by: jc
+      by: robin
 ```
 
 `docs` contains unique canonical paths relative to `.tiller/design/`. Each doc is a regular Markdown file beneath that directory, with no escaping or symlink components; `baseline.yml` is reserved state, not a prose target. Entries have nonempty `describes`. `derived_from` is optional for docs derived directly from code. `confirmed` is absent until approval; an empty confirmation block is invalid. References require complete values, paths where applicable, and observation times. `derived_from` supports `git_blob`; confirmation uses a `git_commit` and `git_blob` or `git_tree` surfaces. Historical confirming owners need not remain on the current roster. Missing prose does not prevent loading, so readiness can name it and unlink can repair the ledger.
@@ -416,7 +416,7 @@ gates:                            # written by `tiller check`; the stored gate r
     required: true
     kind: command
     status: pass                  # pass | fail | pending | skipped | stale
-    run_by: sam
+    run_by: dana
     run_at: "2026-06-23T00:00:00Z"
     against: { kind: git_commit, value: "git:abc1234" }
     code: "sha256:9f2c0000000000000000000000000000000000000000000000000000000000aa"      # the code identity it ran over; see The stored gate block
@@ -426,7 +426,7 @@ gates:                            # written by `tiller check`; the stored gate r
     required: true
     kind: command
     status: pending               # not yet green: the eval ran, but C3 still awaits attestation
-    run_by: sam
+    run_by: dana
     run_at: "2026-06-23T00:00:00Z"
     against: { kind: git_commit, value: "git:abc1234" }
     criteria:
@@ -437,7 +437,7 @@ attestations:                     # human sign-off, one entry per attested targe
   - id: AT-4m9x2q
     target: { kind: criterion, id: C3 }
     status: pass
-    by: jc
+    by: robin
     at: "2026-06-23T00:00:00Z"
     evidence_ref: artifacts/tiller/evals/F-79dh3q-C3.json
 policy_violations: []       # red required gates observed after a human merge under advisory enforcement
@@ -520,9 +520,9 @@ key: form-engine/certification-form-loading/schema-transcription
 title: Transcribe CERT-LTI-02-A (2025) into JSON Schema
 status: done            # proposed | ready | in_progress | check | in_review | done | cancelled
 blocked: false
-owner: sam
+owner: dana
 started: true           # durable first-start boundary; never cleared, including after cancellation
-proposed_by: sam
+proposed_by: dana
 depends_on: []           # sibling tasks this one follows, as ids
 supersedes: []           # same-noun predecessors; applied amendment or explicit transfer
 branch: tiller/form-engine/certification-form-loading/schema-transcription  # recorded once at task start; unchanged on resume
@@ -539,7 +539,7 @@ gates:                  # same shape as feature.yml gates, written by `tiller ch
     required: true
     kind: command
     status: pass        # pass | fail | pending | skipped | stale
-    run_by: sam
+    run_by: dana
     run_at: "2026-06-23T00:00:00Z"
     against: { kind: git_commit, value: "git:abc1234" }
     evidence: [{ kind: command_output, ref: artifacts/tiller/gates/build-abc1234-out-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.txt }]
@@ -606,9 +606,9 @@ key: bugs/certification-form-blank-on-reload
 title: Certification form renders blank after a reload mid-entry
 status: ready              # proposed | ready | in_progress | check | in_review | done | cancelled
 blocked: false
-owner: sam
+owner: dana
 started: false             # set at first independent start; never cleared
-proposed_by: sam
+proposed_by: dana
 attached_to: F-79dh3q      # where it was found: an epic, feature, or task id; optional; provenance only
 resolved_by: null          # the carrier: the epic, feature, or task whose merge fixes it; optional
 resolution: null           # set only on cancelled: wontfix | invalid | duplicate | transferred
@@ -806,7 +806,7 @@ questions:
   - id: Q-h2n7m5
     title: Audit selection unit
     statement: Does the audit selection count projects or project-phases?
-    owner: jc
+    owner: robin
     due: { date: 2026-08-15, hint: "end of week 6" }   # forms: date (YYYY-MM-DD), hint, in either mix
     blocks: [E-a7c0f3, E-d3g6j9]          # Audit Engine, Payments (an epic, feature, or task)
     status: open                      # open | answered | cancelled
@@ -1044,10 +1044,10 @@ Events are not the source of truth for current state; the node files are. An eve
 
 ## Decisions settled so far
 
-The decision record is consolidated in [project history](../project-history.md), especially the [founding model](../project-history.md#founding-model), [single-tree and drift model](../project-history.md#single-tree-and-drift), [amendments and intake](../project-history.md#amendments-and-intake), and [review grain and upgrades](../project-history.md#review-grain-and-upgrades). Current invariants live in the owning sections above.
+The decision record is in the [design history](../design-history.md), especially [one tree of epics, features, and tasks](../design-history.md#one-tree-of-epics-features-and-tasks), [change is forward work](../design-history.md#change-is-forward-work), and [human gates and review grain](../design-history.md#human-gates-and-review-grain). Current invariants live in the owning sections above.
 
 ---
 
 ## What's next
 
-This is the artifact layer. The [CLI command surface](./cli-surface.md), [skill set](./skill-set.md), and [console behavior](./ui-surface.md) define the operations and guidance over it. [STATUS.md](../plans/STATUS.md) tracks unfinished scope; [project history](../project-history.md) preserves completed work and its rationale.
+This is the artifact layer. The [CLI command surface](./cli-surface.md), [skill set](./skill-set.md), and [console behavior](./ui-surface.md) define the operations and guidance over it. The [roadmap](../roadmap.md) tracks unfinished scope; the [design history](../design-history.md) preserves the rationale.
