@@ -491,7 +491,7 @@ func newApproveCmd() *cobra.Command {
 	cmd.Flags().StringVar(&reviewedAssumption, "reviewed-assumption", "",
 		"stamp an answered question's revision into the node's assumption_basis entry (feature only; one node at a time)")
 	cmd.Flags().StringVar(&reviewGrain, "review-grain", "",
-		"record the review grain in the same act as the gate (epic or feature only; task, feature, or epic)")
+		"set the epic's or feature's review_grain in the same act as the gate (task, feature, or epic; a feature cannot say epic)")
 	addContributorFlag(cmd)
 	return cmd
 }
@@ -638,8 +638,8 @@ func newResumeCmd() *cobra.Command {
 			"A command gate whose recorded code identity still equals the current one\n" +
 			"keeps its result, so the next check reuses it; every attestation gate and\n" +
 			"every gate over other code flips to stale (every gate, when the code\n" +
-			"identity cannot be read). A reason is required. A bug or chore resumes\n" +
-			"the same way; its PR is its own. A task's feature simply\n" +
+			"identity cannot be read). A reason is required. A bug, chore, or tweak\n" +
+			"resumes the same way; its PR is its own. A task's feature simply\n" +
 			"stays active: a requested-changes review routes the task back to work\n" +
 			"without touching the feature.",
 		Args: cobra.ExactArgs(2),
@@ -762,8 +762,8 @@ func newSubmitCmd() *cobra.Command {
 			"observes the merge), and they refuse unless the resolved review grain\n" +
 			"actually names that noun. A task whose resolved grain is feature or\n" +
 			"epic carries no PR of its own at all: its own submit still moves it to\n" +
-			"in_review, but only ever records a review ref, remote or not. A bug or\n" +
-			"chore or tweak always records its own PR or review ref; review grain does not\n" +
+			"in_review, but only ever records a review ref, remote or not. A bug,\n" +
+			"chore, or tweak always records its own PR or review ref; review grain does not\n" +
 			"apply to it.\n\n" +
 			"For explicitly authorized historical feature/epic recovery, run from the\n" +
 			"configured integration checkout with --recover-merged --head <reviewed-oid>\n" +
@@ -871,8 +871,8 @@ func newSubmitCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&pr, "pr", 0, "the pull request number representing this change (required when the repo has a remote)")
-	cmd.Flags().StringVar(&assume, "assume-question", "", "proceed under an open question, recording it in assumption_basis (submit task only)")
-	cmd.Flags().StringVar(&reason, "reason", "", "justification for a task assumption or authorized merged aggregate recovery")
+	cmd.Flags().StringVar(&assume, "assume-question", "", "submit task only, and refused there (tasks cannot assume a question); record a feature assumption with check feature or approve feature instead")
+	cmd.Flags().StringVar(&reason, "reason", "", "justification for --assume-question, or for authorized merged aggregate recovery")
 	cmd.Flags().BoolVar(&recoverMerged, "recover-merged", false, "record an explicitly authorized historical merged feature/epic review from integration")
 	cmd.Flags().StringVar(&recoveryHead, "head", "", "historical reviewed commit OID (recovery only)")
 	cmd.Flags().StringVar(&recoveryResult, "merge-commit", "", "exact integration result commit OID (recovery only)")

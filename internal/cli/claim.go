@@ -145,9 +145,9 @@ func newReassignCmd() *cobra.Command {
 
 func newReassignWorkCmd(noun string) *cobra.Command {
 	var to, reason string
-	cmd := &cobra.Command{Use: noun + " <node> --to <owner> --reason <text>", Aliases: []string{noun + "s"}, Short: "Reassign an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
+	cmd := &cobra.Command{Use: noun + " <node> --to <contributor-id> --reason <text>", Aliases: []string{noun + "s"}, Short: "Reassign an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error { return runReassignWork(cmd, noun, args[0], to, reason) }}
-	cmd.Flags().StringVar(&to, "to", "", "registered recipient (required)")
+	cmd.Flags().StringVar(&to, "to", "", "registered contributor who receives the claim (required)")
 	cmd.Flags().StringVar(&reason, "reason", "", "human-directed reason (required)")
 	addContributorFlag(cmd)
 	return cmd

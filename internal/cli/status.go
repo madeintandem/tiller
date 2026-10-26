@@ -41,8 +41,9 @@ func newStatusCmd() *cobra.Command {
 		Long: "status with no node prints the project summary: identity, contributors, and\n" +
 			"node counts. status <noun> <node> is the typed oracle for one node: its\n" +
 			"state, the moves legal from here, its recorded gate results, and any\n" +
-			"active_basis drift, the spec or contract edit that start, check, and\n" +
-			"submit refuse on until the basis is refreshed. It reports; it never gates.",
+			"active_basis drift (a spec or contract edit since approval, which start,\n" +
+			"check, and submit refuse until the basis is refreshed). It reports; it\n" +
+			"never gates.",
 		// Two shapes only: the bare project summary (no args) and the typed
 		// oracle (<noun> <node>). A lone noun with no node is arg-count misuse.
 		Args: statusArgs,

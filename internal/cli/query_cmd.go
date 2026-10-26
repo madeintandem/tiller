@@ -51,8 +51,8 @@ func newQueryCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringArrayVar(&from, "from", nil, "start address: immutable ID, canonical key, doc:path, or path:path (repeatable, required)")
-	cmd.Flags().StringArrayVar(&follow, "follow", nil, "comma-separated forward/inverse relationship directions (required)")
-	cmd.Flags().StringArrayVar(&depth, "depth", nil, "nonnegative maximum hop distance (default 1)")
+	cmd.Flags().StringArrayVar(&follow, "follow", nil, "comma-separated forward/inverse relationship `directions`, given once (required)")
+	cmd.Flags().StringArrayVar(&depth, "depth", nil, "maximum hop distance, one nonnegative integer `n` given once (default 1)")
 	cmd.Flags().StringArrayVar(&where, "where", nil, "exact kind=value, status=value, owner=value, or contributor=value filter (repeatable, ANDed)")
 	return cmd
 }

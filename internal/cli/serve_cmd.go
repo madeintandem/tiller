@@ -37,11 +37,11 @@ func newServeCmd() *cobra.Command {
 	var open bool
 	cmd := &cobra.Command{
 		Use:   "serve",
-		Short: "Serve the local web console (read-only in this build).",
+		Short: "Serve the local web console (read-only).",
 		Long: "serve starts the watching console: the project summary, the\n" +
-			"per-owner streams, and (as later passes land) the full read surface of\n" +
-			"the working tree. It is read-only in this build; every action stays a\n" +
-			"CLI command, and the console shows you which one.\n" +
+			"per-owner streams, and the full read surface of the working tree. It\n" +
+			"is read-only; every action stays a CLI command, and the console shows\n" +
+			"you which one.\n" +
 			"\n" +
 			"By default the console listens on 127.0.0.1 and is reachable only from\n" +
 			"this machine. Bare --host listens on every IPv4 interface (0.0.0.0),\n" +

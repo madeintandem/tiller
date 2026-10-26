@@ -6,6 +6,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -101,6 +102,25 @@ func NewRootCmd() *cobra.Command {
 		newWithdrawCmd(),
 		newIntakeCmd(),
 	)
+
+	// Cobra's generated completion and help commands carry Shorts without the
+	// closing period every other command's Short has. Build them now, which
+	// cobra's own lazy init then leaves alone, and finish their sentences.
+	root.InitDefaultCompletionCmd()
+	root.InitDefaultHelpCmd()
+	for _, c := range root.Commands() {
+		switch c.Name() {
+		case "completion":
+			c.Short = "Generate the autocompletion script for the specified shell."
+			for _, sub := range c.Commands() {
+				if !strings.HasSuffix(sub.Short, ".") {
+					sub.Short += "."
+				}
+			}
+		case "help":
+			c.Short = "Help about any command."
+		}
+	}
 	return root
 }
 

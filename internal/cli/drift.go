@@ -74,7 +74,7 @@ func newDriftCmd() *cobra.Command {
 			"moved. Exit 1 means the sweep found candidates, uncovered nodes, or\n" +
 			"both, because a run that could not check a node must never look like a\n" +
 			"run that found nothing. drift refuses nothing and mutates nothing; the\n" +
-			"fix is the agent's to draft through the drift skill and yours to\n" +
+			"fix is the agent's to draft through the mend-drift skill and yours to\n" +
 			"approve.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

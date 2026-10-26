@@ -58,11 +58,12 @@ func newLsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls <noun> [flags]",
 		Short: "List nodes of a noun, optionally filtered.",
-		Long: "ls lists the nodes of a noun (features, tasks, epics, questions,\n" +
-			"amendments), in either the plural or the singular form, narrowed by\n" +
-			"--status, --owner, --contributor, or a parent. Epics, features, and tasks are listed\n" +
-			"in dependency order, key order breaking ties; questions by id;\n" +
-			"amendments by key. The same tree always lists in the same order.",
+		Long: "ls lists the nodes of a noun (epics, features, tasks, questions,\n" +
+			"amendments, bugs, chores, tweaks), in either the plural or the singular\n" +
+			"form, narrowed by --status, --owner, --contributor, or a parent. Epics,\n" +
+			"features, and tasks are listed in dependency order, key order breaking\n" +
+			"ties; bugs, chores, and tweaks in their shelf's order; questions by id;\n" +
+			"amendments by status, then key. The same tree always lists in the same order.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLs(cmd, args[0], f)

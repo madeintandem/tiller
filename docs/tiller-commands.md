@@ -1,52 +1,61 @@
 # Tiller commands
 
-Every command the current binary exposes, with stubs where an id, key, or text goes. This page is
-the checked-in command inventory; when it and `tiller <command> --help` disagree, the binary wins,
-the same rule STATUS.md follows.
+Every command Tiller v0.21.2 exposes (schema 12, orientation generation 57, eleven embedded
+skills), with stubs where an id, key, or text goes. When this page and
+`tiller <command> --help` disagree, the binary wins.
 
-Current source uses schema 12, orientation generation 57, and eleven embedded skills.
-Generation 57 lets a human cancel a question that needs no decision and narrow what it blocks;
-an agent may only widen, and names the exact cancel or unlink command in Notes otherwise.
-Generation 56 refuses a plan gate while an open question holds the plan: specify settles its questions
-before approve, and execute records a mid-run question on the branch it builds and builds around it.
-Generation 55 replaces the single route with ranked next: every surface lists the legal moves for
-this checkout, ranked by where the reader has been working, and the agent relays the list and starts
-the top agent move unless the developer redirects. Generation 54 has execute run the project's suite through `tiller check`, which reuses a gate already
-passed on unchanged code, and rerun only for a suspected flake or environment change.
-Generation 53 has the human run a coarse review's attest on its recorded aggregate branch, in the worktree
-that holds it, and commit it there before submit. Generation 52 scopes the default worktree to the unit of work one review covers, so a coarse
-feature or epic shares one worktree and tasks built in parallel within it get their own.
-Generation 50 tells agents that a done feature's eval bindings, never its criteria statements,
-are corrected through `amend --correct-eval`. Generation 49 executes started work in its own Git worktree by default, defers to the developer's
-own checkout instructions, and assumes other agents share the repository. Generation 48 ranks unclaimed execution by the reader's own task history first and names the
-Continuity note. Generation 47 adds explicitly requested node code reviews.
-Generation 44 adds explicitly authorized historical aggregate review recovery; live CLI and
-console reads remain. Generation 45 moves the empty-tree decompose rule below every rule that
-can apply to a tree with no epics. Generation 46 makes decompose due on an empty tree only when
-a to-be design doc exists and names the no-work-planned end state otherwise. The version stamp is 0.21.2; the latest published release is v0.18.4.
-This source change does not install, publish, or migrate a managed project.
+## Command index
 
-Schema 8 prevents older binaries from ignoring Tweaks. Upgrade the binary, then run `tiller upgrade --project-only` or `tiller migrate`. The schema-7-to-8 migration changes the manifest stamp only: existing Bug and Chore files and active work remain untouched, with no work drain or ownership review. An epic keyed `tweaks`, which an older binary could create, refuses migration (`migration_reserved_epic_key`, exit 3): rename a draft one with the older binary (`tiller rename epic tweaks --key <new-key>`), commit, and retry. An epic past draft cannot be renamed, so that project stays on its older binary. Review and commit the orientation-43 refresh, reload agents, and restart consoles.
+| Command | What it does |
+|---|---|
+| [`tiller add`](#decompose) | Register a contributor or create a work node. |
+| [`tiller amend`](#amend-a-reshape-of-the-plan) | Stage one operation onto a proposed amendment. |
+| [`tiller answer`](#acceptance-and-gates) | Record the answer to an open question. |
+| [`tiller approve`](#specify) | Approve a proposed plan across its start gate, an amendment, or a design doc. |
+| [`tiller archive`](#the-done-crossing-and-rollups) | Move a done epic to archived. |
+| [`tiller attest`](#acceptance-and-gates) | Record a human attestation for a gate or a criterion. |
+| [`tiller cancel`](#the-done-crossing-and-rollups) | Terminate a node or an open question. |
+| [`tiller check`](#execute-the-task-loop) | Run and record a node's gates, or check project readiness. |
+| [`tiller claim`](#ownership) | Reserve a task, bug, chore, or tweak before it starts. |
+| [`tiller completion`](#help-and-shell-completion) | Generate the shell completion script. |
+| [`tiller configure`](#configure) | Record the review grain at the project, epic, or feature home. |
+| [`tiller drift`](#reads) | Sweep the enabled drift checks and report what moved. |
+| [`tiller eval`](#acceptance-and-gates) | Run a node's acceptance criteria and hand off the rubric evals. |
+| [`tiller guide`](#orient-and-guidance) | Print a skill, or list your next moves and name the skill that fits. |
+| [`tiller help`](#help-and-shell-completion) | Help about any command. |
+| [`tiller init`](#onboard) | Scaffold a new `.tiller/` workspace. |
+| [`tiller intake`](#amend-a-reshape-of-the-plan) | Land an external feedback document and open its amendment. |
+| [`tiller join`](#onboard) | Select your identity and wire your coding agent to the project. |
+| [`tiller link`](#decompose) | Record a dependency, surface, attachment, design baseline link, or question hold. |
+| [`tiller ls`](#reads) | List nodes of a noun, optionally filtered. |
+| [`tiller migrate`](#migrate) | Migrate this checkout and refresh its generated instructions. |
+| [`tiller next`](#orient-and-guidance) | List your likely next moves, ranked. |
+| [`tiller order`](#decompose) | Record the soft order among siblings. |
+| [`tiller query`](#relationship-discovery) | Traverse recorded work, document, and path relationships. |
+| [`tiller queue`](#reads) | List every current action-queue entry. |
+| [`tiller readout`](#orient-and-guidance) | Print the readout block for a seam. |
+| [`tiller reassign`](#ownership) | Hand an unstarted claim to another registered contributor. |
+| [`tiller release`](#ownership) | Return an unstarted claim to the pool. |
+| [`tiller remove`](#correct-a-proposal-or-accepted-plan) | Retire a contributor or remove an unapproved proposal node. |
+| [`tiller rename`](#correct-a-proposal-or-accepted-plan) | Change a node's display title or proposal key. |
+| [`tiller resolve`](#bugs-chores-and-tweaks) | Point a bug, chore, or tweak at the tree work whose merge fixes it. |
+| [`tiller resume`](#execute-the-task-loop) | Re-enter work from review. |
+| [`tiller return`](#specify) | Reverse a mistaken pre-work gate. |
+| [`tiller search`](#reads) | Keyword search across `.tiller/`. |
+| [`tiller serve`](#reads) | Serve the read-only local web console. |
+| [`tiller show`](#reads) | Print a node in full. |
+| [`tiller spec`](#specify) | Assert a feature's specify-stage output is written. |
+| [`tiller start`](#execute-the-task-loop) | Start claimed work and permanently fix its owner. |
+| [`tiller status`](#reads) | Show the project summary, or the typed oracle for one node. |
+| [`tiller submit`](#execute-the-task-loop) | Record the review surface and move work to review. |
+| [`tiller sync`](#the-done-crossing-and-rollups) | Observe merged review branches and record done crossings. |
+| [`tiller transfer`](#ownership) | Replace started unfinished work with a ready assignment to another contributor. |
+| [`tiller tree`](#reads) | Print the work tree. |
+| [`tiller unlink`](#correct-a-proposal-or-accepted-plan) | Remove dependencies, surfaces, attachments, design baseline links, or question holds. |
+| [`tiller upgrade`](#upgrade) | Update Tiller and maintain the current checkout. |
+| [`tiller withdraw`](#amend-a-reshape-of-the-plan) | Drop a proposed amendment without applying it. |
 
-Schema 9 renames the shared manifest roster from `owners:` to `contributors:` and checkout-local identity from `owner:` to `contributor:`. The schema-8-to-9 migration preserves contributor IDs and names, the selected local identity, task/bug/chore/tweak claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. Schema 8 needs neither a work drain nor an ownership review; older migrations retain their existing requirements. New roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
-
-Schema 10 adds immutable feature/epic recovery records and historical policy provenance. The 9-to-10 migration changes only the manifest stamp plus one migration event, preserving work/events/active reviews with no drain or reconstructed review. Older binaries refuse the newer stamp. Refresh and commit orientation 46 after separately authorized binary adoption.
-
-
-Generated-board retirement removes the `gen` command group, `sync`'s `board` result field,
-and board-only mutation warnings rather than leaving compatibility commands or empty fields.
-The general JSON envelope, lifecycle results, unrelated maintenance warnings, and live
-`/api/board` streams are unchanged. See [retirement adoption](spec/distribution.md#generated-board-retirement)
-for instruction refresh and deliberate legacy-file cleanup; Tiller never changes the Git index for it.
-
-Before migrating a schema-2/3/4 project, drain active features, unfinished aggregate reviews,
-and tasks in `in_progress`, `check`, or `in_review` using its old compatible binary, including
-human final merges and sync. Migration preserves terminal history and refs, never renames or
-deletes local/remote branches. Then retry `tiller upgrade` and review/commit its diff.
-After a separate binary install, use `tiller upgrade --project-only` offline. Each checkout
-must incorporate the migration and maintain its own instructions; join is onboarding.
-
-Conventions here:
+## Conventions
 
 - `<epic>` is an epic key or id (`form-engine` or `E-4smkjd`). `<feature>` is the canonical
   epic-qualified key or id (`form-engine/certification-form-loading` or `F-79dh3q`). `<task>` is the
@@ -77,11 +86,11 @@ Conventions here:
 
 ## Onboard
 
-```bash
+```sh
 tiller init --name "<project name>" --key <project-key> --kind greenfield|brownfield|legacy-migration \
   [--design <path/to/design-docs>]
 tiller add contributor <contributor-id> --name "<display name>"          # human: registers the person on the roster
-tiller join --as <contributor-id>                                  # selects that identity for this checkout
+tiller join --as <contributor-id>                                        # selects that identity for this checkout
 ```
 
 Kind describes code that predates Tiller adoption, not which later feature changes are legal.
@@ -107,10 +116,10 @@ Register a contributor, then join. Every code root needs an explicit `surface` o
 Legacy-migration also needs an existing reference root declared in `.tiller/tiller.yml`, even
 after a design import. Init success is not readiness: empty contributors and design inputs remain
 `missing_contributors` and `missing_design`; missing legacy reference declarations produce
-`no_reference_root`, and invalid or empty modes produce `invalid_code_root_mode`. Correct old
-invalid modes by hand; baseline additions did not change schema 4, and `requires_tiller` stays advisory. Build 2 adds
-`no_confirmed_baseline` for both existing-code kinds until one ledger doc is confirmed, and
-`missing_design_doc` in every kind for each missing ledger prose file. A ledger alone does not
+`no_reference_root`, and invalid or empty modes produce `invalid_code_root_mode`; correct an
+invalid mode by hand. Readiness also reports `no_confirmed_baseline` for both existing-code kinds
+until one ledger doc is confirmed, and `missing_design_doc` in every kind for each missing ledger
+prose file. A ledger alone does not
 satisfy non-empty design, and other gaps remain independent after a confirmation.
 
 Init seeds a missing `.gitignore` but never changes an existing one. Join upserts all Tiller-owned
@@ -120,7 +129,7 @@ existing-code projects can wire their current stack; greenfield wires it when th
 
 ## Orient and guidance
 
-```bash
+```sh
 tiller next                        # your ranked next moves, top five
 tiller next --all                  # every legal move, ranked
 tiller guide                       # the ranked list, then the skill for the top agent move
@@ -210,7 +219,7 @@ starts, resolves, or cancels the shelf node.
 
 ## Derive and confirm the baseline
 
-```bash
+```sh
 tiller guide derive-baseline
 tiller link design <doc> --describes <path> [--describes <path>]... [--from <source-path>]...
 tiller link design <doc> --from <source-path> [--from <source-path>]...
@@ -261,15 +270,15 @@ not proof every source section survived. `Open questions` is the current count. 
 notes name dropped, merged, or unplaceable material and questions actually opened; no ledger
 dropped count exists. Reproduce the readout verbatim and stop at its one HUMAN review action.
 Only explicit human instruction naming docs permits agent-recorded approval. Remaining pending
-docs do not globally block work once one doc is confirmed. No automatic baseline drift, touched-doc
-sync output, or baseline console write surface ships in build 2.
+docs do not globally block work once one doc is confirmed. The console has no baseline write
+surface; baseline drift runs through `tiller drift` (see Reads).
 
 ## Decompose
 
 Lay the whole tree down in draft, sweep the cross-epic edges in with `link`, commit, and stop.
 Tiller writes the state files and never commits them.
 
-```bash
+```sh
 tiller add epic <epic-key> [--title "<title>"] [--source <design/doc.md>] [--depends-on <epic|feature>]...
 tiller add feature <epic-key>/<feature-key> [--title "<title>"] [--source <design/doc.md>] \
   [--change-type create|modify|replace|migrate] [--depends-on <epic|feature>]...
@@ -315,7 +324,7 @@ leaves both fields and all events untouched. A changed attachment emits `link.at
 `unlink.attach.<noun>`. `unlink --json` always reports the node's surviving `depends_on` and the
 `removed` edges, empty when the call removed none.
 
-```bash
+```sh
 # --surface removes recorded paths literally, even ones the work moved or deleted:
 tiller unlink <epic|feature> <node> --surface <path> [--surface <path>]...
 ```
@@ -335,7 +344,7 @@ One stage and one gate. Write `feature.md`, `feature.eval.md`, and each task's `
 add the task folders, assert the lot with `spec feature`, and the human's `approve feature` is the
 single plan gate over the feature and its initial tasks together.
 
-```bash
+```sh
 tiller add task <epic-key>/<feature-key>/<task-key> --title "<what it accomplishes>" \
   [--depends-on <sibling task>]...                           # lands proposed, in its own folder
 tiller link task <task> --depends-on <sibling task> [--depends-on <sibling task>]...
@@ -356,7 +365,7 @@ tiller approve feature <feature> [<feature>]...              # human: specced ->
                                                              # question names the feature, its epic,
                                                              # or a task not cancelled: answer it and
                                                              # fold the answer in; no --assume-question
-                                                             # escape at a plan gate
+                                                             # escape at a plan gate (see Execute below)
 tiller approve <feature|task> <node> --refresh-basis         # human: re-record the accepted
                                                              # revisions without changing state; a
                                                              # changed feature contract expires the
@@ -365,14 +374,12 @@ tiller approve feature <feature> --reviewed-assumption <Q-id> # human: stamp an 
                                                              # question's revision into the feature's
                                                              # assumption_basis; the fix for submit's
                                                              # answered_question refusal
-tiller approve feature <feature> --assume-question <Q-id> --reason "<why>" # human: record-only assumption;
-                                                             # no lifecycle move or task assumption
 tiller return feature <feature> --reason "<why>"             # human: ready -> specced, the mistaken-gate undo
 ```
 
 A task added after the plan gate has its own approval:
 
-```bash
+```sh
 tiller approve task <task> [<task>]...                       # human: proposed -> ready; refused
                                                              # (open_question_blocker) while an open
                                                              # question names the task or an ancestor
@@ -412,12 +419,12 @@ route, not cancellation and recreation. Draft, specced, and ready features with 
 proposed/ready tasks can qualify; started descendants refuse. Stage, inspect, and stop for human
 amendment approval. Ordinary feature/epic approval remains separate.
 
-```bash
+```sh
 tiller rename <epic|feature|task|bug|chore|tweak> <node> --title "<display title>"
 tiller rename <epic|feature|task|bug|chore|tweak> <node> --key <canonical-key>
 tiller unlink <epic|feature|task|bug|chore|tweak> <node> --depends-on <target> [--depends-on <target>]...
 tiller unlink <bug|chore|tweak> <node> --detach                    # clear attached_to; legal at any state,
-                                                             # since attachment is provenance
+                                                                   # since attachment is provenance
 tiller remove task <task> --reason "<why this proposed task is removed>"
 tiller remove feature <feature> --reason "<why this task-free draft feature is removed>"
 tiller remove epic <epic> --reason "<why this task-free draft subtree is removed>"
@@ -447,8 +454,8 @@ reported as detached.
 | After epic approval | Epic narrative wording | Edit `epic.md` and commit it; Git is the history because epic prose has no accepted basis. |
 | After feature approval | One more task | `tiller add task foundation/app/document-setup --title "Document local setup"`, write `task.md`, then stop for `tiller approve task foundation/app/document-setup`. |
 | After approval | Preferred sequence | `tiller order task foundation/app/wire foundation/app/document-setup`; soft order is direct and never gates. |
-| Accepted non-terminal work | Same-scope feature or task prose | Edit the Markdown, inspect `active_basis`, then stop for `tiller approve <feature|task> <node> --refresh-basis`. A wrong fact found while executing a task is instead a departure recorded in its commit and review, with `task.md` unedited. |
-| Ready, unstarted plan | Approval should replay | `tiller return <feature|task> <node> --reason "<why>"`, revise it, then stop for ordinary reapproval. |
+| Accepted non-terminal work | Same-scope feature or task prose | Edit the Markdown, inspect `active_basis`, then stop for `tiller approve <feature\|task> <node> --refresh-basis`. A wrong fact found while executing a task is instead a departure recorded in its commit and review, with `task.md` unedited. |
+| Ready, unstarted plan | Approval should replay | `tiller return <feature\|task> <node> --reason "<why>"`, revise it, then stop for ordinary reapproval. |
 | Eligible unstarted feature outside the direct rename window | Move unchanged work, optionally changing its local key | `tiller amend <amendment> --move-feature foundation/auth --to platform/auth --reason "Keep authentication in the platform increment"`; inspect `tiller show amendment <amendment>`, then stop for human amendment approval. |
 | Before affected work starts | Required sequence | Use `tiller link ... --depends-on ...` or `tiller unlink ... --depends-on ...` directly. |
 | After work or its branch starts | Genuine replacement or cancellation | Stage supported operations with `tiller amend`; stop for `tiller approve amendment`. Fresh eligible replacement work may carry its own prerequisites. |
@@ -477,11 +484,11 @@ never cascade. Before first start a reservation can be released or reassigned; a
 start permanently fixes ownership. Resume, checking, review, cancellation, and completion never
 reset that boundary. All terminal ownership is immutable, even cancellation before start.
 
-```bash
+```sh
 tiller claim <task|bug|chore|tweak> <node> [--from <holder-id>]
 tiller release <task|bug|chore|tweak> <node>
 tiller reassign <task|bug|chore|tweak> <node> --to <contributor-id> --reason "<why>"
-tiller transfer <task|bug|chore|tweak> <node> --to <registered-contributor> --reason "<why>"
+tiller transfer <task|bug|chore|tweak> <node> --to <contributor-id> --reason "<why>"
 tiller remove contributor <contributor-id>
 ```
 
@@ -532,14 +539,14 @@ required gate returns exit `1` and `passed: false`; task and shelf work do not
 advance to `check`. The output names outstanding required criteria and any human
 attestation command. Optional reviews remain non-blocking.
 
-```bash
+```sh
 tiller start task <task>                                     # ready -> in_progress; freezes owner, records
                                                              # branch, activates ready parent atomically
 tiller start task <task> --adopt-aggregate                   # first coarse start that records the existing
                                                              # ref at the derived aggregate name; review
                                                              # git log <integration>..<ref> first; lists the
                                                              # commits it holds beyond integration
-tiller start <bug|chore|tweak> <node>                              # the same on a shelf node; it records its
+tiller start <bug|chore|tweak> <node>                        # the same on a shelf node; it records its
                                                              # own branch, tiller/bugs/<key>
 tiller check task <task>                                     # run and record build and tests; green -> check;
                                                              # a gate already passed on unchanged code is
@@ -550,7 +557,7 @@ tiller check task <task> --gate tests                        # run only the name
                                                              # count only if already current (a pass that is
                                                              # not is marked stale), and the task advances
                                                              # only on a full green set
-tiller check <bug|chore|tweak> <node>                              # the task-grade gates on a shelf node; the
+tiller check <bug|chore|tweak> <node>                        # the task-grade gates on a shelf node; the
                                                              # evals gate never applies, there being no
                                                              # acceptance contract at this grain
 tiller submit task <task> --pr <number>                      # check -> in_review, refused (gates_not_green)
@@ -567,26 +574,41 @@ tiller submit feature <feature> [--pr <number>]              # record-only: the 
                                                              # feature, every task in_review or done (one
                                                              # at least), and required feature-grain gates
                                                              # recorded pass
-tiller submit epic <epic> [--pr <number>]                     # the same, one level up: resolved review
+tiller submit epic <epic> [--pr <number>]                    # the same, one level up: resolved review
                                                              # grain epic, every live feature's tasks
                                                              # in_review or done and its own gates green
 tiller submit <feature|epic> <node> [--pr <number>] \
   --recover-merged --head <historical-reviewed-commit> \
   --merge-commit <integration-result-commit> --reason "<explanation>"
                                                              # record-only historical binding on integration
-tiller submit <bug|chore|tweak> <node> [--pr <number>]             # check -> in_review; a shelf node always
+tiller submit <bug|chore|tweak> <node> [--pr <number>]       # check -> in_review; a shelf node always
                                                              # records its own PR or review ref, since
                                                              # review grain does not apply to it; refused
                                                              # (gates_not_green) while a latest required
                                                              # result is not pass, as on a task
 tiller resume task <task> --reason "<what changed>"          # in_review -> in_progress, PR kept; stales only
                                                              # results whose code identity changed
-tiller resume <bug|chore|tweak> <node> --reason "<what changed>"   # the same, one shelf over
-# record a feature-only assumption without a lifecycle move; task start does not inherit it:
-tiller approve feature <feature> --assume-question <question> --reason "<justification>"
-# submit alone also refuses an answered, unreviewed assumption on the feature (answered_question);
-# approve feature <feature> --reviewed-assumption <Q-id> above is the remedy
+tiller resume <bug|chore|tweak> <node> --reason "<what changed>"  # the same, one shelf over
 ```
+
+An open question holds the nodes it blocks: `start`, `check`, and `submit` refuse a held node
+until the question is answered or cancelled. A feature, never a task, may instead proceed under a
+recorded assumption: `--assume-question` names the open question and `--reason` is required.
+
+```sh
+tiller check feature <feature> --assume-question <Q-id> --reason "<why>"  # record the assumption in the
+                                                             # feature's assumption_basis, then run and
+                                                             # record its gates
+tiller approve feature <feature> --assume-question <Q-id> --reason "<why>" # human: record the assumption
+                                                             # only; no lifecycle move, and task start
+                                                             # does not inherit it
+```
+
+`submit task` and `check task` also parse `--assume-question` and `--reason`, but refuse them with
+`assume_unsupported` (exit `2`): tasks cannot assume away a blocking question, so answer it or
+cancel one that no longer needs a decision. `start` does not take the flag. Once an assumed
+question is answered, `submit` refuses the unreviewed assumption (`answered_question`) until
+`tiller approve feature <feature> --reviewed-assumption <Q-id>` stamps the answer's revision.
 
 `submit` only records an existing PR number or permitted review ref. The agent performs publication
 with Git and the project's host tools: commit implementation, check and commit gate state, push,
@@ -615,7 +637,6 @@ An identical retry writes nothing. Exact merge/squash evidence uses ancestry/con
 work without a local witness remains pending for the human's existing fast-forward assertion.
 Do not reset refs, open an extra PR, or commit to the finally merged branch.
 
-
 Every task uses its recorded full-canonical-key branch, unchanged on resume. The default
 pattern yields `tiller/<epic>/<feature>/<task>`; aggregates use
 `tiller/reviews/features/<epic>/<feature>` or `tiller/reviews/epics/<epic>`.
@@ -635,8 +656,8 @@ submission verifies their ancestry. No cherry-pick or squash assembly. Requested
 resume the affected task's own branch, check/resubmit, commit state, reassemble, rerun affected
 feature checks, and reuse the same aggregate PR. The model handles branch work and mechanical
 conflicts; semantic decisions, acceptance, and the final integration merge remain human-only.
-Legacy prefix collisions name both refs: preserve them and use a non-conflicting branch pattern
-for unstarted work, or ask the human to archive/rename deliberately. Never auto-delete refs.
+Prefix collisions with retained refs name both refs: preserve them and use a non-conflicting
+branch pattern for unstarted work, or ask the human to archive or rename one deliberately. Never auto-delete refs.
 Read start's `branch` and `base_branch` before creating refs. A first task may stamp a missing
 aggregate after a safe grain change; reopened coarse rounds get a new aggregate suffixed with
 the new task id, preserving merged refs. Git merges preserve nonoverlapping task state and
@@ -656,23 +677,22 @@ before the agent publishes and records the shared epic review.
 
 The acceptance contract lives at feature grain, in `feature.eval.md`. There is no epic contract.
 
-```bash
+```sh
 tiller eval <feature|task> <node>                            # run the acceptance contract, report what is unmet
 tiller eval <feature|task> <node> --emit-rubrics             # write rubric packets for the agent to grade
 tiller eval <feature|task> <node> --criterion <C-id> --record-rubric-output <path/to/graded.json>
 tiller eval <feature|task> <node> --rerun                    # rerun command and test criteria that would be reused
 tiller check <feature|task> <node>                           # run and record all applicable gates, reusing a pass on
                                                              # unchanged code; --rerun forces runs, --gate <name> limits them
-tiller check <bug|chore|tweak> <node>                              # task-grade command gates only; no eval contract
-tiller attest <feature|task|bug|chore|tweak> <node> --gate <gate-name> --status pass|fail [--reason "<note>"]   # human only;
+tiller attest <feature|task|bug|chore|tweak> <node> --gate <gate-name> --status pass|fail [--reason "<note>"]  # human only;
                                                              # refused (command_gate) for a gate the
                                                              # manifest declares kind: command
-tiller attest <feature|task> <node> --criterion <C-id> --status pass|fail [--reason "<note>"]             # human only
+tiller attest <feature|task> <node> --criterion <C-id> --status pass|fail [--reason "<note>"]  # human only
 tiller answer question <question> --answer "<the answer>"    # human only: open -> answered
 tiller cancel question <question> --reason "<why>"           # human only: open -> cancelled; releases every hold
                                                              # without an answer or drift; cancelling a cancelled
                                                              # question is a no-op, an answered one is question_closed
-tiller link question <question> --blocks <node> [--blocks <node>]...   # widen what an open question blocks
+tiller link question <question> --blocks <node> [--blocks <node>]...  # widen what an open question blocks
                                                              # (an agent may); a present target is a no-op
 tiller unlink question <question> --blocks <node> [--blocks <node>]... # human: narrow it; removing every
                                                              # target is legal; --blocks is the only axis
@@ -684,7 +704,7 @@ an unrecognized binding, or a binding missing its required field refuses with
 `eval_contract_invalid` (exit `2`), naming the offending criterion, before any binding runs or any
 state is written.
 
-`attest feature` refuses off its coarse aggregate branch (issue #150): at feature or epic review
+`attest feature` refuses off its coarse aggregate branch: at feature or epic review
 grain, with the aggregate recorded and its owner not done or cancelled and no recovered review, a
 run on any other branch (integration, another branch, or a detached `HEAD`) exits `1` with reason
 `attest_branch_mismatch`, writes nothing, and names where to run it. When a linked worktree holds
@@ -716,22 +736,21 @@ example an eval refreshed in the working tree and never committed) still crosses
 `eval_contract_mismatch` on that crossing in JSON and an `Eval contract differs from the accepted
 one (advisory):` block in human output naming the feature and both blobs.
 
-```bash
+```sh
 tiller sync [--into <integration-branch>]                    # observe merges, record done crossings;
                                                              # refused (integration_ref_missing, exit 1)
                                                              # when the integration name resolves to no
                                                              # commit, even with nothing in review
-tiller sync --accept-fast-forward <node> [--accept-fast-forward <node>]...        # human only:
+tiller sync --accept-fast-forward <node> [--accept-fast-forward <node>]...  # human only:
                                                              # assert a fast-forward merge sync cannot
                                                              # witness; recorded as human_attested. The
                                                              # task for task-grain work; recorded coarse
                                                              # review node for aggregate work; bug/chore/tweak
                                                              # for shelf work
 tiller archive <epic>                                        # human: done -> archived
-tiller cancel <epic|feature|task> <node> --reason "<why>"     # human: -> cancelled, terminal
-tiller cancel question <question> --reason "<why>"             # human: open -> cancelled, no answer recorded
+tiller cancel <epic|feature|task> <node> --reason "<why>"    # human: -> cancelled, terminal
 tiller cancel <bug|chore|tweak> <node> --reason "<why>" \
-  --resolution wontfix|invalid|duplicate [--duplicate-of <node>]   # human: --resolution is required on
+  --resolution wontfix|invalid|duplicate [--duplicate-of <node>]  # human: --resolution is required on
                                                              # a shelf node and accepted on no other
                                                              # noun; duplicate also names the surviving
                                                              # node, which must be of the same noun
@@ -750,17 +769,17 @@ with the task's lifecycle: `proposed` (captured) to `ready` (triaged, by a human
 claim. `attached_to` records where the node was found and is provenance only: it never gates
 anything and it is not parenthood. Amendments change the work tree; bugs, chores, and tweaks do not.
 
-```bash
+```sh
 tiller add bug <key> --title "<title>" [--attach <epic|feature|task>] [--source <cite>] \
-  [--depends-on <bug|chore|tweak>]...                              # lands proposed at .tiller/bugs/<key>/,
+  [--depends-on <bug|chore|tweak>]...                        # lands proposed at .tiller/bugs/<key>/,
                                                              # holding bug.md (the contract) and bug.yml
 tiller add chore <key> --title "<title>" [--attach <node>] [--source <cite>] [--depends-on <node>]...
 tiller add tweak <key> --title "<title>" [--attach <node>] [--source <cite>] [--depends-on <node>]...
                                                              # tweak.md and tweak.yml, with a TW- ID
 # On add bug|chore|tweak, a blank --attach is the same usage error as on link
 # (attach_target, exit 2, nothing written); omit --attach for no attachment.
-tiller approve <bug|chore|tweak> <node>                            # human: triage, proposed -> ready
-tiller return <bug|chore|tweak> <node> --reason "<why>"            # human: ready -> proposed, before start
+tiller approve <bug|chore|tweak> <node>                      # human: triage, proposed -> ready
+tiller return <bug|chore|tweak> <node> --reason "<why>"      # human: ready -> proposed, before start
 tiller link <bug|chore|tweak> <node> --attach <epic|feature|task>  # record where it was found, after add time;
                                                              # a blank --attach is a usage error
                                                              # (attach_target, exit 2), never a detach
@@ -769,10 +788,11 @@ tiller order bug <b1> <b2> ...                               # the shelf's own s
                                                              # name, so --clear takes none either
 tiller order bug --clear                                     # erase the bug shelf's list
 tiller order chore <c1> <c2> ...                             # and the chore shelf's
-tiller order tweak <tw1> <tw2> ...                           # and the tweak shelf’s
-tiller order tweak --clear                                  # erase the tweak shelf’s list
-tiller resolve <bug|chore|tweak> <node> --by <epic|feature|task>   # record the carrier whose merge fixes it
-tiller resolve <bug|chore|tweak> <node> --clear                    # return it to the queue
+tiller order chore --clear                                   # erase the chore shelf's list
+tiller order tweak <tw1> <tw2> ...                           # and the tweak shelf's
+tiller order tweak --clear                                   # erase the tweak shelf's list
+tiller resolve <bug|chore|tweak> <node> --by <epic|feature|task>  # record the carrier whose merge fixes it
+tiller resolve <bug|chore|tweak> <node> --clear              # return it to the queue
 ```
 
 `resolve` records a carrier and moves no status. The node keeps its stored state, reads the derived
@@ -789,8 +809,8 @@ Everything else a task does, a bug, chore, and tweak do with the same commands: 
 `reassign` (Ownership above), `start`, `check`, `submit`, `resume` (Execute above), `cancel` with
 its required `--resolution` and `sync` (The done crossing above), `rename`, `unlink`, `remove`
 (Correct above), and the reads `show`, `ls`, and `status`. `tiller queue` carries proposed shelf
-triage as `approve_bug` and `approve_chore`, plus stale carrier pointers as `carrier_cancelled`.
-There is no `merge_bug` or `merge_chore`. Optional review gates accept
+triage as `approve_bug`, `approve_chore`, and `approve_tweak`, plus stale carrier pointers as
+`carrier_cancelled`. There is no `merge_bug`, `merge_chore`, or `merge_tweak`. Optional review gates accept
 `attest bug|chore|tweak --gate`; criterion attestation and every `eval` form remain feature/task-only.
 
 ## Amend (a reshape of the plan)
@@ -798,13 +818,13 @@ There is no `merge_bug` or `merge_chore`. Optional review gates accept
 Staging records proposals and executes nothing. One human `approve amendment` validates every
 precondition against the working tree and then applies the whole batch, or none of it.
 
-```bash
+```sh
 tiller add amendment <amendment-key> [--title "<title>"] [--triggered-by <design/doc.md>]... \
   [--implements <ADR-id>]                                    # opens it, records base_revision from HEAD
 tiller intake <file> [--key <key>] [--title "<title>"]       # the other way to open one: lands <file> under
-                                                              # .tiller/feedback/, fingerprinted, source set
+                                                             # .tiller/feedback/, fingerprinted, source set
 # exactly one operation per call, plus any number of --precondition name=value guards:
-tiller amend <amendment> --add-epic <epic-key> [--title "<title>"]       # a root: no parent to resolve
+tiller amend <amendment> --add-epic <epic-key> [--title "<title>"]  # a root: no parent to resolve
 tiller amend <amendment> --add-feature <epic-key>/<feature-key> [--change-type create|modify|replace|migrate] \
   [--title "<title>"]
 tiller amend <amendment> --add-task <epic-key>/<feature-key>/<task-key> --title "<what it accomplishes>"
@@ -813,7 +833,7 @@ tiller amend <amendment> --add-task <epic-key>/<feature-key>/<task-key> --title 
 tiller amend <amendment> --add-question "<statement>" --title "<short title>" [--blocks <epic|feature|task|staged key>]...  # no key at all
 tiller amend <amendment> --supersede <feature|task> --by <feature|task|staged key> # done target only at approval
 tiller amend <amendment> --cancel <feature|task> --reason "<why>" [--superseded-by <feature|task|staged key>]
-tiller amend <amendment> --revise <feature|task>               # non-terminal target only at approval
+tiller amend <amendment> --revise <feature|task>             # non-terminal target only at approval
 tiller amend <amendment> --correct-eval <feature> --reason "<why>" [--retire <criterion-id>]...
 # done feature only at approval; bindings and baseline artifacts only, re-pins verified_against.eval
 tiller amend <amendment> --move-feature <feature-id-or-key> --to <epic-key>/<feature-key> --reason "<why>"
@@ -838,11 +858,10 @@ review surface, no task in `in_progress`, `check`, or `in_review`, and, when ent
 epic grain, no recorded aggregate branch. Existing task PRs remain independent and must merge and
 sync before a later coarse submit. Do not hand-edit state to evade a refusal.
 
-```bash
+```sh
 tiller configure project --review-grain task|feature|epic     # writes execution.review_grain in tiller.yml
 tiller configure epic <epic> --review-grain task|feature|epic
-tiller configure feature <feature> --review-grain task|feature   # a feature cannot say epic
-
+tiller configure feature <feature> --review-grain task|feature  # a feature cannot say epic
 ```
 
 A changed grain also prints: "Commit this change to integration before starting tasks: work started in another checkout or worktree resolves the grain it can see."
@@ -853,44 +872,39 @@ command.
 
 The same setting also rides `approve`, recorded in the same act as the start gate:
 
-```bash
+```sh
 tiller approve epic <epic> --review-grain task|feature|epic     # human: draft -> ready, grain recorded together
 tiller approve feature <feature> --review-grain task|feature    # human: specced -> ready, grain recorded together
 ```
 
-## Schema
+## Migrate
 
-```bash
-tiller migrate --dry-run --json                              # read-only ownership inspection; writes nothing
-tiller migrate [--ownership-review <file>] [--contributor <id>]     # schema conversion plus generated refresh
+```sh
+tiller migrate                                               # schema conversion plus generated refresh
+tiller migrate --dry-run --json                              # read-only inspection; writes nothing
+tiller migrate --ownership-review <file>                     # apply a human-reviewed ownership mapping
 ```
 
-Migrate uses the running binary without installation work. It applies the registered chain,
-records one `migrate.schema` event for a real migration, then runs the same refresh as upgrade:
-orientation, catalog shims, harness wiring, and required ignore entries. Current-schema
-refresh needs no identity; a real migration needs a registered actor. Neither stage selects
-a different checkout identity; schema-9 migration, and current-schema refresh of a checkout that pulled it, only rename an existing legacy key. Repeating successful maintenance writes no redundant event or identical
-artifact. A refresh failure is nonzero even after a committed migration; preserve the completed
-source changes and repair the named cause before retrying project-only.
-
-The dry-run envelope's `data.ownership_review` contains `source_schema`, `target_schema`,
-`snapshot`, `sources: [{path, sha256}]`, and `active: [{id, noun, ref, observed_owner, confirmed_owner}]`.
-Save the whole report or extracted review outside source state. A human fills every initially
-empty `confirmed_owner`, keeping all other fields unchanged; inherited legacy owners may be
-corrected once, with before/after migration provenance. Ready reservations are excluded.
-Stale/incomplete/duplicate/conflicting or unknown-owner reviews refuse before writes.
-Schema-5 active work keeps status, branch, PR/review, accepted bases, and evidence. Only schemas
-2–4 crossing the branch-model boundary require old-work drain.
+Migrate uses the running binary and never changes the installed binary or checkout identity. It
+applies the registered forward migrations, records one `migrate.schema` event for a real
+migration, then runs the same refresh as upgrade: orientation, skill shims, harness wiring, and
+required ignore entries. Current-schema refresh needs no identity; a real migration needs a
+registered actor. Repeating successful maintenance writes no redundant event or identical
+artifact. A refresh failure is nonzero even after a committed migration; keep the completed source
+changes and repair the named cause before retrying. Review and commit the changed files.
+`--dry-run` and `--ownership-review` apply only to a project on an old schema that predates claim
+ownership. The [migration contract](spec/distribution.md#migration) owns schema boundaries,
+drain requirements, and the reviewed ownership format.
 
 ## Upgrade
 
-```bash
-tiller upgrade                         # installation-owner update + current-checkout migration/refresh
-tiller upgrade --project-only          # offline maintenance with this running binary; no brew/network
-tiller upgrade --binary-only           # deliberately exclude all checkout maintenance
-tiller upgrade --version vX.Y.Z         # exact self-managed release, if compatible with this checkout
-tiller upgrade --contributor <id>             # registered migration actor only; never selects checkout identity
-tiller upgrade --project-only --ownership-review <file> # offline reviewed migration; flag requires project-only
+```sh
+tiller upgrade                                               # update the binary, then migrate or refresh this checkout
+tiller upgrade --project-only                                # offline maintenance with the running binary; no brew or network
+tiller upgrade --binary-only                                 # update only the installed binary
+tiller upgrade --version vX.Y.Z                              # an exact self-managed release, if compatible with this checkout
+tiller upgrade --contributor <id>                            # registered migration actor; never selects checkout identity
+tiller upgrade --project-only --ownership-review <file>      # offline reviewed migration; the flag requires project-only
 ```
 
 Project-only and binary-only are mutually exclusive. Project-only with `--version` is misuse,
@@ -899,37 +913,22 @@ binary and reports other checkouts untouched. From a subdirectory, maintenance t
 current resolved project root; it never scans other repos or worktrees.
 
 Unpinned upgrade never downgrades an already-ahead binary. Already-current skips archive
-download/replacement but continues project maintenance. Self-managed candidates are
-checksum-verified and inspect the project before replacement. Known blockers, newer schema or
+download and replacement but continues project maintenance. Self-managed candidates are
+checksum-verified and inspect the project before replacement. Known blockers, a newer schema or
 orientation, and an unsupported pinned target's maintenance protocol refuse before replacement.
 Use `--binary-only --version ...` only for an intentional binary-only downgrade.
 
-Ownership review is required before active schema-5 assignments become permanent; ordinary
-upgrade routes to inspection and this offline project-only path. Candidate preflight refuses
-a known missing review before replacing a self-managed executable. Pause team state mutations,
-reconcile integration state/owners, retain a compatible binary and committed baseline, and migrate
-once in a designated checkout. Publish that migration through Git, upgrade every participant, and
-merge it into every continuing work branch while preserving task-specific state. Refresh each
-checkout, restart consoles, reload agents, and verify identity, owner, branch, schema, and legal
-next action before resuming. Do not independently migrate stale clones or blindly restore old
-schema files after new work exists. September 21 is an intended window, not adoption authorization.
-
-Verified Homebrew installations delegate only the matching installed Tiller cask or legacy
-formula to its owning brew prefix. Pinning refuses before brew; an unverified brew-looking path
-never falls back to manual swap. The child disables installed-dependent checks and automatic
-cleanup with `HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1` and `HOMEBREW_NO_INSTALL_CLEANUP=1`.
-Brew may refresh metadata or install genuine package dependencies. It can already have changed
-the machine before new target compatibility is known; failures do not trigger a manual-swap or
-authentication bypass. Private release access still requires appropriate credentials.
+Verified Homebrew installations delegate only the matching installed Tiller cask or formula to
+its owning brew prefix. Pinning refuses before brew; an unverified brew-looking path never falls back to a
+manual swap. The child disables installed-dependent checks and automatic cleanup with
+`HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1` and `HOMEBREW_NO_INSTALL_CLEANUP=1`. Brew may refresh
+metadata or install genuine package dependencies, and it can already have changed the machine
+before the new target's compatibility is known; a failure does not trigger a manual swap.
 
 Before replacement the outgoing build is verified and retained at
 `~/.local/share/tiller/previous/<version>-<sha256>/tiller`; distinct builds remain until explicitly
-removed. Reported retention is recovery material, not proof of old-schema compatibility.
-For a verified compatible drain build, start a temporary shell and prepend its reported
-directory to PATH so child gates invoking bare `tiller` select it too. Finish authorized legacy
-work, human acceptance/final merges, and sync; leave that shell and retry the upgraded
-executable explicitly. Never mutate a migrated checkout with an older binary. If no compatible
-build is verified, obtaining one is the prerequisite.
+removed. Retention is recovery material, not proof of old-schema compatibility. Never mutate a
+migrated checkout with an older binary.
 
 Exit 0 means every requested phase completed or was genuinely inapplicable. Binary, migration,
 and refresh are separate durable boundaries. Nonzero output preserves actual completed stages;
@@ -938,19 +937,15 @@ leaves unestablished phases unknown, not unchanged. Never remove cache locks or 
 JSON success and exit-1 refusals carry the maintenance result in `data`; exit-2/3 errors may
 carry it in `error.partial_result`, never alongside an outer `data` block.
 
-After success review/commit the reported diff, restart existing serve processes, and reload
+After success, review and commit the reported diff, restart existing serve processes, and reload
 harness instructions as needed. Other checkouts use `tiller upgrade --project-only` when
-revisited. Release-service failure is not already-current success; project-only remains the
-explicit offline path. Join remains first onboarding or deliberate identity selection.
-
-First adoption is different: v0.12.2 and older running processes cannot gain this logic by
-replacing their executable. Keep a compatible old build before that one-time install if needed,
-then run the new binary's project-only maintenance. Older binaries do not support these flags.
-See [distribution](spec/distribution.md#update) for the retention and ownership boundaries.
+revisited. A release-service failure is not already-current success; project-only remains the
+explicit offline path. Join remains first onboarding or deliberate identity selection. See
+[distribution](spec/distribution.md#update) for installation ownership, retention, and recovery.
 
 ## Help and shell completion
 
-```bash
+```sh
 tiller --help
 tiller help [command]
 tiller <command> --help
@@ -960,7 +955,7 @@ tiller completion bash|fish|powershell|zsh
 
 ## Reads
 
-```bash
+```sh
 tiller status                                                # project summary
 tiller status <noun> <node>                                  # state, next moves, basis drift, relationships
 tiller show <noun> <node>                                    # the node in full: gates, criteria, attestations, basis
@@ -982,7 +977,7 @@ tiller drift                                                 # sweep every check
                                                              # (what a check could not compare) separately. Exit 0
                                                              # asserts full coverage; exit 1 means it found
                                                              # candidates, uncovered nodes, or both
-tiller serve [--host [<ip>]] [--port <n>] [--open=false]    # read-only console; defaults 127.0.0.1:4400
+tiller serve [--host [<ip>]] [--port <n>] [--open=false]     # read-only console; defaults 127.0.0.1:4400
                                                              # opens your browser unless --open=false,
                                                              # console.open: false in .tiller/local.yml, or BROWSER=none
 ```
@@ -1029,8 +1024,8 @@ their provenance intact. Authored paths such as `.tiller/design/board.md` and un
 retain the ordinary corpus behavior and safety refusals.
 
 Owner filters match scalar execution/question ownership, never ancestors. Contributor filters match
-started-task membership on features and epics. For example `tiller ls features --contributor sam`
-and `tiller query --from E-abc123 --follow contains --depth 2 --where contributor=sam --json`.
+started-task membership on features and epics. For example `tiller ls features --contributor dana`
+and `tiller query --from E-abc123 --follow contains --depth 2 --where contributor=dana --json`.
 Query filtering is post-traversal so ownerless ancestors remain bridges.
 
 ### Relationship discovery
@@ -1069,8 +1064,7 @@ success. Bad arguments or missing work starts exit 2; read/environment failures 
 
 Every read rebuilds and discards its index. It needs no checkout identity and writes no files,
 events, Git-index refresh, or persistent cache. Manual prose edits and branch changes appear on the
-next request; arbitrary edits racing a read are not an atomic snapshot. Adopt generation-38 guidance
-with the intended binary's `tiller upgrade --project-only`, not join or a managed-project refresh.
+next request; arbitrary edits racing a read are not an atomic snapshot.
 The [CLI specification](spec/cli-surface.md#relationship-queries) owns the full catalog and semantics.
 
 Baseline checks use the same drift command. Fresh projects enable `stale_design`, which joins
@@ -1086,20 +1080,20 @@ Successful feature crossings include `touched_design` in JSON and one aggregate
 then stop for human approval of the named design docs. Registered design-file pages in the
 console show confirmation, provenance, and the same candidates and uncovered failures.
 
-## Not in this build
+## Not built
 
 The specs retain unbuilt designs for the ADR noun and `tiller add adr` (which is why an amendment's
 `--implements` is optional), `add design`, `add evidence`, `block`/`unblock`, `doctor`,
 and `commit state`. The proposed `--commit` and `--dry-run` behavior is also
-unbuilt. Check [STATUS.md](plans/STATUS.md) before treating design examples as executable commands.
+unbuilt. Check the [roadmap](./roadmap.md#not-built-yet) before treating a design example as an
+executable command.
 
 A separate set is gone by design rather than unbuilt, and will not return: `accept`, because feature
 and epic `done` are computed rollups `sync` records; `add blitz`, `schedule`, and `unschedule`, with
 the effort axis they belonged to; `break-down`, folded into `specify`; and `resume feature`, since a
 requested-changes review always routes back through the task actually under review, never through the
-feature or the epic whose PR that task may be riding. `submit feature` and `submit epic` are no
-longer in this set: Review Grain (2026-08-26) added them as `submit task`'s record-only coarse-grain
-siblings, under Execute above.
+feature or the epic whose PR that task may be riding. `submit feature` and `submit epic` exist as
+`submit task`'s record-only coarse-grain siblings, under Execute above.
 
 `ci-status` and Tiller-backed CI or branch protection are also rejected by design, not deferred or
 renamed. Managed-project CI must not install or invoke Tiller, even in an optional advisory job,

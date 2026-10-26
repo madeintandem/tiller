@@ -53,8 +53,10 @@ func newAddQuestionCmd() *cobra.Command {
 		Long: "add question records an owned open question in\n" +
 			".tiller/decisions/open-questions.yml, where readiness and blocks\n" +
 			"enforcement can see it. --blocks names the nodes the question holds:\n" +
-			"start, check, and submit refuse a blocked node until the question is\n" +
-			"answered or the node proceeds explicitly with --assume-question.\n" +
+			"start, check, and submit refuse a held node until the question is\n" +
+			"answered or cancelled. A held feature may instead proceed under a\n" +
+			"recorded assumption with check feature or approve feature\n" +
+			"--assume-question <Q-id> --reason <text>; tasks cannot assume one.\n" +
 			"Re-adding the same statement is an idempotent no-op success; re-adding\n" +
 			"a cancelled question's statement asks it again under a new id.",
 		Args: cobra.ExactArgs(1),

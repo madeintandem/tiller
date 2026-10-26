@@ -44,7 +44,7 @@ func newCheckCmd() *cobra.Command {
 			return runCheck(cmd, args[0], args[1], assume, reason, rerun, gateNames)
 		},
 	}
-	cmd.Flags().StringVar(&assume, "assume-question", "", "proceed under an open question, recording it in assumption_basis")
+	cmd.Flags().StringVar(&assume, "assume-question", "", "check feature only: proceed under an open question, recording it in the feature's assumption_basis (tasks refuse it)")
 	cmd.Flags().StringVar(&reason, "reason", "", "justification for the assumption (with --assume-question)")
 	cmd.Flags().BoolVar(&rerun, "rerun", false, "run every command gate for real, even one whose recorded pass could be reused")
 	cmd.Flags().StringArrayVar(&gateNames, "gate", nil, "run only the named gate (repeatable); another gate counts only if its recorded pass is current, and one that is not is marked stale")

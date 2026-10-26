@@ -35,7 +35,7 @@ func newRenameCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rename <epic|feature|task|bug|chore|tweak> <node> (--title <display-title> | --key <canonical-key>)",
 		Short: "Change a node's display title or proposal key.",
-		Long: "rename changes exactly one axis of an epic, feature, task, bug, or\n" +
+		Long: "rename changes exactly one axis of an epic, feature, task, bug,\n" +
 			"chore, or tweak. --title changes display metadata without editing Markdown, at\n" +
 			"every lifecycle state. --key preserves identity and is limited to:\n" +
 			"  - a draft epic containing only draft, task-free features;\n" +

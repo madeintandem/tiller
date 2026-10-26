@@ -23,8 +23,8 @@ func transferRefViewOf(ref mutate.TransferRef) transferRefView {
 func newTransferCmd() *cobra.Command {
 	var to, reason string
 	cmd := &cobra.Command{
-		Use:   "transfer <task|bug|chore|tweak> <ref> --to <registered-owner> --reason <text>",
-		Short: "Replace started unfinished work with an unstarted assignment to another owner.",
+		Use:   "transfer <task|bug|chore|tweak> <ref> --to <contributor-id> --reason <text>",
+		Short: "Replace started unfinished work with an unstarted assignment to another registered contributor.",
 		Long: "Transfer is a human decision. An agent may run it only on an explicit instruction naming the work and recipient.\n" +
 			"The original is cancelled with its owner, branch, review, evidence, and attribution retained.\n" +
 			"A same-noun replacement receives unchanged approved scope, a new identity, and a ready claim.\n" +
@@ -84,7 +84,7 @@ func newTransferCmd() *cobra.Command {
 			return emitSuccess(cmd, "transfer", view, strings.TrimSpace(human.String()))
 		},
 	}
-	cmd.Flags().StringVar(&to, "to", "", "registered recipient named by the human")
+	cmd.Flags().StringVar(&to, "to", "", "registered contributor named by the human as the new owner (required)")
 	cmd.Flags().StringVar(&reason, "reason", "", "human's reason for the transfer (required)")
 	addContributorFlag(cmd)
 	return cmd
