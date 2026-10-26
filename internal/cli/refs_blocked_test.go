@@ -82,7 +82,7 @@ func TestQuestionBlockedLineNamesTaskByRef(t *testing.T) {
 	require.Equal(t, 1, code, "an open question holding the task is a blocked business answer (exit 1)")
 	human := stdout + stderr
 	require.Contains(t, human, fmt.Sprintf(
-		`Blocked: task form-engine/certification-form-loading/schema-transcription (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`,
+		`Blocked: task form-engine/certification-form-loading/schema-transcription (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them, or cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...".`,
 		ids[0]))
 	require.NotContains(t, human, task4LongQuestionStatement)
 }

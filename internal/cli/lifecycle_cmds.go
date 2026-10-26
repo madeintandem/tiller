@@ -491,7 +491,7 @@ func newApproveCmd() *cobra.Command {
 	cmd.Flags().StringVar(&reviewedAssumption, "reviewed-assumption", "",
 		"stamp an answered question's revision into the node's assumption_basis entry (feature only; one node at a time)")
 	cmd.Flags().StringVar(&reviewGrain, "review-grain", "",
-		"set the epic's or feature's review_grain in the same act as the gate (task, feature, or epic; a feature cannot say epic)")
+		"set the epic's or feature's review_grain in the same act as the gate (task, feature, or epic)")
 	addContributorFlag(cmd)
 	return cmd
 }
@@ -851,7 +851,7 @@ func newSubmitCmd() *cobra.Command {
 			} else {
 				// A shelf node (bug, chore, or tweak): its PR or review ref is always
 				// its own, so there is no grain to resolve at all
-				// (docs/plans/2026-08-28-bugs-and-chores-design.md).
+				// (docs/spec/cli-surface.md).
 				if _, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: sing, Raw: args[1]}); err != nil {
 					return emitFailure(cmd, "submit", err)
 				}
@@ -871,7 +871,7 @@ func newSubmitCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&pr, "pr", 0, "the pull request number representing this change (required when the repo has a remote)")
-	cmd.Flags().StringVar(&assume, "assume-question", "", "submit task only, and refused there (tasks cannot assume a question); record a feature assumption with check feature or approve feature instead")
+	cmd.Flags().StringVar(&assume, "assume-question", "", "accepted only on submit task, which refuses it: tasks cannot assume a question; record a feature assumption with check feature or approve feature")
 	cmd.Flags().StringVar(&reason, "reason", "", "justification for --assume-question, or for authorized merged aggregate recovery")
 	cmd.Flags().BoolVar(&recoverMerged, "recover-merged", false, "record an explicitly authorized historical merged feature/epic review from integration")
 	cmd.Flags().StringVar(&recoveryHead, "head", "", "historical reviewed commit OID (recovery only)")
@@ -1456,10 +1456,14 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 		d, handles := blockedByQuestionsView(blk)
 		// A plan gate (approve) never offers --assume-question: a feature's
 		// assumption does not reach its tasks, so the way out is to answer
-		// the question and fold the answer into the plan (issue #152,
-		// decision 8). The literal <Q-id> is a placeholder; the handles
+		// the question and fold the answer into the plan. Only a feature can
+		// record an assumption, so every other noun is offered answer or
+		// cancel alone. The literal <Q-id> is a placeholder; the handles
 		// already name each question's id and title.
-		remedy := `answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`
+		remedy := `answer them, or cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...".`
+		if blk.Noun == store.NounFeature {
+			remedy = `answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`
+		}
 		if blk.Verb == "approve" {
 			remedy = `answer them with tiller answer question <Q-id> --answer "...", or cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", fold the answers into the plan, and retry.`
 		}

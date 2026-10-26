@@ -49,7 +49,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller status`](#reads) | Show the project summary, or the typed oracle for one node. |
 | [`tiller submit`](#execute-the-task-loop) | Record the review surface and move work to review. |
 | [`tiller sync`](#the-done-crossing-and-rollups) | Observe merged review branches and record done crossings. |
-| [`tiller transfer`](#ownership) | Replace started unfinished work with a ready assignment to another contributor. |
+| [`tiller transfer`](#ownership) | Replace started unfinished work with a ready, unstarted replacement owned by another registered contributor. |
 | [`tiller tree`](#reads) | Print the work tree. |
 | [`tiller unlink`](#correct-a-proposal-or-accepted-plan) | Remove dependencies, surfaces, attachments, design baseline links, or question holds. |
 | [`tiller upgrade`](#upgrade) | Update Tiller and maintain the current checkout. |
@@ -861,7 +861,7 @@ sync before a later coarse submit. Do not hand-edit state to evade a refusal.
 ```sh
 tiller configure project --review-grain task|feature|epic     # writes execution.review_grain in tiller.yml
 tiller configure epic <epic> --review-grain task|feature|epic
-tiller configure feature <feature> --review-grain task|feature  # a feature cannot say epic
+tiller configure feature <feature> --review-grain task|feature|epic
 ```
 
 A changed grain also prints: "Commit this change to integration before starting tasks: work started in another checkout or worktree resolves the grain it can see."
@@ -874,7 +874,7 @@ The same setting also rides `approve`, recorded in the same act as the start gat
 
 ```sh
 tiller approve epic <epic> --review-grain task|feature|epic     # human: draft -> ready, grain recorded together
-tiller approve feature <feature> --review-grain task|feature    # human: specced -> ready, grain recorded together
+tiller approve feature <feature> --review-grain task|feature|epic # human: specced -> ready, grain recorded together
 ```
 
 ## Migrate

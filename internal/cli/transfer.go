@@ -24,7 +24,7 @@ func newTransferCmd() *cobra.Command {
 	var to, reason string
 	cmd := &cobra.Command{
 		Use:   "transfer <task|bug|chore|tweak> <ref> --to <contributor-id> --reason <text>",
-		Short: "Replace started unfinished work with an unstarted assignment to another registered contributor.",
+		Short: "Replace started unfinished work with a ready, unstarted replacement owned by another registered contributor.",
 		Long: "Transfer is a human decision. An agent may run it only on an explicit instruction naming the work and recipient.\n" +
 			"The original is cancelled with its owner, branch, review, evidence, and attribution retained.\n" +
 			"A same-noun replacement receives unchanged approved scope, a new identity, and a ready claim.\n" +
