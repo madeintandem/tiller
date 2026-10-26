@@ -80,16 +80,18 @@ your platform and verifies its checksum before placing it:
 curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh | sh
 ```
 
-Go users can `go install github.com/madeintandem/tiller/cmd/tiller@latest`.
+Go users (Go 1.27 or later) can
+`go install github.com/madeintandem/tiller/cmd/tiller@latest`.
 Checksummed binaries for macOS and Linux, amd64 and arm64, are on the
 [releases page](https://github.com/madeintandem/tiller/releases). Tiller is a
 single static binary with the web console and the skills embedded, so there's
 no runtime to install and nothing else to place.
 
 Distributed third-party components retain their upstream licenses. Full
-licenses and copyright notices are in [THIRD_PARTY_NOTICES.txt](./THIRD_PARTY_NOTICES.txt),
-included in release archives and served by the embedded console at
-`/THIRD_PARTY_NOTICES.txt`. Tiller's own code is licensed under Apache 2.0.
+licenses and copyright notices are in
+[THIRD_PARTY_NOTICES.txt](./THIRD_PARTY_NOTICES.txt), included in release
+archives and served by the embedded console at `/THIRD_PARTY_NOTICES.txt`.
+Tiller's own code is licensed under Apache 2.0.
 
 ## Your first tree
 
@@ -99,7 +101,8 @@ tiller init --name "Acme Platform" --key acme --kind greenfield
 tiller add contributor robin --name "Robin Hale"   # register yourself on the committed roster
 tiller join --as robin                             # select that identity here; wire your coding agent
 mkdir -p .tiller/design
-printf '# Acme\n\nA small application with a health route.\n' > .tiller/design/overview.md
+printf '# Acme\n\nA small application with a health route, sign-in, and invoicing.\n' \
+  > .tiller/design/overview.md
 git add -A && git commit -m "Initialize Acme planning"
 tiller check readiness
 tiller guide
@@ -123,7 +126,8 @@ tiller serve
 
 and watch the tree appear. Once you approve the Foundation epic and the plan
 for its first feature, and the agent starts a task, `tiller tree --status`
-reads something like this:
+reads something like this. An epic that reads `ready, active` has an approved
+shape and work already started under it.
 
 ```
 acme
@@ -154,22 +158,23 @@ that and Tiller calls it drift until a human re-records the basis.
 starts it. The first start fixes the task's owner for good and makes its
 feature active. Every task works on its own branch. The project's
 [review grain](https://madeintandem.github.io/tiller/concepts/#review-grain)
-decides what a pull request covers: one PR per task by default, or one PR for a whole feature or epic, which the
-agent assembles by merging each submitted task branch into a shared review
-branch. The agent creates the branches, runs the gates, resolves mechanical
-conflicts, and opens and updates the PR. The human accepts the work and
-performs the final merge into the integration branch. `tiller sync` observes
-that merge and records done; features and epics roll up as their children
-finish.
+decides what a pull request covers: one PR per task by default, or one PR
+for a whole feature or epic, which the agent assembles by merging each
+submitted task branch into a shared review branch. The agent creates the
+branches, runs the gates, resolves mechanical conflicts, and opens and
+updates the PR. The human accepts the work and performs the final merge into
+the integration branch. `tiller sync` observes that merge and records done;
+features and epics roll up as their children finish.
 
 Different engineers can execute different tasks in the same feature, so a
 feature or epic lists its
 [contributors](https://madeintandem.github.io/tiller/concepts/#contributors-and-claims),
-the owners of its started tasks, instead of a single owner. Before a task starts, `tiller release`
-returns a claim to the pool and `tiller reassign` moves it. After start,
-ownership never changes, through review, cancellation, or completion. When
-several people share one feature or epic PR, coordinate so one of them
-updates it at a time.
+the owners of its started tasks, instead of a single owner. Before a task
+starts, `tiller release` returns a claimed task to the unclaimed pool and
+`tiller reassign` moves the claim to someone else. After start, ownership
+never changes, through review, cancellation, or completion. When several
+people share one feature or epic PR, coordinate so one of them updates it at
+a time.
 
 Handing started, unfinished work to someone else is a human decision:
 `tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason "<why>"`.
@@ -204,17 +209,16 @@ instead. A new button or a broader interaction redesign belongs in planned
 Task work.
 
 Keep changes forward-only. Never reopen or rewrite done work to express a
-new request. Add a new Bug, Chore, Tweak, or Task with attachment or source
-context as appropriate; the completed record stays history. Adding planned
-descendants may recompute feature and epic rollups, but it does not reopen
-merge-backed done work.
+new request. Add a new bug, chore, tweak, or task, noting what it relates
+to; the completed record stays as history. Adding tasks under a done feature
+can change its rolled-up status, but never reopens merged work.
 
 Bugs, Chores, and Tweaks are
 [leaf work beside the tree](https://madeintandem.github.io/tiller/concepts/#bugs-chores-and-tweaks),
-each under its own directory (`.tiller/bugs/`, `.tiller/chores/`, `.tiller/tweaks/`) with
-`B-`, `CH-`, and `TW-` IDs. They follow the same ownership, approval, gate,
-branch, review, and completion rules as tasks. The console's **Fix** board
-shows all three together.
+each under its own directory (`.tiller/bugs/`, `.tiller/chores/`,
+`.tiller/tweaks/`) with `B-`, `CH-`, and `TW-` IDs. They follow the same
+ownership, approval, gate, branch, review, and completion rules as tasks. The
+console's **Fix** board shows all three together.
 
 ## Where things live
 
