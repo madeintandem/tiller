@@ -41,7 +41,7 @@ func TestUnlinkRemovesResolvedIDsAndPreservesSurvivorOrderAtEveryGrain(t *testin
 		root := dependsRepo(t)
 		addEpicWithDependencyMint(t, root, "payments", "dddddd")
 		_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-			Noun: store.NounFeature, Node: "form-engine/nrca-form-loading",
+			Noun: store.NounFeature, Node: "form-engine/certification-form-loading",
 			DependsOn: []string{"form-engine/schema-engine", "form-engine", "payments"},
 		})
 		require.NoError(t, err)
@@ -79,18 +79,18 @@ func TestUnlinkResolvesEveryTargetBeforeWritingAndInheritsDependencyRefusals(t *
 	t.Parallel()
 	root := dependsRepo(t)
 	_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading", DependsOn: []string{"form-engine/schema-engine"},
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading", DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
 
 	for _, targets := range [][]string{
 		{"form-engine/schema-engine", "F-zzzzzz"},
-		{"form-engine/nrca-form-loading"},
+		{"form-engine/certification-form-loading"},
 		{"B-aaaaaa"},
 	} {
 		before := snapshotDir(t, root)
 		_, err := mutate.Unlink(load(t, root), testDeps(), mutate.UnlinkInput{
-			Noun: store.NounFeature, Node: "form-engine/nrca-form-loading", DependsOn: targets,
+			Noun: store.NounFeature, Node: "form-engine/certification-form-loading", DependsOn: targets,
 		})
 		require.Error(t, err)
 		requireNoWrites(t, before, snapshotDir(t, root))
@@ -105,7 +105,7 @@ func TestUnlinkResolvesEveryTargetBeforeWritingAndInheritsDependencyRefusals(t *
 	before := snapshotDir(t, taskRoot)
 	_, err = mutate.Unlink(load(t, taskRoot), testDeps(), mutate.UnlinkInput{
 		Noun: store.NounTask, Node: "form-engine/schema-engine/first",
-		DependsOn: []string{"form-engine/schema-engine/second", "form-engine/nrca-form-loading/other"},
+		DependsOn: []string{"form-engine/schema-engine/second", "form-engine/certification-form-loading/other"},
 	})
 	require.Error(t, err)
 	requireNoWrites(t, before, snapshotDir(t, taskRoot))
@@ -115,13 +115,13 @@ func TestUnlinkRecordsCompleteEvent(t *testing.T) {
 	t.Parallel()
 	root := dependsRepo(t)
 	_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading",
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading",
 		DependsOn: []string{"form-engine/schema-engine", "form-engine"},
 	})
 	require.NoError(t, err)
 
 	res, err := mutate.Unlink(load(t, root), testDeps(), mutate.UnlinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading", DependsOn: []string{"form-engine/schema-engine"},
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading", DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, []string{"F-bbbbbb"}, res.Removed)
@@ -139,10 +139,10 @@ func TestUnlinkStaleSnapshotRefusesWithoutStateOrEventWrite(t *testing.T) {
 	t.Parallel()
 	root := dependsRepo(t)
 	_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading", DependsOn: []string{"form-engine/schema-engine"},
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading", DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
-	featurePath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	featurePath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 
 	d := testDeps()
 	d.Clock = dependencyMutatingClock{mutate: func() {
@@ -158,7 +158,7 @@ func TestUnlinkStaleSnapshotRefusesWithoutStateOrEventWrite(t *testing.T) {
 	beforeEvents := countFiles(t, filepath.Join(root, ".tiller", "events"))
 
 	_, err = mutate.Unlink(load(t, root), d, mutate.UnlinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading", DependsOn: []string{"form-engine/schema-engine"},
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading", DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.Error(t, err)
 	require.Equal(t, []string{"F-bbbbbb"}, load(t, root).Features["F-cccccc"].DependsOn)

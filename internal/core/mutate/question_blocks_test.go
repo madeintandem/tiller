@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const blocksTaskKey = "form-engine/nrca-form-loading/render-the-form"
+const blocksTaskKey = "form-engine/certification-form-loading/render-the-form"
 
 // layQuestionBlocking lays the question repo with a task (T-aaaaaa) beside the
 // epic (E-aaaaaa) and feature (F-bbbbbb), and an open question blocking blocks.
@@ -54,7 +54,7 @@ func TestLinkQuestionBlocksByKey(t *testing.T) {
 	t.Parallel()
 	root, qid := layQuestionBlocking(t, "T-aaaaaa")
 
-	res, err := mutate.LinkQuestionBlocks(load(t, root), testDeps(), mutate.QuestionBlocksInput{Node: qid, Blocks: []string{"form-engine/nrca-form-loading"}})
+	res, err := mutate.LinkQuestionBlocks(load(t, root), testDeps(), mutate.QuestionBlocksInput{Node: qid, Blocks: []string{"form-engine/certification-form-loading"}})
 	require.NoError(t, err)
 	require.Equal(t, []string{"F-bbbbbb"}, res.Added)
 }

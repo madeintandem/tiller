@@ -15,7 +15,7 @@ import (
 // hashes the file and never parses it.
 func writeFeatureEval(t *testing.T) {
 	t.Helper()
-	dir := filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	dir := filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"), []byte("# contract\n"), 0o644))
 }
 
@@ -24,7 +24,7 @@ func TestAmendStagesCorrectEvalAndShowRendersItsHeadline(t *testing.T) {
 	writeFeatureEval(t)
 	aid := openAmendmentCLI(t, "eval-bindings", "Correct eval bindings")
 
-	out, stderr, code := execCLI(t, "amend", aid, "--correct-eval", "form-engine/nrca-form-loading",
+	out, stderr, code := execCLI(t, "amend", aid, "--correct-eval", "form-engine/certification-form-loading",
 		"--reason", "the binding file moved", "--retire", "C7", "--retire", "C8", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out+stderr)
 
@@ -40,7 +40,7 @@ func TestAmendStagesCorrectEvalAndShowRendersItsHeadline(t *testing.T) {
 
 	human, _, code := execCLI(t, "show", "amendment", aid)
 	require.Equal(t, 0, code)
-	require.Contains(t, human, "correct-eval form-engine/nrca-form-loading")
+	require.Contains(t, human, "correct-eval form-engine/certification-form-loading")
 	require.Contains(t, human, ": the binding file moved, retiring C7, C8")
 }
 
@@ -63,7 +63,7 @@ func TestAmendCorrectEvalWithoutRetireHasNoRetiringClause(t *testing.T) {
 	writeFeatureEval(t)
 	aid := openAmendmentCLI(t, "eval-bindings", "Correct eval bindings")
 
-	_, _, code := execCLI(t, "amend", aid, "--correct-eval", "form-engine/nrca-form-loading",
+	_, _, code := execCLI(t, "amend", aid, "--correct-eval", "form-engine/certification-form-loading",
 		"--reason", "the binding file moved", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -77,7 +77,7 @@ func TestAmendCorrectEvalRefusals(t *testing.T) {
 	layAmendmentTree(t)
 	writeFeatureEval(t)
 	aid := openAmendmentCLI(t, "eval-bindings", "Correct eval bindings")
-	feature := "form-engine/nrca-form-loading"
+	feature := "form-engine/certification-form-loading"
 
 	for _, tc := range []struct {
 		name   string
@@ -91,7 +91,7 @@ func TestAmendCorrectEvalRefusals(t *testing.T) {
 		{"retire with no op", []string{"--amends-design", "design/a.md", "--retire", "C7"}, "retire_misplaced"},
 		{"retire with an empty value", []string{"--revise", feature, "--retire="}, "retire_misplaced"},
 		{"two operations", []string{"--correct-eval", feature, "--revise", feature, "--reason", "r"}, "multiple_operations"},
-		{"a task target", []string{"--correct-eval", "form-engine/nrca-form-loading/schema-review", "--reason", "r"}, "correct_eval_not_feature"},
+		{"a task target", []string{"--correct-eval", "form-engine/certification-form-loading/schema-review", "--reason", "r"}, "correct_eval_not_feature"},
 		{"duplicate retire ids", []string{"--correct-eval", feature, "--reason", "r", "--retire", "C7", "--retire", "C7"}, "amendment_shape_invalid"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

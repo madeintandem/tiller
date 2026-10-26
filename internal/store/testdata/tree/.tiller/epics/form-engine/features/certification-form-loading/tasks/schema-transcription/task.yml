@@ -1,0 +1,14 @@
+id: T-k3p9w6
+key: form-engine/certification-form-loading/schema-transcription
+title: Transcribe CERT-LTI-02-A (2025) into JSON Schema with computed-field bindings
+status: in_progress
+blocked: false
+started: true
+owner: pat
+proposed_by: pat
+depends_on: [T-9wq4m1]
+accepted_against:
+  spec: { kind: git_blob, value: "git:5c1e8a9", path: epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.md, observed_at: "2026-06-23T00:00:00Z" }
+evidence: []
+pr: null
+policy_violations: []

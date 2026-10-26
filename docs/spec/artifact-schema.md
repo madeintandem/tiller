@@ -121,7 +121,7 @@ The token carries no owner, branch, date, order, or path. That opacity is delibe
 
 A null entry in `open-questions.yml` fails the load with an error naming the ledger path and entry position, and no partial question list is kept. Tree load validates every addressable epic, feature, task, question, bug, and chore id before assigning the node to an index. Each id must satisfy the compact token syntax, carry the prefix for its noun, and be unique across the whole tree. A malformed id, noun-prefix mismatch, or duplicate id makes the load fail rather than leaving a node unreachable or allowing one node to replace another in memory.
 
-**Keys and paths.** A `key` is built from local key segments, each matching `[a-z0-9]+(?:-[a-z0-9]+)*`. An epic's key is a single segment, and it lives at `.tiller/epics/<epic-key>/`. A feature's canonical key is the two-segment `<epic-key>/<feature-key>`, and it lives at `.tiller/epics/<epic-key>/features/<feature-key>/`. The directory segment under `features/` is the LOCAL `<feature-key>` alone, while the `key` field in `feature.yml` and any branch interpolation use the CANONICAL `<epic-key>/<feature-key>`. That is why the layout shows a `nrca-form-loading/` folder while the feature's `key` is `form-engine/nrca-form-loading`: the folder name is the local segment, and the canonical key prepends the owning epic's key. A task follows the same rule one level down: its directory segment under `tasks/` is the local `<task-key>`, and its canonical key is the three-segment `<epic-key>/<feature-key>/<task-key>`. A bug's canonical key prepends its shelf the same way, `bugs/<bug-key>`, and a chore's is `chores/<chore-key>`; the directory segment is the local key alone, and `bugs`, `chores`, and `tweaks` are reserved epic keys, since an epic folder sits beside the shelves. The rendering convention for human output is defined in [cli-surface.md](./cli-surface.md), this document staying canonical for the id/key model alone.
+**Keys and paths.** A `key` is built from local key segments, each matching `[a-z0-9]+(?:-[a-z0-9]+)*`. An epic's key is a single segment, and it lives at `.tiller/epics/<epic-key>/`. A feature's canonical key is the two-segment `<epic-key>/<feature-key>`, and it lives at `.tiller/epics/<epic-key>/features/<feature-key>/`. The directory segment under `features/` is the LOCAL `<feature-key>` alone, while the `key` field in `feature.yml` and any branch interpolation use the CANONICAL `<epic-key>/<feature-key>`. That is why the layout shows a `certification-form-loading/` folder while the feature's `key` is `form-engine/certification-form-loading`: the folder name is the local segment, and the canonical key prepends the owning epic's key. A task follows the same rule one level down: its directory segment under `tasks/` is the local `<task-key>`, and its canonical key is the three-segment `<epic-key>/<feature-key>/<task-key>`. A bug's canonical key prepends its shelf the same way, `bugs/<bug-key>`, and a chore's is `chores/<chore-key>`; the directory segment is the local key alone, and `bugs`, `chores`, and `tweaks` are reserved epic keys, since an epic folder sits beside the shelves. The rendering convention for human output is defined in [cli-surface.md](./cli-surface.md), this document staying canonical for the id/key model alone.
 
 A Tweak’s canonical key is `tweaks/<tweak-key>`. It lives at `.tiller/tweaks/<tweak-key>/`, uses `tweak.md` and `tweak.yml`, and resolves by its local key when the `tweak` noun selects the shelf. `tweaks` is reserved as an epic key, alongside `bugs` and `chores`.
 
@@ -159,7 +159,7 @@ A revision reference is the other identifier primitive: the one shape every fiel
 ```yaml
 kind: git_blob | git_commit | git_tree | sha256
 value: "git:31fd9c2"        # or "sha256:<hex>"
-path: epics/form-engine/features/nrca-form-loading/feature.md
+path: epics/form-engine/features/certification-form-loading/feature.md
 observed_at: "2026-06-23T00:00:00Z"
 ```
 
@@ -384,8 +384,8 @@ The grain where acceptance lives.
 
 ```yaml
 id: F-79dh3q
-key: form-engine/nrca-form-loading
-title: NRCA form loading (2022 + 2025)
+key: form-engine/certification-form-loading
+title: Certification form loading (2022 + 2025)
 status: active           # draft | specced | ready | active | done | cancelled
 blocked: false
 change_type: create      # create | modify | replace | migrate
@@ -401,8 +401,8 @@ pr: null                     # set only when the feature itself is the reviewed 
 review_ref: null             # the remote-less fallback for the feature's own pr
 recovered_review: null           # optional immutable historical binding; see Merged aggregate review recovery
 accepted_against:                 # RevisionRefs (see Revisions): recorded at approve from current (working-tree) feature.md/feature.eval.md content
-  spec: { kind: git_blob, value: "git:31fd9c2", path: epics/form-engine/features/nrca-form-loading/feature.md, observed_at: "2026-06-23T00:00:00Z" }
-  eval: { kind: git_blob, value: "git:b71a322", path: epics/form-engine/features/nrca-form-loading/feature.eval.md, observed_at: "2026-06-23T00:00:00Z" }
+  spec: { kind: git_blob, value: "git:31fd9c2", path: epics/form-engine/features/certification-form-loading/feature.md, observed_at: "2026-06-23T00:00:00Z" }
+  eval: { kind: git_blob, value: "git:b71a322", path: epics/form-engine/features/certification-form-loading/feature.eval.md, observed_at: "2026-06-23T00:00:00Z" }
   commit: { kind: git_commit, value: "git:7bc1a20", observed_at: "2026-06-23T00:00:00Z" }   # HEAD at approval: the code baseline the plan was approved against
 assumption_basis: {}         # question ids this node rests on; `approve --reviewed-assumption` stamps the answer revision once a human reviews it in
 verified_against:                 # RevisionRefs, recorded by sync at the done crossing from the feature.md/feature.eval.md blobs in the integration commit that run resolved; commit pins that integration commit; surfaces is a fingerprint per surface path, a git_tree with the inventory of files the tree covered for a directory path, a git_blob whose inventory is the file itself for a file path
@@ -516,8 +516,8 @@ The level where code gets written, and the terminus of the prose chain: a task's
 
 ```yaml
 id: T-k3p9w6
-key: form-engine/nrca-form-loading/schema-transcription
-title: Transcribe NRCA-LTI-02-A (2025) into JSON Schema
+key: form-engine/certification-form-loading/schema-transcription
+title: Transcribe CERT-LTI-02-A (2025) into JSON Schema
 status: done            # proposed | ready | in_progress | check | in_review | done | cancelled
 blocked: false
 owner: sam
@@ -525,15 +525,15 @@ started: true           # durable first-start boundary; never cleared, including
 proposed_by: sam
 depends_on: []           # sibling tasks this one follows, as ids
 supersedes: []           # same-noun predecessors; applied amendment or explicit transfer
-branch: tiller/form-engine/nrca-form-loading/schema-transcription  # recorded once at task start; unchanged on resume
+branch: tiller/form-engine/certification-form-loading/schema-transcription  # recorded once at task start; unchanged on resume
 started_grain: task      # task | feature | epic; the review grain resolved at first start, kept through later grain changes
 superseded_by: null      # at most one reciprocal, acyclic same-noun successor
 accepted_against:        # the task.md blob the human approved, pinned at approve
-  spec: { kind: git_blob, value: "git:5c1e8a9", path: epics/form-engine/features/nrca-form-loading/tasks/schema-transcription/task.md, observed_at: "2026-06-23T00:00:00Z" }
+  spec: { kind: git_blob, value: "git:5c1e8a9", path: epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.md, observed_at: "2026-06-23T00:00:00Z" }
   commit: { kind: git_commit, value: "git:7bc1a20", observed_at: "2026-06-23T00:00:00Z" }   # HEAD at approval, same anchor the feature record carries
 evidence:
   - { kind: diff, ref: "abc1234" }
-  - { kind: test, ref: "spec/form_definitions/nrca_lti_02a_spec.rb" }
+  - { kind: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
 gates:                  # same shape as feature.yml gates, written by `tiller check`
   build:
     required: true
@@ -602,8 +602,8 @@ A bug ignores `review_grain` entirely. The grain calibrates oversight over plann
 
 ```yaml
 id: B-7k2p9x
-key: bugs/nrca-form-blank-on-reload
-title: NRCA form renders blank after a reload mid-entry
+key: bugs/certification-form-blank-on-reload
+title: Certification form renders blank after a reload mid-entry
 status: ready              # proposed | ready | in_progress | check | in_review | done | cancelled
 blocked: false
 owner: sam
@@ -616,11 +616,11 @@ duplicate_of: null         # set only with resolution: duplicate; the surviving 
 depends_on: []             # other bugs or chores only, as ids
 source: docs/feedback/2026-08-27-reload-investigation.md#L12-40   # free-text citation, the amend convention
 accepted_against:          # the bug.md blob the human triaged, pinned at approve
-  spec: { kind: git_blob, value: "git:5c1e8a9", path: bugs/nrca-form-blank-on-reload/bug.md, observed_at: "2026-08-28T00:00:00Z" }
+  spec: { kind: git_blob, value: "git:5c1e8a9", path: bugs/certification-form-blank-on-reload/bug.md, observed_at: "2026-08-28T00:00:00Z" }
   commit: { kind: git_commit, value: "git:7bc1a20", observed_at: "2026-08-28T00:00:00Z" }
 evidence: []
 gates: {}                  # same shape as task.yml gates, written by `tiller check`
-branch: null               # tiller/bugs/nrca-form-blank-on-reload once started; cut from the integration branch
+branch: null               # tiller/bugs/certification-form-blank-on-reload once started; cut from the integration branch
 pr: null
 review_ref: null
 done_basis: null           # ancestry | content | human_attested | carried
@@ -662,9 +662,9 @@ An eval file is a structured contract of acceptance criteria. Each criterion has
 node: F-79dh3q
 criteria:
   - id: C1
-    statement: NRCA-LTI-02-A (2025) validates against its JSON Schema
+    statement: CERT-LTI-02-A (2025) validates against its JSON Schema
     polarity: introduce
-    binding: { type: test, ref: "spec/form_definitions/nrca_lti_02a_spec.rb" }
+    binding: { type: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
     required: true
   - id: C2
     statement: Page numbers are continuous when a parent and child render to a single PDF

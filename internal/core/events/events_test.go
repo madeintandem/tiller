@@ -44,7 +44,7 @@ func TestAppendWritesOneDatedFileWithMintedID(t *testing.T) {
 	tree := &store.Tree{Root: dir}
 	clk := fixedClock{t: at("2026-06-27T14:30:00Z")}
 
-	e := NewEvent(clk, "add.feature", "sam", "add feature form-engine/nrca-form-loading", "F-79dh3q")
+	e := NewEvent(clk, "add.feature", "sam", "add feature form-engine/certification-form-loading", "F-79dh3q")
 	commitEvent(t, tree, e)
 
 	// The file lands at events/YYYY/MM/DD/ derived from the injected clock.
@@ -74,14 +74,14 @@ func TestAppendSerializesBeforeAfterMapsAndFileRevisionRefs(t *testing.T) {
 	tree := &store.Tree{Root: dir}
 	clk := fixedClock{t: at("2026-06-27T09:00:00Z")}
 
-	e := NewEvent(clk, "spec.feature", "jc", "spec feature form-engine/nrca-form-loading", "F-79dh3q")
+	e := NewEvent(clk, "spec.feature", "jc", "spec feature form-engine/certification-form-loading", "F-79dh3q")
 	e.ID = "EV-aaaaaa" // fixed id so the assertion is deterministic
 	e.Before = map[string]any{"status": "draft"}
 	e.After = map[string]any{"status": "specced"}
 	e.Files = append(e.Files, FileChange{
-		Path:   "epics/form-engine/features/nrca-form-loading/feature.md",
-		Before: store.RevisionRef{Kind: store.KindGitBlob, Value: "git:31fd9c2", Path: "epics/form-engine/features/nrca-form-loading/feature.md", ObservedAt: at("2026-06-27T09:00:00Z")},
-		After:  store.RevisionRef{Kind: store.KindGitBlob, Value: "git:b71a322", Path: "epics/form-engine/features/nrca-form-loading/feature.md", ObservedAt: at("2026-06-27T09:00:00Z")},
+		Path:   "epics/form-engine/features/certification-form-loading/feature.md",
+		Before: store.RevisionRef{Kind: store.KindGitBlob, Value: "git:31fd9c2", Path: "epics/form-engine/features/certification-form-loading/feature.md", ObservedAt: at("2026-06-27T09:00:00Z")},
+		After:  store.RevisionRef{Kind: store.KindGitBlob, Value: "git:b71a322", Path: "epics/form-engine/features/certification-form-loading/feature.md", ObservedAt: at("2026-06-27T09:00:00Z")},
 	})
 	commitEvent(t, tree, e)
 
@@ -93,11 +93,11 @@ func TestAppendSerializesBeforeAfterMapsAndFileRevisionRefs(t *testing.T) {
 	require.Equal(t, map[string]any{"status": "draft"}, got.Before)
 	require.Equal(t, map[string]any{"status": "specced"}, got.After)
 	require.Len(t, got.Files, 1)
-	require.Equal(t, "epics/form-engine/features/nrca-form-loading/feature.md", got.Files[0].Path)
+	require.Equal(t, "epics/form-engine/features/certification-form-loading/feature.md", got.Files[0].Path)
 	require.Equal(t, store.KindGitBlob, got.Files[0].Before.Kind)
 	require.Equal(t, "git:31fd9c2", got.Files[0].Before.Value)
 	require.Equal(t, "git:b71a322", got.Files[0].After.Value)
-	require.Equal(t, "epics/form-engine/features/nrca-form-loading/feature.md", got.Files[0].After.Path)
+	require.Equal(t, "epics/form-engine/features/certification-form-loading/feature.md", got.Files[0].After.Path)
 }
 
 func TestSecondAppendCreatesNewFileNeverEditsSharedLog(t *testing.T) {

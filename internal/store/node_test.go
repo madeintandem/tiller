@@ -63,8 +63,8 @@ source: design/04-phase-1-mvp-build.md
 		"a hand-authored source value round-trips literally, never rewritten")
 
 	featureYAML := `id: F-aaaaaa
-key: form-engine/nrca-form-loading
-title: NRCA form loading
+key: form-engine/certification-form-loading
+title: Certification form loading
 status: draft
 owner: jc
 change_type: create
@@ -87,7 +87,7 @@ source: design/04-phase-1-mvp-build.md
 // Features; History is append-only), so the field has to survive a load intact.
 func TestSupersedesRoundTripsOnTask(t *testing.T) {
 	taskYAML := `id: T-aaaaaa
-key: form-engine/nrca-form-loading/schema-transcription
+key: form-engine/certification-form-loading/schema-transcription
 title: Transcribe the schema
 status: proposed
 owner: jc

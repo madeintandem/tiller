@@ -74,12 +74,12 @@ func TestFailedFirstStartLeavesNoActivationOrFrozenOwner(t *testing.T) {
 			feature, epic := tree.Features["F-000001"], tree.Epics["E-000001"]
 			switch guard {
 			case "task branch collision":
-				gitRunM(t, root, "branch", "tiller/form-engine/nrca-form-loading/first")
+				gitRunM(t, root, "branch", "tiller/form-engine/certification-form-loading/first")
 			case "feature dependency", "epic dependency":
 				dependency, err := mutate.AddEpic(tree, deps, mutate.EpicInput{Key: "prerequisite", Title: "Prerequisite"})
 				require.NoError(t, err)
 				var doc any = feature
-				path := filepath.Join(root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml")
+				path := filepath.Join(root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml")
 				feature.DependsOn = []string{dependency.ID}
 				if guard == "epic dependency" {
 					epic.DependsOn = []string{dependency.ID}
@@ -94,7 +94,7 @@ func TestFailedFirstStartLeavesNoActivationOrFrozenOwner(t *testing.T) {
 				require.NoError(t, err)
 			case "parent basis":
 				writeFeatureProse(t, root)
-				require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.md"), []byte("Changed contract"), 0o644))
+				require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/epics/form-engine/features/certification-form-loading/feature.md"), []byte("Changed contract"), 0o644))
 			case "retired epic", "closed aggregate":
 				epic.Status = "cancelled"
 				if guard == "closed aggregate" {

@@ -1,4 +1,4 @@
-# Transcribe NRCA-LTI-02-A (2025) into JSON Schema
+# Transcribe CERT-LTI-02-A (2025) into JSON Schema
 
 ## Approach
 
@@ -11,4 +11,4 @@ computed-field bindings the calculator reads.
 
 ## Tests
 
-- `spec/form_definitions/nrca_lti_02a_spec.rb`
+- `spec/form_definitions/cert_lti_02a_spec.rb`

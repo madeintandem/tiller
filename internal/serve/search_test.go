@@ -66,7 +66,7 @@ func searchFixtureAt(t *testing.T) (string, *httptest.Server) {
 	tree, err = store.Load(root)
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(tree, deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create",
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create",
 	})
 	require.NoError(t, err)
 	bugDir := filepath.Join(root, store.ShelfRelDir(store.NounBug, "blank-on-reload"))
@@ -84,7 +84,7 @@ func searchFixtureAt(t *testing.T) (string, *httptest.Server) {
 
 	designDir := filepath.Join(root, ".tiller", "design")
 	require.NoError(t, os.MkdirAll(designDir, 0o755))
-	doc := "# Upload notes\n\nThe uploader parses NRCA PDFs.\n"
+	doc := "# Upload notes\n\nThe uploader parses certification PDFs.\n"
 	require.NoError(t, os.WriteFile(filepath.Join(designDir, "01-notes.md"), []byte(doc), 0o644))
 
 	srv := httptest.NewServer(serve.SearchHandler(root))
@@ -116,7 +116,7 @@ func searchFixture(t *testing.T) *httptest.Server {
 func TestSearchEndpointAnswersTheSearch(t *testing.T) {
 	srv := searchFixture(t)
 
-	resp, err := srv.Client().Get(srv.URL + "/api/search?q=" + url.QueryEscape("NRCA form loading"))
+	resp, err := srv.Client().Get(srv.URL + "/api/search?q=" + url.QueryEscape("Certification form loading"))
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
@@ -125,7 +125,7 @@ func TestSearchEndpointAnswersTheSearch(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	want := `{
-  "query": "NRCA form loading",
+  "query": "Certification form loading",
   "count": 1,
   "truncated": false,
   "kinds": [
@@ -138,17 +138,17 @@ func TestSearchEndpointAnswersTheSearch(t *testing.T) {
     {
       "noun": "feature",
       "id": "F-aaaaaa",
-      "key": "form-engine/nrca-form-loading",
-      "title": "NRCA form loading",
+      "key": "form-engine/certification-form-loading",
+      "title": "Certification form loading",
       "status": "draft",
-      "ref": "form-engine/nrca-form-loading (F-aaaaaa)",
+      "ref": "form-engine/certification-form-loading (F-aaaaaa)",
       "match": "title",
       "count": 1,
       "hits": [
         {
-          "path": ".tiller/epics/form-engine/features/nrca-form-loading/feature.md",
+          "path": ".tiller/epics/form-engine/features/certification-form-loading/feature.md",
           "line": 1,
-          "snippet": "# NRCA form loading"
+          "snippet": "# Certification form loading"
         }
       ]
     }

@@ -99,7 +99,7 @@ First run the structural preflight above, before choosing placement or opening a
 # corrections only: no amendment, no staging, no ceremony
 # edit only same-scope, non-terminal feature.md, feature.eval.md, or task.md, then hand the human
 # (or run on their explicit instruction naming the node):
-tiller approve feature form-engine/nrca-form-loading --refresh-basis
+tiller approve feature form-engine/certification-form-loading --refresh-basis
 tiller approve task T-k3p9w6 --refresh-basis
 ```
 
@@ -107,7 +107,7 @@ The second is the structural reshape: open it, stage it, show it, and stop.
 
 ```
 tiller drift                                               # when a cascade brought you here, read it first
-tiller show feature form-engine/nrca-form-loading --json   # the surface and the basis that bound the reading
+tiller show feature form-engine/certification-form-loading --json   # the surface and the basis that bound the reading
 tiller add amendment form-engine-rework \
   --title "Restructure form engine from embedded JSON to discrete tables" \
   --triggered-by design/solution-design/04-form-engine.md
@@ -142,7 +142,7 @@ tiller amend form-engine-rework --add-question "Keep the legacy embedded-JSON fa
   --title "Legacy offline fallback" \
   --blocks print-layouts/pdf-export
 
-tiller amend form-engine-rework --supersede form-engine/nrca-form-loading \
+tiller amend form-engine-rework --supersede form-engine/certification-form-loading \
   --by form-engine/table-backed-forms \
   --precondition target_status=done --precondition target_revision=git:7bc1a20
 tiller amend form-engine-rework --cancel form-engine/rendering-modes/embedded-json-fallback \
@@ -154,7 +154,7 @@ tiller amend form-engine-rework --cancel form-engine/rendering-modes/embedded-js
 tiller amend form-engine-rework --revise form-engine/rendering-modes \
   --precondition spec_revision=git:3e9293c9d2b5686c3f12421e797ace6d8acabee5
 # a correct-eval of a done feature: edit only the bindings in feature.eval.md first
-tiller amend form-engine-rework --correct-eval form-engine/nrca-form-loading \
+tiller amend form-engine-rework --correct-eval form-engine/certification-form-loading \
   --reason "loader tests moved into two files" --retire C-4
 tiller amend form-engine-rework --amends-design design/solution-design/01-overview.md
 tiller show amendment form-engine-rework                   # the batch, each precondition's live validity

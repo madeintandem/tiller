@@ -30,7 +30,7 @@ func writeQuestionRepo(t *testing.T) string {
 	mintF := func(prefix string) string { return prefix + "-bbbbbb" }
 	deps := testDeps()
 	deps.Mint = mintF
-	_, err = mutate.AddFeature(tree, deps, mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(tree, deps, mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	return root
 }
@@ -46,7 +46,7 @@ func TestAddQuestionMintsIntoTheLedger(t *testing.T) {
 	res, err := mutate.AddQuestion(tree, testDeps(), mutate.QuestionInput{
 		Title:     "Design system location",
 		Statement: "Where does the front-end design system live?",
-		Blocks:    []string{"form-engine/nrca-form-loading", "E-aaaaaa"},
+		Blocks:    []string{"form-engine/certification-form-loading", "E-aaaaaa"},
 		Due:       store.QuestionDue{Date: "2026-07-12"},
 		Source:    "briefing",
 	})
@@ -159,7 +159,7 @@ func TestReAddUnionsNewBlocks(t *testing.T) {
 	again, err := mutate.AddQuestion(tree, testDeps(), mutate.QuestionInput{
 		Title:     "Authentication provider",
 		Statement: "Which auth provider?",
-		Blocks:    []string{"form-engine/nrca-form-loading", "E-aaaaaa"},
+		Blocks:    []string{"form-engine/certification-form-loading", "E-aaaaaa"},
 	})
 	require.NoError(t, err)
 	require.False(t, again.Created)
@@ -178,7 +178,7 @@ func TestReAddUnionsNewBlocks(t *testing.T) {
 	closed, err := mutate.AddQuestion(tree, testDeps(), mutate.QuestionInput{
 		Title:     "Authentication provider",
 		Statement: "Which auth provider?",
-		Blocks:    []string{"form-engine/nrca-form-loading"},
+		Blocks:    []string{"form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 	require.False(t, closed.Changed)
@@ -215,7 +215,7 @@ func TestAddQuestionBlocksATaskByItsKey(t *testing.T) {
 	t.Parallel()
 	root := writeQuestionRepo(t)
 	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/render-the-form",
+		Key:   "form-engine/certification-form-loading/render-the-form",
 		Title: "Render the form",
 	})
 	require.NoError(t, err)
@@ -223,7 +223,7 @@ func TestAddQuestionBlocksATaskByItsKey(t *testing.T) {
 	res, err := mutate.AddQuestion(load(t, root), testDeps(), mutate.QuestionInput{
 		Title:     "Form renderer",
 		Statement: "Which renderer does the form use?",
-		Blocks:    []string{"form-engine/nrca-form-loading/render-the-form"},
+		Blocks:    []string{"form-engine/certification-form-loading/render-the-form"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, []string{"T-aaaaaa"}, res.Blocks, "the task key resolves to the task's id")
@@ -429,7 +429,7 @@ func layOpenQuestionBlockingATask(t *testing.T) (string, string) {
 	root := writeQuestionRepo(t)
 	res, err := mutate.AddQuestion(load(t, root), testDeps(), mutate.QuestionInput{
 		Title: "Which store", Statement: "Which store holds the forms?",
-		Blocks: []string{"form-engine/nrca-form-loading"},
+		Blocks: []string{"form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 	return root, res.ID

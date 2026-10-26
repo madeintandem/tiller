@@ -391,7 +391,7 @@ func TestStartTasksUnderEpicGrainShareTheEpicAggregate(t *testing.T) {
 
 	t.Run("under task grain the feature has no working branch", func(t *testing.T) {
 		root := layActiveFeature(t)
-		require.Empty(t, featureByKey(load(t, root), "form-engine/nrca-form-loading").Branch)
+		require.Empty(t, featureByKey(load(t, root), "form-engine/certification-form-loading").Branch)
 		require.Empty(t, epicByKey(load(t, root), "form-engine").Branch, "an epic outside epic grain never records a branch")
 	})
 }

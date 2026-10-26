@@ -67,11 +67,11 @@ func TestAddEpicIdempotent(t *testing.T) {
 func TestAddTaskAppendsSecond(t *testing.T) {
 	initOwnedRepo(t)
 	execCLI(t, "add", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "add", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "add", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
-	_, _, code := execCLI(t, "add", "task", "form-engine/nrca-form-loading/first-task", "--title", "First task", "--contributor", "jc")
+	_, _, code := execCLI(t, "add", "task", "form-engine/certification-form-loading/first-task", "--title", "First task", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/second-task", "--title", "Second task", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/second-task", "--title", "Second task", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	// Read the ledger straight off disk: two tasks.

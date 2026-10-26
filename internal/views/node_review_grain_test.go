@@ -23,7 +23,7 @@ import (
 
 func TestNodeProjectsReviewGrainAndSource(t *testing.T) {
 	epicKey := "form-engine"
-	featureKey := "form-engine/nrca-form-loading"
+	featureKey := "form-engine/certification-form-loading"
 
 	treeWithEpic := func(e *store.Epic) *store.Tree {
 		return &store.Tree{Epics: map[string]*store.Epic{e.ID: e}}
@@ -160,7 +160,7 @@ func TestNodeOmitsReviewGrainForNounsWithNoWorkUnderThem(t *testing.T) {
 func TestNodeProjectsPRAndReviewRefAtCoarserGrain(t *testing.T) {
 	pr := 101
 	epicKey := "form-engine"
-	featureKey := "form-engine/nrca-form-loading"
+	featureKey := "form-engine/certification-form-loading"
 
 	t.Run("epic-grain epic carries its own recorded PR", func(t *testing.T) {
 		e := &store.Epic{ID: "E-aaaaaa", Key: &epicKey, Status: "in_review", ReviewGrain: "epic", PR: &pr}
@@ -177,18 +177,18 @@ func TestNodeProjectsPRAndReviewRefAtCoarserGrain(t *testing.T) {
 		f := &store.Feature{
 			ID: "F-aaaaaa", Key: &featureKey, Status: "in_review", ReviewGrain: "feature",
 			ReviewRef: &store.ReviewRef{
-				Branch: "tiller/form-engine/nrca-form-loading",
+				Branch: "tiller/form-engine/certification-form-loading",
 				Head:   store.RevisionRef{Kind: store.KindGitCommit, Value: "git:e5f9d28"},
 			},
 		}
 		v := views.Node(&store.Tree{}, f)
 		require.NotNil(t, v.ReviewRef)
-		require.Equal(t, "tiller/form-engine/nrca-form-loading", v.ReviewRef.Branch)
+		require.Equal(t, "tiller/form-engine/certification-form-loading", v.ReviewRef.Branch)
 		require.Equal(t, "git:e5f9d28", v.ReviewRef.Head)
 		require.Nil(t, v.PR)
 		out, err := json.Marshal(v)
 		require.NoError(t, err)
 		require.Contains(t, string(out),
-			`"review_ref":{"branch":"tiller/form-engine/nrca-form-loading","head":"git:e5f9d28"}`)
+			`"review_ref":{"branch":"tiller/form-engine/certification-form-loading","head":"git:e5f9d28"}`)
 	})
 }

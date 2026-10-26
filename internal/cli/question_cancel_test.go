@@ -45,7 +45,7 @@ func TestCancelQuestionCLI(t *testing.T) {
 	human, _, code := execCLI(t, "cancel", "question", qid, "--reason", "moot", "--contributor", "jc")
 	require.Equal(t, 0, code, human)
 	confirm := fmt.Sprintf("question %s (%q): %q is now cancelled.", qid, "Canonical schema version", "Which schema version is canonical?")
-	assumed := fmt.Sprintf("form-engine/nrca-form-loading (%s) assumed %s; its plan stands as built.", fid, qid)
+	assumed := fmt.Sprintf("form-engine/certification-form-loading (%s) assumed %s; its plan stands as built.", fid, qid)
 	require.Contains(t, human, confirm+"\n"+assumed)
 	require.Contains(t, human, "Question cancelled")
 	require.Less(t, strings.Index(human, assumed), strings.Index(human, "Question cancelled"),
@@ -133,11 +133,11 @@ func TestAddQuestionReaskLine(t *testing.T) {
 func TestCancelReleasesPlanGate(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeBlockingQuestion(t, "Q-aaaaaa", soleTaskID(t))
 
-	_, _, code = execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 1, code, "the open question holds the plan")
 	require.Empty(t, queueKinds(views.QueueOf(loadTestTree(t)), "approve_feature"))
 
@@ -145,7 +145,7 @@ func TestCancelReleasesPlanGate(t *testing.T) {
 	require.Len(t, queueKinds(views.QueueOf(loadTestTree(t)), "approve_feature"), 1,
 		"a cancelled question releases the plan and the row returns")
 
-	_, stderr, code := execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, stderr, code := execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	require.Equal(t, "ready", loadTestTree(t).Features[soleFeatureID(t)].Status)
 }

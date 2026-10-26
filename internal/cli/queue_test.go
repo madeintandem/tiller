@@ -25,7 +25,7 @@ func layQueueCommandTree(t *testing.T) *store.Tree {
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/private-review-task",
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/private-review-task",
 		"--title", "Private review task", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "bug", "private-triage", "--title", "Private triage bug", "--contributor", "jc")
@@ -304,7 +304,7 @@ func mergeReadyEpicFixture(t *testing.T) {
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeRealSpec(t)
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")

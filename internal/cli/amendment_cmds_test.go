@@ -33,13 +33,13 @@ func layAmendmentTree(t *testing.T) {
 	initOwnedRepo(t)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/schema-transcription",
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/schema-transcription",
 		"--title", "Transcribe the schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/schema-review",
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/schema-review",
 		"--title", "Review the schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
 }
@@ -196,7 +196,7 @@ func TestAmendMoveFeatureStagesShowsAndApprovesIdentityPreservingMove(t *testing
 	_, stderr, code := execCLI(t, "add", "epic", "back-office", "--title", "Back office", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	aid := openAmendmentCLI(t, "move-loading", "Move loading")
-	out, stderr, code := execCLI(t, "amend", aid, "--move-feature", "form-engine/nrca-form-loading",
+	out, stderr, code := execCLI(t, "amend", aid, "--move-feature", "form-engine/certification-form-loading",
 		"--to", "back-office/loading", "--reason", "Keep oversight together", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	data := jsonData(t, out)
@@ -209,10 +209,10 @@ func TestAmendMoveFeatureStagesShowsAndApprovesIdentityPreservingMove(t *testing
 	require.Equal(t, "Keep oversight together", op["reason"])
 	require.IsType(t, map[string]any{}, op["move"])
 	move := op["move"].(map[string]any)
-	require.Equal(t, "form-engine/nrca-form-loading", move["source_key"])
+	require.Equal(t, "form-engine/certification-form-loading", move["source_key"])
 	require.Equal(t, "back-office", move["destination_epic_key"])
 	require.Equal(t, "append", move["order_effect"])
-	require.Equal(t, "form-engine/nrca-form-loading", *loadCwdTree(t).Features[featureID].Key,
+	require.Equal(t, "form-engine/certification-form-loading", *loadCwdTree(t).Features[featureID].Key,
 		"staging must leave the feature at its original address")
 	out, stderr, code = execCLI(t, "show", "amendment", aid, "--json")
 	require.Equal(t, 0, code, stderr)
@@ -220,7 +220,7 @@ func TestAmendMoveFeatureStagesShowsAndApprovesIdentityPreservingMove(t *testing
 	require.Equal(t, op["move"], shown["move"])
 	out, stderr, code = execCLI(t, "show", "amendment", aid)
 	require.Equal(t, 0, code, stderr)
-	require.Contains(t, out, "form-engine/nrca-form-loading")
+	require.Contains(t, out, "form-engine/certification-form-loading")
 	require.Contains(t, out, "back-office/loading")
 	require.Contains(t, out, "Keep oversight together")
 	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
@@ -232,7 +232,7 @@ func TestAmendMoveFeatureStagesShowsAndApprovesIdentityPreservingMove(t *testing
 	after := loadCwdTree(t)
 	require.Equal(t, "back-office/loading", *after.Features[featureID].Key)
 	for id, task := range before.Tasks {
-		require.Equal(t, strings.Replace(*task.Key, "form-engine/nrca-form-loading/", "back-office/loading/", 1), *after.Tasks[id].Key)
+		require.Equal(t, strings.Replace(*task.Key, "form-engine/certification-form-loading/", "back-office/loading/", 1), *after.Tasks[id].Key)
 		require.Equal(t, task.Status, after.Tasks[id].Status)
 	}
 }
@@ -264,7 +264,7 @@ func TestAmendMoveFeatureShowsStaleReviewedSnapshot(t *testing.T) {
 	showStatus("stale")
 	_, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
 	require.Equal(t, 1, code)
-	require.Equal(t, "form-engine/nrca-form-loading", *loadCwdTree(t).Features[featureID].Key)
+	require.Equal(t, "form-engine/certification-form-loading", *loadCwdTree(t).Features[featureID].Key)
 }
 
 func TestAmendMoveFeatureRefusesInvalidFlagsWithoutStaging(t *testing.T) {
@@ -275,12 +275,12 @@ func TestAmendMoveFeatureRefusesInvalidFlagsWithoutStaging(t *testing.T) {
 		flags  []string
 		reason string
 	}{
-		{"exclusive", []string{"--move-feature", "form-engine/nrca-form-loading", "--cancel", "form-engine/nrca-form-loading", "--to", "back-office/loading", "--reason", "Move"}, "multiple_operations"},
-		{"missing destination", []string{"--move-feature", "form-engine/nrca-form-loading", "--reason", "Move"}, "to_required"},
-		{"missing reason", []string{"--move-feature", "form-engine/nrca-form-loading", "--to", "back-office/loading"}, "reason_required"},
-		{"blank reason", []string{"--move-feature", "form-engine/nrca-form-loading", "--to", "back-office/loading", "--reason", " "}, "reason_required"},
-		{"invalid destination", []string{"--move-feature", "form-engine/nrca-form-loading", "--to", "loading", "--reason", "Move"}, "invalid_key"},
-		{"misplaced destination", []string{"--revise", "form-engine/nrca-form-loading", "--to", "back-office/loading"}, "to_misplaced"},
+		{"exclusive", []string{"--move-feature", "form-engine/certification-form-loading", "--cancel", "form-engine/certification-form-loading", "--to", "back-office/loading", "--reason", "Move"}, "multiple_operations"},
+		{"missing destination", []string{"--move-feature", "form-engine/certification-form-loading", "--reason", "Move"}, "to_required"},
+		{"missing reason", []string{"--move-feature", "form-engine/certification-form-loading", "--to", "back-office/loading"}, "reason_required"},
+		{"blank reason", []string{"--move-feature", "form-engine/certification-form-loading", "--to", "back-office/loading", "--reason", " "}, "reason_required"},
+		{"invalid destination", []string{"--move-feature", "form-engine/certification-form-loading", "--to", "loading", "--reason", "Move"}, "invalid_key"},
+		{"misplaced destination", []string{"--revise", "form-engine/certification-form-loading", "--to", "back-office/loading"}, "to_misplaced"},
 		{"empty misplaced destination", []string{"--amends-design", "design/a.md", "--to="}, "to_misplaced"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -328,7 +328,7 @@ func TestAddAmendmentDuplicateKeyRefused(t *testing.T) {
 func TestAmendRefusesMoreThanOneOperationKind(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--cancel", taskID, "--reason", "x", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
@@ -356,7 +356,7 @@ func TestAmendRefusesPreconditionWithoutOp(t *testing.T) {
 func TestAmendRefusesMalformedPrecondition(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--precondition", "no-equals-sign", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
@@ -386,7 +386,7 @@ func TestAmendAddTaskRequiresTitle(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
-	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/extra-task", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/extra-task", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
 	require.Contains(t, out, `"reason": "title_required"`)
 }
@@ -394,7 +394,7 @@ func TestAmendAddTaskRequiresTitle(t *testing.T) {
 func TestAmendCancelRequiresReason(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--cancel", taskID, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
@@ -404,7 +404,7 @@ func TestAmendCancelRequiresReason(t *testing.T) {
 func TestAmendSupersedeRequiresBy(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--supersede", taskID, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
@@ -416,7 +416,7 @@ func TestAmendSupersedeRequiresBy(t *testing.T) {
 func TestAmendSupersedeRefusesSelfSupersession(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--supersede", taskID, "--by", taskID, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
@@ -436,8 +436,8 @@ func TestAmendSupersedeRefusesSelfSupersession(t *testing.T) {
 func TestAmendByMisplacedOnRevise(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
@@ -447,8 +447,8 @@ func TestAmendByMisplacedOnRevise(t *testing.T) {
 func TestAmendByMisplacedOnCancel(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--cancel", taskID, "--reason", "x", "--by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
@@ -458,7 +458,7 @@ func TestAmendByMisplacedOnCancel(t *testing.T) {
 func TestAmendByMisplacedOnAddFeature(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-feature", "form-engine/table-backed-forms",
 		"--by", task2, "--contributor", "jc", "--json")
@@ -469,9 +469,9 @@ func TestAmendByMisplacedOnAddFeature(t *testing.T) {
 func TestAmendByMisplacedOnAddTask(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
-	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/extra-task",
+	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/extra-task",
 		"--title", "Extra task", "--by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
 	require.Contains(t, out, `"reason": "supersede_by_misplaced"`)
@@ -480,8 +480,8 @@ func TestAmendByMisplacedOnAddTask(t *testing.T) {
 func TestAmendSupersededByMisplacedOnRevise(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--superseded-by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
@@ -491,8 +491,8 @@ func TestAmendSupersededByMisplacedOnRevise(t *testing.T) {
 func TestAmendSupersededByMisplacedOnSupersede(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--supersede", taskID, "--by", task2,
 		"--superseded-by", task2, "--contributor", "jc", "--json")
@@ -503,7 +503,7 @@ func TestAmendSupersededByMisplacedOnSupersede(t *testing.T) {
 func TestAmendByMisplacedOnAddEpic(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-epic", "hardening",
 		"--by", task2, "--contributor", "jc", "--json")
@@ -514,7 +514,7 @@ func TestAmendByMisplacedOnAddEpic(t *testing.T) {
 func TestAmendSupersededByMisplacedOnAddFeature(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-feature", "form-engine/table-backed-forms",
 		"--superseded-by", task2, "--contributor", "jc", "--json")
@@ -525,9 +525,9 @@ func TestAmendSupersededByMisplacedOnAddFeature(t *testing.T) {
 func TestAmendSupersededByMisplacedOnAddTask(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
-	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/extra-task",
+	out, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/extra-task",
 		"--title", "Extra task", "--superseded-by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
 	require.Contains(t, out, `"reason": "superseded_by_misplaced"`)
@@ -536,7 +536,7 @@ func TestAmendSupersededByMisplacedOnAddTask(t *testing.T) {
 func TestAmendSupersededByMisplacedOnAddEpic(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-epic", "hardening",
 		"--superseded-by", task2, "--contributor", "jc", "--json")
@@ -547,7 +547,7 @@ func TestAmendSupersededByMisplacedOnAddEpic(t *testing.T) {
 func TestAmendByMisplacedOnAddQuestion(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-question", "Which auth provider?",
 		"--title", "Authentication provider", "--by", task2, "--contributor", "jc", "--json")
@@ -558,7 +558,7 @@ func TestAmendByMisplacedOnAddQuestion(t *testing.T) {
 func TestAmendSupersededByMisplacedOnAddQuestion(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-question", "Which auth provider?",
 		"--title", "Authentication provider", "--superseded-by", task2, "--contributor", "jc", "--json")
@@ -575,7 +575,7 @@ func TestAmendSupersededByMisplacedOnAddQuestion(t *testing.T) {
 func TestAmendBlocksMisplacedOnRevise(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--blocks", taskID, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
@@ -585,7 +585,7 @@ func TestAmendBlocksMisplacedOnRevise(t *testing.T) {
 func TestAmendBlocksMisplacedOnAddEpic(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-epic", "hardening", "--blocks", taskID, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
@@ -595,7 +595,7 @@ func TestAmendBlocksMisplacedOnAddEpic(t *testing.T) {
 func TestAmendOnATerminalAmendmentRefusesAmendmentNotOpen(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 	_, _, code := execCLI(t, "withdraw", "amendment", aid, "--reason", "dropped", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -622,7 +622,7 @@ func TestAmendStagesAddFeatureAndAddTask(t *testing.T) {
 	require.Equal(t, "form-engine/table-backed-forms", op0["key"])
 	require.Equal(t, "replace", op0["change_type"])
 
-	out, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	out, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
 	data = jsonData(t, out)
@@ -694,7 +694,7 @@ func TestAmendApproveMaterializesAnAddEpicWithItsSourceCitation(t *testing.T) {
 func TestAmendStagesAddQuestion(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-question", "Which auth provider?",
 		"--title", "Authentication provider", "--blocks", taskID, "--contributor", "jc", "--json")
@@ -745,7 +745,7 @@ func TestAmendAddQuestionRequiresStatementAndOneLineTitle(t *testing.T) {
 func TestAmendApproveMaterializesAnAddQuestionWithItsSourceCitation(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "hardening-question", "Land the hardening question")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-question", "Keep the legacy parser?",
 		"--title", "Legacy parser", "--blocks", taskID, "--source", "docs/feedback/opus-review.md#L20-24", "--contributor", "jc", "--json")
@@ -780,7 +780,7 @@ func TestAmendApproveMaterializesAnAddQuestionWithItsSourceCitation(t *testing.T
 func TestShowAmendmentJSONCarriesOpSourceAndBlocks(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-question", "Which auth provider?",
 		"--title", "Authentication provider", "--blocks", taskID, "--source", "docs/feedback/opus-review.md#L20-24", "--contributor", "jc", "--json")
@@ -867,8 +867,8 @@ func TestAmendApproveAddQuestionBlocksAFeatureAddedInTheSameAmendment(t *testing
 func TestAmendStagesSupersedeAndCancelWithReplacement(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task1 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task1 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "amend", aid, "--supersede", task1, "--by", task2, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
@@ -886,7 +886,7 @@ func TestAmendStagesSupersedeAndCancelWithReplacement(t *testing.T) {
 func TestAmendAmendsDesignRidesAloneAndBesideAnOp(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--amends-design", "design/04-platform-and-constraints.md", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
@@ -910,7 +910,7 @@ func TestAmendAmendsDesignRidesAloneAndBesideAnOp(t *testing.T) {
 func TestAmendSourceStagesOntoTheOpAndPersists(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID,
 		"--source", "docs/feedback/opus-review.md#L12-18", "--contributor", "jc", "--json")
@@ -929,7 +929,7 @@ func TestAmendSourceStagesOntoTheOpAndPersists(t *testing.T) {
 func TestAmendRefusesSourcelessOpWhenAmendmentCarriesSource(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 	setAmendmentSourceOnDisk(t, aid, ".tiller/feedback/opus-review.md", "git:9f2a1c0")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--contributor", "jc", "--json")
@@ -946,7 +946,7 @@ func TestAmendRefusesSourcelessOpWhenAmendmentCarriesSource(t *testing.T) {
 func TestAmendAllowsSourcedOpWhenAmendmentCarriesSource(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 	setAmendmentSourceOnDisk(t, aid, ".tiller/feedback/opus-review.md", "git:9f2a1c0")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID,
@@ -961,7 +961,7 @@ func TestAmendAllowsSourcedOpWhenAmendmentCarriesSource(t *testing.T) {
 func TestAmendFlagsACitationThatWillNotResolve(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 	citation := "docs/feedback/opus-review.md#L12-18; L40"
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--source", citation, "--contributor", "jc", "--json")
@@ -977,7 +977,7 @@ func TestAmendFlagsACitationThatWillNotResolve(t *testing.T) {
 func TestAmendHumanWarnsWhenItsCitationWillNotResolve(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--revise", taskID,
 		"--source", "docs/feedback/opus-review.md#L12–18", "--contributor", "jc")
@@ -990,7 +990,7 @@ func TestAmendAcceptsSeveralRangesAndFreeTextWithoutWarning(t *testing.T) {
 		t.Run(source, func(t *testing.T) {
 			layAmendmentTree(t)
 			aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-			taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+			taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 			out, _, code := execCLI(t, "amend", aid, "--revise", taskID, "--source", source, "--contributor", "jc")
 			require.Equal(t, 0, code, out)
@@ -1005,7 +1005,7 @@ func TestAmendAcceptsSeveralRangesAndFreeTextWithoutWarning(t *testing.T) {
 func TestShowAmendmentHumanRendersAddEpicAndAddQuestionHeadlines(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "hardening", "Land hardening work")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "amend", aid, "--add-epic", "hardening-epic",
 		"--title", "Hardening", "--source", "docs/feedback/opus-review.md#L1-9", "--contributor", "jc")
@@ -1036,14 +1036,14 @@ func TestShowAmendmentHumanRendersSourceOnAPreExistingOpKind(t *testing.T) {
 	featureID := soleFeatureID(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
-	out, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--source", "docs/feedback/opus-review.md#L12-18", "--contributor", "jc")
 	require.Equal(t, 0, code, out)
 
 	human, _, code := execCLI(t, "show", "amendment", aid)
 	require.Equal(t, 0, code, human)
 	require.Contains(t, human, fmt.Sprintf(
-		"revise form-engine/nrca-form-loading (%s) · docs/feedback/opus-review.md#L12-18", featureID))
+		"revise form-engine/certification-form-loading (%s) · docs/feedback/opus-review.md#L12-18", featureID))
 }
 
 // TestShowAmendmentHumanOmitsCitationForAWhitespaceOnlySource pins the
@@ -1094,9 +1094,9 @@ func TestShowAmendmentRendersLiveValidity(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
-	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--precondition", "target_status=draft",
-		"--precondition", "key_absent=form-engine/nrca-form-loading",
+		"--precondition", "key_absent=form-engine/certification-form-loading",
 		"--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -1133,7 +1133,7 @@ func TestShowAmendmentRendersUnknownForAStagedKey(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
-	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--precondition", "target_status=done", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -1158,8 +1158,8 @@ func TestShowAmendmentRendersUnknownForAStagedKey(t *testing.T) {
 func TestShowAmendmentSupersedeMechanismNote(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task1 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task1 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	_, _, code := execCLI(t, "amend", aid, "--supersede", task1, "--by", task2, "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -1178,8 +1178,8 @@ func TestShowAmendmentSupersedeMechanismNote(t *testing.T) {
 func TestShowAmendmentSupersedeNoNoteWhenTargetStatusStaged(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	task1 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task1 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	_, _, code := execCLI(t, "amend", aid, "--supersede", task1, "--by", task2,
 		"--precondition", "target_status=done", "--contributor", "jc")
@@ -1207,7 +1207,7 @@ func TestShowAmendmentNotFound(t *testing.T) {
 func TestShowAmendmentDegradesWhenTheBatchDoesNotResolve(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	vanishTargetOnDisk(t, aid)
 
@@ -1374,12 +1374,12 @@ func TestShowAmendmentRendersEveryHandEditDefectAlongsideTheResolutionFailure(t 
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 	setAmendmentSourceOnDisk(t, aid, ".tiller/feedback/opus-review.md", "git:9f2a1c0")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	// Operation 0: a revise, later hand-blanked (source_missing) and hand-
 	// vanished (the resolution failure), carrying a staged precondition so
 	// its own live column has something to prove blank.
-	out, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--precondition", "target_status=draft",
 		"--source", "docs/feedback/opus-review.md#L1-2", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
@@ -1446,14 +1446,14 @@ func TestShowAmendmentRendersEveryHandEditDefectAlongsideTheResolutionFailure(t 
 func TestApproveAmendmentAppliesTheBatchAndPrintsTheReadout(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
-	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance",
-		"--precondition", "key_absent=form-engine/nrca-form-loading/iphone-acceptance", "--contributor", "jc")
+		"--precondition", "key_absent=form-engine/certification-form-loading/iphone-acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "amend", aid, "--cancel", taskID, "--reason", "superseded under the iPhone-only decision",
-		"--superseded-by", "form-engine/nrca-form-loading/iphone-acceptance",
+		"--superseded-by", "form-engine/certification-form-loading/iphone-acceptance",
 		"--precondition", "target_status=proposed", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -1480,15 +1480,15 @@ func TestApproveAmendmentAddTaskDoesNotInheritSiblingOwnership(t *testing.T) {
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	aid := openAmendmentCLI(t, "claimed-add-task", "Add a task beside assigned work")
 
-	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance",
-		"--precondition", "key_absent=form-engine/nrca-form-loading/iphone-acceptance", "--contributor", "jc")
+		"--precondition", "key_absent=form-engine/certification-form-loading/iphone-acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
 	require.Equal(t, 0, code, out)
 
-	minted := soleTaskIDByKey(t, "form-engine/nrca-form-loading/iphone-acceptance")
+	minted := soleTaskIDByKey(t, "form-engine/certification-form-loading/iphone-acceptance")
 	require.Empty(t, loadCwdTree(t).Tasks[minted].Owner)
 	require.Equal(t, "jc", loadCwdTree(t).Tasks[soleTaskIDByKey(t, cliTaskKey)].Owner)
 }
@@ -1497,8 +1497,8 @@ func TestApproveAmendmentAddTaskDoesNotInheritSiblingOwnership(t *testing.T) {
 func TestApproveAmendmentDoesNotCountUpdatedQuestionAsMinted(t *testing.T) {
 	layAmendmentTree(t)
 	statement := "Which billing provider is canonical?"
-	firstBlock := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	secondBlock := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	firstBlock := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	secondBlock := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	out, _, code := execCLI(t, "add", "question", statement, "--title", "Billing currency", "--blocks", firstBlock, "--contributor", "jc")
 	require.Equal(t, 0, code, out)
@@ -1523,7 +1523,7 @@ func TestApproveAmendmentDoesNotCountUpdatedQuestionAsMinted(t *testing.T) {
 func TestApproveAmendmentDoesNotCountNoChangeQuestionAsMinted(t *testing.T) {
 	layAmendmentTree(t)
 	statement := "Which table format is canonical?"
-	block := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	block := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	out, _, code := execCLI(t, "add", "question", statement, "--title", "Table question", "--blocks", block, "--contributor", "jc")
 	require.Equal(t, 0, code, out)
@@ -1563,9 +1563,9 @@ func TestApproveAmendmentBareIdentitySpeaksTheFallbackAndCreditsTheActor(t *test
 	require.Equal(t, 0, code)
 
 	aid1 := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	_, _, code = execCLI(t, "amend", aid1, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code = execCLI(t, "amend", aid1, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance",
-		"--precondition", "key_absent=form-engine/nrca-form-loading/iphone-acceptance", "--contributor", "jc")
+		"--precondition", "key_absent=form-engine/certification-form-loading/iphone-acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code := execCLI(t, "approve", "amendment", aid1)
@@ -1580,9 +1580,9 @@ func TestApproveAmendmentBareIdentitySpeaksTheFallbackAndCreditsTheActor(t *test
 	require.NotContains(t, out, "into the pool")
 
 	aid2 := openAmendmentCLI(t, "android-only", "Remove native Android support")
-	_, _, code = execCLI(t, "amend", aid2, "--add-task", "form-engine/nrca-form-loading/android-acceptance",
+	_, _, code = execCLI(t, "amend", aid2, "--add-task", "form-engine/certification-form-loading/android-acceptance",
 		"--title", "Android-only acceptance",
-		"--precondition", "key_absent=form-engine/nrca-form-loading/android-acceptance", "--contributor", "jc")
+		"--precondition", "key_absent=form-engine/certification-form-loading/android-acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	jsonOut, _, code := execCLI(t, "approve", "amendment", aid2, "--json")
@@ -1597,8 +1597,8 @@ func TestApproveAmendmentBareIdentitySpeaksTheFallbackAndCreditsTheActor(t *test
 func TestApproveAmendmentRefusesSupersedingNonDoneTarget(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "non-done-supersede", "Replace unfinished schema work")
-	task1 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task1 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 
 	_, _, code := execCLI(t, "amend", aid, "--supersede", task1, "--by", task2, "--contributor", "jc")
 	require.Equal(t, 0, code, "staging remains legal before the target is done")
@@ -1612,7 +1612,7 @@ func TestApproveAmendmentRefusesSupersedingNonDoneTarget(t *testing.T) {
 func TestApproveAmendmentPinsCrossGrainLineageReason(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "cross-grain-lineage", "Reject mixed-grain lineage")
-	taskID := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
+	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
 
 	_, _, code := execCLI(t, "amend", aid, "--supersede", taskID, "--by", cliFeatureKey, "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -1625,8 +1625,8 @@ func TestApproveAmendmentPinsCrossGrainLineageReason(t *testing.T) {
 
 func TestApproveAmendmentPinsConflictingLineageReason(t *testing.T) {
 	layAmendmentTree(t)
-	task1 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-transcription")
-	task2 := soleTaskIDByKey(t, "form-engine/nrca-form-loading/schema-review")
+	task1 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
+	task2 := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
 	setTaskStatusOnDisk(t, "schema-transcription", "done")
 
 	first := openAmendmentCLI(t, "first-lineage", "Record the first replacement")
@@ -1635,7 +1635,7 @@ func TestApproveAmendmentPinsConflictingLineageReason(t *testing.T) {
 	_, stderr, code := execCLI(t, "approve", "amendment", first, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	replacement := "form-engine/nrca-form-loading/replacement-schema"
+	replacement := "form-engine/certification-form-loading/replacement-schema"
 	second := openAmendmentCLI(t, "conflicting-lineage", "Reject a conflicting replacement")
 	_, _, code = execCLI(t, "amend", second, "--add-task", replacement, "--title", "Replacement schema work", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -1656,7 +1656,7 @@ func TestApproveAmendmentBlockedStalePreconditions(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
-	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--precondition", "target_status=done", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -1729,7 +1729,7 @@ func TestApproveAmendmentRefusesAReviseWithNoContractOnDisk(t *testing.T) {
 func TestApproveAmendmentRefusesWhenNotOpen(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
@@ -1824,7 +1824,7 @@ func TestWithdrawThenReopenLeavesTheKeyAddressable(t *testing.T) {
 	require.Equal(t, second, jsonData(t, out)["id"], "the key addresses the amendment still open")
 
 	out, stderr, code = execCLI(t, "amend", "iphone-only",
-		"--cancel", "form-engine/nrca-form-loading/schema-review", "--reason", "subsumed",
+		"--cancel", "form-engine/certification-form-loading/schema-review", "--reason", "subsumed",
 		"--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	require.Equal(t, second, jsonData(t, out)["id"], "and staging lands on it")
@@ -1884,7 +1884,7 @@ func TestStatusAmendmentOracle(t *testing.T) {
 	require.Equal(t, "proposed", data["status"])
 	require.Equal(t, []any{"approve", "withdraw"}, data["legal_next"])
 
-	_, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
@@ -1916,7 +1916,7 @@ func TestStatusAmendmentOracle(t *testing.T) {
 func TestAmendmentGatesRunForAnyActingOwnerNoCodeLevelRefusal(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/nrca-form-loading/iphone-acceptance",
+	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
 

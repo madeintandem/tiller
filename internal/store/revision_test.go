@@ -14,7 +14,7 @@ func TestRevisionRef_FullMapping(t *testing.T) {
 	src := `
 kind: git_blob
 value: "git:31fd9c2"
-path: epics/form-engine/features/nrca-form-loading/feature.md
+path: epics/form-engine/features/certification-form-loading/feature.md
 observed_at: "2026-06-23T00:00:00Z"
 `
 	var ref RevisionRef
@@ -22,7 +22,7 @@ observed_at: "2026-06-23T00:00:00Z"
 
 	assert.Equal(t, KindGitBlob, ref.Kind)
 	assert.Equal(t, "git:31fd9c2", ref.Value)
-	assert.Equal(t, "epics/form-engine/features/nrca-form-loading/feature.md", ref.Path)
+	assert.Equal(t, "epics/form-engine/features/certification-form-loading/feature.md", ref.Path)
 	want, _ := time.Parse(time.RFC3339, "2026-06-23T00:00:00Z")
 	assert.True(t, ref.ObservedAt.Equal(want), "observed_at parses")
 }

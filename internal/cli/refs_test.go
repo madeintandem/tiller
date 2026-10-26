@@ -18,7 +18,7 @@ import (
 
 // firstTaskKey is the canonical key of the task prepActiveFeatureWithTasks adds
 // first, the node these reference tests walk.
-const firstTaskKey = "form-engine/nrca-form-loading/schema-transcription"
+const firstTaskKey = "form-engine/certification-form-loading/schema-transcription"
 
 // TestTaskRefsCarryTheirOwnKeyPath walks one task through add, approve, status,
 // show, and ls, asserting every human surface names it by its own canonical key
@@ -29,10 +29,10 @@ func TestTaskRefsCarryTheirOwnKeyPath(t *testing.T) {
 
 	// The add confirmation names the task by its own path and echoes the
 	// recorded title.
-	out, _, code := execCLI(t, "add", "task", "form-engine/nrca-form-loading/wire-the-cli-shell",
+	out, _, code := execCLI(t, "add", "task", "form-engine/certification-form-loading/wire-the-cli-shell",
 		"--title", "Wire the CLI shell", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	require.Contains(t, out, "Created task form-engine/nrca-form-loading/wire-the-cli-shell (T-")
+	require.Contains(t, out, "Created task form-engine/certification-form-loading/wire-the-cli-shell (T-")
 	require.Contains(t, out, `) in proposed: "Wire the CLI shell"`)
 
 	// A transition confirmation names the task the same way.
@@ -69,7 +69,7 @@ func TestBlockedLinesNameTheNodeByRef(t *testing.T) {
 	// The tasks are proposed; start is illegal from there.
 	stdout, stderr, code := execCLI(t, "start", "task", ids[1], "--contributor", "jc")
 	require.Equal(t, 1, code)
-	require.Contains(t, stdout+stderr, fmt.Sprintf("Blocked: cannot start task form-engine/nrca-form-loading/form-render (%s) from %q.", ids[1], "proposed"))
+	require.Contains(t, stdout+stderr, fmt.Sprintf("Blocked: cannot start task form-engine/certification-form-loading/form-render (%s) from %q.", ids[1], "proposed"))
 }
 
 // TestStatusTaskJSONCarriesTitleNotRef pins the status oracle's title field for
@@ -168,7 +168,7 @@ func TestCheckLineNamesTaskByRef(t *testing.T) {
 
 	out, _, code := execCLI(t, "check", "task", tid, "--contributor", "jc")
 	require.Equal(t, 0, code)
-	require.Contains(t, out, fmt.Sprintf("Checked task form-engine/nrca-form-loading/transcribe-the-schema (%s): all required gates green", tid))
+	require.Contains(t, out, fmt.Sprintf("Checked task form-engine/certification-form-loading/transcribe-the-schema (%s): all required gates green", tid))
 }
 
 // TestFoundExistingAddEchoesTitle pins the idempotent re-add arm: the same

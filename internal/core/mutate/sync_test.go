@@ -102,12 +102,12 @@ func driveFeatureBranch(t testing.TB, root string) {
 	t.Helper()
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	gitCommitAllM(t, root, "lay tree")
 	gitRunM(t, root, "branch", "-M", "main")
@@ -146,7 +146,7 @@ func layActiveFeatureGit(t *testing.T, buildRun, testsRun string) string {
 func submitTask(t *testing.T, root string) {
 	t.Helper()
 	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/transcribe-the-schema",
+		Key:   "form-engine/certification-form-loading/transcribe-the-schema",
 		Title: "Transcribe the schema",
 	})
 	require.NoError(t, err)
@@ -161,10 +161,10 @@ func submitTask(t *testing.T, root string) {
 	}
 	stageSyncReview(t, root, "T-aaaaaa", featBranch)
 
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 }
 
 // stageSyncReview isolates observation tests from submission's working-branch
@@ -226,7 +226,7 @@ func layTaskGrainGit(t *testing.T) string {
 		return fmt.Sprintf("%s-tg%02d", prefix, seq)
 	}
 	_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/validate-the-schema",
+		Key:   "form-engine/certification-form-loading/validate-the-schema",
 		Title: "Validate the schema",
 	})
 	require.NoError(t, err)
@@ -246,7 +246,7 @@ func layTaskGrainGit(t *testing.T) string {
 		require.NoError(t, err)
 		stageSyncReview(t, root, id, featBranch)
 	}
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 
 	// The fixture's whole point is two in_review tasks under one feature and
 	// nothing else, which is exactly what the id collision used to hide. The
@@ -254,7 +254,7 @@ func layTaskGrainGit(t *testing.T) string {
 	// alone cannot see a dropped folder, because the drop happens in the id-keyed
 	// map the reader is holding.
 	tree := load(t, root)
-	entries, err := os.ReadDir(filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", store.TaskDirName))
+	entries, err := os.ReadDir(filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", store.TaskDirName))
 	require.NoError(t, err)
 	require.Len(t, entries, len(tree.Tasks), "every task folder on disk must own a distinct id")
 	require.Len(t, tree.Tasks, 2, "two task folders, two ids, no folder dropped by a collision")
@@ -296,25 +296,25 @@ func layActiveFeatureGitWithEval(t *testing.T, buildRun, testsRun, evalMD string
 
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 
-	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
+		[]byte("# Certification form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"), []byte(evalMD), 0o644))
 	// The specify stage is one act: the explosion is part of what `spec feature`
 	// validates, so the fixture lays the task the tests go on to name.
 	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+		Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	_, err = mutate.ClaimTask(load(t, root), testDeps(), "T-aaaaaa", "")
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "transcribe-the-schema", "## Approach\n\nTranscribe the JSON Schema into the form model.")
 
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	gitCommitAllM(t, root, "lay tree")
 	gitRunM(t, root, "branch", "-M", "main")
@@ -412,23 +412,23 @@ func TestActiveBasisGuardRefusesUntilRefresh(t *testing.T) {
 
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	gitCommitAllM(t, root, "lay tree")
 	gitRunM(t, root, "branch", "-M", "main")
 
 	// Record the accepted basis (git_blob) at the committed feature.md/eval.
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
 
 	// Edit feature.md and commit, changing its blob.
-	featDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	featDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(featDir, "feature.md"),
-		[]byte("# NRCA form loading\n\nRevised: now also renders child forms.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised: now also renders child forms.\n"), 0o644))
 	gitCommitAllM(t, root, "revise spec")
 
 	// check refuses with active_basis naming feature.md, and records nothing.
@@ -441,7 +441,7 @@ func TestActiveBasisGuardRefusesUntilRefresh(t *testing.T) {
 	// bypassed guard genuinely violates. No check has run in this fixture yet, so
 	// the stream carries none to begin with.
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(tree, testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.Error(t, err)
 	var ab *mutate.ActiveBasisError
@@ -457,9 +457,9 @@ func TestActiveBasisGuardRefusesUntilRefresh(t *testing.T) {
 	require.Equal(t, []string{"feature.md"}, ab.Drifted)
 
 	// Refresh the basis after review; check no longer refuses for active_basis.
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
 	tree = load(t, root)
-	feat = resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat = resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(tree, testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err, "after refresh-basis check no longer refuses on active_basis")
 }
@@ -507,11 +507,11 @@ func TestSyncRecordsVerifiedAgainst(t *testing.T) {
 	va := f.VerifiedAgainst
 	require.Equal(t, store.KindGitBlob, va.Spec.Kind, "spec is recorded as a git_blob ref")
 	require.True(t, strings.HasPrefix(va.Spec.Value, "git:"), "the spec value carries the git blob prefix")
-	require.Equal(t, ".tiller/epics/form-engine/features/nrca-form-loading/feature.md", filepath.ToSlash(va.Spec.Path))
+	require.Equal(t, ".tiller/epics/form-engine/features/certification-form-loading/feature.md", filepath.ToSlash(va.Spec.Path))
 
 	require.Equal(t, store.KindGitBlob, va.Eval.Kind, "eval is recorded as a git_blob ref")
 	require.True(t, strings.HasPrefix(va.Eval.Value, "git:"), "the eval value carries the git blob prefix")
-	require.Equal(t, ".tiller/epics/form-engine/features/nrca-form-loading/feature.eval.md", filepath.ToSlash(va.Eval.Path))
+	require.Equal(t, ".tiller/epics/form-engine/features/certification-form-loading/feature.eval.md", filepath.ToSlash(va.Eval.Path))
 
 	require.Equal(t, store.KindGitCommit, va.Commit.Kind)
 	require.NotEmpty(t, va.Commit.Value, "the completion record pins the integration commit so stale_spec can say since when")
@@ -972,7 +972,7 @@ func TestSyncSquashCarriesTasksToDone(t *testing.T) {
 	root := layFeatureBranchGit(t, "true", "true")
 	squash := squashMergeFeature(t, root)
 
-	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "approve"})
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
@@ -982,10 +982,10 @@ func TestSyncSquashCarriesTasksToDone(t *testing.T) {
 	require.NoError(t, err)
 	stageSyncReview(t, root, "T-aaaaaa", featBranch)
 
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -1276,7 +1276,7 @@ func TestSyncCrossingsRankSiblingTasksByDependency(t *testing.T) {
 // falling back to id, reads the pair backwards.
 func submitChainedTasks(t *testing.T, root string) string {
 	t.Helper()
-	base := "form-engine/nrca-form-loading/"
+	base := "form-engine/certification-form-loading/"
 	mint := func(taskID string) mutate.Deps {
 		d := testDeps()
 		seq := 0
@@ -1300,7 +1300,7 @@ func submitChainedTasks(t *testing.T, root string) string {
 		require.NoError(t, err)
 		stageSyncReview(t, root, id, featBranch)
 	}
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 	return root
 }
 
@@ -1326,7 +1326,7 @@ func TestSyncRollupWithNoObservableBranchRecordsTheRollupBasis(t *testing.T) {
 	t.Parallel()
 	root := layActiveFeatureGit(t, "true", "true")
 
-	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "approve"})
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
@@ -1335,7 +1335,7 @@ func TestSyncRollupWithNoObservableBranchRecordsTheRollupBasis(t *testing.T) {
 	_, err = mutate.Check(tree, testDeps(), vcs.New(root), task, mutate.CheckInput{})
 	require.NoError(t, err)
 	stageSyncReview(t, root, "T-aaaaaa", featBranch)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 
 	// The first sync crosses the task on ancestry; the feature gates are not
 	// checked yet, so the rollup does not fire.
@@ -1347,7 +1347,7 @@ func TestSyncRollupWithNoObservableBranchRecordsTheRollupBasis(t *testing.T) {
 
 	// The branch is deleted after the merge, then the feature gates are checked.
 	gitRunM(t, root, "branch", "-D", featBranch)
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 
@@ -1904,7 +1904,7 @@ func TestSyncAcceptFastForwardRefusesANodeWithNothingToCross(t *testing.T) {
 	root := layFeatureBranchGit(t, "true", "true")
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 	gitRunM(t, root, "merge", "--ff-only", featBranch)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 	require.Equal(t, "active", load(t, root).Features["F-aaaaaa"].Status)
 
 	declareIntegrationBranch(t, root)
@@ -1929,7 +1929,7 @@ func TestSyncAcceptFastForwardCarriesTasksToDone(t *testing.T) {
 	root := layTaskGrainGit(t)
 	gitRunM(t, root, "merge", "--ff-only", featBranch)
 
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err := mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 
@@ -2089,7 +2089,7 @@ func TestSyncRecordsTheDoneBasisOnEveryCrossing(t *testing.T) {
 	// rollup, with the branch gone entirely: the arm that shows the feature basis
 	// is not merely inherited from an observation that happened to be present.
 	root = layActiveFeatureGit(t, "true", "true")
-	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "approve"})
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
@@ -2097,7 +2097,7 @@ func TestSyncRecordsTheDoneBasisOnEveryCrossing(t *testing.T) {
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), task, mutate.CheckInput{})
 	require.NoError(t, err)
 	stageSyncReview(t, root, "T-aaaaaa", featBranch)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 
 	_, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -2105,7 +2105,7 @@ func TestSyncRecordsTheDoneBasisOnEveryCrossing(t *testing.T) {
 		"the task crossed on the merge the branch witnessed")
 
 	gitRunM(t, root, "branch", "-D", featBranch)
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 	_, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
@@ -2287,7 +2287,7 @@ func TestSyncReopensADoneFeatureThatGainedATask(t *testing.T) {
 		return fmt.Sprintf("%s-late%02d", prefix, seq)
 	}
 	_, err = mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/one-more-thing",
+		Key:   "form-engine/certification-form-loading/one-more-thing",
 		Title: "One more thing",
 	})
 	require.NoError(t, err)
@@ -2364,7 +2364,7 @@ func TestSyncReopenClearsTheConsumedReviewSurfaceOnAFeature(t *testing.T) {
 
 	// Stage the feature-grain submit this fixture's own task-grain flow never
 	// runs: a recorded PR, as if `submit feature` had closed out this round.
-	setFeatureReviewSurfaceOnDisk(t, root, "form-engine", "nrca-form-loading", "feature", 99)
+	setFeatureReviewSurfaceOnDisk(t, root, "form-engine", "certification-form-loading", "feature", 99)
 
 	// A new task lands under the done feature: the mechanical "new work
 	// landed" trigger reopenFeature responds to (TestSyncReopensADoneFeatureThatGainedATask).
@@ -2376,7 +2376,7 @@ func TestSyncReopenClearsTheConsumedReviewSurfaceOnAFeature(t *testing.T) {
 		return fixedMint(prefix)
 	}
 	_, err = mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/one-more-thing", Title: "One more thing",
+		Key: "form-engine/certification-form-loading/one-more-thing", Title: "One more thing",
 	})
 	require.NoError(t, err)
 
@@ -2395,7 +2395,7 @@ func TestSyncReopenClearsTheConsumedReviewSurfaceOnAFeature(t *testing.T) {
 	// succeeds instead of refusing with ReviewGrainLockedError, because the
 	// node's own review surface no longer exists on disk.
 	_, err = mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
-		Noun: store.NounFeature, Key: "form-engine/nrca-form-loading", ReviewGrain: "feature"})
+		Noun: store.NounFeature, Key: "form-engine/certification-form-loading", ReviewGrain: "feature"})
 	require.NoError(t, err, "the reopen must have cleared the review surface Configure's guard locks on")
 }
 
@@ -2561,7 +2561,7 @@ func addLateTask(t *testing.T, root, taskID, localKey, title string) {
 		return fixedMint(prefix)
 	}
 	_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/" + localKey, Title: title,
+		Key: "form-engine/certification-form-loading/" + localKey, Title: title,
 	})
 	require.NoError(t, err)
 }
@@ -2780,7 +2780,7 @@ func TestCheckRecomputesAStaleMechanicalCriterionRatherThanFreezingIt(t *testing
 	// One ordinary check, with no human judgment of any kind. C1 is required, so
 	// the gate can read pass here only if C1 itself was actually recomputed: a
 	// frozen stale value would leave the gate pending, not pass.
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 	after := load(t, root).Features["F-aaaaaa"].Gates["evals"]
@@ -2820,7 +2820,7 @@ func TestReopenStalesAHumanAttestedCriterionAndCheckReturnsItToNeedsAttestation(
 	root := layActiveFeatureGitWithEval(t, "true", "true", requiredManualEvalMD)
 	submitTask(t, root)
 
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err := mutate.Attest(load(t, root), testDeps(), feat, mutate.AttestInput{
 		Criterion: "C1", Status: store.CriterionStatusPass,
 	})
@@ -2845,7 +2845,7 @@ func TestReopenStalesAHumanAttestedCriterionAndCheckReturnsItToNeedsAttestation(
 		"the human's attested pass must not ride across the reopen")
 
 	// One ordinary check, with no new human judgment of any kind.
-	feat = resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat = resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 
@@ -2866,7 +2866,7 @@ func TestReopenStalesAHumanAttestedCriterionAndCheckReturnsItToNeedsAttestation(
 func TestSyncSkipsAFeatureWithNoProseRatherThanFailingTheRun(t *testing.T) {
 	t.Parallel()
 	root := layEpicRollupGit(t)
-	removeFromIntegration(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.md")
+	removeFromIntegration(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.md")
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err, "one unrecordable feature must not take the whole sync down")
@@ -2882,17 +2882,17 @@ func TestSyncSkipsAFeatureWithNoProseRatherThanFailingTheRun(t *testing.T) {
 	require.Len(t, res.Skipped, 1, "the skip is reported, never silent")
 	require.Equal(t, store.NounFeature, res.Skipped[0].Noun)
 	require.Equal(t, "F-aaaaaa", res.Skipped[0].ID)
-	require.Equal(t, "form-engine/nrca-form-loading", res.Skipped[0].Key)
+	require.Equal(t, "form-engine/certification-form-loading", res.Skipped[0].Key)
 	require.Equal(t, filepath.Join(".tiller", "epics", "form-engine", "features",
-		"nrca-form-loading", "feature.md"), res.Skipped[0].Path,
+		"certification-form-loading", "feature.md"), res.Skipped[0].Path,
 		"the offending path is the whole diagnosis, and the fix")
 
 	// It is a skip, not a refusal: restoring the path on integration lets the
 	// feature roll up on the very next run, and the epic follows it.
 	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "epics", "form-engine",
-		"features", "nrca-form-loading", "feature.md"),
-		[]byte("# NRCA form loading\n\nRestored prose.\n"), 0o644))
-	commitPaths(t, root, "restore feature prose", ".tiller/epics/form-engine/features/nrca-form-loading/feature.md")
+		"features", "certification-form-loading", "feature.md"),
+		[]byte("# Certification form loading\n\nRestored prose.\n"), 0o644))
+	commitPaths(t, root, "restore feature prose", ".tiller/epics/form-engine/features/certification-form-loading/feature.md")
 	res, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
 	require.Empty(t, res.Skipped)
@@ -2909,7 +2909,7 @@ func TestSyncSkipsAFeatureWithNoProseRatherThanFailingTheRun(t *testing.T) {
 func TestSyncSkipsAFeatureWhoseSurfacePathDoesNotResolve(t *testing.T) {
 	t.Parallel()
 	root := layEpicRollupGit(t)
-	setFeatureSurfacePath(t, root, "form-engine", "nrca-form-loading", "app/models/nowhere")
+	setFeatureSurfacePath(t, root, "form-engine", "certification-form-loading", "app/models/nowhere")
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err, "a bad surface path is one node's problem, not the run's")
@@ -2943,7 +2943,7 @@ func TestATaskWritePreservesTheFieldsNoVerbTouches(t *testing.T) {
 	t.Parallel()
 	root := layActiveFeatureGit(t, "true", "true")
 	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/transcribe-the-schema",
+		Key:   "form-engine/certification-form-loading/transcribe-the-schema",
 		Title: "Transcribe the schema",
 	})
 	require.NoError(t, err)
@@ -2961,10 +2961,10 @@ func TestATaskWritePreservesTheFieldsNoVerbTouches(t *testing.T) {
 
 	stageSyncReview(t, root, "T-aaaaaa", featBranch)
 
-	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading")
 	_, err = mutate.Check(load(t, root), testDeps(), vcs.New(root), feat, mutate.CheckInput{})
 	require.NoError(t, err)
-	setFeatureBranch(t, root, "form-engine", "nrca-form-loading", featBranch)
+	setFeatureBranch(t, root, "form-engine", "certification-form-loading", featBranch)
 
 	_, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -2977,7 +2977,7 @@ func TestATaskEvalPreservesTheFieldsNoVerbTouches(t *testing.T) {
 	t.Parallel()
 	root := layActiveFeatureGitWithEval(t, "true", "true", requiredManualEvalMD)
 	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/transcribe-the-schema",
+		Key:   "form-engine/certification-form-loading/transcribe-the-schema",
 		Title: "Transcribe the schema",
 	})
 	require.NoError(t, err)
@@ -3008,7 +3008,7 @@ func seedTaskDependsOn(t *testing.T, root, taskID string) {
 		return fixedMint(prefix)
 	}
 	_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/schema-prerequisite",
+		Key:   "form-engine/certification-form-loading/schema-prerequisite",
 		Title: "Schema prerequisite",
 	})
 	require.NoError(t, err)
@@ -3060,7 +3060,7 @@ func TestSyncRecordsAFileSurfaceAsAGitBlobFingerprint(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(root, "chrome.swift"), []byte("struct Chrome {}\n"), 0o644))
 	gitRunM(t, root, "add", "-A")
 	gitRunM(t, root, "commit", "-m", "add chrome.swift")
-	setFeatureSurfacePath(t, root, "form-engine", "nrca-form-loading", "chrome.swift")
+	setFeatureSurfacePath(t, root, "form-engine", "certification-form-loading", "chrome.swift")
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -3088,7 +3088,7 @@ func TestSyncRecordsMixedSurfaceGrains(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(root, "chrome.swift"), []byte("struct Chrome {}\n"), 0o644))
 	gitRunM(t, root, "add", "-A")
 	gitRunM(t, root, "commit", "-m", "add code")
-	setFeatureSurfacePath(t, root, "form-engine", "nrca-form-loading", "src", "chrome.swift")
+	setFeatureSurfacePath(t, root, "form-engine", "certification-form-loading", "src", "chrome.swift")
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -3204,12 +3204,12 @@ func TestSyncTouchedDesignExcludesTaskOnlySkippedAndReopened(t *testing.T) {
 				require.NoError(t, err)
 			}
 			if mode == "skipped" {
-				removeFromIntegration(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.md")
+				removeFromIntegration(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.md")
 			} else {
 				deps := testDeps()
 				deps.Mint = func(prefix string) string { return prefix + "-bbbbbb" }
 				_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-					Key: "form-engine/nrca-form-loading/more-work", Title: "More work",
+					Key: "form-engine/certification-form-loading/more-work", Title: "More work",
 				})
 				require.NoError(t, err)
 			}

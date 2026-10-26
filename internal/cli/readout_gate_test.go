@@ -123,8 +123,8 @@ func TestApproveBatchEmitsOneReadoutAfterAllConfirmations(t *testing.T) {
 func TestStartTaskEmitsNoReadout(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	claimTaskAsOwner(t, cliFeatureKey+"/transcribe-the-schema", "jc")
 	out, _, code := execCLI(t, "start", "task", cliFeatureKey+"/transcribe-the-schema", "--contributor", "jc")

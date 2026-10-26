@@ -22,7 +22,7 @@ func featureDir(t *testing.T) string {
 	t.Helper()
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	return filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	return filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 }
 
 func setFeatureReviewGrainOnDisk(t *testing.T, grain string) {
@@ -40,7 +40,7 @@ func writeRealSpec(t *testing.T) {
 	t.Helper()
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nLoad the NRCA-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))
 }
@@ -57,7 +57,7 @@ func writeTaskSpec(t *testing.T, localKey, body string) {
 // implementation spec, the pair the merged specify stage requires.
 func addSpeccedTask(t *testing.T, localKey, title string) {
 	t.Helper()
-	_, _, code := execCLI(t, "add", "task", "form-engine/nrca-form-loading/"+localKey,
+	_, _, code := execCLI(t, "add", "task", "form-engine/certification-form-loading/"+localKey,
 		"--title", title, "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeTaskSpec(t, localKey, "## Approach\n\nThe implementation spec for "+localKey+".")
@@ -100,7 +100,7 @@ func TestSpecFeatureExitCodesAcrossTheInputSpace(t *testing.T) {
 			lay: func(t *testing.T) {
 				layReadTree(t)
 				require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), "feature.md"),
-					[]byte("# NRCA form loading\n\nReal spec prose.\n"), 0o644))
+					[]byte("# Certification form loading\n\nReal spec prose.\n"), 0o644))
 			},
 		},
 		{
@@ -135,7 +135,7 @@ func TestSpecFeatureExitCodesAcrossTheInputSpace(t *testing.T) {
 			lay: func(t *testing.T) {
 				layReadTree(t)
 				writeRealSpec(t)
-				_, _, code := execCLI(t, "add", "task", "form-engine/nrca-form-loading/transcribe-the-schema",
+				_, _, code := execCLI(t, "add", "task", "form-engine/certification-form-loading/transcribe-the-schema",
 					"--title", "Transcribe the schema", "--contributor", "jc")
 				require.Equal(t, 0, code)
 			},
@@ -147,7 +147,7 @@ func TestSpecFeatureExitCodesAcrossTheInputSpace(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.lay(t)
-			out, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+			out, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 			require.Equal(t, tc.code, code, out)
 			if tc.reason != "" {
 				require.Contains(t, out, tc.reason)
@@ -201,7 +201,7 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 
-	out, stderr, code := execCLI(t, "approve", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
+	out, stderr, code := execCLI(t, "approve", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "approve under a draft feature is a blocked answer: out=%s stderr=%s", out, stderr)
 	require.Contains(t, out, `"reason": "parent_plan_ungated"`)
 
@@ -211,7 +211,7 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 	// line the same way), so it is asserted on a plain-mode repeat of the
 	// same refused call; the task never moved, so the repeat refuses
 	// identically.
-	_, stderrHuman, codeHuman := execCLI(t, "approve", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc")
+	_, stderrHuman, codeHuman := execCLI(t, "approve", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 1, codeHuman)
 	require.Contains(t, stderrHuman, "tiller guide specify")
 
@@ -219,11 +219,11 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 	// node; its human lines all print to stdout via emitBatch
 	// (TestApproveBatchBlockedHumanLines pins that stream choice), so the
 	// assertion reads both the way that test does.
-	outBatch, stderrBatch, codeBatch := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	outBatch, stderrBatch, codeBatch := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 1, codeBatch, "the batch form refuses the same way")
 	require.Contains(t, outBatch+stderrBatch, "Blocked")
 
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	// Both approves above were refused, so the task itself never reached
 	// ready; start's own refusal is pinned at the state issue #33's field
@@ -233,13 +233,13 @@ func TestTaskVerbsRefuseUnderUngatedFeature(t *testing.T) {
 	// TestStartTaskRefusesUnderDraftFeature).
 	setTaskStatus(t, "transcribe-the-schema", "proposed", "ready")
 
-	_, stderr3, code3 := execCLI(t, "start", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc")
+	_, stderr3, code3 := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 1, code3, "specced is still pre-gate; start refuses")
 	require.Contains(t, stderr3, "tiller approve feature")
 
-	_, _, code4 := execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code4 := execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code4)
-	_, _, code5 := execCLI(t, "start", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc")
+	_, _, code5 := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 0, code5, "past the plan gate the guard is silent")
 }
 
@@ -262,7 +262,7 @@ func TestApproveTaskOnAnAlreadyReadyTaskStillRefusesUnderUngatedFeature(t *testi
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	setTaskStatus(t, "transcribe-the-schema", "proposed", "ready")
 
-	out, _, code := execCLI(t, "approve", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "an idempotent retry must not bypass the parent-gate guard: out=%s", out)
 	require.Contains(t, out, `"reason": "parent_plan_ungated"`)
 	require.Equal(t, "ready", loadTestTree(t).Tasks[soleTaskID(t)].Status, "a refused approve must not move the task")
@@ -276,17 +276,17 @@ func TestTaskVerbsRefuseUnderCancelledFeature(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 
-	out, stderr, code := execCLI(t, "approve", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
+	out, stderr, code := execCLI(t, "approve", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "approve under a draft feature is a blocked answer: out=%s stderr=%s", out, stderr)
 	require.Contains(t, out, `"reason": "parent_plan_ungated"`)
-	require.Contains(t, out, `"feature_key": "form-engine/nrca-form-loading"`)
+	require.Contains(t, out, `"feature_key": "form-engine/certification-form-loading"`)
 
-	execCLI(t, "cancel", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--reason", "scope cut")
+	execCLI(t, "cancel", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--reason", "scope cut")
 
-	out2, stderr2, code2 := execCLI(t, "approve", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
+	out2, stderr2, code2 := execCLI(t, "approve", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code2, "approve under a cancelled feature is a blocked answer: out=%s stderr=%s", out2, stderr2)
 	require.Contains(t, out2, `"reason": "parent_feature_cancelled"`)
-	require.Contains(t, out2, `"feature_key": "form-engine/nrca-form-loading"`)
+	require.Contains(t, out2, `"feature_key": "form-engine/certification-form-loading"`)
 
 	// Neither approve above ever moved the task, so it is still proposed;
 	// start requires ready, so the fixture is hand-advanced the same way
@@ -295,7 +295,7 @@ func TestTaskVerbsRefuseUnderCancelledFeature(t *testing.T) {
 	// issue #33's and #35's field trees can already hold on disk).
 	setTaskStatus(t, "transcribe-the-schema", "proposed", "ready")
 
-	_, stderr3, code3 := execCLI(t, "start", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc")
+	_, stderr3, code3 := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 1, code3, "a cancelled parent is terminal; start refuses")
 	require.Contains(t, stderr3, "tiller cancel task")
 }
@@ -358,7 +358,7 @@ func TestFeatureVerbsRefuseUnderRetiredEpic(t *testing.T) {
 			laySpeccableFeature(t)
 			tc.retire(t)
 
-			out, stderr, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+			out, stderr, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 			require.Equal(t, 1, code, "spec under a retired epic is a blocked answer: out=%s stderr=%s", out, stderr)
 			require.Contains(t, out, `"reason": "parent_epic_retired"`)
 			require.Contains(t, out, fmt.Sprintf(`"epic_state": "%s"`, tc.epicState))
@@ -373,12 +373,12 @@ func TestFeatureVerbsRefuseUnderRetiredEpic(t *testing.T) {
 func TestTaskVerbsRefuseUnderLiveFeatureCancelledEpic(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	execCLI(t, "cancel", "epic", "form-engine", "--contributor", "jc", "--reason", "programme killed")
 
-	out, stderr, code := execCLI(t, "start", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
+	out, stderr, code := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "start under a live feature whose epic is cancelled is a blocked answer: out=%s stderr=%s", out, stderr)
 	require.Contains(t, out, `"reason": "parent_epic_retired"`)
 	tree := loadTestTree(t)
@@ -389,7 +389,7 @@ func TestTaskVerbsRefuseUnderLiveFeatureCancelledEpic(t *testing.T) {
 	// The human line is carried on the report, not the --json payload (the #35
 	// arm's own test asserts it the same way: a plain-mode repeat of the same
 	// refused call, since the task never moved).
-	_, stderrHuman, codeHuman := execCLI(t, "start", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--contributor", "jc")
+	_, stderrHuman, codeHuman := execCLI(t, "start", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 1, codeHuman)
 	require.Contains(t, stderrHuman, "tiller cancel task")
 }
@@ -400,14 +400,14 @@ func TestTaskVerbsRefuseUnderLiveFeatureCancelledEpic(t *testing.T) {
 func TestStatusReportsHeldByRetiredFeature(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "cancel", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--reason", "scope cut")
+	execCLI(t, "cancel", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--reason", "scope cut")
 
-	out, _, code := execCLI(t, "status", "task", "form-engine/nrca-form-loading/transcribe-the-schema")
+	out, _, code := execCLI(t, "status", "task", "form-engine/certification-form-loading/transcribe-the-schema")
 	require.Equal(t, 0, code)
-	require.Contains(t, out, "held:  feature form-engine/nrca-form-loading (F-")
+	require.Contains(t, out, "held:  feature form-engine/certification-form-loading (F-")
 	require.Contains(t, out, "is cancelled; the doing verbs will refuse")
 
-	jout, _, code := execCLI(t, "status", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--json")
+	jout, _, code := execCLI(t, "status", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, jout, `"held": {`)
 	require.Contains(t, jout, `"noun": "feature"`)
@@ -421,19 +421,19 @@ func TestStatusReportsHeldByRetiredFeature(t *testing.T) {
 func TestStatusReportsHeldByRetiredEpic(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	_, startErr, code := execCLI(t, "start", "task", cliTaskKey, "--contributor", "jc")
 	require.Equal(t, 0, code, startErr)
 	execCLI(t, "cancel", "epic", "form-engine", "--contributor", "jc", "--reason", "programme killed")
 
-	taskOut, _, code := execCLI(t, "status", "task", "form-engine/nrca-form-loading/transcribe-the-schema")
+	taskOut, _, code := execCLI(t, "status", "task", "form-engine/certification-form-loading/transcribe-the-schema")
 	require.Equal(t, 0, code)
 	require.Contains(t, taskOut, "held:  epic form-engine (E-")
 	require.Contains(t, taskOut, "is cancelled; the doing verbs will refuse")
 
-	featOut, _, code := execCLI(t, "status", "feature", "form-engine/nrca-form-loading")
+	featOut, _, code := execCLI(t, "status", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.Contains(t, featOut, "held:  epic form-engine (E-")
 }
@@ -445,11 +445,11 @@ func TestStatusReportsHeldByRetiredEpic(t *testing.T) {
 func TestStatusDoesNotReportHeldForPreGateParent(t *testing.T) {
 	laySpeccableFeature(t)
 
-	out, _, code := execCLI(t, "status", "task", "form-engine/nrca-form-loading/transcribe-the-schema")
+	out, _, code := execCLI(t, "status", "task", "form-engine/certification-form-loading/transcribe-the-schema")
 	require.Equal(t, 0, code)
 	require.NotContains(t, out, "held:")
 
-	fout, _, code := execCLI(t, "status", "feature", "form-engine/nrca-form-loading")
+	fout, _, code := execCLI(t, "status", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.NotContains(t, fout, "held:")
 }
@@ -462,8 +462,8 @@ func layFeatureReadyToStart(t *testing.T) string {
 	writeRealSpec(t)
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	return soleFeatureID(t)
 }
 
@@ -689,7 +689,7 @@ func TestIllegalTransitionExits1(t *testing.T) {
 func TestSpecBlockedWhenIncomplete(t *testing.T) {
 	layReadTree(t) // no real spec/eval written
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	out, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code)
 	require.Contains(t, out, "\"ok\": false")
 	require.Contains(t, out, "\"reason\": \"spec_incomplete\"")
@@ -705,7 +705,7 @@ func writeMalformedEval(t *testing.T, evalBody string) {
 	t.Helper()
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nReal spec prose.\n"), 0o644))
+		[]byte("# Certification form loading\n\nReal spec prose.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"), []byte(evalBody), 0o644))
 }
 
@@ -746,7 +746,7 @@ func TestSpecRejectsMalformedEval(t *testing.T) {
 			execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 			writeMalformedEval(t, tc.eval)
 
-			out, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+			out, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 			require.Equal(t, 2, code, "a malformed contract is misuse (exit 2)")
 			require.Contains(t, out, "\"ok\": false")
 			require.Contains(t, out, "\"reason\": \"eval_contract_invalid\"")
@@ -818,8 +818,8 @@ func TestStartBlockedByOpenQuestion(t *testing.T) {
 func TestAssumeQuestionRequiresReason(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	_, _, code := execCLI(t, "approve", "feature", cliFeatureKey,
 		"--assume-question", "Q-zzzzzz", "--contributor", "jc", "--json")
@@ -831,11 +831,11 @@ func TestAssumeQuestionRequiresReason(t *testing.T) {
 func TestReturnAndResume(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	// return: ready -> specced.
-	out, _, code := execCLI(t, "return", "feature", "form-engine/nrca-form-loading", "--reason", "scope was wrong", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "return", "feature", "form-engine/certification-form-loading", "--reason", "scope was wrong", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "\"status\": \"specced\"")
 
@@ -892,10 +892,10 @@ func TestSubmitTaskRefusesAnotherTasksBranch(t *testing.T) {
 func TestReturnRequiresReason(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
-	_, _, code := execCLI(t, "return", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	_, _, code := execCLI(t, "return", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, "a missing required --reason is misuse")
 }
 
@@ -905,7 +905,7 @@ func TestReturnRequiresReason(t *testing.T) {
 func TestCancelRequiresReasonFlag(t *testing.T) {
 	layReadTree(t)
 
-	_, stderr, code := execCLI(t, "cancel", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, stderr, code := execCLI(t, "cancel", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	require.Equal(t, 2, code, "a missing required flag is misuse")
 	require.Contains(t, stderr, "reason", "the refusal must name the flag the human forgot")
@@ -915,7 +915,7 @@ func TestCancelRequiresReasonFlag(t *testing.T) {
 // engine's legal next moves (the Phase 2 seam closed here).
 func TestStatusSurfacesLegalNext(t *testing.T) {
 	laySpeccableFeature(t)
-	out, _, code := execCLI(t, "status", "feature", "form-engine/nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "status", "feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "\"legal_next\"")
 	require.Contains(t, out, "spec")
@@ -928,8 +928,8 @@ func TestStatusSurfacesLegalNext(t *testing.T) {
 func TestStatusEpicShowsDerivedActive(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	_, startErr, code := execCLI(t, "start", "task", cliTaskKey, "--contributor", "jc")
 	require.Equal(t, 0, code, startErr)
@@ -986,12 +986,12 @@ func TestHappyChain(t *testing.T) {
 
 	_, _, code := execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--title", "Transcribe the schema", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--title", "Transcribe the schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	tid := soleTaskID(t)
@@ -1043,7 +1043,7 @@ func walkFeatureToActive(t *testing.T) {
 	t.Helper()
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -1335,7 +1335,7 @@ func gitOut(t *testing.T, dir string, args ...string) string {
 
 func TestRefreshBasisOnDoneFeatureIsABlockedAnswer(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
-	path := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	path := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	raw, err := os.ReadFile(path)
 	require.NoError(t, err)
 	done := strings.Replace(string(raw), "status: ready", "status: done", 1)
@@ -1362,7 +1362,7 @@ func TestRefreshBasisOnDoneFeatureIsABlockedAnswer(t *testing.T) {
 // message now names is the one that works.
 func TestRefreshBasisOnADeletedPinFailsAndTheRefusalSaidSo(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
-	evalPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.eval.md")
+	evalPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.eval.md")
 	kept, err := os.ReadFile(evalPath)
 	require.NoError(t, err)
 	require.NoError(t, os.Remove(evalPath))
@@ -1402,8 +1402,8 @@ func TestRefreshBasisOnADeletedPinFailsAndTheRefusalSaidSo(t *testing.T) {
 // breadcrumbs and help text are self-contained in the project").
 func TestActiveBasisRefusalNamesARunnableCommand(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
-	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md")
-	require.NoError(t, os.WriteFile(mdPath, []byte("# NRCA form loading\n\nRevised.\n"), 0o644))
+	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md")
+	require.NoError(t, os.WriteFile(mdPath, []byte("# Certification form loading\n\nRevised.\n"), 0o644))
 
 	stdout, stderr, code := execCLI(t, "start", "task", cliTaskKey, "--contributor", "jc")
 	require.Equal(t, 1, code)
@@ -1424,7 +1424,7 @@ func TestRefreshBasisReportsWhatItRecordedNotAMove(t *testing.T) {
 	tid := soleTaskID(t)
 	mustRun(t, "start", "task", tid, "--contributor", "jc")
 
-	taskMD := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading",
+	taskMD := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading",
 		store.TaskDirName, "transcribe-the-schema", store.TaskProseFile)
 	require.NoError(t, os.WriteFile(taskMD, []byte("# Transcribe the schema\n\n## Approach\n\nRevised after approval.\n"), 0o644))
 
@@ -1466,7 +1466,7 @@ func TestRefreshBasisReportsWhatItRecordedOnABatch(t *testing.T) {
 
 	for _, k := range []string{"transcribe-the-schema", "render-the-form"} {
 		require.NoError(t, os.WriteFile(
-			filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading",
+			filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading",
 				store.TaskDirName, k, store.TaskProseFile),
 			[]byte("# "+k+"\n\n## Approach\n\nRevised after approval.\n"), 0o644))
 	}
@@ -1513,8 +1513,8 @@ func TestActiveBasisRefusalOfATaskNamesTheTask(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
 	tid := soleTaskID(t)
 	require.NoError(t, os.WriteFile(
-		filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md"),
-		[]byte("# NRCA form loading\n\nRevised.\n"), 0o644))
+		filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md"),
+		[]byte("# Certification form loading\n\nRevised.\n"), 0o644))
 
 	stdout, stderr, code := execCLI(t, "start", "task", tid, "--contributor", "jc")
 	require.Equal(t, 1, code)
@@ -1611,14 +1611,14 @@ func TestApproveReviewedAssumptionStampsIt(t *testing.T) {
 func TestApproveReviewedAssumptionRefusesAnEmptyValue(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
-	stdout, stderr, code := execCLI(t, "approve", "feature", "form-engine/nrca-form-loading",
+	stdout, stderr, code := execCLI(t, "approve", "feature", "form-engine/certification-form-loading",
 		"--reviewed-assumption", "", "--contributor", "jc")
 	require.Equal(t, 2, code, "an explicit empty value is misuse, not flag-absent")
 	require.Contains(t, stdout+stderr, "--reviewed-assumption needs a question id")
 
-	out, _, code := execCLI(t, "status", "feature", "form-engine/nrca-form-loading")
+	out, _, code := execCLI(t, "status", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "state: specced", "the approval gate must not have silently crossed")
 	require.NotContains(t, out, "state: ready")
@@ -1948,7 +1948,7 @@ func TestSubmitEpicCLINamesNoLiveTaskRatherThanTasksIncompleteWording(t *testing
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--review-grain", "epic", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	_, errOut, code := execCLI(t, "submit", "epic", "form-engine", "--pr", "50", "--contributor", "jc")
@@ -1989,11 +1989,11 @@ func TestSubmitFeatureRefusesActiveBasisDriftAfterGreenCheck(t *testing.T) {
 	}
 	assembleTaskForReviewCLI(t, tid, soleFeatureBranch(t))
 
-	featurePath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md")
+	featurePath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md")
 	before, err := os.ReadFile(featurePath)
 	require.NoError(t, err)
 	after := strings.Replace(string(before),
-		"Load the NRCA-LTI-02-A form from its JSON Schema and render it.",
+		"Load the CERT-LTI-02-A form from its JSON Schema and render it.",
 		"Build materially different behavior.", 1)
 	require.NotEqual(t, string(before), after)
 	require.NoError(t, os.WriteFile(featurePath, []byte(after), 0o644))

@@ -37,15 +37,15 @@ func TestSpecIncompleteBlockedLineNamesFeatureByRef(t *testing.T) {
 	layReadTree(t) // stub feature.md, no eval: the spec is incomplete
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 
-	stdout, stderr, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	stdout, stderr, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 1, code, "an incomplete spec is a blocked business answer (exit 1)")
 	require.Contains(t, stdout+stderr,
-		fmt.Sprintf("Blocked: feature form-engine/nrca-form-loading (%s) is not specced", soleFeatureID(t)))
+		fmt.Sprintf("Blocked: feature form-engine/certification-form-loading (%s) is not specced", soleFeatureID(t)))
 	// The line names the folder the files live in and points at the guide: a
 	// dry run bounced between spec and approve because nothing said where to
 	// write or that spec asserts rather than writes (JC, 2026-07-30).
 	require.Contains(t, stdout+stderr,
-		"write feature.md, feature.eval.md under .tiller/epics/form-engine/features/nrca-form-loading/")
+		"write feature.md, feature.eval.md under .tiller/epics/form-engine/features/certification-form-loading/")
 	require.Contains(t, stdout+stderr, "run `tiller guide specify` for the walkthrough")
 }
 
@@ -55,16 +55,16 @@ func TestSpecIncompleteBlockedLineNamesFeatureByRef(t *testing.T) {
 func TestSpeccedFeatureWithUnwrittenOutputIsNotCalledUnspecced(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), store.TaskDirName, "transcribe-the-schema", store.TaskProseFile), nil, 0o644))
 
 	for _, verb := range []string{"spec", "approve"} {
-		stdout, stderr, code := execCLI(t, verb, "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+		stdout, stderr, code := execCLI(t, verb, "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 		require.Equal(t, 1, code, verb)
 		require.NotContains(t, stdout+stderr, "is not specced", verb)
 		require.Contains(t, stdout+stderr, fmt.Sprintf(
-			"Blocked: feature form-engine/nrca-form-loading (%s) is specced, but its specify output no longer passes; write tasks/transcribe-the-schema/task.md", soleFeatureID(t)), verb)
+			"Blocked: feature form-engine/certification-form-loading (%s) is specced, but its specify output no longer passes; write tasks/transcribe-the-schema/task.md", soleFeatureID(t)), verb)
 	}
 }
 
@@ -82,16 +82,16 @@ func TestQuestionBlockedLineNamesTaskByRef(t *testing.T) {
 	require.Equal(t, 1, code, "an open question holding the task is a blocked business answer (exit 1)")
 	human := stdout + stderr
 	require.Contains(t, human, fmt.Sprintf(
-		`Blocked: task form-engine/nrca-form-loading/schema-transcription (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`,
+		`Blocked: task form-engine/certification-form-loading/schema-transcription (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`,
 		ids[0]))
 	require.NotContains(t, human, task4LongQuestionStatement)
 }
 
 func TestTaskDependencyBlockedLineOmitsAbsentAggregate(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
-	late := "form-engine/nrca-form-loading/late-task"
+	late := "form-engine/certification-form-loading/late-task"
 	_, stderr, code := execCLI(t, "add", "task", late, "--title", "Late task", "--contributor", "jc",
-		"--depends-on", "form-engine/nrca-form-loading/schema-transcription")
+		"--depends-on", "form-engine/certification-form-loading/schema-transcription")
 	require.Equal(t, 0, code, stderr)
 	_, stderr, code = execCLI(t, "approve", "task", late, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
@@ -108,7 +108,7 @@ func TestTaskDependencyBlockedLineOmitsAbsentAggregate(t *testing.T) {
 	stdout, stderr, code = execCLI(t, "start", "task", late, "--contributor", "jc")
 	require.Equal(t, 1, code, stderr)
 	human := stdout + stderr
-	require.Contains(t, human, fmt.Sprintf("form-engine/nrca-form-loading/schema-transcription (%s)", ids[0]))
+	require.Contains(t, human, fmt.Sprintf("form-engine/certification-form-loading/schema-transcription (%s)", ids[0]))
 	require.Contains(t, human, "wait")
 	require.NotContains(t, human, "assemble")
 	require.NotContains(t, human, "into  before")

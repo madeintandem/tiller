@@ -36,7 +36,7 @@ func laySearchTree(t *testing.T) {
 	require.NoError(t, err)
 	designDir := filepath.Join(cwd, ".tiller", "design")
 	require.NoError(t, os.MkdirAll(designDir, 0o755))
-	doc := "# Upload notes\n\nThe uploader parses NRCA PDFs.\n"
+	doc := "# Upload notes\n\nThe uploader parses certification PDFs.\n"
 	require.NoError(t, os.WriteFile(filepath.Join(designDir, "01-notes.md"), []byte(doc), 0o644))
 }
 
@@ -48,7 +48,7 @@ func TestSearchHumanDocumentResult(t *testing.T) {
 	out, _, code := execCLI(t, "search", "uploader parses")
 	require.Equal(t, 0, code)
 	require.Equal(t, ".tiller/design/01-notes.md  [document · 1 match]\n"+
-		"    .tiller/design/01-notes.md:3  The uploader parses NRCA PDFs.\n", out)
+		"    .tiller/design/01-notes.md:3  The uploader parses certification PDFs.\n", out)
 }
 
 // TestSearchHumanNodeResult pins a node's block: its "<key-path> (<id>)"
@@ -58,11 +58,11 @@ func TestSearchHumanDocumentResult(t *testing.T) {
 func TestSearchHumanNodeResult(t *testing.T) {
 	laySearchTree(t)
 
-	out, _, code := execCLI(t, "search", "NRCA form loading")
+	out, _, code := execCLI(t, "search", "Certification form loading")
 	require.Equal(t, 0, code)
 	require.Equal(t,
-		"form-engine/nrca-form-loading (F-xxxxxx)  NRCA form loading  [feature · draft · title match]\n"+
-			"    .tiller/epics/form-engine/features/nrca-form-loading/feature.md:1  # NRCA form loading\n",
+		"form-engine/certification-form-loading (F-xxxxxx)  Certification form loading  [feature · draft · title match]\n"+
+			"    .tiller/epics/form-engine/features/certification-form-loading/feature.md:1  # Certification form loading\n",
 		normalizeSearchIDs(out))
 }
 
@@ -84,7 +84,7 @@ func TestSearchHumanSaysHowManyMoreLines(t *testing.T) {
 // id: the node itself, first, as an id match.
 func TestSearchByIDNamesTheNode(t *testing.T) {
 	laySearchTree(t)
-	out, _, code := execCLI(t, "search", "nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "search", "certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	var found struct {
 		Data struct {
@@ -100,7 +100,7 @@ func TestSearchByIDNamesTheNode(t *testing.T) {
 	out, _, code = execCLI(t, "search", id)
 	require.Equal(t, 0, code)
 	require.True(t, strings.HasPrefix(normalizeSearchIDs(out),
-		"form-engine/nrca-form-loading (F-xxxxxx)  NRCA form loading  [feature · draft · id match]"), out)
+		"form-engine/certification-form-loading (F-xxxxxx)  Certification form loading  [feature · draft · id match]"), out)
 }
 
 // TestSearchHumanQuestionResult pins the question grammar at the terminal:
@@ -126,13 +126,13 @@ func TestSearchHumanQuestionResult(t *testing.T) {
 func TestSearchJSONGolden(t *testing.T) {
 	laySearchTree(t)
 
-	out, _, code := execCLI(t, "search", "NRCA form loading", "--json")
+	out, _, code := execCLI(t, "search", "Certification form loading", "--json")
 	require.Equal(t, 0, code)
 	want := `{
   "ok": true,
   "command": "search",
   "data": {
-    "query": "NRCA form loading",
+    "query": "Certification form loading",
     "count": 1,
     "truncated": false,
     "kinds": [
@@ -145,17 +145,17 @@ func TestSearchJSONGolden(t *testing.T) {
       {
         "noun": "feature",
         "id": "F-xxxxxx",
-        "key": "form-engine/nrca-form-loading",
-        "title": "NRCA form loading",
+        "key": "form-engine/certification-form-loading",
+        "title": "Certification form loading",
         "status": "draft",
-        "ref": "form-engine/nrca-form-loading (F-xxxxxx)",
+        "ref": "form-engine/certification-form-loading (F-xxxxxx)",
         "match": "title",
         "count": 1,
         "hits": [
           {
-            "path": ".tiller/epics/form-engine/features/nrca-form-loading/feature.md",
+            "path": ".tiller/epics/form-engine/features/certification-form-loading/feature.md",
             "line": 1,
-            "snippet": "# NRCA form loading"
+            "snippet": "# Certification form loading"
           }
         ]
       }
@@ -215,12 +215,12 @@ func TestSearchCappedPageSaysSo(t *testing.T) {
 func TestSearchKindKeepsOneKind(t *testing.T) {
 	laySearchTree(t)
 
-	out, _, code := execCLI(t, "search", "nrca", "--kind", "document")
+	out, _, code := execCLI(t, "search", "certification", "--kind", "document")
 	require.Equal(t, 0, code)
 	require.True(t, strings.HasPrefix(out, ".tiller/design/01-notes.md  [document"), out)
 	require.NotContains(t, out, "F-")
 
-	out, _, code = execCLI(t, "search", "nrca", "--kind", "widget", "--json")
+	out, _, code = execCLI(t, "search", "certification", "--kind", "widget", "--json")
 	require.Equal(t, 2, code)
 	require.Contains(t, out, `"reason": "unknown_kind"`)
 }

@@ -26,10 +26,10 @@ func stageFixture(t *testing.T) (root, amendmentID string) {
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/schema-transcription", Title: "Transcribe the schema"})
+		Key: "form-engine/certification-form-loading/schema-transcription", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	res, err := mutate.AddAmendment(load(t, root), gitDeps(root), mutate.AmendmentInput{
 		Key: "iphone-only", Title: "Remove native iPad support from v1"})
@@ -408,7 +408,7 @@ func TestStageOperationReviseHappyPath(t *testing.T) {
 
 	res, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:            store.AmendmentOpRevise,
-		Target:        "form-engine/nrca-form-loading",
+		Target:        "form-engine/certification-form-loading",
 		Preconditions: map[string]string{"spec_revision": "git:aaa", "eval_revision": "git:bbb"},
 	})
 	require.NoError(t, err)
@@ -492,7 +492,7 @@ func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testin
 
 	_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:  store.AmendmentOpAddTask,
-		Key: "form-engine/nrca-form-loading/iphone-acceptance",
+		Key: "form-engine/certification-form-loading/iphone-acceptance",
 	})
 	require.NoError(t, err)
 
@@ -500,12 +500,12 @@ func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testin
 		Op:           store.AmendmentOpCancel,
 		Target:       taskID,
 		Reason:       "superseded under the iPhone-only decision",
-		SupersededBy: "form-engine/nrca-form-loading/iphone-acceptance",
+		SupersededBy: "form-engine/certification-form-loading/iphone-acceptance",
 	})
 	require.NoError(t, err)
 	require.Equal(t, taskID, res.Op.Target)
 	require.Equal(t, "superseded under the iPhone-only decision", res.Op.Reason)
-	require.Equal(t, "form-engine/nrca-form-loading/iphone-acceptance", res.Op.SupersededBy)
+	require.Equal(t, "form-engine/certification-form-loading/iphone-acceptance", res.Op.SupersededBy)
 }
 
 func TestStageOperationAddFeatureHappyPath(t *testing.T) {
@@ -566,11 +566,11 @@ func TestStageOperationAddTaskHappyPath(t *testing.T) {
 	root, amendmentID := stageFixture(t)
 	res, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddTask,
-		Key:   "form-engine/nrca-form-loading/iphone-acceptance",
+		Key:   "form-engine/certification-form-loading/iphone-acceptance",
 		Title: "iPhone-only acceptance",
 	})
 	require.NoError(t, err)
-	require.Equal(t, "form-engine/nrca-form-loading/iphone-acceptance", res.Op.Key)
+	require.Equal(t, "form-engine/certification-form-loading/iphone-acceptance", res.Op.Key)
 	require.Equal(t, "iPhone-only acceptance", res.Op.Title)
 }
 
@@ -791,7 +791,7 @@ func TestStageOperationAddQuestionResolvesLiveBlocks(t *testing.T) {
 		Op:        store.AmendmentOpAddQuestion,
 		Title:     "Schema ownership",
 		Statement: "Which schema owns this?",
-		Blocks:    []string{epicID, "form-engine/nrca-form-loading"},
+		Blocks:    []string{epicID, "form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, []string{epicID, featureID}, res.Op.Blocks, "both addresses resolved to ids")
@@ -1084,7 +1084,7 @@ func TestStageOperationRefusals(t *testing.T) {
 		},
 		{
 			name:       "superseded_by on add-task",
-			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/nrca-form-loading/x", SupersededBy: featureID},
+			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/x", SupersededBy: featureID},
 			wantReason: "superseded_by_misplaced",
 		},
 		{
@@ -1134,7 +1134,7 @@ func TestStageOperationRefusals(t *testing.T) {
 		},
 		{
 			name:       "blocks on add-task",
-			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/nrca-form-loading/x", Blocks: []string{featureID}},
+			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/x", Blocks: []string{featureID}},
 			wantReason: "blocks_misplaced",
 		},
 		{
@@ -1149,7 +1149,7 @@ func TestStageOperationRefusals(t *testing.T) {
 		},
 		{
 			name:       "supersede names its own target by key",
-			in:         mutate.StageInput{Op: store.AmendmentOpSupersede, Target: featureID, By: "form-engine/nrca-form-loading"},
+			in:         mutate.StageInput{Op: store.AmendmentOpSupersede, Target: featureID, By: "form-engine/certification-form-loading"},
 			wantReason: "self_supersession",
 		},
 		{
@@ -1184,7 +1184,7 @@ func TestStageOperationRefusals(t *testing.T) {
 		},
 		{
 			name:       "malformed add-task key",
-			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/nrca-form-loading"},
+			in:         mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading"},
 			wantReason: "invalid_key",
 		},
 		{

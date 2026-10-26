@@ -49,8 +49,8 @@ must incorporate the migration and maintain its own instructions; join is onboar
 Conventions here:
 
 - `<epic>` is an epic key or id (`form-engine` or `E-4smkjd`). `<feature>` is the canonical
-  epic-qualified key or id (`form-engine/nrca-form-loading` or `F-79dh3q`). `<task>` is the
-  canonical three-segment key or id (`form-engine/nrca-form-loading/transcribe-the-schema` or
+  epic-qualified key or id (`form-engine/certification-form-loading` or `F-79dh3q`). `<task>` is the
+  canonical three-segment key or id (`form-engine/certification-form-loading/transcribe-the-schema` or
   `T-k3p9w6`): a task is a folder under its feature, so it carries a key like every other grain.
   `<question>` is addressed by id only (`Q-2erhyz`): the decisions ledger carries no keys. Human scan references render that id plus the short title; question detail retains the full statement.
 - `<bug>`, `<chore>`, and `<tweak>` are shelf nodes, addressed by id (`B-4k2p9x`, `CH-7m3vqz`, `TW-2p8k9m`), by the canonical

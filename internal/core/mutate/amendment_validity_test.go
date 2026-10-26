@@ -43,7 +43,7 @@ func TestEvaluateAmendmentPreconditionsReportsValidAndStale(t *testing.T) {
 		Target: featureID,
 		Preconditions: map[string]string{
 			"target_status": "draft",
-			"key_absent":    "form-engine/nrca-form-loading",
+			"key_absent":    "form-engine/certification-form-loading",
 		},
 	})
 
@@ -77,7 +77,7 @@ func TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey(t *testing.T)
 	root, amendmentID := stageFixture(t)
 	deps := gitDeps(root)
 
-	const newKey = "form-engine/nrca-form-loading/extra-task"
+	const newKey = "form-engine/certification-form-loading/extra-task"
 	a := stage(t, root, deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddTask,
 		Key:   newKey,

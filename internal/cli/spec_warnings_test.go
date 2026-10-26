@@ -40,12 +40,12 @@ const coveredPreserveCLIWarning = "criterion C1 (preserve) is a test the tests g
 func TestSpecFeatureHumanWarning(t *testing.T) {
 	layCoveredPreserveFeature(t, "{ type: test, ref: TestExisting }")
 
-	out, stderr, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	out, stderr, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code, "the warning never blocks: out=%s stderr=%s", out, stderr)
 	require.Contains(t, out, "is now specced.")
 	require.Contains(t, out, "\nWarning: "+coveredPreserveCLIWarning)
 
-	out, stderr, code = execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	out, stderr, code = execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code, "out=%s stderr=%s", out, stderr)
 	require.Contains(t, out, "(no change).")
 	require.Contains(t, out, "\nWarning: "+coveredPreserveCLIWarning)
@@ -56,14 +56,14 @@ func TestSpecFeatureHumanWarning(t *testing.T) {
 func TestSpecFeatureJSONWarnings(t *testing.T) {
 	t.Run("covered preserve criterion", func(t *testing.T) {
 		layCoveredPreserveFeature(t, "{ type: test, ref: TestExisting }")
-		out, stderr, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+		out, stderr, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 		require.Equal(t, 0, code, "out=%s stderr=%s", out, stderr)
 		require.Contains(t, out, `"warnings": [`)
 		require.Contains(t, out, coveredPreserveCLIWarning)
 	})
 	t.Run("targeted preserve criterion", func(t *testing.T) {
 		layCoveredPreserveFeature(t, `{ type: test, run: "go test ./internal/forms -run TestExisting" }`)
-		out, stderr, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+		out, stderr, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 		require.Equal(t, 0, code, "out=%s stderr=%s", out, stderr)
 		require.NotContains(t, out, `"warnings"`)
 	})

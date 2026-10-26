@@ -47,14 +47,14 @@ func layClaimFeature(t *testing.T, deps mutate.Deps) (root, ref string) {
 	root = writeTwoOwnerRepo(t)
 	_, err := mutate.AddEpic(load(t, root), depsAs(deps, "jc"), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), depsAs(deps, "jc"), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), depsAs(deps, "jc"), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
-	return root, "form-engine/nrca-form-loading"
+	return root, "form-engine/certification-form-loading"
 }
 
 func addTaskNamed(t *testing.T, root string, deps mutate.Deps, localKey string) string {
 	t.Helper()
-	res, err := mutate.AddTask(load(t, root), depsAs(deps, "jc"), mutate.TaskInput{Key: "form-engine/nrca-form-loading/" + localKey, Title: localKey})
+	res, err := mutate.AddTask(load(t, root), depsAs(deps, "jc"), mutate.TaskInput{Key: "form-engine/certification-form-loading/" + localKey, Title: localKey})
 	require.NoError(t, err)
 	return res.ID
 }

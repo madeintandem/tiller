@@ -241,7 +241,7 @@ func TestCaughtUpGuideNamesWhyThePoolIsNotStartable(t *testing.T) {
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "claim", "task", "form-engine/schema-engine/parse-the-schema", "--contributor", "pat")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "link", "feature", "form-engine/nrca-form-loading",
+	_, _, code = execCLI(t, "link", "feature", "form-engine/certification-form-loading",
 		"--depends-on", "form-engine/schema-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -258,7 +258,7 @@ func TestCaughtUpGuideNamesWhyThePoolIsNotStartable(t *testing.T) {
 
 func TestGuideSkipsAClaimableTaskHeldByQuestion(t *testing.T) {
 	layFeatureReadyToStart(t)
-	const featureKey = "form-engine/nrca-form-loading"
+	const featureKey = "form-engine/certification-form-loading"
 	const taskKey = featureKey + "/transcribe-the-schema"
 	out, stderr, code := execCLI(t, "add", "question", "Which schema version should the task use?",
 		"--title", "Schema version", "--blocks", taskKey, "--contributor", "jc", "--json")
@@ -310,8 +310,8 @@ func TestGuideNoArgRoutesByState(t *testing.T) {
 	// specify.
 	_, _, code = execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code := execCLI(t, "guide", "--json")
@@ -340,7 +340,7 @@ func TestGuideNoArgRoutesByState(t *testing.T) {
 // longer ships. Both surfaces rank with views.NextOf, so both say it.
 func TestTaskLessFeatureNamesNoSeam(t *testing.T) {
 	laySpeccableFeature(t)
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	require.NoError(t, os.RemoveAll(filepath.Join(featureDir(t), store.TaskDirName)))
 
@@ -359,7 +359,7 @@ func TestTaskLessFeatureNamesNoSeam(t *testing.T) {
 	require.Equal(t, 0, code)
 	_, next := splitAtNext(t, route)
 	require.NotContains(t, next, "break-down", "guide and the readout answer one question one way")
-	require.Contains(t, next, "1. You: approve the spec for form-engine/nrca-form-loading (",
+	require.Contains(t, next, "1. You: approve the spec for form-engine/certification-form-loading (",
 		"the plan-gate wait, not an invented seam")
 }
 
@@ -370,7 +370,7 @@ func TestTaskLessFeatureNamesNoSeam(t *testing.T) {
 // the readout's Next must agree.
 func TestGuideNamesThePlanGateWait(t *testing.T) {
 	laySpeccableFeature(t)
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code := execCLI(t, "guide", "--json")
@@ -396,7 +396,7 @@ func TestPlanGateClearsIntoExecuteOnApprove(t *testing.T) {
 	// --contributor jc no longer makes that true by itself).
 	claimTaskAsOwner(t, cliFeatureKey+"/transcribe-the-schema", "jc")
 	mustRun(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code := execCLI(t, "guide", "--json")
@@ -404,7 +404,7 @@ func TestPlanGateClearsIntoExecuteOnApprove(t *testing.T) {
 	require.Contains(t, out, "\"skill\": \"orient\"", "the gate holds the route before the approve")
 	require.Contains(t, out, "\"kind\": \"approve_feature\"")
 
-	_, _, code = execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	out, _, code = execCLI(t, "guide", "--json")
@@ -426,8 +426,8 @@ func layApprovedPlanAheadOfADraftFeature(t *testing.T) {
 	claimTaskAsOwner(t, cliFeatureKey+"/transcribe-the-schema", "jc")
 	for _, argv := range [][]string{
 		{"approve", "epic", "form-engine", "--contributor", "jc"},
-		{"spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc"},
-		{"approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc"},
+		{"spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc"},
+		{"approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc"},
 		{"add", "feature", "form-engine/zebra-reporting",
 			"--title", "Zebra reporting", "--change-type", "create", "--contributor", "jc"},
 	} {
@@ -490,7 +490,7 @@ func TestAddVerbsRefuseAParentAddressedByID(t *testing.T) {
 	laySpeccableFeature(t)
 
 	epicID := extractID(t, mustJSON(t, "show", "epic", "form-engine"), "E-")
-	featureID := extractID(t, mustJSON(t, "show", "feature", "form-engine/nrca-form-loading"), "F-")
+	featureID := extractID(t, mustJSON(t, "show", "feature", "form-engine/certification-form-loading"), "F-")
 
 	_, errOut, code := execCLI(t, "add", "feature", epicID+"/by-id", "--contributor", "jc")
 	require.Equal(t, 2, code, "an id in the epic position is misuse")
@@ -933,5 +933,5 @@ func TestGuideSuggestsTheTopAgentMoveBelowHumanMoves(t *testing.T) {
 	require.Equal(t, "approve_feature", top["kind"], "the human's approval ranks first: %s", out)
 	require.Equal(t, "human", top["actor"])
 	require.Equal(t, "execute", data["skill"], "the suggestion skips the human move for the agent's")
-	require.Contains(t, data["reason"], "form-engine/nrca-form-loading/transcribe-the-schema")
+	require.Contains(t, data["reason"], "form-engine/certification-form-loading/transcribe-the-schema")
 }

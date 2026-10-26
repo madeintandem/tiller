@@ -55,7 +55,7 @@ func TestRenderReadoutMatchesItsGolden(t *testing.T) {
 		NeedsYou: []views.ReadoutAction{{Text: "1 epic awaits your approval", Command: "tiller queue --kind approve_epic"}},
 		Next: views.Next{Reader: "jc", Candidates: []views.NextCandidate{
 			approveEpicMove("platform-foundation", "E-1wmkgv"),
-			specifyMove("form-engine/nrca-form-loading", "F-79dh3q"),
+			specifyMove("form-engine/certification-form-loading", "F-79dh3q"),
 		}},
 	}
 	got := renderReadout(r)
@@ -202,9 +202,9 @@ func TestRenderReadoutRendersTheUnpushedWarningDirectlyUnderItsNode(t *testing.T
 		Moment:   views.MomentExecute,
 		Headline: "Execution status",
 		Entities: []views.ReadoutEntity{
-			{Ref: "form-engine/nrca-form-loading/transcribe (T-aaaaaa)", Note: "PR #41",
-				Unpushed: &views.UnpushedReviewView{Commit: "abc1234", Branch: "tiller/form-engine/nrca-form-loading/transcribe", Upstream: "origin/tiller/form-engine/nrca-form-loading/transcribe"}},
-			{Ref: "form-engine/nrca-form-loading/validate (T-bbbbbb)", Note: "PR #42"},
+			{Ref: "form-engine/certification-form-loading/transcribe (T-aaaaaa)", Note: "PR #41",
+				Unpushed: &views.UnpushedReviewView{Commit: "abc1234", Branch: "tiller/form-engine/certification-form-loading/transcribe", Upstream: "origin/tiller/form-engine/certification-form-loading/transcribe"}},
+			{Ref: "form-engine/certification-form-loading/validate (T-bbbbbb)", Note: "PR #42"},
 		},
 	})
 

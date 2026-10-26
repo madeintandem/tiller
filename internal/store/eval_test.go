@@ -13,7 +13,7 @@ import (
 // (artifact-schema.md, The eval model).
 func TestLoadEvalFile_Greenfield(t *testing.T) {
 	path := filepath.Join(".tiller", "epics", "form-engine",
-		"features", "nrca-form-loading", "feature.eval.md")
+		"features", "certification-form-loading", "feature.eval.md")
 
 	ef, err := LoadEvalFile(fixtureTreeRoot, path)
 	require.NoError(t, err)
@@ -25,12 +25,12 @@ func TestLoadEvalFile_Greenfield(t *testing.T) {
 	assert.Equal(t, "C1", c1.ID)
 	assert.Equal(t, PolarityIntroduce, c1.Polarity)
 	assert.Equal(t, BindingTest, c1.Binding.Type)
-	assert.Equal(t, BindingRefs{"spec/form_definitions/nrca_lti_02a_spec.rb"}, c1.Binding.Ref)
+	assert.Equal(t, BindingRefs{"spec/form_definitions/cert_lti_02a_spec.rb"}, c1.Binding.Ref)
 	assert.True(t, c1.Required)
 
 	c2 := ef.Criteria[1]
 	assert.Equal(t, BindingCommand, c2.Binding.Type)
-	assert.Equal(t, "bundle exec rspec spec/pdf/nrca_golden_spec.rb", c2.Binding.Run)
+	assert.Equal(t, "bundle exec rspec spec/pdf/cert_golden_spec.rb", c2.Binding.Run)
 
 	c3 := ef.Criteria[2]
 	assert.Equal(t, BindingManual, c3.Binding.Type)

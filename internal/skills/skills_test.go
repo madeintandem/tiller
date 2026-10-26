@@ -490,8 +490,8 @@ func TestOrientCarriesNodeReferenceConvention(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
 	require.Contains(t, text, "## Node references", "orient states the convention once")
-	require.Contains(t, text, "form-engine/nrca-form-loading (F-79dh3q)", "the key path carries the id in parentheses")
-	require.Contains(t, text, "form-engine/nrca-form-loading/schema-transcription (T-k3p9w6)",
+	require.Contains(t, text, "form-engine/certification-form-loading (F-79dh3q)", "the key path carries the id in parentheses")
+	require.Contains(t, text, "form-engine/certification-form-loading/schema-transcription (T-k3p9w6)",
 		"a task carries its own three-segment key path")
 	require.Contains(t, text, "This convention is inherited by every skill", "the other skills only point back to it")
 }
@@ -654,7 +654,7 @@ func TestEmbeddedHandoffsUseRunnableCommands(t *testing.T) {
 	for _, command := range []string{
 		"tiller add task <epic>/<feature>/<task-key> --title",
 		"tiller link task <key> --depends-on <sibling>",
-		"tiller spec feature form-engine/nrca-form-loading",
+		"tiller spec feature form-engine/certification-form-loading",
 	} {
 		require.Containsf(t, specify, command, "specify carries runnable command %q", command)
 	}
@@ -729,7 +729,7 @@ func TestAmendNamesTheShippedAmendmentSurface(t *testing.T) {
 		"--add-feature form-engine/table-backed-forms",
 		"--change-type replace",
 		"--add-task form-engine/rendering-modes/table-aware-rendering",
-		"--supersede form-engine/nrca-form-loading",
+		"--supersede form-engine/certification-form-loading",
 		"--by form-engine/table-backed-forms",
 		"--cancel form-engine/rendering-modes/embedded-json-fallback",
 		"--superseded-by form-engine/rendering-modes/table-aware-rendering",
@@ -1173,7 +1173,7 @@ func TestSpecifySettlesQuestionsAndExecuteBuildsAroundThem(t *testing.T) {
 	// commits the question ledger with the plan.
 	for _, want := range []string{
 		"# final pass (Settle questions before approve)",
-		"git add .tiller/epics/form-engine/features/nrca-form-loading .tiller/decisions/open-questions.yml",
+		"git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml",
 	} {
 		require.Containsf(t, specify, want, "specify choreography pins %q", want)
 	}
@@ -1259,9 +1259,9 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		require.NotEqualf(t, -1, j, "missing %q", later)
 		require.Lessf(t, i, j, "%q must precede %q", earlier, later)
 	}
-	order(`git worktree add --detach "$worktree" "$start_base"`, "tiller claim task form-engine/nrca-form-loading/schema-transcription")
+	order(`git worktree add --detach "$worktree" "$start_base"`, "tiller claim task form-engine/certification-form-loading/schema-transcription")
 	order(`cd "$worktree" && tiller join --as <you>                   # a new worktree has no identity; restore any refresh it reports
-tiller claim task`, "tiller claim task form-engine/nrca-form-loading/schema-transcription")
+tiller claim task`, "tiller claim task form-engine/certification-form-loading/schema-transcription")
 	order(`git worktree add --detach "$worktree" "$base"`, "tiller claim bug bugs/blank-on-reload")
 	order(`cd "$worktree" && tiller join --as <you>                   # a new worktree has no identity; restore any refresh it reports
 tiller claim bug`, "tiller claim bug bugs/blank-on-reload")
@@ -1280,7 +1280,7 @@ func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 		"Add `--retire <criterion-id>` for each check you deliberately removed",
 		"re-pins `verified_against.eval`",
 		"The spec leg and the surface leg of `stale_spec` have no such command",
-		"tiller amend eval-fix --correct-eval form-engine/nrca-form-loading",
+		"tiller amend eval-fix --correct-eval form-engine/certification-form-loading",
 	} {
 		require.Containsf(t, mend, want, "mend-drift pins %q", want)
 	}
@@ -1296,7 +1296,7 @@ func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 		"`correct_eval_changes_contract`",
 		"`correct_eval_not_feature`",
 		"`retire_misplaced`",
-		"tiller amend form-engine-rework --correct-eval form-engine/nrca-form-loading",
+		"tiller amend form-engine-rework --correct-eval form-engine/certification-form-loading",
 	} {
 		require.Containsf(t, amend, want, "amend pins %q", want)
 	}

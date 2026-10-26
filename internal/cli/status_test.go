@@ -232,7 +232,7 @@ func layApprovedFeatureWithTask(t *testing.T) string {
 	dir := initGatedGitRepo(t, "true")
 	for _, argv := range [][]string{
 		{"add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc"},
-		{"add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc"},
+		{"add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc"},
 		{"approve", "epic", "form-engine", "--contributor", "jc"},
 	} {
 		_, _, code := execCLI(t, argv...)
@@ -262,7 +262,7 @@ func layApprovedFeatureWithTask(t *testing.T) string {
 // node status calls clean and start refuses would fail here.
 func TestStatusReportsActiveBasisDriftAtBothGrains(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
-	featDir := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	featDir := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	tid := soleTaskID(t)
 
 	// Clean: nothing drifted, and the verb the guard fronts agrees.
@@ -272,7 +272,7 @@ func TestStatusReportsActiveBasisDriftAtBothGrains(t *testing.T) {
 
 	// A bare working-tree edit of feature.md, no commit.
 	require.NoError(t, os.WriteFile(filepath.Join(featDir, "feature.md"),
-		[]byte("# NRCA form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
 
 	out, _, code = execCLI(t, "status", "feature", cliFeatureKey)
 	require.Equal(t, 0, code, "status reports, it never gates")
@@ -344,7 +344,7 @@ func TestStatusReportsActiveBasisDriftAtBothGrains(t *testing.T) {
 // not there (task-9-brief.md, inherited item 5).
 func TestStatusReportsADeletedPinAsDriftNamingARestore(t *testing.T) {
 	dir := layApprovedFeatureWithTask(t)
-	featDir := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	featDir := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.Remove(filepath.Join(featDir, "feature.eval.md")))
 
 	out, _, code := execCLI(t, "status", "feature", cliFeatureKey)
@@ -440,7 +440,7 @@ func TestStatusIsSilentAboutBasisWhereThereIsNoPin(t *testing.T) {
 	initGatedGitRepo(t, "true")
 	for _, argv := range [][]string{
 		{"add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc"},
-		{"add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc"},
+		{"add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc"},
 	} {
 		_, _, code := execCLI(t, argv...)
 		require.Equalf(t, 0, code, "%v", argv)

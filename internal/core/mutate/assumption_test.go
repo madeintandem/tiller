@@ -31,8 +31,8 @@ func layFeatureWithOpenAssumedQuestion(t *testing.T) string {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	_, err := mutate.AddQuestion(load(t, root), testDeps(), mutate.QuestionInput{
 		Title:     "Canonical schema version",
@@ -40,7 +40,7 @@ func layFeatureWithOpenAssumedQuestion(t *testing.T) string {
 	})
 	require.NoError(t, err)
 
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{
 		Verb: "approve", AssumeQuestion: "Q-aaaaaa", Reason: "proceeding under the documented assumption",
 	})
 	return root

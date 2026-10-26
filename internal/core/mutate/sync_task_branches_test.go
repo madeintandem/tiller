@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	syncFirstTaskBranch  = "tiller/form-engine/nrca-form-loading/transcribe-the-schema"
-	syncSecondTaskBranch = "tiller/form-engine/nrca-form-loading/validate-the-schema"
-	syncAggregateBranch  = "tiller/reviews/features/form-engine/nrca-form-loading"
+	syncFirstTaskBranch  = "tiller/form-engine/certification-form-loading/transcribe-the-schema"
+	syncSecondTaskBranch = "tiller/form-engine/certification-form-loading/validate-the-schema"
+	syncAggregateBranch  = "tiller/reviews/features/form-engine/certification-form-loading"
 )
 
 func independentSyncBranches(t *testing.T) string {
@@ -47,7 +47,7 @@ func mergeSyncBranch(t *testing.T, root, branch, shape string) {
 func recordSyncAggregate(t *testing.T, root, grain string, recorded bool) string {
 	t.Helper()
 	branch := syncAggregateBranch
-	featurePath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	featurePath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	data, err := os.ReadFile(featurePath)
 	require.NoError(t, err)
 	var f store.Feature

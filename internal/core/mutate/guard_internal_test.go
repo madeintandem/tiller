@@ -25,7 +25,7 @@ import (
 // makes the two files readable side by side.
 func guardMatrixFixture(epicStatus, featureStatus, taskStatus string) (*store.Tree, *store.Feature, *store.Task) {
 	epicKey := "form-engine"
-	featKey := "form-engine/nrca-form-loading"
+	featKey := "form-engine/certification-form-loading"
 	epic := &store.Epic{ID: "E-aaaaaa", Key: &epicKey, Status: epicStatus}
 	feat := &store.Feature{ID: "F-aaaaaa", Key: &featKey, Status: featureStatus, EpicKey: epicKey}
 	task := &store.Task{ID: "T-aaaaaa", FeatureID: feat.ID, Status: taskStatus}

@@ -39,7 +39,7 @@ func evalFixture() *store.EvalFile {
 				Statement: "Parent + child render to a single PDF with continuous page numbers",
 				Polarity:  store.PolarityIntroduce,
 				Required:  false,
-				Binding:   store.EvalBinding{Type: store.BindingCommand, Run: "bundle exec rspec spec/pdf/nrca_golden_spec.rb"},
+				Binding:   store.EvalBinding{Type: store.BindingCommand, Run: "bundle exec rspec spec/pdf/cert_golden_spec.rb"},
 			},
 			{
 				ID:        "C4",
@@ -118,7 +118,7 @@ func TestEvalContractOfMapsCriteriaInFileOrder(t *testing.T) {
 	      "statement": "Parent + child render to a single PDF with continuous page numbers",
 	      "polarity": "introduce",
 	      "required": false,
-	      "binding": { "type": "command", "run": "bundle exec rspec spec/pdf/nrca_golden_spec.rb" }
+	      "binding": { "type": "command", "run": "bundle exec rspec spec/pdf/cert_golden_spec.rb" }
 	    },
 	    {
 	      "id": "C4",

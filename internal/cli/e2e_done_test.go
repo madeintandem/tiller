@@ -64,7 +64,7 @@ func TestEndToEndTaskAndFeatureReachDoneCLI(t *testing.T) {
 
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -219,7 +219,7 @@ func TestEndToEndRollupParkedFeatureIsNamedAndThenCrosses(t *testing.T) {
 
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -373,7 +373,7 @@ func TestEndToEndActiveBasisRefusesUntilRefreshCLI(t *testing.T) {
 
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -389,8 +389,8 @@ func TestEndToEndActiveBasisRefusesUntilRefreshCLI(t *testing.T) {
 
 	// A bare working-tree edit of feature.md, no commit: its blob now differs from
 	// the recorded basis, and the guard must notice immediately.
-	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md")
-	require.NoError(t, os.WriteFile(mdPath, []byte("# NRCA form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
+	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md")
+	require.NoError(t, os.WriteFile(mdPath, []byte("# Certification form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
 
 	// start refuses with active_basis (exit 1, ok:false + a data block, no error block).
 	out, _, code := execCLI(t, "start", "task", cliFeatureKey+"/transcribe-the-schema", "--contributor", "jc", "--json")
@@ -419,7 +419,7 @@ func TestEndToEndActiveBasisRefusesUntilRefreshCLI(t *testing.T) {
 	// The same arc at task grain. The plan gate pinned this task's task.md when
 	// it approved the feature, so it starts clean.
 	tid := soleTaskID(t)
-	taskMD := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading",
+	taskMD := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading",
 		store.TaskDirName, "transcribe-the-schema", store.TaskProseFile)
 
 	// start is the first of the three verbs the guard covers, and this grain owns
@@ -532,7 +532,7 @@ func driveOfflineLoopToInReviewCLI(t *testing.T, dir string) (branch, taskID, he
 	t.Helper()
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)

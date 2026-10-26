@@ -252,7 +252,7 @@ func TestCheckDoesNotReuseLegacyRecords(t *testing.T) {
 	dir := t.TempDir()
 	root, taskID := layCountedTask(t, countingRun(dir, "build"), countingRun(dir, "tests"))
 
-	path := filepath.Join(root, store.TaskRelDir("form-engine", "nrca-form-loading", "transcribe-the-schema"), store.TaskStateFile)
+	path := filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", "transcribe-the-schema"), store.TaskStateFile)
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	var doc store.Task
@@ -295,7 +295,7 @@ func TestCheckWithStubIdentityAlwaysRuns(t *testing.T) {
 func checkGatedFeature(t *testing.T, root string, deps mutate.Deps) mutate.CheckResult {
 	t.Helper()
 	tree := load(t, root)
-	res, err := mutate.Check(tree, deps, vcs.New(root), resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading"), mutate.CheckInput{})
+	res, err := mutate.Check(tree, deps, vcs.New(root), resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading"), mutate.CheckInput{})
 	require.NoError(t, err)
 	return res
 }
@@ -558,29 +558,29 @@ func layAttestedFeature(t *testing.T, dir string) (root, featureID string) {
 	layGatedRepo(t, root, "true", "true")
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
-	fdir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
-	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.md"), []byte("# NRCA form loading\n\nLoad the form.\n"), 0o644))
+	fdir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
+	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.md"), []byte("# Certification form loading\n\nLoad the form.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.eval.md"), []byte("---\nnode: F-aaaaaa\ncriteria:\n"+
 		"  - id: C1\n    statement: The form loads\n    polarity: introduce\n    binding: { type: command, run: \"echo run >> "+filepath.Join(dir, "c1.count")+"\" }\n    required: true\n"+
 		"  - id: C2\n    statement: The form reads well\n    polarity: introduce\n    binding: { type: manual }\n    required: true\n"+
 		"---\n\n# Acceptance\n"), 0o644))
-	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
-	_, err = mutate.ClaimTask(load(t, root), testDeps(), "form-engine/nrca-form-loading/transcribe-the-schema", "")
+	_, err = mutate.ClaimTask(load(t, root), testDeps(), "form-engine/certification-form-loading/transcribe-the-schema", "")
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "transcribe-the-schema", "## Approach\n\nTranscribe the JSON Schema into the form model.")
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	require.NoError(t, os.WriteFile(filepath.Join(root, "main.go"), []byte("package main\n"), 0o644))
 	gitCommitAllM(t, root, "lay feature")
 
 	first := checkFeatureWith(t, root, testDeps(), mutate.CheckInput{})
 	require.Equal(t, store.CriterionStatusNeedsAttestation, outcome(t, first, "evals").Criteria["C2"])
 	tree := load(t, root)
-	_, err = mutate.Attest(tree, testDeps(), resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading"), mutate.AttestInput{Criterion: "C2", Status: store.GateStatusPass})
+	_, err = mutate.Attest(tree, testDeps(), resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading"), mutate.AttestInput{Criterion: "C2", Status: store.GateStatusPass})
 	require.NoError(t, err)
 	gitCommitAllM(t, root, "record acceptance")
 	evals := load(t, root).Features["F-aaaaaa"].Gates["evals"]
@@ -593,7 +593,7 @@ func layAttestedFeature(t *testing.T, dir string) (root, featureID string) {
 func checkFeatureWith(t *testing.T, root string, deps mutate.Deps, in mutate.CheckInput) mutate.CheckResult {
 	t.Helper()
 	tree := load(t, root)
-	res, err := mutate.Check(tree, deps, vcs.New(root), resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading"), in)
+	res, err := mutate.Check(tree, deps, vcs.New(root), resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading"), in)
 	require.NoError(t, err)
 	return res
 }

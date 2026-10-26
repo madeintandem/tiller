@@ -42,11 +42,11 @@ func mapTree() *store.Tree {
 	formKey := "form-engine"
 	dbKey := "foundation/db-core"
 	authnKey := "foundation/authn"
-	loadKey := "form-engine/nrca-form-loading"
+	loadKey := "form-engine/certification-form-loading"
 	// The two tasks are held once and pointed at from both indexes, the shape the
 	// store leaves on load: Tasks resolves by id, FeatureTasks groups per feature.
-	task01Key := "form-engine/nrca-form-loading/schema-transcription"
-	task02Key := "form-engine/nrca-form-loading/wire-validation"
+	task01Key := "form-engine/certification-form-loading/schema-transcription"
+	task02Key := "form-engine/certification-form-loading/wire-validation"
 	task01 := &store.Task{ID: "T-task01", Key: &task01Key, Title: "Transcribe the schema", Status: "in_progress", Owner: "jc", FeatureID: "F-loadng"}
 	task02 := &store.Task{ID: "T-task02", Key: &task02Key, Title: "Wire validation", Status: "proposed", Owner: "jc", FeatureID: "F-loadng"}
 	return &store.Tree{
@@ -58,7 +58,7 @@ func mapTree() *store.Tree {
 		Features: map[string]*store.Feature{
 			"F-dbcore": {ID: "F-dbcore", Key: &dbKey, Title: "Database core", Status: "ready", EpicKey: "foundation", HasEval: true},
 			"F-authnn": {ID: "F-authnn", Key: &authnKey, Title: "Authentication", Status: "specced", EpicKey: "foundation"},
-			"F-loadng": {ID: "F-loadng", Key: &loadKey, Title: "NRCA form loading", Status: "active", EpicKey: "form-engine"},
+			"F-loadng": {ID: "F-loadng", Key: &loadKey, Title: "Certification form loading", Status: "active", EpicKey: "form-engine"},
 		},
 		Tasks:        map[string]*store.Task{"T-task01": task01, "T-task02": task02},
 		FeatureTasks: map[string][]*store.Task{"F-loadng": {task01, task02}},
@@ -114,9 +114,9 @@ func TestTreeBuildsDefinitionAxis(t *testing.T) {
 	require.Len(t, loading.Children, 2)
 	require.Equal(t, store.NounTask, loading.Children[0].Noun)
 	require.Equal(t, "T-task01", loading.Children[0].ID)
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription", loading.Children[0].Key)
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription", loading.Children[0].Key)
 	require.Equal(t, "Transcribe the schema", loading.Children[0].Title)
-	require.Equal(t, ".tiller/epics/form-engine/features/nrca-form-loading/tasks/schema-transcription/task.md",
+	require.Equal(t, ".tiller/epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.md",
 		loading.Children[0].Path)
 	require.Equal(t, "T-task02", loading.Children[1].ID)
 }
@@ -202,12 +202,12 @@ func TestTreeFilesFootprint(t *testing.T) {
 	// children's, because a task owns its own folder.
 	loading := nodeByKey(m.Nodes, "form-engine").Children[0]
 	require.Equal(t, []string{
-		".tiller/epics/form-engine/features/nrca-form-loading/feature.md",
-		".tiller/epics/form-engine/features/nrca-form-loading/feature.yml",
+		".tiller/epics/form-engine/features/certification-form-loading/feature.md",
+		".tiller/epics/form-engine/features/certification-form-loading/feature.yml",
 	}, loading.Files)
 	require.Equal(t, []string{
-		".tiller/epics/form-engine/features/nrca-form-loading/tasks/schema-transcription/task.md",
-		".tiller/epics/form-engine/features/nrca-form-loading/tasks/schema-transcription/task.yml",
+		".tiller/epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.md",
+		".tiller/epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.yml",
 	}, loading.Children[0].Files)
 }
 
@@ -236,7 +236,7 @@ func TestSubtreeRoots(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, m.Nodes, 1)
 	require.Equal(t, store.NounFeature, m.Nodes[0].Noun)
-	require.Equal(t, "form-engine/nrca-form-loading", m.Nodes[0].Key)
+	require.Equal(t, "form-engine/certification-form-loading", m.Nodes[0].Key)
 	require.Len(t, m.Nodes[0].Children, 2)
 
 	_, ok = Subtree(tr, tr.Tasks["T-task01"])
@@ -325,6 +325,6 @@ func TestTreeKeylessTaskNamesNoFile(t *testing.T) {
 	require.Equal(t, "T-nokey", got.ID, "the row still renders")
 	require.Empty(t, got.Path, "a task naming no folder drills nowhere")
 	require.Empty(t, got.Files, "and claims no footprint")
-	require.NotContains(t, got.Path, "nrca-form-loading/tasks/task.md",
+	require.NotContains(t, got.Path, "certification-form-loading/tasks/task.md",
 		"never the feature-level path an empty segment would collapse to")
 }

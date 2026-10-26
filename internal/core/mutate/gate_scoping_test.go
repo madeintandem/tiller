@@ -90,7 +90,7 @@ func TestCheckFeatureStillDerivesEvalsWhenScoped(t *testing.T) {
 	gitCommitAllM(t, dir, "lay tree")
 
 	tree := load(t, dir)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Check(tree, testDeps(), vcs.New(dir), feat, mutate.CheckInput{})
 	require.NoError(t, err)
 

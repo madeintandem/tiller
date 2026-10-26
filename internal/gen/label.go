@@ -2,7 +2,7 @@ package gen
 
 // This file is the one shared implementation of the human node-reference
 // convention (cli-surface.md, References in human output): a node is named by
-// its key path with the id in parentheses, "form-engine/nrca-form-loading
+// its key path with the id in parentheses, "form-engine/certification-form-loading
 // (F-79dh3q)". The path says where, the id says which: keys are renameable by
 // design while ids are stable, which is why the id rides along. A question is
 // never keyed and stays a bare id. Every human render surface goes through

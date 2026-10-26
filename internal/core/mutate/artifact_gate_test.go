@@ -19,7 +19,7 @@ import (
 
 func writeEvalWithArtifact(t *testing.T, root, artifact string) {
 	t.Helper()
-	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.eval.md")
+	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.eval.md")
 	eval := `---
 node: F-aaaaaa
 criteria:

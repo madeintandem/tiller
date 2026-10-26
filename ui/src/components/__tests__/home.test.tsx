@@ -770,10 +770,10 @@ describe("DecisionCard", () => {
       kind: "attest_gate",
       noun: "task",
       id: "T-aaaaaa",
-      key: "form-engine/nrca-form-loading/transcribe-the-schema",
+      key: "form-engine/certification-form-loading/transcribe-the-schema",
       ref: "T-aaaaaa",
       prose: "Transcribe the schema",
-      command: `tiller attest task form-engine/nrca-form-loading/transcribe-the-schema --gate ${gate} --status pass`,
+      command: `tiller attest task form-engine/certification-form-loading/transcribe-the-schema --gate ${gate} --status pass`,
       gate,
       gate_status: "pending",
     }));
@@ -1489,7 +1489,7 @@ describe("Home pulse: Just happened", () => {
               contributor: "pat",
               command: "tiller check task T-1",
               ask: false,
-              targets: [{ noun: "task", id: "T-1", key: "form-engine/nrca-form-loading/schema", ref: "schema (T-1)" }],
+              targets: [{ noun: "task", id: "T-1", key: "form-engine/certification-form-loading/schema", ref: "schema (T-1)" }],
             },
             {
               at: "2026-08-10T13:42:00Z",
@@ -1631,7 +1631,7 @@ describe("Home pulse: In flight", () => {
       contributors: [
         {
           contributor: { id: "jc", name: "jc" },
-          active: [{ noun: "task", id: "T-1", key: "form-engine/nrca-form-loading/schema", ref: "schema (T-1)", status: "active", display: "active" }],
+          active: [{ noun: "task", id: "T-1", key: "form-engine/certification-form-loading/schema", ref: "schema (T-1)", status: "active", display: "active" }],
           blocked: [],
           gates_in_review: [],
           open_questions: [],
@@ -1663,7 +1663,7 @@ describe("Home pulse: In flight", () => {
   // three lists is what actually exercises the brief's own ordering rule.
   it("renders one owner's active work, then gates in review, then the blocked register, in that document order", async () => {
     const active: StreamItem[] = [
-      { noun: "task", id: "T-1", key: "form-engine/nrca-form-loading/schema", ref: "schema (T-1)", status: "active", display: "active" },
+      { noun: "task", id: "T-1", key: "form-engine/certification-form-loading/schema", ref: "schema (T-1)", status: "active", display: "active" },
     ];
     const gatesInReview: GatesItem[] = [
       { noun: "task", id: "T-2", key: "intake/applicant-portal-auth/wire-oauth", ref: "wire-oauth (T-2)", gates: {} },

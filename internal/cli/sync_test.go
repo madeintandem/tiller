@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const cliFeatureKey = "form-engine/nrca-form-loading"
+const cliFeatureKey = "form-engine/certification-form-loading"
 
 // cliTaskKey is the canonical key of the task the CLI sync fixtures add under
 // cliFeatureKey, the node the human-surface assertions name.
@@ -26,7 +26,7 @@ func driveFeatureToReadyCLI(t *testing.T) {
 	t.Helper()
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeRealSpec(t)
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
@@ -883,8 +883,8 @@ func TestActiveBasisRefusesCheckCLI(t *testing.T) {
 	require.Equal(t, 0, code)
 
 	// Edit feature.md and commit, drifting the basis.
-	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md")
-	require.NoError(t, os.WriteFile(mdPath, []byte("# NRCA form loading\n\nRevised spec.\n"), 0o644))
+	mdPath := filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md")
+	require.NoError(t, os.WriteFile(mdPath, []byte("# Certification form loading\n\nRevised spec.\n"), 0o644))
 	gitRun(t, dir, "add", "-A")
 	gitRun(t, dir, "commit", "-m", "revise spec")
 
@@ -1227,7 +1227,7 @@ func TestSyncHumanNamesChecksDueOnCleanRun(t *testing.T) {
 // that line, so it is not part of what gets suppressed and still renders.
 func TestSyncHumanNamesChecksDueSurvivesCleanRunSuppression(t *testing.T) {
 	tree := checksDueTree()
-	otherKey := "form-engine/nrca-form-loading"
+	otherKey := "form-engine/certification-form-loading"
 	tree.Features["F-bbbbbb"] = &store.Feature{ID: "F-bbbbbb", Key: &otherKey}
 	res := mutate.SyncResult{
 		ChecksDue: checksDueFixture,
@@ -1247,7 +1247,7 @@ func TestSyncHumanNamesChecksDueSurvivesCleanRunSuppression(t *testing.T) {
 // the incident this feature fixes says must never separate.
 func TestSyncHumanNamesChecksDueOnCrossingPath(t *testing.T) {
 	tree := checksDueTree()
-	taskKey := "form-engine/nrca-form-loading/transcribe-the-schema"
+	taskKey := "form-engine/certification-form-loading/transcribe-the-schema"
 	tree.Tasks = map[string]*store.Task{"T-aaaaaa": {ID: "T-aaaaaa", Key: &taskKey}}
 	res := mutate.SyncResult{
 		Crossings: []mutate.Crossing{
@@ -1357,7 +1357,7 @@ func layEvalContractMismatchCLI(t *testing.T) (string, string, string) {
 	tid := submitTaskOnFeatureCLI(t, cliFeatureKey)
 	mergeTaskBranchCLI(t, dir, loadTestTree(t).Tasks[tid].Branch)
 
-	featDir := filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	featDir := filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	evalRel := filepath.Join(featDir, "feature.eval.md")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, evalRel),
 		[]byte("---\nnode: x\ncriteria: []\n---\n\n# Refreshed, uncommitted eval\n"), 0o644))

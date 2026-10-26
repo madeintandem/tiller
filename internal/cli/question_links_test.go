@@ -12,7 +12,7 @@ import (
 func TestLinkQuestionBlocksCLI(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
 	qid := addCancelFixtureQuestion(t, ids[0])
-	first := fmt.Sprintf("form-engine/nrca-form-loading/schema-transcription (%s)", ids[0])
+	first := fmt.Sprintf("form-engine/certification-form-loading/schema-transcription (%s)", ids[0])
 	second := refOfTask(t, ids[1])
 
 	human, _, code := execCLI(t, "link", "question", qid, "--blocks", ids[1], "--contributor", "jc")
@@ -37,7 +37,7 @@ func TestUnlinkQuestionBlocksCLI(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
 	qid := addCancelFixtureQuestion(t, ids[0])
 	mustRun(t, "link", "question", qid, "--blocks", ids[1], "--contributor", "jc")
-	first := fmt.Sprintf("form-engine/nrca-form-loading/schema-transcription (%s)", ids[0])
+	first := fmt.Sprintf("form-engine/certification-form-loading/schema-transcription (%s)", ids[0])
 	second := refOfTask(t, ids[1])
 
 	human, _, code := execCLI(t, "unlink", "question", qid, "--blocks", ids[0], "--contributor", "jc")
@@ -86,7 +86,7 @@ func TestLinkQuestionRefusesOtherAxes(t *testing.T) {
 		{"link", "question", qid, "--depends-on", ids[1]},
 		{"unlink", "question", qid, "--depends-on", ids[1]},
 		{"link", "question", qid, "--blocks", ids[1], "--surface", "src"},
-		{"link", "feature", "form-engine/nrca-form-loading", "--blocks", ids[1]},
+		{"link", "feature", "form-engine/certification-form-loading", "--blocks", ids[1]},
 		{"unlink", "task", ids[0], "--blocks", ids[1]},
 	} {
 		out, _, code := execCLI(t, append(argv, "--contributor", "jc", "--json")...)

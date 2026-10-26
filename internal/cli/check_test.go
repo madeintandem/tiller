@@ -95,19 +95,19 @@ func TestCheckFeaturePassesThroughSeededEvalsGate(t *testing.T) {
 	initEvalSeededGitRepo(t)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeRealSpec(t)
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
 	claimTaskAsOwner(t, cliFeatureKey+"/transcribe-the-schema", "jc")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	_, stderr, code := execCLI(t, "start", "task", cliFeatureKey+"/transcribe-the-schema", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	out, _, code := execCLI(t, "check", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "check", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, "a specced, green feature passes through the active evals gate")
 	require.Contains(t, out, "\"passed\": true")
 	require.Contains(t, out, "\"name\": \"evals\"")
@@ -128,17 +128,17 @@ func driveToStartedTask(t *testing.T) string {
 	t.Helper()
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeRealSpec(t)
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
 
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/transcribe-the-schema", "--title", "Transcribe the schema", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/transcribe-the-schema", "--title", "Transcribe the schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	tid := soleTaskID(t)
 	claimTaskAsOwner(t, tid, "jc")
@@ -279,10 +279,10 @@ func layActiveFeatureWithEvalCLI(t *testing.T, evalMD string) {
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", cliFeatureKey,
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), "feature.md"),
-		[]byte("# NRCA form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
+		[]byte("# Certification form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), "feature.eval.md"), []byte(evalMD), 0o644))
 	addSpeccedTask(t, "first-slice-of-the-feature", "First slice of the feature")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")

@@ -19,7 +19,7 @@ import (
 // every combination guardParentState's own switch cares about.
 func heldTaskFixture(epicStatus, featureStatus, taskStatus string) (*store.Tree, *store.Task) {
 	epicKey := "form-engine"
-	featKey := "form-engine/nrca-form-loading"
+	featKey := "form-engine/certification-form-loading"
 	epic := &store.Epic{ID: "E-aaaaaa", Key: &epicKey, Status: epicStatus}
 	feat := &store.Feature{ID: "F-aaaaaa", Key: &featKey, Status: featureStatus, EpicKey: epicKey}
 	task := &store.Task{ID: "T-aaaaaa", FeatureID: feat.ID, Status: taskStatus}
@@ -113,7 +113,7 @@ func TestRetiredAncestorTaskTruthTable(t *testing.T) {
 // epic, and archived retires it exactly like cancelled does.
 func TestRetiredAncestorFeatureUnderArchivedEpic(t *testing.T) {
 	epicKey := "form-engine"
-	featKey := "form-engine/nrca-form-loading"
+	featKey := "form-engine/certification-form-loading"
 	epic := &store.Epic{ID: "E-aaaaaa", Key: &epicKey, Status: "archived"}
 	feat := &store.Feature{ID: "F-aaaaaa", Key: &featKey, Status: "active", EpicKey: epicKey}
 	tree := &store.Tree{
@@ -134,7 +134,7 @@ func TestRetiredAncestorFeatureUnderArchivedEpic(t *testing.T) {
 // finished, so it is never held, however retired its epic reads.
 func TestRetiredAncestorFeatureItselfCancelledIsNil(t *testing.T) {
 	epicKey := "form-engine"
-	featKey := "form-engine/nrca-form-loading"
+	featKey := "form-engine/certification-form-loading"
 	epic := &store.Epic{ID: "E-aaaaaa", Key: &epicKey, Status: "cancelled"}
 	feat := &store.Feature{ID: "F-aaaaaa", Key: &featKey, Status: "cancelled", EpicKey: epicKey}
 	tree := &store.Tree{

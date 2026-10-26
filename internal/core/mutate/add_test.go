@@ -173,8 +173,8 @@ func TestAddFeatureNestsUnderEpic(t *testing.T) {
 	require.NoError(t, err)
 
 	res, err := mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{
-		Key:        "form-engine/nrca-form-loading",
-		Title:      "NRCA form loading",
+		Key:        "form-engine/certification-form-loading",
+		Title:      "Certification form loading",
 		ChangeType: "create",
 		Source:     "design/04-form-engine.md",
 	})
@@ -182,12 +182,12 @@ func TestAddFeatureNestsUnderEpic(t *testing.T) {
 	require.True(t, res.Created)
 	require.Equal(t, "F-aaaaaa", res.ID)
 	require.Equal(t, "feature", res.Noun)
-	require.Equal(t, "form-engine/nrca-form-loading", res.Key)
+	require.Equal(t, "form-engine/certification-form-loading", res.Key)
 	require.Equal(t, "draft", res.Status)
 	require.Equal(t, "create", res.ChangeType)
 
-	ymlPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
-	mdPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md")
+	ymlPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
+	mdPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md")
 	require.FileExists(t, ymlPath)
 	require.FileExists(t, mdPath)
 
@@ -196,7 +196,7 @@ func TestAddFeatureNestsUnderEpic(t *testing.T) {
 	require.NotNil(t, f)
 	require.Equal(t, "draft", f.Status)
 	require.NotNil(t, f.Key)
-	require.Equal(t, "form-engine/nrca-form-loading", *f.Key)
+	require.Equal(t, "form-engine/certification-form-loading", *f.Key)
 	require.Equal(t, "form-engine", f.EpicKey)
 }
 
@@ -217,12 +217,12 @@ func TestAddTaskLaysDownAProposedFolder(t *testing.T) {
 	root := writeOwnedRepo(t)
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", ChangeType: "create"})
 	require.NoError(t, err)
 
 	res, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/schema-transcription",
-		Title: "Transcribe NRCA-LTI-02-A into JSON Schema",
+		Key:   "form-engine/certification-form-loading/schema-transcription",
+		Title: "Transcribe CERT-LTI-02-A into JSON Schema",
 	})
 	require.NoError(t, err)
 	require.True(t, res.Created)
@@ -230,12 +230,12 @@ func TestAddTaskLaysDownAProposedFolder(t *testing.T) {
 	require.Equal(t, "task", res.Noun)
 	require.Equal(t, "proposed", res.Status)
 	require.Equal(t, "F-aaaaaa", res.Feature)
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription", res.Key)
-	require.Equal(t, "Transcribe NRCA-LTI-02-A into JSON Schema", res.Title)
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription", res.Key)
+	require.Equal(t, "Transcribe CERT-LTI-02-A into JSON Schema", res.Title)
 
 	// Both files land in the task's own folder: the implementation spec beside
 	// the state (artifact-schema.md, Tasks).
-	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "schema-transcription")
+	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "schema-transcription")
 	require.FileExists(t, filepath.Join(dir, "task.md"))
 	require.FileExists(t, filepath.Join(dir, "task.yml"))
 
@@ -247,7 +247,7 @@ func TestAddTaskLaysDownAProposedFolder(t *testing.T) {
 	require.Equal(t, "jc", task.ProposedBy)
 	require.Equal(t, "F-aaaaaa", task.FeatureID)
 	require.NotNil(t, task.Key)
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription", *task.Key)
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription", *task.Key)
 }
 
 // The stub seeds a Reuses heading between Approach and Surfaces, the place
@@ -259,15 +259,15 @@ func TestAddTaskStubCarriesReuses(t *testing.T) {
 	root := writeOwnedRepo(t)
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", ChangeType: "create"})
 	require.NoError(t, err)
 	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/schema-transcription",
-		Title: "Transcribe NRCA-LTI-02-A into JSON Schema",
+		Key:   "form-engine/certification-form-loading/schema-transcription",
+		Title: "Transcribe CERT-LTI-02-A into JSON Schema",
 	})
 	require.NoError(t, err)
 
-	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "schema-transcription")
+	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "schema-transcription")
 	data, err := os.ReadFile(filepath.Join(dir, "task.md"))
 	require.NoError(t, err)
 	stub := string(data)
@@ -282,11 +282,11 @@ func TestAddTaskRefusesANonCanonicalKey(t *testing.T) {
 	root := writeOwnedRepo(t)
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", ChangeType: "create"})
 	require.NoError(t, err)
 
 	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading", Title: "Two segments is a feature",
+		Key: "form-engine/certification-form-loading", Title: "Two segments is a feature",
 	})
 	require.Error(t, err)
 	require.Empty(t, load(t, root).Tasks)
@@ -312,10 +312,10 @@ func TestAddTaskIdempotentByKey(t *testing.T) {
 	root := writeOwnedRepo(t)
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", ChangeType: "create"})
 	require.NoError(t, err)
 
-	in := mutate.TaskInput{Key: "form-engine/nrca-form-loading/schema-transcription", Title: "Transcribe NRCA-LTI-02-A into JSON Schema"}
+	in := mutate.TaskInput{Key: "form-engine/certification-form-loading/schema-transcription", Title: "Transcribe CERT-LTI-02-A into JSON Schema"}
 	first, err := mutate.AddTask(load(t, root), testDeps(), in)
 	require.NoError(t, err)
 	require.True(t, first.Created)
@@ -359,16 +359,16 @@ func TestAddFeatureSourceSurvivesSpecApproveRewrite(t *testing.T) {
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{
-		Key:        "form-engine/nrca-form-loading",
-		Title:      "NRCA form loading",
+		Key:        "form-engine/certification-form-loading",
+		Title:      "Certification form loading",
 		ChangeType: "create",
 		Source:     "design/04-form-engine.md",
 	})
 	require.NoError(t, err)
 	writeStage2Output(t, root)
 
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	res := driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	res := driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	require.Equal(t, "ready", res.Status)
 
 	got := load(t, root).Features["F-aaaaaa"]

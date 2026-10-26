@@ -65,7 +65,7 @@ criteria:
   - id: C1
     statement: The form validates against its JSON Schema
     polarity: introduce
-    binding: { type: test, ref: "spec/form_definitions/nrca_lti_02a_spec.rb" }
+    binding: { type: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
     required: true
   - id: C2
     statement: Page numbers are continuous when a parent and child render to a single PDF
@@ -104,17 +104,17 @@ Read `gates.required.tests.run` in `.tiller/tiller.yml` and inspect the command 
 
 For a `test` binding, an explicit `run` is the complete command: Tiller does not append `ref` when both are present. Without `run`, Tiller appends a space and `ref` to `gates.required.tests.run`. If neither an explicit command nor a configured tests runner exists, a bare test ref stays pending. Tiller does not infer a runner from a file extension or verify that an arbitrary shell command honors its arguments.
 
-For example, `bundle exec rspec` accepts a spec path, so a ref-only binding can select `spec/form_definitions/nrca_lti_02a_spec.rb`. A `bin/ci` wrapper that ignores arguments instead repeats its entire pipeline for every ref-only criterion. Keep that full CI command as the required tests gate, but give each test-bound criterion an explicit targeted `run`. Retain `ref` for traceability; it is not a second argument list.
+For example, `bundle exec rspec` accepts a spec path, so a ref-only binding can select `spec/form_definitions/cert_lti_02a_spec.rb`. A `bin/ci` wrapper that ignores arguments instead repeats its entire pipeline for every ref-only criterion. Keep that full CI command as the required tests gate, but give each test-bound criterion an explicit targeted `run`. Retain `ref` for traceability; it is not a second argument list.
 
 Commands must work from the project root without depending on another criterion or an earlier CI run. Include required environment, test database, fixture, and compiled-asset preparation in the command or the project's existing targeted runner. For a Rails project whose selected spec needs test database and stylesheet preparation, the binding could be:
 
 ```yaml
 binding:
   type: test
-  ref: spec/form_definitions/nrca_lti_02a_spec.rb
+  ref: spec/form_definitions/cert_lti_02a_spec.rb
   run: >-
     RAILS_ENV=test bin/rails db:test:prepare tailwindcss:build &&
-    bin/rspec spec/form_definitions/nrca_lti_02a_spec.rb
+    bin/rspec spec/form_definitions/cert_lti_02a_spec.rb
 ```
 
 Use the project's actual prerequisites and runner, not these example commands by default. Where the referenced tests already exist, verify the resolved command's output selects those tests rather than the whole CI pipeline. If an `introduce` test or its runner is still to be built, put that scope check in the implementing task's `Tests` section for execute to perform; do not implement tests during specify or claim a future command was verified.
@@ -126,7 +126,7 @@ Correcting an already approved binding changes accepted prose. For a non-termina
 `tiller add task` seeds `task.md` with a stub carrying the headings below, and a stub is exactly what `tiller spec feature` refuses. Replace the body under each heading with the real plan.
 
 ```markdown
-# Transcribe NRCA-LTI-02-A (2025) into JSON Schema
+# Transcribe CERT-LTI-02-A (2025) into JSON Schema
 
 ## Approach
 
@@ -174,24 +174,24 @@ On any refusal, follow the recovery protocol in `.tiller/orientation.md`.
 One feature, one pass, one gate remains the default. Do not hand a feature over between the contract and the tasks; the human reviews all three together. This two-feature example applies only when the human explicitly names both features as one batch.
 
 ```
-# first named feature, form-engine/nrca-form-loading (F-79dh3q): extend the specification at:
-#   .tiller/epics/form-engine/features/nrca-form-loading/feature.md
+# first named feature, form-engine/certification-form-loading (F-79dh3q): extend the specification at:
+#   .tiller/epics/form-engine/features/certification-form-loading/feature.md
 # write its acceptance contract (criteria, polarity, bindings) at:
-#   .tiller/epics/form-engine/features/nrca-form-loading/feature.eval.md
-tiller add task form-engine/nrca-form-loading/schema-transcription \
-  --title "Transcribe NRCA-LTI-02-A (2025) into JSON Schema"
-tiller add task form-engine/nrca-form-loading/computed-field-bindings \
+#   .tiller/epics/form-engine/features/certification-form-loading/feature.eval.md
+tiller add task form-engine/certification-form-loading/schema-transcription \
+  --title "Transcribe CERT-LTI-02-A (2025) into JSON Schema"
+tiller add task form-engine/certification-form-loading/computed-field-bindings \
   --title "Bind the computed fields" \
-  --depends-on form-engine/nrca-form-loading/schema-transcription
+  --depends-on form-engine/certification-form-loading/schema-transcription
 # write each task's implementation spec over its task.md stub
 # final pass (Settle questions before approve): record each decision only the human can make
 tiller add question "<statement>" --title "<short title>" \
-  --blocks form-engine/nrca-form-loading/computed-field-bindings
-tiller spec feature form-engine/nrca-form-loading
+  --blocks form-engine/certification-form-loading/computed-field-bindings
+tiller spec feature form-engine/certification-form-loading
 # a .tiller/-only diff needs no PR; commit only this feature's plan and the questions it recorded;
 # Tiller never commits:
-#   git add .tiller/epics/form-engine/features/nrca-form-loading .tiller/decisions/open-questions.yml
-#   git commit -m "specify: nrca-form-loading"
+#   git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml
+#   git commit -m "specify: certification-form-loading"
 
 # the ranked list suggests waiting; the explicit batch instruction already selected the next feature
 # second named feature, form-engine/pdf-assembly (F-p4d8x2): extend feature.md and write feature.eval.md at:
@@ -208,7 +208,7 @@ tiller spec feature form-engine/pdf-assembly
 tiller readout specify   # the one final block that closes your reply, reproduced verbatim
 ```
 
-`approve` remains outside the specify batch. After the stop, run `tiller approve feature form-engine/nrca-form-loading` only on an explicit instruction naming the node; otherwise hand that exact command to the human. While a recorded question holds a plan, its answer comes first (**Settle questions before approve**).
+`approve` remains outside the specify batch. After the stop, run `tiller approve feature form-engine/certification-form-loading` only on an explicit instruction naming the node; otherwise hand that exact command to the human. While a recorded question holds a plan, its answer comes first (**Settle questions before approve**).
 
 ## Correcting the feature plan
 

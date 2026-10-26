@@ -66,10 +66,10 @@ func initDriftGitRepo(t *testing.T, checks string) string {
 // driftFeatureDir is the on-disk folder of the one fixture feature
 // layDriftFeature lays under dir.
 func driftFeatureDir(dir string) string {
-	return filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	return filepath.Join(dir, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 }
 
-const driftFeatureKey = "form-engine/nrca-form-loading"
+const driftFeatureKey = "form-engine/certification-form-loading"
 
 // layDriftFeature adds one epic and one feature, writes a real spec and
 // acceptance contract, adds one task with its own implementation spec, then
@@ -84,14 +84,14 @@ func layDriftFeature(t *testing.T, dir string) {
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", driftFeatureKey,
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	fdir := driftFeatureDir(dir)
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.md"),
-		[]byte("# NRCA form loading\n\nLoad the NRCA-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n"+
 			"    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))
@@ -215,7 +215,7 @@ func TestDriftCandidatesExitOne(t *testing.T) {
 
 	mdPath := filepath.Join(driftFeatureDir(dir), "feature.md")
 	require.NoError(t, os.WriteFile(mdPath,
-		[]byte("# NRCA form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised: scope changed since acceptance.\n"), 0o644))
 
 	out, errOut, code := execCLI(t, "drift", "--json")
 	require.Equal(t, 1, code)
@@ -260,11 +260,11 @@ func TestDriftUncoveredAloneExitsOne(t *testing.T) {
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", driftFeatureKey,
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	fid := soleFeatureID(t)
 
-	markFeatureDone(t, dir, "form-engine", "nrca-form-loading")
+	markFeatureDone(t, dir, "form-engine", "certification-form-loading")
 
 	out, errOut, code := execCLI(t, "drift", "--json")
 	require.Equal(t, 1, code, "a run that could not check must never look like a run that found nothing")
@@ -320,7 +320,7 @@ func TestDriftEndToEndArc(t *testing.T) {
 	// Induce the candidate: edit the approved feature's spec, no commit.
 	mdPath := filepath.Join(driftFeatureDir(dir), "feature.md")
 	require.NoError(t, os.WriteFile(mdPath,
-		[]byte("# NRCA form loading\n\nRevised after acceptance.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised after acceptance.\n"), 0o644))
 
 	// Induce the uncovered node: a second, unrelated feature hand-set to done
 	// with no verified_against, the same fixture TestDriftUncoveredAloneExitsOne
@@ -367,7 +367,7 @@ func TestDriftExemptedFooter(t *testing.T) {
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", driftFeatureKey,
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	// README.md already exists (initDriftGitRepo's own first commit), so it
@@ -407,7 +407,7 @@ func TestDriftContextLinesRender(t *testing.T) {
 	fdir := driftFeatureDir(dir)
 	require.NoError(t, os.Remove(filepath.Join(fdir, "feature.eval.md")))
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.md"),
-		[]byte("# NRCA form loading\n\nRevised after acceptance.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised after acceptance.\n"), 0o644))
 
 	out, errOut, code := execCLI(t, "drift", "--json")
 	require.Equal(t, 1, code)

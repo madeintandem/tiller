@@ -27,7 +27,7 @@ import (
 // asserted absent from the payload, not just zero on the struct.
 func TestNodeProjectsSourceSurfaceAndReviewTargets(t *testing.T) {
 	epicKey := "form-engine"
-	prFeatureKey := "form-engine/nrca-form-loading"
+	prFeatureKey := "form-engine/certification-form-loading"
 	draftFeatureKey := "form-engine/draft-only"
 	pr := 42
 
@@ -74,12 +74,12 @@ func TestNodeProjectsSourceSurfaceAndReviewTargets(t *testing.T) {
 				ID: "F-aaaaaa", Key: &prFeatureKey, Status: "active",
 				Source:  "design/04-form-engine.md",
 				Surface: store.Surface{Paths: []string{"internal/formengine"}},
-				Branch:  "tiller/form-engine/nrca-form-loading",
+				Branch:  "tiller/form-engine/certification-form-loading",
 			},
 			check: func(t *testing.T, v views.NodeView, raw string) {
 				require.Equal(t, "design/04-form-engine.md", v.Source)
 				require.NotNil(t, v.Surface)
-				require.Equal(t, "tiller/form-engine/nrca-form-loading", v.Branch)
+				require.Equal(t, "tiller/form-engine/certification-form-loading", v.Branch)
 				// A PR represents exactly one node, the reviewed grain's own
 				// (docs/plans/2026-08-26-review-grain-design.md, Schema and the
 				// PR record): this fixture sets no ReviewGrain and records no
@@ -110,16 +110,16 @@ func TestNodeProjectsSourceSurfaceAndReviewTargets(t *testing.T) {
 			node: &store.Task{
 				ID: "T-aaaaaa", Status: "in_review", FeatureID: "F-aaaaaa",
 				ReviewRef: &store.ReviewRef{
-					Branch: "tiller/form-engine/nrca-form-loading",
+					Branch: "tiller/form-engine/certification-form-loading",
 					Head:   store.RevisionRef{Kind: store.KindGitCommit, Value: "git:e5f9d28"},
 				},
 			},
 			check: func(t *testing.T, v views.NodeView, raw string) {
 				require.NotNil(t, v.ReviewRef)
-				require.Equal(t, "tiller/form-engine/nrca-form-loading", v.ReviewRef.Branch)
+				require.Equal(t, "tiller/form-engine/certification-form-loading", v.ReviewRef.Branch)
 				require.Equal(t, "git:e5f9d28", v.ReviewRef.Head)
 				require.Contains(t, raw,
-					`"review_ref":{"branch":"tiller/form-engine/nrca-form-loading","head":"git:e5f9d28"}`)
+					`"review_ref":{"branch":"tiller/form-engine/certification-form-loading","head":"git:e5f9d28"}`)
 			},
 		},
 		{
@@ -431,12 +431,12 @@ func TestBlockedReadsEveryGrainThatCarriesTheFlag(t *testing.T) {
 // the epic held tasks, which reads as a fact about the epic rather than a
 // missing filter.
 func TestEpicKeyPlacesATaskUnderItsEpic(t *testing.T) {
-	taskKey := "form-engine/nrca-form-loading/schema-transcription"
+	taskKey := "form-engine/certification-form-loading/schema-transcription"
 	require.Equal(t, "form-engine", views.EpicKey(&store.Task{ID: "T-1", Key: &taskKey}))
 
 	// A feature still answers from its recorded linkage, and a task with no key
 	// recorded places nowhere rather than guessing.
-	featKey := "form-engine/nrca-form-loading"
+	featKey := "form-engine/certification-form-loading"
 	require.Equal(t, "form-engine", views.EpicKey(&store.Feature{ID: "F-1", Key: &featKey, EpicKey: "form-engine"}))
 	require.Equal(t, "", views.EpicKey(&store.Task{ID: "T-2"}))
 }

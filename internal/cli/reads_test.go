@@ -19,8 +19,8 @@ func layReadTree(t *testing.T) {
 	_, _, code := execCLI(t, "add", "epic", "form-engine",
 		"--title", "Form Engine", "--source", "design/04-form-engine.md", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create",
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create",
 		"--source", "design/04-form-engine.md", "--contributor", "jc")
 	require.Equal(t, 0, code)
 }
@@ -47,7 +47,7 @@ func TestShowFeatureGolden(t *testing.T) {
 	require.NoError(t, err)
 
 	layReadTree(t)
-	out, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	require.Equal(t, string(golden), normalizeIDs(out))
 }
@@ -59,8 +59,8 @@ func TestShowFeatureGolden(t *testing.T) {
 // records surfaces as the empty list for this create feature). Every value is fixed
 // so the golden is deterministic (the random id is normalized to F-xxxxxx).
 const enrichedFeatureYML = `id: F-aaaaaa
-key: form-engine/nrca-form-loading
-title: NRCA form loading
+key: form-engine/certification-form-loading
+title: Certification form loading
 status: active
 blocked: false
 change_type: create
@@ -120,10 +120,10 @@ func TestShowFeatureEnrichedGolden(t *testing.T) {
 	layReadTree(t)
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	require.NoError(t, os.WriteFile(ymlPath, []byte(enrichedFeatureYML), 0o644))
 
-	out, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	require.Equal(t, string(golden), normalizeIDs(out))
 }
@@ -136,10 +136,10 @@ func TestShowFeatureEnrichedHuman(t *testing.T) {
 	layReadTree(t)
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	require.NoError(t, os.WriteFile(ymlPath, []byte(enrichedFeatureYML), 0o644))
 
-	out, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading")
+	out, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "gates:")
 	require.Contains(t, out, "evals: pending")
@@ -160,8 +160,8 @@ func TestShowFeatureEnrichedHuman(t *testing.T) {
 // block right next to "evals: fail" in policy_violations with nothing saying
 // the two are consistent, not contradictory.
 const crossedNonGreenNowPassYML = `id: F-aaaaaa
-key: form-engine/nrca-form-loading
-title: NRCA form loading
+key: form-engine/certification-form-loading
+title: Certification form loading
 status: active
 blocked: false
 change_type: create
@@ -184,8 +184,8 @@ policy_violations:
 // passing, the control case: the qualifier must stay silent while the
 // violated gate has not actually recovered.
 const crossedNonGreenStillRedYML = `id: F-aaaaaa
-key: form-engine/nrca-form-loading
-title: NRCA form loading
+key: form-engine/certification-form-loading
+title: Certification form loading
 status: active
 blocked: false
 change_type: create
@@ -211,7 +211,7 @@ func writeFeatureYML(t *testing.T, yml string) {
 	t.Helper()
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	ymlPath := filepath.Join(cwd, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	require.NoError(t, os.WriteFile(ymlPath, []byte(yml), 0o644))
 }
 
@@ -224,7 +224,7 @@ func TestShowPolicyViolationQualifierWhenGateNowPasses(t *testing.T) {
 	layReadTree(t)
 	writeFeatureYML(t, crossedNonGreenNowPassYML)
 
-	out, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading")
+	out, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "evals: fail (recorded at the crossing; gate now pass)")
 
@@ -232,7 +232,7 @@ func TestShowPolicyViolationQualifierWhenGateNowPasses(t *testing.T) {
 	// render-local fact the human renderer alone adds (NodeView already
 	// carries Gates and PolicyViolations together), so a machine caller's
 	// decode is untouched.
-	jout, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading", "--json")
+	jout, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	require.NotContains(t, jout, "recorded at the crossing")
 }
@@ -245,7 +245,7 @@ func TestShowPolicyViolationQualifierAbsentWhileGateStillNotPass(t *testing.T) {
 	layReadTree(t)
 	writeFeatureYML(t, crossedNonGreenStillRedYML)
 
-	out, _, code := execCLI(t, "show", "feature", "form-engine/nrca-form-loading")
+	out, _, code := execCLI(t, "show", "feature", "form-engine/certification-form-loading")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "evals: fail")
 	require.NotContains(t, out, "recorded at the crossing",
@@ -300,7 +300,7 @@ func TestShowNotFoundExits2(t *testing.T) {
 // TestShowUnknownNounExits2 confirms an unrecognized noun is rejected as misuse.
 func TestShowUnknownNounExits2(t *testing.T) {
 	layReadTree(t)
-	out, _, code := execCLI(t, "show", "widget", "form-engine/nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "show", "widget", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 2, code)
 	require.Contains(t, out, "unknown_noun")
 }
@@ -360,18 +360,18 @@ func TestLsTaskByFeatureFilter(t *testing.T) {
 	initOwnedRepo(t)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", "form-engine/pdf-export",
 		"--title", "PDF", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "task", "form-engine/nrca-form-loading/transcribe-the-schema",
+	_, _, code = execCLI(t, "add", "task", "form-engine/certification-form-loading/transcribe-the-schema",
 		"--title", "Transcribe the schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	// The named feature's task is listed.
-	out, _, code := execCLI(t, "ls", "task", "--feature", "form-engine/nrca-form-loading", "--json")
+	out, _, code := execCLI(t, "ls", "task", "--feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "\"count\": 1")
 	require.Contains(t, out, "Transcribe the schema")
@@ -398,8 +398,8 @@ func TestLsFeatureByEpicFilter(t *testing.T) {
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "epic", "billing", "--title", "Billing", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "add", "feature", "billing/invoices",
 		"--title", "Invoices", "--change-type", "create", "--contributor", "jc")
@@ -408,7 +408,7 @@ func TestLsFeatureByEpicFilter(t *testing.T) {
 	out, _, code := execCLI(t, "ls", "feature", "--epic", "form-engine", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "\"count\": 1")
-	require.Contains(t, out, "form-engine/nrca-form-loading")
+	require.Contains(t, out, "form-engine/certification-form-loading")
 	require.NotContains(t, out, "billing/invoices")
 }
 
@@ -439,7 +439,7 @@ func TestLsFeatureByEpicKeyEqualsID(t *testing.T) {
 	byKey, _, code := execCLI(t, "ls", "features", "--epic", "form-engine", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, byKey, "\"count\": 1")
-	require.Contains(t, byKey, "NRCA form loading")
+	require.Contains(t, byKey, "Certification form loading")
 
 	byID, _, code := execCLI(t, "ls", "features", "--epic", soleEpicID(t), "--json")
 	require.Equal(t, 0, code)
@@ -531,8 +531,8 @@ func TestLsSizesItsLabelColumnToTheWidestReference(t *testing.T) {
 
 	out, _, code := execCLI(t, "ls", "tasks")
 	require.Equal(t, 0, code)
-	require.Contains(t, out, "form-engine/nrca-form-loading/transcribe-the-schema (T-")
-	require.Contains(t, out, "form-engine/nrca-form-loading/b (T-")
+	require.Contains(t, out, "form-engine/certification-form-loading/transcribe-the-schema (T-")
+	require.Contains(t, out, "form-engine/certification-form-loading/b (T-")
 
 	cols := titleColumns(t, out)
 	require.Len(t, cols, 2)
@@ -547,7 +547,7 @@ func TestLsNeverTruncatesAReference(t *testing.T) {
 
 	out, _, code := execCLI(t, "ls", "tasks")
 	require.Equal(t, 0, code)
-	require.Contains(t, out, "form-engine/nrca-form-loading/transcribe-the-schema (T-")
+	require.Contains(t, out, "form-engine/certification-form-loading/transcribe-the-schema (T-")
 	require.NotContains(t, out, "…")
 }
 

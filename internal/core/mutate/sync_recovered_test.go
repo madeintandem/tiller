@@ -77,7 +77,7 @@ func recoveredSyncFixture(t *testing.T, grain, shape string, splitAcrossFeatures
 		require.NoError(t, err)
 		record.Tasks = append(record.Tasks, store.RecoveredTask{ID: id, Path: filepath.ToSlash(path), State: pin})
 	}
-	policyPath := ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml"
+	policyPath := ".tiller/epics/form-engine/features/certification-form-loading/feature.yml"
 	_, manifestPin, err := rev.ReadFileAt(head, ".tiller/tiller.yml")
 	require.NoError(t, err)
 	record.PolicySnapshots = []store.HistoricalPolicySnapshot{{Path: ".tiller/tiller.yml", Source: manifestPin}}
@@ -213,15 +213,15 @@ func TestRecoveredSyncRefusesStaleEvidenceWithoutCrossings(t *testing.T) {
 				f := load(t, root).Features["F-aaaaaa"]
 				f.RecoveredReview.Tasks[1].State.Value = record.Tasks[0].State.Value
 				f.RecoveredReview.PolicySnapshots[3].Source.Value = record.Tasks[0].State.Value
-				transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+				transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 			case "changed_grain":
 				f := load(t, root).Features["F-aaaaaa"]
 				f.ReviewGrain = store.ReviewGrainTask
-				transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+				transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 			case "new_rider":
 				deps := seqDeps()
-				rgAddTask(t, root, deps, "form-engine", "nrca-form-loading", "later-work")
-				driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/later-work", mutate.TransitionInput{Verb: "approve"})
+				rgAddTask(t, root, deps, "form-engine", "certification-form-loading", "later-work")
+				driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/later-work", mutate.TransitionInput{Verb: "approve"})
 			default:
 				task := load(t, root).Tasks["T-aaaaab"]
 				switch scenario {
@@ -292,7 +292,7 @@ func TestRecoveredReviewCannotHideIntegratedWorkFromTransfer(t *testing.T) {
 			f := load(t, root).Features["F-aaaaaa"]
 			pr := 41
 			f.PR, f.ReviewRef = &pr, nil
-			transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+			transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 			if refs == "deleted" {
 				gitRunM(t, root, "branch", "-D", record.Branch, syncFirstTaskBranch, syncSecondTaskBranch)
 			} else {
@@ -313,7 +313,7 @@ func TestRecoveredSyncKeepsHistoricalAndCurrentPolicySeparate(t *testing.T) {
 	root, _ := recoveredSyncFixture(t, store.ReviewGrainFeature, "merge")
 	f := load(t, root).Features["F-aaaaaa"]
 	f.Gates["evals"] = store.Gate{Status: store.GateStatusFail}
-	transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+	transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
 	require.Equal(t, []string{"evals"}, res.Crossings[2].PolicyViolations)
@@ -337,10 +337,10 @@ func TestRecoveredReviewReopenClearsWitnessAndIsolatesNewWork(t *testing.T) {
 			originalEvents := recoveryEvents(t, root, grain)
 			require.Len(t, originalEvents, 1)
 			deps := seqDeps()
-			rgAddTask(t, root, deps, "form-engine", "nrca-form-loading", "later-work")
-			driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/later-work", mutate.TransitionInput{Verb: "approve"})
+			rgAddTask(t, root, deps, "form-engine", "certification-form-loading", "later-work")
+			driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/later-work", mutate.TransitionInput{Verb: "approve"})
 			before := snapshotDir(t, root)
-			err = tryTransition(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/later-work", mutate.TransitionInput{Verb: "start"})
+			err = tryTransition(t, root, deps, store.NounTask, "form-engine/certification-form-loading/later-work", mutate.TransitionInput{Verb: "start"})
 			var blocked *mutate.BranchSafetyError
 			require.ErrorAs(t, err, &blocked)
 			require.Equal(t, "aggregate_round_closed", blocked.Reason)
@@ -351,12 +351,12 @@ func TestRecoveredReviewReopenClearsWitnessAndIsolatesNewWork(t *testing.T) {
 			tree := load(t, root)
 			require.Nil(t, tree.Features["F-aaaaaa"].RecoveredReview)
 			require.Nil(t, tree.Epics["E-aaaaaa"].RecoveredReview)
-			started := driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/later-work", mutate.TransitionInput{Verb: "start"})
+			started := driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/later-work", mutate.TransitionInput{Verb: "start"})
 			require.NotEqual(t, record.Branch, started.AggregateBranch)
 			require.Equal(t, record.Head.Value[4:], gitOutM(t, root, "rev-parse", "refs/heads/"+record.Branch), "starting new work never resets the old reviewed ref")
 			require.Equal(t, originalEvents, recoveryEvents(t, root, grain), "reopening preserves the old round's complete recovery audit")
 			// Even a later submission on old ancestry cannot borrow its witness.
-			task := branchTask(t, root, "form-engine/nrca-form-loading/later-work")
+			task := branchTask(t, root, "form-engine/certification-form-loading/later-work")
 			stageSyncReview(t, root, task.ID, syncSecondTaskBranch)
 			res, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 			require.NoError(t, err)
@@ -386,7 +386,7 @@ func TestRecoveredSyncPersistsFeaturePolicyBeforeDelayedRollupWithoutDuplicates(
 			root, _ := recoveredSyncFixture(t, grain, "merge")
 			f := load(t, root).Features["F-aaaaaa"]
 			delete(f.Gates, "tests")
-			transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+			transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 			res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 			require.NoError(t, err)
 			require.Equal(t, []string{"T-aaaaaa", "T-aaaaab"}, crossedIDs(res))
@@ -401,7 +401,7 @@ func TestRecoveredSyncPersistsFeaturePolicyBeforeDelayedRollupWithoutDuplicates(
 			require.Empty(t, again.Crossings)
 			requireNoWrites(t, before, snapshotDir(t, root))
 			f.Gates["tests"] = store.Gate{Status: store.GateStatusPass}
-			transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+			transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 			res, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 			require.NoError(t, err)
 			require.Equal(t, []string{"F-aaaaaa", "E-aaaaaa"}, crossedIDs(res))
@@ -427,7 +427,7 @@ func TestRecoveredSyncRetainsUnknownHistoricalPolicy(t *testing.T) {
 	root, _ := recoveredSyncFixture(t, store.ReviewGrainFeature, "merge")
 	f := load(t, root).Features["F-aaaaaa"]
 	f.RecoveredReview.PolicySnapshots[1].Observations[0].Status = "unknown"
-	transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+	transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
 	require.Len(t, res.Crossings[2].HistoricalPolicyViolations, 1)
@@ -475,7 +475,7 @@ func TestRecoveredSyncGuardsChangesAfterObservation(t *testing.T) {
 				case "aggregate_provenance":
 					f := load(t, root).Features["F-aaaaaa"]
 					f.RecoveredReview.Reason = "concurrently replaced source"
-					transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+					transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 				case "retained_task_tip":
 					gitRunM(t, root, "update-ref", "refs/heads/"+syncSecondTaskBranch, lateTip)
 				}
@@ -521,9 +521,9 @@ func TestConsumedRecoveryDoesNotCrossLaterSubmissionBeforeReopen(t *testing.T) {
 			_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 			require.NoError(t, err)
 			deps := seqDeps()
-			rgAddTask(t, root, deps, "form-engine", "nrca-form-loading", "premature-submission")
-			driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/premature-submission", mutate.TransitionInput{Verb: "approve"})
-			task := branchTask(t, root, "form-engine/nrca-form-loading/premature-submission")
+			rgAddTask(t, root, deps, "form-engine", "certification-form-loading", "premature-submission")
+			driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/premature-submission", mutate.TransitionInput{Verb: "approve"})
+			task := branchTask(t, root, "form-engine/certification-form-loading/premature-submission")
 			stageSyncReview(t, root, task.ID, syncSecondTaskBranch)
 			assertedID := "F-aaaaaa"
 			if grain == store.ReviewGrainEpic {
@@ -587,7 +587,7 @@ func TestRecoveredSyncWhitespaceMismatchNeverFallsBackToAssertion(t *testing.T) 
 	gitRunM(t, root, "update-ref", "refs/heads/main", incorrect)
 	f := load(t, root).Features["F-aaaaaa"]
 	f.RecoveredReview.MergeCommit.Value = "git:" + incorrect
-	transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", f)
+	transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", f)
 	before := snapshotDir(t, root)
 	_, err = mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{AcceptFastForward: []string{f.ID}})
 	var refusal *mutate.RecoverReviewError
@@ -605,7 +605,7 @@ func TestRecoveredEpicGuardsParticipatingFeatureGrainAfterObservation(t *testing
 	rev.change = func() {
 		feature := load(t, root).Features["F-aaaaaa"]
 		feature.ReviewGrain = store.ReviewGrainTask
-		transferWrite(t, root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml", feature)
+		transferWrite(t, root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml", feature)
 		afterExternalChange = snapshotDir(t, root)
 	}
 	_, err := mutate.Sync(load(t, root), syncDeps(), rev, mutate.SyncInput{})
@@ -628,7 +628,7 @@ func splitRecoveredFixtureFeatures(t *testing.T, root string) {
 	dir := ".tiller/epics/form-engine/features/second-feature"
 	transferWrite(t, root, dir+"/feature.yml", &second)
 	for _, name := range []string{"feature.md", "feature.eval.md"} {
-		content, err := store.ReadRepositoryFile(root, ".tiller/epics/form-engine/features/nrca-form-loading/"+name)
+		content, err := store.ReadRepositoryFile(root, ".tiller/epics/form-engine/features/certification-form-loading/"+name)
 		require.NoError(t, err)
 		if name == "feature.eval.md" {
 			content = []byte(strings.ReplaceAll(string(content), source.ID, second.ID))

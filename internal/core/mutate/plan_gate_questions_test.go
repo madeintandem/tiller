@@ -16,7 +16,7 @@ import (
 // question mid-run. The refusal covers approve from specced (feature) and from
 // proposed (task) and nothing else.
 
-const planGateFeature = "form-engine/nrca-form-loading"
+const planGateFeature = "form-engine/certification-form-loading"
 
 // requirePlanHeld asserts err is the plan-gate question refusal naming the
 // feature, with the approve verb and the given questions.
@@ -116,9 +116,9 @@ func TestRefreshBasisIgnoresQuestions(t *testing.T) {
 	require.Equal(t, "active", load(t, root).Features["F-aaaaaa"].Status)
 
 	// Move the basis, then hold one task with an open question.
-	featDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	featDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(featDir, "feature.md"),
-		[]byte("# NRCA form loading\n\nRevised after the answer.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRevised after the answer.\n"), 0o644))
 	gitCommitAllM(t, root, "revise spec")
 	writeOpenQuestion(t, root, "Q-zzzzzz", "T-aaaaaa")
 

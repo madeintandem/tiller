@@ -38,7 +38,7 @@ const amendE2EForwardFeature = "form-engine/table-backed-forms"
 // amendE2EReplacementKey is the task the reshape adds, named by its canonical
 // key while it is only staged: an add operation's key is the only handle it has
 // until approve materializes it and mints its id.
-const amendE2EReplacementKey = "form-engine/nrca-form-loading/table-aware-rendering"
+const amendE2EReplacementKey = "form-engine/certification-form-loading/table-aware-rendering"
 
 // amendE2EDesignDoc is the design document the reshape answers. It is a real
 // file in the fixture repo, because --triggered-by and --amends-design record
@@ -148,7 +148,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 	require.Contains(t, batch, "amends_design: "+amendE2EDesignDoc)
 	require.Contains(t, batch, "0. revise "+cliFeatureKey+" ("+featureID+")")
 	require.Contains(t, batch, "1. add-task "+amendE2EReplacementKey+`: "Render from the table model"`)
-	require.Contains(t, batch, "2. cancel form-engine/nrca-form-loading/transcribe-the-schema ("+retiredTask+
+	require.Contains(t, batch, "2. cancel form-engine/certification-form-loading/transcribe-the-schema ("+retiredTask+
 		"): embedded JSON rendering is replaced by the table model, superseded by "+
 		amendE2EReplacementKey+" (staged, materializes on apply)")
 	require.Equal(t, 5, strings.Count(batch, "[valid]"),
@@ -238,7 +238,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 			"landing owner is not something Op alone can honestly report")
 	require.Contains(t, applied, "operation 0 (revise) "+cliFeatureKey+" ("+featureID+"): active")
 	require.Contains(t, applied, "operation 1 (add-task) "+amendE2EReplacementKey+" ("+replacementTask+"): proposed")
-	require.Contains(t, applied, "operation 2 (cancel) form-engine/nrca-form-loading/transcribe-the-schema ("+
+	require.Contains(t, applied, "operation 2 (cancel) form-engine/certification-form-loading/transcribe-the-schema ("+
 		retiredTask+"): cancelled, replaced by "+amendE2EReplacementKey+" ("+replacementTask+")")
 	require.Contains(t, applied, "Operations applied: 3")
 	require.Contains(t, applied, "By kind: 1 revise, 1 cancel, 1 add-task")
@@ -357,7 +357,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 	require.Equal(t, 0, code)
 	require.Contains(t, replacementShow, "title:  Render from the table model")
 	require.Contains(t, replacementShow,
-		"supersedes: form-engine/nrca-form-loading/transcribe-the-schema ("+retiredTask+")")
+		"supersedes: form-engine/certification-form-loading/transcribe-the-schema ("+retiredTask+")")
 
 	whyShow, _, code := execCLI(t, "show", "amendment", "form-engine-rework")
 	require.Equal(t, 0, code)
@@ -390,7 +390,7 @@ func layAmendE2ELanternShape(t *testing.T) string {
 	dir := initGatedGitRepo(t, "true")
 	for _, argv := range [][]string{
 		{"add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc"},
-		{"add", "feature", cliFeatureKey, "--title", "NRCA form loading",
+		{"add", "feature", cliFeatureKey, "--title", "Certification form loading",
 			"--change-type", "create", "--contributor", "jc"},
 		{"add", "feature", amendE2EForwardFeature, "--title", "Table backed forms",
 			"--change-type", "create", "--contributor", "jc"},
@@ -436,7 +436,7 @@ func layAmendE2ELanternShape(t *testing.T) string {
 // amendE2EFeatureRel is the fixture feature's repo-relative folder, the base the
 // working-tree blob reads are taken against.
 func amendE2EFeatureRel() string {
-	return filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	return filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading")
 }
 
 // amendE2EEvalMD is the fixture's acceptance contract with one criterion. The
@@ -460,7 +460,7 @@ func reshapeAmendE2ESpec(t *testing.T, featureID string) {
 	t.Helper()
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nRender the NRCA-LTI-02-A form from discrete tables.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRender the CERT-LTI-02-A form from discrete tables.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte(amendE2EEvalMD(featureID, "The table model renders every form")), 0o644))
 }

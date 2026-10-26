@@ -59,7 +59,7 @@ func TestAKeyMatchesExactlyOrAsAFragment(t *testing.T) {
 	require.Equal(t, []string{"B-aaaaaa key"}, nodeLabels(run(t, root, tree, "bugs/blank-on-reload")))
 	require.Equal(t, []string{"B-aaaaaa key"}, nodeLabels(run(t, root, tree, "blank-on-reload")))
 
-	res := run(t, root, tree, "nrca-form-loading")
+	res := run(t, root, tree, "certification-form-loading")
 	require.Equal(t, []string{"F-aaaaaa key", "T-aaaaaa key_fragment"}, nodeLabels(res)[:2],
 		"the feature's own key outranks the task key that contains it")
 }
@@ -81,7 +81,7 @@ func TestTitleMatchesOutrankKeyFragmentsAndText(t *testing.T) {
 func TestTextOnlyNodesRankByHowOftenTheyMatch(t *testing.T) {
 	root, tree := fixture(t)
 	writeLines(t, filepath.Join(root, ".tiller", "epics", "form-engine", "notes.md"), "ocelot %d", 1)
-	writeLines(t, filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "notes.md"), "ocelot %d", 4)
+	writeLines(t, filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "notes.md"), "ocelot %d", 4)
 	res := run(t, root, tree, "ocelot")
 	require.Equal(t, []string{"F-aaaaaa text", "E-aaaaaa text"}, nodeLabels(res))
 	require.Equal(t, 4, res.Nodes[0].Count)
@@ -119,10 +119,10 @@ func TestQuestionFieldsAreHitsOnTheQuestion(t *testing.T) {
 	res := run(t, root, tree, "revision")
 	require.Equal(t, []string{"Q-aaaaaa title"}, nodeLabels(res))
 	q := res.Nodes[0]
-	require.Equal(t, "Canonical NRCA revision", q.Title)
+	require.Equal(t, "Canonical certification revision", q.Title)
 	require.Equal(t, 2, q.Count, "the title ranks the question; it is not one of its hits")
 	require.Equal(t, []search.Hit{
-		{Path: ".tiller/decisions/open-questions.yml", Snippet: "Which NRCA revision is canonical?", Field: "statement"},
+		{Path: ".tiller/decisions/open-questions.yml", Snippet: "Which certification revision is canonical?", Field: "statement"},
 		{Path: ".tiller/decisions/open-questions.yml", Snippet: "The 2025 revision, per the county memo.", Field: "answer"},
 	}, q.Hits)
 
@@ -251,7 +251,7 @@ func TestShelfTitlesAndProseLandOnTheShelfNode(t *testing.T) {
 	require.Empty(t, loose.Nodes)
 	require.Len(t, loose.Documents, 1)
 	require.Equal(t, []search.Hit{{Path: ".tiller/design/01-form-shapes.md", Line: 3,
-		Snippet: "The NRCA form loads from uploaded PDF manifests."}}, loose.Documents[0].Hits)
+		Snippet: "The certification form loads from uploaded PDF manifests."}}, loose.Documents[0].Hits)
 }
 
 // TestResultJSONShape pins the payload bytes `tiller search --json` and GET
@@ -274,15 +274,15 @@ func TestResultJSONShape(t *testing.T) {
     {
       "noun": "task",
       "id": "T-aaaaaa",
-      "key": "form-engine/nrca-form-loading/wire-the-schema-registry-loader",
+      "key": "form-engine/certification-form-loading/wire-the-schema-registry-loader",
       "title": "Wire the schema registry loader",
       "status": "STATUS",
-      "ref": "form-engine/nrca-form-loading/wire-the-schema-registry-loader (T-aaaaaa)",
+      "ref": "form-engine/certification-form-loading/wire-the-schema-registry-loader (T-aaaaaa)",
       "match": "title",
       "count": 1,
       "hits": [
         {
-          "path": ".tiller/epics/form-engine/features/nrca-form-loading/tasks/wire-the-schema-registry-loader/task.md",
+          "path": ".tiller/epics/form-engine/features/certification-form-loading/tasks/wire-the-schema-registry-loader/task.md",
           "line": 1,
           "snippet": "# Wire the schema registry loader"
         }
@@ -335,7 +335,7 @@ func TestNoMatchesIsAnEmptyAnswer(t *testing.T) {
 func TestAttributeFallsOutwardFromAnUnplaceableTaskFolder(t *testing.T) {
 	root, tree := fixture(t)
 	orphan := filepath.Join(root, ".tiller", "epics", "form-engine", "features",
-		"nrca-form-loading", store.TaskDirName, "no-such-task")
+		"certification-form-loading", store.TaskDirName, "no-such-task")
 	require.NoError(t, os.MkdirAll(orphan, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(orphan, "notes.md"),
 		[]byte("# Notes\n\nA distinctive marmoset phrase.\n"), 0o644))

@@ -67,7 +67,7 @@ func TestReadoutCommandRefusesAnUnknownSeam(t *testing.T) {
 func TestReadoutCommandPrintsTheAmendSeam(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
-	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--precondition", "target_status=draft", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -92,7 +92,7 @@ func TestAmendReadoutRechecksRevisionPreconditionsAfterProseChanges(t *testing.T
 	require.NoError(t, err)
 	specPath := filepath.Join(featureDir(t), "feature.md")
 	revision := "git:" + gitOutput(t, root, "hash-object", "--", specPath)
-	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/nrca-form-loading",
+	_, _, code := execCLI(t, "amend", aid, "--revise", "form-engine/certification-form-loading",
 		"--precondition", "spec_revision="+revision, "--contributor", "jc")
 	require.Equal(t, 0, code)
 
@@ -270,7 +270,7 @@ func layCorrectedDraftTree(t *testing.T) (dir, since string) {
 	gitRun(t, dir, "commit", "-m", "decompose: lay the tree down")
 	since = gitOutput(t, dir, "rev-parse", "--short", "HEAD")
 
-	_, _, code := execCLI(t, "rename", "feature", "form-engine/loading", "--title", "NRCA form loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "rename", "feature", "form-engine/loading", "--title", "Certification form loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "link", "feature", "form-engine/loading", "--depends-on", "form-engine/schema", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -295,7 +295,7 @@ func TestReadoutSinceRendersTheCorrectionBlock(t *testing.T) {
 	require.Equal(t, 0, code, errOut)
 	require.True(t, strings.HasPrefix(out, "**Decomposition corrected** · committed at `"+head+"` (since `"+since+"`)\n"), out)
 	require.Contains(t, out, "**Changed**")
-	require.Regexp(t, `- renamed form-engine/loading \(F-[a-z0-9]{6}\) title from "Feature form-engine/loading" to "NRCA form loading"`, out)
+	require.Regexp(t, `- renamed form-engine/loading \(F-[a-z0-9]{6}\) title from "Feature form-engine/loading" to "Certification form loading"`, out)
 	require.Regexp(t, `- linked 1 edge \(0 cross-epic\) on form-engine/loading \(F-[a-z0-9]{6}\)`, out)
 	require.Regexp(t, `- added question Q-[a-z0-9]{6} \("Schema version"\); blocks form-engine/loading \(F-[a-z0-9]{6}\)`, out)
 	require.Regexp(t, `- removed form-engine/obsolete \(F-[a-z0-9]{6}\)`, out)

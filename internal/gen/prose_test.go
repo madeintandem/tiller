@@ -24,7 +24,7 @@ func TestProsePathPerNoun(t *testing.T) {
 
 	p, ok = ProsePath(tr, tr.Tasks["T-task01"])
 	require.True(t, ok)
-	require.Equal(t, ".tiller/epics/form-engine/features/nrca-form-loading/tasks/schema-transcription/task.md", p)
+	require.Equal(t, ".tiller/epics/form-engine/features/certification-form-loading/tasks/schema-transcription/task.md", p)
 
 	_, ok = ProsePath(tr, tr.Questions["Q-000001"])
 	require.False(t, ok, "a question's prose handle is its statement and answer")

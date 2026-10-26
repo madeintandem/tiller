@@ -49,7 +49,7 @@ func TestSyncRecordsNestedProjectSurfacesInProjectCoordinates(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(repo, path), []byte(data), 0o644))
 	}
 	gitCommitAllM(t, repo, "add code")
-	setFeatureSurfacePath(t, project, "form-engine", "nrca-form-loading", "src", "chrome.swift")
+	setFeatureSurfacePath(t, project, "form-engine", "certification-form-loading", "src", "chrome.swift")
 
 	res, err := mutate.Sync(load(t, project), syncDeps(), vcs.New(project), mutate.SyncInput{})
 	require.NoError(t, err)

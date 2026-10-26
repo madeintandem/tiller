@@ -127,13 +127,13 @@ func TestApproveBatchCarriesEachPlanGatesTasks(t *testing.T) {
 		[]byte("# Wire the cart\n\n## Approach\n\nWire it.\n"), 0o644))
 
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	for _, key := range []string{"form-engine/nrca-form-loading", "form-engine/checkout-flow"} {
+	for _, key := range []string{"form-engine/certification-form-loading", "form-engine/checkout-flow"} {
 		_, _, code := execCLI(t, "spec", "feature", key, "--contributor", "jc")
 		require.Equal(t, 0, code)
 	}
 
 	out, _, code := execCLI(t, "approve", "feature",
-		"form-engine/nrca-form-loading", "form-engine/checkout-flow", "--contributor", "jc", "--json")
+		"form-engine/certification-form-loading", "form-engine/checkout-flow", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
 
 	env := parseBatch(t, out)
@@ -161,11 +161,11 @@ func TestApproveBatchBlockedExits1(t *testing.T) {
 	execCLI(t, "add", "feature", "form-engine/checkout-flow",
 		"--title", "Checkout flow", "--change-type", "create", "--contributor", "jc")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	// The blocked (still draft) feature comes FIRST, proving application continues.
 	out, _, code := execCLI(t, "approve", "feature",
-		"form-engine/checkout-flow", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+		"form-engine/checkout-flow", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "any blocked node makes the batch exit 1")
 
 	env := parseBatch(t, out)
@@ -186,7 +186,7 @@ func TestApproveBatchBlockedExits1(t *testing.T) {
 	for _, f := range tree.Features {
 		byKey[*f.Key] = f.Status
 	}
-	require.Equal(t, "ready", byKey["form-engine/nrca-form-loading"])
+	require.Equal(t, "ready", byKey["form-engine/certification-form-loading"])
 	require.Equal(t, "draft", byKey["form-engine/checkout-flow"])
 }
 
@@ -244,11 +244,11 @@ func TestApproveBatchBlockedHumanLines(t *testing.T) {
 	execCLI(t, "add", "feature", "form-engine/checkout-flow",
 		"--title", "Checkout flow", "--change-type", "create", "--contributor", "jc")
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	// The blocked (still draft) feature comes FIRST, proving application continues.
 	stdout, stderr, code := execCLI(t, "approve", "feature",
-		"form-engine/checkout-flow", "form-engine/nrca-form-loading", "--contributor", "jc")
+		"form-engine/checkout-flow", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 1, code, "any blocked node makes the batch exit 1")
 
 	// The minted ids are random, so read them off disk by key.
@@ -260,8 +260,8 @@ func TestApproveBatchBlockedHumanLines(t *testing.T) {
 	out := stdout + stderr
 	require.Contains(t, out, fmt.Sprintf("Blocked: cannot approve feature form-engine/checkout-flow (%s) from %q.",
 		featIDByKey["form-engine/checkout-flow"], "draft"))
-	require.Contains(t, out, fmt.Sprintf("feature form-engine/nrca-form-loading (%s) is now ready.",
-		featIDByKey["form-engine/nrca-form-loading"]))
+	require.Contains(t, out, fmt.Sprintf("feature form-engine/certification-form-loading (%s) is now ready.",
+		featIDByKey["form-engine/certification-form-loading"]))
 	require.Contains(t, out, "Summary: 2 total, 1 changed, 0 unchanged, 1 blocked.")
 }
 
@@ -271,8 +271,8 @@ func prepActiveFeatureWithTasks(t *testing.T) []string {
 	t.Helper()
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	_, stderr, code := execCLI(t, "start", "task", cliTaskKey, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
@@ -289,7 +289,7 @@ func prepActiveFeatureWithTasks(t *testing.T) []string {
 		{"form-render", "Render the form"},
 		{"validation", "Wire validation"},
 	} {
-		_, _, code := execCLI(t, "add", "task", "form-engine/nrca-form-loading/"+tk.local, "--title", tk.title, "--contributor", "jc")
+		_, _, code := execCLI(t, "add", "task", "form-engine/certification-form-loading/"+tk.local, "--title", tk.title, "--contributor", "jc")
 		require.Equal(t, 0, code)
 		for id := range loadTestTree(t).Tasks {
 			if !seen[id] {
@@ -310,7 +310,7 @@ func TestApproveTaskByFeature(t *testing.T) {
 	_, _, code := execCLI(t, "approve", "task", ids[0], "--contributor", "jc")
 	require.Equal(t, 0, code)
 
-	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	env := parseBatch(t, out)
 	require.True(t, env.OK)
@@ -328,11 +328,11 @@ func TestApproveTaskByFeature(t *testing.T) {
 
 	// Zero proposed tasks is not an error. The feature is named by the reference
 	// convention; its minted id is random, so the assertion brackets it.
-	stdout, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	stdout, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	require.Contains(t, stdout, "No proposed tasks on feature form-engine/nrca-form-loading (F-")
+	require.Contains(t, stdout, "No proposed tasks on feature form-engine/certification-form-loading (F-")
 
-	out, _, code = execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code = execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	env = parseBatch(t, out)
 	require.True(t, env.OK)
@@ -351,7 +351,7 @@ func TestApproveTaskByFeature(t *testing.T) {
 // must refuse the same way rather than reporting the empty-batch success.
 func TestApproveTaskByFeatureZeroArmRefusesCorruptIdentity(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
-	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
 	env := parseBatch(t, out)
 	require.Equal(t, len(ids), env.Data.Summary.Changed, "every proposed task approved, leaving zero proposed")
@@ -361,7 +361,7 @@ func TestApproveTaskByFeatureZeroArmRefusesCorruptIdentity(t *testing.T) {
 	corruptIdentityFile(t, cwd)
 	t.Setenv("TILLER_CONTRIBUTOR", "")
 
-	out, _, code = execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--json")
+	out, _, code = execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--json")
 	require.Equal(t, 3, code, "a corrupt identity file refuses even on the zero-proposed-tasks arm")
 	require.Contains(t, out, store.ReasonIdentityUnreadable)
 }
@@ -377,13 +377,13 @@ func TestApproveTaskByFeatureZeroArmRefusesCorruptIdentity(t *testing.T) {
 func TestApproveTaskByFeatureFollowsDependencyOrder(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
-	execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
+	execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
 	_, stderr, code := execCLI(t, "start", "task", cliTaskKey, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	base := "form-engine/nrca-form-loading/"
+	base := "form-engine/certification-form-loading/"
 	for _, tk := range []struct{ local, follows string }{
 		{"schema-transcription", ""},
 		{"validation", "schema-transcription"},
@@ -397,7 +397,7 @@ func TestApproveTaskByFeatureFollowsDependencyOrder(t *testing.T) {
 		require.Equal(t, 0, code, "add task %s", tk.local)
 	}
 
-	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	env := parseBatch(t, out)
 	require.True(t, env.OK)
@@ -418,10 +418,10 @@ func TestApproveTaskByFeatureFollowsDependencyOrder(t *testing.T) {
 func TestApproveFeatureFlagMisuse(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
 
-	_, _, code := execCLI(t, "approve", "task", ids[0], "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	_, _, code := execCLI(t, "approve", "task", ids[0], "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, "--feature is mutually exclusive with positional nodes")
 
-	_, _, code = execCLI(t, "approve", "epic", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	_, _, code = execCLI(t, "approve", "epic", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, "--feature applies to approve task only")
 
 	// Nothing mutated by either misuse: the three mid-flight tasks are still

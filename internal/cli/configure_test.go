@@ -19,11 +19,11 @@ import (
 func TestConfigureFeatureRecordsTheGrain(t *testing.T) {
 	layReadTree(t)
 
-	out, _, code := execCLI(t, "configure", "feature", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "configure", "feature", "form-engine/certification-form-loading",
 		"--review-grain", "feature", "--contributor", "jc")
 	require.Equal(t, 0, code, out)
 	require.Contains(t, out, "review grain: feature recorded on")
-	require.Contains(t, out, "nrca-form-loading")
+	require.Contains(t, out, "certification-form-loading")
 	require.Contains(t, out, "resolved grain here is now: feature (feature explicit)")
 
 	tree := loadTestTree(t)
@@ -164,12 +164,12 @@ func TestConfigureFeatureOmitsNextBlockOnceApproved(t *testing.T) {
 	laySpeccableFeature(t)
 	_, _, code := execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
-	out, _, code := execCLI(t, "configure", "feature", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "configure", "feature", "form-engine/certification-form-loading",
 		"--review-grain", "feature", "--contributor", "jc")
 	require.Equal(t, 0, code, out)
 	require.NotContains(t, out, "**Next**")
@@ -183,11 +183,11 @@ func TestConfigureFeatureNamesTheAnswerWhileAQuestionHoldsThePlan(t *testing.T) 
 	laySpeccableFeature(t)
 	_, _, code := execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code = execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeBlockingQuestion(t, "Q-aaaaaa", soleTaskID(t))
 
-	out, _, code := execCLI(t, "configure", "feature", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "configure", "feature", "form-engine/certification-form-loading",
 		"--review-grain", "feature", "--contributor", "jc")
 	require.Equal(t, 0, code, out)
 	require.Contains(t, out, "**Next**")
@@ -248,11 +248,11 @@ func TestConfigureUnknownTargetAndMissingKeyAreMisuse(t *testing.T) {
 func TestConfigureJSONEnvelopeKeepsIDAndKeySeparate(t *testing.T) {
 	layReadTree(t)
 
-	out, _, code := execCLI(t, "configure", "feature", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "configure", "feature", "form-engine/certification-form-loading",
 		"--review-grain", "feature", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
 	require.Contains(t, out, "\"id\":")
-	require.Contains(t, out, "\"key\": \"form-engine/nrca-form-loading\"")
+	require.Contains(t, out, "\"key\": \"form-engine/certification-form-loading\"")
 	require.Contains(t, out, "\"review_grain\": \"feature\"")
 }
 

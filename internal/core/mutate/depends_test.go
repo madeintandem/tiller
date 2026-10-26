@@ -37,7 +37,7 @@ func dependsRepo(t *testing.T) string {
 	_, err = mutate.AddFeature(tree, mint("bbbbbb"), mutate.FeatureInput{Key: "form-engine/schema-engine", Title: "Schema engine", ChangeType: "create"})
 	require.NoError(t, err)
 	tree = load(t, root)
-	_, err = mutate.AddFeature(tree, mint("cccccc"), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+	_, err = mutate.AddFeature(tree, mint("cccccc"), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	return root
 }
@@ -117,7 +117,7 @@ func TestLinkRefusesAKeylessFeature(t *testing.T) {
 	root := dependsRepo(t)
 
 	// Strip the key line the way a bad hand edit or merge would.
-	ymlPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	ymlPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	data, err := os.ReadFile(ymlPath)
 	require.NoError(t, err)
 	var kept []string
@@ -170,7 +170,7 @@ func TestLinkUnionsDependencies(t *testing.T) {
 
 	tree := load(t, root)
 	res, err := mutate.Link(tree, testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading",
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading",
 		DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
@@ -203,12 +203,12 @@ func TestLinkRecordsTheEdgesItAdded(t *testing.T) {
 	t.Parallel()
 	root := dependsRepo(t)
 	_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading",
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading",
 		DependsOn: []string{"form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
 	_, err = mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
-		Noun: store.NounFeature, Node: "form-engine/nrca-form-loading",
+		Noun: store.NounFeature, Node: "form-engine/certification-form-loading",
 		DependsOn: []string{"form-engine/schema-engine", "form-engine"},
 	})
 	require.NoError(t, err)
@@ -232,7 +232,7 @@ func TestLinkRecordsTheEdgesItAdded(t *testing.T) {
 }
 
 // siblingTaskRepo builds on dependsRepo by laying two tasks under
-// schema-engine (T-first, T-second) and one under nrca-form-loading
+// schema-engine (T-first, T-second) and one under certification-form-loading
 // (T-other), the cross-feature target a sibling edge must refuse.
 func siblingTaskRepo(t *testing.T) string {
 	t.Helper()
@@ -245,7 +245,7 @@ func siblingTaskRepo(t *testing.T) string {
 	for _, tk := range []struct{ key, suffix string }{
 		{"form-engine/schema-engine/first", "first0"},
 		{"form-engine/schema-engine/second", "second"},
-		{"form-engine/nrca-form-loading/other", "other0"},
+		{"form-engine/certification-form-loading/other", "other0"},
 	} {
 		_, err := mutate.AddTask(load(t, root), mint(tk.suffix), mutate.TaskInput{Key: tk.key, Title: tk.key})
 		require.NoError(t, err)
@@ -282,7 +282,7 @@ func TestAddTaskRefusesNonSiblingDependsOn(t *testing.T) {
 	t.Parallel()
 	root := siblingTaskRepo(t)
 
-	for _, target := range []string{"T-other0", "form-engine/nrca-form-loading/other"} {
+	for _, target := range []string{"T-other0", "form-engine/certification-form-loading/other"} {
 		_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
 			Key: "form-engine/schema-engine/held-wrong", Title: "x", DependsOn: []string{target},
 		})
@@ -371,7 +371,7 @@ func TestReAddNeverDiscardsDependsOn(t *testing.T) {
 	reAdd := func(t *testing.T, deps []string) (mutate.Result, error) {
 		t.Helper()
 		return mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{
-			Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create",
+			Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create",
 			DependsOn: deps})
 	}
 
@@ -389,7 +389,7 @@ func TestReAddNeverDiscardsDependsOn(t *testing.T) {
 	require.ErrorContains(t, err, "already exists and does not depend on")
 	require.Regexp(t, `does not depend on form-engine \(E-[a-z0-9]{6}\)`, err.Error(),
 		"the prose names the target as <key> (<id>)")
-	require.ErrorContains(t, err, "tiller link feature form-engine/nrca-form-loading --depends-on form-engine",
+	require.ErrorContains(t, err, "tiller link feature form-engine/certification-form-loading --depends-on form-engine",
 		"the suggested command is runnable, so it carries the address alone")
 	require.Equal(t, 2, exitCodeOf(t, err), "a re-add naming an unrecorded edge is misuse")
 
@@ -676,7 +676,7 @@ func TestDependencyChangeRefusesRecordedFeatureAndDescendantEpicBranches(t *test
 		t.Run("feature branch/"+operation, func(t *testing.T) {
 			root, node, existing, absent := dependencyChangeFixture(t, store.NounFeature)
 			stale := load(t, root)
-			setDependencyNodeState(t, root, store.NounFeature, node, "draft", "tiller/form-engine/nrca-form-loading")
+			setDependencyNodeState(t, root, store.NounFeature, node, "draft", "tiller/form-engine/certification-form-loading")
 			before := snapshotDir(t, root)
 
 			_, err := callDependencyChange(stale, operation, store.NounFeature, node, existing, absent)
@@ -704,7 +704,7 @@ func TestDependencyChangeRefusesRecordedFeatureAndDescendantEpicBranches(t *test
 	t.Run("branch-locked no-op retries remain legal", func(t *testing.T) {
 		root, node, existing, absent := dependencyChangeFixture(t, store.NounFeature)
 		stale := load(t, root)
-		setDependencyNodeState(t, root, store.NounFeature, node, "ready", "tiller/form-engine/nrca-form-loading")
+		setDependencyNodeState(t, root, store.NounFeature, node, "ready", "tiller/form-engine/certification-form-loading")
 		before := snapshotDir(t, root)
 
 		changed, err := callDependencyChange(stale, "link existing no-op", store.NounFeature, node, existing, absent)
@@ -824,10 +824,10 @@ func TestDependencyChangeReadyEpicLocksStartedThenCancelledTaskWithoutFeatureBra
 			})
 			require.NoError(t, err)
 			driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-			driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-			driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
-			driveTo(t, root, store.NounTask, "form-engine/nrca-form-loading/transcribe-the-schema", mutate.TransitionInput{Verb: "start"})
-			driveTo(t, root, store.NounTask, "form-engine/nrca-form-loading/transcribe-the-schema", mutate.TransitionInput{
+			driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+			driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
+			driveTo(t, root, store.NounTask, "form-engine/certification-form-loading/transcribe-the-schema", mutate.TransitionInput{Verb: "start"})
+			driveTo(t, root, store.NounTask, "form-engine/certification-form-loading/transcribe-the-schema", mutate.TransitionInput{
 				Verb: "cancel", Reason: "work was started before the proposal was retired",
 			})
 			tree := load(t, root)
@@ -837,7 +837,7 @@ func TestDependencyChangeReadyEpicLocksStartedThenCancelledTaskWithoutFeatureBra
 			require.Equal(t, "cancelled", tree.Tasks["T-aaaaaa"].Status)
 			before := snapshotDir(t, root)
 
-			changed, err := callDependencyChange(tree, operation, store.NounEpic, "form-engine", "payments", "form-engine/nrca-form-loading")
+			changed, err := callDependencyChange(tree, operation, store.NounEpic, "form-engine", "payments", "form-engine/certification-form-loading")
 			if strings.Contains(operation, "no-op") {
 				require.NoError(t, err)
 				require.False(t, changed)
@@ -862,7 +862,7 @@ func dependencyChangeFixture(t *testing.T, noun string) (root, node, existing, a
 		absent = "form-engine/schema-engine/third"
 	case store.NounFeature:
 		root = dependsRepo(t)
-		node = "form-engine/nrca-form-loading"
+		node = "form-engine/certification-form-loading"
 		existing = "form-engine/schema-engine"
 		absent = "form-engine"
 	case store.NounEpic:
@@ -957,7 +957,7 @@ func TestUnlinkTaskStillLockedWhileInProgress(t *testing.T) {
 func TestLinkFeatureStillLockedWithDoneTarget(t *testing.T) {
 	t.Parallel()
 	root, node, _, absent := dependencyChangeFixture(t, store.NounFeature)
-	setDependencyNodeState(t, root, store.NounFeature, node, "active", "tiller/form-engine/nrca-form-loading")
+	setDependencyNodeState(t, root, store.NounFeature, node, "active", "tiller/form-engine/certification-form-loading")
 	setDependencyNodeState(t, root, store.NounEpic, absent, "done", "")
 	_, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
 		Noun: store.NounFeature, Node: node, DependsOn: []string{absent},

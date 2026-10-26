@@ -65,20 +65,20 @@ func fixture(t *testing.T) (string, *store.Tree) {
 	_, err := mutate.AddEpic(reload(), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(reload(), deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create",
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create",
 	})
 	require.NoError(t, err)
 	_, err = mutate.AddTask(reload(), deps, mutate.TaskInput{
-		Key:   "form-engine/nrca-form-loading/wire-the-schema-registry-loader",
+		Key:   "form-engine/certification-form-loading/wire-the-schema-registry-loader",
 		Title: "Wire the schema registry loader",
 	})
 	require.NoError(t, err)
-	_, err = mutate.AddQuestion(reload(), deps, mutate.QuestionInput{Title: "Canonical NRCA revision", Statement: "Which NRCA revision is canonical?"})
+	_, err = mutate.AddQuestion(reload(), deps, mutate.QuestionInput{Title: "Canonical certification revision", Statement: "Which certification revision is canonical?"})
 	require.NoError(t, err)
 
 	designDir := filepath.Join(root, ".tiller", "design")
 	require.NoError(t, os.MkdirAll(designDir, 0o755))
-	doc := "# Form shapes\n\nThe NRCA form loads from uploaded PDF manifests.\nA second line about parsing.\n"
+	doc := "# Form shapes\n\nThe certification form loads from uploaded PDF manifests.\nA second line about parsing.\n"
 	require.NoError(t, os.WriteFile(filepath.Join(designDir, "01-form-shapes.md"), []byte(doc), 0o644))
 
 	return root, reload()

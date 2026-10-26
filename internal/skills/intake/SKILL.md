@@ -79,9 +79,9 @@ tiller amend opus-review --add-feature form-engine/csrf-token-rotation \
   --source .tiller/feedback/opus-review.md#L16-21
 
 # a correction inside an existing feature's scope: a task, on the PRE-EXISTING
-# feature form-engine/nrca-form-loading (F-79dh3q), never on either feature
+# feature form-engine/certification-form-loading (F-79dh3q), never on either feature
 # staged above, since a new feature's task explosion is specify's own act
-tiller amend opus-review --add-task form-engine/nrca-form-loading/csp-regression-test \
+tiller amend opus-review --add-task form-engine/certification-form-loading/csp-regression-test \
   --title "Add a CSP regression test" \
   --source .tiller/feedback/opus-review.md#L34-36
 
@@ -98,7 +98,7 @@ tiller amend opus-review --add-question "Keep or trim the legacy image parsers?"
 # If loading cannot execute acceptably until CSRF rotation is complete, loading
 # is the DEPENDENT, but this edge is legal only while loading remains unstarted
 # and eligible under the feature state/branch checks:
-#   tiller link feature form-engine/nrca-form-loading --depends-on form-engine/csrf-token-rotation
+#   tiller link feature form-engine/certification-form-loading --depends-on form-engine/csrf-token-rotation
 # If loading is already active or done, approval does not unlock that edge.
 # Explain the limit; genuine replacement needs fresh work, not a lock bypass.
 # A preferred release sequence without an execution prerequisite stays soft.

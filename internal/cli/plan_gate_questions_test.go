@@ -16,21 +16,21 @@ import (
 func TestApproveFeatureHeldHumanLine(t *testing.T) {
 	laySpeccableFeature(t)
 	execCLI(t, "approve", "epic", "form-engine", "--contributor", "jc")
-	_, _, code := execCLI(t, "spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	_, _, code := execCLI(t, "spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	writeBlockingQuestion(t, "Q-aaaaaa", soleTaskID(t))
 
-	stdout, stderr, code := execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc")
+	stdout, stderr, code := execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc")
 
 	require.Equal(t, 1, code, "an open question holding the plan is a blocked business answer (exit 1)")
 	human := stdout + stderr
 	require.Contains(t, human, fmt.Sprintf(
-		`Blocked: feature form-engine/nrca-form-loading (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them with tiller answer question <Q-id> --answer "...", or cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", fold the answers into the plan, and retry.`,
+		`Blocked: feature form-engine/certification-form-loading (%s) is held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them with tiller answer question <Q-id> --answer "...", or cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", fold the answers into the plan, and retry.`,
 		soleFeatureID(t)))
 	require.NotContains(t, human, "--assume-question")
 	require.Equal(t, "specced", loadTestTree(t).Features[soleFeatureID(t)].Status, "a refused plan gate must not move the feature")
 
-	out, _, code := execCLI(t, "approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code)
 	data := jsonData(t, out)
 	require.Equal(t, "open_question_blocker", data["reason"])
@@ -46,7 +46,7 @@ func TestApproveTasksByFeaturePerTask(t *testing.T) {
 	require.Equal(t, 0, code)
 	writeBlockingQuestion(t, "Q-aaaaaa", ids[0])
 
-	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "approve", "task", "--feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 
 	require.Equal(t, 1, code, "a batch with a blocked entry exits 1")
 	env := parseBatch(t, out)

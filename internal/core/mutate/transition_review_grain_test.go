@@ -69,11 +69,11 @@ func TestApproveFeaturePlanRecordsReviewGrain(t *testing.T) {
 	root := laySpeccedPlan(t, deps, "alfa")
 	grain := "feature"
 
-	res := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	res := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 	require.Equal(t, "ready", res.Status)
 
-	require.Equal(t, "feature", featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain)
+	require.Equal(t, "feature", featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain)
 
 	evs, err := events.List(load(t, root))
 	require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestApproveFeaturePlanDoesNotLeakReviewGrainIntoTaskEvents(t *testing.T) {
 	root := laySpeccedPlan(t, deps, "alfa")
 	grain := "feature"
 
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 
 	evs, err := events.List(load(t, root))
@@ -192,14 +192,14 @@ func TestApproveFeaturePlanWithoutReviewGrainLeavesItUntouched(t *testing.T) {
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
 	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
-		Noun: store.NounFeature, Key: "form-engine/nrca-form-loading", ReviewGrain: "task"})
+		Noun: store.NounFeature, Key: "form-engine/certification-form-loading", ReviewGrain: "task"})
 	require.NoError(t, err)
 
-	res := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	res := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 	require.Equal(t, "ready", res.Status)
 
-	require.Equal(t, "task", featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain,
+	require.Equal(t, "task", featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain,
 		"a plain approve must not touch a previously configured grain")
 }
 
@@ -307,20 +307,20 @@ func TestApproveFeatureAlreadyReadyRecordsChangedGrain(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 
 	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
-		Noun: store.NounFeature, Key: "form-engine/nrca-form-loading", ReviewGrain: "task"})
+		Noun: store.NounFeature, Key: "form-engine/certification-form-loading", ReviewGrain: "task"})
 	require.NoError(t, err)
 
 	grain := "feature"
-	res := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	res := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 	require.Equal(t, "ready", res.Status, "status is already ready; the verb is a legal no-op there")
 	require.True(t, res.Changed, "a changed grain on an idempotent re-approve still counts as a change")
 
-	require.Equal(t, "feature", featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain)
+	require.Equal(t, "feature", featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain)
 
 	evs, err := events.List(load(t, root))
 	require.NoError(t, err)
@@ -343,21 +343,21 @@ func TestApproveFeatureAlreadyReadyRefusesIllegalReviewGrain(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 
 	evsDir := filepath.Join(root, ".tiller", "events")
 	before := countFiles(t, evsDir)
 
 	grain := "bogus"
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 	require.Error(t, err)
 	var r interface{ Reason() string }
 	require.ErrorAs(t, err, &r)
 	require.Equal(t, "invalid_review_grain", r.Reason())
 
-	require.Equal(t, "", featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain,
+	require.Equal(t, "", featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain,
 		"a refused approve must not write the grain")
 	require.Equal(t, before, countFiles(t, evsDir), "a refused approve records no event")
 }
@@ -371,20 +371,20 @@ func TestApproveFeatureAlreadyReadyRefusesOnceReviewSurfaceRecorded(t *testing.T
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
-	setFeatureReviewRefOnDisk(t, root, "form-engine", "nrca-form-loading")
+	setFeatureReviewRefOnDisk(t, root, "form-engine", "certification-form-loading")
 
 	evsDir := filepath.Join(root, ".tiller", "events")
 	before := countFiles(t, evsDir)
 
 	grain := "task"
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "review surface", "the refusal names why")
 
-	require.Equal(t, "", featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain,
+	require.Equal(t, "", featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain,
 		"a refused approve must not write the grain")
 	require.Equal(t, before, countFiles(t, evsDir), "a refused approve records no event")
 }
@@ -397,14 +397,14 @@ func TestApproveFeatureAlreadyReadyWithoutReviewGrainStaysAQuietNoOp(t *testing.
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 
 	evsDir := filepath.Join(root, ".tiller", "events")
 	before := countFiles(t, evsDir)
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Transition(tree, deps, feat, mutate.TransitionInput{Verb: "approve"})
 	require.NoError(t, err)
 	require.False(t, res.Changed, "a plain re-approve of an already-ready feature stays a quiet no-op")
@@ -535,14 +535,14 @@ func TestApproveFeaturePlanRefusesReviewGrainWithAffectedTaskInFlightWithoutWrit
 	eventsBefore := countFiles(t, filepath.Join(root, ".tiller", "events"))
 
 	grain := store.ReviewGrainFeature
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 
 	var blocked *mutate.ReviewGrainChangeBlockedError
 	require.ErrorAs(t, err, &blocked)
 	require.Equal(t, mutate.ReasonReviewGrainWorkInFlight, blocked.Reason)
 	require.Equal(t, taskID, blocked.BlockerID)
-	require.Equal(t, "specced", featureByKey(load(t, root), "form-engine/nrca-form-loading").Status)
+	require.Equal(t, "specced", featureByKey(load(t, root), "form-engine/certification-form-loading").Status)
 	require.Equal(t, eventsBefore, countFiles(t, filepath.Join(root, ".tiller", "events")))
 	requireNoWrites(t, before, snapshotDir(t, root))
 }
@@ -551,7 +551,7 @@ func TestApproveFeatureAgainRefusesSameReviewGrainChangeAsConfigureWithoutWritin
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 	taskID := onlyTaskID(t, load(t, root))
 	setTaskStatusOnDisk(t, root, taskID, "in_review")
@@ -559,14 +559,14 @@ func TestApproveFeatureAgainRefusesSameReviewGrainChangeAsConfigureWithoutWritin
 	eventsBefore := countFiles(t, filepath.Join(root, ".tiller", "events"))
 
 	grain := store.ReviewGrainFeature
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
 
 	var blocked *mutate.ReviewGrainChangeBlockedError
 	require.ErrorAs(t, err, &blocked)
 	require.Equal(t, mutate.ReasonReviewGrainWorkInFlight, blocked.Reason)
 	require.Equal(t, taskID, blocked.BlockerID)
-	require.Empty(t, featureByKey(load(t, root), "form-engine/nrca-form-loading").ReviewGrain)
+	require.Empty(t, featureByKey(load(t, root), "form-engine/certification-form-loading").ReviewGrain)
 	require.Equal(t, eventsBefore, countFiles(t, filepath.Join(root, ".tiller", "events")))
 	requireNoWrites(t, before, snapshotDir(t, root))
 }

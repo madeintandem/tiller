@@ -33,7 +33,7 @@ import (
 
 // Ref is an address as the grammar parsed it: the validated Noun the command
 // named and the Raw token the caller typed (an id like "F-79dh3q" or a key like
-// "form-engine/nrca-form-loading"). An empty Noun means "do not checksum the
+// "form-engine/certification-form-loading"). An empty Noun means "do not checksum the
 // noun", which only makes sense for an id lookup.
 type Ref struct {
 	Noun string

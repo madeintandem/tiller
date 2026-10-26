@@ -13,8 +13,8 @@ import (
 // reference helper can be exercised across the whole convention table.
 func labelTree() *store.Tree {
 	epicKey := "form-engine"
-	featKey := "form-engine/nrca-form-loading"
-	taskKey := "form-engine/nrca-form-loading/schema-transcription"
+	featKey := "form-engine/certification-form-loading"
+	taskKey := "form-engine/certification-form-loading/schema-transcription"
 	amendKey := "iphone-only"
 	return &store.Tree{
 		Epics: map[string]*store.Epic{
@@ -43,8 +43,8 @@ func TestLabelIsTheKeyPath(t *testing.T) {
 	tree := labelTree()
 
 	require.Equal(t, "form-engine", Label(tree, tree.Epics["E-aaaaaa"]))
-	require.Equal(t, "form-engine/nrca-form-loading", Label(tree, tree.Features["F-aaaaaa"]))
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription", Label(tree, tree.Tasks["T-aaaaaa"]))
+	require.Equal(t, "form-engine/certification-form-loading", Label(tree, tree.Features["F-aaaaaa"]))
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription", Label(tree, tree.Tasks["T-aaaaaa"]))
 	require.Equal(t, "iphone-only", Label(tree, tree.Amendments["A-aaaaaa"]))
 
 	// No key: a question (never keyed) and a task whose task.yml carries none
@@ -61,8 +61,8 @@ func TestRefIsKeyPathWithID(t *testing.T) {
 	tree := labelTree()
 
 	require.Equal(t, "form-engine (E-aaaaaa)", Ref(tree, tree.Epics["E-aaaaaa"]))
-	require.Equal(t, "form-engine/nrca-form-loading (F-aaaaaa)", Ref(tree, tree.Features["F-aaaaaa"]))
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription (T-aaaaaa)", Ref(tree, tree.Tasks["T-aaaaaa"]))
+	require.Equal(t, "form-engine/certification-form-loading (F-aaaaaa)", Ref(tree, tree.Features["F-aaaaaa"]))
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription (T-aaaaaa)", Ref(tree, tree.Tasks["T-aaaaaa"]))
 	require.Equal(t, "iphone-only (A-aaaaaa)", Ref(tree, tree.Amendments["A-aaaaaa"]))
 
 	// Bare id, never "id (id)".
@@ -90,8 +90,8 @@ func TestRefByIDResolvesAcrossTheTree(t *testing.T) {
 	tree := labelTree()
 
 	require.Equal(t, "form-engine (E-aaaaaa)", RefByID(tree, "E-aaaaaa"))
-	require.Equal(t, "form-engine/nrca-form-loading (F-aaaaaa)", RefByID(tree, "F-aaaaaa"))
-	require.Equal(t, "form-engine/nrca-form-loading/schema-transcription (T-aaaaaa)", RefByID(tree, "T-aaaaaa"))
+	require.Equal(t, "form-engine/certification-form-loading (F-aaaaaa)", RefByID(tree, "F-aaaaaa"))
+	require.Equal(t, "form-engine/certification-form-loading/schema-transcription (T-aaaaaa)", RefByID(tree, "T-aaaaaa"))
 	require.Equal(t, "Q-aaaaaa", RefByID(tree, "Q-aaaaaa"))
 	require.Equal(t, "iphone-only (A-aaaaaa)", RefByID(tree, "A-aaaaaa"),
 		"an amendment resolves the same way every other noun's map does")
@@ -102,7 +102,7 @@ func TestRefByIDResolvesAcrossTheTree(t *testing.T) {
 // they already carry both halves: key path plus id, or the bare id when the
 // path is empty.
 func TestRefParts(t *testing.T) {
-	require.Equal(t, "form-engine/nrca-form-loading (F-aaaaaa)", RefParts("form-engine/nrca-form-loading", "F-aaaaaa"))
+	require.Equal(t, "form-engine/certification-form-loading (F-aaaaaa)", RefParts("form-engine/certification-form-loading", "F-aaaaaa"))
 	require.Equal(t, "T-aaaaaa", RefParts("", "T-aaaaaa"))
 }
 

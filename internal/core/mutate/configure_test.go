@@ -461,12 +461,12 @@ func TestConfigureRefusesCrossingEpicBoundaryAfterTaskActivationWithoutWriting(t
 				Noun: store.NounEpic, Key: "form-engine", ReviewGrain: grain,
 			})
 			require.NoError(t, err)
-			driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+			driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 				mutate.TransitionInput{Verb: "approve"})
-			driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/alfa",
+			driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/alfa",
 				mutate.TransitionInput{Verb: "start"})
 			setTaskStatusOnDisk(t, root, onlyTaskID(t, load(t, root)), "done")
-			require.Equal(t, "active", featureByKey(load(t, root), "form-engine/nrca-form-loading").Status)
+			require.Equal(t, "active", featureByKey(load(t, root), "form-engine/certification-form-loading").Status)
 
 			epicPath := filepath.Join(root, ".tiller", "epics", "form-engine", "epic.yml")
 			beforeEpic, err := os.ReadFile(epicPath)
@@ -496,14 +496,14 @@ func TestConfigureFeatureUsesParentOfFreshDocumentWhenGuardingEpicBoundary(t *te
 		Noun: store.NounEpic, Key: "form-engine", ReviewGrain: store.ReviewGrainEpic,
 	})
 	require.NoError(t, err)
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
-	driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/alfa",
+	driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/alfa",
 		mutate.TransitionInput{Verb: "start"})
 	setTaskStatusOnDisk(t, root, onlyTaskID(t, load(t, root)), "done")
 
 	_, err = mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
-		Noun: store.NounFeature, Key: "form-engine/nrca-form-loading", ReviewGrain: store.ReviewGrainTask,
+		Noun: store.NounFeature, Key: "form-engine/certification-form-loading", ReviewGrain: store.ReviewGrainTask,
 	})
 
 	var blocked *mutate.ReviewGrainChangeBlockedError

@@ -17,7 +17,7 @@ import (
 
 // orderRepo lays two epics (form-engine with two features, payments with one)
 // and three tasks, two under form-engine/schema-engine and one under
-// form-engine/nrca-form-loading: enough siblings at every grain to record an
+// form-engine/certification-form-loading: enough siblings at every grain to record an
 // order, and a cross-parent pair at both feature and task grain to prove the
 // split-parent refusal.
 func orderRepo(t *testing.T) string {
@@ -36,7 +36,7 @@ func orderRepo(t *testing.T) string {
 		Key: "form-engine/schema-engine", Title: "Schema engine", ChangeType: "create"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), mint("cccccc"), mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 
 	_, err = mutate.AddEpic(load(t, root), mint("dddddd"), mutate.EpicInput{Key: "payments", Title: "Payments"})
@@ -52,7 +52,7 @@ func orderRepo(t *testing.T) string {
 		Key: "form-engine/schema-engine/second", Title: "Second"})
 	require.NoError(t, err)
 	_, err = mutate.AddTask(load(t, root), mint("other0"), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/other", Title: "Other"})
+		Key: "form-engine/certification-form-loading/other", Title: "Other"})
 	require.NoError(t, err)
 
 	return root
@@ -87,7 +87,7 @@ func TestSetOrderFeatureGrainWritesEpicOrderAndEvent(t *testing.T) {
 	root := orderRepo(t)
 
 	res, err := mutate.SetOrder(load(t, root), testDeps(), mutate.SetOrderInput{
-		Noun: store.NounFeature, Nodes: []string{"form-engine/nrca-form-loading", "form-engine/schema-engine"},
+		Noun: store.NounFeature, Nodes: []string{"form-engine/certification-form-loading", "form-engine/schema-engine"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, store.NounFeature, res.Noun)
@@ -149,7 +149,7 @@ func TestSetOrderReplacesNotUnions(t *testing.T) {
 	require.Equal(t, []string{"F-bbbbbb"}, first.Order)
 
 	second, err := mutate.SetOrder(load(t, root), testDeps(), mutate.SetOrderInput{
-		Noun: store.NounFeature, Nodes: []string{"form-engine/nrca-form-loading"},
+		Noun: store.NounFeature, Nodes: []string{"form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 	require.True(t, second.Changed)
@@ -163,7 +163,7 @@ func TestSetOrderReplacesNotUnions(t *testing.T) {
 	require.Len(t, eventsOfType(evs, "order.features"), 2, "each real change records its own event")
 
 	third, err := mutate.SetOrder(load(t, root), testDeps(), mutate.SetOrderInput{
-		Noun: store.NounFeature, Nodes: []string{"form-engine/nrca-form-loading"},
+		Noun: store.NounFeature, Nodes: []string{"form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 	require.False(t, third.Changed, "an identical list is a no-change success")
@@ -259,7 +259,7 @@ func TestSetOrderClearFeatureGrain(t *testing.T) {
 	t.Parallel()
 	root := orderRepo(t)
 	_, err := mutate.SetOrder(load(t, root), testDeps(), mutate.SetOrderInput{
-		Noun: store.NounFeature, Nodes: []string{"form-engine/schema-engine", "form-engine/nrca-form-loading"},
+		Noun: store.NounFeature, Nodes: []string{"form-engine/schema-engine", "form-engine/certification-form-loading"},
 	})
 	require.NoError(t, err)
 

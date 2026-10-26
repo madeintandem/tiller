@@ -50,13 +50,13 @@ func layEvalFeature(t *testing.T) string {
 	initOwnedRepo(t)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"), []byte(evalFeatureEvalMD), 0o644))
-	return "form-engine/nrca-form-loading"
+	return "form-engine/certification-form-loading"
 }
 
 // evalsCriterion reads one recorded evals-gate criterion off the feature on disk.
@@ -204,14 +204,14 @@ func TestEvalRequiredUnsatisfiedIsNotPassed(t *testing.T) {
 	initGatedGitRepo(t, "true")
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	evalMD := "---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: A reviewer confirms the layout\n    polarity: introduce\n    binding: { type: manual }\n    required: true\n---\n"
 	require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), "feature.eval.md"), []byte(evalMD), 0o644))
 
-	out, _, code := execCLI(t, "eval", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "eval", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, "a required criterion in needs_attestation is not passed")
 	require.Contains(t, out, "\"passed\": false")
 	require.Contains(t, out, "\"ok\": false")
@@ -229,11 +229,11 @@ func TestEvalNoCriteriaIsCleanNoOp(t *testing.T) {
 	initGatedGitRepo(t, "true")
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
-	out, _, code := execCLI(t, "eval", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "eval", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, "no required criteria means a clean no-op, not a failure")
 	require.Contains(t, out, "\"ok\": true")
 	require.Contains(t, out, "\"passed\": true")
@@ -301,15 +301,15 @@ func TestEvalEmitRubricsAllowsMissingDraftContract(t *testing.T) {
 	initOwnedRepo(t)
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA form loading", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification form loading", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	ymlPath := filepath.Join(featureDir(t), "feature.yml")
 	before, err := os.ReadFile(ymlPath)
 	require.NoError(t, err)
 
-	out, _, code := execCLI(t, "eval", "feature", "form-engine/nrca-form-loading",
+	out, _, code := execCLI(t, "eval", "feature", "form-engine/certification-form-loading",
 		"--emit-rubrics", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, `"ok": true`)
@@ -349,11 +349,11 @@ func TestEvalRerunConflicts(t *testing.T) {
 func TestEvalReusedCriterion(t *testing.T) {
 	runEvalCommandBinding(t, "true", 0, store.GateStatusPass)
 
-	out, _, code := execCLI(t, "eval", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	out, _, code := execCLI(t, "eval", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "\"reused\": true")
 
-	out, _, code = execCLI(t, "eval", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--rerun", "--json")
+	out, _, code = execCLI(t, "eval", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--rerun", "--json")
 	require.Equal(t, 0, code)
 	require.NotContains(t, out, "\"reused\"")
 }
@@ -428,14 +428,14 @@ func runEvalCommandBinding(t *testing.T, run string, wantCode int, wantStatus st
 	initGatedGitRepo(t, "true")
 	_, _, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc")
 	require.Equal(t, 0, code)
-	_, _, code = execCLI(t, "add", "feature", "form-engine/nrca-form-loading",
-		"--title", "NRCA", "--change-type", "create", "--contributor", "jc")
+	_, _, code = execCLI(t, "add", "feature", "form-engine/certification-form-loading",
+		"--title", "Certification", "--change-type", "create", "--contributor", "jc")
 	require.Equal(t, 0, code)
 
 	evalMD := "---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The suite passes\n    polarity: introduce\n    binding: { type: command, run: \"" + run + "\" }\n    required: true\n---\n"
 	require.NoError(t, os.WriteFile(filepath.Join(featureDir(t), "feature.eval.md"), []byte(evalMD), 0o644))
 
-	_, _, code = execCLI(t, "eval", "feature", "form-engine/nrca-form-loading", "--contributor", "jc", "--json")
+	_, _, code = execCLI(t, "eval", "feature", "form-engine/certification-form-loading", "--contributor", "jc", "--json")
 	require.Equal(t, wantCode, code)
 
 	c := evalsCriterion(t, "C1")

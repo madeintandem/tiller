@@ -136,7 +136,7 @@ func TestSetSurfaceRefusesWrongGrainAndBadPaths(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "lib/good"), 0o755))
 	tree := load(t, root)
 	_, err := mutate.AddTask(tree, testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/probe", Title: "Probe",
+		Key: "form-engine/certification-form-loading/probe", Title: "Probe",
 	})
 	require.NoError(t, err)
 	_, err = mutate.AddQuestion(load(t, root), testDeps(), mutate.QuestionInput{Title: "Canonical schema version", Statement: "Which schema?"})
@@ -221,7 +221,7 @@ func TestSetSurfacePathBoundaries(t *testing.T) {
 					{Root: ref, Mode: tt.mode},
 				}
 			}
-			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml")
+			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml")
 			before, err := os.ReadFile(nodePath)
 			require.NoError(t, err)
 			beforeEvents, err := events.List(tree)
@@ -338,7 +338,7 @@ func TestSetSurfaceRefusesReferenceIdentityAliases(t *testing.T) {
 			}
 			tree := load(t, root)
 			tree.Manifest.Inputs.Code = []store.CodeRoot{{Root: tc.reference, Mode: store.CodeModeReference}}
-			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml")
+			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml")
 			before, err := os.ReadFile(nodePath)
 			require.NoError(t, err)
 			beforeEvents, err := events.List(tree)
@@ -364,7 +364,7 @@ func TestCombinedLinkIsAtomic(t *testing.T) {
 			root := dependsRepo(t)
 			require.NoError(t, os.MkdirAll(filepath.Join(root, "current"), 0o755))
 			if scenario == "locked dependency" {
-				setFeatureStatusOnDisk(t, root, "form-engine", "nrca-form-loading", "active")
+				setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "active")
 			}
 			tree := load(t, root)
 			in := mutate.LinkInput{Noun: store.NounFeature, Node: "F-cccccc", DependsOn: []string{"F-bbbbbb"}, Surface: []string{"current"}}
@@ -397,7 +397,7 @@ func TestCombinedLinkIsAtomic(t *testing.T) {
 					return fmt.Sprintf("%s-link%02d", prefix, minted)
 				}
 			}
-			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/nrca-form-loading/feature.yml")
+			nodePath := filepath.Join(root, ".tiller/epics/form-engine/features/certification-form-loading/feature.yml")
 			before, err := os.ReadFile(nodePath)
 			require.NoError(t, err)
 			beforeEvents, err := events.List(tree)
@@ -441,7 +441,7 @@ func TestCombinedLinkAllowsNoOpDependencyAfterStart(t *testing.T) {
 	d := seqDeps()
 	_, err := mutate.Link(load(t, root), d, mutate.LinkInput{Noun: store.NounFeature, Node: "F-cccccc", DependsOn: []string{"F-bbbbbb"}})
 	require.NoError(t, err)
-	setFeatureStatusOnDisk(t, root, "form-engine", "nrca-form-loading", "active")
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "active")
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "current"), 0o755))
 	tree := load(t, root)
 	before, err := events.List(tree)

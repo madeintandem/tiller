@@ -28,7 +28,7 @@ contributors:
 
 // mirrorDriftFeatureKey is the one feature-grain feature every mirrorDrift
 // fixture builds.
-const mirrorDriftFeatureKey = "form-engine/nrca-form-loading"
+const mirrorDriftFeatureKey = "form-engine/certification-form-loading"
 
 // queueSetTaskStatus rewrites one task's status line directly,
 // queueSetTaskInReview's task-grain twin for the one case this file needs:
@@ -57,7 +57,7 @@ func mirrorDriftFixture(t *testing.T, taskFinalStatus string) (root string, deps
 	_, err := mutate.AddEpic(queueLoad(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(queueLoad(t, root), deps, mutate.FeatureInput{
-		Key: mirrorDriftFeatureKey, Title: "NRCA form loading", ChangeType: "create"})
+		Key: mirrorDriftFeatureKey, Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	_, err = mutate.AddTask(queueLoad(t, root), deps, mutate.TaskInput{
 		Key: mirrorDriftFeatureKey + "/transcribe-the-schema", Title: "Transcribe the schema"})
@@ -66,7 +66,7 @@ func mirrorDriftFixture(t *testing.T, taskFinalStatus string) (root string, deps
 	require.NoError(t, err)
 	for _, feature := range queueLoad(t, root).Features {
 		contract := "---\nnode: " + feature.ID + "\ncriteria:\n  - id: C1\n    statement: Optional human observation\n    binding: {type: manual}\n---\n"
-		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.eval.md"), []byte(contract), 0o644))
+		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.eval.md"), []byte(contract), 0o644))
 	}
 
 	// The epic is approved the way the arc would have it: a draft epic is
@@ -74,14 +74,14 @@ func mirrorDriftFixture(t *testing.T, taskFinalStatus string) (root string, deps
 	// #93), so leaving it draft would hide the finish line behind that gate.
 	epicYML := filepath.Join(root, ".tiller", "epics", "form-engine", "epic.yml")
 	queueSetStatusOnDisk(t, epicYML, "draft", "ready")
-	featureYML := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	featureYML := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	queueSetStatusOnDisk(t, featureYML, "draft", "active")
 
 	_, err = mutate.Configure(queueLoad(t, root), deps, mutate.ConfigureInput{
 		Noun: store.NounFeature, Key: mirrorDriftFeatureKey, ReviewGrain: "feature"})
 	require.NoError(t, err)
 
-	taskYML := queueTaskYML(root, "form-engine", "nrca-form-loading", "transcribe-the-schema")
+	taskYML := queueTaskYML(root, "form-engine", "certification-form-loading", "transcribe-the-schema")
 	if taskFinalStatus == "in_review" {
 		queueSetTaskInReview(t, taskYML)
 	} else {
@@ -160,7 +160,7 @@ func TestSubmitAndTheFinishLineAgreeAtTheSeam(t *testing.T) {
 
 func TestLegacyTaskPRBlocksBothSubmitAndTheCoarseFinishLine(t *testing.T) {
 	root, deps := mirrorDriftFixture(t, "in_review")
-	taskPath := queueTaskYML(root, "form-engine", "nrca-form-loading", "transcribe-the-schema")
+	taskPath := queueTaskYML(root, "form-engine", "certification-form-loading", "transcribe-the-schema")
 	task := queueReadTask(t, taskPath)
 	pr := 41
 	task.PR = &pr

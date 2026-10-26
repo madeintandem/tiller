@@ -38,7 +38,7 @@ func TestLoad_KeyClass(t *testing.T) {
 	feat := tree.Features["F-79dh3q"]
 	require.NotNil(t, feat)
 	require.NotNil(t, feat.Key, "a feature's key is non-nil")
-	assert.Equal(t, "form-engine/nrca-form-loading", *feat.Key)
+	assert.Equal(t, "form-engine/certification-form-loading", *feat.Key)
 
 	task := tree.Tasks["T-k3p9w6"]
 	require.NotNil(t, task)
@@ -249,8 +249,8 @@ func TestLoadReadsFolderBackedTasks(t *testing.T) {
 	task := tree.Tasks["T-k3p9w6"]
 	require.NotNil(t, task)
 	require.NotNil(t, task.Key, "a task is a keyed, folder-backed node")
-	assert.Equal(t, "form-engine/nrca-form-loading/schema-transcription", *task.Key)
-	assert.Equal(t, "Transcribe NRCA-LTI-02-A (2025) into JSON Schema with computed-field bindings", task.Title)
+	assert.Equal(t, "form-engine/certification-form-loading/schema-transcription", *task.Key)
+	assert.Equal(t, "Transcribe CERT-LTI-02-A (2025) into JSON Schema with computed-field bindings", task.Title)
 	assert.Equal(t, "F-79dh3q", task.FeatureID, "the parent link comes from the folder path")
 }
 
@@ -316,7 +316,7 @@ func TestLoadRefusesInvalidEpicReviewGrain(t *testing.T) {
 
 func TestLoadAllowsExplicitEpicGrainOnMovedFeature(t *testing.T) {
 	root := copyTree(t, fixtureTreeRoot)
-	path := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	path := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	data = bytes.Replace(data, []byte("status:"), []byte("review_grain: epic\nstatus:"), 1)
@@ -329,7 +329,7 @@ func TestLoadAllowsExplicitEpicGrainOnMovedFeature(t *testing.T) {
 
 // tasksDirOf is the fixture feature's tasks/ folder inside a copied tree.
 func tasksDirOf(root string) string {
-	return filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks")
+	return filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks")
 }
 
 // A directory under tasks/ is a claim that a node lives there, so a missing
@@ -369,7 +369,7 @@ func TestLoad_TaskFolderDisagreeingWithItsKeyIsRefused(t *testing.T) {
 
 	_, err := Load(root)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "form-engine/nrca-form-loading/schema-transcription", "the error names the recorded key")
+	assert.Contains(t, err.Error(), "form-engine/certification-form-loading/schema-transcription", "the error names the recorded key")
 	assert.Contains(t, err.Error(), "moved-elsewhere", "and the folder it disagrees with")
 }
 
@@ -378,10 +378,10 @@ func TestLoad_TaskFolderDisagreeingWithItsKeyIsRefused(t *testing.T) {
 func TestLoad_FeatureAndEpicFoldersDisagreeingWithTheirKeysAreRefused(t *testing.T) {
 	featureRoot := copyTree(t, fixtureTreeRoot)
 	features := filepath.Join(featureRoot, ".tiller", "epics", "form-engine", "features")
-	require.NoError(t, os.Rename(filepath.Join(features, "nrca-form-loading"), filepath.Join(features, "moved-elsewhere")))
+	require.NoError(t, os.Rename(filepath.Join(features, "certification-form-loading"), filepath.Join(features, "moved-elsewhere")))
 	_, err := Load(featureRoot)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "form-engine/nrca-form-loading")
+	assert.Contains(t, err.Error(), "form-engine/certification-form-loading")
 
 	epicRoot := copyTree(t, fixtureTreeRoot)
 	epics := filepath.Join(epicRoot, ".tiller", "epics")
@@ -415,12 +415,12 @@ func TestLoad_TwoSourcesClaimingOneIDAreRefused(t *testing.T) {
 			noun:   NounFeature,
 			nodeID: "F-79dh3q",
 			arrange: func(t *testing.T, root string) (string, string) {
-				first := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+				first := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 				second := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "second-feature", "feature.yml")
 				data, err := os.ReadFile(first)
 				require.NoError(t, err)
 				data = []byte(strings.Replace(string(data),
-					"key: form-engine/nrca-form-loading\n", "key: form-engine/second-feature\n", 1))
+					"key: form-engine/certification-form-loading\n", "key: form-engine/second-feature\n", 1))
 				require.NoError(t, os.MkdirAll(filepath.Dir(second), 0o755))
 				require.NoError(t, os.WriteFile(second, data, 0o644))
 				return first, second
@@ -435,7 +435,7 @@ func TestLoad_TwoSourcesClaimingOneIDAreRefused(t *testing.T) {
 				require.NoError(t, os.MkdirAll(filepath.Dir(second), 0o755))
 				require.NoError(t, os.WriteFile(second, []byte(
 					"id: T-k3p9w6\n"+
-						"key: form-engine/nrca-form-loading/render-the-form\n"+
+						"key: form-engine/certification-form-loading/render-the-form\n"+
 						"title: Render the form\n"+
 						"status: ready\n"+
 						"blocked: false\n"+
@@ -497,7 +497,7 @@ func TestLoad_InvalidOrWrongNounIDsAreRefused(t *testing.T) {
 			id:      "E-aaaaaa",
 			validID: "F-79dh3q",
 			sourcePath: func(root string) string {
-				return filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+				return filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 			},
 		},
 		{
@@ -551,7 +551,7 @@ func TestLoad_NodeWithNoRecordedKeyStillLoads(t *testing.T) {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	stripped := strings.ReplaceAll(string(data),
-		"key: form-engine/nrca-form-loading/schema-transcription\n", "")
+		"key: form-engine/certification-form-loading/schema-transcription\n", "")
 	require.NotEqual(t, string(data), stripped, "the fixture carried a key to strip")
 	require.NoError(t, os.WriteFile(path, []byte(stripped), 0o644))
 

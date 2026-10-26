@@ -580,7 +580,7 @@ func TestEmittableVerbs(t *testing.T) {
 // branch and head commit on the task it moves to in_review, with pr left unset.
 func TestApply_SubmitRecordsReviewRef(t *testing.T) {
 	ref := &store.ReviewRef{
-		Branch: "tiller/form-engine/nrca-form-loading",
+		Branch: "tiller/form-engine/certification-form-loading",
 		Head:   store.RevisionRef{Kind: store.KindGitCommit, Value: "git:abc1234"},
 	}
 
@@ -588,7 +588,7 @@ func TestApply_SubmitRecordsReviewRef(t *testing.T) {
 	require.NoError(t, Apply(tk, "submit", Payload{ReviewRef: ref}))
 	assert.Equal(t, "in_review", tk.Status)
 	require.NotNil(t, tk.ReviewRef)
-	assert.Equal(t, "tiller/form-engine/nrca-form-loading", tk.ReviewRef.Branch)
+	assert.Equal(t, "tiller/form-engine/certification-form-loading", tk.ReviewRef.Branch)
 	assert.Equal(t, "git:abc1234", tk.ReviewRef.Head.Value)
 	assert.Nil(t, tk.PR, "the offline case never fakes a PR number")
 }

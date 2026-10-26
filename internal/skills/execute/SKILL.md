@@ -73,7 +73,7 @@ Keep claims and machine state through normal command writes and Git merges. Reso
 
 Execution ownership and review responsibility are separate. Different developers can start different tasks in the same feature at every review grain. Any registered developer can perform authorized aggregate assembly, checks, and submission without owning the tasks. Coordinate one aggregate updater at a time through the team and Git; there is no coordinator claim or distributed lock. Requested changes belong to the affected task's original owner and branch. Shared closeout appears once per feature or epic, including feature acceptance after the last task-grain merge. Surface that next step without assigning it to the last finisher or every historical contributor; a ranked move is a suggestion, not execution authority.
 
-Legacy feature-prefix refs can obstruct a task branch, for example `tiller/form-engine/nrca-form-loading` blocks `tiller/form-engine/nrca-form-loading/schema-transcription`. Name the desired and conflicting refs and inspect their local/remote status without altering them. Preserve historical refs and choose a non-conflicting configured branch pattern for unstarted work, or ask the human to archive/rename the collision deliberately. Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches.
+Legacy feature-prefix refs can obstruct a task branch, for example `tiller/form-engine/certification-form-loading` blocks `tiller/form-engine/certification-form-loading/schema-transcription`. Name the desired and conflicting refs and inspect their local/remote status without altering them. Preserve historical refs and choose a non-conflicting configured branch pattern for unstarted work, or ask the human to archive/rename the collision deliberately. Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches.
 
 ### Publication sequence
 
@@ -175,7 +175,7 @@ gh pr create --repo "$host_repo" --base "$base" --head "$branch" --draft --title
 gh pr view "$pr" --repo "$host_repo" --json number,url,state,isDraft,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner
 ```
 
-Set `title` to the resolved node's full key path and id, and `body` to its review scope and verification, naming the parent feature for a task, riding tasks for a feature, and riding features and tasks for an epic. The body also names every departure from the reviewed tasks' `task.md` plans, gathered from the riding tasks' implementation commit messages when the PR is a feature or epic review, and an offline review surface names them the same way. For the task example, the title is `form-engine/nrca-form-loading/schema-transcription (T-k3p9w6)` and the body names `form-engine/nrca-form-loading (F-79dh3q)`. A shelf PR names its own shelf reference and any attached context, never substitutes the attached feature as the reviewed node. On another host, use that project's available tool to perform the same lookup/create/inspect operations and obtain the actual number. `gh` is an example, not a Tiller runtime requirement.
+Set `title` to the resolved node's full key path and id, and `body` to its review scope and verification, naming the parent feature for a task, riding tasks for a feature, and riding features and tasks for an epic. The body also names every departure from the reviewed tasks' `task.md` plans, gathered from the riding tasks' implementation commit messages when the PR is a feature or epic review, and an offline review surface names them the same way. For the task example, the title is `form-engine/certification-form-loading/schema-transcription (T-k3p9w6)` and the body names `form-engine/certification-form-loading (F-79dh3q)`. A shelf PR names its own shelf reference and any attached context, never substitutes the attached feature as the reviewed node. On another host, use that project's available tool to perform the same lookup/create/inspect operations and obtain the actual number. `gh` is an example, not a Tiller runtime requirement.
 
 Compare the host's head repository/owner to the configured push destination, not only the head branch name; a fork can share that name. The selected `--repo` and returned URL identify the base repository. Verify the head OID contains the intended pushed tip. If several candidates are ambiguous, stop rather than choose an arbitrary number. An existing non-draft PR while acceptance is outstanding is not evidence of acceptance: report that actual state, do not silently alter host review state or submit early. After accepted decisions and required rechecks, `gh pr ready "$pr" --repo "$host_repo"` makes the same draft ready; inspect it again before formal submit.
 
@@ -247,7 +247,7 @@ Choose exactly one task entry path after reading the task and its feature:
 # A later task in a coarse unit whose worktree you hold: git switch --detach "$start_base" there, no new join.
 git worktree add --detach "$worktree" "$start_base"
 cd "$worktree" && tiller join --as <you>                   # a new worktree has no identity; restore any refresh it reports
-tiller claim task form-engine/nrca-form-loading/schema-transcription  # ready and unclaimed only
+tiller claim task form-engine/certification-form-loading/schema-transcription  # ready and unclaimed only
 # First successful task start activates a ready parent and initializes any aggregate.
 tiller start task T-k3p9w6 --json                           # ready only; read branch and base_branch
 # Set task_branch and task_base to those actual returned values, not placeholders.
@@ -289,7 +289,7 @@ tiller status task T-k3p9w6
 # coarse grain: checkout recorded aggregate; git merge <recorded-task-branch>
 # Include submission state, then continue eligible work on its own task branch.
 ```
-The human performs the final merge into integration with a merge commit or squash, preserves local refs until sync, and never adds commits to a branch after its final merge. Intermediate assembly never uses squash. If a task-grain fast-forward already happened, hand them `tiller sync --accept-fast-forward form-engine/nrca-form-loading/schema-transcription`. Sync's later `.tiller/`-only delta belongs directly on the integration branch, without a new PR.
+The human performs the final merge into integration with a merge commit or squash, preserves local refs until sync, and never adds commits to a branch after its final merge. Intermediate assembly never uses squash. If a task-grain fast-forward already happened, hand them `tiller sync --accept-fast-forward form-engine/certification-form-loading/schema-transcription`. Sync's later `.tiller/`-only delta belongs directly on the integration branch, without a new PR.
 
 At task grain, a reported last-task merge enters integration-branch closeout. Resolve and safely update `base` before this sequence; preserve the local review ref until sync observes it:
 

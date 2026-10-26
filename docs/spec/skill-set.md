@@ -42,7 +42,7 @@ Five conventions are shared across the catalog rather than repeated in each. The
 
 The second is the **delegation model.** The gate is the human's decision, not the human's keyboard. A skill surfaces a start gate and stops for the decision; on an explicit human instruction naming the nodes, or an unambiguous set ("approve all nine epics" after the agent listed them), the agent may run the `approve` itself, stating exactly what it is about to record before running and reporting what it recorded after. A declarative past-tense claim ("they're all approved") is authorization to record only when the set is unambiguous: verify the recorded state first, then record, then report the delta. The terminal crossings, `attest`, `sync --accept-fast-forward`, and the merge to done, are never the agent's to run, even on instruction; the skill hands the human the exact command. This is guidance, not enforcement, per the non-coercion principle.
 
-The third is the **node reference convention.** When a skill names a node to the human, it uses the key path with the id in parentheses: `form-engine/nrca-form-loading (F-79dh3q)`, and a task its own three-segment path, `form-engine/nrca-form-loading/schema-transcription (T-k3p9w6)`; a question is its id plus short title on scanning surfaces, with the full statement when the question itself is the subject. In command position bare ids stay valid, and questions are addressed by id only. The convention is stated once in `orient`; the other skills follow it. Design docs use their path relative to `.tiller/design/`, without an invented id.
+The third is the **node reference convention.** When a skill names a node to the human, it uses the key path with the id in parentheses: `form-engine/certification-form-loading (F-79dh3q)`, and a task its own three-segment path, `form-engine/certification-form-loading/schema-transcription (T-k3p9w6)`; a question is its id plus short title on scanning surfaces, with the full statement when the question itself is the subject. In command position bare ids stay valid, and questions are addressed by id only. The convention is stated once in `orient`; the other skills follow it. Design docs use their path relative to `.tiller/design/`, without an invented id.
 
 The fourth is **developer authorship.** The developer owns and is responsible for the work. No agent identifies itself, a model, provider, or harness as an author or contributor in any output, including code, comments, docs, commit messages, PR titles and descriptions, issues, reviews, reports, and replies. Generated-by notices, agent signatures, badges, footers, and agent co-author trailers are prohibited. Use the developer's configured Git identity, never an agent author or committer identity or an invented human identity. Describe the work, its reasoning, and observed verification rather than the tool that produced it. Preserve necessary technical references, real human credits, and required third-party notices. Every skill inherits this rule from `.tiller/orientation.md`; `orient` introduces it and `execute` checks authored content and publication text, including template and host-tool defaults, before committing or posting. This is agent guidance, not CLI enforcement or a rewrite of existing history.
 
@@ -256,14 +256,14 @@ An explicit instruction naming several features, or every draft feature in one n
 
 ```
 # first named feature: extend feature.md, write feature.eval.md, and complete every task.md
-tiller add task form-engine/nrca-form-loading/schema-transcription \
-  --title "Transcribe NRCA-LTI-02-A (2025) into JSON Schema"
+tiller add task form-engine/certification-form-loading/schema-transcription \
+  --title "Transcribe CERT-LTI-02-A (2025) into JSON Schema"
 # final pass: record each decision only the human can make, pinned to the narrowest node
 tiller add question "<statement>" --title "<short title>" \
-  --blocks form-engine/nrca-form-loading/schema-transcription
-tiller spec feature form-engine/nrca-form-loading
-git add .tiller/epics/form-engine/features/nrca-form-loading .tiller/decisions/open-questions.yml
-git commit -m "specify: nrca-form-loading"
+  --blocks form-engine/certification-form-loading/schema-transcription
+tiller spec feature form-engine/certification-form-loading
+git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml
+git commit -m "specify: certification-form-loading"
 
 # the ranked list suggests waiting; the explicit batch already selected the next named feature
 # second named feature: complete its specification, contract, and full task set
@@ -297,7 +297,7 @@ A question the agent judges moot, or pinned wider than the work it touches, is t
 
 Configure the project's actual build/tests commands as part of implementation, not init. Check current required gates, not only old stored Required flags. Task submit relies on lifecycle state rather than explicitly revalidating the current required set like coarse submit; keeping task checks current is protocol, not a claimed submit guard.
 
-At task grain the PR title is the full task reference, for example `form-engine/nrca-form-loading/schema-transcription (T-k3p9w6)`, and its body names the parent feature. Coarse PRs name the reviewed feature or epic and all riding work. Every implementation/state commit carries the task id; coarse finish commits name the riding ids concerned. Shelf commits carry their shelf id. Follow developer authorship, preserve unrelated changes, and stage only this run's reviewed paths.
+At task grain the PR title is the full task reference, for example `form-engine/certification-form-loading/schema-transcription (T-k3p9w6)`, and its body names the parent feature. Coarse PRs name the reviewed feature or epic and all riding work. Every implementation/state commit carries the task id; coarse finish commits name the riding ids concerned. Shelf commits carry their shelf id. Follow developer authorship, preserve unrelated changes, and stage only this run's reviewed paths.
 
 **Shelf loop.** A bug, chore, or tweak owns its claim, branch, gates, and review irrespective of review grain. Claim/start the shelf, not an attached feature. Read its own contract and attachment context: epic prose for an epic, feature prose/contract for a feature, or task prose plus parent feature prose/contract for a task. Attachment supplies context, not inherited acceptance. Ready shelf work claims/starts then creates its recorded branch; in-progress/checked work checks out the existing branch without start/resume; requested changes use `resume bug|chore|tweak` from in-review and reuse the same PR. A bug includes a regression reproducing the defect; chore tests honestly cover its maintenance. Shelf execute runs neither eval nor approve. Live carried work waits on its carrier; owned `carrier_cancelled` work returns to its own status/branch while the human clears or replaces the pointer.
 
@@ -369,7 +369,7 @@ On configured integration with relevant source inputs committed, run `tiller sub
 
 ```
 tiller add bug blank-on-reload --title "Form is blank after reload" \
-  --attach form-engine/nrca-form-loading \
+  --attach form-engine/certification-form-loading \
   --source docs/investigations/2026-08-29-reload.md#L12-L44
 # replace bug.md with the complete Reproduction, Expected, Actual, and Fixed when contract
 
@@ -428,18 +428,18 @@ Three disciplines carry the rest. **Preconditions**, one on every destructive op
 
 ```bash
 # lightweight examples, no amendment
-tiller rename feature form-engine/nrca-form-loading --title "NRCA form loading"
-tiller approve feature form-engine/nrca-form-loading --refresh-basis
-tiller add task form-engine/nrca-form-loading/csp-regression \
+tiller rename feature form-engine/certification-form-loading --title "Certification form loading"
+tiller approve feature form-engine/certification-form-loading --refresh-basis
+tiller add task form-engine/certification-form-loading/csp-regression \
   --title "Cover the CSP regression"
-tiller approve task form-engine/nrca-form-loading/csp-regression
+tiller approve task form-engine/certification-form-loading/csp-regression
 ```
 
 For a structural reshape, open the amendment, write its narrative, stage the operations, show the batch, and stop.
 
 ```
 tiller drift                                               # when a cascade brought you here, read it first
-tiller show feature form-engine/nrca-form-loading --json   # the surface and the basis that bound the reading
+tiller show feature form-engine/certification-form-loading --json   # the surface and the basis that bound the reading
 tiller add amendment form-engine-rework \
   --title "Restructure form engine from embedded JSON to discrete tables" \
   --triggered-by design/solution-design/04-form-engine.md
@@ -465,7 +465,7 @@ tiller amend form-engine-rework --add-task form-engine/rendering-modes/table-awa
 tiller amend form-engine-rework --add-question "Keep the legacy embedded-JSON fallback for offline mode, or drop it once the table model ships?" \
   --title "Legacy offline fallback" \
   --blocks print-layouts/pdf-export
-tiller amend form-engine-rework --supersede form-engine/nrca-form-loading \
+tiller amend form-engine-rework --supersede form-engine/certification-form-loading \
   --by form-engine/table-backed-forms \
   --precondition target_status=done --precondition target_revision=git:7bc1a20
 tiller amend form-engine-rework --cancel form-engine/rendering-modes/embedded-json-fallback \
@@ -523,9 +523,9 @@ tiller amend opus-review --add-feature form-engine/csrf-token-rotation \
   --change-type create --title "CSRF token rotation" \
   --source .tiller/feedback/opus-review.md#L16-21
 # a correction inside an existing feature's scope: a task, on the PRE-EXISTING
-# feature form-engine/nrca-form-loading, never on either feature staged
+# feature form-engine/certification-form-loading, never on either feature staged
 # above, since a new feature's task explosion is specify's own act
-tiller amend opus-review --add-task form-engine/nrca-form-loading/csp-regression-test \
+tiller amend opus-review --add-task form-engine/certification-form-loading/csp-regression-test \
   --title "Add a CSP regression test" \
   --source .tiller/feedback/opus-review.md#L34-36
 # a judgment call the review explicitly declines: a question, not a decision

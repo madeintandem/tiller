@@ -29,7 +29,7 @@ On a refusal, follow `.tiller/orientation.md`. Fix an invalid local key, unresol
 
 ```text
 tiller add bug blank-on-reload --title "Form is blank after reload" \
-  --attach form-engine/nrca-form-loading \
+  --attach form-engine/certification-form-loading \
   --source docs/investigations/2026-08-29-reload.md#L12-L44
 # replace .tiller/bugs/blank-on-reload/bug.md with the complete contract:
 # ## Reproduction

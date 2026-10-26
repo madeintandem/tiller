@@ -52,13 +52,13 @@ func TestAddQuestionRecordsAndEchoes(t *testing.T) {
 
 	out, _, code := execCLI(t, "add", "question", "Where does the design system live?",
 		"--title", "Design system location",
-		"--blocks", "form-engine/nrca-form-loading", "--blocks", ids[0],
+		"--blocks", "form-engine/certification-form-loading", "--blocks", ids[0],
 		"--due", "2026-07-12", "--source", "briefing", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, `Created question Q-`)
 	require.Contains(t, out, `: "Where does the design system live?"`)
-	require.Contains(t, out, "blocks form-engine/nrca-form-loading (F-")
-	require.Contains(t, out, fmt.Sprintf("form-engine/nrca-form-loading/schema-transcription (%s)", ids[0]),
+	require.Contains(t, out, "blocks form-engine/certification-form-loading (F-")
+	require.Contains(t, out, fmt.Sprintf("form-engine/certification-form-loading/schema-transcription (%s)", ids[0]),
 		"a blocked task is named by its own key path")
 
 	// The ledger loads back through every read surface.
@@ -214,7 +214,7 @@ func TestShowQuestionJSONCarriesSourceAndBlocks(t *testing.T) {
 
 	out, _, code := execCLI(t, "add", "question", "Keep or trim the legacy image parsers?",
 		"--title", "Legacy image parsers",
-		"--blocks", "form-engine/nrca-form-loading",
+		"--blocks", "form-engine/certification-form-loading",
 		"--source", "briefing/2026-08-15.md#L3", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code)
 	qid := extractID(t, out, "Q-")
@@ -228,7 +228,7 @@ func TestShowQuestionJSONCarriesSourceAndBlocks(t *testing.T) {
 	require.Len(t, blocks, 1)
 	row, ok := blocks[0].(map[string]any)
 	require.True(t, ok)
-	require.Equal(t, "form-engine/nrca-form-loading", row["key"])
+	require.Equal(t, "form-engine/certification-form-loading", row["key"])
 	require.NotEmpty(t, row["id"])
 
 	// A blockless, sourceless question renders neither key.

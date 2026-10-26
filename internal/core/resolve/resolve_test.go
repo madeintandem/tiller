@@ -24,12 +24,12 @@ func fixtureTree() *store.Tree {
 			"E-j8m4q2": {ID: "E-j8m4q2", Key: keyPtr("form-engine")},
 		},
 		Features: map[string]*store.Feature{
-			"F-79dh3q": {ID: "F-79dh3q", Key: keyPtr("form-engine/nrca-form-loading"), EpicKey: "form-engine"},
+			"F-79dh3q": {ID: "F-79dh3q", Key: keyPtr("form-engine/certification-form-loading"), EpicKey: "form-engine"},
 		},
 		Tasks: map[string]*store.Task{
 			"T-k3p9w6": {
 				ID:        "T-k3p9w6",
-				Key:       keyPtr("form-engine/nrca-form-loading/schema-transcription"),
+				Key:       keyPtr("form-engine/certification-form-loading/schema-transcription"),
 				FeatureID: "F-79dh3q",
 			},
 		},
@@ -78,7 +78,7 @@ func TestResolve_IdLookupNounAgnostic(t *testing.T) {
 // (cli-surface.md, "A feature's canonical key includes the epic segment").
 func TestResolve_FeatureByCanonicalKey(t *testing.T) {
 	r := NewResolver(fixtureTree())
-	node, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/nrca-form-loading"})
+	node, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/certification-form-loading"})
 	require.NoError(t, err)
 	assert.Equal(t, "F-79dh3q", node.NodeID())
 }
@@ -87,7 +87,7 @@ func TestResolve_FeatureByCanonicalKey(t *testing.T) {
 // resolve. This locks the epic-segment requirement.
 func TestResolve_FeatureLocalSegmentDoesNotResolve(t *testing.T) {
 	r := NewResolver(fixtureTree())
-	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "nrca-form-loading"})
+	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "certification-form-loading"})
 	var nf *ErrNotFound
 	require.ErrorAs(t, err, &nf)
 }
@@ -199,12 +199,12 @@ func TestResolve_AmendmentKeyAmbiguousAmongOpenProposals(t *testing.T) {
 func TestResolve_FeatureKeyAmbiguityIsNotStatusResolved(t *testing.T) {
 	tree := fixtureTree()
 	tree.Features["F-aaaaaa"] = &store.Feature{
-		ID: "F-aaaaaa", Key: keyPtr("form-engine/nrca-form-loading"), EpicKey: "form-engine", Status: "draft",
+		ID: "F-aaaaaa", Key: keyPtr("form-engine/certification-form-loading"), EpicKey: "form-engine", Status: "draft",
 	}
 	tree.Features["F-79dh3q"].Status = "cancelled"
 	r := NewResolver(tree)
 
-	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/nrca-form-loading"})
+	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/certification-form-loading"})
 	var ak *ErrAmbiguousKey
 	require.ErrorAs(t, err, &ak)
 	require.Len(t, ak.Candidates, 2)
@@ -230,7 +230,7 @@ func TestResolve_TaskLocalSegmentDoesNotResolve(t *testing.T) {
 	var nf *ErrNotFound
 	require.ErrorAs(t, err, &nf)
 
-	_, err = r.Resolve(Ref{Noun: store.NounTask, Raw: "nrca-form-loading/schema-transcription"})
+	_, err = r.Resolve(Ref{Noun: store.NounTask, Raw: "certification-form-loading/schema-transcription"})
 	require.ErrorAs(t, err, &nf)
 }
 
@@ -238,7 +238,7 @@ func TestResolve_TaskLocalSegmentDoesNotResolve(t *testing.T) {
 // mismatched feature key is.
 func TestResolve_TaskKeyUnderAnotherNounIsNotFound(t *testing.T) {
 	r := NewResolver(fixtureTree())
-	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/nrca-form-loading/schema-transcription"})
+	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/certification-form-loading/schema-transcription"})
 	var nf *ErrNotFound
 	require.ErrorAs(t, err, &nf)
 }
@@ -249,12 +249,12 @@ func TestResolve_AmbiguousTaskKey(t *testing.T) {
 	tree := fixtureTree()
 	tree.Tasks["T-aaaaaa"] = &store.Task{
 		ID:        "T-aaaaaa",
-		Key:       keyPtr("form-engine/nrca-form-loading/schema-transcription"),
+		Key:       keyPtr("form-engine/certification-form-loading/schema-transcription"),
 		FeatureID: "F-79dh3q",
 	}
 	r := NewResolver(tree)
 
-	_, err := r.Resolve(Ref{Noun: store.NounTask, Raw: "form-engine/nrca-form-loading/schema-transcription"})
+	_, err := r.Resolve(Ref{Noun: store.NounTask, Raw: "form-engine/certification-form-loading/schema-transcription"})
 	var ak *ErrAmbiguousKey
 	require.ErrorAs(t, err, &ak)
 	require.Len(t, ak.Candidates, 2)
@@ -267,7 +267,7 @@ func TestResolve_AmbiguousTaskKey(t *testing.T) {
 // (cli-surface.md, "A task's adds its own: <epic-key>/<feature-key>/<task-key>").
 func TestResolveAnswersTheThreeSegmentTaskKey(t *testing.T) {
 	r := NewResolver(fixtureTree())
-	node, err := r.Resolve(Ref{Noun: store.NounTask, Raw: "form-engine/nrca-form-loading/schema-transcription"})
+	node, err := r.Resolve(Ref{Noun: store.NounTask, Raw: "form-engine/certification-form-loading/schema-transcription"})
 	require.NoError(t, err)
 	assert.Equal(t, "T-k3p9w6", node.NodeID())
 	assert.Equal(t, store.NounTask, node.Noun())
@@ -293,19 +293,19 @@ func TestResolve_AmbiguousKey(t *testing.T) {
 	tree := fixtureTree()
 	tree.Features["F-aaaaaa"] = &store.Feature{
 		ID:      "F-aaaaaa",
-		Key:     keyPtr("form-engine/nrca-form-loading"),
+		Key:     keyPtr("form-engine/certification-form-loading"),
 		EpicKey: "form-engine",
 	}
 	r := NewResolver(tree)
 
-	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/nrca-form-loading"})
+	_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/certification-form-loading"})
 	var ak *ErrAmbiguousKey
 	require.ErrorAs(t, err, &ak)
 	require.Len(t, ak.Candidates, 2, "ambiguity carries every candidate")
 
 	ids := []string{ak.Candidates[0].NodeID(), ak.Candidates[1].NodeID()}
 	assert.ElementsMatch(t, []string{"F-79dh3q", "F-aaaaaa"}, ids)
-	assert.Equal(t, "form-engine/nrca-form-loading", ak.Key)
+	assert.Equal(t, "form-engine/certification-form-loading", ak.Key)
 	assert.Equal(t, store.NounFeature, ak.Noun)
 }
 
@@ -315,13 +315,13 @@ func TestResolve_AmbiguousKey(t *testing.T) {
 func TestResolve_AmbiguousCandidatesAreOrderedByID(t *testing.T) {
 	tree := fixtureTree()
 	for _, id := range []string{"F-zzzzzz", "F-aaaaaa", "F-mmmmmm"} {
-		tree.Features[id] = &store.Feature{ID: id, Key: keyPtr("form-engine/nrca-form-loading"), EpicKey: "form-engine"}
+		tree.Features[id] = &store.Feature{ID: id, Key: keyPtr("form-engine/certification-form-loading"), EpicKey: "form-engine"}
 	}
 	r := NewResolver(tree)
 
 	var first string
 	for i := 0; i < 20; i++ {
-		_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/nrca-form-loading"})
+		_, err := r.Resolve(Ref{Noun: store.NounFeature, Raw: "form-engine/certification-form-loading"})
 		var ak *ErrAmbiguousKey
 		require.ErrorAs(t, err, &ak)
 		ids := make([]string, len(ak.Candidates))

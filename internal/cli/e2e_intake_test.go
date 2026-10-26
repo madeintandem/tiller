@@ -59,7 +59,7 @@ const intakeE2EReviewBody = `# Acme field review
    form-engine epic: token rotates on a fixed interval, the
    old token rejected once rotated.
 
-4. The NRCA form loader throws on a null zone value instead of
+4. The certification form loader throws on a null zone value instead of
    rejecting the record cleanly. Add a regression test guarding
    the null-zone parse path; a correction inside the loader's
    existing scope, not new scope.
@@ -73,7 +73,7 @@ const (
 	intakeE2EEpicKey         = "hardening"
 	intakeE2EEpicFeatureKey  = "hardening/csp-headers"
 	intakeE2EFeatureKey      = "form-engine/csrf-token-rotation"
-	intakeE2ETaskKey         = "form-engine/nrca-form-loading/guard-null-zone"
+	intakeE2ETaskKey         = "form-engine/certification-form-loading/guard-null-zone"
 	intakeE2EQuestion        = "Keep or trim the legacy image parsers?"
 	intakeE2EQuestionTitle   = "Legacy image parsers"
 	intakeE2EEpicCite        = ".tiller/feedback/opus-review.md#L5-L7"
@@ -259,7 +259,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.Equal(t, intakeE2EFeatureCite, tree.Features[existingEpicFeatureID].Source,
 		"the feature carries its own op's citation as its own node source")
 
-	preExistingFeatureID := featureIDByKey(t, "form-engine/nrca-form-loading")
+	preExistingFeatureID := featureIDByKey(t, "form-engine/certification-form-loading")
 	require.Equal(t, "proposed", tree.Tasks[taskID].Status)
 	require.Equal(t, preExistingFeatureID, tree.Tasks[taskID].FeatureID,
 		"the task landed on the PRE-EXISTING feature the mapping rules name: task grain stays closed to same-batch parenting")
@@ -381,7 +381,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.NotEmpty(t, aid2)
 
 	_, stderr, code = execCLI(t, "amend", aid2, "--add-task",
-		"form-engine/nrca-form-loading/tighten-request-timeout",
+		"form-engine/certification-form-loading/tighten-request-timeout",
 		"--title", "Tighten the request timeout",
 		"--source", ".tiller/feedback/followup-note.md#L1-L2", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
@@ -444,7 +444,7 @@ func layIntakeE2EShape(t *testing.T) string {
 	for _, argv := range [][]string{
 		{"add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc"},
 		{"approve", "epic", "form-engine", "--contributor", "jc"},
-		{"add", "feature", "form-engine/nrca-form-loading", "--title", "NRCA form loading",
+		{"add", "feature", "form-engine/certification-form-loading", "--title", "Certification form loading",
 			"--change-type", "create", "--contributor", "jc"},
 	} {
 		_, stderr, code := execCLI(t, argv...)
@@ -455,13 +455,13 @@ func layIntakeE2EShape(t *testing.T) string {
 	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
 
 	for _, argv := range [][]string{
-		{"spec", "feature", "form-engine/nrca-form-loading", "--contributor", "jc"},
-		{"approve", "feature", "form-engine/nrca-form-loading", "--contributor", "jc"},
+		{"spec", "feature", "form-engine/certification-form-loading", "--contributor", "jc"},
+		{"approve", "feature", "form-engine/certification-form-loading", "--contributor", "jc"},
 	} {
 		_, stderr, code := execCLI(t, argv...)
 		require.Equalf(t, 0, code, "%v: %s", argv, stderr)
 	}
-	require.Equal(t, "ready", loadCwdTree(t).Features[featureIDByKey(t, "form-engine/nrca-form-loading")].Status,
+	require.Equal(t, "ready", loadCwdTree(t).Features[featureIDByKey(t, "form-engine/certification-form-loading")].Status,
 		"ready, past both the plan gate and the frontier, so the explosion's own draft feature is the frontier's only candidate")
 
 	// Approving the feature's plan also rides its one initial task to ready

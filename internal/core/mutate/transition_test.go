@@ -47,7 +47,7 @@ func addEpicFeature(t testing.TB, root, changeType string) {
 	t.Helper()
 	_, err := mutate.AddEpic(load(t, root), testDeps(), mutate.EpicInput{Key: "form-engine", Title: "Form Engine", Source: "design/04-form-engine.md"})
 	require.NoError(t, err)
-	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: changeType, Source: "design/04-form-engine.md"})
+	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: changeType, Source: "design/04-form-engine.md"})
 	require.NoError(t, err)
 }
 
@@ -55,9 +55,9 @@ func addEpicFeature(t testing.TB, root, changeType string) {
 // one criterion: the prose pair alone, for the fixtures that lay their own tasks.
 func writeFeatureProse(t testing.TB, root string) {
 	t.Helper()
-	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nLoad the NRCA-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))
 }
@@ -74,9 +74,9 @@ func writeStage2Output(t testing.TB, root string) {
 	t.Helper()
 	writeFeatureProse(t, root)
 	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+		Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
-	_, err = mutate.ClaimTask(load(t, root), testDeps(), "form-engine/nrca-form-loading/transcribe-the-schema", "")
+	_, err = mutate.ClaimTask(load(t, root), testDeps(), "form-engine/certification-form-loading/transcribe-the-schema", "")
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "transcribe-the-schema", "## Approach\n\nTranscribe the JSON Schema into the form model.")
 }
@@ -145,7 +145,7 @@ func TestTransitionSpecValidatesFiles(t *testing.T) {
 	t.Parallel()
 	root := layEpicFeature(t)
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 
 	// A freshly added feature has a stub feature.md and no feature.eval.md.
 	_, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "spec"})
@@ -159,7 +159,7 @@ func TestTransitionSpecValidatesFiles(t *testing.T) {
 	// With a real spec and eval the assertion validates draft -> specced.
 	writeStage2Output(t, root)
 	tree = load(t, root)
-	feat = resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat = resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "spec"})
 	require.NoError(t, err)
 	require.Equal(t, "specced", res.Status)
@@ -173,14 +173,14 @@ func TestTransitionSpecValidatesFiles(t *testing.T) {
 func TestTransitionSpecRejectsMalformedEval(t *testing.T) {
 	t.Parallel()
 	root := layEpicFeature(t)
-	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# NRCA form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
+		[]byte("# Certification form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form should feel nice\n---\n\n# Acceptance\n"), 0o644))
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	_, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "spec"})
 	require.Error(t, err)
 
@@ -195,7 +195,7 @@ func TestTransitionIllegalReturnsTypedError(t *testing.T) {
 	t.Parallel()
 	root := layEpicFeature(t)
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 
 	_, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "approve"})
 	require.Error(t, err)
@@ -213,8 +213,8 @@ func TestTransitionStartBlockedByOpenQuestion(t *testing.T) {
 	// Walk the feature to ready.
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	// Record an open question that blocks the feature.
 	writeOpenQuestion(t, root, "Q-zzzzzz", "F-aaaaaa")
@@ -231,7 +231,7 @@ func TestTransitionStartBlockedByOpenQuestion(t *testing.T) {
 
 	// A feature assumption is record-only and does not clear the task's hold.
 	tree = load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "approve", AssumeQuestion: "Q-zzzzzz", Reason: "proceeding under the documented assumption"})
 	require.NoError(t, err)
 	require.Equal(t, "ready", res.Status)
@@ -254,8 +254,8 @@ func TestTaskAssumeRefusalNamesCancel(t *testing.T) {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	err := tryTransition(t, root, testDeps(), store.NounTask, "T-aaaaaa",
 		mutate.TransitionInput{Verb: "start", AssumeQuestion: "Q-zzzzzz", Reason: "assume it"})
@@ -282,10 +282,10 @@ func TestTransitionTaskApproveThenStart(t *testing.T) {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
-	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "approve"})
@@ -301,8 +301,8 @@ func TestTransitionRefreshBasisRecordsAcceptedAgainst(t *testing.T) {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	// The basis is a git_blob taken over committed content, so the feature files
 	// must be under version control before the basis is recorded.
@@ -311,7 +311,7 @@ func TestTransitionRefreshBasisRecordsAcceptedAgainst(t *testing.T) {
 	gitRunM(t, root, "branch", "-M", "main")
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Transition(tree, testDeps(), feat, mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
 	require.NoError(t, err)
 	require.Equal(t, "ready", res.Status, "refresh-basis does not change lifecycle state")
@@ -319,7 +319,7 @@ func TestTransitionRefreshBasisRecordsAcceptedAgainst(t *testing.T) {
 	f := load(t, root).Features["F-aaaaaa"]
 	require.Equal(t, store.KindGitBlob, f.AcceptedAgainst.Spec.Kind)
 	require.True(t, strings.HasPrefix(f.AcceptedAgainst.Spec.Value, "git:"))
-	require.Equal(t, filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md"), f.AcceptedAgainst.Spec.Path)
+	require.Equal(t, filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md"), f.AcceptedAgainst.Spec.Path)
 	require.Equal(t, store.KindGitBlob, f.AcceptedAgainst.Eval.Kind)
 }
 
@@ -338,8 +338,8 @@ func TestRefreshBasisRefusesTerminalFeatureAndTask(t *testing.T) {
 			name:     "done feature",
 			noun:     store.NounFeature,
 			status:   "done",
-			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml"),
-			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md"),
+			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml"),
+			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md"),
 			node: func(tree *store.Tree) store.Node {
 				return tree.Features["F-aaaaaa"]
 			},
@@ -351,8 +351,8 @@ func TestRefreshBasisRefusesTerminalFeatureAndTask(t *testing.T) {
 			name:     "cancelled feature",
 			noun:     store.NounFeature,
 			status:   "cancelled",
-			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml"),
-			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.md"),
+			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml"),
+			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.md"),
 			node: func(tree *store.Tree) store.Node {
 				return tree.Features["F-aaaaaa"]
 			},
@@ -364,8 +364,8 @@ func TestRefreshBasisRefusesTerminalFeatureAndTask(t *testing.T) {
 			name:     "done task",
 			noun:     store.NounTask,
 			status:   "done",
-			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "transcribe-the-schema", "task.yml"),
-			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "transcribe-the-schema", "task.md"),
+			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "transcribe-the-schema", "task.yml"),
+			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "transcribe-the-schema", "task.md"),
 			node: func(tree *store.Tree) store.Node {
 				return tree.Tasks["T-aaaaaa"]
 			},
@@ -377,8 +377,8 @@ func TestRefreshBasisRefusesTerminalFeatureAndTask(t *testing.T) {
 			name:     "cancelled task",
 			noun:     store.NounTask,
 			status:   "cancelled",
-			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "transcribe-the-schema", "task.yml"),
-			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading", "tasks", "transcribe-the-schema", "task.md"),
+			stateRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "transcribe-the-schema", "task.yml"),
+			proseRel: filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "transcribe-the-schema", "task.md"),
 			node: func(tree *store.Tree) store.Node {
 				return tree.Tasks["T-aaaaaa"]
 			},
@@ -436,7 +436,7 @@ func TestRefreshBasisExpiresAnAttestationWhenTheEvalContractChanges(t *testing.T
 	})
 	require.NoError(t, err)
 
-	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.eval.md")
+	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.eval.md")
 	data, err := os.ReadFile(evalPath)
 	require.NoError(t, err)
 	changed := strings.Replace(string(data), "A reviewer confirms the rendered layout matches the source", "A reviewer confirms the changed layout matches the source", 1)
@@ -489,7 +489,7 @@ func TestRefreshBasisPreservesAnAttestationWhenTheEvalContractIsUnchanged(t *tes
 func TestRefreshBasisRejectsMalformedEvalContract(t *testing.T) {
 	t.Parallel()
 	root := layActiveFeatureGitWithEval(t, "true", "true", requiredManualEvalMD)
-	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.eval.md")
+	evalPath := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.eval.md")
 	require.NoError(t, os.WriteFile(evalPath, []byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: Missing a binding\n---\n"), 0o644))
 	before := load(t, root).Features["F-aaaaaa"].AcceptedAgainst
 
@@ -574,7 +574,7 @@ func TestSpecFeatureRequiresATaskWithARealImplementationSpec(t *testing.T) {
 
 	// A task whose task.md is still the generated stub is no more written.
 	_, addErr := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/only-task", Title: "Only task"})
+		Key: "form-engine/certification-form-loading/only-task", Title: "Only task"})
 	require.NoError(t, addErr)
 	err = trySpec(t, root)
 	require.ErrorAs(t, err, &inc, "a stub task.md is still not written yet")
@@ -584,7 +584,7 @@ func TestSpecFeatureRequiresATaskWithARealImplementationSpec(t *testing.T) {
 
 	// With the implementation spec written, the whole stage validates.
 	writeTaskSpec(t, root, "only-task", "## Approach\n\nParse the schema, emit the form.")
-	res := driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	res := driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 	require.Equal(t, "specced", res.Status)
 }
 
@@ -612,14 +612,14 @@ func TestSpecFeatureContractFaultsStayMisuse(t *testing.T) {
 		for _, tasks := range []string{"with the explosion written", "with no tasks yet"} {
 			t.Run(tc.name+", "+tasks, func(t *testing.T) {
 				root := layEpicFeature(t)
-				dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+				dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 				require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-					[]byte("# NRCA form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
+					[]byte("# Certification form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
 				require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 					[]byte("---\nnode: F-aaaaaa\n"+tc.criteria+"\n---\n\n# Acceptance\n"), 0o644))
 				if tasks == "with the explosion written" {
 					_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-						Key: "form-engine/nrca-form-loading/only-task", Title: "Only task"})
+						Key: "form-engine/certification-form-loading/only-task", Title: "Only task"})
 					require.NoError(t, err)
 					writeTaskSpec(t, root, "only-task", "## Approach\n\nParse the schema.")
 				}
@@ -649,18 +649,18 @@ func TestSpecFeatureIgnoresCancelledTasks(t *testing.T) {
 	_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeFeatureProse(t, root)
 
 	// Two cancelled tasks, one carrying a fully written spec and one still a
 	// stub, so both halves have something to be wrong about.
 	added, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/dropped", Title: "Dropped"})
+		Key: "form-engine/certification-form-loading/dropped", Title: "Dropped"})
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "dropped", "## Approach\n\nA fully written spec for work that was then cancelled.")
 	stubbed, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/also-dropped", Title: "Also dropped"})
+		Key: "form-engine/certification-form-loading/also-dropped", Title: "Also dropped"})
 	require.NoError(t, err)
 	for _, id := range []string{added.ID, stubbed.ID} {
 		driveWith(t, root, deps, store.NounTask, id, mutate.TransitionInput{Verb: "cancel", Reason: "subsumed"})
@@ -680,7 +680,7 @@ func TestSpecFeatureIgnoresCancelledTasks(t *testing.T) {
 
 	// A live task beside it is what the answer is about, and what satisfies it.
 	live, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/kept", Title: "Kept"})
+		Key: "form-engine/certification-form-loading/kept", Title: "Kept"})
 	require.NoError(t, err)
 	err = trySpec(t, root)
 	require.ErrorAs(t, err, &inc)
@@ -688,11 +688,11 @@ func TestSpecFeatureIgnoresCancelledTasks(t *testing.T) {
 		"only the live task's spec is asked for")
 
 	writeTaskSpec(t, root, "kept", "## Approach\n\nThe work that is actually happening.")
-	res := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	res := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 	require.Equal(t, "specced", res.Status)
 
 	// And the plan gate moves the live task alone: the cancelled one is terminal.
-	plan := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	plan := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	require.Len(t, plan.Tasks, 1, "the gate moves the live task, not the cancelled one")
 	require.Equal(t, live.ID, plan.Tasks[0].ID)
 	require.Equal(t, "cancelled", load(t, root).Tasks[added.ID].Status, "the cancelled task is left where the human put it")
@@ -721,7 +721,7 @@ func TestSpecRefusesReplaceWithNoSurface(t *testing.T) {
 				"the refusal names the writer that fixes it")
 			require.Contains(t, err.Error(), "--surface",
 				"the refusal names the flag that fixes it")
-			require.Contains(t, err.Error(), "form-engine/nrca-form-loading",
+			require.Contains(t, err.Error(), "form-engine/certification-form-loading",
 				"the refusal names the feature by its key, ready to paste into the command")
 			require.Equal(t, "draft", load(t, root).Features["F-aaaaaa"].Status,
 				"a refused spec must not move the feature")
@@ -803,13 +803,13 @@ func TestSpecEarlierChecksOutrankMissingSurface(t *testing.T) {
 
 		t.Run(ct+", malformed contract outranks missing surface", func(t *testing.T) {
 			root := layEpicFeatureCT(t, ct)
-			dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+			dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 			require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-				[]byte("# NRCA form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
+				[]byte("# Certification form loading\n\nReal spec prose, no longer a stub.\n"), 0o644))
 			require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 				[]byte("---\nnode: F-aaaaaa\ncriteria: []\n---\n\n# Acceptance\n"), 0o644))
 			_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
-				Key: "form-engine/nrca-form-loading/only-task", Title: "Only task"})
+				Key: "form-engine/certification-form-loading/only-task", Title: "Only task"})
 			require.NoError(t, err)
 			writeTaskSpec(t, root, "only-task", "## Approach\n\nParse the schema.")
 			// Checks 1 and 3 are satisfied (real prose, a written task spec)
@@ -837,7 +837,7 @@ func TestApproveFeatureApprovesThePlanAndPinsEveryBasis(t *testing.T) {
 	root := laySpeccedPlan(t, deps, "alfa", "zulu")
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	res, err := mutate.Transition(tree, deps, feat, mutate.TransitionInput{Verb: "approve"})
 	require.NoError(t, err)
 	require.Equal(t, "ready", res.Status)
@@ -857,7 +857,7 @@ func TestApproveFeatureApprovesThePlanAndPinsEveryBasis(t *testing.T) {
 	for _, tk := range after.FeatureTasks[f.ID] {
 		require.Equal(t, "ready", tk.Status, "initial tasks flip in the same act")
 		require.NotNil(t, tk.AcceptedAgainst, "task.md is pinned exactly as the feature spec is")
-		rel := filepath.Join(store.TaskRelDir("form-engine", "nrca-form-loading", localKeyT(*tk.Key)), store.TaskProseFile)
+		rel := filepath.Join(store.TaskRelDir("form-engine", "certification-form-loading", localKeyT(*tk.Key)), store.TaskProseFile)
 		require.Equal(t, store.KindGitBlob, tk.AcceptedAgainst.Spec.Kind)
 		require.Equal(t, rel, tk.AcceptedAgainst.Spec.Path)
 		require.Equal(t, blobOf(t, root, rel), tk.AcceptedAgainst.Spec.Value)
@@ -880,7 +880,7 @@ func TestApproveFeaturePlanGateReadsStatusNotProse(t *testing.T) {
 	_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeFeatureProse(t, root)
 
@@ -888,13 +888,13 @@ func TestApproveFeaturePlanGateReadsStatusNotProse(t *testing.T) {
 	// it, so the stub under test is the real one rather than a retyped copy.
 	for _, key := range []string{"alfa", "zulu"} {
 		_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-			Key: "form-engine/nrca-form-loading/" + key, Title: "Task " + key})
+			Key: "form-engine/certification-form-loading/" + key, Title: "Task " + key})
 		require.NoError(t, err)
 	}
 	writeTaskSpec(t, root, "alfa", "## Approach\n\nThe one written spec, which is the bar.")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 
-	res := driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	res := driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	require.Len(t, res.Tasks, 2, "the gate moves both, the stub included")
 
 	for _, tk := range load(t, root).Tasks {
@@ -913,7 +913,7 @@ func TestApproveFeatureRecordsOneEventPerTransition(t *testing.T) {
 	root := laySpeccedPlan(t, deps, "alfa", "zulu")
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	_, err := mutate.Transition(tree, deps, feat, mutate.TransitionInput{Verb: "approve"})
 	require.NoError(t, err)
 
@@ -954,7 +954,7 @@ func TestApproveFeatureLeavesNothingHalfApplied(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(eventDir, 0o755) })
 
 	tree := load(t, root)
-	feat := resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading")
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading")
 	_, err := mutate.Transition(tree, deps, feat, mutate.TransitionInput{Verb: "approve"})
 	require.Error(t, err, "a task file that cannot be written fails the whole gate")
 
@@ -984,15 +984,15 @@ func TestApproveTaskPinsItsOwnBasisAndRefreshRepins(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	added, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/mid-flight", Title: "Mid flight"})
+		Key: "form-engine/certification-form-loading/mid-flight", Title: "Mid flight"})
 	require.NoError(t, err)
 	require.Equal(t, "proposed", added.Status, "a task added mid-flight lands proposed")
 	writeTaskSpec(t, root, "mid-flight", "## Approach\n\nAdd the missing validator.")
 
-	rel := filepath.Join(store.TaskRelDir("form-engine", "nrca-form-loading", "mid-flight"), store.TaskProseFile)
+	rel := filepath.Join(store.TaskRelDir("form-engine", "certification-form-loading", "mid-flight"), store.TaskProseFile)
 	driveWith(t, root, deps, store.NounTask, added.ID, mutate.TransitionInput{Verb: "approve"})
 	tk := load(t, root).Tasks[added.ID]
 	require.Equal(t, "ready", tk.Status)
@@ -1030,7 +1030,7 @@ func layEpicFeatureGit(t *testing.T) string {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 
 	gitInitM(t, root)
 	gitCommitAllM(t, root, "lay tree")
@@ -1043,7 +1043,7 @@ func layEpicFeatureGit(t *testing.T) string {
 func layApprovedFeatureGit(t *testing.T) string {
 	t.Helper()
 	root := layEpicFeatureGit(t)
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	return root
 }
 
@@ -1236,7 +1236,7 @@ func TestTaskBasisGuardRefusesStartCheckAndSubmit(t *testing.T) {
 		t.Run(tc.verb, func(t *testing.T) {
 			deps := seqDeps()
 			root := laySpeccedPlan(t, deps, "alfa")
-			driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+			driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 			taskID := onlyTaskID(t, load(t, root))
 			for _, v := range tc.drive {
@@ -1267,13 +1267,13 @@ func TestTaskBasisGuardRefusesStartCheckAndSubmit(t *testing.T) {
 func TestBasisGuardTreatsADeletedPinAsDrift(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct{ name, rel, drifted, noun string }{
-		{"the task's own spec", filepath.Join(store.TaskRelDir("form-engine", "nrca-form-loading", "alfa")), store.TaskProseFile, store.NounTask},
+		{"the task's own spec", filepath.Join(store.TaskRelDir("form-engine", "certification-form-loading", "alfa")), store.TaskProseFile, store.NounTask},
 		{"the feature's spec", featureRelDirT, "feature.md", store.NounFeature},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			deps := seqDeps()
 			root := laySpeccedPlan(t, deps, "alfa")
-			driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+			driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 			taskID := onlyTaskID(t, load(t, root))
 
@@ -1299,7 +1299,7 @@ func TestLegalityIsSettledBeforeTheGuards(t *testing.T) {
 	t.Run("task, drifted basis and an illegal verb", func(t *testing.T) {
 		deps := seqDeps()
 		root := laySpeccedPlan(t, deps, "alfa")
-		driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+		driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 		taskID := onlyTaskID(t, load(t, root))
 		writeTaskSpec(t, root, "alfa", "## Approach\n\nEdited after approval.")
@@ -1320,7 +1320,7 @@ func TestLegalityIsSettledBeforeTheGuards(t *testing.T) {
 		writeOpenQuestion(t, root, "Q-zzzzzz", "F-aaaaaa")
 
 		// Approval is illegal before specification, even with a question hold.
-		err := tryTransition(t, root, testDeps(), store.NounFeature, "form-engine/nrca-form-loading",
+		err := tryTransition(t, root, testDeps(), store.NounFeature, "form-engine/certification-form-loading",
 			mutate.TransitionInput{Verb: "approve"})
 		var ill *lifecycle.IllegalTransitionError
 		require.ErrorAs(t, err, &ill)
@@ -1337,14 +1337,14 @@ func TestTaskSubmitRefusesOnFeatureBasisDrift(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	taskID := onlyTaskID(t, load(t, root))
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "check"})
 
 	require.NoError(t, os.WriteFile(filepath.Join(root, featureRelDirT, "feature.md"),
-		[]byte("# NRCA form loading\n\nThe spec changed after the human approved it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nThe spec changed after the human approved it.\n"), 0o644))
 
 	pr := 41
 	err := tryTransition(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "submit", PR: &pr})
@@ -1454,7 +1454,7 @@ func TestSubmitActiveBasisOutranksUnreviewedAssumption(t *testing.T) {
 
 // featureRelDirT is the fixture feature's repo-relative folder, the one every
 // test in this file lays its epic and feature under.
-var featureRelDirT = filepath.Join(".tiller", "epics", "form-engine", "features", "nrca-form-loading")
+var featureRelDirT = filepath.Join(".tiller", "epics", "form-engine", "features", "certification-form-loading")
 
 // seqDeps gives every node and event in the multi-node plan gate a stable,
 // distinct id.
@@ -1477,18 +1477,18 @@ func laySpeccedPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 	_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeFeatureProse(t, root)
 	for _, key := range taskKeys {
 		_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-			Key: "form-engine/nrca-form-loading/" + key, Title: "Task " + key})
+			Key: "form-engine/certification-form-loading/" + key, Title: "Task " + key})
 		require.NoError(t, err)
-		_, err = mutate.ClaimTask(load(t, root), deps, "form-engine/nrca-form-loading/"+key, "")
+		_, err = mutate.ClaimTask(load(t, root), deps, "form-engine/certification-form-loading/"+key, "")
 		require.NoError(t, err)
 		writeTaskSpec(t, root, key, "## Approach\n\nThe implementation spec for "+key+".")
 	}
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 	return root
 }
 
@@ -1502,13 +1502,13 @@ func layDraftPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 	_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	for _, key := range taskKeys {
 		_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-			Key: "form-engine/nrca-form-loading/" + key, Title: "Task " + key})
+			Key: "form-engine/certification-form-loading/" + key, Title: "Task " + key})
 		require.NoError(t, err)
-		_, err = mutate.ClaimTask(load(t, root), deps, "form-engine/nrca-form-loading/"+key, "")
+		_, err = mutate.ClaimTask(load(t, root), deps, "form-engine/certification-form-loading/"+key, "")
 		require.NoError(t, err)
 		writeTaskSpec(t, root, key, "## Approach\n\nThe implementation spec for "+key+".")
 	}
@@ -1520,7 +1520,7 @@ func layDraftPlan(t *testing.T, deps mutate.Deps, taskKeys ...string) string {
 // bite on what is there, not only on what today's verbs can produce.
 func setTaskStatus(t *testing.T, root, taskKey, from, to string) {
 	t.Helper()
-	path := filepath.Join(root, store.TaskRelDir("form-engine", "nrca-form-loading", taskKey), store.TaskStateFile)
+	path := filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", taskKey), store.TaskStateFile)
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	var task store.Task
@@ -1610,9 +1610,9 @@ func TestApproveTaskUnderReadyFeatureStillWorks(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{
-		Key: "form-engine/nrca-form-loading/bravo", Title: "Task bravo"})
+		Key: "form-engine/certification-form-loading/bravo", Title: "Task bravo"})
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "bravo", "## Approach\n\nA late addition.")
 	tree := load(t, root)
@@ -1682,7 +1682,7 @@ func TestApproveTaskRefusesUnderCancelledFeature(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := layDraftPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "scope cut"})
 	taskID := onlyTaskID(t, load(t, root))
 
@@ -1702,11 +1702,11 @@ func TestStartTaskRefusesUnderFeatureCancelledFromActive(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa", "starter")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
-	driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/starter", mutate.TransitionInput{Verb: "start"})
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/starter", mutate.TransitionInput{Verb: "start"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "priorities moved"})
-	taskID := taskAtKey(t, load(t, root), "form-engine/nrca-form-loading/alfa").ID
+	taskID := taskAtKey(t, load(t, root), "form-engine/certification-form-loading/alfa").ID
 
 	err := tryTransition(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
 
@@ -1721,12 +1721,12 @@ func TestSubmitTaskRefusesUnderCancelledFeature(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	taskID := onlyTaskID(t, load(t, root))
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "check"})
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "priorities moved"})
 
 	pr := 35
@@ -1743,11 +1743,11 @@ func TestCheckTaskRefusesUnderCancelledFeature(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	taskID := onlyTaskID(t, load(t, root))
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "priorities moved"})
 	tree := load(t, root)
 	task := resolveNode(t, tree, store.NounTask, taskID)
@@ -1766,7 +1766,7 @@ func TestCancelTaskStillWorksUnderCancelledFeature(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := layDraftPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "scope cut"})
 	taskID := onlyTaskID(t, load(t, root))
 
@@ -1781,7 +1781,7 @@ func TestApproveRefreshBasisBypassesCancelledParent(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := layDraftPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "scope cut"})
 	taskID := onlyTaskID(t, load(t, root))
 
@@ -1815,7 +1815,7 @@ func TestSpecFeatureRefusesUnderCancelledEpic(t *testing.T) {
 	driveWith(t, root, deps, store.NounEpic, "form-engine",
 		mutate.TransitionInput{Verb: "cancel", Reason: "programme killed"})
 
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 
 	var pe *mutate.ParentEpicRetiredError
@@ -1839,7 +1839,7 @@ func TestSpecFeatureRefusesUnderArchivedEpic(t *testing.T) {
 	root := laySpeccedPlan(t, deps, "alfa")
 	setEpicStatus(t, root, "form-engine", "draft", "archived")
 
-	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	err := tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve"})
 
 	var pe *mutate.ParentEpicRetiredError
@@ -1857,11 +1857,11 @@ func TestTaskVerbsRefuseUnderLiveFeatureCancelledEpic(t *testing.T) {
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa", "starter")
 	driveWith(t, root, deps, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
-	driveWith(t, root, deps, store.NounTask, "form-engine/nrca-form-loading/starter", mutate.TransitionInput{Verb: "start"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounTask, "form-engine/certification-form-loading/starter", mutate.TransitionInput{Verb: "start"})
 	driveWith(t, root, deps, store.NounEpic, "form-engine",
 		mutate.TransitionInput{Verb: "cancel", Reason: "programme killed"})
-	taskID := taskAtKey(t, load(t, root), "form-engine/nrca-form-loading/alfa").ID
+	taskID := taskAtKey(t, load(t, root), "form-engine/certification-form-loading/alfa").ID
 
 	err := tryTransition(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
 
@@ -1883,7 +1883,7 @@ func TestSubmitTaskRefusesUnderRetiredEpicLiveFeature(t *testing.T) {
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
 	driveWith(t, root, deps, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	taskID := onlyTaskID(t, load(t, root))
 	driveWith(t, root, deps, store.NounTask, taskID, mutate.TransitionInput{Verb: "start"})
@@ -1907,7 +1907,7 @@ func TestFeatureArmWinsOverEpicArmForTasks(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := layDraftPlan(t, deps, "alfa")
-	driveWith(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "scope cut"})
 	driveWith(t, root, deps, store.NounEpic, "form-engine",
 		mutate.TransitionInput{Verb: "cancel", Reason: "programme killed"})
@@ -1971,7 +1971,7 @@ func TestCancelFeatureStillWorksUnderCancelledEpic(t *testing.T) {
 	driveWith(t, root, deps, store.NounEpic, "form-engine",
 		mutate.TransitionInput{Verb: "cancel", Reason: "programme killed"})
 
-	require.NoError(t, tryTransition(t, root, deps, store.NounFeature, "form-engine/nrca-form-loading",
+	require.NoError(t, tryTransition(t, root, deps, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "cancel", Reason: "epic was cancelled"}))
 }
 
@@ -1979,7 +1979,7 @@ func TestCancelFeatureStillWorksUnderCancelledEpic(t *testing.T) {
 // the non-stub state the merged specify stage requires.
 func writeTaskSpec(t testing.TB, root, taskKey, body string) {
 	t.Helper()
-	path := filepath.Join(root, store.TaskRelDir("form-engine", "nrca-form-loading", taskKey), store.TaskProseFile)
+	path := filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", taskKey), store.TaskProseFile)
 	require.NoError(t, os.WriteFile(path, []byte("# "+taskKey+"\n\n"+body+"\n"), 0o644))
 }
 
@@ -1987,7 +1987,7 @@ func writeTaskSpec(t testing.TB, root, taskKey, body string) {
 // the shape the blocked-versus-misuse assertions read.
 func trySpec(t *testing.T, root string) error {
 	t.Helper()
-	return tryTransition(t, root, testDeps(), store.NounFeature, "form-engine/nrca-form-loading",
+	return tryTransition(t, root, testDeps(), store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "spec"})
 }
 
@@ -2180,8 +2180,8 @@ func TestTransitionStartTaskActivatesFeatureWithoutAggregateBranch(t *testing.T)
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	res := driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 	require.Equal(t, "in_progress", res.Status)
@@ -2199,12 +2199,12 @@ func TestTransitionStartKeepsAnExistingBranch(t *testing.T) {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	_, err := mutate.Configure(load(t, root), testDeps(), mutate.ConfigureInput{
-		Noun: store.NounFeature, Key: "form-engine/nrca-form-loading", ReviewGrain: "feature"})
+		Noun: store.NounFeature, Key: "form-engine/certification-form-loading", ReviewGrain: "feature"})
 	require.NoError(t, err)
-	setFeatureBranchOnDisk(t, root, "form-engine", "nrca-form-loading", "wip/hand-cut")
+	setFeatureBranchOnDisk(t, root, "form-engine", "certification-form-loading", "wip/hand-cut")
 
 	res := driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 	require.Equal(t, "wip/hand-cut", res.AggregateBranch)
@@ -2220,17 +2220,17 @@ func TestTransitionBranchOnlyOnStart(t *testing.T) {
 
 	res := driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
 	require.Empty(t, res.Branch, "an epic carries no branch")
-	res = driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
+	res = driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
 	require.Empty(t, res.Branch, "spec records no branch")
-	res = driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	res = driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	require.Empty(t, res.Branch, "approve records no branch")
 
-	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/nrca-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
+	_, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{Key: "form-engine/certification-form-loading/transcribe-the-schema", Title: "Transcribe the schema"})
 	require.NoError(t, err)
 	res = driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "approve"})
 	require.Empty(t, res.Branch, "approval does not start a branch")
 	res = driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
-	require.Equal(t, "tiller/form-engine/nrca-form-loading/transcribe-the-schema", res.Branch)
+	require.Equal(t, "tiller/form-engine/certification-form-loading/transcribe-the-schema", res.Branch)
 
 	// approve --refresh-basis returns without a state move, off an active feature
 	// whose branch is on record: the branch belongs to the start, not to every
@@ -2239,7 +2239,7 @@ func TestTransitionBranchOnlyOnStart(t *testing.T) {
 	gitInitM(t, root)
 	gitCommitAllM(t, root, "lay tree")
 	gitRunM(t, root, "branch", "-M", "main")
-	res = driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading",
+	res = driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", RefreshBasis: true})
 	require.Empty(t, res.Branch, "refresh-basis records no branch")
 
@@ -2265,13 +2265,13 @@ func TestTransitionAssumeQuestionOnActiveFeatureNamesNoBranch(t *testing.T) {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 
 	writeOpenQuestion(t, root, "Q-zzzzzz", "F-aaaaaa")
-	res := driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading",
+	res := driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading",
 		mutate.TransitionInput{Verb: "approve", AssumeQuestion: "Q-zzzzzz", Reason: "assume the 2025 revision"})
 	require.True(t, res.Changed, "recording the assumption is a real write, not the no-op early return")
 	require.Equal(t, "active", res.Status, "the feature was already active; the state did not move")
@@ -2312,7 +2312,7 @@ func TestResumeFeatureIsMisuse(t *testing.T) {
 	t.Parallel()
 	root := layActiveFeature(t)
 	_, err := mutate.Transition(load(t, root), testDeps(),
-		resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading"),
+		resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading"),
 		mutate.TransitionInput{Verb: "resume", Reason: "review asked for changes"})
 	requireTaskOnlyMisuse(t, err, "resume")
 	require.Equal(t, "active", load(t, root).Features["F-aaaaaa"].Status,
@@ -2335,7 +2335,7 @@ func TestSubmitFeatureNoLongerSpecialCasedInTheLifecycleEngine(t *testing.T) {
 	root := layActiveFeature(t)
 	pr := 41
 	_, err := mutate.Transition(load(t, root), testDeps(),
-		resolveNode(t, load(t, root), store.NounFeature, "form-engine/nrca-form-loading"),
+		resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading"),
 		mutate.TransitionInput{Verb: "submit", PR: &pr})
 	require.Error(t, err)
 	var ill *lifecycle.IllegalTransitionError
@@ -2367,8 +2367,8 @@ func layActiveFeature(t *testing.T) string {
 	root := layEpicFeature(t)
 	writeStage2Output(t, root)
 	driveTo(t, root, store.NounEpic, "form-engine", mutate.TransitionInput{Verb: "approve"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveTo(t, root, store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveTo(t, root, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	driveTo(t, root, store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 	return root
 }
@@ -2417,7 +2417,7 @@ func TestEveryTaskInATreeLoadsRoundTripsAndResolvesBothWays(t *testing.T) {
 	require.NoError(t, err)
 
 	want := map[string]string{} // canonical task key -> title
-	for _, featureKey := range []string{"form-engine/nrca-form-loading", "form-engine/audit-export", "reporting/rollups"} {
+	for _, featureKey := range []string{"form-engine/certification-form-loading", "form-engine/audit-export", "reporting/rollups"} {
 		_, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{Key: featureKey, ChangeType: "create"})
 		require.NoError(t, err)
 		var firstLocal string
@@ -2605,11 +2605,11 @@ func layClaimGateTask(t *testing.T, state string) (root string, deps mutate.Deps
 	_, err := mutate.AddEpic(load(t, root), depsAs(deps, "jc"), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), depsAs(deps, "jc"), mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeFeatureProse(t, root)
 	_, err = mutate.AddTask(load(t, root), depsAs(deps, "jc"),
-		mutate.TaskInput{Key: "form-engine/nrca-form-loading/alfa", Title: "Alfa"})
+		mutate.TaskInput{Key: "form-engine/certification-form-loading/alfa", Title: "Alfa"})
 	require.NoError(t, err)
 	writeTaskSpec(t, root, "alfa", "## Approach\n\nDo the work.")
 	_, err = mutate.ClaimTask(load(t, root), depsAs(deps, "jc"), "T-000001", "")
@@ -2620,8 +2620,8 @@ func layClaimGateTask(t *testing.T, state string) (root string, deps mutate.Deps
 	// specced -> ready move (approveFeaturePlan), so there is no separate
 	// task-grain approve to drive, and none would be legal here: "ready" is
 	// already the task's state once the feature crosses the gate.
-	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	if state == "ready" {
 		return root, deps
 	}
@@ -2709,13 +2709,13 @@ func layPatClaimedActiveFeature(t *testing.T) (root string, deps mutate.Deps) {
 	_, err := mutate.AddEpic(load(t, root), depsAs(deps, "jc"), mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
 	require.NoError(t, err)
 	_, err = mutate.AddFeature(load(t, root), depsAs(deps, "jc"), mutate.FeatureInput{
-		Key: "form-engine/nrca-form-loading", Title: "NRCA form loading", ChangeType: "create"})
+		Key: "form-engine/certification-form-loading", Title: "Certification form loading", ChangeType: "create"})
 	require.NoError(t, err)
 	writeStage2Output(t, root)
 	_, err = mutate.ReassignTask(load(t, root), depsAs(deps, "jc"), "T-aaaaaa", "pat", "Pat implements this task")
 	require.NoError(t, err)
-	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "spec"})
-	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/nrca-form-loading", mutate.TransitionInput{Verb: "approve"})
+	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "spec"})
+	driveWith(t, root, depsAs(deps, "jc"), store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	driveWith(t, root, depsAs(deps, "pat"), store.NounTask, "T-aaaaaa", mutate.TransitionInput{Verb: "start"})
 	return root, deps
 }
@@ -2725,7 +2725,7 @@ func TestApproveTaskImmuneToAnotherOwnersClaim(t *testing.T) {
 	t.Parallel()
 	root, deps := layPatClaimedActiveFeature(t)
 	added, err := mutate.AddTask(load(t, root), depsAs(deps, "jc"),
-		mutate.TaskInput{Key: "form-engine/nrca-form-loading/mid-flight", Title: "Mid flight"})
+		mutate.TaskInput{Key: "form-engine/certification-form-loading/mid-flight", Title: "Mid flight"})
 	require.NoError(t, err)
 	_, err = mutate.ClaimTask(load(t, root), depsAs(deps, "pat"), added.ID, "")
 	require.NoError(t, err)
@@ -2759,7 +2759,7 @@ func TestAttestImmuneToAnotherOwnersClaim(t *testing.T) {
 	root, deps := layPatClaimedActiveFeature(t)
 	tree := load(t, root)
 	res, err := mutate.Attest(tree, depsAs(deps, "jc"),
-		resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading"),
+		resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading"),
 		mutate.AttestInput{Gate: "code_review", Status: store.GateStatusPass})
 	require.NoError(t, err, "attest must succeed for jc despite pat holding the claim")
 	require.True(t, res.Satisfied)
@@ -2771,7 +2771,7 @@ func TestEvalImmuneToAnotherOwnersClaim(t *testing.T) {
 	root, deps := layPatClaimedActiveFeature(t)
 	tree := load(t, root)
 	_, err := mutate.Eval(tree, depsAs(deps, "jc"), stubRev(root),
-		resolveNode(t, tree, store.NounFeature, "form-engine/nrca-form-loading"), mutate.EvalInput{})
+		resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading"), mutate.EvalInput{})
 	require.NoError(t, err, "eval must succeed for jc despite pat holding the claim")
 }
 

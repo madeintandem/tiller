@@ -1,7 +1,7 @@
 // Vitest/RTL coverage for App's own <Routes>, not any one view: whether a URL
 // reaches a page at all. A console row now shows a task's three-segment key
 // and hides its id, but every link addresses by id, so a key-addressed URL
-// like /node/task/form-engine/nrca-form-loading/transcribe-the-schema is a
+// like /node/task/form-engine/certification-form-loading/transcribe-the-schema is a
 // four-segment path against a route that only ever took three
 // (/node/:noun/:addr). That mismatch renders NOTHING: no loading state, no
 // error, the header and nav draw and the body is empty. This file pins the
@@ -51,11 +51,11 @@ function taskPage(overrides: Partial<NodePage> = {}): NodePage {
     node: {
       noun: "task",
       id: "T-h4k2wq",
-      key: "form-engine/nrca-form-loading/transcribe-the-schema",
+      key: "form-engine/certification-form-loading/transcribe-the-schema",
       title: "Transcribe the schema",
       status: "ready",
     },
-    ref: "form-engine/nrca-form-loading/transcribe-the-schema (T-h4k2wq)",
+    ref: "form-engine/certification-form-loading/transcribe-the-schema (T-h4k2wq)",
     prose: null,
     relationships: {},
     backlinks: { groups: [], count: 0, diagnostics: [], complete: true },
@@ -212,12 +212,12 @@ describe("App routing: a task's key, not just its id, addresses the node page", 
   it("reaches the node page on a four-segment, key-addressed task URL", async () => {
     stubFetch({
       "/api/status": summary(),
-      "/api/node/task/form-engine/nrca-form-loading/transcribe-the-schema": taskPage(),
+      "/api/node/task/form-engine/certification-form-loading/transcribe-the-schema": taskPage(),
     });
 
     render(
       <MemoryRouter
-        initialEntries={["/node/task/form-engine/nrca-form-loading/transcribe-the-schema"]}
+        initialEntries={["/node/task/form-engine/certification-form-loading/transcribe-the-schema"]}
       >
         <App />
       </MemoryRouter>,

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	featureMDPath = ".tiller/epics/form-engine/features/nrca-form-loading/feature.md"
-	featureEvalMD = ".tiller/epics/form-engine/features/nrca-form-loading/feature.eval.md"
+	featureMDPath = ".tiller/epics/form-engine/features/certification-form-loading/feature.md"
+	featureEvalMD = ".tiller/epics/form-engine/features/certification-form-loading/feature.eval.md"
 	epicMDPath    = ".tiller/epics/form-engine/epic.md"
 )
 
@@ -45,7 +45,7 @@ func layScratchCheckoutAfterMerge(t *testing.T) (string, string) {
 	writeRel(t, root, "src/a.swift", "struct A {}\n")
 	writeRel(t, root, "chrome.swift", "struct Chrome {}\n")
 	commitPaths(t, root, "surfaces on main", "src", "chrome.swift")
-	setFeatureSurfacePath(t, root, "form-engine", "nrca-form-loading", "src", "chrome.swift")
+	setFeatureSurfacePath(t, root, "form-engine", "certification-form-loading", "src", "chrome.swift")
 	setEpicSurfacePath(t, root, "form-engine", "src")
 	mainTip := gitOutM(t, root, "rev-parse", "main")
 
@@ -211,7 +211,7 @@ func TestSyncSkipsAPathTheIntegrationCommitLacks(t *testing.T) {
 	root, _ := layScratchCheckoutAfterMerge(t)
 	writeRel(t, root, "scratch-only.swift", "struct ScratchOnly {}\n")
 	commitPaths(t, root, "scratch-only surface", "scratch-only.swift")
-	setFeatureSurfacePath(t, root, "form-engine", "nrca-form-loading", "scratch-only.swift")
+	setFeatureSurfacePath(t, root, "form-engine", "certification-form-loading", "scratch-only.swift")
 
 	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
 	require.NoError(t, err)
@@ -281,7 +281,7 @@ func TestSyncRefusesAnIntegrationThatResolvesToNoCommit(t *testing.T) {
 // committed to integration.
 func setFeatureAcceptedEval(t *testing.T, root, value string) {
 	t.Helper()
-	p := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "nrca-form-loading", "feature.yml")
+	p := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
 	data, err := os.ReadFile(p)
 	require.NoError(t, err)
 	var doc store.Feature
