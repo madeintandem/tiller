@@ -67,7 +67,7 @@ Loaded Build, Fix, and Explore omit a visible view-name H1. The active main-navi
 
 **Shared rendering conventions.** Keyed-node rows lead with title and a muted mono key, or a hover key where space is tight; the id stays in detail metadata and copyable commands rather than repeating on each row. Materialized questions scan as Q-id plus short title. Staged add-question operations have no Q-id and lead with short title, with their full statement as subordinate detail. This changes no CLI addressing rule.
 
-Home, Explore Browse, Build, and Fix share the same initial loading shell: the view name as a heading and a muted “Loading…” status line, with identical page gutters and typography. The topbar stays available. Each view keeps its own data-read prerequisites; independent panels and Explore's other modes do not wait for unrelated reads.
+Home, Explore Browse, Build, and Fix share the same initial loading shell: the view name as a heading and a muted "Loading…" status line, with identical page gutters and typography. The topbar stays available. Each view keeps its own data-read prerequisites; independent panels and Explore's other modes do not wait for unrelated reads.
 
 Person labels use full names from the project roster across owners, contributors, proposers, history actors, attestors, and baseline confirmers. An unlisted person uses a supplied name when available, otherwise the stable person ID. The shared roster refreshes on navigation and manual refresh. IDs remain unchanged in stored state, API payloads, commands, filter values, grouping, and tooltips; authored prose is not rewritten.
 
@@ -123,7 +123,7 @@ Explore separates Owner from Contributor filters. `contributor=<id>` selects anc
 
 Shared aggregate assembly, checks, rubric work, acceptance, and submission appear once per feature/epic, as do task-grain feature checks after all tasks finish. The ranked next list, queue, node advice, and recap use the shared workflow-input classification; ancestor gate arrivals are team asks for identified readers too. Keep human-versus-agent Actor/next_owner distinct from developer ownership. No last-task owner or persistent coordinator is inferred.
 
-Task and shelf details/relationships display reciprocal supersedes/superseded_by transfer links. The original keeps owner, branch, review, and evidence; a transferred shelf has resolution `transferred`, not duplicate. A ready replacement is unstarted, with fresh identity/basis and no inherited checks/review. Copyable transfer guidance uses `tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason <text>` only under explicit human authority; the console does not mutate state, Git refs, or host PRs.
+Task and shelf details/relationships display reciprocal supersedes/superseded_by transfer links. The original keeps owner, branch, review, and evidence; a transferred shelf has resolution `transferred`, not duplicate. A ready replacement is unstarted, with fresh identity/basis and no inherited checks/review. Copyable transfer guidance uses `tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>` only under explicit human authority; the console does not mutate state, Git refs, or host PRs.
 
 ### Fix
 
@@ -216,7 +216,7 @@ The registered file page shows confirmation or **Unconfirmed**, the historical c
 
 `/drift` includes `stale_design` and opt-in `shifted_design` alongside the existing work-node markers. Design candidates and uncovered rows lead with `design/<doc>` and link to `/file/<encoded .tiller/design/doc>#L1`; literal filename segments are encoded independently, including percent and fragment characters. Their empty IDs never become node links or invented references. Candidates show the confirmation `since` anchor and optional upper `until` anchor, matching features at their recorded crossing commits, and links to their repo-relative feature specs. The clearing command follows human reconciliation and review, never substitutes for it. Shifted comparison context must retain the dirty-worktree and external-code history limitations.
 
-Coverage keeps its actual grain: `compared` counts distinct work nodes and `compared_design` counts distinct design docs, with baseline coverage in `doc(s)` rather than node units. The footer names both totals; candidates or uncovered rows suppress “nothing moved.” Older node-only reports without the additive fields retain their prior rendering. Disabled checks remain explicit and no unconfirmed or failed comparison is presented as clean.
+Coverage keeps its actual grain: `compared` counts distinct work nodes and `compared_design` counts distinct design docs, with baseline coverage in `doc(s)` rather than node units. The footer names both totals; candidates or uncovered rows suppress "nothing moved." Older node-only reports without the additive fields retain their prior rendering. Disabled checks remain explicit and no unconfirmed or failed comparison is presented as clean.
 
 ### Node detail
 

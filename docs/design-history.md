@@ -48,7 +48,7 @@ Two rules extend this. The developer who directs the work owns it, so nothing au
 
 **Rejected.** Editing done records to fit a change of mind, and blanket immutability that left no correction path at all.
 
-**Why.** Every real project pivots. Treating the team's own recent code as brownfield keeps history honest and gives the reviewer one coherent proposal.
+**Why.** Every real project pivots. When the plan changes, the code the team already merged is treated like any existing codebase: the change becomes new work that builds on it or replaces it. Done records keep describing what was actually built and accepted, and the reviewer sees the whole change as one proposal.
 
 ## Brownfield baseline
 

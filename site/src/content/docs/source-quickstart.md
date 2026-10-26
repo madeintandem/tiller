@@ -428,7 +428,7 @@ Use `epic` for an epic-grain review; omit `--pr` only without a remote. Tiller v
 
 ## Share a feature without sharing ownership
 
-Another registered developer may claim a different ready task under the same feature. Approval never assigns it to the approver or a sibling's owner. Use `release task` or human-directed `reassign task <ref> --to <owner> --reason "<why>"` only before start. First start fixes ownership permanently, even after resume, review, cancellation, or completion. Features/epics display Contributors from started tasks, not an exclusive owner. Claimed ready work is an assignment, not yet contribution.
+Another registered developer may claim a different ready task under the same feature. Approval never assigns it to the approver or a sibling's owner. Use `release task` or human-directed `reassign task <ref> --to <contributor-id> --reason "<why>"` only before start. First start fixes ownership permanently, even after resume, review, cancellation, or completion. Features/epics display Contributors from started tasks, not an exclusive owner. Claimed ready work is an assignment, not yet contribution.
 
 Any registered developer may perform authorized aggregate assembly/checks/submission at feature or epic grain. Coordinate one updater at a time through Git. Shared checks, acceptance, and publication appear once per reviewed unit; the last task finisher surfaces that step without becoming its owner. At task grain, after every task is done, complete feature acceptance and ordinary sync on integration.
 

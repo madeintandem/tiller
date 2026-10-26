@@ -8,8 +8,10 @@ test, how we work, and what a pull request needs.
 
 ## Set up
 
-You need Go (the version pinned in [`go.mod`](./go.mod)) and Node (a current
-LTS) for the console under `ui/`. Then:
+You need Go (the version pinned in [`go.mod`](./go.mod), currently 1.27.2) and
+Node 22 (22.22.2 or newer in the 22 line, which is what CI runs) for the console
+under `ui/` and the docs site under `site/`. Reshooting the site's screenshots
+also needs `cwebp` (`brew install webp`); nothing else does. Then:
 
 ```sh
 git clone https://github.com/madeintandem/tiller.git
@@ -101,8 +103,8 @@ copy. `cd site && npm ci && npm run dev` serves it at
 - Commit messages lead with a short prefix and a summary line, then say what
   changed and why in the body. The prefixes in use are `Fix:`, `Docs:`,
   `Test:`, `Build:`, and `Release:`; a feature can go without one. Reference
-  the issue in the summary when there is one, for example `Fix: preserve
-  missing evidence under safe aliases (#70)`.
+  the issue in the summary when there is one, for example `Fix: keep the
+  console's theme choice across reloads (#<issue>)`.
 - The PR description says what changed, why, and how you verified it, meaning
   the commands you ran and what they showed. Evidence over adjectives.
 - CI must be green. A maintainer reviews and merges. For now that's one

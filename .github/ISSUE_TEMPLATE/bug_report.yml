@@ -7,7 +7,7 @@ body:
     attributes:
       label: tiller version
       description: Output of `tiller --version`.
-      placeholder: v0.9.4
+      placeholder: tiller version 0.21.2
     validations:
       required: true
   - type: input

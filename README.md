@@ -177,7 +177,7 @@ people share one feature or epic PR, coordinate so one of them updates it at
 a time.
 
 Handing started, unfinished work to someone else is a human decision:
-`tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason "<why>"`.
+`tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason "<why>"`.
 It keeps the original's attribution and creates an approved, unstarted
 replacement of the same scope for the recipient, with a fresh identity and no
 inherited review or passing checks. The agent runs it only on an explicit

@@ -51,11 +51,11 @@ These are the calls already made. They're the spine of the design. Weigh new dec
 - Always follow SOLID principles both when writing code and reviewing it
 - Always consider YAGNI, especially when considering a new dependency or an abstraction
 - Build using TDD, do not cheat, write meaningful tests that prove correctness
-- Be aggressive about simplicity, always be asking if there is a simpler way to do something, simple doesn’t equal clever
+- Be aggressive about simplicity, always be asking if there is a simpler way to do something, simple doesn't equal clever
 - Avoid overly large classes/modules/components/etc, if a code file hits 500 lines start thinking about decomposition, if it hits 1000 lines, do something about it
 - Don't use deprecated or undocumented APIs
-- Write idiomatic code in whatever language you’re writing, don’t invent new patterns or conventions
-- Choose human-friendly names for things, variables, classes, modules, functions, write code that’s easy for human to understand
+- Write idiomatic code in whatever language you're writing, don't invent new patterns or conventions
+- Choose human-friendly names for things, variables, classes, modules, functions, write code that's easy for human to understand
 
 ### When Using Subagents
 
