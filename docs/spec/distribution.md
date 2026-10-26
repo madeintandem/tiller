@@ -2,7 +2,7 @@
 
 **Scope.** This document defines how Tiller reaches a developer and a project: how it is built, installed, updated, versioned, migrated, wired into a coding harness, adopted, and documented. It layers over the [artifact schema](./artifact-schema.md), canonical for the on-disk model, and the [CLI command surface](./cli-surface.md), canonical for commands. Where this document disagrees with either, they win and this one is fixed.
 
-**Status.** Current reference at version stamp 0.21.2, schema 12, orientation generation 57, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
+**Status.** Current reference at version stamp 0.21.3, schema 12, orientation generation 57, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
 
 ---
 

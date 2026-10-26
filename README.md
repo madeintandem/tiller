@@ -60,8 +60,8 @@ somebody's hand has to be on it.
 
 ## Install
 
-The current release is **v0.21.2**. Install it with either path below, then
-check that `tiller --version` reports 0.21.2. The
+The current release is **v0.21.3**. Install it with either path below, then
+check that `tiller --version` reports 0.21.3. The
 [Quickstart](https://madeintandem.github.io/tiller/quickstart/) walks a
 scratch project from install to a merged, synced task, and the
 [source walkthrough](https://madeintandem.github.io/tiller/source-quickstart/)

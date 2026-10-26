@@ -14,7 +14,7 @@ that doesn't match (`scripts/check-version-stamp.sh`).
 
 Publication requires an explicit maintainer decision. A local snapshot and
 green tests do not authorize a tag push, a release, or a visibility change.
-These instructions match v0.21.2. Before publishing a newer release, update
+These instructions match v0.21.3. Before publishing a newer release, update
 the release Quickstart to the reviewed artifact's exact command contract and
 complete it using the installed artifact, not a source binary.
 
@@ -51,7 +51,7 @@ Set the release once, then use that value for the stamp, the tag, and the
 verification:
 
 ```sh
-VERSION=0.21.2
+VERSION=0.21.3
 
 # 1. Stamp the running version in source.
 $EDITOR internal/cli/root.go
@@ -139,7 +139,7 @@ contribution toolchain.
 To see exactly what a release would produce without publishing anything:
 
 ```sh
-VERSION=0.21.2
+VERSION=0.21.3
 scripts/check-version-stamp.sh "v$VERSION"
 SNAPSHOT_DIR=$(mktemp -d)
 cp .goreleaser.yaml "$SNAPSHOT_DIR/config.yaml"

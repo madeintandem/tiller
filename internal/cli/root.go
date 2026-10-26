@@ -14,7 +14,7 @@ import (
 // version is reported by `tiller --version` and is the number issues are
 // tracked against. Stamped by hand at each release tag until release tooling
 // exists; a build from an untagged commit still reports the last stamp.
-const version = "0.21.2"
+const version = "0.21.3"
 
 // NewRootCmd builds the root cobra command for the tiller CLI. Subcommands are
 // registered onto the returned command by later wiring; pass 1 starts with the

@@ -1,9 +1,9 @@
 ---
 title: Quickstart
-description: Complete a scratch project with the v0.21.2 release.
+description: Complete a scratch project with the v0.21.3 release.
 ---
 
-This walkthrough is for **v0.21.2**. It uses schema **12**, orientation generation
+This walkthrough is for **v0.21.3**. It uses schema **12**, orientation generation
 **57**, and **eleven skills**. Tasks are claimed and started one at a time, each on
 its own branch, and maintenance runs through `tiller upgrade`. The longer
 [source walkthrough](/tiller/source-quickstart/) covers the same contract in more
@@ -20,7 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh
 tiller --version
 ```
 
-Verify that the installed version is **0.21.2** before following this page. The
+Verify that the installed version is **0.21.3** before following this page. The
 commands and output below match that release.
 
 ## Initialize a disposable project
