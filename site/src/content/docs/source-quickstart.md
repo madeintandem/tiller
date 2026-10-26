@@ -5,9 +5,9 @@ description: Run the current source build through project setup, human gates, ta
 
 From a repository to a tree you can see. The walkthrough uses a greenfield scratch project called Acme, with an existing-code path below; ids and commit hashes are illustrative.
 
-This page documents source stamp **0.21.2**, schema **12**, orientation generation
-**57**, and **eleven embedded skills**. The latest published release is **v0.18.4**;
-the [release Quickstart](/tiller/quickstart/) is prepared for 0.21.2.
+This page documents version **0.21.2**, schema **12**, orientation generation
+**57**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
+installs the v0.21.2 release instead of building from source.
 
 ## Build the matching source
 
@@ -21,9 +21,8 @@ cp /tmp/tiller-source /tmp/tiller-source-bin/tiller
 export PATH="/tmp/tiller-source-bin:$PATH"
 ```
 
-Verify the version is **0.21.2** before using the commands below. This is a source
-build, not an anonymous release-installation check. Use a disposable project;
-do not migrate an existing team's checkout merely to try the walkthrough.
+Verify the version is **0.21.2** before using the commands below. Use a disposable
+project; do not upgrade an existing team's checkout merely to try the walkthrough.
 
 ## Turn a repository into a tiller project
 
@@ -37,7 +36,12 @@ tiller init --name "Acme Platform" --key acme --kind greenfield
 Initialized "Acme Platform" (acme, greenfield).
 
 **Next**
-  1. Copy your design inputs under .tiller/design/ (--design imports only on the init that scaffolds).
+  1. Put your design inputs under .tiller/design/.
+     For in-repo docs, choose a move into .tiller/design/ when Tiller takes ownership,
+     or a pointer page there when another consumer needs the original location.
+     Record committed source provenance with `tiller link design --from` before retiring translated sources.
+     External --design imports are copies; keep their source documents.
+     --design imports only on the init that scaffolds.
   2. Register yourself as a contributor (a human, once per project):
        tiller add contributor <id> --name "<full name>"
   3. Join, wiring your identity and your agent:
@@ -45,7 +49,7 @@ Initialized "Acme Platform" (acme, greenfield).
   4. tiller check readiness
   5. tiller guide decompose
   6. From there the feature frontier paces the work, one feature specified
-     when its turn comes. This names the seam whose turn it is:
+     when its turn comes. This lists your ranked next moves and the skill that fits:
        tiller guide
 
 The build and tests gates wire later in .tiller/tiller.yml, once a stack
@@ -130,8 +134,8 @@ ignored; `.git` and `.tiller` metadata are excluded. See the full
 [ledger contract](/tiller/spec/artifact-schema/#baseline-ledger-designbaselineyml).
 
 Init success is not readiness. `missing_contributors`, `missing_design`, `no_reference_root`, and
-`invalid_code_root_mode` remain independent gaps. Build 2 adds `no_confirmed_baseline` for both
-existing-code kinds until one ledger doc is confirmed, and `missing_design_doc` for missing ledger
+`invalid_code_root_mode` remain independent gaps. `no_confirmed_baseline` holds both
+existing-code kinds until one ledger doc is confirmed, and `missing_design_doc` reports missing ledger
 prose in every kind. A ledger alone does not satisfy non-empty design. One confirmation releases
 the startup baseline route, even when other docs remain unconfirmed; other readiness gaps still
 need repair. With no tree, decompose is next only when a to-be design doc exists under
@@ -151,30 +155,30 @@ confirmation, provenance, and the same drift facts; it does not approve anything
 Two deliberate acts, not one. Registration puts you on the project's committed roster. Joining says this checkout is you, and wires your coding agent while it's at it.
 
 ```sh
-tiller add contributor jc --name "JC Grubbs"
-tiller join --as jc
+tiller add contributor robin --name "Robin Hale"
+tiller join --as robin
 ```
 
 ```
-Registered jc (JC Grubbs).
-Roster (1 contributor): jc (JC Grubbs)
+Registered robin (Robin Hale).
+Roster (1 contributor): robin (Robin Hale)
 ```
 
 ```
-Joined as jc (JC Grubbs). Identity recorded; roster now 1 contributor.
+Joined as robin (Robin Hale). Identity recorded; roster now 1 contributor.
 Project files kept current: orientation.md (generation 57).
 
 **Wired the Claude Code harness**
-  agent skills    .claude/skills/tiller-*    10 shims, gitignored
+  agent skills    .claude/skills/tiller-*    11 shims, gitignored
   pointer block   AGENTS.md
   redirect        CLAUDE.md
 
 **Next**
   tiller status
-  tiller guide      names the seam that fits
+  tiller guide      lists your ranked next moves and the skill that fits
 ```
 
-`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the ten current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
+`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the eleven current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
 
 Init seeds `.gitignore` only if it is missing. Join adds missing Tiller-owned ignore groups,
 including the local identity, the optional `.tiller/local.yml` preferences file, cache, skill shims, `/.bin/`, and `/artifacts/tiller/`, while leaving
@@ -196,12 +200,12 @@ tiller guide
 
 ```
 Project: Acme Platform (acme) [greenfield]
-Contributors:  jc
+Contributors: robin
 Epics 0  Features 0  Tasks 0  Questions 0
 ```
 
 ```
-Up next for jc:
+Up next for robin:
 1. Agent: decompose. No epics recorded yet; 1 to-be design doc awaits decomposition, starting with .tiller/design/overview.md. `tiller guide decompose`
 
 Suggested skill: decompose
@@ -210,7 +214,7 @@ queue: 0 bugs, 0 chores, 0 tweaks ready
 Run `tiller guide decompose` to load it.
 ```
 
-`tiller guide` with no argument prints your ranked next moves, the same list `tiller next` prints, then names the skill for the top agent move. Your agent reads the same list, so the 2 of you always agree on what comes next. Here the design inputs copied in step 1 are what make decompose due; with nothing under `.tiller/design/` beyond as-is docs, guide reports that no work is planned instead.
+`tiller guide` with no argument prints your ranked next moves, the same list `tiller next` prints, then names the skill for the top agent move. Your agent reads the same list, so the two of you always agree on what comes next. Here the design inputs copied in step 1 are what make decompose due; with nothing under `.tiller/design/` beyond as-is docs, guide reports that no work is planned instead.
 
 ## Hand it to your agent
 
@@ -311,7 +315,7 @@ opens the console on localhost. The decisions that need you, what's in flight, w
 
 ## Choose where review happens
 
-The walkthrough above uses the default, `task`: each task owns its PR, and execute finishes after recording its review and publishing the submission-state commit. Review Grain can move that review surface upward without changing the task loop:
+The walkthrough above uses the default, `task`: each task owns its PR, and execute finishes after recording its review and publishing the submission-state commit. Review grain can move that review surface upward without changing the task loop:
 
 ```sh
 tiller configure feature foundation/app-scaffold --review-grain feature
@@ -362,7 +366,7 @@ The agent's execute instruction includes ordinary commits, pushes, PR creation o
 submission unless you explicitly say not to publish. Green checks are intermediate. If a session
 stops at `check`, re-enter execute without another `start` or `resume`; bare guide prioritizes
 owned checked tasks before other ready or in-progress tasks, while preserving owner and question
-guards. Tree work stays ahead of shelves; shelves prefer checked work, bugs before chores before tweaks before tweaks within
+guards. Tree work stays ahead of shelves; shelves prefer checked work, bugs before chores before tweaks within
 each phase.
 
 The initial Acme repository has no remote, so this example records a local review ref and you
@@ -385,10 +389,10 @@ tiller sync
 ```
 
 ```
-Claimed foundation/app-scaffold/wire-the-build (T-h389ih) for jc.
-task foundation/app-scaffold/wire-the-build (T-h389ih) is now in_progress. Work happens on branch tiller/foundation/app-scaffold/wire-the-build.
+Claimed foundation/app-scaffold/wire-the-build (T-h389ih) for robin.
+task foundation/app-scaffold/wire-the-build (T-h389ih) is now in_progress. Work happens on branch tiller/foundation/app-scaffold/wire-the-build. Create it from main; Tiller has not changed Git refs.
 Checked task foundation/app-scaffold/wire-the-build (T-h389ih): all required gates green; state is now check.
-task foundation/app-scaffold/wire-the-build (T-h389ih) is now in_review. No remote: recorded branch tiller/foundation/app-scaffold/wire-the-build at 8755651; review happens on the branch.
+task foundation/app-scaffold/wire-the-build (T-h389ih) is now in_review. Recorded branch tiller/foundation/app-scaffold/wire-the-build at 8755651. Offline review happens on the recorded branch.
 Sync: recorded 1 done crossing(s):
   - task foundation/app-scaffold/wire-the-build (T-h389ih) -> done
 ```
@@ -424,7 +428,6 @@ tiller submit feature <feature> --pr <actual-number> --recover-merged \
 
 Use `epic` for an epic-grain review; omit `--pr` only without a remote. Tiller validates local immutable Git evidence and labels the PR association caller-supplied. The record operation changes no status, gate, ownership, or acceptance. Commit its actual integration-state delta, run ordinary sync, inspect historical warnings and current acceptance separately, commit actual sync state, publish when authorized, and read back status/show/queue/readout. Exact retries write nothing. Deleted or advanced aggregate refs do not replace the historical anchors. Contained work without a merge witness still needs the human's existing fast-forward assertion.
 
-
 ## Share a feature without sharing ownership
 
 Another registered developer may claim a different ready task under the same feature. Approval never assigns it to the approver or a sibling’s owner. Use `release task` or human-directed `reassign task <ref> --to <owner> --reason "<why>"` only before start. First start fixes ownership permanently, even after resume, review, cancellation, or completion. Features/epics display Contributors from started tasks, not an exclusive owner. Claimed ready work is an assignment, not yet contribution.
@@ -434,7 +437,7 @@ Any registered developer may perform authorized aggregate assembly/checks/submis
 For an exceptional started-work handoff, the human must explicitly name work and recipient:
 
 ```sh
-tiller transfer task foundation/app-scaffold/wire-the-build --to sam --reason "Sam will complete the remaining implementation"
+tiller transfer task foundation/app-scaffold/wire-the-build --to dana --reason "Dana will complete the remaining implementation"
 ```
 
 Use a real registered recipient and unfinished started work. The original is cancelled with its owner/history intact; the returned replacement is ready, unstarted, same-scope, and has a fresh ID/key/basis and no branch/review/green evidence. Start the returned ref as its recipient. Questions, pauses, dependencies, and carriers remain operative; started unfinished dependents or scope drift refuse before writes. Close an old task/shelf PR without merging and open a replacement; at coarse grain update the existing unmerged aggregate PR and rerun affected checks/acceptance. Git/host follow-through is separate from Tiller’s state transaction. Already-merged work requires sync and forward work instead.
@@ -450,7 +453,7 @@ git add .tiller && git commit -m "capture: blank-on-reload"
 ```
 
 ```
-Created bug bugs/blank-on-reload (B-4k2p9x) in proposed, attached to foundation/app-scaffold (F-dv5ppv).
+Created bug bugs/blank-on-reload (B-4k2p9x) in proposed: "Form blanks on reload" (attached to foundation/app-scaffold (F-dv5ppv))
 ```
 
 Capture never approves, claims, or starts what it just wrote. Triage is yours:
@@ -492,10 +495,10 @@ tiller sync
 ```
 
 ```
-Claimed bugs/blank-on-reload (B-4k2p9x) for jc.
+Claimed bugs/blank-on-reload (B-4k2p9x) for robin.
 bug bugs/blank-on-reload (B-4k2p9x) is now in_progress. Work happens on branch tiller/bugs/blank-on-reload.
 Checked bug bugs/blank-on-reload (B-4k2p9x): all required gates green; state is now check.
-bug bugs/blank-on-reload (B-4k2p9x) is now in_review. Recorded PR #51; review happens there.
+bug bugs/blank-on-reload (B-4k2p9x) is now in_review.
 Sync: recorded 1 done crossing(s):
   - bug bugs/blank-on-reload (B-4k2p9x) -> done
 ```
@@ -509,31 +512,11 @@ resume the same reviewed work, rerun checks, reuse the PR, and publish the new s
 Ordinary publication needs no second go-ahead; genuine missing credentials, tools, or safe conflict
 resolution can require your help. Approval, attestation, and merge remain your decisions.
 
-The developer owns and is responsible for every change. Version 0.11.1 instructs agents
+The developer owns and is responsible for every change. The skills instruct agents
 not to identify themselves, their model, provider, or harness as an author or contributor anywhere
 in the work. That includes code, comments, docs, commits, PRs, and reports: no generated-by notices,
 agent signatures, or agent co-author trailers. The rule preserves real human credits and required
 third-party notices. It is guidance for the agent, not a CLI content filter.
-
-Schema 9 renames the shared manifest roster from `owners:` to `contributors:` and checkout-local identity from `owner:` to `contributor:`. The schema-8-to-9 migration preserves contributor IDs and names, the selected local identity, task/bug/chore/tweak claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Schema 8 needs neither a work drain nor an ownership review; older migrations retain their existing requirements. New roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
-
-## Reviewed ownership adoption
-
-Schema-5 active work and open reviews can migrate while preserving branches, PRs, statuses, and evidence. Inspect without writes:
-
-```sh
-tiller migrate --dry-run --json
-```
-
-Save the whole JSON report or extracted `data.ownership_review` outside source state. A human fills every initially empty `confirmed_owner` for started unfinished tasks, bugs, chores, and tweaks, copying or correcting `observed_owner`. Keep source_schema, target_schema, snapshot, sources, IDs, and other fields unchanged. A stale/incomplete/duplicate/conflicting or unknown-owner review refuses before writes.
-
-```sh
-tiller migrate --ownership-review /path/to/review.json
-# Or the same offline project maintenance via upgrade:
-tiller upgrade --project-only --ownership-review /path/to/review.json
-```
-
-Pause team mutations and reconcile actual owners/state on integration first. Retain a compatible binary and committed recovery baseline. Apply one reviewed migration in a designated checkout, then commit/publish through Git. Upgrade everyone and incorporate the migration into every continuing work branch without discarding its task progress; do not independently migrate stale clones. Refresh each checkout, restart consoles, reload agent instructions, and check schema, identity, task owner, branch, and legal next action before resuming. A schema fence is local, not a distributed lock. After new work exists, recovery must preserve it rather than blindly restore old schema files. September 21 is an intended window, not authorization or an evidence waiver.
 
 ## Keep a checkout current
 
@@ -549,40 +532,21 @@ binary-only. Outside a project, normal upgrade updates only the binary and repor
 Inside one, it selects the current resolved checkout, even from a subdirectory. It never discovers
 or rewrites other repositories, branches, or worktrees.
 
-Artifact refresh does not need identity and never changes it. A real schema migration needs a
-registered actor through `--contributor`, `TILLER_CONTRIBUTOR`, or local identity. Missing checkout identity
-still calls for onboarding with `tiller join --as <id>`, not an invented contributor.
+Artifact refresh does not need identity and never changes it. A schema migration needs a
+registered actor through `--contributor`, `TILLER_CONTRIBUTOR`, or local identity. Missing checkout
+identity still calls for onboarding with `tiller join --as <id>`, not an invented contributor.
 
-Only when migrating schemas 2–4 across the schema-5 branch-model boundary, drain active old-schema features, unfinished aggregate reviews, and tasks
-in `in_progress`, `check`, or `in_review` with a verified compatible binary, including human
-acceptance/final merges and sync. Known blockers stop self-managed replacement. Upgrade never
-finishes or cancels work to clear them, and never deletes or renames retained refs.
-
-Before replacement, upgrade retains the outgoing build under
-`~/.local/share/tiller/previous/<version>-<sha256>/tiller` and reports its path and directory.
-A retained build is not automatically compatible. In a temporary drain shell, prepend the
-verified compatible build's reported directory to PATH so gates invoking bare `tiller` use it too.
-Leave that shell afterward and invoke the upgraded executable explicitly for project-only
-maintenance. Never use an older binary to mutate a migrated checkout.
-
-Homebrew remains the owner of verified cask or legacy formula installs. Upgrade delegates only
-that Tiller package with implicit dependent checks and cleanup disabled; brew may still refresh
-metadata or install genuine dependencies. Pins are unsupported for brew, and private download
-authentication still applies. Brew can change the machine before the target's compatibility is
-known; failures never fall back to a direct Cellar/Caskroom overwrite.
+Before replacing the binary, upgrade keeps the outgoing build under
+`~/.local/share/tiller/previous/<version>-<sha256>/tiller` and reports its path. Homebrew remains
+the owner of cask installs; upgrade delegates only the Tiller package to brew and never falls back
+to overwriting brew's files directly.
 
 Binary replacement, migration, and generated refresh are separate durable steps. A failed later
-step is nonzero and preserves completed steps; repair the named cause before project-only retry.
-Recovery-required journals must be recovered first, never removed. Unknown state after a lost
-child result is not proof that nothing changed. Review/commit the reported diff, restart existing
-serve processes, and reload harness instructions as needed. Shims load full instructions through
-`tiller guide`; do not hand-edit them or generated orientation.
-
-**Upgrading an older binary:** a running binary cannot acquire new maintenance
-logic merely because its executable is replaced. If its help lacks the flags
-above, retain a verified compatible binary for old-schema work before installing
-the newer one, then invoke the new executable's project-only command. The old
-process provides no new preflight or retention guarantee.
+step is nonzero and preserves completed steps; repair the named cause before a project-only retry.
+Review and commit the reported diff, restart existing `tiller serve` processes, and reload harness
+instructions as needed. Shims load full instructions through `tiller guide`; do not hand-edit them
+or generated orientation. The [distribution spec](/tiller/spec/distribution/#update) covers the
+full upgrade contract.
 
 ## Where to next
 
@@ -590,4 +554,4 @@ process provides no new preflight or retention guarantee.
 - [Skills](/tiller/skills/) for what the agent is actually reading.
 - [The CLI reference](/tiller/cli/) for every command, and `tiller status <noun> <node>` any time you want to know what's legal from here.
 - [The console](/tiller/console/)'s Explore tab, then Map, for a mind map of the whole project, epics down to bugs, chores, and tweaks, with the dependency graph drawn as arcs.
-- [The console](/tiller/console/)'s Fix lens for the shelf-work board, 6 columns from Proposed to Closed.
+- [The console](/tiller/console/)'s Fix lens for the shelf-work board, six columns from Proposed to Closed.

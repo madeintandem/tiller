@@ -41,7 +41,7 @@ export default defineConfig({
           label: 'Start here',
           items: [
             { label: 'Quickstart', slug: 'quickstart' },
-            { label: 'Source walkthrough (0.21.2)', slug: 'source-quickstart' },
+            { label: 'Source walkthrough', slug: 'source-quickstart' },
             { label: 'Concepts', slug: 'concepts' },
           ],
         },

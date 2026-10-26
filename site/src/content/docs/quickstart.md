@@ -9,10 +9,6 @@ its own branch, and maintenance runs through `tiller upgrade`. The longer
 [source walkthrough](/tiller/source-quickstart/) covers the same contract in more
 detail, including existing code, review grain, bugs, and ownership transfer.
 
-The repository is still private. The commands below require authorized access
-until the human launch decision makes source and release assets public.
-Anonymous installation and a clean-machine run remain launch checks.
-
 ## Install and check the version
 
 Choose one installation path:
@@ -24,9 +20,8 @@ curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh
 tiller --version
 ```
 
-Verify that the installed version is **0.21.2** before following this page. An
-earlier binary has a different command contract; see
-[Maintain this release](#maintain-this-release) before you replace one.
+Verify that the installed version is **0.21.2** before following this page. The
+commands and output below match that release.
 
 ## Initialize a disposable project
 
@@ -37,8 +32,8 @@ mkdir acme-tiller-scratch
 cd acme-tiller-scratch
 git init -b main
 tiller init --name "Acme Platform" --key acme --kind greenfield
-tiller add contributor jc --name "JC Grubbs"
-tiller join --as jc
+tiller add contributor robin --name "Robin Hale"
+tiller join --as robin
 mkdir -p .tiller/design
 printf '# Acme\n\nA small application with a health route.\n' > .tiller/design/overview.md
 git add -A
@@ -48,7 +43,7 @@ tiller guide
 ```
 
 Use your own contributor ID and full name. Registration is committed; `join` selects
-that identity for this checkout and installs ten gitignored skill shims for
+that identity for this checkout and installs eleven gitignored skill shims for
 Claude Code. A greenfield project with design inputs and a contributor starts at
 decomposition, so `tiller guide` names the `decompose` skill. For an existing
 repository, use `--kind brownfield` and follow `tiller guide derive-baseline`:
@@ -168,7 +163,7 @@ port 4400 is in use, pass `--port` with a free port. Inspect Home, Explore, and
 the completed task. Stop the server with Ctrl-C. The console and skills are
 embedded; no Node runtime is needed to run them.
 
-## Maintain this release
+## Keep a checkout current
 
 `tiller upgrade` updates the binary through its installation owner, then
 migrates and refreshes the current checkout. To maintain a checkout with the
@@ -189,11 +184,5 @@ Started work keeps its owner. Before start, `tiller release` and
 `tiller transfer` hands the work to another registered contributor; see
 `tiller transfer --help`.
 
-Schema 8→9 is a terminology migration: the committed roster becomes `contributors:` and local identity becomes `contributor:`, preserving IDs, selected identity, work claims/lifecycle, branches, reviews, evidence, and historical events. It needs no work drain or ownership review. Older migration requirements below remain unchanged. Acting identity uses `--contributor` or `TILLER_CONTRIBUTOR`; task/bug/chore/tweak and question `owner` fields and ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
-
-Projects on schema 4 or earlier, such as those made by v0.11.3, cross the
-schema-5 branch-model boundary. Finish active features, reviews, and tasks with
-the old binary before replacing it, then run the new binary's
-`tiller upgrade --project-only`. See [Concepts](/tiller/concepts/) for
-terminology and `tiller guide execute` for the remote PR and aggregate-review
-workflow.
+See [Concepts](/tiller/concepts/) for terminology and `tiller guide execute` for
+the remote PR and aggregate-review workflow.

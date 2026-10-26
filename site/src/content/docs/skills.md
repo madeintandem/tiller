@@ -11,13 +11,25 @@ tiller guide            # the same list, then the skill for the top agent move
 tiller guide execute    # prints that skill in full
 ```
 
-There are nine skills in v0.11.0. `orient` reads state, names the next move, and stops. `derive-baseline` derives or translates as-is docs and stops at human per-doc confirmation. `decompose` lays a draft epic and feature tree for the human to approve. `specify` writes one feature's specification, acceptance contract, and tasks, then runs `tiller spec feature`. `execute` runs the task loop and stops at the resolved task, feature, or epic review surface. `capture` writes one complete proposed bug or chore and stops before human triage. `mend-drift` reads a drift candidate and drafts the smallest honest fix. `amend` stages a reshape for human approval. `intake` lands a document written outside the tree and opens the amendment it implies.
+v0.21.2 carries eleven skills. Nine of them are the workflow seams:
 
-Current source carries eleven skills, including the explicitly requested `design-brief` and `code-review`, schema 12, orientation generation 57, and version stamp 0.21.2. The latest published release is v0.18.4. Earlier releases retain their historical inventories. Source guidance alone does not establish installation or checkout refresh; the build status records observed adoption.
+- `orient` reads state, names the next move, and stops.
+- `derive-baseline` derives or translates as-is docs and stops at human per-doc confirmation.
+- `decompose` lays a draft epic and feature tree for the human to approve.
+- `specify` writes one feature's specification, acceptance contract, and tasks, then runs `tiller spec feature`.
+- `execute` runs the task loop and stops at the resolved task, feature, or epic review surface.
+- `capture` writes one complete proposed bug, chore, or tweak and stops before human triage.
+- `mend-drift` reads a drift candidate and drafts the smallest honest fix.
+- `amend` stages a reshape for human approval.
+- `intake` lands a document written outside the tree and opens the amendment it implies.
 
-In current source, `orient` relays the ranked next list: every legal move for your checkout, human decisions included, ranked by where you have been working, at most five. It names any of your decisions that rank above the top agent move, ends its reply on the list, and starts that agent move once your reply does not redirect. Tiller ranks by a fixed rule and never calls a model; the agent may say it would take a different row first, but it reproduces the list as printed.
+The other two run only when you ask for them: `design-brief` exports a brief for a design tool, and `code-review` reviews what a node delivered. Both are described below.
 
-`capture` never approves, claims, starts, resolves, or cancels what it wrote; triage is the human's `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak`. Once a bug, chore, or tweak is ready and claimed, `execute` runs it the way it runs a task, on its own branch, with the attached node's context read first, a regression test where the work is a fix, task-grade gates, and a stop at the human's merge. Shelf work ignores Review Grain and runs no eval.
+This page covers what each skill does. [Concepts](/tiller/concepts/) owns the model they work in: the tree, the gates, review grain, ownership, and the shelves.
+
+`orient` relays the ranked next list: every legal move for your checkout, human decisions included, ranked by where you have been working, at most five. It names any of your decisions that rank above the top agent move, ends its reply on the list, and starts that agent move once your reply does not redirect. Tiller ranks by a fixed rule and never calls a model; the agent may say it would take a different row first, but it reproduces the list as printed.
+
+`capture` never approves, claims, starts, resolves, or cancels what it wrote; triage is the human's `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak`. Once a bug, chore, or tweak is ready and claimed, `execute` runs it the way it runs a task, on its own branch, with the attached node's context read first, a regression test where the work is a fix, task-grade gates, and a stop at the human's merge. Shelf work ignores review grain and runs no eval.
 
 ## Plan outcomes through the known scope
 
@@ -90,21 +102,19 @@ confirmation bytes were stored in Git. Automatic uncovered-root routing is not i
 
 ## Execute at the resolved review grain
 
-`execute` reads Review Grain from the project, epic, and feature state the binary already loaded. It accepts owned work in `ready`, `in_progress`, or `check`, requested changes to reviewed work, and coarse review finish lines. Checked work re-enters without `start` or `resume`; green gates are intermediate, not a completed handoff. Task grain finishes with the task's recorded and published review. Feature and epic grain keep going until the resolved node's own gates, acceptance work, and publication are complete. A riding task records its permitted review ref without a task PR; name the resolved feature or epic, but do not claim its PR exists until it is recorded. Shelf work always owns its branch and review, and live carried items do not enter their own loop.
+The [review grain](/tiller/concepts/#review-grain) model lives in Concepts; this is what `execute` does with it.
+
+`execute` reads the review grain from the project, epic, and feature state the binary already loaded. It accepts owned work in `ready`, `in_progress`, or `check`, requested changes to reviewed work, and coarse review finish lines. Checked work re-enters without `start` or `resume`; green gates are intermediate, not a completed handoff. Task grain finishes with the task's recorded and published review. Feature and epic grain keep going until the resolved node's own gates, acceptance work, and publication are complete. A riding task records its permitted review ref without a task PR; name the resolved feature or epic, but do not claim its PR exists until it is recorded. Shelf work always owns its branch and review, and live carried items do not enter their own loop.
 
 Every task has its own recorded working branch, unchanged on resume. Independent tasks start from integration; task-PR dependencies wait for integration rather than stacking PRs. Feature/epic reviews use recorded aggregates under `reviews/features/<epic>/<feature>` or `reviews/epics/<epic>` in the configured branch pattern. The agent creates these branches and ordinary-merges each submitted task tip, including submission-state commits, into the aggregate. A coarse dependent task may start from that aggregate once its prerequisites are included. Before feature checks, draft publication, and coarse submit, assemble all current riding task tips and their recorded heads. No cherry-pick or squash assembly. Requested changes return to the affected task branch, then reassemble and recheck the same aggregate PR. Mechanical conflicts are agent work; semantic conflicts and acceptance need human decisions. Only the final integration merge is human-only.
 
 ## Claim one execution unit
 
-Execute claims tasks individually with `tiller claim task <ref>`, just as it claims bugs, chores, and tweaks. New tasks are unclaimed regardless of creation/approval actor. Before start, reservations can be released or human-directed reassigned; taking another reservation needs its actual holder in --from and explicit handoff. A first successful start atomically activates a ready feature and permanently fixes the task owner. Resume, review, checks, cancellation, and completion never reset ownership; all terminal ownership is immutable.
-
-Features/epics have Contributors derived from started tasks, not exclusive owners. Past contribution is not unfinished responsibility: personal work includes nonterminal task/shelf assignments, including proposed/blocked/checked/in-review. Any registered developer may perform authorized aggregate assembly/checks/submission. Shared closeout appears once per feature/epic, not once per contributor or last finisher; coordinate one updater at a time through Git. A suggestion is not authorization. Judgment actor and human-gate rules remain unchanged. Feature-only assumptions use `tiller approve feature <ref> --assume-question <Q-id> --reason <text>` without a lifecycle move or automatic task inheritance.
+Execute claims one unit at a time with `tiller claim task <ref>`, and the same verb for a bug, chore, or tweak. It never takes another contributor's reservation without an explicit human handoff, and a ranked suggestion is not authorization. The ownership rules it follows, including what a first start fixes and how features show Contributors, are in [Contributors and claims](/tiller/concepts/#contributors-and-claims).
 
 ## Transfer only on explicit human instruction
 
-`tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason <text>` is for started unfinished work, explicitly named with its recipient by the human. Before start use reassign. Transfer preserves approved scope and original identity/prose/owner/review/evidence, cancels the original, and creates an approved unstarted successor with a fresh ID/key/basis and reciprocal lineage. No branch, review, green checks, attestations, or evidence carries forward. Same-owner/terminal/scope-drift/started-unfinished-dependent cases refuse atomically; questions, pauses, ordering, dependencies, shelf attachments, and carriers stay operative.
-
-Execute reads the returned replacement ref, starts it as recipient, and uses ordinary Git to preserve implementation without relabeling authorship. Close old task/shelf PRs without merging; preserve an unmerged aggregate PR and rerun affected checks/acceptance. Old commits/approvals do not vanish. Tiller changes no refs/host APIs, so failed external follow-through stays incomplete rather than rolled back. If already merged, sync and use forward work. Amend explains scope changes and unsafe relationships without inventing a transfer override or shelf amendment command.
+Execute uses `tiller transfer` only when the human names the started work and its recipient; before start it uses reassign. After a transfer it reads the returned replacement ref, starts it as the recipient, and preserves the implementation through ordinary Git without relabeling authorship. It closes the old task or shelf PR without merging, or updates an unmerged aggregate PR and reruns affected checks. Tiller changes no refs or host state, so incomplete Git follow-through stays visible rather than rolled back. [Exceptional transfer](/tiller/concepts/#exceptional-transfer) covers what the transaction preserves and refuses.
 
 ## Publish the authorized work
 
@@ -126,18 +136,6 @@ An aggregate review missing after its final merge needs explicit authorization t
 
 From configured integration with relevant source inputs committed, run `tiller submit feature|epic <node> --recover-merged --head <historical-oid> --merge-commit <result-oid> --reason <explanation> [--pr <actual-number>]`. A remote requires the actual positive PR number. Commit the actual recovery delta, run ordinary sync, inspect current acceptance and historical policy independently, commit actual sync state, publish when authorized, and read it back. Recovery changes no lifecycle/gates/approval. Contained work needs the human fast-forward assertion. Never reset refs, create an extra PR, or commit to the finally merged branch.
 
-
-## Review ownership before adoption
-
-Use `tiller migrate --dry-run --json`; save the report or data.ownership_review outside source state. The human fills each confirmed_owner for started unfinished task/bug/chore/tweak/tweak work, keeping all other inspected snapshot fields unchanged. Apply with `tiller migrate --ownership-review <file>` or `tiller upgrade --project-only --ownership-review <file>`. Stale/incomplete reviews refuse. Schema-5 active reviews/branches/evidence survive; only crossing schemas 2–4 into schema 5 requires shared-branch drain.
-
-Pause mutations, reconcile owners/state, retain a compatible binary and committed recovery baseline, and migrate once in a designated checkout. Publish through Git, upgrade every participant, and merge migration into every continuing branch while preserving task progress. Refresh each checkout, restart consoles, reload agents, and inspect identity/schema/owner/branch/legal next action before resuming. Do not independently migrate stale clones or blindly restore old files after new work. The intended September 21 window does not authorize managed-project adoption or waive verification.
-
-Schema 8→9 is a terminology migration: the committed roster becomes `contributors:` and local identity becomes `contributor:`, preserving IDs, selected identity, work claims/lifecycle, branches, reviews, evidence, and historical events. It needs no work drain or ownership review. Older migration requirements remain unchanged. Acting identity uses `--contributor` or `TILLER_CONTRIBUTOR`; task/bug/chore/tweak and question `owner` fields and ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
-
-Schema 9→10 adds typed immutable aggregate recovery and historical policy provenance. Its stamp-only migration preserves work, historical events, ownership, and active reviews without draining work or reconstructing missing history. Older binaries refuse the newer schema instead of dropping recovery fields.
-
-
 ## Maintain guidance
 
 `tiller upgrade` updates the binary and the current checkout's supported schema, orientation,
@@ -148,23 +146,11 @@ refresh stale artifacts. Join remains onboarding or deliberate identity selectio
 never silently joins. Current-schema artifact refresh needs no identity, while a real migration
 resolves a registered actor.
 
-Before migration from supported schemas 2 through 4, use a verified compatible binary to drain
-active features, unfinished aggregate reviews, and tasks in `in_progress`, `check`, or `in_review`,
-including human final merges and sync. Upgrade reports blockers rather than cancelling or
-completing work. A retained executable is not proof of compatibility: verify it, then prepend its
-reported directory to PATH in a temporary drain shell so gates use the same build. Leave that
-shell and retry the upgraded executable explicitly afterward. Never use an older build to mutate
-a migrated checkout. Migration preserves terminal history and refs; retained-prefix collisions
-are execution warnings, not permission to delete history. For unstarted work use a non-conflicting
-configured branch pattern or ask the human to archive/rename the collision deliberately.
-
 Read phase results on failure: a binary update or migration may already have completed. Repair
 the named cause before project-only retry, and recover any retained transaction journal first.
 Do not remove caches or infer unchanged files from an unknown result. Review/commit the reported
 diff. Other checkouts maintain themselves; existing serve and harness sessions need restart/reload
-as appropriate. For the first installation from v0.12.2 or older, keep a compatible build beforehand
-if needed and run the new binary's project-only command afterward: the old process cannot gain
-new preflight/retention logic mid-run.
+as appropriate.
 
 The refresh is idempotent and discovers every current catalog skill through thin shims. It removes
 obsolete shims only with positive generated ownership evidence, preserving custom files.
@@ -175,6 +161,8 @@ broader check is wanted. The [distribution spec](/tiller/spec/distribution/#upda
 Homebrew ownership, retention, and partial-failure boundaries.
 
 ## How skills route correction feedback
+
+[Corrections, drift and amendments](/tiller/concepts/#corrections-drift-and-amendments) lays out the four correction routes. This section is how the skills choose one.
 
 An explicit human correction is already the go-ahead to take the matching route. The agent doesn't ask the human to translate review feedback into command vocabulary, and it doesn't push every accepted change through an amendment.
 
