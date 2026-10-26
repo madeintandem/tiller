@@ -171,9 +171,9 @@ func guardExecutionClaim(noun, id, key, status string, started bool, holder, act
 		return nil
 	}
 	seam := fmt.Sprintf("tiller claim %s %s --from %s", noun, key, holder)
-	reassign := fmt.Sprintf(`tiller reassign %s %s --to <owner> --reason "<why>"`, noun, key)
+	reassign := fmt.Sprintf(`tiller reassign %s %s --to <contributor-id> --reason "<why>"`, noun, key)
 	if started {
-		seam = fmt.Sprintf(`tiller transfer %s %s --to <owner> --reason "<why>"`, noun, key)
+		seam = fmt.Sprintf(`tiller transfer %s %s --to <contributor-id> --reason "<why>"`, noun, key)
 		reassign = ""
 	}
 	return &WorkClaimHeldError{

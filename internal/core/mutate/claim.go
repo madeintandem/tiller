@@ -129,7 +129,7 @@ func ReleaseTask(tree *store.Tree, deps Deps, ref string) (ReleaseResult, error)
 
 func ReassignTask(tree *store.Tree, deps Deps, ref, to, reason string) (ReassignResult, error) {
 	if strings.TrimSpace(to) == "" {
-		return ReassignResult{}, &usageError{reason: "reassign_to_required", msg: "reassign needs --to <owner>"}
+		return ReassignResult{}, &usageError{reason: "reassign_to_required", msg: "reassign needs --to <contributor-id>"}
 	}
 	if strings.TrimSpace(reason) == "" {
 		return ReassignResult{}, &usageError{reason: "reassign_reason_required", msg: "reassign needs --reason <text>"}
@@ -193,7 +193,7 @@ func guardOwnerMutable(noun, id, key, status string, started bool, owner string)
 	}
 	seam := ""
 	if status != statusDone && status != statusCancelled {
-		seam = fmt.Sprintf(`tiller transfer %s %s --to <owner> --reason "<why>"`, noun, key)
+		seam = fmt.Sprintf(`tiller transfer %s %s --to <contributor-id> --reason "<why>"`, noun, key)
 	}
 	return &OwnerImmutableError{Noun: noun, NodeID: id, Key: key, CurrentState: status, Owner: owner, Reason: "owner_immutable", Seam: seam}
 }
@@ -250,5 +250,5 @@ func (e *NotClaimantError) Error() string {
 	return fmt.Sprintf("mutate: %s %s is claimed by %s, not the acting contributor", e.Noun, e.NodeID, e.Holder)
 }
 func notClaimantErr(noun, id, key, holder string) error {
-	return &NotClaimantError{Noun: noun, NodeID: id, Key: key, Reason: "not_claimant", Holder: holder, Seam: fmt.Sprintf(`tiller reassign %s %s --to <owner> --reason "<why>"`, noun, key)}
+	return &NotClaimantError{Noun: noun, NodeID: id, Key: key, Reason: "not_claimant", Holder: holder, Seam: fmt.Sprintf(`tiller reassign %s %s --to <contributor-id> --reason "<why>"`, noun, key)}
 }

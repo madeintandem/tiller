@@ -54,7 +54,7 @@ On any refusal, follow the recovery protocol in `.tiller/orientation.md`. The st
 Land the document if it is not landed, read it whole, map each finding to its rule, cite every op, write the narrative, then stop for the human.
 
 ```
-tiller intake docs/feedback/opus-review.md --contributor jc
+tiller intake docs/feedback/opus-review.md --contributor robin
 # lands .tiller/feedback/opus-review.md and opens amendment opus-review with
 # Source set and nothing staged; read .tiller/feedback/opus-review.md whole
 # before mapping anything below

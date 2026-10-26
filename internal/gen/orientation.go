@@ -296,8 +296,8 @@ unrequested replan.
   state into each continuing work branch without discarding task-specific state.
   Do not migrate stale branches independently. Refresh each checkout, restart
   consoles, reload agent instructions, and check schema, identity, task owner,
-  branch, and legal next action before resuming. September 21 is an intended
-  adoption window, not permission to skip verification or migrate a project.
+  branch, and legal next action before resuming. Adoption is not
+  permission to skip verification or migrate a project.
   A schema fence is local, not a distributed lock; old binaries in unmigrated
   clones can still conflict. Never use one on migrated state. After adoption,
   recovery must preserve new work rather than blindly restore old schema files.
@@ -573,7 +573,7 @@ uses the same ownership, gates, lifecycle, and review as a chore.
 Every new task is unclaimed, regardless of who created or approved it. Claim
 only the execution unit: ` + "`tiller claim task <key>`" + ` (or ` + "`bug`" + ` / ` + "`chore`" + ` / ` + "`tweak`" + `).
 Before start, ` + "`release`" + ` returns your reservation to the pool and
-` + "`reassign task|bug|chore|tweak <key> --to <owner> --reason <text>`" + ` records a
+` + "`reassign task|bug|chore|tweak <key> --to <contributor-id> --reason <text>`" + ` records a
 human-directed handoff. Taking another reservation with ` + "`claim --from <id>`" + `
 requires an explicit human handoff naming the work and actual holder; knowing
 an owner flag is not permission. The first successful start permanently fixes
@@ -596,7 +596,7 @@ Use ` + "`tiller ls features --contributor <id>`" + ` for contribution history a
 
 For already-started unfinished work, only an explicit human instruction naming
 the work and recipient authorizes
-` + "`tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason <text>`" + `.
+` + "`tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>`" + `.
 Transfer cancels the original with its owner, prose, branch, review, and evidence
 intact, and creates a same-noun, approved ready replacement with a new ID/key,
 recipient claim, fresh accepted basis, and reciprocal replacement links.

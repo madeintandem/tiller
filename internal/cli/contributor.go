@@ -198,7 +198,7 @@ func reportContributorRemoveError(cmd *cobra.Command, err error) error {
 		return emitReport(cmd, "remove contributor", false, d,
 			fmt.Sprintf("Blocked: %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s), and %d open question(s); "+
 				"release or reassign unstarted reservations, finish or explicitly transfer started work "+
-				"(`tiller transfer task|bug|chore|tweak <node> --to <owner> --reason \"<why>\"`), "+
+				"(`tiller transfer task|bug|chore|tweak <node> --to <contributor-id> --reason \"<why>\"`), "+
 				"and answer open questions (`tiller answer question <Q-id> --answer \"<answer>\"`).",
 				held.ID, h.Tasks, h.Bugs, h.Chores, h.Tweaks, h.Questions),
 			1)

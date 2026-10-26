@@ -147,7 +147,7 @@ func ReleaseWork(tree *store.Tree, deps Deps, noun, ref string) (ReleaseResult, 
 // with a required reason.
 func ReassignWork(tree *store.Tree, deps Deps, noun, ref, to, reason string) (ReassignResult, error) {
 	if strings.TrimSpace(to) == "" {
-		return ReassignResult{}, &usageError{reason: "reassign_to_required", msg: "reassign needs --to <owner>"}
+		return ReassignResult{}, &usageError{reason: "reassign_to_required", msg: "reassign needs --to <contributor-id>"}
 	}
 	if strings.TrimSpace(reason) == "" {
 		return ReassignResult{}, &usageError{reason: "reassign_reason_required", msg: "reassign needs --reason"}

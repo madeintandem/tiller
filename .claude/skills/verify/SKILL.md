@@ -25,8 +25,8 @@ never in `~/dev/tiller-test-run`, which is the human's real dry-run repo):
 rm -rf /tmp/tiller-smoke/p && mkdir -p /tmp/tiller-smoke/p && cd /tmp/tiller-smoke/p
 git init -q -b main && git config user.email s@t && git config user.name S
 tiller init --name "Smoke App" --key smoke --kind greenfield
-tiller add contributor jc --name "JC Grubbs"
-tiller join --as jc
+tiller add contributor robin --name "Robin Hale"
+tiller join --as robin
 git add -A && git commit -qm init
 ```
 
@@ -36,9 +36,9 @@ git add -A && git commit -qm init
 narrative; the epic gate approves the tree, not the acceptance criteria.
 
 ```
-tiller add epic foundation --title Foundation --contributor jc
-tiller add feature foundation/app-scaffold --title "App scaffold" --contributor jc
-tiller approve epic foundation --contributor jc
+tiller add epic foundation --title Foundation --contributor robin
+tiller add feature foundation/app-scaffold --title "App scaffold" --contributor robin
+tiller approve epic foundation --contributor robin
 ```
 
 **Specify the feature.** Stage 2 is one act with one output: the specification,
@@ -71,7 +71,7 @@ criteria:
 # Acceptance
 EOF
 
-tiller add task foundation/app-scaffold/wire-the-build --title "Wire the build" --contributor jc
+tiller add task foundation/app-scaffold/wire-the-build --title "Wire the build" --contributor robin
 
 cat > $F/tasks/wire-the-build/task.md <<'EOF'
 # Wire the build
@@ -81,7 +81,7 @@ cat > $F/tasks/wire-the-build/task.md <<'EOF'
 Add the build target and the entrypoint, then prove it with the health route.
 EOF
 
-tiller spec feature foundation/app-scaffold --contributor jc
+tiller spec feature foundation/app-scaffold --contributor robin
 ```
 
 **Take the plan gate, claim one task, and start it.** Feature approval readies the
@@ -91,14 +91,14 @@ fixes its owner and atomically activates the ready feature. Features and epics
 show Contributors derived from started tasks, never an exclusive claim.
 
 ```
-tiller approve feature foundation/app-scaffold --contributor jc
-tiller claim task foundation/app-scaffold/wire-the-build --contributor jc
-tiller start task foundation/app-scaffold/wire-the-build --contributor jc
+tiller approve feature foundation/app-scaffold --contributor robin
+tiller claim task foundation/app-scaffold/wire-the-build --contributor robin
+tiller start task foundation/app-scaffold/wire-the-build --contributor robin
 git checkout -q -b tiller/foundation/app-scaffold/wire-the-build
 echo app > app.txt
 git add -A && git commit -qm "implement the build-wiring task"
-tiller check task foundation/app-scaffold/wire-the-build --contributor jc
-tiller check feature foundation/app-scaffold --contributor jc
+tiller check task foundation/app-scaffold/wire-the-build --contributor robin
+tiller check feature foundation/app-scaffold --contributor robin
 ```
 
 **Merge on a branch, then let sync observe it.** Tiller never branches, pushes,
@@ -106,11 +106,11 @@ or merges. Submit from the branch the work sits on so the review ref names it.
 
 ```
 # Already on the task's recorded branch, with implementation committed and checked.
-tiller submit task foundation/app-scaffold/wire-the-build --contributor jc
+tiller submit task foundation/app-scaffold/wire-the-build --contributor robin
 git add -A && git commit -qm "record task submission"
 git checkout -q main
 git merge --no-ff -m "merge build-wiring task branch" tiller/foundation/app-scaffold/wire-the-build
-tiller sync --contributor jc
+tiller sync --contributor robin
 ```
 
 `sync` should record three crossings, in this order: the task on `ancestry` (the
@@ -126,7 +126,7 @@ owning its tasks; applicable gates, inclusion of review heads/current task tips,
 and human acceptance still apply. Coordinate aggregate updates through Git.
 
 For an explicitly authorized transfer use
-`tiller transfer task|bug|chore|tweak <ref> --to <registered-contributor> --reason <text>`.
+`tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>`.
 Read the returned replacement ref; verify original attribution and history remain,
 the replacement is ready/unstarted with fresh identity/basis and no review/evidence,
 and held/dependent/carrier relationships remain truthful. Close an old task/shelf

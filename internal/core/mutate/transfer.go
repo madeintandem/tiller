@@ -83,7 +83,7 @@ func Transfer(tree *store.Tree, deps Deps, in TransferInput) (TransferResult, er
 	}
 	in.To, in.Reason = strings.TrimSpace(in.To), strings.TrimSpace(in.Reason)
 	if in.To == "" || in.Reason == "" {
-		return TransferResult{}, &usageError{reason: "transfer_arguments_required", msg: "transfer requires --to <registered-owner> and a nonblank --reason"}
+		return TransferResult{}, &usageError{reason: "transfer_arguments_required", msg: "transfer requires --to <contributor-id> and a nonblank --reason"}
 	}
 	recipient, err := store.ResolveContributor(tree.Manifest, in.To)
 	if err != nil {
