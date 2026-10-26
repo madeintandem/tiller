@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Build the Acme Platform stand-in project the documentation screenshots are
 # shot from: a greenfield project caught mid-flight, with one feature merged,
-# two in motion under two owners, a plan approved and waiting to be claimed,
-# an epic awaiting approval, an open question, and bugs, chores, and tweaks on the
-# shelves. Everything is driven through the tiller CLI so the project is
+# two in motion under two owners, a plan approved and waiting to be claimed
+# whose spec has since drifted, an epic awaiting approval, an open question,
+# and bugs, chores, and tweaks on the shelves. Everything is driven through the tiller CLI so the project is
 # always a tree the current binary would write itself, and it ends checked
 # out on the second owner's task branch, where her task is in review.
 #
@@ -201,6 +201,18 @@ $TILLER add task payments/stripe-checkout/webhook-receipt --title "Receive and v
 spec_feature payments/stripe-checkout "Stripe checkout" "One checkout session per enrollment fee, confirmed by Stripe's webhook rather than by the browser's return."
 $TILLER approve feature payments/stripe-checkout --contributor robin >/dev/null
 commit "payments/stripe-checkout: plan approved"
+
+# A late edit to the approved spec, not yet re-approved: the accepted basis
+# no longer matches feature.md, so drift reports one active_basis candidate
+# and Home's header band carries the Drift tile. Clear it with
+# `tiller approve feature payments/stripe-checkout --refresh-basis` when a
+# shot wants a clean sweep.
+cat >> .tiller/epics/payments/features/stripe-checkout/feature.md <<'EOF2'
+
+Refunds go back through the same checkout session, so the webhook handler
+also records Stripe's refund events against the enrollment.
+EOF2
+commit "payments/stripe-checkout: note refund events"
 
 # ---------- the shelves ----------
 $TILLER add bug blank-on-reload --title "Form blanks on a hard reload" --attach form-engine/certification-form-loading --contributor robin >/dev/null

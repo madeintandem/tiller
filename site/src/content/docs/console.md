@@ -136,8 +136,8 @@ the top bar, and narrow by status from a rail of tabs, each with its count.
 
 ### The map
 
-<img class="dark:sl-hidden" src="/tiller/console-map-light.webp" width="1440" height="780" alt="The Explore map: the project at the center, epics seated to either side with their features open, a selected feature lit with arcs to what it depends on and what depends on it, and its floating card at the top right, light theme" />
-<img class="light:sl-hidden" src="/tiller/console-map-dark.webp" width="1440" height="780" alt="The Explore map: the project at the center, epics seated to either side with their features open, a selected feature lit with arcs to what it depends on and what depends on it, and its floating card at the top right, dark theme" />
+<img class="dark:sl-hidden" src="/tiller/console-map-light.webp" width="1440" height="780" alt="The Explore map: the project at the center, epics seated to either side with their features open, a selected feature lit with arcs to what it depends on and what depends on it, and its floating card at the right, light theme" />
+<img class="light:sl-hidden" src="/tiller/console-map-dark.webp" width="1440" height="780" alt="The Explore map: the project at the center, epics seated to either side with their features open, a selected feature lit with arcs to what it depends on and what depends on it, and its floating card at the right, dark theme" />
 
 The map draws the whole project as a mind map. The project sits at the center. Epics branch out to either side, each seated beside what it depends on rather than by strict left-right alternation, so a chain of dependent epics tends to land together and fewer arcs have to cross the middle. Features sit beside their epic, tasks beside their feature, and Bugs, Chores, and Tweaks are three more branches off the root. A question hold renders as a small accent badge on the node it holds, counting only the questions that name that node directly.
 
