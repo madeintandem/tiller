@@ -106,8 +106,8 @@ func (u gatedUnit) attestGate(t *testing.T, gate, status string) (mutate.AttestR
 // layToggledUnit lays one started execution unit of the given noun on a repo
 // whose tests gate reads a flag file, with extra manifest gate lines
 // appended. A task runs under an approved feature; a shelf node stands alone.
-// The task is checked out on its own branch so task submit's branch guard
-// observes the branch the unit records.
+// Every unit is checked out on its recorded branch so submission observes
+// the same review identity as ordinary execution.
 func layToggledUnit(t *testing.T, noun, extraGates string) gatedUnit {
 	t.Helper()
 	flag := filepath.Join(t.TempDir(), "tests-green")
@@ -147,7 +147,8 @@ func layToggledUnit(t *testing.T, noun, extraGates string) gatedUnit {
 	driveTo(t, root, noun, "alpha", mutate.TransitionInput{Verb: "approve"})
 	_, err = mutate.ClaimWork(load(t, root), testDeps(), noun, "alpha", "")
 	require.NoError(t, err)
-	driveTo(t, root, noun, "alpha", mutate.TransitionInput{Verb: "start"})
+	started := driveTo(t, root, noun, "alpha", mutate.TransitionInput{Verb: "start"})
+	gitRunM(t, root, "checkout", "-b", started.Branch)
 	u.id, u.ref = prefix+"-aaaaaa", "alpha"
 	return u
 }

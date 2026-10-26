@@ -29,6 +29,9 @@ type RelationshipOptions struct {
 	// AllowIncompleteCorpus is for supplemental node/map enrichment only.
 	// Queries require a complete safe read and leave this false.
 	AllowIncompleteCorpus bool
+	// MaxDocumentBytes bounds console corpus/citation reads; zero leaves CLI
+	// reads unbounded. The limit is enforced before parsing document contents.
+	MaxDocumentBytes int64
 }
 
 // Relationships gathers missing supplemental inputs, then publishes one
@@ -41,7 +44,7 @@ func Relationships(ctx context.Context, t *store.Tree, options RelationshipOptio
 	index := relationships.BuildStructural(t)
 	documents := []relationships.Document{}
 	byPath := map[string][]byte{}
-	err := corpus.Walk(ctx, t.Root, func(document corpus.Document) error {
+	err := corpus.WalkLimited(ctx, t.Root, options.MaxDocumentBytes, func(document corpus.Document) error {
 		documents = append(documents, relationships.Document{Path: document.Path, Content: document.Content})
 		byPath[document.Path] = document.Content
 		return nil
@@ -99,7 +102,7 @@ func Relationships(ctx context.Context, t *store.Tree, options RelationshipOptio
 		}
 	}
 	relationships.AddContracts(t, index, contracts, failures)
-	if err := resolveCitedDocuments(ctx, t, index, byPath, corpusAvailable, options.AllowIncompleteCorpus); err != nil {
+	if err := resolveCitedDocuments(ctx, t, index, byPath, corpusAvailable, options.AllowIncompleteCorpus, options.MaxDocumentBytes); err != nil {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -131,7 +134,7 @@ func Relationships(ctx context.Context, t *store.Tree, options RelationshipOptio
 // .tiller. Their content is not scanned for mentions or recursively followed.
 // A hidden coordinate (corpus.Servable) is never read or granted a destination:
 // the console would refuse to serve it, so the index must not advertise it.
-func resolveCitedDocuments(ctx context.Context, t *store.Tree, index *relationships.Index, content map[string][]byte, corpusAvailable, tolerate bool) error {
+func resolveCitedDocuments(ctx context.Context, t *store.Tree, index *relationships.Index, content map[string][]byte, corpusAvailable, tolerate bool, maxDocumentBytes int64) error {
 	ids := []string{}
 	for id, vertex := range index.Vertices {
 		if vertex.Kind == "document" && vertex.Unresolved {
@@ -159,7 +162,7 @@ func resolveCitedDocuments(ctx context.Context, t *store.Tree, index *relationsh
 			continue
 		}
 		if !strings.HasPrefix(vertex.Path, ".tiller/") {
-			document, err := corpus.Read(ctx, t.Root, vertex.Path)
+			document, err := corpus.ReadLimited(ctx, t.Root, vertex.Path, maxDocumentBytes)
 			if err != nil && !errors.Is(err, fs.ErrNotExist) {
 				if ctx.Err() != nil {
 					return ctx.Err()

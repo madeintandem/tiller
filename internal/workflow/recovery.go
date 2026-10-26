@@ -140,11 +140,12 @@ func reviewOwnerClosed(status string) bool {
 	return status == "done" || status == "cancelled" || status == "archived"
 }
 
-// hasSubmittedRider reports a task of f in review on the aggregate, not on a
-// task PR of its own.
+// hasSubmittedRider reports a task of f in review on the aggregate, not an
+// independent task review of its own, including historical offline reviews.
 func hasSubmittedRider(t *store.Tree, f *store.Feature) bool {
 	for _, task := range t.FeatureTasks[f.ID] {
-		if task.Status == "in_review" && task.PR == nil {
+		grain, _ := store.TaskReviewGrain(t.Manifest, epicByKey(t, f.EpicKey), f, task)
+		if task.Status == "in_review" && task.PR == nil && grain != store.ReviewGrainTask {
 			return true
 		}
 	}
@@ -152,7 +153,7 @@ func hasSubmittedRider(t *store.Tree, f *store.Feature) bool {
 }
 
 // ReviewOwnerOf resolves the aggregate independently of closeout readiness.
-// Historical task PRs stay task-owned rather than riding the current grain.
+// Historical task-grain reviews stay independent, with a PR or offline ref.
 func ReviewOwnerOf(t *store.Tree, n store.Node) store.Node {
 	var feature *store.Feature
 	switch node := n.(type) {
@@ -164,10 +165,14 @@ func ReviewOwnerOf(t *store.Tree, n store.Node) store.Node {
 	case *store.Feature:
 		feature = node
 	case *store.Task:
-		if node.PR != nil {
+		feature = t.Features[node.FeatureID]
+		if feature == nil {
 			return nil
 		}
-		feature = t.Features[node.FeatureID]
+		grain, _ := store.TaskReviewGrain(t.Manifest, epicByKey(t, feature.EpicKey), feature, node)
+		if node.PR != nil || grain == store.ReviewGrainTask {
+			return nil
+		}
 	default:
 		return nil
 	}

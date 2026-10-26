@@ -51,6 +51,8 @@ On any refusal, follow the recovery protocol in `.tiller/orientation.md`. The st
 
 ## Choreography
 
+Inspect `git diff --cached --name-status` and the working tree before intake. Preserve unrelated staged and unstaged work, including other proposals. Stage only exact reviewed paths from this run: the landed feedback, authored amendment narrative, command-written amendment state, and events. Do not stage `.tiller/` or a whole directory. Commit with that same exact path list to exclude unrelated indexed files. If a named file also carries unrelated edits, isolate authorized hunks with a reviewed index or stop; `--only` takes the whole named working-tree file.
+
 Land the document if it is not landed, read it whole, map each finding to its rule, cite every op, write the narrative, then stop for the human.
 
 ```
@@ -110,7 +112,9 @@ tiller amend opus-review --add-question "Keep or trim the legacy image parsers?"
 #   .tiller/amendments/<A-id>-opus-review.md
 
 tiller show amendment opus-review          # the whole batch, every op sourced
-git add .tiller && git commit -m "intake: stage the opus review explosion"
+git add -- <each-reviewed-feedback-proposal-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "intake: stage the opus review explosion" -- <same-exact-paths>
 #   (directly on the integration branch: a .tiller/-only diff needs no PR)
 # STOP. the human reads the narrative and the batch beside the git diff, for
 # opus-review. on an explicit instruction naming the amendment you may run the

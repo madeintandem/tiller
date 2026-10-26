@@ -62,9 +62,30 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 			return TransitionResult{}, err
 		}
 	}
+	if in.Verb == "start" {
+		if workNodeCarried(tree, target) {
+			return TransitionResult{}, &WorkCarriedError{Noun: noun, NodeID: w.ID, Key: deref(w.Key), Carrier: w.ResolvedBy, CurrentState: w.Status}
+		}
+		if err := guardNewBranch(tree, rev, noun, w.ID, branchFor(tree.Manifest, deref(w.Key))); err != nil {
+			return TransitionResult{}, err
+		}
+	}
 	if in.Verb == "submit" {
 		if err := guardSubmitGates(tree.Manifest, noun, w.ID, deref(w.Key), w.Status, &w.GatesBlock); err != nil {
 			return TransitionResult{}, err
+		}
+		if err := guardReviewIdentity(noun, w.ID, w.PR, in.PR); err != nil {
+			return TransitionResult{}, err
+		}
+		if err := guardSubmitBranch(rev, noun, w.ID, w.Branch, in.ReviewRef); err != nil {
+			return TransitionResult{}, err
+		}
+		if in.PR == nil {
+			head, err := rev.CurrentCommit()
+			if err != nil {
+				return TransitionResult{}, err
+			}
+			in.ReviewRef = &store.ReviewRef{Branch: w.Branch, Head: head}
 		}
 	}
 	if in.Verb == "cancel" {
@@ -115,6 +136,16 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		return TransitionResult{}, err
 	}
 	return workResult(target, true), nil
+}
+
+// WorkCarriedError refuses independent execution while a live carrier owns
+// completion. Clearing that relationship is a deliberate decision.
+type WorkCarriedError struct {
+	Noun, NodeID, Key, Carrier, CurrentState string
+}
+
+func (e *WorkCarriedError) Error() string {
+	return fmt.Sprintf("%s %s is carried by %s; run tiller resolve %s %s --clear before starting independent work", e.Noun, e.NodeID, e.Carrier, e.Noun, e.Key)
 }
 
 // workResult projects a shelf node the way taskResult projects a task,

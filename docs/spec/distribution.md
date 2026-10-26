@@ -2,7 +2,7 @@
 
 **Scope.** This document defines how Tiller reaches a developer and a project: how it is built, installed, updated, versioned, migrated, wired into a coding harness, adopted, and documented. It layers over the [artifact schema](./artifact-schema.md), canonical for the on-disk model, and the [CLI command surface](./cli-surface.md), canonical for commands. Where this document disagrees with either, they win and this one is fixed.
 
-**Status.** Current reference at version stamp 0.21.3, schema 12, orientation generation 57, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
+**Status.** Current reference at version stamp 0.21.3, schema 12, orientation generation 58, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
 
 ---
 
@@ -300,7 +300,7 @@ The hard rule stays inline, where it is always in the harness's loaded context, 
 
 `tiller upgrade` refreshes this checkout's orientation after binary selection and migration. `tiller upgrade --project-only` refreshes it offline with the running binary, without joining or changing identity. Join's onboarding and standalone migrate reuse the same refresh. Readiness names a stamped generation mismatch: behind the binary, use project-only; ahead of the binary, use upgrade. Refresh refuses to overwrite higher on-disk generations rather than downgrading them. Byte-identical outputs are not rewritten.
 
-The orientation generation is 57, with schema 12 and eleven embedded skills. The generation moves only when the rules the generated file states change, and older generated instructions must not overwrite a higher orientation generation. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline and design-brief guidance, project independence, and the human acceptance, final-merge, and fast-forward boundaries are stable across generations.
+The orientation generation is 58, with schema 12 and eleven embedded skills. The generation moves only when the rules the generated file states change, and older generated instructions must not overwrite a higher orientation generation. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline and design-brief guidance, project independence, and the human acceptance, final-merge, and fast-forward boundaries are stable across generations.
 
 Use the reviewed project-only ownership migration above for schema-5 active work; only schemas 2 through 4 crossing schema 5 require old-work drain. Review and commit source and generated changes separately from binary installation outcomes. Current-schema refresh is identity-free, real migration needs a registered actor, and neither selects checkout identity. Every continuing branch/checkout must incorporate the published migration and refresh its own artifacts. Do not hand-edit installed shims or generated orientation.
 
@@ -400,7 +400,7 @@ Contributors and any required reference declaration still need completing before
 imported docs. Init leaves an existing `.gitignore` alone; join upserts the shared Tiller patterns.
 The baseline ledger, named-doc confirmation gate, and the `derive-baseline` startup move are built. Fresh imports
 refuse a root-level `baseline.yml`, including case variants, before scaffold writes; import prose,
-not another project's confirmations. The current build uses schema 12, eleven skills, and orientation generation 57.
+not another project's confirmations. The current build uses schema 12, eleven skills, and orientation generation 58.
 Fresh scaffolds include `stale_design` in drift checks; `shifted_design` remains opt-in. Init reruns, join, and migrate
 never rewrite an existing manifest's checks list or confirm its baseline. Empty or invalid modes that
 older binaries tolerated now need a human manifest correction; no migration rewrites them, and

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/madeintandem/tiller/internal/rootpath"
 	"gopkg.in/yaml.v3"
 )
 
@@ -220,6 +221,9 @@ func (t *Tree) loadShelf(noun string, ids *nodeIDRegistry) error {
 		return err
 	}
 	for _, e := range entries {
+		if e.Type()&os.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(dir, e.Name()))
+		}
 		if !e.IsDir() {
 			continue
 		}

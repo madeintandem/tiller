@@ -359,6 +359,23 @@ func newApproveCmd() *cobra.Command {
 			"and accepts none of the work-node flags or --all.",
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("review-grain") {
+				noun, ok := singularNoun(args[0])
+				if !ok || (noun != store.NounEpic && noun != store.NounFeature) {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--review-grain applies only to approve epic or approve feature, not " + args[0]})
+				}
+			}
+			if cmd.Flags().Changed("feature") {
+				if strings.TrimSpace(feature) == "" {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--feature needs a nonblank feature address"})
+				}
+				if noun, ok := singularNoun(args[0]); !ok || noun != store.NounTask {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--feature applies only to approve task"})
+				}
+				if len(args) != 1 {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--feature is mutually exclusive with positional nodes; pass one or the other"})
+				}
+			}
 			if cmd.Flags().Changed("assume-question") || cmd.Flags().Changed("reason") {
 				if len(args) != 2 || args[0] != store.NounFeature || strings.TrimSpace(assumeQuestion) == "" || strings.TrimSpace(assumptionReason) == "" ||
 					cmd.Flags().Changed("refresh-basis") || cmd.Flags().Changed("review-grain") || cmd.Flags().Changed("reviewed-assumption") || cmd.Flags().Changed("feature") {
@@ -391,23 +408,8 @@ func newApproveCmd() *cobra.Command {
 				return runApproveAmendmentDispatch(cmd, args, refreshBasis, feature, reviewedAssumption,
 					cmd.Flags().Changed("reviewed-assumption"))
 			}
-			// --review-grain's own validation runs as one block ahead of
-			// every other arm: gate on whether the flag was passed at all,
-			// not on a non-empty value (the same rule --reviewed-assumption
-			// draws immediately below, for the identical reason), then
-			// refuse every combination the mutate layer would otherwise
-			// silently drop rather than apply. --refresh-basis is
-			// controller ruling B: neither transitionEpic, transitionFeature's
-			// own refresh-basis arm, nor transitionTask's ever reads
-			// ReviewGrain on that path, so combining the two would record
-			// the basis refresh and quietly leave the grain unrecorded, the
-			// same silent-pass-over class tiller refuses elsewhere.
-			// --reviewed-assumption is the identical hazard one flag over:
-			// runApproveReviewedAssumption is a dedicated act that never
-			// reads ReviewGrain either. Task noun is out of contract on its
-			// own terms: store.Task carries no review_grain field at all, so
-			// transitionTask never reads the flag either, and letting it
-			// through would be the same silent drop under a third name.
+			// Basis refresh and assumption review do not record review grain;
+			// reject combinations rather than silently dropping that flag.
 			if cmd.Flags().Changed("review-grain") {
 				if strings.TrimSpace(reviewGrain) == "" {
 					return emitFailure(cmd, "approve", &usageError{
@@ -427,14 +429,6 @@ func newApproveCmd() *cobra.Command {
 						reason: "bad_args",
 						msg:    "--review-grain is mutually exclusive with --reviewed-assumption; one node and one act at a time",
 					})
-				}
-				if len(args) > 0 {
-					if sing, ok := singularNoun(args[0]); ok && sing == store.NounTask {
-						return emitFailure(cmd, "approve", &usageError{
-							reason: "bad_args",
-							msg:    "--review-grain applies to approve epic or approve feature; a task carries no review grain of its own",
-						})
-					}
 				}
 			}
 			// Gate on whether the flag was passed at all, not on a
@@ -457,19 +451,7 @@ func newApproveCmd() *cobra.Command {
 				g := reviewGrain
 				in.ReviewGrain = &g
 			}
-			if feature != "" {
-				if len(args) > 1 {
-					return emitFailure(cmd, "approve", &usageError{
-						reason: "bad_args",
-						msg:    "--feature is mutually exclusive with positional nodes; pass one or the other",
-					})
-				}
-				if sing, ok := singularNoun(args[0]); !ok || sing != store.NounTask {
-					return emitFailure(cmd, "approve", &usageError{
-						reason: "bad_args",
-						msg:    fmt.Sprintf("--feature applies to `approve task`, not %q", args[0]),
-					})
-				}
+			if cmd.Flags().Changed("feature") {
 				return runApproveTasksByFeature(cmd, feature, in)
 			}
 			if len(args) < 2 {
@@ -1418,6 +1400,11 @@ func blockedByQuestionsView(blk *mutate.BlockedByQuestionsError) (BlockedByQuest
 func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any, human string, matched bool) {
 	if data, human, matched := branchBlockedView(tree, err); matched {
 		return data, human, true
+	}
+	var carried *mutate.WorkCarriedError
+	if errors.As(err, &carried) {
+		return map[string]any{"reason": "work_carried", "noun": carried.Noun, "id": carried.NodeID, "key": carried.Key, "current_state": carried.CurrentState, "resolved_by": carried.Carrier},
+			"Blocked: " + carried.Error(), true
 	}
 	var gatesBlk *mutate.RequiredGatesNotGreenError
 	if errors.As(err, &gatesBlk) {

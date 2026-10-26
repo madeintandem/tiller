@@ -37,11 +37,11 @@ import (
 // written, and a changed path that exists but cannot be read is the same
 // worktree_unreadable error, never a deletion.
 //
-// HEAD blobs are a safe shortcut only when Git cannot normalize away working-tree
-// byte differences. If check-in conversion is configured for tracked code, it
-// returns "" instead of trusting Git's normalized diff or hashing the entire
-// checkout on every check. Attributes are resolved by Git from the current
-// worktree (with its index fallback), including local and global overrides.
+// HEAD blobs are a safe shortcut only when Git cannot hide working-tree byte
+// or executable-mode differences. Conversion, hidden index flags, and mode
+// suppression disable reuse rather than altering the user's Git settings.
+// Attributes are resolved from the current worktree with its index fallback,
+// including local and global overrides.
 //
 // A repository inside the checkout is opaque to it: a submodule's gitlink
 // records only a commit, and an untracked nested repository reads as one
@@ -88,6 +88,9 @@ func (g *Git) CodeIdentity() (string, error) {
 			entries[p] = fields[0] + " " + fields[2]
 		}
 		if converts, err := repo.codeCheckinConversion(entries, excluded); err != nil || converts {
+			return "", err
+		}
+		if hidden, err := repo.codeHiddenChanges(excluded); err != nil || hidden {
 			return "", err
 		}
 
@@ -147,13 +150,38 @@ func (g *Git) CodeIdentity() (string, error) {
 	sort.Strings(sorted)
 
 	h := sha256.New()
-	// Retire records produced before conversion safety was established, including
-	// records made under conversion settings that have since been removed.
-	h.Write([]byte("tiller-code-identity-v2\x00"))
+	// Retire identities that trusted hidden index bytes or suppressed modes,
+	// even when those settings have since been removed.
+	h.Write([]byte("tiller-code-identity-v3\x00"))
 	for _, p := range sorted {
 		fmt.Fprintf(h, "%s\x00%s\n", p, entries[p])
 	}
 	return "sha256:" + hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// codeHiddenChanges detects index and config settings that make diff HEAD
+// incomplete. Excluded state flags do not affect executable code identity.
+func (g *Git) codeHiddenChanges(excluded []string) (bool, error) {
+	mode, err := g.run("config", "--bool", "--get", "core.filemode")
+	if err != nil {
+		var ge *gitError
+		if !errors.As(err, &ge) || ge.exitCode != 1 {
+			return false, g.asEnv(err)
+		}
+	}
+	if mode == "false" {
+		return true, nil
+	}
+	flags, err := g.runRaw("--no-optional-locks", "ls-files", "-v", "-z")
+	if err != nil {
+		return false, g.asEnv(err)
+	}
+	for _, record := range strings.Split(flags, "\x00") {
+		if len(record) >= 2 && record[:2] != "H " && !isExcluded(record[2:], excluded) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // codeCheckinConversion checks the HEAD paths whose raw bytes the fast path

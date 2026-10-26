@@ -16,7 +16,7 @@ import (
 // ObserveWorkflow reads each feature contract and basis once per snapshot. Task
 // basis checks use task-owned pins rather than rereading their parent feature.
 func ObserveWorkflow(t *store.Tree) workflow.Input {
-	return observeWorkflow(t, nil, nil)
+	return observeWorkflow(t, nil, nil, 0)
 }
 
 // ObserveWorkflowForNode scopes observations to the addressed node's resolved review.
@@ -29,12 +29,18 @@ func ObserveWorkflowForNode(t *store.Tree, node store.Node) workflow.Input {
 // ObserveWorkflowForNodes unions ObserveWorkflowForNode's scopes, so a list
 // that classifies a few review owners reads only their features.
 func ObserveWorkflowForNodes(t *store.Tree, nodes []store.Node) workflow.Input {
+	return ObserveWorkflowForNodesLimited(t, nodes, 0)
+}
+
+// ObserveWorkflowForNodesLimited bounds contract bytes before parsing for
+// console reads. A zero limit retains the CLI observation policy.
+func ObserveWorkflowForNodesLimited(t *store.Tree, nodes []store.Node, maxDocumentBytes int64) workflow.Input {
 	features := map[string]bool{}
 	tasks := map[string]bool{}
 	for _, node := range nodes {
 		addWorkflowScope(t, node, features, tasks)
 	}
-	return observeWorkflow(t, features, tasks)
+	return observeWorkflow(t, features, tasks, maxDocumentBytes)
 }
 
 func addWorkflowScope(t *store.Tree, node store.Node, features, tasks map[string]bool) {
@@ -69,7 +75,7 @@ func addWorkflowScope(t *store.Tree, node store.Node, features, tasks map[string
 	}
 }
 
-func observeWorkflow(t *store.Tree, features, tasks map[string]bool) workflow.Input {
+func observeWorkflow(t *store.Tree, features, tasks map[string]bool, maxDocumentBytes int64) workflow.Input {
 	in := workflow.Input{
 		Contracts: map[string]*store.EvalFile{}, ContractErrors: map[string]string{}, ContractMissing: map[string]bool{},
 		Eligibility: map[string]string{}, SubmissionEligibility: map[string]string{},
@@ -85,7 +91,7 @@ func observeWorkflow(t *store.Tree, features, tasks map[string]bool) workflow.In
 		path, ok := gen.EvalPath(t, f)
 		if !ok {
 			in.ContractErrors[id] = "contract path unavailable"
-		} else if document, err := corpus.Read(context.Background(), t.Root, filepath.ToSlash(path)); err != nil {
+		} else if document, err := corpus.ReadLimited(context.Background(), t.Root, filepath.ToSlash(path), maxDocumentBytes); err != nil {
 			in.ContractErrors[id] = err.Error()
 			in.ContractMissing[id] = errors.Is(err, fs.ErrNotExist)
 		} else {

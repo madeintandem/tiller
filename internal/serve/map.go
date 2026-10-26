@@ -10,7 +10,7 @@ import (
 
 func MapHandler(root string) http.HandlerFunc {
 	return api(root, func(t *store.Tree, r *http.Request) (any, error) {
-		index, err := readinput.Relationships(r.Context(), t, readinput.RelationshipOptions{AllowIncompleteCorpus: true})
+		index, err := readinput.Relationships(r.Context(), t, readinput.RelationshipOptions{AllowIncompleteCorpus: true, MaxDocumentBytes: maxServedFileBytes})
 		if err != nil {
 			return nil, err
 		}

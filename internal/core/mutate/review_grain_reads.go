@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/madeintandem/tiller/internal/rootpath"
 	"github.com/madeintandem/tiller/internal/store"
 )
 
@@ -99,6 +100,9 @@ func freshReviewGrainState(tree *store.Tree, change reviewGrainChange) (*store.T
 	}
 	fresh.Epics = make(map[string]*store.Epic)
 	for _, entry := range entries {
+		if entry.Type()&fs.ModeSymlink != 0 {
+			return nil, reviewGrainChange{}, nil, fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(epicsDir, entry.Name()))
+		}
 		if !entry.IsDir() {
 			continue
 		}

@@ -286,6 +286,9 @@ func (t *Tree) loadEpics(ids *nodeIDRegistry) error {
 	}
 
 	for _, e := range entries {
+		if e.Type()&fs.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(epicsDir, e.Name()))
+		}
 		if !e.IsDir() {
 			continue
 		}
@@ -325,6 +328,9 @@ func (t *Tree) loadFeatures(epicsDir, epicKey string, ids *nodeIDRegistry) error
 	}
 
 	for _, fe := range entries {
+		if fe.Type()&fs.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(featuresDir, fe.Name()))
+		}
 		if !fe.IsDir() {
 			continue
 		}
@@ -376,6 +382,9 @@ func (t *Tree) loadTasks(featureDir string, feat *Feature, ids *nodeIDRegistry) 
 	}
 
 	for _, e := range entries {
+		if e.Type()&fs.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(tasksDir, e.Name()))
+		}
 		if !e.IsDir() {
 			continue
 		}

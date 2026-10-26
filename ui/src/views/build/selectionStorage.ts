@@ -1,8 +1,8 @@
 // The Build board's epic selection, persisted to localStorage so a page
-// reload restores the epics the developer was focused on (this feature's own
-// spec: restore-on-mount, bootstrap only - the URL stays the single source of
-// truth downstream, exactly the way selection.ts's own doc comment already
-// frames the URL). Namespaced per project key because every project serves
+// reload or bare-route arrival restores the epics the developer was focused
+// on. Storage only bootstraps an absent URL selection; the URL stays the
+// single source of truth downstream, as selection.ts's doc comment
+// frames it. Namespaced per project key because every project serves
 // on the same default port (4400), one browser origin, so a flat key (the
 // panelStorage.ts shape) would leak one project's selection into another
 // project's tab.

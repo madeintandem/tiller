@@ -73,9 +73,13 @@ tiller amend eval-fix --correct-eval form-engine/certification-form-loading \
 # stale_spec on the spec leg or the surface leg: the edit is still the right fix to
 # draft, but say plainly that the candidate persists until a byte-identical revert
 # or a reopen-and-re-cross, not a forward correction alone (the Reasoning above says why)
-# stage only the reviewed prose and exact command-written state/event paths
-git add -- .tiller/epics/form-engine/features/certification-form-loading/feature.md
-git commit -m "mend-drift: reconcile form-engine/certification-form-loading"
+# inspect the existing index; preserve unrelated staged/unstaged work
+# stage only reviewed prose and exact command-written state/event paths
+# stop if a named file includes unrelated edits; --only takes the whole file
+git diff --cached --name-status
+git add -- <each-reviewed-prose-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "mend-drift: reconcile form-engine/certification-form-loading" -- <same-exact-paths>
 # a mend that touches only .tiller/ commits directly on the integration branch, no PR
 tiller drift                                              # once the fix lands, confirm the candidate cleared
 ```

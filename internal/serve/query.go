@@ -31,7 +31,7 @@ func QueryHandler(root string) http.HandlerFunc {
 		if err != nil {
 			return nil, &httpError{http.StatusBadRequest, err.Error()}
 		}
-		index, err := readinput.Relationships(request.Context(), tree, readinput.RelationshipOptions{})
+		index, err := readinput.Relationships(request.Context(), tree, readinput.RelationshipOptions{MaxDocumentBytes: maxServedFileBytes})
 		if err != nil {
 			return nil, err
 		}

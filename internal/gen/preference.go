@@ -73,7 +73,8 @@ func eligibleTask(t *store.Tree, task *store.Task, assigned bool) bool {
 		if !UnfinishedAssignment(dep.Status) {
 			continue
 		}
-		if coarse && dep.FeatureID == f.ID && dep.Status == ReviewState && dep.ReviewRef != nil {
+		depGrain, _ := store.TaskReviewGrain(t.Manifest, epic, f, dep)
+		if coarse && depGrain != store.ReviewGrainTask && dep.FeatureID == f.ID && dep.Status == ReviewState && dep.ReviewRef != nil {
 			continue
 		}
 		return false

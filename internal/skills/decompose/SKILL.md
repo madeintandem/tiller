@@ -91,8 +91,13 @@ tiller show feature inspect-result/read-result --json
 tiller order epic result-foundation inspect-result compare-results
 tiller order feature compare-results/retain-results compare-results/compare-retained
 
-# commit the tree so the human has something to review; Tiller never commits:
-#   git add .tiller && git commit -m "decompose: result delivery increments"
+# Inspect the existing index and preserve unrelated staged/unstaged work.
+# Review exact authored prose and command-written state/event paths, not directories.
+# If a named file also has unrelated edits, stop rather than commit the whole file.
+git diff --cached --name-status
+git add -- <each-reviewed-proposal-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "decompose: result delivery increments" -- <same-exact-paths>
 # directly on the integration branch: a .tiller/-only diff needs no PR.
 # stop for human review and `tiller approve epic result-foundation`.
 # approval leaves features draft; the human chooses which to specify just in time.

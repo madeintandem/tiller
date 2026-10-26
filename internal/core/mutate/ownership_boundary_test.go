@@ -143,7 +143,8 @@ func TestShelfOwnerBoundarySurvivesReviewResumeAndCancellation(t *testing.T) {
 			_, err = mutate.ClaimWork(load(t, root), deps, noun, item.ID, "")
 			require.NoError(t, err)
 			driveWith(t, root, deps, noun, item.ID, mutate.TransitionInput{Verb: "approve"})
-			driveWith(t, root, deps, noun, item.ID, mutate.TransitionInput{Verb: "start"})
+			started := driveWith(t, root, deps, noun, item.ID, mutate.TransitionInput{Verb: "start"})
+			gitRunM(t, root, "checkout", "-b", started.Branch)
 			for _, verb := range []string{"start", "check", "submit", "resume", "cancel"} {
 				if verb != "start" {
 					in := mutate.TransitionInput{Verb: verb, Reason: "review continuation", Resolution: store.ResolutionWontfix}

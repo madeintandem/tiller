@@ -93,6 +93,8 @@ One addressing rule is particular to this noun. An amendment answers to its key 
 
 ## Choreography
 
+Inspect `git diff --cached --name-status` and the working tree before editing. Preserve unrelated staged and unstaged work, including other planning changes. Stage only exact reviewed paths this proposal authored or its commands wrote: amendment prose/state, revised intent, and this run's events. Do not stage `.tiller/` or a whole node directory. Commit with the same exact path list to exclude unrelated indexed files. If one named file also contains unrelated edits, isolate the authorized hunks with a reviewed index or stop rather than commit its whole working-tree contents with `--only`.
+
 First run the structural preflight above, before choosing placement or opening a proposal. These examples show the lightweight correction exit and a genuine scope replacement; unchanged relocation instead stages `--move-feature` under the same inspect, commit, and human-approval boundary.
 
 ```
@@ -158,7 +160,9 @@ tiller amend form-engine-rework --correct-eval form-engine/certification-form-lo
   --reason "loader tests moved into two files" --retire C-4
 tiller amend form-engine-rework --amends-design design/solution-design/01-overview.md
 tiller show amendment form-engine-rework                   # the batch, each precondition's live validity
-git add .tiller && git commit -m "amend: stage the form engine reshape"
+git add -- <each-reviewed-proposal-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "amend: stage the form engine reshape" -- <same-exact-paths>
 #   (directly on the integration branch: a .tiller/-only diff needs no PR)
 tiller readout amend                                       # the block that closes your reply, reproduced verbatim
 # STOP. the human reads the narrative and the batch beside the git diff, for

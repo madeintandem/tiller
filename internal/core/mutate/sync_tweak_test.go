@@ -32,7 +32,6 @@ func layReviewedTweakGitGates(t *testing.T, buildRun, testsRun string) string {
 	t.Helper()
 	root := layStartedTweak(t, buildRun, testsRun)
 	gitCommitAllM(t, root, "tweak started")
-	gitRunM(t, root, "branch", "-M", "main")
 	tree := load(t, root)
 	res, err := mutate.Check(tree, testDeps(), vcs.New(root), tree.Tweaks["TW-aaaaaa"], mutate.CheckInput{})
 	require.NoError(t, err)
@@ -43,8 +42,9 @@ func layReviewedTweakGitGates(t *testing.T, buildRun, testsRun string) string {
 		stageShelfReview(t, root, store.NounTweak, "alpha", 41)
 	}
 	gitCommitAllM(t, root, "tweak in review")
+	// Integration holds the submitted ledger snapshot, not the implementation.
+	gitRunM(t, root, "branch", "-f", "main")
 
-	gitRunM(t, root, "checkout", "-b", tweakBranch)
 	require.NoError(t, os.WriteFile(filepath.Join(root, "fix.txt"), []byte("fix\n"), 0o644))
 	gitCommitAllM(t, root, "fix the tweak")
 	gitRunM(t, root, "checkout", "main")

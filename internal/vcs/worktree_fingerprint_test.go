@@ -224,3 +224,20 @@ func TestWorktreeFingerprint_SymlinkTargetIsItsIdentity(t *testing.T) {
 	require.NoError(t, os.Remove(link))
 	assert.NotEqual(t, first, fingerprint(t, g), "a removed link is a deletion")
 }
+
+func TestWorktreeFingerprint_UnbornIndexedFilesUseWorkingBytes(t *testing.T) {
+	dir := t.TempDir()
+	run(t, dir, "init")
+	g := New(dir)
+	name := "staged\ncode.txt"
+	require.NoError(t, writeRepoFile(dir, name, "first\n"))
+	run(t, dir, "add", "-A")
+	first := fingerprint(t, g)
+	require.NoError(t, writeRepoFile(dir, name, "second\n"))
+	second := fingerprint(t, g)
+	require.NotEqual(t, first, second, "indexed paths must observe unstaged working bytes before the first commit")
+	run(t, dir, "add", "-A")
+	require.Equal(t, second, fingerprint(t, g), "staging unchanged bytes must preserve the observed tree")
+	require.NoError(t, os.Remove(filepath.Join(dir, name)))
+	require.NotEqual(t, second, fingerprint(t, g), "an indexed path missing from the working tree is distinct")
+}

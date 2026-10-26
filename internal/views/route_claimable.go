@@ -23,7 +23,8 @@ func assignedTaskEligible(t *store.Tree, task *store.Task, in workflow.Input) bo
 // A submitted coarse prerequisite can be assembled before starting its dependent.
 // Start verifies Git inclusion; this pure hint authorizes execute to assemble it.
 func unmetTaskDependency(t *store.Tree, f *store.Feature, task *store.Task) string {
-	coarse := store.ResolvedReviewGrain(t.Manifest, recapEpicByKey(t, f.EpicKey), f) != store.ReviewGrainTask
+	epic := recapEpicByKey(t, f.EpicKey)
+	coarse := store.ResolvedReviewGrain(t.Manifest, epic, f) != store.ReviewGrainTask
 	for _, id := range task.DependsOn {
 		dep := t.Tasks[id]
 		if dep == nil {
@@ -32,7 +33,8 @@ func unmetTaskDependency(t *store.Tree, f *store.Feature, task *store.Task) stri
 		if dep.Status == "done" || dep.Status == "cancelled" {
 			continue
 		}
-		if coarse && dep.FeatureID == f.ID && dep.Status == "in_review" && dep.ReviewRef != nil {
+		depGrain, _ := store.TaskReviewGrain(t.Manifest, epic, f, dep)
+		if coarse && depGrain != store.ReviewGrainTask && dep.FeatureID == f.ID && dep.Status == "in_review" && dep.ReviewRef != nil {
 			continue
 		}
 		return gen.Ref(t, dep)

@@ -66,11 +66,12 @@ func NodeHandler(root string) http.HandlerFunc {
 		} else {
 			evs = merged
 		}
-		workflowInput := readinput.WorkflowForNode(snapshot.Base, baseNode)
+		workflowInput := mutate.ObserveWorkflowForNodesLimited(snapshot.Base, []store.Node{baseNode}, maxServedFileBytes)
 		index, err := readinput.Relationships(r.Context(), t, readinput.RelationshipOptions{
 			Events: evs, EventsLoaded: true, HistoryError: historyError,
 			Contracts: workflowInput.Contracts, ContractErrors: workflowInput.ContractErrors, ContractMissing: workflowInput.ContractMissing,
 			AllowIncompleteCorpus: true,
+			MaxDocumentBytes:      maxServedFileBytes,
 		})
 		if err != nil {
 			return nil, err
@@ -84,7 +85,11 @@ func NodeHandler(root string) http.HandlerFunc {
 			// sentinel is still in the file. It is scoped to a file that was
 			// actually read: a file that is not there is a missing file, a
 			// different fact with its own honest rendering.
-			if content, ok := readProse(r.Context(), root, page.Prose.Path); ok {
+			content, err := readProse(r.Context(), root, page.Prose.Path)
+			if errors.Is(err, corpus.ErrTooLarge) {
+				return nil, tooLarge(page.Prose.Path)
+			}
+			if err == nil {
 				page.Prose.Content = content
 				page.Prose.Stub = mutate.IsProseUnwritten(page.Node.Noun, content)
 			}
@@ -422,19 +427,14 @@ func commitURL(repo, token string) string {
 	return repo + "/commit/" + strings.TrimPrefix(token, prefix)
 }
 
-// readProse reads the node's prose file for the page, reporting whether the
-// read landed. A missing or unreadable file leaves the content empty with the
-// path intact: the page renders an honest pointer to prose that is not there
-// rather than failing, the same way a dangling relationship degrades to a bare
-// id. The ok return is what keeps that gap distinguishable from an empty file
-// the caller must still judge. The path is repo-relative with forward slashes
-// (views fills it from gen.ProsePath), so it is localized here.
-func readProse(ctx context.Context, root, rel string) (string, bool) {
-	document, err := corpus.Read(ctx, root, rel)
+// readProse bounds node prose with the same policy as the direct file route.
+// Missing and unreadable files retain the existing empty-content pointer.
+func readProse(ctx context.Context, root, rel string) (string, error) {
+	document, err := corpus.ReadLimited(ctx, root, rel, maxServedFileBytes)
 	if err != nil {
-		return "", false
+		return "", err
 	}
-	return string(document.Content), true
+	return string(document.Content), nil
 }
 
 // nodePath splits /api/node/<noun>/<address>. The first segment after the

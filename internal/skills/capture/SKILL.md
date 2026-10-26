@@ -27,6 +27,8 @@ On a refusal, follow `.tiller/orientation.md`. Fix an invalid local key, unresol
 
 ## Choreography
 
+Before changing files, inspect the existing index with `git diff --cached --name-status` and the working tree. Preserve unrelated staged and unstaged work, including other `.tiller/` proposals. Review this run's exact authored contract, command-written state, and event paths before staging. The path lists below must name only those reviewed files, never a directory. Use a path-limited commit to exclude unrelated staged files. If a named file contains someone else's edits too, isolate the authorized hunks with a reviewed index or stop; `--only` includes the whole named working-tree file.
+
 ```text
 tiller add bug blank-on-reload --title "Form is blank after reload" \
   --attach form-engine/certification-form-loading \
@@ -51,7 +53,9 @@ tiller add tweak button-spacing --title "Adjust button spacing"
 # ## Why
 # ## Done when
 
-git add .tiller && git commit -m "capture: blank-on-reload"
+git add -- <each-reviewed-path-this-run-wrote>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "capture: blank-on-reload" -- <same-exact-paths>
 # STOP. The status remains `proposed`; never approve it in capture.
 ```
 

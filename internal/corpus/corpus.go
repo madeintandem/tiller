@@ -5,6 +5,7 @@ package corpus
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -20,6 +21,9 @@ type Document struct {
 	Path    string
 	Content []byte
 }
+
+// ErrTooLarge marks a document refused before parsing by a bounded reader.
+var ErrTooLarge = errors.New("document exceeds the read size limit")
 
 // Retired reports whether a repository coordinate is outside the live document
 // corpus because it names the retired root board or a descendant obstruction.
@@ -55,6 +59,12 @@ func Servable(coordinate string) bool {
 // Each walk reads and validates current bytes; file metadata is not a content
 // identity.
 func Walk(ctx context.Context, root string, visit func(Document) error) error {
+	return WalkLimited(ctx, root, 0, visit)
+}
+
+// WalkLimited applies a per-document byte limit before parsing or visiting.
+// A zero limit preserves the CLI's unbounded corpus policy.
+func WalkLimited(ctx context.Context, root string, maxBytes int64, visit func(Document) error) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -139,9 +149,14 @@ func Walk(ctx context.Context, root string, visit func(Document) error) error {
 		if !info.Mode().IsRegular() {
 			return fmt.Errorf("%s is not a regular file", coordinate)
 		}
-		data, err := fs.ReadFile(fsys, p)
+		file, err := fsys.Open(p)
 		if err != nil {
 			return err
+		}
+		data, err := readContent(file, maxBytes)
+		closeErr := file.Close()
+		if err != nil || closeErr != nil {
+			return fmt.Errorf("%s: %w", coordinate, errors.Join(err, closeErr))
 		}
 		if !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
 			return fmt.Errorf("%s is not displayable UTF-8 prose", coordinate)
@@ -163,6 +178,11 @@ func Walk(ctx context.Context, root string, visit func(Document) error) error {
 // Read opens one explicitly cited repository Markdown document. It does not
 // extend Walk's corpus, enumerate neighboring files, or follow symlinks.
 func Read(ctx context.Context, root, coordinate string) (Document, error) {
+	return ReadLimited(ctx, root, coordinate, 0)
+}
+
+// ReadLimited reads one cited document with an optional byte limit.
+func ReadLimited(ctx context.Context, root, coordinate string, maxBytes int64) (Document, error) {
 	if err := ctx.Err(); err != nil {
 		return Document{}, err
 	}
@@ -182,7 +202,7 @@ func Read(ctx context.Context, root, coordinate string) (Document, error) {
 		return Document{}, err
 	}
 	defer file.Close()
-	data, err := io.ReadAll(file)
+	data, err := readContent(file, maxBytes)
 	if err != nil {
 		return Document{}, err
 	}
@@ -193,6 +213,27 @@ func Read(ctx context.Context, root, coordinate string) (Document, error) {
 		return Document{}, err
 	}
 	return Document{Path: coordinate, Content: data}, nil
+}
+
+func readContent(file fs.File, maxBytes int64) ([]byte, error) {
+	if maxBytes <= 0 {
+		return io.ReadAll(file)
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if info.Size() > maxBytes {
+		return nil, ErrTooLarge
+	}
+	data, err := io.ReadAll(io.LimitReader(file, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > maxBytes {
+		return nil, ErrTooLarge
+	}
+	return data, nil
 }
 
 // corpusFS never reopens a cumulative pathname through a swappable directory:

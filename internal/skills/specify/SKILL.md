@@ -188,10 +188,13 @@ tiller add task form-engine/certification-form-loading/computed-field-bindings \
 tiller add question "<statement>" --title "<short title>" \
   --blocks form-engine/certification-form-loading/computed-field-bindings
 tiller spec feature form-engine/certification-form-loading
-# a .tiller/-only diff needs no PR; commit only this feature's plan and the questions it recorded;
-# Tiller never commits:
-#   git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml
-#   git commit -m "specify: certification-form-loading"
+# Inspect existing index entries and preserve unrelated staged/unstaged work.
+# Review exact plan, question-ledger, state, and event files, not directories.
+# If a shared file also contains unrelated edits, stop rather than include them.
+git diff --cached --name-status
+git add -- <each-reviewed-first-feature-plan-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "specify: certification-form-loading" -- <same-exact-paths>
 
 # the ranked list suggests waiting; the explicit batch instruction already selected the next feature
 # second named feature, form-engine/pdf-assembly (F-p4d8x2): extend feature.md and write feature.eval.md at:
@@ -200,9 +203,10 @@ tiller add task form-engine/pdf-assembly/continuous-page-numbering \
   --title "Render continuous page numbers across assembled forms"
 # write the task's implementation spec over its task.md stub
 tiller spec feature form-engine/pdf-assembly
-# a .tiller/-only diff needs no PR; commit only this feature's plan:
-#   git add .tiller/epics/form-engine/features/pdf-assembly
-#   git commit -m "specify: pdf-assembly"
+# Review and commit only exact files written for this second feature:
+git add -- <each-reviewed-second-feature-plan-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "specify: pdf-assembly" -- <same-exact-paths>
 
 # stop for the human's decision on both complete plans; never run approve inside the batch
 tiller readout specify   # the one final block that closes your reply, reproduced verbatim

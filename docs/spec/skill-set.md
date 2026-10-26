@@ -2,9 +2,11 @@
 
 **Scope.** This document defines the skills: the reasoning procedures an AI coding agent runs against the Tiller structure, their CLI choreography, and their stopping points. It is the counterpart to [cli-surface.md](./cli-surface.md). That document defines the operations that record or expose the agent's inputs; this one defines the reasoning, normally recorded through mutations, with the explicitly requested `design-brief` export and the `code-review` review arm as read-only exceptions. The CLI surface stays canonical for the commands themselves. Where this document and that one disagree about a command, the CLI surface wins and this one gets fixed.
 
-**Status.** Current reference for the eleven skills embedded in Tiller v0.21.3 (schema 12, orientation generation 57). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
+**Status.** Current reference for the eleven skills embedded in Tiller v0.21.3 (schema 12, orientation generation 58). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
 
 ---
+
+Every skill that commits work first inspects the existing index and preserves unrelated staged and unstaged changes, including human `.tiller/` drafts. It stages only exact reviewed authored and command-output files, never a directory or blanket `.tiller/` path. A path-limited commit with the same file list excludes unrelated pre-staged work. If a named file also has unrelated edits, isolate authorized hunks with a reviewed index or stop; `git commit --only` takes the whole named working-tree file. The examples' path lists refer to the reviewed files this run actually wrote, including its own events and evidence.
 
 ## What a skill is
 
@@ -258,16 +260,18 @@ tiller add task form-engine/certification-form-loading/schema-transcription \
 tiller add question "<statement>" --title "<short title>" \
   --blocks form-engine/certification-form-loading/schema-transcription
 tiller spec feature form-engine/certification-form-loading
-git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml
-git commit -m "specify: certification-form-loading"
+git add -- <each-reviewed-first-feature-plan-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "specify: certification-form-loading" -- <same-exact-paths>
 
 # the ranked list suggests waiting; the explicit batch already selected the next named feature
 # second named feature: complete its specification, contract, and full task set
 tiller add task form-engine/pdf-assembly/continuous-page-numbering \
   --title "Render continuous page numbers across assembled forms"
 tiller spec feature form-engine/pdf-assembly
-git add .tiller/epics/form-engine/features/pdf-assembly
-git commit -m "specify: pdf-assembly"
+git add -- <each-reviewed-second-feature-plan-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "specify: pdf-assembly" -- <same-exact-paths>
 
 # never approve inside specify; stop for the human's decision on the complete plans
 tiller readout specify
@@ -334,7 +338,7 @@ Read back the replacement ref and recipient start command. Preserve implementati
 6. Formally submit the resolved node with `tiller submit <noun> <node> --pr <actual-number>`, using the host's real number. Commit any actual submission-state delta and push it to the same review branch. An unchanged successful coarse submit needs no empty commit or redundant push; verify its already-published state.
 7. Read back node status and verify the remote includes the submission-state commit. Matching `git rev-parse HEAD` and `git ls-remote <remote> refs/heads/<branch>` tips prove publication; if the remote advanced, fetch and verify ancestry rather than overwrite it. Render the final readout and stop for human review/merge.
 
-Rechecks are conditional on current work and failures, not merely an attestation commit changing HEAD. `check` preserves settled criteria but resets a required attestation-backed gate to pending. Finish needed mechanical checks before that gate's human sign-off; do not erase it with a redundant blanket check. If new work requires another check, commit its evidence and obtain fresh human gate attestation afterward. The agent never restores a human gate itself or uses standalone eval to bypass guards.
+Rechecks are conditional on current work and failures, not merely an attestation commit changing HEAD. `check` preserves applicable same-kind settled attestation-backed gates, including human attribution and evidence, as well as settled criteria. Inspect returned statuses before asking for another decision: required pending, failing, or stale acceptance needs the human, while a retained pass does not. Resume can stale acceptance. The agent never attests or restores a human gate itself or uses standalone eval to bypass guards.
 
 On GitHub the existing `gh pr list --repo <repo> --state open --base <base> --head <branch>` discovers candidates, `gh pr create ... --draft` creates only when none matches, `gh pr view <number> --repo <repo> --json number,url,state,isDraft,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner` verifies the surface, and `gh pr ready <number> --repo <repo>` makes that same draft ready after acceptance/rechecks. Task/shelf reviews with no acceptance wait can open ready. Other hosts use their own tools; `gh` is not a Tiller dependency. Exact runnable choreography lives in the embedded `tiller guide execute`, not installed copied skill bodies.
 
@@ -374,7 +378,9 @@ tiller add tweak button-text --title "Clarify save button text" \
 # replace tweak.md with the complete What, Why, and Done when contract
 
 tiller show bug bugs/blank-on-reload
-git add .tiller && git commit -m "capture: blank-on-reload"
+git add -- <each-reviewed-contract-state-and-event-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "capture: blank-on-reload" -- <same-exact-paths>
 # stop with status proposed; never approve inside capture
 ```
 
@@ -473,7 +479,9 @@ tiller amend form-engine-rework --revise form-engine/rendering-modes \
   --precondition spec_revision=git:3e9293c
 tiller amend form-engine-rework --amends-design design/solution-design/01-overview.md
 tiller show amendment form-engine-rework                   # the batch, each precondition's live validity
-git add .tiller && git commit -m "amend: stage the form engine reshape"
+git add -- <each-reviewed-proposal-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "amend: stage the form engine reshape" -- <same-exact-paths>
 tiller readout amend
 # stop. the human reads the narrative and the batch beside the git diff; on their explicit
 # instruction naming the amendment you may run the gate yourself, otherwise hand them
@@ -536,7 +544,9 @@ tiller amend opus-review --add-question "Keep or trim the legacy image parsers?"
 # write the distilled narrative over the stub at .tiller/amendments/<A-id>-opus-review.md
 
 tiller show amendment opus-review          # the whole batch, every op sourced
-git add .tiller && git commit -m "intake: stage the opus review explosion"
+git add -- <each-reviewed-feedback-proposal-and-output-path>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "intake: stage the opus review explosion" -- <same-exact-paths>
 # stop. the human reads the narrative and the batch beside the git diff; on their explicit
 # instruction naming the amendment you may run the gate yourself, otherwise hand them
 # `tiller approve amendment opus-review`, or the escape,

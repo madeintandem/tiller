@@ -31,7 +31,8 @@ func layStartedTweak(t *testing.T, buildRun, testsRun string) string {
 	driveTo(t, root, store.NounTweak, "alpha", mutate.TransitionInput{Verb: "approve"})
 	_, err = mutate.ClaimWork(load(t, root), testDeps(), store.NounTweak, "alpha", "")
 	require.NoError(t, err)
-	driveTo(t, root, store.NounTweak, "alpha", mutate.TransitionInput{Verb: "start"})
+	started := driveTo(t, root, store.NounTweak, "alpha", mutate.TransitionInput{Verb: "start"})
+	gitRunM(t, root, "checkout", "-b", started.Branch)
 	return root
 }
 

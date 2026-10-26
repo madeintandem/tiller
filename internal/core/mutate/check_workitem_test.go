@@ -31,7 +31,8 @@ func layStartedBug(t *testing.T, buildRun, testsRun string) string {
 	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve"})
 	_, err = mutate.ClaimWork(load(t, root), testDeps(), store.NounBug, "alpha", "")
 	require.NoError(t, err)
-	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "start"})
+	started := driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "start"})
+	gitRunM(t, root, "checkout", "-b", started.Branch)
 	return root
 }
 

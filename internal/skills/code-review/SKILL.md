@@ -335,9 +335,13 @@ tiller show amendment <amendment-key>
 
 #### 4. Annotate and commit once
 
+Inspect the existing index and preserve unrelated staged and unstaged work. Review exact paths this disposition wrote, not directories. The path-limited commit excludes unrelated index entries; if a named file contains unrelated edits, stop or isolate only authorized hunks with a reviewed index rather than commit its whole working-tree contents.
+
 ```sh
-git add <review-file> <each-path-this-disposition-wrote>
-git commit -m "code-review: <node-id> log B1 TW1 P1, drop CH1"
+git diff --cached --name-status
+git add -- <review-file> <each-path-this-disposition-wrote>
+git diff --cached -- <same-exact-paths>
+git commit --only -m "code-review: <node-id> log B1 TW1 P1, drop CH1" -- <same-exact-paths>
 ```
 
 For a fix, commit the annotation alone first (`code-review: <node-id> fix B2 on <unit>`), then follow `tiller guide execute`.

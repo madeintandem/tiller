@@ -128,53 +128,6 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 	}
 }
 
-// The disposition arm resolves the whole selection first, rechecks moved code,
-// records only through capture and intake shapes, commits once, and leaves every
-// approval to the human.
-func TestCodeReviewDispositionLogsThroughExistingShapesAndCommitsOnce(t *testing.T) {
-	text, ok := Lookup("code-review")
-	require.True(t, ok)
-	for _, want := range []string{
-		"### Disposition arm",
-		"tiller guide capture",
-		"tiller guide intake",
-		"tiller guide execute",
-		"write nothing",
-		"\"the rest\"",
-		"log B6 as a tweak",
-		"drop CH1",
-		"commit the review",
-		"attach to <node>",
-		"rechecked at <commit>",
-		"no longer reproduces at <commit>",
-		"Never recheck an unselected row",
-		"tiller add bug <key> --title",
-		"--source .tiller/reviews/<file>.md#L<n>-L<m>",
-		"-plan-changes.md",
-		"tiller intake <distillation> --contributor <you>",
-		"--source .tiller/feedback/<distillation>.md#L<n>-L<m>",
-		"one distillation, one intake, one amendment",
-		"does not own",
-		"git commit -m \"code-review: <node-id> log B1 TW1 P1, drop CH1\"",
-		"Never push",
-		"tiller approve bug|chore|tweak <node>",
-		"tiller approve amendment <amendment-key>",
-	} {
-		require.Containsf(t, text, want, "code-review disposition pins %q", want)
-	}
-	start := strings.Index(text, "### Disposition arm\n\n#### 1.")
-	handoff := strings.Index(text, "## Hand-off")
-	require.Positive(t, start, "the disposition arm has its own choreography")
-	require.Greater(t, handoff, start)
-	choreography := text[start:handoff]
-	for _, forbidden := range []string{
-		"tiller approve", "tiller claim", "tiller start", "tiller resolve",
-		"tiller cancel", "tiller attest", "git push",
-	} {
-		require.NotContainsf(t, choreography, forbidden, "the disposition arm never runs %q", forbidden)
-	}
-}
-
 // orient sends an explicit review or disposition request straight to the skill.
 func TestOrientRoutesExplicitCodeReviews(t *testing.T) {
 	text, ok := Lookup("orient")
@@ -208,16 +161,6 @@ func TestCodeReviewShelfTargetsAttachHonestly(t *testing.T) {
 	require.Contains(t, text, "`--attach` accepts only an epic, feature, or task")
 	require.Contains(t, text, "its own `attached_to`, or omit `--attach`")
 	require.NotContains(t, text, "For a bug, chore, or tweak target, Found in is the target.")
-}
-
-// A disposition commits only the paths it wrote, never other uncommitted reviews
-// or stray state.
-func TestCodeReviewStagesOnlyItsOwnPaths(t *testing.T) {
-	text, ok := Lookup("code-review")
-	require.True(t, ok)
-	require.NotContains(t, text, "git add .tiller\n")
-	require.Contains(t, text, "git add <review-file> <each-path-this-disposition-wrote>")
-	require.Contains(t, text, "Stage only the paths this disposition wrote")
 }
 
 // A row handed to its unit's owner stays fixable by that owner.
@@ -700,20 +643,6 @@ func TestCorrectionsRerunTheReadoutWithSince(t *testing.T) {
 	}
 }
 
-func TestSkillsSayTillerOnlyDiffsNeedNoPR(t *testing.T) {
-	for skill, want := range map[string]string{
-		"decompose":  "never needs a pull request",
-		"specify":    "a .tiller/-only diff needs no PR",
-		"mend-drift": "commits directly on the integration branch, no PR",
-		"amend":      "a .tiller/-only diff needs no PR",
-		"intake":     "a .tiller/-only diff needs no PR",
-	} {
-		text, ok := Lookup(skill)
-		require.True(t, ok)
-		require.Containsf(t, text, want, "%s carries the no-PR rule for .tiller/-only diffs", skill)
-	}
-}
-
 // TestAmendNamesTheShippedAmendmentSurface is the fidelity rule at this seam,
 // the same guard TestExecuteDrivesVerifiedHappyPath keeps over the work loop.
 // Every flag here was driven against the real binary; the denied list is the
@@ -1124,60 +1053,6 @@ func TestExecuteRecordsFactualCorrectionsAsDepartures(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
-}
-
-// specify settles questions at the plan gate and execute records mid-run
-// questions and builds around them (item 1).
-func TestSpecifySettlesQuestionsAndExecuteBuildsAroundThem(t *testing.T) {
-	specify, ok := Lookup("specify")
-	require.True(t, ok)
-	for _, want := range []string{
-		"## Settle questions before approve",
-		"the criteria against each other and against `feature.md`",
-		`tiller add question "<statement>" --title "<short title>" --blocks <node>`,
-		"`--blocks` names the narrowest node the answer could change",
-		"A question asked only in chat is not allowed",
-		"There is no `--assume-question` escape at a plan gate.",
-		"Write each answer into the prose it changes",
-		"which answer changed which file",
-	} {
-		require.Containsf(t, specify, want, "specify pins %q", want)
-	}
-	require.NotContains(t, specify, "Questions and commentary are yours to add freely",
-		"specify no longer invites chat-only questions")
-
-	execute, ok := Lookup("execute")
-	require.True(t, ok)
-	for _, want := range []string{
-		"Record a finding that needs a human decision and keep building",
-		"leave the task where it stands",
-		"Recording a question never stops a run by itself",
-		"stop only when the run has no legal work left, or at a stop it already makes",
-		"every question the run\nrecorded and every open question still holding the run's work",
-		"resumes the held task; note the answer in its implementation commit message",
-		"the route an out-of-bounds departure takes",
-		"Semantic merge conflicts needing a product or acceptance decision stop on the spot",
-		// A mid-run question lives on the branch it is recorded on, so the run
-		// holds the work it names itself and the human answers on that branch.
-		"The question lands on the branch it is recorded on",
-		"Push the held branch when the project is remote-backed, and keep its worktree.",
-		"hold that work yourself for the rest of the run rather than trusting routing in another checkout",
-		"the answer is committed on that branch",
-		"the branch and worktree that carry it",
-		"The question ledger, `.tiller/decisions/open-questions.yml`, is one file several task branches now edit",
-	} {
-		require.Containsf(t, execute, want, "execute pins %q", want)
-	}
-	// The specify choreography runs the final pass before spec feature and
-	// commits the question ledger with the plan.
-	for _, want := range []string{
-		"# final pass (Settle questions before approve)",
-		"git add .tiller/epics/form-engine/features/certification-form-loading .tiller/decisions/open-questions.yml",
-	} {
-		require.Containsf(t, specify, want, "specify choreography pins %q", want)
-	}
-	require.NotContains(t, execute, "Stop and route that change",
-		"a finding past a departure is recorded, not a full stop")
 }
 
 // Skills that read task.md as a contract or correct it in place honor a

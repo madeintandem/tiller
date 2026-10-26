@@ -73,6 +73,14 @@ func (g *Git) WorktreeFingerprint() (store.RevisionRef, error) {
 			return store.RevisionRef{}, g.asEnv(err)
 		}
 		addNULPaths(paths, diff)
+	} else {
+		// Before the first commit, indexed files are absent from --others.
+		// Inventory their names, then read their current working-tree bytes.
+		cached, err := repo.runRaw("--no-optional-locks", "ls-files", "--cached", "-z")
+		if err != nil {
+			return store.RevisionRef{}, g.asEnv(err)
+		}
+		addNULPaths(paths, cached)
 	}
 	others, err := repo.runRaw("--no-optional-locks", "ls-files", "--others", "--exclude-standard", "-z")
 	if err != nil {

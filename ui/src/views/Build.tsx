@@ -17,7 +17,7 @@
 //
 // The URL stays the single source of truth downstream (matchedEpics reads
 // nothing else); localStorage (views/build/selectionStorage.ts) is only a
-// bootstrap for the ONE case the URL itself cannot answer - a fresh load
+// bootstrap for the ONE case the URL itself cannot answer - an arrival
 // with no `?epics=` at all. An absent param restores a stored selection for
 // this project (keyed by project.key, since every project serves on the
 // same default port and thus the same browser origin) by writing it onto
@@ -43,7 +43,7 @@
 // task-13-report.md flagged: BuildFeature originally shipped `held` only.)
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { BuildBoard, BuildEpic, BuildFeature, DriftReportView, ProjectSummary, Queue, RelatedNode } from "../api";
 import { buildPath, driftPath, queuePath, statusPath } from "../api";
 import BoardGrid from "../components/BoardGrid";
@@ -84,6 +84,7 @@ export default function Build() {
   const drift = useFetch<DriftReportView>(driftPath);
 
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const [panelOpen, setPanelOpen] = useState<boolean>(() => readPanelState() === "open");
   const [scrollMode, changeScrollMode] = useBoardScrollMode();
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set());
@@ -92,16 +93,10 @@ export default function Build() {
   const needsDefault = rawEpics === null;
   const projectKey = summary.data?.project.key;
 
-  // Bootstrap-restore, once per load: an absent `?epics=` is the only case
-  // with nothing yet to defer to (selection.ts's own table - present, even
-  // present-empty, already names an exact selection). The moment either
-  // condition changes - the param becomes explicit, or the project key
-  // resolves and there is nothing stored - restoredRef latches shut so this
-  // never fires again for the rest of the mount; a stored selection's own
-  // write below lands through setParams, which is what turns the restore
-  // into an ordinary "URL is explicit" render on the next pass, not a
-  // continuing effect. The URL stays the single downstream source of truth
-  // (selectedEpicKeys, matchedEpics) - this effect only ever seeds it.
+  // Restore once per route arrival, including primary navigation back to a
+  // bare /build while this component is still mounted. Explicit selections,
+  // including ?epics=, always win. The URL remains the downstream source of
+  // truth; this effect only seeds a bare arrival.
   //
   // useLayoutEffect, not useEffect: the constraint here is paint timing, not
   // data availability. By the render where projectKey first resolves, the
@@ -116,10 +111,11 @@ export default function Build() {
   // re-render the browser paints in place of the default one - the restored
   // selection is what actually reaches the screen first, not a fixed-up
   // second frame.
-  const restoredRef = useRef(false);
+  const handledArrivalRef = useRef<string | null>(null);
   useLayoutEffect(() => {
-    if (restoredRef.current || rawEpics !== null) {
-      restoredRef.current = true;
+    if (handledArrivalRef.current === location.key) return;
+    if (rawEpics !== null) {
+      handledArrivalRef.current = location.key;
       return;
     }
     if (projectKey === undefined) {
@@ -127,7 +123,7 @@ export default function Build() {
       // giving up (the attempt is not "used" until it actually runs).
       return;
     }
-    restoredRef.current = true;
+    handledArrivalRef.current = location.key;
     const stored = readSelectionKeys(projectKey);
     if (stored === null) {
       // Nothing stored for this project; the active_epics default applies,
@@ -137,7 +133,7 @@ export default function Build() {
     const nextParams = new URLSearchParams(params);
     nextParams.set("epics", epicsParamValue(stored));
     setParams(nextParams, { replace: true });
-  }, [rawEpics, projectKey]);
+  }, [location.key, rawEpics, projectKey]);
 
   // Persist, every time the URL names an explicit selection (present,
   // empty included): toggles, a pasted board URL, and an explicit

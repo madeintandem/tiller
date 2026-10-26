@@ -349,6 +349,9 @@ func (t *rootedTransaction) readDirectories(target string) ([]fs.DirEntry, error
 	}
 	directories := entries[:0]
 	for _, entry := range entries {
+		if entry.Type()&fs.ModeSymlink != 0 {
+			return nil, fmt.Errorf("%w: %s is a symlink", rootpath.ErrUnsafe, filepath.Join(target, entry.Name()))
+		}
 		if entry.IsDir() {
 			directories = append(directories, entry)
 		}

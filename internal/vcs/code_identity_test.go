@@ -344,3 +344,32 @@ func TestCodeIdentity_UnbornHeadStagedGitlinkHasNoIdentity(t *testing.T) {
 	run(t, dir, "add", "lib")
 	assert.Empty(t, identity(t, g))
 }
+
+func TestCodeIdentity_HiddenIndexChangesDisableReuse(t *testing.T) {
+	t.Parallel()
+	for _, flag := range []string{"--assume-unchanged", "--skip-worktree"} {
+		t.Run(flag, func(t *testing.T) {
+			t.Parallel()
+			dir, g := codeIdentityRepo(t)
+			require.NotEmpty(t, identity(t, g))
+			run(t, dir, "update-index", flag, "src/a.go")
+			require.NoError(t, writeRepoFile(dir, "src/a.go", "changed executable input\n"))
+			before := gitWriteState(t, dir)
+			require.Empty(t, identity(t, g))
+			require.Equal(t, before, gitWriteState(t, dir), "observation must preserve the user's index flags")
+		})
+	}
+}
+
+func TestCodeIdentity_SuppressedExecutableModeDisablesReuse(t *testing.T) {
+	t.Parallel()
+	dir, g := codeIdentityRepo(t)
+	require.NoError(t, writeRepoFile(dir, "probe.sh", "#!/bin/sh\nexit 0\n"))
+	require.NoError(t, os.Chmod(filepath.Join(dir, "probe.sh"), 0o755))
+	run(t, dir, "add", "probe.sh")
+	run(t, dir, "commit", "-m", "executable probe")
+	require.NotEmpty(t, identity(t, g))
+	run(t, dir, "config", "core.filemode", "false")
+	require.NoError(t, os.Chmod(filepath.Join(dir, "probe.sh"), 0o644))
+	require.Empty(t, identity(t, g), "Git's ignored executable-mode changes cannot certify a passing command")
+}

@@ -2193,6 +2193,7 @@ func TestCheckSubmitResumeBugCommands(t *testing.T) {
 	mustRun(t, "approve", "bug", "alpha", "--contributor", "jc")
 	mustRun(t, "claim", "bug", "alpha", "--contributor", "jc")
 	mustRun(t, "start", "bug", "alpha", "--contributor", "jc")
+	gitRun(t, dir, "checkout", "-b", "tiller/bugs/alpha")
 	out, stderr, code := execCLI(t, "check", "bug", "alpha", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	require.Contains(t, out, "check")

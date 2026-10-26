@@ -40,7 +40,9 @@ import (
 // specify settles its questions before approve, and execute records a mid-run
 // question on the branch it builds and builds around it.
 // Generation 57 lets a human cancel a question that needs no decision and narrow what it blocks; an agent may only widen.
-const orientationSchemaGen = 57
+// Generation 58 preserves settled gate-attestation guidance and permits explicit
+// feature epic grain, with exact-path staging and isolated commits.
+const orientationSchemaGen = 58
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -202,6 +204,11 @@ unrequested replan.
   under ` + "`.tiller/`" + `, and Tiller never commits them for you. The commit is part
   of the work: commit the state delta with, or right after, the change it
   describes, using plain ` + "`git`" + ` and this project's own commit conventions.
+  Inspect the existing index first and preserve unrelated staged and unstaged
+  work, including planning drafts. Stage exact reviewed authored/output paths,
+  never a whole directory. Isolate commits with the same exact paths so unrelated
+  index entries stay out; if a named file has unrelated edits, isolate authorized
+  hunks with a reviewed index or stop rather than commit its whole contents.
   One requirement rides on top of those conventions rather than replacing them:
   a commit you author while executing a task carries that task's id. A commit
   while executing a started shelf node carries that shelf node's own id, so
@@ -370,10 +377,10 @@ unrequested replan.
   verify it, and formally submit its actual number. Commit actual submission
   state and push again, then read back the record and verify the published tip.
   Skip empty state commits and redundant pushes on unchanged success.
-  Recheck only when current work or failures require it. Check resets a required
-  attestation-backed gate to pending, unlike settled criteria. Complete needed
-  checks before that gate's human sign-off; if later work needs another check,
-  obtain a fresh human gate attestation afterward, never restore it yourself.
+  Recheck only when current work or failures require it. Check retains applicable
+  same-kind settled gate attestations, including their human attribution.
+  Inspect returned statuses: only required pending, failing, or stale acceptance
+  needs another human decision. Resume can stale acceptance. Never attest yourself.
   Green task gates and riding refs do not prove feature acceptance or submission;
   absence of a formal record does not prove no draft exists. Pure reads verify
   neither host state nor pushes. Requested changes reuse the established review.
@@ -629,8 +636,8 @@ Review does not have to land once per task. ` + "`review_grain`" + ` records whe
 it lands instead: ` + "`task`" + ` by default, ` + "`feature`" + `, or ` + "`epic`" + `. It lives in the
 project's ` + "`tiller.yml`" + `, an epic's ` + "`epic.yml`" + `, and a feature's ` + "`feature.yml`" + `,
 absence inheriting downward and the most specific explicit setting winning.
-A feature cannot itself say ` + "`epic`" + `, since riding its epic's PR is inheritance,
-not an override. Set it only on an explicit human instruction naming the node
+Each home accepts task, feature, or epic, including an explicit epic override
+on a feature. Set it only on an explicit human instruction naming the node
 and grain, through ` + "`tiller configure project`" + `, ` + "`configure epic <key>`" + `,
 ` + "`configure feature <key>`" + `, or the matching ` + "`approve --review-grain`" + ` gate.
 State what you will record and report what you recorded.

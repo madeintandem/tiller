@@ -94,7 +94,9 @@ Commit the state Tiller wrote even if a later step refuses. The review ref is ca
 
 Commit only state a command actually changed. A successful feature or epic submit of the same PR can report `changed: false` and write nothing, including after requested changes whose riding task refs and gates were already committed and pushed. That is a completed record operation, not a publishing failure. Skip the state commit and extra push in that case, never manufacture an empty commit, and still verify the existing published tip. The same actual-delta rule applies to evaluation and other no-op commands.
 
-Recheck only what current work or recorded failures require, not merely because an attestation state commit changed HEAD. A required attestation-backed gate is different from an attested criterion: `check` currently resets that gate to pending. Complete needed mechanical rechecks before asking for that gate's human attestation, and do not erase a fresh gate acceptance with another blanket check. If new work requires rechecking afterward, record the new evidence and ask the human to attest the gate again before submission. Never restore it yourself or bypass check's guards through standalone eval.
+Before staging, inspect `git diff --cached --name-status` and the working tree. Stage exact reviewed code, test, state, evidence, and event files this run wrote, never an entire `.tiller/` directory. The path-limited commits below exclude unrelated pre-existing index entries. If a named file also carries unrelated edits, isolate authorized hunks with a reviewed index or stop; `--only` commits that whole working-tree file.
+
+Recheck only what current work or recorded failures require, not merely because an attestation state commit changed HEAD. `check` retains an applicable settled attestation-backed gate when its kind still matches, including its human attribution and evidence. Inspect returned gate statuses before asking for human action: a required pending, failing, or stale attestation still needs the human's decision, while a retained pass does not. Resume can stale prior acceptance. Never attest or restore a human gate yourself, or bypass check's guards through standalone eval.
 
 With no configured remote, omit host operations and pushes. Before a human-acceptance handoff, prepare a committed local branch-and-tip review surface with the implementation and evidence, name it in run notes, and stop for the same exact human decision; do not submit a coarse review before acceptance. Once acceptance passes, submit without `--pr` to record the permitted branch-and-commit review ref, commit the submission state locally, and read it back. Do not require a host account, create a remote, or use offline mode to disguise failed remote-backed publication. Under a coarse grain a riding task also submits without `--pr`, even with a remote: commit its review-ref state and continue the approved branch loop. That ref does not prove a feature or epic PR exists, and a missing formal submission does not prove no draft exists.
 
@@ -219,15 +221,17 @@ After requested changes, fix the work, rerun the gates, and resubmit. Every entr
 
 ```
 # fix the defect and add the regression test; stage only this work
-git add <changed-code-and-test-paths>
-git commit -m "B-7k2p9x fix reload state"
+git add -- <changed-code-and-test-paths>
+git commit --only -m "B-7k2p9x fix reload state" -- <same-exact-paths>
 tiller check bug bugs/blank-on-reload                      # build and tests; no evals gate
-git add .tiller && git commit -m "B-7k2p9x record gate evidence"
+git add -- <each-reviewed-check-state-evidence-and-event-path>
+git commit --only -m "B-7k2p9x record gate evidence" -- <same-exact-paths>
 # remote-backed finish: branch=tiller/bugs/blank-on-reload
 git push -u "$remote" "$branch"
 # perform the host step above for this bug; pr is its actual PR number
 tiller submit bug bugs/blank-on-reload --pr "$pr"
-git add .tiller && git commit -m "B-7k2p9x in review"
+git add -- <each-reviewed-submit-state-and-event-path>
+git commit --only -m "B-7k2p9x in review" -- <same-exact-paths>
 git push "$remote" "$branch"                               # publish submission state
 tiller status bug bugs/blank-on-reload
 git rev-parse HEAD
@@ -259,10 +263,11 @@ git checkout -b "$task_branch" "$task_base"                 # task state follows
 # git checkout <recorded-branch>
 # tiller resume task T-k3p9w6 --reason "address review: tighten validation"
 # ... implement from task.md, following project and harness craft guidance ...
-git add <changed-code-and-test-paths>
-git commit -m "T-k3p9w6 implement schema transcription"
+git add -- <changed-code-and-test-paths>
+git commit --only -m "T-k3p9w6 implement schema transcription" -- <same-exact-paths>
 tiller check task T-k3p9w6                                  # required build and tests; green -> check
-git add .tiller && git commit -m "T-k3p9w6 record gate evidence"
+git add -- <each-reviewed-check-state-evidence-and-event-path>
+git commit --only -m "T-k3p9w6 record gate evidence" -- <same-exact-paths>
 ```
 
 For a checked task whose implementation and current green gate state are already committed, skip that entry/build sequence and finish submission. At task grain with a remote:
@@ -271,7 +276,8 @@ For a checked task whose implementation and current green gate state are already
 git push -u "$remote" "$branch"
 # perform the GitHub or other-host step above; reuse the task's PR on requested changes
 tiller submit task T-k3p9w6 --pr "$pr"                      # actual task PR -> in_review
-git add .tiller && git commit -m "T-k3p9w6 in review"
+git add -- <each-reviewed-submit-state-and-event-path>
+git commit --only -m "T-k3p9w6 in review" -- <same-exact-paths>
 git push "$remote" "$branch"                               # submission state is part of this PR
 tiller status task T-k3p9w6
 git rev-parse HEAD
@@ -283,7 +289,8 @@ At task grain without a remote, or for a task riding a coarse review even with a
 
 ```
 tiller submit task T-k3p9w6                                # records the permitted review ref, no task PR
-git add .tiller && git commit -m "T-k3p9w6 record review ref"
+git add -- <each-reviewed-submit-state-and-event-path>
+git commit --only -m "T-k3p9w6 record review ref" -- <same-exact-paths>
 tiller status task T-k3p9w6
 # offline task grain: render tiller readout execute and stop for the human review
 # coarse grain: checkout recorded aggregate; git merge <recorded-task-branch>
@@ -303,7 +310,7 @@ tiller check feature F-79dh3q                              # includes contract; 
 # Commit actual evidence; resolve machine work and grade required rubrics below.
 # If only acceptance remains: push base, verify its tip, name exact HUMAN decisions, readout and STOP.
 # On re-entry after human acceptance: commit its delta; recheck only if needed.
-# Required attestation-backed gates must be attested AFTER the last needed check.
+# Check retains applicable same-kind settled gate attestations; ask the human only for required pending/failing/stale acceptance.
 # Inspect results and commit actual evidence; continue only with acceptance passed.
 tiller sync                                                # ordinary clean rollup, never --accept-fast-forward
 # Commit actual sync delta directly on base; no new state-only PR.

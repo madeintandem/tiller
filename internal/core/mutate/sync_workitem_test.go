@@ -33,7 +33,6 @@ func layReviewedBugGitGates(t *testing.T, buildRun, testsRun string) string {
 	t.Helper()
 	root := layStartedBug(t, buildRun, testsRun)
 	gitCommitAllM(t, root, "bug started")
-	gitRunM(t, root, "branch", "-M", "main")
 	tree := load(t, root)
 	res, err := mutate.Check(tree, testDeps(), vcs.New(root), tree.Bugs["B-aaaaaa"], mutate.CheckInput{})
 	require.NoError(t, err)
@@ -44,8 +43,9 @@ func layReviewedBugGitGates(t *testing.T, buildRun, testsRun string) string {
 		stageShelfReview(t, root, store.NounBug, "alpha", 41)
 	}
 	gitCommitAllM(t, root, "bug in review")
+	// Integration holds the submitted ledger snapshot, not the implementation.
+	gitRunM(t, root, "branch", "-f", "main")
 
-	gitRunM(t, root, "checkout", "-b", bugBranch)
 	require.NoError(t, os.WriteFile(filepath.Join(root, "fix.txt"), []byte("fix\n"), 0o644))
 	gitCommitAllM(t, root, "fix the bug")
 	gitRunM(t, root, "checkout", "main")

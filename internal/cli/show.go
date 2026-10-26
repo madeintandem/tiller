@@ -50,6 +50,9 @@ func newShowCmd() *cobra.Command {
 }
 
 func runShow(cmd *cobra.Command, noun, node string) error {
+	if canonical, ok := singularNoun(noun); ok {
+		noun = canonical
+	}
 	// An amendment's full render is its own shape (title, base revision, the
 	// staged operations with LIVE precondition validity), not views.Node's
 	// epic/feature/task/question projection, so it is intercepted here rather
