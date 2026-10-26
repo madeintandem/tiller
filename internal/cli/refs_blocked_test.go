@@ -87,6 +87,21 @@ func TestQuestionBlockedLineNamesTaskByRef(t *testing.T) {
 	require.NotContains(t, human, task4LongQuestionStatement)
 }
 
+// TestQuestionBlockedLineOffersFeatureAssumption pins the feature arm of the
+// open_question_blocker remedy: only a feature can record an assumption, so a
+// held feature's check still offers --assume-question beside answer and cancel.
+func TestQuestionBlockedLineOffersFeatureAssumption(t *testing.T) {
+	prepActiveFeatureWithTasks(t)
+	feature := "form-engine/certification-form-loading"
+	writeBlockingQuestion(t, "Q-aaaaaa", feature)
+
+	stdout, stderr, code := execCLI(t, "check", "feature", feature, "--contributor", "jc")
+	require.Equal(t, 1, code, "an open question holding the feature is a blocked business answer (exit 1)")
+	human := stdout + stderr
+	require.Contains(t, human, "Blocked: feature form-engine/certification-form-loading")
+	require.Contains(t, human, `held by 1 open question(s): Q-aaaaaa ("Canonical schema version"); answer them, cancel one that no longer needs a decision with tiller cancel question <Q-id> --reason "...", or pass --assume-question.`)
+}
+
 func TestTaskDependencyBlockedLineOmitsAbsentAggregate(t *testing.T) {
 	ids := prepActiveFeatureWithTasks(t)
 	late := "form-engine/certification-form-loading/late-task"
