@@ -7,13 +7,16 @@ import (
 	"time"
 )
 
-// Call is one model call in a session.
+// Call is one model call in a session. ID is the harness's identity for the
+// model response when it records one; a response two logs of one session
+// both hold is counted once.
 type Call struct {
 	At      time.Time
 	Model   string
 	Tokens  Tokens
 	Markers []Marker
 	Branch  string
+	ID      string
 }
 
 // Session is one harness session, with the sessions of its subagents.

@@ -67,6 +67,7 @@ func (claudeReader) Parse(logs []LogRef) (Session, error) {
 type claudeLine struct {
 	Timestamp string `json:"timestamp"`
 	GitBranch string `json:"gitBranch"`
+	RequestID string `json:"requestId"`
 	Message   struct {
 		ID      string `json:"id"`
 		Model   string `json:"model"`
@@ -121,8 +122,15 @@ func parseClaudeLog(path string) ([]Call, error) {
 					}
 				}
 			}
+			// One response is logged as several lines sharing its message
+			// id (and request id); they are one call.
+			var id string
 			if m.ID != "" {
-				if i, seen := byID[m.ID]; seen {
+				id = m.ID
+				if l.RequestID != "" {
+					id += " " + l.RequestID
+				}
+				if i, seen := byID[id]; seen {
 					calls[i].Markers = append(calls[i].Markers, markers...)
 					return nil
 				}
@@ -131,8 +139,8 @@ func parseClaudeLog(path string) ([]Call, error) {
 			if err != nil {
 				return nil
 			}
-			if m.ID != "" {
-				byID[m.ID] = len(calls)
+			if id != "" {
+				byID[id] = len(calls)
 			}
 			u := m.Usage
 			calls = append(calls, Call{
@@ -144,6 +152,7 @@ func parseClaudeLog(path string) ([]Call, error) {
 				},
 				Markers: markers,
 				Branch:  l.GitBranch,
+				ID:      id,
 			})
 			return nil
 		})

@@ -201,3 +201,42 @@ func TestClaudeParseSubagents(t *testing.T) {
 		t.Fatalf("session = %+v", s)
 	}
 }
+
+// TestClaudeParseCountsAResponseOnceAcrossTheSession pins the cross-file
+// guard: real Claude Code subagent logs can repeat a response another log of
+// the same session already holds (same message and request id). It counts
+// once, in the first log that holds it (the top-level log first); the same
+// message id under another request id is a different response.
+func TestClaudeParseCountsAResponseOnceAcrossTheSession(t *testing.T) {
+	dir := t.TempDir()
+	call := func(id, req, ts string) string {
+		r := ""
+		if req != "" {
+			r = `"requestId":"` + req + `",`
+		}
+		return `{"type":"assistant",` + r + `"timestamp":"` + ts + `","message":{"id":"` + id + `","model":"m","content":[],"usage":{"input_tokens":1,"output_tokens":1}}}` + "\n"
+	}
+	top := filepath.Join(dir, "s1.jsonl")
+	subA := filepath.Join(dir, "s1", "subagents", "agent-a.jsonl")
+	subB := filepath.Join(dir, "s1", "subagents", "agent-b.jsonl")
+	mustWrite(t, top, call("shared", "r1", "2026-10-20T14:00:00Z"))
+	mustWrite(t, subA, call("shared", "r1", "2026-10-20T14:00:00Z")+call("fork", "r2", "2026-10-20T14:01:00Z")+call("a-own", "", "2026-10-20T14:02:00Z"))
+	mustWrite(t, subB, call("fork", "r2", "2026-10-20T14:01:00Z")+call("fork", "r3", "2026-10-20T14:03:00Z")+call("b-own", "", "2026-10-20T14:04:00Z"))
+	s, err := NewClaudeReader().Parse([]LogRef{
+		{Harness: "claude-code", Path: top, Session: "s1"},
+		{Harness: "claude-code", Path: subA, Session: "agent-a", Parent: "s1"},
+		{Harness: "claude-code", Path: subB, Session: "agent-b", Parent: "s1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Calls) != 1 || len(s.Subagents) != 2 {
+		t.Fatalf("session = %+v", s)
+	}
+	if n := len(s.Subagents[0].Calls); n != 2 {
+		t.Errorf("agent-a calls = %d, want 2 (fork, a-own)", n)
+	}
+	if n := len(s.Subagents[1].Calls); n != 2 {
+		t.Errorf("agent-b calls = %d, want 2 (fork under r3, b-own)", n)
+	}
+}

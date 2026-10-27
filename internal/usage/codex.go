@@ -127,15 +127,19 @@ type codexLine struct {
 		Arguments string `json:"arguments"`
 		Input     string `json:"input"`
 		Info      *struct {
-			Last struct {
-				Input      int64 `json:"input_tokens"`
-				Cached     int64 `json:"cached_input_tokens"`
-				CacheWrite int64 `json:"cache_write_input_tokens"`
-				Output     int64 `json:"output_tokens"`
-				Reasoning  int64 `json:"reasoning_output_tokens"`
-			} `json:"last_token_usage"`
+			Total *codexUsage `json:"total_token_usage"`
+			Last  codexUsage  `json:"last_token_usage"`
 		} `json:"info"`
 	} `json:"payload"`
+}
+
+type codexUsage struct {
+	Input      int64 `json:"input_tokens"`
+	Cached     int64 `json:"cached_input_tokens"`
+	CacheWrite int64 `json:"cache_write_input_tokens"`
+	Output     int64 `json:"output_tokens"`
+	Reasoning  int64 `json:"reasoning_output_tokens"`
+	Total      int64 `json:"total_tokens"`
 }
 
 var codexKeep = [][]byte{
@@ -162,10 +166,15 @@ func codexCommand(args string) string {
 	return args
 }
 
+// parseCodexLog reads one rollout. Each token_count is one call, except one
+// whose running total_token_usage equals the previous one's: Codex writes
+// such a repeat with the last call's usage again, and counting it would
+// double that call.
 func parseCodexLog(path string) ([]Call, error) {
 	var calls []Call
 	var model string
 	var pending []Marker
+	var prevTotal *codexUsage
 	err := scanLines(path,
 		func(line []byte) bool {
 			for _, k := range codexKeep {
@@ -195,6 +204,11 @@ func parseCodexLog(path string) ([]Call, error) {
 				if err != nil {
 					return nil
 				}
+				total := p.Info.Total
+				if total != nil && prevTotal != nil && *total == *prevTotal {
+					return nil // a repeat of the previous call's usage
+				}
+				prevTotal = total
 				u := p.Info.Last
 				calls = append(calls, Call{
 					At:      at,

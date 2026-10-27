@@ -197,7 +197,28 @@ func folderLogs(harness, folder, subagentDir string) ([]LogRef, error) {
 }
 
 // parseSession builds a Session from one top-level log and its subagent logs.
+// A call whose ID an earlier log of the session already holds (the top-level
+// log first, then the subagent logs in order) is dropped, so a response
+// repeated across the session's logs counts once.
 func parseSession(harness string, logs []LogRef, parseLog func(path string) ([]Call, error)) (Session, error) {
+	seen := map[string]bool{}
+	parse := func(path string) ([]Call, error) {
+		calls, err := parseLog(path)
+		if err != nil {
+			return nil, err
+		}
+		kept := calls[:0]
+		for _, c := range calls {
+			if c.ID != "" {
+				if seen[c.ID] {
+					continue
+				}
+				seen[c.ID] = true
+			}
+			kept = append(kept, c)
+		}
+		return kept, nil
+	}
 	var top *LogRef
 	for i := range logs {
 		if logs[i].Parent == "" {
@@ -210,14 +231,14 @@ func parseSession(harness string, logs []LogRef, parseLog func(path string) ([]C
 	}
 	s := Session{Harness: harness, ID: top.Session}
 	var err error
-	if s.Calls, err = parseLog(top.Path); err != nil {
+	if s.Calls, err = parse(top.Path); err != nil {
 		return Session{}, err
 	}
 	for _, l := range logs {
 		if l.Parent == "" {
 			continue
 		}
-		calls, err := parseLog(l.Path)
+		calls, err := parse(l.Path)
 		if err != nil {
 			return Session{}, err
 		}

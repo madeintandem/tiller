@@ -1,6 +1,7 @@
 package usage
 
 import (
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -195,5 +196,46 @@ func TestCodexCmdArgumentsStillYieldMarkers(t *testing.T) {
 	want := []Marker{{Kind: MarkVerb, Stage: Implementation, Refs: []string{"T-abc123"}, Verb: "start"}}
 	if len(calls) != 1 || !reflect.DeepEqual(calls[0].Markers, want) {
 		t.Fatalf("calls = %+v", calls)
+	}
+}
+
+// TestCodexRepeatedTokenCountIsSkipped pins the double-count guard: Codex
+// sometimes writes a token_count again with an unchanged total_token_usage,
+// repeating the last call's usage. The repeat is not a call; markers seen
+// before it wait for the next real one. A token_count with no running total
+// is always a call.
+func TestCodexRepeatedTokenCountIsSkipped(t *testing.T) {
+	tc := func(ts, total string, last int) string {
+		info := fmt.Sprintf(`"last_token_usage":{"input_tokens":%d,"output_tokens":1,"total_tokens":%d}`, last, last+1)
+		if total != "" {
+			info = `"total_token_usage":` + total + "," + info
+		}
+		return `{"timestamp":"2026-09-07T19:41:` + ts + `.000Z","type":"event_msg","payload":{"type":"token_count","info":{` + info + `}}}` + "\n"
+	}
+	marker := `{"timestamp":"2026-09-07T19:41:20.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"tiller start task T-abc123\"}"}}` + "\n"
+	path := filepath.Join(t.TempDir(), "r.jsonl")
+	mustWrite(t, path,
+		tc("10", `{"input_tokens":10,"output_tokens":1,"total_tokens":11}`, 10)+
+			marker+
+			tc("21", `{"input_tokens":10,"output_tokens":1,"total_tokens":11}`, 10)+
+			tc("30", `{"input_tokens":30,"output_tokens":2,"total_tokens":32}`, 20)+
+			tc("40", "", 5)+
+			tc("41", "", 5))
+	calls, err := parseCodexLog(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calls) != 4 {
+		t.Fatalf("calls = %+v", calls)
+	}
+	var sum int64
+	for _, c := range calls {
+		sum += c.Tokens.Input + c.Tokens.Output
+	}
+	if sum != 11+21+6+6 {
+		t.Errorf("tokens = %d", sum)
+	}
+	if len(calls[0].Markers) != 0 || len(calls[1].Markers) != 1 || calls[1].Markers[0].Verb != "start" {
+		t.Errorf("markers = %+v / %+v", calls[0].Markers, calls[1].Markers)
 	}
 }
