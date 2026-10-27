@@ -649,6 +649,26 @@ func TestWorktreeFor_PrimaryWorktreeCounts(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+// TestWorktreePathsListsEveryStanza: the primary checkout and every added
+// worktree are listed, in git's porcelain order, primary first.
+func TestWorktreePathsListsEveryStanza(t *testing.T) {
+	dir, g := newRepo(t)
+	run(t, dir, "branch", "feat")
+	wtDir := filepath.Join(t.TempDir(), "wt")
+	run(t, dir, "worktree", "add", wtDir, "feat")
+
+	paths, err := g.WorktreePaths()
+	require.NoError(t, err)
+	require.Len(t, paths, 2)
+	for i, want := range []string{dir, wtDir} {
+		w, err := filepath.EvalSymlinks(want)
+		require.NoError(t, err)
+		got, err := filepath.EvalSymlinks(paths[i])
+		require.NoError(t, err)
+		assert.Equal(t, w, got)
+	}
+}
+
 func TestGitUnavailable_NotARepo(t *testing.T) {
 	dir := t.TempDir() // a real dir that is not a git repo
 	g := New(dir)

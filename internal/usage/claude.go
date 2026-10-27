@@ -27,12 +27,16 @@ func claudeFolder(abs string) string {
 	return strings.NewReplacer("/", "-", ".", "-").Replace(abs)
 }
 
-func (claudeReader) Discover(r Roots) ([]LogRef, error) {
+func (claudeReader) Dirs(r Roots) []string {
 	base := r.env("CLAUDE_CONFIG_DIR")
 	if base == "" {
 		base = filepath.Join(r.Home, ".claude")
 	}
-	projects := filepath.Join(base, "projects")
+	return []string{filepath.Join(base, "projects")}
+}
+
+func (c claudeReader) Discover(r Roots) ([]LogRef, error) {
+	projects := c.Dirs(r)[0]
 	entries, err := os.ReadDir(projects)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil

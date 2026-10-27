@@ -1,0 +1,282 @@
+package usage
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"time"
+
+	"github.com/madeintandem/tiller/internal/store"
+)
+
+// SettleAfter is how long a session must have been quiet before capture
+// records it, so a running session is never captured mid-flight.
+const SettleAfter = 30 * time.Minute
+
+// Options configures one capture.
+type Options struct {
+	Root    string // checkout root the usage files and cursor live under
+	Roots   Roots
+	Readers []Reader
+	Resolve Resolver
+	Now     time.Time
+	// Since is the project's earliest event; a session whose first call is
+	// before it is not captured. Zero means no lower bound.
+	Since time.Time
+	// Budget bounds the capture's wall time, checked between sessions. Zero
+	// means none.
+	Budget time.Duration
+}
+
+// HarnessResult is what capture did for one harness. Sessions counts the
+// top-level sessions found for this project, Written the files planned,
+// Tokens their total, and Tied the part credited to a work item.
+type HarnessResult struct {
+	Harness  string
+	Found    bool
+	Sessions int
+	Written  int
+	Tokens   int64
+	Tied     int64
+}
+
+// Result is a capture's planned writes. Partial is true when the budget
+// stopped it before every changed session was read.
+type Result struct {
+	Harnesses []HarnessResult
+	Writes    []store.PlannedWrite
+	Partial   bool
+}
+
+// Capture reads this project's harness logs and plans the usage files to
+// create or grow. It takes no lock and writes nothing: the caller commits
+// Result.Writes through tree.Commit, whose snapshot guards refuse a file
+// changed since planning, and saves the returned cursor only after that
+// commit succeeds. Now is injected; the wall clock is read only to measure
+// the budget.
+func Capture(o Options) (Result, Cursor, error) {
+	c := &capture{o: o, prev: LoadCursor(o.Root), next: Cursor{}, examined: map[string]bool{}, started: time.Now()}
+	if c.o.Resolve == nil {
+		c.o.Resolve = func(string) string { return "" }
+	}
+	for _, rd := range o.Readers {
+		h := HarnessResult{Harness: rd.Harness(), Found: anyDir(rd.Dirs(o.Roots))}
+		if !c.res.Partial {
+			if err := c.harness(rd, &h); err != nil {
+				return Result{}, nil, err
+			}
+		}
+		c.res.Harnesses = append(c.res.Harnesses, h)
+	}
+	if c.res.Partial {
+		// Logs the budget left unread keep what the old cursor knew of them.
+		for p, e := range c.prev {
+			if !c.examined[p] {
+				c.next[p] = e
+			}
+		}
+	}
+	return c.res, c.next, nil
+}
+
+type capture struct {
+	o        Options
+	prev     Cursor
+	next     Cursor
+	examined map[string]bool
+	started  time.Time
+	parsed   int
+	res      Result
+}
+
+func anyDir(dirs []string) bool {
+	for _, d := range dirs {
+		if info, err := os.Stat(d); err == nil && info.IsDir() {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *capture) harness(rd Reader, h *HarnessResult) error {
+	refs, err := rd.Discover(c.o.Roots)
+	if err != nil {
+		return err
+	}
+	groups := groupLogs(refs)
+	h.Sessions = len(groups)
+	for _, g := range groups {
+		seen, changed, err := c.stat(g)
+		if err != nil {
+			return err
+		}
+		if seen == nil {
+			continue // a log vanished since discovery
+		}
+		if !changed {
+			c.record(seen)
+			continue
+		}
+		// The first changed session always runs, so every capture makes
+		// progress; after it, the budget is checked at each session boundary.
+		if c.parsed > 0 && c.o.Budget > 0 && time.Since(c.started) > c.o.Budget {
+			c.res.Partial = true
+			return nil
+		}
+		c.parsed++
+		if err := c.session(rd, g, seen, h); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// groupLogs gathers each top-level log with its subagent logs, top-level log
+// first, ordered by the top-level log's path. Subagent logs whose parent log
+// is absent are dropped, since there is no session to fold them into.
+func groupLogs(refs []LogRef) [][]LogRef {
+	bySession := map[string][]LogRef{}
+	var tops []LogRef
+	for _, r := range refs {
+		if r.Parent == "" {
+			tops = append(tops, r)
+		} else {
+			bySession[r.Parent] = append(bySession[r.Parent], r)
+		}
+	}
+	sort.Slice(tops, func(i, j int) bool { return tops[i].Path < tops[j].Path })
+	groups := make([][]LogRef, 0, len(tops))
+	for _, t := range tops {
+		groups = append(groups, append([]LogRef{t}, bySession[t.Session]...))
+	}
+	return groups
+}
+
+// stat reads each member's size and modification time without opening it.
+// changed is true when any member differs from the cursor or is new to it. A
+// member that no longer exists yields nil: the group is skipped this time.
+func (c *capture) stat(g []LogRef) (Cursor, bool, error) {
+	seen := Cursor{}
+	changed := false
+	for _, l := range g {
+		c.examined[l.Path] = true
+		info, err := os.Stat(l.Path)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, false, nil
+		}
+		if err != nil {
+			return nil, false, err
+		}
+		e := cursorEntry{Size: info.Size(), ModTime: info.ModTime(), Match: true}
+		if old, ok := c.prev[l.Path]; !ok || !old.same(e) {
+			changed = true
+		}
+		seen[l.Path] = e
+	}
+	return seen, changed, nil
+}
+
+func (c *capture) record(seen Cursor) {
+	for p, e := range seen {
+		c.next[p] = e
+	}
+}
+
+// session parses one changed group and plans its file. The group enters the
+// cursor once it is decided, unless the session is still active, so an
+// unchanged but now-settled log is read again next time.
+func (c *capture) session(rd Reader, g []LogRef, seen Cursor, h *HarnessResult) error {
+	s, err := rd.Parse(g)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil // removed mid-capture; retried next time
+	}
+	if err != nil {
+		return err
+	}
+	first, last, ok := callSpan(s)
+	if !ok {
+		c.record(seen)
+		return nil
+	}
+	if last.After(c.o.Now.Add(-SettleAfter)) {
+		return nil
+	}
+	if !c.o.Since.IsZero() && first.Before(c.o.Since) {
+		c.record(seen)
+		return nil
+	}
+
+	f := File{
+		Harness: rd.Harness(), Session: s.ID, Reader: ReaderVersion, CapturedAt: c.o.Now,
+		FirstCall: first, LastCall: last, Rows: Credit(s, c.o.Resolve),
+	}
+	rel := Path(f.Harness, f.Session)
+	target := filepath.Join(c.o.Root, filepath.FromSlash(rel))
+	existing, snapshot, err := store.ReadGuardedFileSnapshot(c.o.Root, target)
+	if err != nil {
+		return err
+	}
+	data, err := Encode(f)
+	if err != nil {
+		return err
+	}
+	if snapshot.Exists() {
+		old, err := Decode(existing)
+		if err != nil {
+			return fmt.Errorf("%s: %w", rel, err)
+		}
+		if old.Calls() > f.Calls() {
+			c.record(seen) // the log lost calls; the file keeps them
+			return nil
+		}
+		same := f
+		same.CapturedAt = old.CapturedAt
+		if again, err := Encode(same); err == nil && bytes.Equal(again, existing) {
+			c.record(seen) // nothing new since the file was written
+			return nil
+		}
+	}
+
+	c.res.Writes = append(c.res.Writes, store.PlanWrite(target, snapshot, data))
+	h.Written++
+	for _, r := range f.Rows {
+		h.Tokens += r.Total()
+		if r.Node != "" {
+			h.Tied += r.Total()
+		}
+	}
+	c.record(seen)
+	return nil
+}
+
+// callSpan is the earliest and latest call across a session and its
+// subagents; ok is false when there are no calls.
+func callSpan(s Session) (first, last time.Time, ok bool) {
+	for _, call := range s.Calls {
+		if !ok || call.At.Before(first) {
+			first = call.At
+		}
+		if !ok || call.At.After(last) {
+			last = call.At
+		}
+		ok = true
+	}
+	for _, sub := range s.Subagents {
+		f, l, sok := callSpan(sub)
+		if !sok {
+			continue
+		}
+		if !ok || f.Before(first) {
+			first = f
+		}
+		if !ok || l.After(last) {
+			last = l
+		}
+		ok = true
+	}
+	return first, last, ok
+}

@@ -78,12 +78,16 @@ func underAny(cwd string, roots []string) bool {
 	return false
 }
 
-func (codexReader) Discover(r Roots) ([]LogRef, error) {
+func (codexReader) Dirs(r Roots) []string {
 	base := r.env("CODEX_HOME")
 	if base == "" {
 		base = filepath.Join(r.Home, ".codex")
 	}
-	dir := filepath.Join(base, "sessions")
+	return []string{filepath.Join(base, "sessions")}
+}
+
+func (c codexReader) Discover(r Roots) ([]LogRef, error) {
+	dir := c.Dirs(r)[0]
 	var refs []LogRef
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {

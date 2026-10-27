@@ -881,6 +881,22 @@ func (g *Git) WorktreeFor(branch string) (path string, ok bool, err error) {
 	return "", false, nil
 }
 
+// WorktreePaths lists the path of every worktree in `git worktree list
+// --porcelain` order, the primary checkout first.
+func (g *Git) WorktreePaths() ([]string, error) {
+	out, err := g.run("worktree", "list", "--porcelain")
+	if err != nil {
+		return nil, g.asEnv(err)
+	}
+	var paths []string
+	for _, line := range strings.Split(out, "\n") {
+		if p, ok := strings.CutPrefix(line, "worktree "); ok {
+			paths = append(paths, p)
+		}
+	}
+	return paths, nil
+}
+
 // HeadBranch reports the branch HEAD points at, or "" when HEAD is detached. It
 // shells `git symbolic-ref --quiet --short HEAD`, whose exit 1 means exactly
 // "HEAD is not a symbolic ref", i.e. detached. --quiet is load-bearing: without

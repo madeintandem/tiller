@@ -33,6 +33,9 @@ func (r Roots) env(key string) string {
 // Reader turns one harness's logs into neutral sessions.
 type Reader interface {
 	Harness() string
+	// Dirs names the harness folders Discover reads; when none exists the
+	// harness is not on this machine.
+	Dirs(r Roots) []string
 	// Discover lists the logs whose working directory is under a project root.
 	Discover(r Roots) ([]LogRef, error)
 	// Parse receives one top-level log and its subagent logs.

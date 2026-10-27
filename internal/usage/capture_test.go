@@ -1,0 +1,437 @@
+package usage
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+var captureNow = time.Date(2026, 10, 20, 20, 0, 0, 0, time.UTC)
+
+// claudeCall is one assistant line; a non-empty cmd adds a Bash tool call.
+func claudeCall(at time.Time, id, cmd string) string {
+	content := `[]`
+	if cmd != "" {
+		content = fmt.Sprintf(`[{"type":"tool_use","name":"Bash","input":{"command":%q}}]`, cmd)
+	}
+	return fmt.Sprintf(`{"type":"assistant","timestamp":%q,"message":{"id":%q,"model":"claude-opus-5-5","content":%s,"usage":{"input_tokens":10,"cache_creation_input_tokens":20,"cache_read_input_tokens":100,"output_tokens":5}}}`+"\n",
+		at.Format(time.RFC3339Nano), id, content)
+}
+
+// claudeSession writes a Claude log for session id under the folder encoded
+// for dir, one call at each time; the first call starts work on T-abc123.
+func claudeSession(t *testing.T, home, dir, id string, times ...time.Time) string {
+	t.Helper()
+	var b strings.Builder
+	for i, at := range times {
+		cmd := ""
+		if i == 0 {
+			cmd = "tiller start T-abc123"
+		}
+		b.WriteString(claudeCall(at, fmt.Sprintf("%s-%d", id, i), cmd))
+	}
+	path := filepath.Join(home, ".claude", "projects", claudeFolder(dir), id+".jsonl")
+	mustWrite(t, path, b.String())
+	return path
+}
+
+type captureEnv struct {
+	home, root string
+}
+
+func newCaptureEnv(t *testing.T) captureEnv {
+	t.Helper()
+	return captureEnv{home: t.TempDir(), root: t.TempDir()}
+}
+
+func (e captureEnv) options(readers ...Reader) Options {
+	if len(readers) == 0 {
+		readers = []Reader{NewClaudeReader()}
+	}
+	return Options{
+		Root:    e.root,
+		Roots:   Roots{Home: e.home, Project: []string{e.root}},
+		Readers: readers,
+		Resolve: func(ref string) string {
+			if ref == "T-abc123" {
+				return ref
+			}
+			return ""
+		},
+		Now: captureNow,
+	}
+}
+
+func mustCapture(t *testing.T, o Options) (Result, Cursor) {
+	t.Helper()
+	res, cur, err := Capture(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res, cur
+}
+
+func harnessResult(t *testing.T, res Result, harness string) HarnessResult {
+	t.Helper()
+	for _, h := range res.Harnesses {
+		if h.Harness == harness {
+			return h
+		}
+	}
+	t.Fatalf("no result for %s in %+v", harness, res.Harnesses)
+	return HarnessResult{}
+}
+
+// countingReader counts Parse calls and can slow each one down.
+type countingReader struct {
+	Reader
+	parses int
+	delay  time.Duration
+}
+
+func (c *countingReader) Parse(logs []LogRef) (Session, error) {
+	c.parses++
+	if c.delay > 0 {
+		time.Sleep(c.delay)
+	}
+	return c.Reader.Parse(logs)
+}
+
+func TestCaptureWritesSettledSessions(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+
+	res, cur := mustCapture(t, e.options())
+	if len(res.Writes) != 1 {
+		t.Fatalf("writes = %d, want 1", len(res.Writes))
+	}
+	w := res.Writes[0]
+	if want := filepath.Join(e.root, ".tiller", "usage", "claude-code", "s1.yml"); w.Path != want {
+		t.Errorf("path = %s, want %s", w.Path, want)
+	}
+	if w.Before.Exists() {
+		t.Error("snapshot of a new file should be absent")
+	}
+	f, err := Decode(w.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Harness != "claude-code" || f.Session != "s1" || f.Reader != ReaderVersion || !f.CapturedAt.Equal(captureNow) {
+		t.Errorf("header = %+v", f)
+	}
+	if !f.FirstCall.Equal(captureNow.Add(-3*time.Hour)) || !f.LastCall.Equal(captureNow.Add(-2*time.Hour)) {
+		t.Errorf("first/last = %v %v", f.FirstCall, f.LastCall)
+	}
+	if f.Calls() != 2 {
+		t.Fatalf("calls = %d, want 2", f.Calls())
+	}
+	for _, r := range f.Rows {
+		if r.Node != "T-abc123" || r.Stage != Implementation || r.Model != "claude-opus-5-5" {
+			t.Errorf("row = %+v", r)
+		}
+	}
+	h := harnessResult(t, res, "claude-code")
+	want := HarnessResult{Harness: "claude-code", Found: true, Sessions: 1, Written: 1, Tokens: 270, Tied: 270}
+	if h != want {
+		t.Errorf("harness = %+v, want %+v", h, want)
+	}
+	if res.Partial {
+		t.Error("partial without a budget")
+	}
+	if len(cur) != 1 {
+		t.Errorf("cursor = %+v, want one entry", cur)
+	}
+}
+
+func TestCaptureSkipsActiveSession(t *testing.T) {
+	e := newCaptureEnv(t)
+	path := claudeSession(t, e.home, e.root, "s1", captureNow.Add(-time.Hour), captureNow.Add(-10*time.Minute))
+
+	res, cur := mustCapture(t, e.options())
+	if len(res.Writes) != 0 {
+		t.Fatalf("writes = %d, want 0 for an active session", len(res.Writes))
+	}
+	if _, ok := cur[path]; ok {
+		t.Fatal("an unsettled session must not enter the cursor")
+	}
+
+	// Once it has gone quiet the same, unchanged log is captured.
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+	later := e.options()
+	later.Now = captureNow.Add(time.Hour)
+	res, _ = mustCapture(t, later)
+	if len(res.Writes) != 1 {
+		t.Fatalf("writes = %d, want 1 once settled", len(res.Writes))
+	}
+}
+
+func TestCaptureSkipsSessionsBeforeSince(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "old", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	claudeSession(t, e.home, e.root, "new", captureNow.Add(-50*time.Minute), captureNow.Add(-40*time.Minute))
+
+	o := e.options()
+	o.Since = captureNow.Add(-time.Hour)
+	res, _ := mustCapture(t, o)
+	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "new.yml") {
+		t.Fatalf("writes = %+v, want only the session after Since", res.Writes)
+	}
+}
+
+func writeUsageFile(t *testing.T, root string, f File) []byte {
+	t.Helper()
+	data, err := Encode(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustWrite(t, filepath.Join(root, filepath.FromSlash(Path(f.Harness, f.Session))), string(data))
+	return data
+}
+
+func TestCaptureNeverShrinks(t *testing.T) {
+	e := newCaptureEnv(t)
+	times := make([]time.Time, 20)
+	for i := range times {
+		times[i] = captureNow.Add(-3*time.Hour + time.Duration(i)*time.Minute)
+	}
+	claudeSession(t, e.home, e.root, "s1", times...)
+	big := writeUsageFile(t, e.root, File{Harness: "claude-code", Session: "s1", Reader: ReaderVersion,
+		Rows: []Row{{Hour: captureNow.Add(-4 * time.Hour).Truncate(time.Hour), Stage: Other, Model: "m", Calls: 50}}})
+	gone := writeUsageFile(t, e.root, File{Harness: "claude-code", Session: "gone", Reader: ReaderVersion,
+		Rows: []Row{{Hour: captureNow.Add(-9 * time.Hour).Truncate(time.Hour), Stage: Other, Model: "m", Calls: 7}}})
+
+	res, _ := mustCapture(t, e.options())
+	if len(res.Writes) != 0 {
+		t.Fatalf("writes = %+v, want none", res.Writes)
+	}
+	for name, want := range map[string][]byte{"s1": big, "gone": gone} {
+		got, err := os.ReadFile(filepath.Join(e.root, filepath.FromSlash(Path("claude-code", name))))
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if string(got) != string(want) {
+			t.Errorf("%s changed", name)
+		}
+	}
+}
+
+func TestCaptureGrowsAndLeavesIdenticalFilesAlone(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
+	res, _ := mustCapture(t, e.options())
+	if len(res.Writes) != 1 {
+		t.Fatalf("writes = %d, want 1", len(res.Writes))
+	}
+	mustWrite(t, res.Writes[0].Path, string(res.Writes[0].Data))
+
+	// A fresh machine (no cursor) recaptures the same session: nothing to write.
+	again := e.options()
+	again.Now = captureNow.Add(time.Hour)
+	res, _ = mustCapture(t, again)
+	if len(res.Writes) != 0 {
+		t.Fatalf("writes = %d, want 0 for identical content", len(res.Writes))
+	}
+
+	// The session grew: the file is rewritten over its snapshot.
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	res, _ = mustCapture(t, again)
+	if len(res.Writes) != 1 || !res.Writes[0].Before.Exists() {
+		t.Fatalf("writes = %+v, want one rewrite guarded by the existing file", res.Writes)
+	}
+	if f, _ := Decode(res.Writes[0].Data); f.Calls() != 2 {
+		t.Errorf("calls = %d, want 2", f.Calls())
+	}
+}
+
+func TestCaptureUnchangedLogIsNotOpened(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
+	r := &countingReader{Reader: NewClaudeReader()}
+	_, cur := mustCapture(t, e.options(r))
+	if r.parses != 1 {
+		t.Fatalf("first capture parses = %d, want 1", r.parses)
+	}
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	r.parses = 0
+	res, next := mustCapture(t, e.options(r))
+	if r.parses != 0 {
+		t.Errorf("parses = %d, want 0 for a log matching the cursor", r.parses)
+	}
+	if len(res.Writes) != 0 {
+		t.Errorf("writes = %d, want 0", len(res.Writes))
+	}
+	if len(next) != 1 {
+		t.Errorf("cursor = %+v, want the skipped log kept", next)
+	}
+	if h := harnessResult(t, res, "claude-code"); h.Sessions != 1 || h.Written != 0 {
+		t.Errorf("harness = %+v", h)
+	}
+}
+
+func TestCaptureReparsesGroupWhenASubagentChanged(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
+	sub := filepath.Join(e.home, ".claude", "projects", claudeFolder(e.root), "s1", "subagents", "agent-a.jsonl")
+	mustWrite(t, sub, claudeCall(captureNow.Add(-170*time.Minute), "a-0", ""))
+	r := &countingReader{Reader: NewClaudeReader()}
+	_, cur := mustCapture(t, e.options(r))
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	mustWrite(t, sub, claudeCall(captureNow.Add(-170*time.Minute), "a-0", "")+claudeCall(captureNow.Add(-160*time.Minute), "a-1", ""))
+	r.parses = 0
+	res, _ := mustCapture(t, e.options(r))
+	if r.parses != 1 {
+		t.Fatalf("parses = %d, want the group reparsed", r.parses)
+	}
+	if len(res.Writes) != 1 {
+		t.Fatalf("writes = %d, want 1", len(res.Writes))
+	}
+	if f, _ := Decode(res.Writes[0].Data); f.Calls() != 3 {
+		t.Errorf("calls = %d, want 3 (one top-level, two subagent)", f.Calls())
+	}
+}
+
+func TestCaptureFindsRemovedInRootWorktree(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, filepath.Join(e.root, ".worktrees", "gone"), "wt", captureNow.Add(-3*time.Hour))
+
+	res, _ := mustCapture(t, e.options())
+	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, filepath.Join("claude-code", "wt.yml")) {
+		t.Fatalf("writes = %+v, want the removed worktree's session", res.Writes)
+	}
+}
+
+func TestCaptureBudgetStopsAtSessionBoundary(t *testing.T) {
+	e := newCaptureEnv(t)
+	for _, id := range []string{"s1", "s2", "s3"} {
+		claudeSession(t, e.home, e.root, id, captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	}
+	r := &countingReader{Reader: NewClaudeReader(), delay: 5 * time.Millisecond}
+	o := e.options(r)
+	o.Budget = time.Millisecond
+
+	res, cur := mustCapture(t, o)
+	if !res.Partial {
+		t.Fatal("want Partial")
+	}
+	if r.parses != 1 || len(res.Writes) != 1 {
+		t.Fatalf("parses = %d writes = %d, want one whole session", r.parses, len(res.Writes))
+	}
+	if f, _ := Decode(res.Writes[0].Data); f.Calls() != 2 {
+		t.Errorf("calls = %d, want the whole session", f.Calls())
+	}
+	if len(cur) != 1 {
+		t.Errorf("cursor = %+v, want only the captured session", cur)
+	}
+}
+
+func TestCaptureReportsMissingHarness(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
+
+	res, _ := mustCapture(t, e.options(NewClaudeReader(), NewCodexReader()))
+	if h := harnessResult(t, res, "codex"); h != (HarnessResult{Harness: "codex", Found: false}) {
+		t.Errorf("codex = %+v", h)
+	}
+	if h := harnessResult(t, res, "claude-code"); !h.Found {
+		t.Errorf("claude = %+v", h)
+	}
+}
+
+// noChangeFixture lays n settled logs and saves a cursor that matches them all.
+func noChangeFixture(tb testing.TB, n int) (captureEnv, *countingReader) {
+	tb.Helper()
+	e := captureEnv{home: tb.TempDir(), root: tb.TempDir()}
+	dir := filepath.Join(e.home, ".claude", "projects", claudeFolder(e.root))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		tb.Fatal(err)
+	}
+	for i := range n {
+		path := filepath.Join(dir, fmt.Sprintf("s%03d.jsonl", i))
+		if err := os.WriteFile(path, []byte(claudeCall(captureNow.Add(-3*time.Hour), fmt.Sprintf("m%d", i), "")), 0o644); err != nil {
+			tb.Fatal(err)
+		}
+	}
+	r := &countingReader{Reader: NewClaudeReader()}
+	_, cur, err := Capture(e.options(r))
+	if err != nil {
+		tb.Fatal(err)
+	}
+	if len(cur) != n {
+		tb.Fatalf("cursor holds %d entries, want %d", len(cur), n)
+	}
+	if err := cur.Save(e.root); err != nil {
+		tb.Fatal(err)
+	}
+	// Unreadable logs make any open fail; stat still works.
+	entries, _ := os.ReadDir(dir)
+	for _, en := range entries {
+		path := filepath.Join(dir, en.Name())
+		if err := os.Chmod(path, 0); err != nil {
+			tb.Fatal(err)
+		}
+		tb.Cleanup(func() { os.Chmod(path, 0o644) })
+	}
+	r.parses = 0
+	return e, r
+}
+
+func TestCaptureNoChangeOpensNothing(t *testing.T) {
+	e, r := noChangeFixture(t, 200)
+	res, cur := mustCapture(t, e.options(r))
+	if r.parses != 0 {
+		t.Errorf("parses = %d, want 0", r.parses)
+	}
+	if len(res.Writes) != 0 || len(cur) != 200 {
+		t.Errorf("writes = %d cursor = %d, want 0 and 200", len(res.Writes), len(cur))
+	}
+	if h := harnessResult(t, res, "claude-code"); h.Sessions != 200 {
+		t.Errorf("sessions = %d, want 200", h.Sessions)
+	}
+}
+
+func BenchmarkCaptureNoChange(b *testing.B) {
+	e, r := noChangeFixture(b, 200)
+	o := e.options(r)
+	b.ResetTimer()
+	for b.Loop() {
+		if _, _, err := Capture(o); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestCursorRoundTrip(t *testing.T) {
+	root := t.TempDir()
+	if got := LoadCursor(root); len(got) != 0 {
+		t.Fatalf("missing cursor = %+v, want empty", got)
+	}
+	c := Cursor{"/h/a.jsonl": {Size: 42, ModTime: time.Date(2026, 10, 20, 1, 2, 3, 456789, time.UTC), Match: true}}
+	if err := c.Save(root); err != nil {
+		t.Fatal(err)
+	}
+	got := LoadCursor(root)
+	e := got["/h/a.jsonl"]
+	if len(got) != 1 || e.Size != 42 || !e.ModTime.Equal(c["/h/a.jsonl"].ModTime) || !e.Match {
+		t.Errorf("round trip = %+v", got)
+	}
+
+	mustWrite(t, filepath.Join(root, ".tiller", ".cache", "usage.yml"), "{not yaml")
+	if got := LoadCursor(root); len(got) != 0 {
+		t.Errorf("corrupt cursor = %+v, want empty", got)
+	}
+	mustWrite(t, filepath.Join(root, ".tiller", ".cache", "usage.yml"), "reader: 0\nlogs:\n  /h/a.jsonl: {size: 1}\n")
+	if got := LoadCursor(root); len(got) != 0 {
+		t.Errorf("cursor from another reader version = %+v, want empty", got)
+	}
+}

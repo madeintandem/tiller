@@ -41,16 +41,25 @@ func piInner(abs string) string {
 	return piEncoder.Replace(strings.TrimPrefix(abs, "/"))
 }
 
-func (piReader) Discover(r Roots) ([]LogRef, error) {
+// Dirs is the OhMyPi folder, then the Pi folder.
+func (piReader) Dirs(r Roots) []string {
+	return []string{
+		filepath.Join(r.Home, ".omp", "agent", "sessions"),
+		filepath.Join(r.Home, ".pi", "agent", "sessions"),
+	}
+}
+
+func (pr piReader) Discover(r Roots) ([]LogRef, error) {
 	omp := newFolderMatcher(r.Project, func(p string) string { return ompFolder(r.Home, p) })
 	pi := newFolderMatcher(r.Project, piInner)
+	dirs := pr.Dirs(r)
 	var refs []LogRef
 	for _, base := range []struct {
 		dir     string
 		matches func(name string) bool
 	}{
-		{filepath.Join(r.Home, ".omp", "agent", "sessions"), omp.match},
-		{filepath.Join(r.Home, ".pi", "agent", "sessions"), func(name string) bool {
+		{dirs[0], omp.match},
+		{dirs[1], func(name string) bool {
 			if len(name) <= 4 || !strings.HasPrefix(name, "--") || !strings.HasSuffix(name, "--") {
 				return false
 			}
