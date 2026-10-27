@@ -286,7 +286,7 @@ func TestCaptureSkipsSessionsBeforeSince(t *testing.T) {
 	claudeSession(t, e.home, e.root, "new", captureNow.Add(-50*time.Minute), captureNow.Add(-40*time.Minute))
 
 	o := e.options()
-	o.Since = captureNow.Add(-time.Hour)
+	o.Since = func() (time.Time, error) { return captureNow.Add(-time.Hour), nil }
 	res, _ := mustCapture(t, o)
 	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "new.yml") {
 		t.Fatalf("writes = %+v, want only the session after Since", res.Writes)
@@ -506,6 +506,32 @@ func TestCaptureNoChangeOpensNothing(t *testing.T) {
 	}
 	if h := harnessResult(t, res, "claude-code"); h.Sessions != 200 {
 		t.Errorf("sessions = %d, want 200", h.Sessions)
+	}
+}
+
+// A capture with nothing new never asks for the project's earliest event, so
+// sync's no-change capture does not read the event stream.
+func TestCaptureNoChangeAsksNoSince(t *testing.T) {
+	e, r := noChangeFixture(t, 3)
+	o := e.options(r)
+	asked := 0
+	o.Since = func() (time.Time, error) { asked++; return time.Time{}, nil }
+	mustCapture(t, o)
+	if asked != 0 {
+		t.Errorf("Since asked %d times, want 0", asked)
+	}
+}
+
+func TestCaptureAsksSinceOnce(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "a", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	claudeSession(t, e.home, e.root, "b", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	o := e.options()
+	asked := 0
+	o.Since = func() (time.Time, error) { asked++; return time.Time{}, nil }
+	res, _ := mustCapture(t, o)
+	if asked != 1 || len(res.Writes) != 2 {
+		t.Errorf("Since asked %d times with %d writes, want 1 and 2", asked, len(res.Writes))
 	}
 }
 

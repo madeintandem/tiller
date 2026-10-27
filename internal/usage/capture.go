@@ -25,9 +25,11 @@ type Options struct {
 	Readers []Reader
 	Resolve Resolver
 	Now     time.Time
-	// Since is the project's earliest event; a session whose first call is
-	// before it is not captured. Zero means no lower bound.
-	Since time.Time
+	// Since returns the project's earliest event; a session whose first call
+	// is before it is not captured. It is asked at most once, and only when a
+	// session is parsed, so a capture with nothing new never reads the event
+	// stream. Nil, or a zero time, means no lower bound.
+	Since func() (time.Time, error)
 	// Budget bounds the capture's wall time, checked between sessions. Zero
 	// means none.
 	Budget time.Duration
@@ -103,6 +105,22 @@ type capture struct {
 	parsed   int
 	res      Result
 	files    map[string]map[string]bool // harness -> usage file names on disk
+	since    *time.Time                 // Options.Since's answer, once asked
+}
+
+// earliest answers Options.Since, asking it the first time only.
+func (c *capture) earliest() (time.Time, error) {
+	if c.since == nil {
+		var at time.Time
+		if c.o.Since != nil {
+			var err error
+			if at, err = c.o.Since(); err != nil {
+				return time.Time{}, err
+			}
+		}
+		c.since = &at
+	}
+	return *c.since, nil
 }
 
 // logStats is one group's logs as stat'd this run, keyed by path.
@@ -259,7 +277,11 @@ func (c *capture) session(rd Reader, g []LogRef, seen logStats, h *HarnessResult
 	if last.After(c.o.Now.Add(-SettleAfter)) {
 		return nil
 	}
-	if !c.o.Since.IsZero() && first.Before(c.o.Since) {
+	since, err := c.earliest()
+	if err != nil {
+		return err
+	}
+	if !since.IsZero() && first.Before(since) {
 		c.record(seen, top.Path, false)
 		return nil
 	}

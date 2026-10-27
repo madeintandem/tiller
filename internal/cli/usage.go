@@ -83,7 +83,7 @@ func runUsage(cmd *cobra.Command, _ []string) error {
 			UsageRefusedData{Reason: reasonUsageNotIntegration, Current: current, Integration: integration},
 			fmt.Sprintf("Agent usage is captured on the integration branch only. You are on %s; check out %s and run this again.", current, integration), 1)
 	}
-	res, err := captureUsage(tree, time.Now(), 0)
+	res, err := captureUsage(tree, time.Now(), 0, false)
 	if err != nil {
 		var env *store.EnvError
 		if errors.As(err, &env) && env.Reason == store.ReasonMutationStale {
@@ -116,7 +116,10 @@ var usageBeforeCommit func(tree *store.Tree)
 // captureUsage runs one capture against tree and commits what it planned. The
 // cursor is saved only after the commit succeeds, or when there was nothing to
 // commit. It is best effort for sync and the whole job for `tiller usage`.
-func captureUsage(tree *store.Tree, now time.Time, budget time.Duration) (usage.Result, error) {
+// reload loads the tree again before committing, for a caller (sync) whose own
+// commit has advanced the generation since tree was loaded; a capture with
+// nothing to write never pays for that load, nor for reading the event stream.
+func captureUsage(tree *store.Tree, now time.Time, budget time.Duration, reload bool) (usage.Result, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return usage.Result{}, err
@@ -130,13 +133,12 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration) (usage.
 			}
 		}
 	}
-	var since time.Time
-	evs, err := events.List(tree)
-	if err != nil {
-		return usage.Result{}, err
-	}
-	if len(evs) > 0 {
-		since = evs[0].At
+	since := func() (time.Time, error) {
+		evs, err := events.List(tree)
+		if err != nil || len(evs) == 0 {
+			return time.Time{}, err
+		}
+		return evs[0].At, nil
 	}
 	res, cursor, err := usage.Capture(usage.Options{
 		Root:  tree.Root,
@@ -153,6 +155,11 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration) (usage.
 		return usage.Result{}, err
 	}
 	if len(res.Writes) > 0 {
+		if reload {
+			if tree, err = store.Load(tree.Root); err != nil {
+				return usage.Result{}, err
+			}
+		}
 		if usageBeforeCommit != nil {
 			usageBeforeCommit(tree)
 		}
