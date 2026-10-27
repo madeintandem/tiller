@@ -859,3 +859,31 @@ func TestImportDocsStillWalksADirectoryPreservingStructure(t *testing.T) {
 	require.FileExists(t, filepath.Join(destDir, "docs", "sub", "b.md"))
 	require.NoFileExists(t, filepath.Join(destDir, "docs", ".DS_Store"))
 }
+
+func TestInitCaptureUsageWritesTheBlock(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	_, _, code := execCLI(t, "init", "--name", "P", "--key", "p", "--kind", "greenfield", "--capture-usage")
+	require.Equal(t, 0, code)
+
+	data, err := os.ReadFile(filepath.Join(dir, ".tiller", "tiller.yml"))
+	require.NoError(t, err)
+	require.Contains(t, string(data), "usage:\n  capture: true")
+
+	m, err := store.LoadManifest(dir)
+	require.NoError(t, err)
+	require.True(t, m.Usage.Capture)
+}
+
+func TestInitWithoutCaptureUsageWritesNoUsageBlock(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	_, _, code := execCLI(t, "init", "--name", "P", "--key", "p", "--kind", "greenfield")
+	require.Equal(t, 0, code)
+
+	data, err := os.ReadFile(filepath.Join(dir, ".tiller", "tiller.yml"))
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "\nusage:")
+}

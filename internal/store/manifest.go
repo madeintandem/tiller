@@ -105,11 +105,18 @@ type Manifest struct {
 	Git           GitBlock       `yaml:"git,omitempty"`
 	Execution     ExecutionBlock `yaml:"execution,omitempty"`
 	Drift         DriftBlock     `yaml:"drift,omitempty"`
+	Usage         UsageBlock     `yaml:"usage,omitempty"`
 
 	// root is the repo root the manifest was loaded from. It is not part of the
 	// on-disk shape; LoadManifest sets it, and Validate's filesystem checks
 	// resolve against it.
 	root string
+}
+
+// UsageBlock is the opt-in agent usage setting. Capture is off unless the
+// manifest says usage.capture: true; an absent block means off.
+type UsageBlock struct {
+	Capture bool `yaml:"capture"`
 }
 
 // ProjectBlock identifies the project and its archetype.

@@ -93,6 +93,7 @@ func newInitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "human-readable project name (required)")
 	cmd.Flags().StringVar(&key, "key", "", "short project key in [a-z0-9-] (required)")
 	cmd.Flags().StringVar(&kind, "kind", "", "archetype: greenfield | brownfield | legacy-migration (required)")
+	cmd.Flags().Bool("capture-usage", false, "record agent token usage from local harness logs (writes usage.capture: true)")
 	cmd.Flags().String("design", "", "import a folder of design docs into .tiller/design/ (copy-out-only; point at a clean folder of just your design docs)")
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.MarkFlagRequired("key")
@@ -117,7 +118,8 @@ func runInit(cmd *cobra.Command, name, key, kind string) error {
 		return emitFailure(cmd, "init", err)
 	}
 
-	result, err := scaffold(root, name, key, kind, design)
+	captureUsage, _ := cmd.Flags().GetBool("capture-usage")
+	result, err := scaffold(root, name, key, kind, design, captureUsage)
 	if err != nil {
 		return emitFailure(cmd, "init", err)
 	}
@@ -265,7 +267,7 @@ func validateInitFlags(name, key, kind string) error {
 // exactly as it found it, not partially rewritten (skeleton directories
 // created, a root .gitignore seeded) on the way to the refusal. It returns
 // whether a new manifest was written.
-func scaffold(root, name, key, kind string, design *designSource) (initResult, error) {
+func scaffold(root, name, key, kind string, design *designSource, captureUsage bool) (initResult, error) {
 	tillerDir := filepath.Join(root, ".tiller")
 	manifestPath := filepath.Join(tillerDir, "tiller.yml")
 	present, err := store.PathExistsNoSymlinks(root, manifestPath)
@@ -299,7 +301,7 @@ func scaffold(root, name, key, kind string, design *designSource) (initResult, e
 				adopted = &store.AdoptedAnchor{Commit: "git:" + head, At: time.Now().UTC().Format(time.RFC3339)}
 			}
 		}
-		manifest := renderManifest(name, key, kind, design, detectIntegrationBranch(root), adopted)
+		manifest := renderManifest(name, key, kind, design, detectIntegrationBranch(root), adopted, captureUsage)
 		if err := store.WriteRepositoryFileAtomic(root, filepath.Join(".tiller", "tiller.yml"), []byte(manifest)); err != nil {
 			return initResult{}, err
 		}
@@ -381,7 +383,11 @@ func detectIntegrationBranch(root string) string {
 // branch `sync` observes done crossings into; artifact-schema.md, Project
 // manifest). Design provenance and the optional HEAD observation are inputs:
 // rendering does not query Git or the clock.
-func renderManifest(name, key, kind string, design *designSource, integrationBranch string, adopted *store.AdoptedAnchor) string {
+func renderManifest(name, key, kind string, design *designSource, integrationBranch string, adopted *store.AdoptedAnchor, captureUsage bool) string {
+	usage := ""
+	if captureUsage {
+		usage = "\n# Record agent token usage from local harness logs for the Report page's Agent use tab.\nusage:\n  capture: true\n"
+	}
 	code := "  code: []\n"
 	anchor := ""
 	if kind == store.KindBrownfield || kind == store.KindLegacyMigration {
@@ -445,7 +451,7 @@ git:
 
 drift:
   checks: [stale_spec, active_basis, answered_question, missing_surface, orphan_eval, stale_design]
-`, store.CurrentSchemaVersion, jsonString(name), key, kind, anchor, code, renderImportedFrom(design), jsonString(integrationBranch))
+%s`, store.CurrentSchemaVersion, jsonString(name), key, kind, anchor, code, renderImportedFrom(design), jsonString(integrationBranch), usage)
 }
 
 // renderImportedFrom renders the inputs.imported_from provenance lines for a

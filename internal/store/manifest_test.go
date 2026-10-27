@@ -538,3 +538,19 @@ lint: { kind: command, run: "lint", on: [task], reuse: true }
 	assert.True(t, specs["lint"].Reusable())
 	assert.True(t, GateSpec{}.Reusable())
 }
+
+func TestLoadManifestReadsUsageCapture(t *testing.T) {
+	root := tempRepo(t, "tiller.yml", true)
+	m, err := LoadManifest(root)
+	require.NoError(t, err)
+	assert.False(t, m.Usage.Capture, "no usage block means capture is off")
+
+	path := filepath.Join(root, ".tiller", "tiller.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, append(data, []byte("\nusage:\n  capture: true\n")...), 0o644))
+
+	m, err = LoadManifest(root)
+	require.NoError(t, err)
+	assert.True(t, m.Usage.Capture)
+}
