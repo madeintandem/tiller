@@ -8,16 +8,21 @@ import (
 )
 
 // workItemTotals returns the token total of each work item under the coverage
-// rule, and how many done items with usage of their own it left out. A work
+// rule, how many done items with usage of their own it left out, and how many
+// done items have no usage of their own (unmeasured, never zero). A work
 // item is a done task, bug, chore, or tweak with rows of its own whose first
 // real start is on or after fullAt; a carried item that never started on its
 // own, or one started before every harness was measured, is left out rather
 // than drawn artificially cheap. In-progress items would pull the figures down
-// with partial totals, and items with no rows are unknown, so neither counts.
-func workItemTotals(t *store.Tree, r *replay, nodes map[string]int64, fullAt time.Time) (items []int64, leftOut int) {
+// with partial totals, so they are not counted at all.
+func workItemTotals(t *store.Tree, r *replay, nodes map[string]int64, fullAt time.Time) (items []int64, leftOut, unmeasured int) {
 	consider := func(id, status, noun string) {
+		if status != "done" {
+			return
+		}
 		total, has := nodes[id]
-		if status != "done" || !has {
+		if !has {
+			unmeasured++
 			return
 		}
 		started, ok := r.firstAt(id, "in_progress", changeFrom("start."+noun))
@@ -39,7 +44,7 @@ func workItemTotals(t *store.Tree, r *replay, nodes map[string]int64, fullAt tim
 	for id, tw := range t.Tweaks {
 		consider(id, tw.Status, store.NounTweak)
 	}
-	return items, leftOut
+	return items, leftOut, unmeasured
 }
 
 // featureTokens returns each finished feature's tokens, its own rows plus its

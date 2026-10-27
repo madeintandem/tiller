@@ -86,8 +86,24 @@ func TestUsageReportCoveragePartialBeforeLatestHarness(t *testing.T) {
 	require.Equal(t, "2026-09-30", got.FullCoverage)
 	require.Equal(t, []string{"2026-08-10", "2026-08-17", "2026-08-24", "2026-08-31", "2026-09-07", "2026-09-14",
 		"2026-09-21", "2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"}, got.Weeks)
+	// The week of Sep 28 is partial: Claude was measured only from Sep 30.
 	require.Equal(t, []string{"none", "none", "none", "partial", "partial", "partial", "partial",
-		"full", "full", "full", "full"}, got.Coverage)
+		"partial", "full", "full", "full"}, got.Coverage)
+}
+
+// TestUsageReportCoverageOnMondays pins both boundaries on a Monday: a week
+// ending exactly when the first harness begins is none, and the week starting
+// on the full-coverage date is full.
+func TestUsageReportCoverageOnMondays(t *testing.T) {
+	files := []usage.File{
+		usageFile("pi", "p", usageRow(onDay(time.October, 5), "", usage.Other, "m", input(1))),
+		usageFile("claude-code", "c", usageRow(onDay(time.October, 12), "", usage.Other, "m", input(2))),
+	}
+	got := usageReport(reportTree("p", "main"), files, nil)
+
+	require.Equal(t, []string{"2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19"}, got.Weeks)
+	require.Equal(t, "2026-10-12", got.FullCoverage)
+	require.Equal(t, []string{"none", "partial", "full", "full"}, got.Coverage)
 }
 
 func TestUsageReportItemsLeaveOutEarlyStarts(t *testing.T) {
@@ -114,6 +130,7 @@ func TestUsageReportItemsLeaveOutEarlyStarts(t *testing.T) {
 
 	require.Equal(t, 2, got.KPIs.Items)
 	require.Equal(t, 2, got.ItemsLeftOut)
+	require.Equal(t, 1, got.ItemsUnmeasured, "T-cccccc is done with no usage")
 	require.NotNil(t, got.KPIs.MedianPerItem)
 	require.Equal(t, int64(25_075_000), *got.KPIs.MedianPerItem)
 	counts := map[string]int{}
@@ -124,6 +141,22 @@ func TestUsageReportItemsLeaveOutEarlyStarts(t *testing.T) {
 		"<100K": 0, "100K–300K": 1, "300K–1M": 0, "1M–3M": 0,
 		"3M–10M": 0, "10M–30M": 0, "30M–100M": 1, ">100M": 0,
 	}, counts)
+}
+
+// TestUsageReportCountsUnmeasuredItems pins that a done item with no usage of
+// its own is unmeasured, never a zero in a band, the median, or left out.
+func TestUsageReportCountsUnmeasuredItems(t *testing.T) {
+	tr := flowTree(nil, nil, "T-aaaaaa")
+	evs := []events.Event{statusEv("start.task", onDay(time.October, 5), "in_progress", "T-aaaaaa")}
+	got := usageReport(tr, []usage.File{claudeSinceSep30()}, evs)
+
+	require.Equal(t, 1, got.ItemsUnmeasured)
+	require.Zero(t, got.ItemsLeftOut)
+	require.Zero(t, got.KPIs.Items)
+	require.Nil(t, got.KPIs.MedianPerItem)
+	for _, b := range got.ItemBands {
+		require.Zero(t, b.Count, b.Label)
+	}
 }
 
 func TestUsageReportSumsSessionsWithoutPeople(t *testing.T) {
@@ -269,7 +302,7 @@ func TestUsageReportEmpty(t *testing.T) {
 	require.NotContains(t, text, "NaN")
 	require.NotContains(t, text, "Inf")
 	for _, want := range []string{`"median_per_item":null`, `"tied_share":0`, `"harnesses":[]`, `"models":[]`,
-		`"features":[]`, `"totals":[]`, `"full_coverage":""`} {
+		`"features":[]`, `"totals":[]`, `"full_coverage":""`, `"items_unmeasured":0`} {
 		require.Contains(t, text, want)
 	}
 }
@@ -282,7 +315,8 @@ func TestUsageReportFilesWithoutEvents(t *testing.T) {
 	got := usageReport(reportTree("p", "main"), files, nil)
 
 	require.Len(t, got.Weeks, 4)
-	require.Equal(t, []string{"none", "none", "none", "full"}, got.Coverage)
+	// Codex begins on Tuesday Oct 20, so the current week is partly measured.
+	require.Equal(t, []string{"none", "none", "none", "partial"}, got.Coverage)
 	require.Equal(t, int64(42), got.Weekly[3].Input)
 	require.Equal(t, []views.UsageHarness{{Harness: "codex", Label: "Codex", Since: "2026-10-20"}}, got.Harnesses)
 	require.Nil(t, got.KPIs.MedianPerItem)

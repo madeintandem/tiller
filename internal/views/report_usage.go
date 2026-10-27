@@ -34,8 +34,9 @@ type UsageReport struct {
 	ModelStages     []UsageModelStage `json:"model_stages"` // all nine stages, totals aligned to Models
 	Features        []UsageFeature    `json:"features"`
 	FeaturesLeftOut int               `json:"features_left_out"`
-	ItemBands       []UsageBand       `json:"item_bands"` // the eight bands, smallest first
-	ItemsLeftOut    int               `json:"items_left_out"`
+	ItemBands       []UsageBand       `json:"item_bands"`       // the eight bands, smallest first
+	ItemsLeftOut    int               `json:"items_left_out"`   // done items with usage that started before full coverage
+	ItemsUnmeasured int               `json:"items_unmeasured"` // done items with no usage of their own
 }
 
 // UsageHarness is one harness measured, with the local date of its earliest
@@ -164,8 +165,8 @@ func UsageReportOf(t *store.Tree, in UsageReportInput) UsageReport {
 	}
 	rep.Models, rep.ModelStages = modelStages(sums.models)
 
-	items, left := workItemTotals(t, r, sums.nodes, fullAt)
-	rep.ItemsLeftOut = left
+	items, left, unmeasured := workItemTotals(t, r, sums.nodes, fullAt)
+	rep.ItemsLeftOut, rep.ItemsUnmeasured = left, unmeasured
 	rep.KPIs.Items = len(items)
 	rep.KPIs.MedianPerItem = medianTokens(items)
 	rep.ItemBands = bandCounts(items)
@@ -242,9 +243,9 @@ func sumUsage(files []usage.File, weeks []time.Time) usageSums {
 
 // harnessCoverage fills the harness list and the full-coverage date, and
 // returns the instant full coverage begins (local midnight of that date) with
-// the rule that classifies a week: none before the week of the earliest
-// harness date, partial until the week holding the full-coverage date, full
-// from it on. With no usage every week is none.
+// the rule that classifies a week by its Monday: none when it ends at or
+// before the earliest harness date, partial when any of it precedes full
+// coverage, full otherwise. With no usage every week is none.
 func harnessCoverage(harnesses map[string]*harnessExtent, loc *time.Location, rep *UsageReport) (time.Time, func(time.Time) string) {
 	if len(harnesses) == 0 {
 		return time.Time{}, func(time.Time) string { return "none" }
@@ -277,12 +278,11 @@ func harnessCoverage(harnesses map[string]*harnessExtent, loc *time.Location, re
 		rep.Harnesses = append(rep.Harnesses, UsageHarness{Harness: id, Label: label, Since: since.Format("2006-01-02")})
 	}
 	rep.FullCoverage = fullAt.Format("2006-01-02")
-	measured, full := mondayOf(earliestAt, loc), mondayOf(fullAt, loc)
 	return fullAt, func(week time.Time) string {
 		switch {
-		case week.Before(measured):
+		case !week.AddDate(0, 0, 7).After(earliestAt):
 			return "none"
-		case week.Before(full):
+		case week.Before(fullAt):
 			return "partial"
 		default:
 			return "full"
