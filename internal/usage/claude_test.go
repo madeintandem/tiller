@@ -75,6 +75,58 @@ func TestClaudeDiscoverMatchesRootAndWorktreePrefix(t *testing.T) {
 	}
 }
 
+// cwdLog is a log whose first line records no working directory and whose
+// second line does, the way Claude Code and Pi logs begin.
+func cwdLog(cwd string) string {
+	return `{"type":"summary"}` + "\n" + `{"type":"user","cwd":"` + cwd + `"}` + "\n"
+}
+
+// TestClaudeDiscoverFindsSubdirectorySessions pins sessions started in a
+// subdirectory of the checkout: their folder only begins like the root's
+// encoding, so the working directory recorded in the logs decides, by path
+// segment. A sibling project whose folder begins the same way is not ours.
+// Each folder's directory is read once; the memo answers after that.
+func TestClaudeDiscoverFindsSubdirectorySessions(t *testing.T) {
+	home := t.TempDir()
+	proj := filepath.Join(home, ".claude", "projects")
+	sub := filepath.Join(proj, "-p-app-ui", "s1.jsonl")
+	sibling := filepath.Join(proj, "-p-app-two", "s2.jsonl")
+	siblingSub := filepath.Join(proj, "-p-app-two-ui", "s3.jsonl")
+	mustWrite(t, sub, cwdLog("/p/app/ui"))
+	mustWrite(t, sibling, cwdLog("/p/app-two"))
+	mustWrite(t, siblingSub, cwdLog("/p/app-two/ui"))
+	mustWrite(t, filepath.Join(proj, "-p-app-empty", "notes.txt"), "no logs here\n")
+
+	sessions := func(memo *cwdMemo) []string {
+		t.Helper()
+		refs, err := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []string
+		for _, r := range refs {
+			got = append(got, r.Session)
+		}
+		return got
+	}
+	memo := newCwdMemo(nil)
+	if got := sessions(memo); !reflect.DeepEqual(got, []string{"s1"}) {
+		t.Fatalf("sessions = %v, want [s1]", got)
+	}
+	want := map[string]string{
+		filepath.Dir(sub): "/p/app/ui", filepath.Dir(sibling): "/p/app-two", filepath.Dir(siblingSub): "/p/app-two/ui",
+	}
+	if !reflect.DeepEqual(memo.seen, want) {
+		t.Fatalf("memo = %v, want %v", memo.seen, want)
+	}
+
+	// The logs are not opened again: the memo decides.
+	unreadable(t, sub, sibling, siblingSub)
+	if got := sessions(newCwdMemo(memo.seen)); !reflect.DeepEqual(got, []string{"s1"}) {
+		t.Fatalf("sessions from memo = %v, want [s1]", got)
+	}
+}
+
 func TestClaudeHonorsConfigDir(t *testing.T) {
 	home := t.TempDir()
 	cfg := t.TempDir()

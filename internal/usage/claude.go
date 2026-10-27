@@ -47,10 +47,14 @@ func (c claudeReader) Discover(r Roots) ([]LogRef, error) {
 	m := newFolderMatcher(r.Project, claudeFolder)
 	var refs []LogRef
 	for _, e := range entries {
-		if !e.IsDir() || !m.match(e.Name()) {
+		if !e.IsDir() {
 			continue
 		}
-		found, err := folderLogs(claudeHarness, filepath.Join(projects, e.Name()), "subagents")
+		folder := filepath.Join(projects, e.Name())
+		if !m.match(e.Name()) && !(m.maybe(e.Name()) && r.beneath(folder)) {
+			continue
+		}
+		found, err := folderLogs(claudeHarness, folder, "subagents")
 		if err != nil {
 			return nil, err
 		}

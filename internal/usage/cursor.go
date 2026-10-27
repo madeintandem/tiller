@@ -21,8 +21,10 @@ type cursorEntry struct {
 
 // Cursor is capture's memory between runs. Logs records, per absolute log
 // path, the log as last captured; a log whose size and modification time
-// still match is not opened again. Cwd records each Codex rollout's
-// first-line working directory, which never changes.
+// still match is not opened again. Cwd records, per path, a working
+// directory that never changes: each Codex rollout's first-line one, and the
+// one recorded in each Claude Code or Pi folder whose name only begins like
+// a project path's encoding (a subdirectory's sessions, or a sibling's).
 type Cursor struct {
 	Logs map[string]cursorEntry `yaml:"logs"`
 	Cwd  map[string]string      `yaml:"cwd,omitempty"`

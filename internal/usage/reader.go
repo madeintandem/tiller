@@ -2,6 +2,8 @@ package usage
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -21,14 +23,17 @@ type Roots struct {
 	Home    string
 	Env     func(string) string
 	Project []string
-	// cwd remembers each Codex rollout's first-line working directory across
-	// captures; Capture sets it from the cursor. Nil reads every first line.
+	// cwd remembers working directories across captures: each Codex
+	// rollout's first-line one, and the one recorded in each harness folder
+	// that only begins like a project path's encoding. Capture sets it from
+	// the cursor. Nil reads them every time.
 	cwd *cwdMemo
 }
 
 // cwdMemo holds the working directories learned by earlier captures (prev)
 // and those looked up or read in this discovery (seen). A rollout's first
-// line never changes, so a known path is never opened again.
+// line never changes, and a harness folder is named for one working
+// directory, so a known path is never opened again.
 type cwdMemo struct {
 	prev, seen map[string]string
 }
@@ -140,9 +145,15 @@ func trimEOL(b []byte) []byte {
 // project path, or the root's encoding plus "--", which is how a path under
 // one of the root's dot directories (a removed worktree) encodes. A sibling
 // project such as /p/app-two never matches /p/app.
+//
+// A folder that only begins with a project path's encoding plus "-" may hold
+// sessions started in a subdirectory (/p/app/ui encodes as -p-app-ui), or a
+// sibling's (/p/app-ui encodes the same way): maybe reports those, and the
+// working directory recorded in the folder's logs decides (Roots.beneath).
 type folderMatcher struct {
 	exact  map[string]bool
 	prefix string
+	under  []string
 }
 
 // newFolderMatcher encodes each path with enc; paths[0] is the checkout root.
@@ -154,6 +165,7 @@ func newFolderMatcher(paths []string, enc func(string) string) folderMatcher {
 			continue
 		}
 		m.exact[e] = true
+		m.under = append(m.under, e+"-")
 		if i == 0 {
 			m.prefix = e + "--"
 		}
@@ -163,6 +175,77 @@ func newFolderMatcher(paths []string, enc func(string) string) folderMatcher {
 
 func (m folderMatcher) match(s string) bool {
 	return m.exact[s] || (m.prefix != "" && strings.HasPrefix(s, m.prefix))
+}
+
+// maybe reports a folder match does not accept whose name still begins like
+// a path beneath a project path.
+func (m folderMatcher) maybe(s string) bool {
+	if m.match(s) {
+		return false
+	}
+	for _, u := range m.under {
+		if strings.HasPrefix(s, u) {
+			return true
+		}
+	}
+	return false
+}
+
+// beneath reports whether the sessions in a folder maybe accepted ran at or
+// beneath a project path, by the working directory its logs record. The
+// answer comes from the memo after the folder's first read; a folder with no
+// recorded working directory yet is not ours this time and is read again.
+func (r Roots) beneath(folder string) bool {
+	cwd, err := r.cwd.lookup(folder, folderCwd)
+	return err == nil && underAny(cwd, r.Project)
+}
+
+var errNoCwd = errors.New("usage: no working directory recorded")
+
+// folderCwd is the working directory recorded in a folder's top-level logs:
+// the first line that carries a top-level cwd, trying the logs in name order.
+func folderCwd(folder string) (string, error) {
+	entries, err := os.ReadDir(folder)
+	if err != nil {
+		return "", err
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
+			continue
+		}
+		if cwd, err := logCwd(filepath.Join(folder, e.Name())); err == nil {
+			return cwd, nil
+		}
+	}
+	return "", errNoCwd
+}
+
+var cwdMark = []byte(`"cwd"`)
+
+// logCwd reads a log until a line records a top-level cwd (Claude Code's
+// message lines, Pi's session header) and returns it.
+func logCwd(path string) (string, error) {
+	var cwd string
+	errFound := errors.New("found")
+	err := scanLines(path,
+		func(line []byte) bool { return bytes.Contains(line, cwdMark) },
+		func(line []byte) error {
+			var l struct {
+				Cwd string `json:"cwd"`
+			}
+			if json.Unmarshal(line, &l) == nil && l.Cwd != "" {
+				cwd = l.Cwd
+				return errFound
+			}
+			return nil
+		})
+	if errors.Is(err, errFound) {
+		return cwd, nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return "", errNoCwd
 }
 
 // folderLogs lists a matched folder's top-level *.jsonl logs and, for each

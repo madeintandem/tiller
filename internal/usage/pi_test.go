@@ -3,6 +3,7 @@ package usage
 import (
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 )
@@ -41,6 +42,54 @@ func TestPiDiscoverBothEncodings(t *testing.T) {
 		if got[not] {
 			t.Errorf("session %s discovered", not)
 		}
+	}
+}
+
+// TestPiDiscoverFindsSubdirectorySessions pins sessions started beneath the
+// checkout under both encodings: the session header's cwd decides, once per
+// folder, and a sibling project is not ours.
+func TestPiDiscoverFindsSubdirectorySessions(t *testing.T) {
+	home := t.TempDir()
+	omp := filepath.Join(home, ".omp", "agent", "sessions")
+	pi := filepath.Join(home, ".pi", "agent", "sessions")
+	app := filepath.Join(home, "dev", "app")
+	header := func(cwd string) string {
+		return `{"type":"session","version":3,"id":"x","timestamp":"2026-07-30T20:22:45.196Z","cwd":"` + cwd + `"}` + "\n"
+	}
+	logs := []string{
+		filepath.Join(omp, "-dev-app-ui", "a.jsonl"),
+		filepath.Join(pi, "--"+piInner(filepath.Join(app, "pkg", "x"))+"--", "b.jsonl"),
+		filepath.Join(omp, "-dev-app-two", "c.jsonl"),
+		filepath.Join(pi, "--"+piInner(filepath.Join(home, "dev", "app-two"))+"--", "d.jsonl"),
+	}
+	mustWrite(t, logs[0], header(filepath.Join(app, "ui")))
+	mustWrite(t, logs[1], header(filepath.Join(app, "pkg", "x")))
+	mustWrite(t, logs[2], header(filepath.Join(home, "dev", "app-two")))
+	mustWrite(t, logs[3], header(filepath.Join(home, "dev", "app-two")))
+
+	sessions := func(memo *cwdMemo) []string {
+		t.Helper()
+		refs, err := NewPiReader().Discover(Roots{Home: home, Project: []string{app}, cwd: memo})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []string
+		for _, r := range refs {
+			got = append(got, r.Session)
+		}
+		sort.Strings(got)
+		return got
+	}
+	memo := newCwdMemo(nil)
+	if got := sessions(memo); !reflect.DeepEqual(got, []string{"a", "b"}) {
+		t.Fatalf("sessions = %v, want [a b]", got)
+	}
+	if len(memo.seen) != 4 {
+		t.Fatalf("memo = %v, want the four folders", memo.seen)
+	}
+	unreadable(t, logs...)
+	if got := sessions(newCwdMemo(memo.seen)); !reflect.DeepEqual(got, []string{"a", "b"}) {
+		t.Fatalf("sessions from memo = %v, want [a b]", got)
 	}
 }
 

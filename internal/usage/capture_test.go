@@ -280,6 +280,25 @@ func TestCaptureKeepsCodexCwdMemo(t *testing.T) {
 	}
 }
 
+// A session started in a subdirectory of the checkout is captured, and the
+// cursor keeps its folder's working directory so the folder is read once.
+func TestCaptureFindsSubdirectorySessionAndRemembersItsFolder(t *testing.T) {
+	e := newCaptureEnv(t)
+	ui := filepath.Join(e.root, "ui")
+	at := captureNow.Add(-3 * time.Hour)
+	path := filepath.Join(e.home, ".claude", "projects", claudeFolder(ui), "s1.jsonl")
+	mustWrite(t, path, `{"type":"user","cwd":"`+ui+`"}`+"\n"+claudeCall(at, "m1", "tiller start T-abc123"))
+	touch(t, path, at)
+
+	res, cur := mustCapture(t, e.options())
+	if len(res.Writes) != 1 {
+		t.Fatalf("writes = %d, want 1", len(res.Writes))
+	}
+	if got := cur.Cwd[filepath.Dir(path)]; got != ui {
+		t.Errorf("cursor cwd for the folder = %q, want %q (all: %v)", got, ui, cur.Cwd)
+	}
+}
+
 func TestCaptureSkipsSessionsBeforeSince(t *testing.T) {
 	e := newCaptureEnv(t)
 	claudeSession(t, e.home, e.root, "old", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
