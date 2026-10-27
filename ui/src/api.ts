@@ -1547,6 +1547,7 @@ export interface Report {
   project: string;
   as_of: string;
   off_branch?: ReportBranchNotice;
+  agent_use: boolean; // usage.capture is on; false hides the Agent use tab
   weeks: string[]; // YYYY-MM-DD labels
   week_boundaries: string[]; // RFC3339; length == weeks.length + 1
   kpis: ReportKPIs;

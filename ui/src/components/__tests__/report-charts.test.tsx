@@ -29,6 +29,7 @@ function fixtureReport(): Report {
   return {
     project: "Acme",
     as_of: "2026-10-20T15:00:00Z",
+    agent_use: false,
     weeks: WEEKS,
     week_boundaries: WEEK_BOUNDARIES,
     kpis: {
@@ -92,6 +93,7 @@ function emptyReport(): Report {
   return {
     project: "Acme",
     as_of: "2026-10-20T15:00:00Z",
+    agent_use: false,
     weeks: WEEKS,
     week_boundaries: WEEK_BOUNDARIES,
     kpis: {

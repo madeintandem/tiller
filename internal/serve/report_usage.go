@@ -17,7 +17,9 @@ import (
 
 // UsageReportHandler serves GET /api/report/usage on the same week axis and
 // integration tree as ReportHandler. A broken event stream or a malformed
-// usage file is a 500 naming it: the tab is those files.
+// usage file is a 500 naming it: the tab is those files. With usage.capture
+// off the files are not read and the report is empty, because usage that is
+// no longer captured is not shown, even when files remain from before.
 func UsageReportHandler(root string) http.HandlerFunc {
 	return api(root, func(_ *store.Tree, r *http.Request) (any, error) {
 		t := executionSnapshot(r).Base
@@ -25,9 +27,12 @@ func UsageReportHandler(root string) http.HandlerFunc {
 		if err != nil {
 			return nil, err
 		}
-		files, err := usage.LoadFiles(root)
-		if err != nil {
-			return nil, err
+		var files []usage.File
+		if t.Manifest.Usage.Capture {
+			files, err = usage.LoadFiles(root)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return views.UsageReportOf(t, views.UsageReportInput{
 			Files:    files,

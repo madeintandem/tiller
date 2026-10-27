@@ -53,6 +53,7 @@ function fixtureReport(overrides: Partial<Report> = {}): Report {
   return {
     project: "Acme Platform",
     as_of: "2026-10-20T15:00:00Z",
+    agent_use: true,
     weeks: WEEKS,
     week_boundaries: WEEK_BOUNDARIES,
     kpis: {
@@ -117,6 +118,7 @@ function emptyReport(): Report {
   return {
     project: "Acme Platform",
     as_of: "2026-10-20T15:00:00Z",
+    agent_use: true,
     weeks: WEEKS,
     week_boundaries: WEEK_BOUNDARIES,
     kpis: {
@@ -306,6 +308,16 @@ describe("Report page", () => {
       expect(await screen.findByText("No agent usage recorded yet")).toBeInTheDocument();
       expect(screen.getByRole("heading", { level: 1, name: "Acme Platform" })).toBeInTheDocument();
       expect(screen.queryByRole("img", { name: "3 of 8 approved features done" })).toBeNull();
+    });
+
+    it("shows no tabs and never reads usage with capture off", async () => {
+      const spy = stubFetch({ "/api/report": fixtureReport({ agent_use: false }), "/api/report/usage": emptyUsage });
+      renderReport("/report?tab=agent-use");
+
+      expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
+      expect(screen.queryByRole("navigation", { name: "Report view" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Agent use" })).toBeNull();
+      expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
     });
 
     it("reads an unknown tab as Project", async () => {

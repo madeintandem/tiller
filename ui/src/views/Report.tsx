@@ -1,7 +1,8 @@
 // The Report page (docs/spec/ui-surface.md, Report): a client-
 // facing read of how the project is going over time. Metrics only (D3): a
 // header over two tabs, Project (the KPI strip and five charts drawn from one
-// /api/report read, each enlargeable in a dialog) and Agent use. The
+// /api/report read, each enlargeable in a dialog) and Agent use. With
+// usage.capture off there are no tabs, only the Project view. The
 // page names no node, person, or branch; the one exception is the off-branch
 // notice (D15), which never blocks the charts beneath it.
 
@@ -54,15 +55,19 @@ export default function Report() {
           Showing branch {data.off_branch.branch}, not {data.off_branch.integration}. Numbers include unmerged work.
         </p>
       )}
-      <NodeTabs
-        label="Report view"
-        active={search.get("tab") ?? "project"}
-        onSelect={selectTab}
-        tabs={[
-          { key: "project", label: "Project", render: () => <ProjectTab report={data} /> },
-          { key: "agent-use", label: "Agent use", render: () => <AgentUseTab /> },
-        ]}
-      />
+      {data.agent_use ? (
+        <NodeTabs
+          label="Report view"
+          active={search.get("tab") ?? "project"}
+          onSelect={selectTab}
+          tabs={[
+            { key: "project", label: "Project", render: () => <ProjectTab report={data} /> },
+            { key: "agent-use", label: "Agent use", render: () => <AgentUseTab /> },
+          ]}
+        />
+      ) : (
+        <ProjectTab report={data} />
+      )}
     </section>
   );
 }

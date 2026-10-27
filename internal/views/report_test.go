@@ -136,6 +136,17 @@ func TestReportOffBranchNotice(t *testing.T) {
 	}
 }
 
+// TestReportAgentUseFollowsCapture pins that the Agent use tab is offered only
+// while usage.capture is on: turning capture off hides the tab even when
+// usage files remain from before.
+func TestReportAgentUseFollowsCapture(t *testing.T) {
+	now := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
+	tr := reportTree("p", "main")
+	require.False(t, views.ReportOf(tr, views.ReportInput{Now: now, Location: time.UTC}).AgentUse)
+	tr.Manifest.Usage.Capture = true
+	require.True(t, views.ReportOf(tr, views.ReportInput{Now: now, Location: time.UTC}).AgentUse)
+}
+
 func TestReportHeader(t *testing.T) {
 	now := time.Date(2026, 10, 20, 12, 0, 0, 0, time.FixedZone("CST", -6*3600))
 	rep := views.ReportOf(reportTree("Acme", "main"), views.ReportInput{Now: now})

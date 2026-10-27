@@ -35,6 +35,7 @@ type Report struct {
 	Project        string                 `json:"project"`
 	AsOf           string                 `json:"as_of"` // RFC3339, UTC
 	OffBranch      *ReportBranchNotice    `json:"off_branch,omitempty"`
+	AgentUse       bool                   `json:"agent_use"`       // usage.capture is on, so the page shows the Agent use tab
 	Weeks          []string               `json:"weeks"`           // Monday date labels YYYY-MM-DD; last is the current, partial week
 	WeekBoundaries []string               `json:"week_boundaries"` // RFC3339 server-local Mondays, including the final week's end; len == len(Weeks)+1
 	KPIs           ReportKPIs             `json:"kpis"`
@@ -123,6 +124,7 @@ func ReportOf(t *store.Tree, in ReportInput) Report {
 
 	rep := Report{
 		Project:      t.Manifest.Project.Name,
+		AgentUse:     t.Manifest.Usage.Capture,
 		AsOf:         in.Now.UTC().Format(time.RFC3339),
 		BurnUp:       burnUp(t, r, weeks, in.Now),
 		Throughput:   throughput(t, r, weeks),
