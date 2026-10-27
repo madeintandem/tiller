@@ -1,0 +1,7 @@
+{"timestamp":"2026-09-07T19:41:17.000Z","type":"session_meta","payload":{"id":"11111111-aaaa","cwd":"/p/app"}}
+{"timestamp":"2026-09-07T19:41:18.000Z","type":"turn_context","payload":{"turn_id":"t1","cwd":"/p/app","model":"gpt-6.1-sol"}}
+{"timestamp":"2026-09-07T19:41:19.000Z","type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"tiller start task T-abc123\"]}"}}
+{"timestamp":"2026-09-07T19:41:20.000Z","type":"response_item","payload":{"type":"custom_tool_call","name":"exec","input":"tiller check T-abc123"}}
+{"timestamp":"2026-09-07T19:41:21.000Z","type":"event_msg","payload":{"type":"token_count","info":null}}
+{"timestamp":"2026-09-07T19:41:22.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{},"last_token_usage":{"input_tokens":22647,"cached_input_tokens":6016,"cache_write_input_tokens":3,"output_tokens":184,"reasoning_output_tokens":122,"total_tokens":22831},"model_context_window":258400}}}
+{"timestamp":"2026-09-07T19:41:23.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":100,"cached_input_tokens":0,"output_tokens":5,"reasoning_output_tokens":0}}}}
