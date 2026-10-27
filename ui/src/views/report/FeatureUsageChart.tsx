@@ -21,7 +21,7 @@ export default function FeatureUsageChart({ usage }: { usage: UsageReport }) {
   const left = usage.features_left_out;
   return (
     <ChartFrame
-      title="Tokens per feature"
+      title="Tokens per finished feature"
       summary={latest ? `${features.length} features completed; rolling median ${formatTokens(latest.median)}` : ""}
       empty={features.length === 0 ? "No features completed yet" : undefined}
       note={left > 0 ? `${left} earlier ${left === 1 ? "feature" : "features"} not shown` : undefined}

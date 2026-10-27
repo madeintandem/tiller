@@ -277,7 +277,7 @@ const BANDS = ["< 1M", "1-3M", "3-10M", "10-30M", "30-100M", "100-300M", "300M-1
 describe("Agent use feature and work-item charts", () => {
   it("plots features on a labeled log axis", async () => {
     const { container } = await renderTab(usage({ features: FEATURES }));
-    const card = chart("Tokens per feature");
+    const card = chart("Tokens per finished feature");
     expect(within(card).getByText("Tokens (log scale)")).toBeInTheDocument();
     expect(card.querySelectorAll("circle[data-feature]")).toHaveLength(3);
     expect(within(card).getByText("10.0M")).toBeInTheDocument();
@@ -287,7 +287,7 @@ describe("Agent use feature and work-item charts", () => {
 
   it("names the feature and its total on hover", async () => {
     await renderTab(usage({ features: FEATURES }));
-    const dot = chart("Tokens per feature").querySelector("circle[data-feature]")!;
+    const dot = chart("Tokens per finished feature").querySelector("circle[data-feature]")!;
     fireEvent.pointerMove(dot.closest("g")!, { clientX: 10, clientY: 10 });
     expect(await screen.findByText("Search results")).toBeInTheDocument();
     expect(screen.getByText("12.0M")).toBeInTheDocument();
@@ -295,13 +295,13 @@ describe("Agent use feature and work-item charts", () => {
 
   it("notes features left out", async () => {
     await renderTab(usage({ features: FEATURES, features_left_out: 4 }));
-    expect(within(chart("Tokens per feature")).getByText("4 earlier features not shown")).toBeInTheDocument();
+    expect(within(chart("Tokens per finished feature")).getByText("4 earlier features not shown")).toBeInTheDocument();
   });
 
   it("draws one or no features without NaN", async () => {
     const one = await renderTab(usage({ features: [FEATURES[0]] }));
     expect(one.container.innerHTML).not.toMatch(/NaN|Infinity/);
-    expect(chart("Tokens per feature").querySelectorAll("circle[data-feature]")).toHaveLength(1);
+    expect(chart("Tokens per finished feature").querySelectorAll("circle[data-feature]")).toHaveLength(1);
     cleanup();
     await renderTab(usage());
     expect(screen.getByText("No features completed yet")).toBeInTheDocument();
@@ -336,5 +336,19 @@ describe("Agent use feature and work-item charts", () => {
     const scale = logScale([1e6, 1e8], [0, 100]);
     expect(scale(1e7)).toBe(50);
     expect(scale(0)).toBe(0);
+  });
+
+  it("keeps the earlier-features note under the empty feature message", async () => {
+    await renderTab(usage({ features_left_out: 3 }));
+    const card = chart("Tokens per finished feature");
+    expect(within(card).getByText("No features completed yet")).toBeInTheDocument();
+    expect(within(card).getByText("3 earlier features not shown")).toBeInTheDocument();
+  });
+
+  it("keeps the unmeasured note under the empty item message", async () => {
+    await renderTab(usage({ items_unmeasured: 2, kpis: { ...usage().kpis, median_per_item: null, items: 0 } }));
+    const card = chart("Tokens per work item");
+    expect(within(card).getByText("No work items finished yet")).toBeInTheDocument();
+    expect(within(card).getByText("2 items with no usage recorded")).toBeInTheDocument();
   });
 });

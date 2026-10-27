@@ -153,7 +153,7 @@ export default function ChartFrame({ title, summary, empty, note, legend, height
           <ChartTooltip tip={tip ?? null} />
         </div>
       )}
-      {note && !empty && <p className="report-chart-note">{note}</p>}
+      {note && <p className="report-chart-note">{note}</p>}
     </section>
   );
 }
