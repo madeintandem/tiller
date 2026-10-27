@@ -241,6 +241,20 @@ describe("Agent use stage and model charts", () => {
     expect(segment.getAttribute("style")).toBe(swatch.getAttribute("style"));
   });
 
+  it("inks labels on the gold and gray fills apart from the panel ink", async () => {
+    await renderTab(stageUsage());
+    const row = stageRow(chart("Tokens by stage and model"), "execute");
+    const [opus, sonnet] = [...row.querySelectorAll(".report-seg-label")];
+    expect(opus.getAttribute("class")).toBe("report-seg-label");
+    expect(sonnet.getAttribute("class")).toContain("report-seg-label--on-gold");
+    const other = stageUsage();
+    other.model_stages = other.model_stages.map((r) => ({ ...r, totals: [0, 0, 0, 0, r.totals.reduce((a, b) => a + b, 0)] }));
+    cleanup();
+    await renderTab(other);
+    const gray = stageRow(chart("Tokens by stage and model"), "execute").querySelector(".report-seg-label")!;
+    expect(gray.getAttribute("class")).toContain("report-seg-label--on-gray");
+  });
+
   it("draws no NaN and says so without stage data", async () => {
     const { container } = await renderTab(usage());
     expect(container.innerHTML).not.toMatch(/NaN|Infinity/);

@@ -137,12 +137,24 @@
   font-size: 12px;
 }
 
-/* A percent label inside a segment: panel ink on the series fill. */
+/* A percent label inside a segment: panel ink on the series fill, which
+   reaches 4.5:1 on the blue, plum and green fills in both themes. The gold
+   and gray fills need their own ink (checked against tokens.css):
+   gold: heading ink 5.1:1 on light #a5801c, panel ink 6.8:1 on dark #d3ad44;
+   gray: panel ink 4.7:1 on light #76736e, recess ink 5.6:1 on dark #838d99. */
 .report-seg-label {
   fill: var(--panel);
   font-size: 11px;
   font-weight: 600;
   pointer-events: none;
+}
+
+.report-seg-label.report-seg-label--on-gold {
+  fill: light-dark(var(--heading), var(--panel));
+}
+
+.report-seg-label.report-seg-label--on-gray {
+  fill: light-dark(var(--panel), var(--recess));
 }
 
 .report-row-title {

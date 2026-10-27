@@ -399,6 +399,8 @@ export interface BarSegment {
   color: string;
   // label, when given, is drawn centered in the segment.
   label?: string;
+  // labelClass adds a modifier class to the label, for a fill the default ink cannot read on.
+  labelClass?: string;
 }
 
 // SegmentedBar draws one horizontal bar of side-by-side segments with the
@@ -432,7 +434,7 @@ export function SegmentedBar({
           <Fragment key={s.key}>
             <rect x={at} y={y} width={w} height={BAR_HEIGHT} style={{ fill: s.color }} />
             {s.label !== undefined && (
-              <text className="report-seg-label" x={at + w / 2} y={y + BAR_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">
+              <text className={s.labelClass ? `report-seg-label ${s.labelClass}` : "report-seg-label"} x={at + w / 2} y={y + BAR_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">
                 {s.label}
               </text>
             )}

@@ -15,6 +15,9 @@ import { formatPercent, formatTokens } from "./format";
 
 export const MODEL_COLORS = ["var(--st-active)", "var(--st-in_review)", "var(--st-specced)", "var(--st-done)", "var(--ink-3)"];
 
+// The label ink modifier for each MODEL_COLORS fill (see charts.css): the gold
+// in_review and gray fills read at 4.5:1 only with their own ink.
+const LABEL_CLASS = [undefined, "report-seg-label--on-gold", undefined, undefined, "report-seg-label--on-gray"];
 const STAGE_COLOR = "var(--accent)";
 // A segment narrower than this share of its bar carries no inline label.
 const LABEL_FLOOR = 0.12;
@@ -117,6 +120,7 @@ export function ModelStageChart({ usage }: { usage: UsageReport }) {
               value: row.totals[m],
               color: modelColor(m),
               label: share >= LABEL_FLOOR ? `${Math.round(share * 100)}%` : undefined,
+              labelClass: LABEL_CLASS[Math.min(m, MODEL_COLORS.length - 1)],
             };
           });
           return (
