@@ -122,8 +122,8 @@ func WalkLimited(ctx context.Context, root string, maxBytes int64, visit func(Do
 			}
 			return nil
 		}
-		// Usage files are token counts, not prose: "Nothing else walks the
-		// usage files" (docs/plans/2026-10-26-agent-use-report-design.md).
+		// Usage files are token counts, not prose, and nothing else walks
+		// them (docs/spec/artifact-schema.md, Agent usage).
 		if p == "usage" && entry.IsDir() {
 			return fs.SkipDir
 		}

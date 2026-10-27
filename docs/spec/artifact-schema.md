@@ -91,6 +91,9 @@ Everything Tiller owns lives under `.tiller/` at the repo root, beside the code 
         <adr-id>-<slug>.md          # designed ADR location; ADR node surface is not built
       open-questions.yml           # owned, date-gated questions
     events/                         # one event file per mutation, for recaps, history, and stale-click protection
+    usage/                          # agent token usage, one file per harness session; written by capture, never by hand
+      <harness>/
+        <session-id>.yml
     orientation.md                 # GENERATED for the agent: what Tiller is and the rules to follow; do not hand-edit
     order.yml                      # root soft order: recorded epic sequence; created by `tiller order` or an amendment approval that mints an epic
     identity.yml                   # LOCAL, git-ignored: who I am on this checkout (contributor: <id>); written by `tiller join`
@@ -99,6 +102,7 @@ Everything Tiller owns lives under `.tiller/` at the repo root, beside the code 
       lock                         # exclusive repository mutation lock; present only while held
       journal.yml                  # recoverable operation plan and preimages; present only during or after an unfinished mutation
       generation                   # persistent source-generation token used by readers and writers
+      usage.yml                    # usage capture's cursor: what it last saw of each harness log
 ```
 
 **State path confinement.** Store and consumer reads, snapshots, and writes beneath `.tiller/`, including the manifest, node and question state, event streams, generated orientation, local identity and preferences, and cache lock, journal, and generation files, use descriptor-relative operations anchored at the selected checkout root. Re-add checks, lifecycle prose gates, readouts, and mutation inventory walks use the same boundary. Directory entries carry metadata captured under their anchor rather than reopening a pathname later. Symlinks in these paths are refused rather than read as state or followed for writes. Initialization and design imports also confine destination directory creation. Temporary files, replacement, lock release, journal cleanup, rollback, and recovery retain their directory anchors, so a pathname swap cannot redirect them to a symlink target. Missing lazy state remains ordinary absence. Explicit design and feedback import sources, configured external reference code roots, gate execution inputs and evidence outputs, saved human ownership reviews, and home installation retain their separate boundaries.
@@ -216,6 +220,9 @@ execution:
 
 drift:                        # load-bearing: `tiller drift` runs exactly the listed checks
   checks: [stale_spec, active_basis, answered_question, missing_surface, orphan_eval, stale_design]
+
+usage:                        # optional; capture is off when absent
+  capture: true               # record agent token usage from local harness logs (see Agent usage)
 ```
 
 | Block | Purpose |
@@ -227,6 +234,7 @@ drift:                        # load-bearing: `tiller drift` runs exactly the li
 | `inputs` | Where decomposition came from. `current_state` plus `code` are the as-is additions. Each code root requires an explicit `mode: surface` or `mode: reference`; no archetype supplies a missing mode. Roots are absolute or relative to the repository. `imported_from` records the absolute source `path` and import `at` timestamp when `tiller init --design <dir>` copies an external folder into `.tiller/design/` on the first scaffold. It is provenance, not confirmation that the docs match code. |
 | `execution` | The project's own review-grain default, `execution.review_grain` (`task` \| `feature` \| `epic`), the widest of Review Grain's three homes; an epic's or a feature's own explicit setting beats it. Absence means `task`. The stored shape is unchanged. The loader refuses any other value, including one introduced by a hand edit. Written by `tiller configure project --review-grain <g>`, or by hand: the manifest stays the one human-owned yml. `configure project` requires `execution` to be absent or a block mapping; a flow mapping or scalar refuses before any write and must be rewritten as block-form YAML. See Review grain, under Epics. |
 | `drift` | The enabled drift checks. Load-bearing: `tiller drift` runs exactly this list, and a check removed from it is named in the report's footer rather than silently skipped, so disabling is deliberate, in-repo, and versioned. Fresh `init` seeds the five work-node markers plus `stale_design`; `shifted_design` is opt-in. Existing manifests are never backfilled. See Drift control hooks. |
+| `usage` | The opt-in agent usage setting. `usage.capture: true` lets `tiller usage` and `tiller sync` read this machine's coding-agent session logs and write `.tiller/usage/`; absent, or any other value, means off, and then neither reads a log. It is a project setting so the team decides together and every checkout behaves the same. `tiller init --capture-usage` writes the block on a fresh scaffold; an existing project adds it by hand. Older binaries decode the manifest loosely and ignore the block, so turning it on needs no schema bump or migration. See [Agent usage](#agent-usage-usage). |
 | `gates` | Required vs optional. Command-backed (Tiller can run and verify) vs attestation-backed (an external signal sets it; Tiller never runs the reviewer). The canonical required set is `build`, `tests`, and `evals`. `evals` is project-agnostic (it always shells `tiller eval ${node.noun} ${node.id}`), so `tiller init` seeds it active by default at feature grain (`on: [feature]`), wiring each feature's acceptance contract into `check`: the contract gates the feature, while tasks, bugs, chores, and tweaks gate on build and tests. `build` and `tests` are project-specific, so init leaves them as commented templates (at `on: [feature, task]`) the team fills in. Optional attestation-backed gates scoped to PR review can be recorded on a bug, chore, or tweak through its existing `gates` and `attestations` fields. Shelf nodes carry no criteria or eval contract. A required command gate may declare `reuse: false` to opt out of gate reuse (The stored gate block), for a result that depends on something outside the repository, such as an integration suite against a live service; on the `evals` gate it turns reuse off for every criterion. In advisory mode a human merge can still be recorded, but any red required gate is preserved as a policy violation rather than hidden. |
 
 The manifest is human-owned after its first scaffold. A rerun uses its recorded project identity, kind, roots, and adopted anchor rather than reclassifying it from flags. Neither rerun, `join`, nor `migrate` backfills an absent anchor or injects roots. Baseline reasoning states when adoption history is absent or unavailable; it never substitutes a later HEAD as the adoption commit.
@@ -1041,10 +1049,89 @@ Events are not the source of truth for current state; the node files are. An eve
 
 ---
 
+## Agent usage: `usage/`
+
+`.tiller/usage/` holds an approximation of the model tokens the project's coding agents spent, credited to the work item and the stage of the workflow each model call served. It feeds the console Report's [Agent use tab](./ui-surface.md#report). Capture writes it, through `tiller usage` or best effort inside `tiller sync` (see [the CLI surface](./cli-surface.md#capturing-agent-usage-usage)), and only when the manifest's `usage.capture` is `true`. The bar is "close and calculated consistently": the same method applied the same way every time, not an exact bill.
+
+There is one file per top-level harness session, with its subagents folded in:
+
+```
+.tiller/usage/<harness>/<session-id>.yml
+```
+
+```yaml
+harness: claude-code          # claude-code | codex | pi (Pi and OhMyPi share one reader and format)
+session: 165906e8-0e15-454a-a5b0-60b3affcce0d
+reader: 1                     # reader version; a later version may recompute the file
+captured_at: 2026-10-26T19:02:11Z
+first_call: 2026-10-20T14:03:55Z
+last_call: 2026-10-20T18:41:02Z
+rows:
+  - hour: 2026-10-20T14:00:00Z  # the UTC hour the calls fall in
+    node: T-d8icjq               # omitted when the calls are not tied to a work item
+    stage: implementation
+    model: claude-opus-5-5       # as the harness reports it, provider prefix kept when it gives one
+    calls: 41
+    input: 1203                  # fresh input, excluding cache reads
+    cache_write: 290114
+    cache_read: 3920551
+    output: 18220
+    reasoning: 4410              # only when the harness reports it; part of output, never added to a total
+```
+
+A row is the calls of one model in one UTC hour credited to one node, or to none, and one stage. Rows are written sorted by hour, node, stage, and model, and every timestamp is UTC. The hour bucket lets the console place usage on its local-time week axis with at most an hour's error. Each reader maps its harness's fields into the four counts so they never overlap: Codex's `input_tokens` includes its cached tokens, so `input` is `input_tokens` minus `cached_input_tokens` and `cache_read` is the cached part. A row's total is `input + cache_write + cache_read + output`; `reasoning` is informational.
+
+**No person, no content.** The harness id and the session id are the only identifiers. A usage file carries no contributor, owner, path, command, prompt, response, or tool output, only counts. Git history still shows who committed a usage file; that is Git, not a metric surface Tiller controls, and no Tiller read or payload attaches a usage figure to a person.
+
+**Stages.** `stage` is one of nine keys, in display order: `spec_writing`, `planning`, `implementation`, `checks`, `acceptance_evals`, `code_review`, `publishing`, `closeout`, and `other`. An unknown value reads as `other`. The console's labels for them are page copy and live in the [console contract](./ui-surface.md#report).
+
+**How calls are credited.** Each session is replayed in time order, tracking what it is working on now. The current node and stage change only on markers found in the session's tool calls:
+
+| Marker | Sets the stage to | Sets the node to |
+|---|---|---|
+| `tiller start`, `claim`, `resume`, `transfer` | `implementation` | the node named |
+| `tiller check` | `checks` | the node named |
+| `tiller eval`, `attest` | `acceptance_evals` | the node named |
+| `tiller submit` | `publishing` | the node named |
+| `tiller spec`, `return` | `spec_writing` | the node named |
+| `tiller add`, `link`, `order`, `amend`, `intake`, `withdraw`, `unlink`, `rename`, `remove`, `configure`, `resolve` | `planning` | the node named |
+| `tiller approve`, `answer` | `other` | the node named |
+| `tiller sync`, `archive`, `cancel` | `closeout` | the node named |
+| loading the execute, specify, code-review, capture, amend, intake, decompose, orient, mend-drift, or derive-baseline skill, by `tiller guide <skill>` or the harness's own skill mechanism | `implementation` for execute, `spec_writing` for specify, `code_review` for code-review, `planning` for capture, amend, intake, and decompose, `other` for the rest | the node named, if any, else unchanged |
+| a read-only command (`show`, `status`, `readout`, `next`, `queue`, `ls`, `tree`, `search`, `query`, `drift`, or `guide` without a skill) | unchanged, or `other` if none is set yet | the node named, only when none is set |
+
+A mutating verb that names no node, such as a bare `tiller sync`, clears the node. The node named is the first argument that is not a flag, after a leading noun word. It is resolved against the tree at capture time, by id or key (a shelf key with or without its `bugs/`, `chores/`, or `tweaks/` prefix), and stored as an id, so a later rename cannot orphan it. A reference that does not resolve is kept as written when it is shaped like a node id, so an id from a since-changed ledger is not dropped, and is otherwise treated as no node. The call that issues a marker is credited to the state the marker sets. A call made before any marker is `other`. When no node is set, a Claude Code call on a `tiller/<key>` Git branch is credited to that key's node. A subagent starts from its parent's state as of the subagent's first call and then follows its own markers. A marker is `tiller <verb>` as a word in a shell command, at the start of the text or after whitespace, a quote, a backtick, or one of `;&|(`, so `.tiller/` and `./cmd/tiller` never match. Each reader decides which of its harness's tool calls are shell commands and which are skill loads; the replay itself is shared and knows no harness.
+
+This is accepted roughness: a stage is sticky until the next marker, so fixing a failing check after `tiller check` counts as `checks`, and chatter between items stays with the previous item. It is consistent, which is the bar.
+
+**Never lose data.** Capture creates and grows usage files; it never deletes one. When a session's log is gone, or now holds fewer calls than the file records, as after Claude Code's 30-day transcript cleanup or a truncated log, the file is left exactly as it is. A rewrite that would change only `captured_at` is skipped, so recapturing an unchanged session writes nothing. Session ids are unique, so two engineers never write the same file and merges never conflict on one.
+
+**What capture leaves out.** A session is captured only once it has settled: a session whose newest log file was modified in the last 30 minutes is not opened, and one whose last call is under 30 minutes old is not written. A running session is captured once it goes quiet, and the session running `sync` is never captured by its own sync. A session whose first call is earlier than the project's earliest event is ignored, since agent work from before the ledger began is not Tiller work; so is a session with no model calls. Capture writes only when the checkout is on `git.integration_branch`, because it scans every worktree, and a session file written from a task branch would land on two branches with different contents. With no integration branch configured, it writes wherever it runs.
+
+**Written without an event.** Usage files are written under the store's path confinement and the mutation lock, in one transaction whose snapshot guards refuse a usage file changed since capture planned it and whose generation check refuses the whole write as `mutation_stale` when another Tiller write landed meanwhile. Capture records no event. Every event carries a required contributor, and target-less events surface in History and on Home with a person's name on them, which would put "this person captured these token counts" on a surface Tiller controls. Usage files are not lifecycle state, and each carries its own `captured_at`. So capture needs no joined identity.
+
+**The cursor.** `.tiller/.cache/usage.yml` is capture's gitignored memory between runs. It records the reader version and, per absolute log path, the size and modification time last seen and whether that session has a usage file; a log whose size and modification time are unchanged is not opened again. It also records each Codex rollout's working directory, read once from the file's first line, since that line never changes. A missing, unreadable, or corrupt cursor, or one from another reader version, reads as empty, so every log is examined afresh and each file is rewritten only when its result differs, subject to the never-lose rule. The cursor is saved only after the capture's writes commit, or when there was nothing to write, and never when capture is skipped or refused.
+
+**Nothing else walks it.** `.tiller/usage/` is token counts, not prose or lifecycle state. Keyword search and its Markdown corpus skip it, and the drift sweep, node inventories, and the event cache never read it. Code identity already excludes all of `.tiller/`. A new walker over `.tiller/` states whether it includes `usage/`. Nothing in a managed project's build, CI, or merge eligibility reads usage files.
+
+**Reading it.** A reader loads every `.tiller/usage/<harness>/*.yml`. A missing `usage/` directory is no usage. A file that does not parse fails the whole read, naming its path; usage files are machine-written, so a broken one is a defect to surface rather than to hide.
+
+---
+
 
 ## Decisions settled so far
 
 The decision record is in the [design history](../design-history.md), especially [one tree of epics, features, and tasks](../design-history.md#one-tree-of-epics-features-and-tasks), [change is forward work](../design-history.md#change-is-forward-work), and [human gates and review grain](../design-history.md#human-gates-and-review-grain). Current invariants live in the owning sections above.
+
+For agent usage, settled 2026-10-26 (rationale in [agent usage, aggregate and never personal](../design-history.md#agent-usage-aggregate-and-never-personal)):
+
+- Usage is summed across the team through committed files, and no usage file, payload, or chart attaches a metric to a person. (JC)
+- Raw token counts with cache reads kept apart from fresh input, cache writes, and output; no cost weighting and no dollars. (JC)
+- One committed file per top-level session, subagents folded in, created and grown but never shrunk or deleted.
+- Calls are credited by replaying the Tiller commands each session ran, with subagents inheriting their parent's state, a method a spike over CALCTP's real logs validated against Tiller's own event stream.
+- Nine stages, with display labels kept out of the file format.
+- Capture records no event and needs no identity, skips sessions active in the last 30 minutes, writes only on the integration branch, and ignores sessions from before the ledger began.
+- Capture is off by default and turned on per project in `tiller.yml`. (JC)
 
 ---
 

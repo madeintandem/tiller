@@ -10,7 +10,8 @@ What Tiller does today, what is designed but not built, and what it deliberately
 - **Plan changes.** Reviewed amendments and sourced intake, revision, cancellation, and supersession lineage, eval-binding corrections on done features, and identity-preserving moves of never-started feature subtrees.
 - **Existing code and drift.** Code-root and reference protection, baseline derivation and confirmation, work-node and baseline drift, and read-only repair guidance.
 - **Agent guidance.** Embedded skills for every stage of the workflow, a generated orientation file, gitignored skill shims written by `join`, and deterministic lifecycle readouts.
-- **Console.** A read-only local console (`tiller serve`) with Home, Explore (tree, map, search, filters, relationships), Build, Fix, Report, History, and node detail. Refresh is manual or on navigation.
+- **Console.** A read-only local console (`tiller serve`) with Home, Explore (tree, map, search, filters, relationships), Build, Fix, Report (Project and Agent use tabs), History, and node detail. Refresh is manual or on navigation.
+- **Agent usage.** Opt-in capture of coding-agent token usage from Claude Code, Codex, and Pi or OhMyPi session logs, by `tiller usage` and best effort inside `sync`, into committed per-session files credited to work items and workflow stages, with no metric on a person. The Report's Agent use tab draws it, with partial coverage shown as partial.
 - **Storage and distribution.** Journaled, lock-guarded mutation batches, schema migrations, checksum-verified `tiller upgrade`, release automation, an installer, a Homebrew cask, and the documentation site.
 
 ## Not built yet
@@ -23,6 +24,7 @@ These are retained scope, not a promised sequence.
 - **Baseline coverage.** Automatic baseline routing for uncovered code roots, accepted-basis drift sweeps for shelf items, and completion fingerprints for submodules.
 - **Amendments and intake.** Automatic splitting of large intakes into several proposals, staged `order` and `link` operations, and the remaining [amendment input validation](spec/artifact-schema.md#deferred-amendment-input-validation).
 - **Search and reads.** Ranked prose search and Explore filters by activity phase or unowned work.
+- **More agent usage readers.** OpenCode and Gemini CLI are the likely next harnesses; Cursor's logs showed no usable token data. OpenTelemetry ingestion could become another reader. Token costs in dollars are not designed.
 - **Hardening questions.** Repair of merge-produced duplicate ids, evidence garbage collection, and bulk reaffirmation of stale criteria. These are open questions, not known regressions.
 - **Guided discovery.** Tiller covers execution, from specs and a plan to merged and done. Covering discovery, from the first meeting to a plan, is a later goal.
 
@@ -32,4 +34,5 @@ These are retained scope, not a promised sequence.
 - **Orchestrating agents or running review tools.** Tiller records gates; the agent reasons and the human decides.
 - **A CI emitter or any Tiller step in a managed project's CI.** Managed projects never depend on Tiller.
 - **Global, user, or machine configuration.** Everything lives in the repo.
+- **A usage metric on a person.** Agent usage is summed across the team and stays with the work; no view, filter, or ranking is cut by person.
 - **A model call inside Tiller.** Ranking, routing, and readouts are deterministic.

@@ -53,6 +53,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller tree`](#reads) | Print the work tree. |
 | [`tiller unlink`](#correct-a-proposal-or-accepted-plan) | Remove dependencies, surfaces, attachments, design baseline links, or question holds. |
 | [`tiller upgrade`](#upgrade) | Update Tiller and maintain the current checkout. |
+| [`tiller usage`](#agent-usage) | Capture agent token usage from local harness logs. |
 | [`tiller withdraw`](#amend-a-reshape-of-the-plan) | Drop a proposed amendment without applying it. |
 
 ## Conventions
@@ -88,7 +89,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 
 ```sh
 tiller init --name "<project name>" --key <project-key> --kind greenfield|brownfield|legacy-migration \
-  [--design <path/to/design-docs>]
+  [--design <path/to/design-docs>] [--capture-usage]
 tiller add contributor <contributor-id> --name "<display name>"          # human: registers the person on the roster
 tiller join --as <contributor-id>                                        # selects that identity for this checkout
 ```
@@ -99,6 +100,8 @@ optional `project.adopted` observation of this repository's HEAD and UTC time. A
 leaves the anchor absent; it is not a clean-worktree assertion or an external legacy revision.
 Greenfield starts with `code: []` and no anchor. Reruns preserve the manifest's project identity,
 kind, roots, and original or absent anchor; `join` and `migrate` do not backfill them.
+`--capture-usage` writes `usage: { capture: true }` into a fresh manifest, turning on
+[agent usage capture](#agent-usage); without it, capture stays off.
 
 Prepare docs before readiness. Reconcile existing docs against code; an import is not baseline
 confirmation. Move in-repo docs into `.tiller/design/` when ownership moves to Tiller, or put a
@@ -756,6 +759,10 @@ tiller cancel <bug|chore|tweak> <node> --reason "<why>" \
                                                              # node, which must be of the same noun
 ```
 
+With `usage: { capture: true }` in `tiller.yml`, `sync` then captures agent usage as `tiller usage`
+does, best effort and within 2 seconds (see [Agent usage](#agent-usage)). A capture problem is one
+warning line, `usage_warning` in JSON, never a sync failure.
+
 A bug, chore, and tweak each carry a branch and a PR of their own, so `sync` observes each on its own
 branch exactly as it observes a feature's, by ancestry then content, and records `done` with the
 basis it observed. The one crossing that rests on no branch is a shelf node with a carrier: see
@@ -876,6 +883,32 @@ The same setting also rides `approve`, recorded in the same act as the start gat
 tiller approve epic <epic> --review-grain task|feature|epic     # human: draft -> ready, grain recorded together
 tiller approve feature <feature> --review-grain task|feature|epic # human: specced -> ready, grain recorded together
 ```
+
+## Agent usage
+
+```sh
+tiller usage                                                 # read this machine's harness logs for this
+                                                             # project's sessions; create or grow one file
+                                                             # per session under .tiller/usage/
+```
+
+Capture is off unless `.tiller/tiller.yml` has `usage: { capture: true }`; `tiller init
+--capture-usage` writes that block, and an existing project adds it by hand. With it off, `usage`
+refuses `usage_capture_off` (exit `1`) and reads nothing. It writes only on `git.integration_branch`
+(anywhere when none is configured) and otherwise refuses `not_integration_branch` (exit `1`),
+naming both branches. A refusal `mutation_stale` means another Tiller write landed meanwhile; run
+it again. It records no event and no person, so it needs no joined identity.
+
+It reads, read-only, Claude Code's `~/.claude/projects` (honoring `CLAUDE_CONFIG_DIR`), Codex's
+`~/.codex/sessions` (honoring `CODEX_HOME`), and Pi's and OhMyPi's `~/.pi/agent/sessions` and
+`~/.omp/agent/sessions`, and only the sessions that ran in this checkout, one of its worktrees, or
+a path beneath them. Sessions active in the last 30 minutes and sessions older than the project's
+first event are skipped. A file is never deleted or shrunk, so a harness that cleaned up its logs
+loses nothing already captured. Each line of output is this run's: `Claude Code: 12 sessions found,
+4 captured, 1.2B tokens captured, 71% tied to a work item`, `nothing new to capture`, or
+`no session logs found`. Commit the files it writes with the rest of `.tiller/`. `sync` runs the
+same capture when it is on; run `usage` once after turning capture on, so the first backfill is not
+cut short by sync's 2-second budget. The Report page's Agent use tab draws the result.
 
 ## Migrate
 

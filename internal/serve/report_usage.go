@@ -1,7 +1,7 @@
 package serve
 
-// The Report page's Agent use tab (docs/plans/2026-10-26-agent-use-report-design.md,
-// "Serving it"): a thin shell over views.UsageReportOf. It reads the committed
+// The Report page's Agent use tab (docs/spec/ui-surface.md, Report, Agent use):
+// a thin shell over views.UsageReportOf. It reads the committed
 // .tiller/usage/ files and the event stream through their process caches,
 // walks no Git history, and never writes.
 

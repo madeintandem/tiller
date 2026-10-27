@@ -11,6 +11,8 @@
 
 Tiller is self-contained in the project repo. It neither reads nor writes global or user config: no `~/.config/tiller`, no machine-default contributor. The committed `contributors` roster in `.tiller/tiller.yml` says who can hold work; the gitignored `.tiller/identity.yml` says who I am on this checkout. A fresh clone carries the roster but no identity, so every checkout runs its own `tiller join`. The only thing Tiller depends on beyond the repo is the binary on `PATH`. The deferred launcher's engine cache under `~/.cache/tiller/versions/` would be a disposable projection of released binaries, not another source of truth.
 
+**Agent usage capture is a second, bounded exception: it reads outside the repo.** When a project turns capture on with `usage: { capture: true }` in `tiller.yml` (JC ruled 2026-10-26), `tiller usage` and `tiller sync` read coding-agent session logs under the user's home directory: `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`), `~/.codex/sessions` (or `$CODEX_HOME/sessions`), `~/.omp/agent/sessions`, and `~/.pi/agent/sessions`. The read is read-only and limited to sessions whose working directory is this checkout, one of its worktrees, or a path beneath them. Capture never writes there, never reads harness configuration, and never reads another project's sessions. What it learns lands in the repo, as committed files under `.tiller/usage/` and a gitignored cursor under `.tiller/.cache/`, so those directories are an input, never configuration: nothing about how Tiller behaves comes from them, and a machine without them captures nothing. With capture off, Tiller reads none of them. The [CLI surface](./cli-surface.md#capturing-agent-usage-usage) owns the command and the [artifact schema](./artifact-schema.md#agent-usage-usage) owns the files.
+
 The agent surface is self-contained the same way. Nothing Tiller puts at the agent and harness interface (CLI output and refusals, the skill text `tiller guide` serves and the shims delegate to, the generated `orientation.md`, the files `init` seeds) references a path or document that does not exist inside the project or come from the binary itself. Version skew is what makes this a correctness rule rather than a portability nicety: a developer's machine may hold a Tiller source checkout while the project's resolved binary is a different version entirely, so an out-of-project pointer is not just possibly absent on a teammate's machine, it is possibly wrong even where it resolves. The binary is the source of truth for guidance at its own version. `orientation.md` states the boundary to the agent directly: the project directory is the whole workspace and Tiller's guidance is complete inside it, so the agent goes outside only where the developer points.
 
 ---
@@ -439,6 +441,8 @@ The documentation site is built; further tutorials are not.
 ## Decisions settled so far
 
 The design reasoning behind these contracts is in the [design history](../design-history.md). The sections above retain the current contracts and distinct future designs.
+
+- Reading coding-agent session logs for agent usage capture is a bounded exception to the self-contained principle: read-only, this project's sessions only, and only once the project turns capture on. (JC, 2026-10-26)
 
 
 ---
