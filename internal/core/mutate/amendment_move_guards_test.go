@@ -3,6 +3,7 @@ package mutate
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
@@ -31,6 +32,27 @@ func TestReviewedMoveCannotRebaseValidatedInputDuringPlanning(t *testing.T) {
 			require.Equal(t, "external edit after validation", string(data))
 		})
 	}
+}
+
+// Agent usage files are token counts, never move inputs: the guards skip
+// .tiller/usage/, so a capture landing during a move cannot make it stale.
+func TestMoveReadGuardsSkipUsageFiles(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	for _, rel := range []string{"epics/source/epic.yml", "usage/claude-code/s1.yml"} {
+		path := filepath.Join(root, ".tiller", rel)
+		require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+		require.NoError(t, os.WriteFile(path, []byte("x: 1\n"), 0o644))
+	}
+	guards, err := captureMoveReadGuards(root)
+	require.NoError(t, err)
+	usage := filepath.Join(root, ".tiller", "usage")
+	sawEpic := false
+	for _, g := range guards {
+		require.False(t, g.Path == usage || strings.HasPrefix(g.Path, usage+string(filepath.Separator)), "guard on %s", g.Path)
+		sawEpic = sawEpic || strings.HasSuffix(g.Path, "epic.yml")
+	}
+	require.True(t, sawEpic)
 }
 
 func TestReviewedMoveCannotRebaseDirectoryInventoryOrModes(t *testing.T) {

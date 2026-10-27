@@ -21,6 +21,12 @@ func captureMoveReadGuards(root string) ([]store.PlannedWrite, error) {
 			if path == filepath.Join(root, ".tiller", ".cache") {
 				return filepath.SkipDir
 			}
+			// Agent usage files are token counts, never a move's input, and
+			// nothing else walks them (artifact-schema.md, "Agent usage"):
+			// guarding them would let a capture landing mid-move make it stale.
+			if path == filepath.Join(root, ".tiller", "usage") {
+				return filepath.SkipDir
+			}
 			snapshot, err := store.ReadDirectorySnapshot(root, path)
 			if err != nil {
 				return err
