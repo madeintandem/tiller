@@ -109,6 +109,10 @@ func usageBranch(tree *store.Tree) (ok bool, current, integration string, err er
 	return current == integration, current, integration, nil
 }
 
+// usageBeforeCommit is a test seam called just before the capture commit, so a
+// test can advance the project's generation and provoke mutation_stale.
+var usageBeforeCommit func(tree *store.Tree)
+
 // captureUsage runs one capture against tree and commits what it planned. The
 // cursor is saved only after the commit succeeds, or when there was nothing to
 // commit. It is best effort for sync and the whole job for `tiller usage`.
@@ -149,6 +153,9 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration) (usage.
 		return usage.Result{}, err
 	}
 	if len(res.Writes) > 0 {
+		if usageBeforeCommit != nil {
+			usageBeforeCommit(tree)
+		}
 		if err := tree.Commit(usageOperation, res.Writes); err != nil {
 			return usage.Result{}, err
 		}
@@ -236,7 +243,11 @@ func humanUsage(res usage.Result) string {
 		if h.Sessions == 1 {
 			noun = "session"
 		}
-		line := fmt.Sprintf("%s: %d %s, %d written, %s tokens", label, h.Sessions, noun, h.Written, formatTokens(h.Tokens))
+		if h.Written == 0 {
+			lines = append(lines, fmt.Sprintf("%s: %d %s found, nothing new to capture", label, h.Sessions, noun))
+			continue
+		}
+		line := fmt.Sprintf("%s: %d %s found, %d captured, %s tokens captured", label, h.Sessions, noun, h.Written, formatTokens(h.Tokens))
 		if h.Tokens > 0 {
 			line += fmt.Sprintf(", %d%% tied to a work item", int(float64(h.Tied)*100/float64(h.Tokens)+0.5))
 		}

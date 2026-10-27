@@ -3,10 +3,12 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
 )
 
@@ -125,8 +127,88 @@ func TestUsageHumanOutput(t *testing.T) {
 
 	human, _, code := execCLI(t, "usage")
 	require.Equal(t, 0, code)
-	require.Contains(t, human, "Claude Code: 1 session, 1 written, 62 tokens")
+	require.Contains(t, human, "Claude Code: 1 session found, 1 captured, 62 tokens captured")
 	require.Contains(t, human, "Codex: no session logs found")
+
+	again, _, code := execCLI(t, "usage")
+	require.Equal(t, 0, code)
+	require.Contains(t, again, "Claude Code: 1 session found, nothing new to capture")
+}
+
+// advanceGeneration makes the tree captureUsage holds stale by committing a
+// real write through a second loaded copy.
+func advanceGeneration(t *testing.T) func(*store.Tree) {
+	t.Helper()
+	return func(tree *store.Tree) {
+		other, err := store.Load(tree.Root)
+		require.NoError(t, err)
+		target := filepath.Join(tree.Root, ".tiller", "usage", "other", "x.yml")
+		_, snap, err := store.ReadGuardedFileSnapshot(tree.Root, target)
+		require.NoError(t, err)
+		require.NoError(t, other.Commit("test write", []store.PlannedWrite{store.PlanWrite(target, snap, []byte("x: 1\n"))}))
+	}
+}
+
+func TestUsageStaleTreeIsARefusalToRunAgain(t *testing.T) {
+	dir, home := usageRepo(t)
+	layClaudeSession(t, home)
+	usageBeforeCommit = advanceGeneration(t)
+	t.Cleanup(func() { usageBeforeCommit = nil })
+
+	out, _, code := execCLI(t, "usage", "--json")
+	require.Equal(t, 1, code, out)
+	require.Contains(t, out, `"reason": "mutation_stale"`)
+	require.Empty(t, usageFiles(t, dir))
+	require.NoFileExists(t, filepath.Join(dir, ".tiller", ".cache", "usage.yml"), "no cursor for an uncommitted capture")
+
+	_, errOut, code := execCLI(t, "usage")
+	require.Equal(t, 1, code)
+	require.Contains(t, errOut, "Run tiller usage again.")
+}
+
+func TestSyncStaleCaptureIsAWarning(t *testing.T) {
+	dir, home := usageRepo(t)
+	layClaudeSession(t, home)
+	usageBeforeCommit = advanceGeneration(t)
+	t.Cleanup(func() { usageBeforeCommit = nil })
+
+	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, `"ok": true`)
+	require.NotEmpty(t, jsonData(t, out)["usage_warning"])
+	require.NoFileExists(t, filepath.Join(dir, ".tiller", ".cache", "usage.yml"))
+}
+
+// backdateEvents moves every recorded event to before the fixture session.
+func backdateEvents(t *testing.T, dir string) {
+	t.Helper()
+	at := regexp.MustCompile(`(?m)^at: .*$`)
+	require.NoError(t, filepath.WalkDir(filepath.Join(dir, ".tiller", "events"), func(p string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(p, at.ReplaceAll(data, []byte("at: 2025-12-01T00:00:00Z")), 0o644)
+	}))
+}
+
+// A sync that records a crossing advances the generation; capture must reload.
+func TestSyncWithCrossingStillCaptures(t *testing.T) {
+	dir, home := usageRepo(t)
+	driveFeatureToReadyCLI(t)
+	tid := submitTaskOnFeatureCLI(t, cliFeatureKey)
+	mergeTaskBranchCLI(t, dir, loadTestTree(t).Tasks[tid].Branch)
+	backdateEvents(t, dir) // the fixture session must not predate the project's first event
+	layClaudeSession(t, home)
+
+	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, `"status": "done"`)
+	require.NotContains(t, jsonData(t, out), "usage_warning")
+	require.Len(t, usageFiles(t, dir), 1)
 }
 
 func TestUsageNeedsNoIdentity(t *testing.T) {
