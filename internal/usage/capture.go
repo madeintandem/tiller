@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"time"
@@ -59,24 +60,34 @@ type Result struct {
 // commit succeeds. Now is injected; the wall clock is read only to measure
 // the budget.
 func Capture(o Options) (Result, Cursor, error) {
-	c := &capture{o: o, prev: LoadCursor(o.Root), next: Cursor{}, examined: map[string]bool{}, started: time.Now()}
-	if c.o.Resolve == nil {
-		c.o.Resolve = func(string) string { return "" }
+	prev := LoadCursor(o.Root)
+	memo := newCwdMemo(prev.Cwd)
+	o.Roots.cwd = memo
+	if o.Resolve == nil {
+		o.Resolve = func(string) string { return "" }
 	}
+	c := &capture{o: o, prev: prev, next: emptyCursor(), examined: map[string]bool{}, started: time.Now()}
 	for _, rd := range o.Readers {
 		h := HarnessResult{Harness: rd.Harness(), Found: anyDir(rd.Dirs(o.Roots))}
 		if !c.res.Partial {
 			if err := c.harness(rd, &h); err != nil {
-				return Result{}, nil, err
+				return Result{}, Cursor{}, err
 			}
 		}
 		c.res.Harnesses = append(c.res.Harnesses, h)
 	}
+	// Working directories of rollouts no longer on disk are dropped.
+	c.next.Cwd = memo.seen
 	if c.res.Partial {
-		// Logs the budget left unread keep what the old cursor knew of them.
-		for p, e := range c.prev {
+		// What the budget left unread keeps what the old cursor knew of it.
+		for p, e := range prev.Logs {
 			if !c.examined[p] {
-				c.next[p] = e
+				c.next.Logs[p] = e
+			}
+		}
+		for p, cwd := range prev.Cwd {
+			if _, ok := c.next.Cwd[p]; !ok {
+				c.next.Cwd[p] = cwd
 			}
 		}
 	}
@@ -91,7 +102,11 @@ type capture struct {
 	started  time.Time
 	parsed   int
 	res      Result
+	files    map[string]map[string]bool // harness -> usage file names on disk
 }
+
+// logStats is one group's logs as stat'd this run, keyed by path.
+type logStats map[string]cursorEntry
 
 func anyDir(dirs []string) bool {
 	for _, d := range dirs {
@@ -110,15 +125,26 @@ func (c *capture) harness(rd Reader, h *HarnessResult) error {
 	groups := groupLogs(refs)
 	h.Sessions = len(groups)
 	for _, g := range groups {
-		seen, changed, err := c.stat(g)
+		seen, changed, newest, err := c.stat(g)
 		if err != nil {
 			return err
 		}
 		if seen == nil {
 			continue // a log vanished since discovery
 		}
+		top := g[0]
+		hadFile := c.prev.Logs[top.Path].File
+		if !changed && hadFile && !c.usageFileExists(rd.Harness(), top.Session) {
+			changed = true // its usage file was discarded before commit
+		}
 		if !changed {
-			c.record(seen)
+			c.record(seen, top.Path, hadFile)
+			continue
+		}
+		// A log is last written no earlier than its last call, so a group
+		// whose newest log is recent may still be running: it is not opened,
+		// and stays out of the cursor until it settles.
+		if newest.After(c.o.Now.Add(-SettleAfter)) {
 			continue
 		}
 		// The first changed session always runs, so every capture makes
@@ -157,39 +183,67 @@ func groupLogs(refs []LogRef) [][]LogRef {
 }
 
 // stat reads each member's size and modification time without opening it.
-// changed is true when any member differs from the cursor or is new to it. A
-// member that no longer exists yields nil: the group is skipped this time.
-func (c *capture) stat(g []LogRef) (Cursor, bool, error) {
-	seen := Cursor{}
-	changed := false
+// changed is true when any member differs from the cursor or is new to it;
+// newest is the latest modification time. A member that no longer exists
+// yields nil: the group is skipped this time.
+func (c *capture) stat(g []LogRef) (seen logStats, changed bool, newest time.Time, err error) {
+	seen = logStats{}
 	for _, l := range g {
 		c.examined[l.Path] = true
 		info, err := os.Stat(l.Path)
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, false, nil
+			return nil, false, time.Time{}, nil
 		}
 		if err != nil {
-			return nil, false, err
+			return nil, false, time.Time{}, err
 		}
-		e := cursorEntry{Size: info.Size(), ModTime: info.ModTime(), Match: true}
-		if old, ok := c.prev[l.Path]; !ok || !old.same(e) {
+		e := cursorEntry{Size: info.Size(), ModTime: info.ModTime()}
+		if old, ok := c.prev.Logs[l.Path]; !ok || !old.same(e) {
 			changed = true
+		}
+		if e.ModTime.After(newest) {
+			newest = e.ModTime
 		}
 		seen[l.Path] = e
 	}
-	return seen, changed, nil
+	return seen, changed, newest, nil
 }
 
-func (c *capture) record(seen Cursor) {
+// usageFileExists answers from one listing of the harness's usage folder,
+// read the first time it is asked. An unreadable folder counts as empty, so
+// the session is recaptured.
+func (c *capture) usageFileExists(harness, session string) bool {
+	if c.files == nil {
+		c.files = map[string]map[string]bool{}
+	}
+	names, ok := c.files[harness]
+	if !ok {
+		names = map[string]bool{}
+		entries, _ := store.ReadRepositoryDirectory(c.o.Root, filepath.FromSlash(path.Dir(Path(harness, session))))
+		for _, e := range entries {
+			if !e.IsDir() {
+				names[e.Name()] = true
+			}
+		}
+		c.files[harness] = names
+	}
+	return names[path.Base(Path(harness, session))]
+}
+
+// record enters a decided group into the next cursor; file marks, on the
+// top-level log, that the session has a usage file.
+func (c *capture) record(seen logStats, top string, file bool) {
 	for p, e := range seen {
-		c.next[p] = e
+		e.File = file && p == top
+		c.next.Logs[p] = e
 	}
 }
 
 // session parses one changed group and plans its file. The group enters the
 // cursor once it is decided, unless the session is still active, so an
 // unchanged but now-settled log is read again next time.
-func (c *capture) session(rd Reader, g []LogRef, seen Cursor, h *HarnessResult) error {
+func (c *capture) session(rd Reader, g []LogRef, seen logStats, h *HarnessResult) error {
+	top := g[0]
 	s, err := rd.Parse(g)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil // removed mid-capture; retried next time
@@ -199,19 +253,19 @@ func (c *capture) session(rd Reader, g []LogRef, seen Cursor, h *HarnessResult) 
 	}
 	first, last, ok := callSpan(s)
 	if !ok {
-		c.record(seen)
+		c.record(seen, top.Path, false)
 		return nil
 	}
 	if last.After(c.o.Now.Add(-SettleAfter)) {
 		return nil
 	}
 	if !c.o.Since.IsZero() && first.Before(c.o.Since) {
-		c.record(seen)
+		c.record(seen, top.Path, false)
 		return nil
 	}
 
 	f := File{
-		Harness: rd.Harness(), Session: s.ID, Reader: ReaderVersion, CapturedAt: c.o.Now,
+		Harness: rd.Harness(), Session: top.Session, Reader: ReaderVersion, CapturedAt: c.o.Now,
 		FirstCall: first, LastCall: last, Rows: Credit(s, c.o.Resolve),
 	}
 	rel := Path(f.Harness, f.Session)
@@ -230,13 +284,13 @@ func (c *capture) session(rd Reader, g []LogRef, seen Cursor, h *HarnessResult) 
 			return fmt.Errorf("%s: %w", rel, err)
 		}
 		if old.Calls() > f.Calls() {
-			c.record(seen) // the log lost calls; the file keeps them
+			c.record(seen, top.Path, true) // the log lost calls; the file keeps them
 			return nil
 		}
 		same := f
 		same.CapturedAt = old.CapturedAt
 		if again, err := Encode(same); err == nil && bytes.Equal(again, existing) {
-			c.record(seen) // nothing new since the file was written
+			c.record(seen, top.Path, true) // nothing new since the file was written
 			return nil
 		}
 	}
@@ -249,7 +303,7 @@ func (c *capture) session(rd Reader, g []LogRef, seen Cursor, h *HarnessResult) 
 			h.Tied += r.Total()
 		}
 	}
-	c.record(seen)
+	c.record(seen, top.Path, true)
 	return nil
 }
 

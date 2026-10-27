@@ -37,6 +37,41 @@ func TestCodexMatchesByFirstLineCwd(t *testing.T) {
 	}
 }
 
+func TestCodexDiscoverReadsEachFirstLineOnce(t *testing.T) {
+	home := t.TempDir()
+	dir := filepath.Join(home, ".codex", "sessions", "2026", "09", "07")
+	a, b := filepath.Join(dir, "rollout-a.jsonl"), filepath.Join(dir, "rollout-b.jsonl")
+	mustWrite(t, a, codexRollout("/p/app"))
+	mustWrite(t, b, codexRollout("/p/other"))
+	memo := newCwdMemo(nil)
+	if _, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo}); err != nil {
+		t.Fatal(err)
+	}
+	if want := map[string]string{a: "/p/app", b: "/p/other"}; !reflect.DeepEqual(memo.seen, want) {
+		t.Fatalf("memo = %v, want %v", memo.seen, want)
+	}
+
+	// Known files are not opened again; a new one is read once and added.
+	unreadable(t, a, b)
+	c := filepath.Join(dir, "rollout-c.jsonl")
+	mustWrite(t, c, codexRollout("/p/app"))
+	next := newCwdMemo(memo.seen)
+	refs, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: next})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, r := range refs {
+		got = append(got, r.Session)
+	}
+	if want := []string{"rollout-a", "rollout-c"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("sessions = %v, want %v", got, want)
+	}
+	if want := map[string]string{a: "/p/app", b: "/p/other", c: "/p/app"}; !reflect.DeepEqual(next.seen, want) {
+		t.Fatalf("memo = %v, want %v", next.seen, want)
+	}
+}
+
 func TestCodexHonorsCodexHome(t *testing.T) {
 	home, ch := t.TempDir(), t.TempDir()
 	mustWrite(t, filepath.Join(ch, "sessions", "2026", "09", "07", "rollout-z.jsonl"), codexRollout("/p/app"))

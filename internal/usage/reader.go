@@ -21,6 +21,37 @@ type Roots struct {
 	Home    string
 	Env     func(string) string
 	Project []string
+	// cwd remembers each Codex rollout's first-line working directory across
+	// captures; Capture sets it from the cursor. Nil reads every first line.
+	cwd *cwdMemo
+}
+
+// cwdMemo holds the working directories learned by earlier captures (prev)
+// and those looked up or read in this discovery (seen). A rollout's first
+// line never changes, so a known path is never opened again.
+type cwdMemo struct {
+	prev, seen map[string]string
+}
+
+func newCwdMemo(prev map[string]string) *cwdMemo {
+	return &cwdMemo{prev: prev, seen: map[string]string{}}
+}
+
+// lookup answers path's working directory from the memo or, the first time,
+// from read. A read error is not remembered, so the file is tried again.
+func (m *cwdMemo) lookup(path string, read func(string) (string, error)) (string, error) {
+	if m == nil {
+		return read(path)
+	}
+	cwd, ok := m.prev[path]
+	if !ok {
+		var err error
+		if cwd, err = read(path); err != nil {
+			return "", err
+		}
+	}
+	m.seen[path] = cwd
+	return cwd, nil
 }
 
 func (r Roots) env(key string) string {

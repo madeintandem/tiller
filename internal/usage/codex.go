@@ -100,7 +100,7 @@ func (c codexReader) Discover(r Roots) ([]LogRef, error) {
 		if d.IsDir() || !strings.HasPrefix(name, "rollout-") || !strings.HasSuffix(name, ".jsonl") {
 			return nil
 		}
-		cwd, err := codexSessionCwd(path)
+		cwd, err := r.cwd.lookup(path, codexSessionCwd)
 		if err != nil || !underAny(cwd, r.Project) {
 			return nil // unreadable or foreign: not ours
 		}

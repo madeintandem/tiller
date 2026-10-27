@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +36,41 @@ func claudeSession(t *testing.T, home, dir, id string, times ...time.Time) strin
 	}
 	path := filepath.Join(home, ".claude", "projects", claudeFolder(dir), id+".jsonl")
 	mustWrite(t, path, b.String())
+	touch(t, path, times[len(times)-1])
 	return path
+}
+
+// touch sets a log's modification time, as the harness would have when it
+// wrote its last line.
+func touch(tb testing.TB, path string, at time.Time) {
+	tb.Helper()
+	if err := os.Chtimes(path, at, at); err != nil {
+		tb.Fatal(err)
+	}
+}
+
+// commitWrites lays the planned writes down, standing in for tree.Commit.
+func commitWrites(tb testing.TB, res Result) {
+	tb.Helper()
+	for _, w := range res.Writes {
+		if err := os.MkdirAll(filepath.Dir(w.Path), 0o755); err != nil {
+			tb.Fatal(err)
+		}
+		if err := os.WriteFile(w.Path, w.Data, 0o644); err != nil {
+			tb.Fatal(err)
+		}
+	}
+}
+
+// unreadable makes the files fail to open (stat still works) until cleanup.
+func unreadable(tb testing.TB, paths ...string) {
+	tb.Helper()
+	for _, p := range paths {
+		if err := os.Chmod(p, 0); err != nil {
+			tb.Fatal(err)
+		}
+		tb.Cleanup(func() { os.Chmod(p, 0o644) })
+	}
 }
 
 type captureEnv struct {
@@ -141,7 +176,7 @@ func TestCaptureWritesSettledSessions(t *testing.T) {
 	if res.Partial {
 		t.Error("partial without a budget")
 	}
-	if len(cur) != 1 {
+	if len(cur.Logs) != 1 {
 		t.Errorf("cursor = %+v, want one entry", cur)
 	}
 }
@@ -149,24 +184,99 @@ func TestCaptureWritesSettledSessions(t *testing.T) {
 func TestCaptureSkipsActiveSession(t *testing.T) {
 	e := newCaptureEnv(t)
 	path := claudeSession(t, e.home, e.root, "s1", captureNow.Add(-time.Hour), captureNow.Add(-10*time.Minute))
+	sub := filepath.Join(e.home, ".claude", "projects", claudeFolder(e.root), "s1", "subagents", "agent-a.jsonl")
+	mustWrite(t, sub, claudeCall(captureNow.Add(-50*time.Minute), "a-0", ""))
+	touch(t, sub, captureNow.Add(-50*time.Minute))
+	unreadable(t, path, sub)
+	r := &countingReader{Reader: NewClaudeReader()}
 
-	res, cur := mustCapture(t, e.options())
-	if len(res.Writes) != 0 {
-		t.Fatalf("writes = %d, want 0 for an active session", len(res.Writes))
+	// A group whose newest log was written within SettleAfter is not opened,
+	// even when an older subagent log sits beside it.
+	res, cur := mustCapture(t, e.options(r))
+	if len(res.Writes) != 0 || r.parses != 0 {
+		t.Fatalf("writes = %d parses = %d, want 0 and 0 for an active session", len(res.Writes), r.parses)
 	}
-	if _, ok := cur[path]; ok {
-		t.Fatal("an unsettled session must not enter the cursor")
+	if len(cur.Logs) != 0 {
+		t.Fatalf("cursor = %+v: an unsettled session must not enter the cursor", cur.Logs)
 	}
 
 	// Once it has gone quiet the same, unchanged log is captured.
 	if err := cur.Save(e.root); err != nil {
 		t.Fatal(err)
 	}
-	later := e.options()
+	os.Chmod(path, 0o644)
+	os.Chmod(sub, 0o644)
+	later := e.options(r)
 	later.Now = captureNow.Add(time.Hour)
 	res, _ = mustCapture(t, later)
+	if len(res.Writes) != 1 || r.parses != 1 {
+		t.Fatalf("writes = %d parses = %d, want 1 and 1 once settled", len(res.Writes), r.parses)
+	}
+}
+
+// A log's modification time can predate its last call only if something reset
+// it; the parsed last call still decides.
+func TestCaptureSettleCheckUsesLastCall(t *testing.T) {
+	e := newCaptureEnv(t)
+	path := claudeSession(t, e.home, e.root, "s1", captureNow.Add(-time.Hour), captureNow.Add(-10*time.Minute))
+	touch(t, path, captureNow.Add(-2*time.Hour))
+	r := &countingReader{Reader: NewClaudeReader()}
+
+	res, cur := mustCapture(t, e.options(r))
+	if len(res.Writes) != 0 || r.parses != 1 || len(cur.Logs) != 0 {
+		t.Fatalf("writes = %d parses = %d cursor = %d, want 0, 1, 0", len(res.Writes), r.parses, len(cur.Logs))
+	}
+}
+
+func TestCaptureRecapturesDiscardedFile(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
+	claudeSession(t, e.home, e.root, "s2", captureNow.Add(-3*time.Hour))
+	res, cur := mustCapture(t, e.options())
+	if len(res.Writes) != 2 {
+		t.Fatalf("writes = %d, want 2", len(res.Writes))
+	}
+	commitWrites(t, res)
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	// The uncommitted s1 file is discarded (git checkout, clean, reset).
+	if err := os.Remove(res.Writes[0].Path); err != nil {
+		t.Fatal(err)
+	}
+	r := &countingReader{Reader: NewClaudeReader()}
+	again, _ := mustCapture(t, e.options(r))
+	if len(again.Writes) != 1 || again.Writes[0].Path != res.Writes[0].Path || r.parses != 1 {
+		t.Fatalf("writes = %+v parses = %d, want only the discarded file rewritten", again.Writes, r.parses)
+	}
+}
+
+func codexCall(at time.Time) string {
+	return fmt.Sprintf(`{"timestamp":%q,"type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":10,"cached_input_tokens":4,"output_tokens":3}}}}`+"\n", at.Format(time.RFC3339Nano))
+}
+
+func TestCaptureKeepsCodexCwdMemo(t *testing.T) {
+	e := newCaptureEnv(t)
+	dir := filepath.Join(e.home, ".codex", "sessions", "2026", "10", "20")
+	ours := filepath.Join(dir, "rollout-ours.jsonl")
+	foreign := filepath.Join(dir, "rollout-foreign.jsonl")
+	mustWrite(t, ours, codexRollout(e.root)+codexCall(captureNow.Add(-3*time.Hour)))
+	mustWrite(t, foreign, codexRollout("/elsewhere")+codexCall(captureNow.Add(-3*time.Hour)))
+	touch(t, ours, captureNow.Add(-3*time.Hour))
+	touch(t, foreign, captureNow.Add(-3*time.Hour))
+	stale := Cursor{Logs: map[string]cursorEntry{}, Cwd: map[string]string{filepath.Join(dir, "rollout-gone.jsonl"): e.root}}
+	if err := stale.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	res, cur := mustCapture(t, e.options(NewCodexReader()))
 	if len(res.Writes) != 1 {
-		t.Fatalf("writes = %d, want 1 once settled", len(res.Writes))
+		t.Fatalf("writes = %d, want 1", len(res.Writes))
+	}
+	want := map[string]string{ours: e.root, foreign: "/elsewhere"}
+	if !reflect.DeepEqual(cur.Cwd, want) {
+		t.Errorf("cwd memo = %v, want %v (gone path dropped)", cur.Cwd, want)
 	}
 }
 
@@ -252,10 +362,11 @@ func TestCaptureUnchangedLogIsNotOpened(t *testing.T) {
 	e := newCaptureEnv(t)
 	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
 	r := &countingReader{Reader: NewClaudeReader()}
-	_, cur := mustCapture(t, e.options(r))
+	first, cur := mustCapture(t, e.options(r))
 	if r.parses != 1 {
 		t.Fatalf("first capture parses = %d, want 1", r.parses)
 	}
+	commitWrites(t, first)
 	if err := cur.Save(e.root); err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +379,7 @@ func TestCaptureUnchangedLogIsNotOpened(t *testing.T) {
 	if len(res.Writes) != 0 {
 		t.Errorf("writes = %d, want 0", len(res.Writes))
 	}
-	if len(next) != 1 {
+	if len(next.Logs) != 1 {
 		t.Errorf("cursor = %+v, want the skipped log kept", next)
 	}
 	if h := harnessResult(t, res, "claude-code"); h.Sessions != 1 || h.Written != 0 {
@@ -281,6 +392,7 @@ func TestCaptureReparsesGroupWhenASubagentChanged(t *testing.T) {
 	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-3*time.Hour))
 	sub := filepath.Join(e.home, ".claude", "projects", claudeFolder(e.root), "s1", "subagents", "agent-a.jsonl")
 	mustWrite(t, sub, claudeCall(captureNow.Add(-170*time.Minute), "a-0", ""))
+	touch(t, sub, captureNow.Add(-170*time.Minute))
 	r := &countingReader{Reader: NewClaudeReader()}
 	_, cur := mustCapture(t, e.options(r))
 	if err := cur.Save(e.root); err != nil {
@@ -288,6 +400,7 @@ func TestCaptureReparsesGroupWhenASubagentChanged(t *testing.T) {
 	}
 
 	mustWrite(t, sub, claudeCall(captureNow.Add(-170*time.Minute), "a-0", "")+claudeCall(captureNow.Add(-160*time.Minute), "a-1", ""))
+	touch(t, sub, captureNow.Add(-160*time.Minute))
 	r.parses = 0
 	res, _ := mustCapture(t, e.options(r))
 	if r.parses != 1 {
@@ -330,7 +443,7 @@ func TestCaptureBudgetStopsAtSessionBoundary(t *testing.T) {
 	if f, _ := Decode(res.Writes[0].Data); f.Calls() != 2 {
 		t.Errorf("calls = %d, want the whole session", f.Calls())
 	}
-	if len(cur) != 1 {
+	if len(cur.Logs) != 1 {
 		t.Errorf("cursor = %+v, want only the captured session", cur)
 	}
 }
@@ -356,32 +469,28 @@ func noChangeFixture(tb testing.TB, n int) (captureEnv, *countingReader) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		tb.Fatal(err)
 	}
+	var logs []string
 	for i := range n {
 		path := filepath.Join(dir, fmt.Sprintf("s%03d.jsonl", i))
 		if err := os.WriteFile(path, []byte(claudeCall(captureNow.Add(-3*time.Hour), fmt.Sprintf("m%d", i), "")), 0o644); err != nil {
 			tb.Fatal(err)
 		}
+		touch(tb, path, captureNow.Add(-3*time.Hour))
+		logs = append(logs, path)
 	}
 	r := &countingReader{Reader: NewClaudeReader()}
-	_, cur, err := Capture(e.options(r))
+	res, cur, err := Capture(e.options(r))
 	if err != nil {
 		tb.Fatal(err)
 	}
-	if len(cur) != n {
-		tb.Fatalf("cursor holds %d entries, want %d", len(cur), n)
+	commitWrites(tb, res)
+	if len(cur.Logs) != n {
+		tb.Fatalf("cursor holds %d entries, want %d", len(cur.Logs), n)
 	}
 	if err := cur.Save(e.root); err != nil {
 		tb.Fatal(err)
 	}
-	// Unreadable logs make any open fail; stat still works.
-	entries, _ := os.ReadDir(dir)
-	for _, en := range entries {
-		path := filepath.Join(dir, en.Name())
-		if err := os.Chmod(path, 0); err != nil {
-			tb.Fatal(err)
-		}
-		tb.Cleanup(func() { os.Chmod(path, 0o644) })
-	}
+	unreadable(tb, logs...)
 	r.parses = 0
 	return e, r
 }
@@ -392,8 +501,8 @@ func TestCaptureNoChangeOpensNothing(t *testing.T) {
 	if r.parses != 0 {
 		t.Errorf("parses = %d, want 0", r.parses)
 	}
-	if len(res.Writes) != 0 || len(cur) != 200 {
-		t.Errorf("writes = %d cursor = %d, want 0 and 200", len(res.Writes), len(cur))
+	if len(res.Writes) != 0 || len(cur.Logs) != 200 {
+		t.Errorf("writes = %d cursor = %d, want 0 and 200", len(res.Writes), len(cur.Logs))
 	}
 	if h := harnessResult(t, res, "claude-code"); h.Sessions != 200 {
 		t.Errorf("sessions = %d, want 200", h.Sessions)
@@ -413,25 +522,32 @@ func BenchmarkCaptureNoChange(b *testing.B) {
 
 func TestCursorRoundTrip(t *testing.T) {
 	root := t.TempDir()
-	if got := LoadCursor(root); len(got) != 0 {
+	empty := func(c Cursor) bool { return len(c.Logs) == 0 && len(c.Cwd) == 0 && c.Logs != nil && c.Cwd != nil }
+	if got := LoadCursor(root); !empty(got) {
 		t.Fatalf("missing cursor = %+v, want empty", got)
 	}
-	c := Cursor{"/h/a.jsonl": {Size: 42, ModTime: time.Date(2026, 10, 20, 1, 2, 3, 456789, time.UTC), Match: true}}
+	c := Cursor{
+		Logs: map[string]cursorEntry{"/h/a.jsonl": {Size: 42, ModTime: time.Date(2026, 10, 20, 1, 2, 3, 456789, time.UTC), File: true}},
+		Cwd:  map[string]string{"/h/rollout-x.jsonl": "/p/app"},
+	}
 	if err := c.Save(root); err != nil {
 		t.Fatal(err)
 	}
 	got := LoadCursor(root)
-	e := got["/h/a.jsonl"]
-	if len(got) != 1 || e.Size != 42 || !e.ModTime.Equal(c["/h/a.jsonl"].ModTime) || !e.Match {
+	e := got.Logs["/h/a.jsonl"]
+	if len(got.Logs) != 1 || e.Size != 42 || !e.ModTime.Equal(c.Logs["/h/a.jsonl"].ModTime) || !e.File {
 		t.Errorf("round trip = %+v", got)
+	}
+	if !reflect.DeepEqual(got.Cwd, c.Cwd) {
+		t.Errorf("cwd round trip = %v", got.Cwd)
 	}
 
 	mustWrite(t, filepath.Join(root, ".tiller", ".cache", "usage.yml"), "{not yaml")
-	if got := LoadCursor(root); len(got) != 0 {
+	if got := LoadCursor(root); !empty(got) {
 		t.Errorf("corrupt cursor = %+v, want empty", got)
 	}
 	mustWrite(t, filepath.Join(root, ".tiller", ".cache", "usage.yml"), "reader: 0\nlogs:\n  /h/a.jsonl: {size: 1}\n")
-	if got := LoadCursor(root); len(got) != 0 {
+	if got := LoadCursor(root); !empty(got) {
 		t.Errorf("cursor from another reader version = %+v, want empty", got)
 	}
 }
