@@ -65,6 +65,14 @@
   color: var(--ink);
 }
 
+/* ---------- Agent use coverage note ---------- */
+
+.report-usage-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
 /* ---------- KPI strip (D13) ---------- */
 
 .report-kpis {

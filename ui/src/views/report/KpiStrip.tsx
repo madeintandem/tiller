@@ -49,7 +49,7 @@ interface TileProps {
   trend?: ReactNode;
 }
 
-function Tile({ label, value, muted = false, sub, trend }: TileProps) {
+export function Tile({ label, value, muted = false, sub, trend }: TileProps) {
   return (
     <div className="report-kpi">
       <dt>{label}</dt>

@@ -1,14 +1,55 @@
 // The Report page's Agent use tab. It fetches /api/report/usage itself, so the
-// endpoint is read only when this tab renders.
+// endpoint is read only when this tab renders. Above the figures a note says
+// what the usage covers, because capture began on a different day per harness.
 
 import type { UsageReport } from "../../api";
 import { usageReportPath } from "../../api";
 import { useFetch } from "../../hooks";
+import ChartCard from "./ChartCard";
+import { formatTokens, formatWeek } from "./format";
+import { Tile } from "./KpiStrip";
+import { CacheReadsChart, FreshTokensChart } from "./UsageWeekCharts";
+
+function percent(part: number, whole: number): string {
+  return whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "0%";
+}
 
 export default function AgentUseTab() {
   const { data, error } = useFetch<UsageReport>(usageReportPath);
   if (error !== null) return <p className="error">{error}</p>;
   if (data === null) return <p className="muted" role="status">Loading…</p>;
   if (data.harnesses.length === 0) return <p className="muted">No agent usage recorded yet</p>;
-  return null;
+  const { kpis } = data;
+  const median = kpis.median_per_item;
+  return (
+    <>
+      <p className="report-usage-note">
+        Measured: {data.harnesses.map((h) => `${h.label} since ${formatWeek(h.since)}`).join(" · ")}
+      </p>
+      <dl className="report-kpis">
+        <Tile label="Total tokens" value={formatTokens(kpis.total)} />
+        <Tile label="Cache reads" value={formatTokens(kpis.cache_read)} sub={`${percent(kpis.cache_read, kpis.total)} of all`} />
+        <Tile label="Fresh input and cache writes" value={formatTokens(kpis.input + kpis.cache_write)} />
+        <Tile label="Output" value={formatTokens(kpis.output)} />
+        <Tile
+          label="Median per work item"
+          value={median === null ? "Not yet" : formatTokens(median)}
+          muted={median === null}
+          sub={
+            median === null
+              ? undefined
+              : `${kpis.items} ${kpis.items === 1 ? "item" : "items"} · ${Math.round(kpis.tied_share * 100)}% of tokens tied to a work item`
+          }
+        />
+      </dl>
+      <div className="report-charts">
+        <ChartCard>
+          <CacheReadsChart usage={data} />
+        </ChartCard>
+        <ChartCard>
+          <FreshTokensChart usage={data} />
+        </ChartCard>
+      </div>
+    </>
+  );
 }

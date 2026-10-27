@@ -214,7 +214,16 @@ export function weekPlot(report: Pick<Report, "weeks" | "week_boundaries">, widt
 // WeekAxis draws beneath a weekly chart's marks: gridlines at niceTicks, week
 // labels thinned to fit, and the current week's band hatched as partial
 // (D5) so a week in progress does not read as a slump.
-export function WeekAxis({ plot, unit }: { plot: WeekPlot; unit?: string }) {
+export function WeekAxis({
+  plot,
+  unit,
+  format,
+}: {
+  plot: WeekPlot;
+  unit?: string;
+  // format words a tick; the Project charts show ticks as bare numbers.
+  format?: (tick: number) => string;
+}) {
   const { weeks, band, ticks, width, height } = plot;
   const last = weeks.length - 1;
   const every = Math.max(1, Math.ceil(WEEK_LABEL_SPACING / band));
@@ -238,7 +247,7 @@ export function WeekAxis({ plot, unit }: { plot: WeekPlot; unit?: string }) {
         <g key={t}>
           <line className="report-grid" x1={MARGIN.left} x2={width - MARGIN.right} y1={plot.y(t)} y2={plot.y(t)} />
           <text className="report-tick" x={MARGIN.left - 8} y={plot.y(t)} textAnchor="end" dominantBaseline="middle">
-            {t}
+            {format ? format(t) : t}
           </text>
         </g>
       ))}

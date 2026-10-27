@@ -17,6 +17,22 @@ export function formatWeek(monday: string): string {
   return new Date(localMidnight(monday)).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// formatTokens abbreviates a token count to about three significant figures:
+// "6.03B", "186M", "8.9M", "412K", "950".
+export function formatTokens(n: number): string {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) {
+    const m = n / 1e6;
+    if (m >= 999.5) return `${(n / 1e9).toFixed(2)}B`;
+    return m >= 99.5 ? `${Math.round(m)}M` : `${m.toFixed(1)}M`;
+  }
+  if (n >= 1e3) {
+    const k = Math.round(n / 1e3);
+    return k >= 1000 ? "1.0M" : `${k}K`;
+  }
+  return String(Math.round(n));
+}
+
 // formatAsOf is the header's "As of" time in the reader's locale.
 export function formatAsOf(iso: string): string {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
