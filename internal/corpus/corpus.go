@@ -122,6 +122,11 @@ func WalkLimited(ctx context.Context, root string, maxBytes int64, visit func(Do
 			}
 			return nil
 		}
+		// Usage files are token counts, not prose: "Nothing else walks the
+		// usage files" (docs/plans/2026-10-26-agent-use-report-design.md).
+		if p == "usage" && entry.IsDir() {
+			return fs.SkipDir
+		}
 		// Dot entries are local and gitignored (.cache), never corpus; the
 		// console refuses to serve them, so search must not quote them either.
 		if p != "." && strings.HasPrefix(entry.Name(), ".") {

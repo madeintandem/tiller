@@ -88,3 +88,16 @@ func TestReadCitedMarkdownCannotEscapeRepository(t *testing.T) {
 	_, err = corpus.Read(context.Background(), root, "../secret.md")
 	require.Error(t, err)
 }
+
+func TestWalkSkipsUsageDirectory(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller/usage/pi"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/usage/pi/x.md"), []byte("usage"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/orientation.md"), []byte("guidance"), 0644))
+	var paths []string
+	require.NoError(t, corpus.Walk(context.Background(), root, func(d corpus.Document) error {
+		paths = append(paths, d.Path)
+		return nil
+	}))
+	require.Equal(t, []string{".tiller/orientation.md"}, paths)
+}
