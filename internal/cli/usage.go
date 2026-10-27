@@ -133,12 +133,13 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration, reload 
 			}
 		}
 	}
+	base := tree // the tree is reloaded below; the bound comes from this one
 	since := func() (time.Time, error) {
-		evs, err := events.List(tree)
-		if err != nil || len(evs) == 0 {
+		evs, err := events.List(base)
+		if err != nil {
 			return time.Time{}, err
 		}
-		return evs[0].At, nil
+		return firstEventAt(evs), nil
 	}
 	res, cursor, err := usage.Capture(usage.Options{
 		Root:  tree.Root,
@@ -171,6 +172,18 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration, reload 
 		return usage.Result{}, err
 	}
 	return res, nil
+}
+
+// firstEventAt is the time of the earliest event that has one. events.List
+// sorts by time, so an event with a zero At (malformed) comes first and is
+// skipped. Zero means no event has a time: capture then writes nothing.
+func firstEventAt(evs []events.Event) time.Time {
+	for _, e := range evs {
+		if !e.At.IsZero() {
+			return e.At
+		}
+	}
+	return time.Time{}
 }
 
 func samePath(a, b string) bool {

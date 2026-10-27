@@ -8,25 +8,57 @@ import (
 	"testing"
 	"time"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
 )
 
 // usageRepo lays the gated git repo with usage capture on, a declared
-// integration branch, and a clean environment for the harness folders.
+// integration branch, one event dated before the sessions the tests lay (so
+// the ledger has begun), and a clean environment for the harness folders.
 func usageRepo(t *testing.T) (dir, home string) {
 	t.Helper()
-	dir = initGatedGitRepo(t, "true")
-	p := filepath.Join(dir, ".tiller", "tiller.yml")
-	data, err := os.ReadFile(p)
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(p, append(data, []byte("usage:\n  capture: true\n")...), 0o644))
-	declareIntegrationBranchCLI(t, dir)
+	dir = usageRepoWithoutEvents(t)
+	ev := filepath.Join(dir, ".tiller", "events", "2026", "01", "01", "EV-usage0.yml")
+	require.NoError(t, os.MkdirAll(filepath.Dir(ev), 0o755))
+	require.NoError(t, os.WriteFile(ev, []byte("id: EV-usage0\ntype: init\nat: 2026-01-01T00:00:00Z\ncontributor: jc\ncommand: init\n"), 0o644))
 	home = t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("CLAUDE_CONFIG_DIR", "")
 	t.Setenv("CODEX_HOME", "")
 	return dir, home
+}
+
+// usageRepoWithoutEvents is usageRepo before the ledger's first event; the
+// caller sets up HOME.
+func usageRepoWithoutEvents(t *testing.T) string {
+	t.Helper()
+	dir := initGatedGitRepo(t, "true")
+	p := filepath.Join(dir, ".tiller", "tiller.yml")
+	data, err := os.ReadFile(p)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(p, append(data, []byte("usage:\n  capture: true\n")...), 0o644))
+	declareIntegrationBranchCLI(t, dir)
+	return dir
+}
+
+// A project whose ledger has no event yet captures nothing: there is no
+// lower bound to judge a session by, and months of earlier history must not
+// be baked into permanent files.
+func TestUsageWithNoEventsCapturesNothing(t *testing.T) {
+	dir := usageRepoWithoutEvents(t)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("CLAUDE_CONFIG_DIR", "")
+	t.Setenv("CODEX_HOME", "")
+	layClaudeSession(t, home)
+
+	out, _, code := execCLI(t, "usage", "--json")
+	require.Equal(t, 0, code, out)
+	require.Empty(t, usageFiles(t, dir))
+	first := jsonData(t, out)["harnesses"].([]any)[0].(map[string]any)
+	require.EqualValues(t, 1, first["sessions"])
+	require.EqualValues(t, 0, first["written"])
 }
 
 func claudeProjectFolder(t *testing.T, home string) string {
@@ -268,6 +300,16 @@ func TestSyncNotesCaptureSkippedOffIntegrationBranch(t *testing.T) {
 	require.Equal(t, 0, code, out)
 	require.Contains(t, out, "Agent usage not captured: not on main.")
 	require.NoDirExists(t, filepath.Join(dir, ".tiller", "usage"))
+}
+
+// The lower bound is the first event that carries a time: a malformed event
+// with a zero At sorts first and must not erase the bound, and no
+// timestamped event at all reads as zero (nothing captured yet).
+func TestFirstEventAtSkipsZeroTimes(t *testing.T) {
+	at := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
+	require.Equal(t, at, firstEventAt([]events.Event{{ID: "a"}, {ID: "b", At: at}, {ID: "c", At: at.Add(time.Hour)}}))
+	require.True(t, firstEventAt([]events.Event{{ID: "a"}}).IsZero())
+	require.True(t, firstEventAt(nil).IsZero())
 }
 
 func TestFormatTokens(t *testing.T) {

@@ -26,9 +26,12 @@ type Options struct {
 	Resolve Resolver
 	Now     time.Time
 	// Since returns the project's earliest event; a session whose first call
-	// is before it is not captured. It is asked at most once, and only when a
-	// session is parsed, so a capture with nothing new never reads the event
-	// stream. Nil, or a zero time, means no lower bound.
+	// is before it is not captured. A zero time means the project has no
+	// event yet: then nothing is captured and the sessions stay out of the
+	// cursor, so they are judged once an event exists. It is asked at most
+	// once, and only when a changed, settled session would be parsed, so a
+	// capture with nothing new never reads the event stream. Nil means no
+	// lower bound.
 	Since func() (time.Time, error)
 	// Budget bounds the capture's wall time, checked between sessions. Zero
 	// means none.
@@ -262,6 +265,13 @@ func (c *capture) record(seen logStats, top string, file bool) {
 // unchanged but now-settled log is read again next time.
 func (c *capture) session(rd Reader, g []LogRef, seen logStats, h *HarnessResult) error {
 	top := g[0]
+	since, err := c.earliest()
+	if err != nil {
+		return err
+	}
+	if c.o.Since != nil && since.IsZero() {
+		return nil // no event yet: nothing to judge the session by
+	}
 	s, err := rd.Parse(g)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil // removed mid-capture; retried next time
@@ -276,10 +286,6 @@ func (c *capture) session(rd Reader, g []LogRef, seen logStats, h *HarnessResult
 	}
 	if last.After(c.o.Now.Add(-SettleAfter)) {
 		return nil
-	}
-	since, err := c.earliest()
-	if err != nil {
-		return err
 	}
 	if !since.IsZero() && first.Before(since) {
 		c.record(seen, top.Path, false)

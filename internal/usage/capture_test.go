@@ -528,10 +528,38 @@ func TestCaptureAsksSinceOnce(t *testing.T) {
 	claudeSession(t, e.home, e.root, "b", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
 	o := e.options()
 	asked := 0
-	o.Since = func() (time.Time, error) { asked++; return time.Time{}, nil }
+	o.Since = func() (time.Time, error) { asked++; return captureNow.Add(-24 * time.Hour), nil }
 	res, _ := mustCapture(t, o)
 	if asked != 1 || len(res.Writes) != 2 {
 		t.Errorf("Since asked %d times with %d writes, want 1 and 2", asked, len(res.Writes))
+	}
+}
+
+// With no event yet there is no lower bound to judge a session by, so
+// capture writes nothing and leaves the sessions out of the cursor: they are
+// judged once the project has an event, not baked in as prior history.
+func TestCaptureWithNoEventsWritesNothingAndRemembersNothing(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "a", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	claudeSession(t, e.home, e.root, "b", captureNow.Add(-50*time.Minute), captureNow.Add(-40*time.Minute))
+	r := &countingReader{Reader: NewClaudeReader()}
+	o := e.options(r)
+	o.Since = func() (time.Time, error) { return time.Time{}, nil }
+	res, cur := mustCapture(t, o)
+	if len(res.Writes) != 0 || len(cur.Logs) != 0 {
+		t.Fatalf("writes = %d cursor = %+v, want none", len(res.Writes), cur.Logs)
+	}
+	if r.parses != 0 {
+		t.Errorf("parses = %d, want 0: no event means nothing to judge a session by", r.parses)
+	}
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	o.Since = func() (time.Time, error) { return captureNow.Add(-time.Hour), nil }
+	res, _ = mustCapture(t, o)
+	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "b.yml") {
+		t.Fatalf("writes = %+v, want the session after the first event", res.Writes)
 	}
 }
 
