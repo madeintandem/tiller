@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
@@ -102,6 +103,10 @@ type SyncView struct {
 	Awaiting   []AwaitingView `json:"awaiting,omitempty"`
 	Attested   []string       `json:"attested,omitempty"`
 	ChecksDue  []CheckDueView `json:"checks_due,omitempty"`
+	// UsageWarning is set when the best-effort agent usage capture sync runs
+	// after its own work failed, ran out of time, or was skipped. It never
+	// changes sync's exit code or what sync recorded.
+	UsageWarning string `json:"usage_warning,omitempty"`
 }
 
 // CheckDueView is one feature left awaiting its feature check after the walk.
@@ -368,6 +373,8 @@ func runSync(cmd *cobra.Command, into string, acceptFF []string) error {
 	}
 
 	view := syncView(res)
+	warning := syncCaptureUsage(tree)
+	view.UsageWarning = warning
 	// sync is one of the four human gates (gateMomentFor, readout_gate.go), so
 	// its confirmation carries the readout after it. act.Crossed and
 	// act.Awaiting carry res.Crossings and res.Awaiting verbatim: sync
@@ -376,7 +383,7 @@ func runSync(cmd *cobra.Command, into string, acceptFF []string) error {
 	// second time, so syncContent (internal/views/readout.go) reads them
 	// straight rather than falling back to a bare in_review count.
 	act := &views.GateAct{Crossed: syncCrossingsAct(res.Crossings), Awaiting: syncAwaitingAct(res.Awaiting)}
-	return emitReportWithReadout(cmd, "sync", true, view, humanSync(tree, res), 0, gateMomentFor("sync"), tree.Root, act)
+	return emitReportWithReadout(cmd, "sync", true, view, withUsageWarning(humanSync(tree, res), warning), 0, gateMomentFor("sync"), tree.Root, act)
 }
 
 // syncCrossingsAct projects mutate.Sync's own Crossings onto the readout's
@@ -1025,4 +1032,41 @@ func humanSyncAwaiting(tree *store.Tree, res mutate.SyncResult) string {
 			"  Name the task at task grain, the reviewed feature or epic at coarse grain, or the bug/chore/tweak.")
 	}
 	return strings.Join(lines, "\n")
+}
+
+// syncCaptureUsage runs the best-effort agent usage capture after sync's own
+// work succeeded and returns the one warning line it earns, or "". The tree is
+// reloaded because sync's commit advanced the generation, so the old tree's
+// commit would be refused as stale. A failure here is a warning, never a
+// refusal.
+func syncCaptureUsage(tree *store.Tree) string {
+	if !tree.Manifest.Usage.Capture {
+		return ""
+	}
+	onIntegration, _, integration, err := usageBranch(tree)
+	if err != nil {
+		return "Agent usage not captured: " + err.Error()
+	}
+	if !onIntegration {
+		return fmt.Sprintf("Agent usage not captured: not on %s.", integration)
+	}
+	reloaded, err := store.Load(tree.Root)
+	if err != nil {
+		return "Agent usage not captured: " + err.Error()
+	}
+	res, err := captureUsage(reloaded, time.Now(), 2*time.Second)
+	if err != nil {
+		return "Agent usage not captured: " + err.Error()
+	}
+	if res.Partial {
+		return "Agent usage capture ran out of time; run tiller usage to finish."
+	}
+	return ""
+}
+
+func withUsageWarning(human, warning string) string {
+	if warning == "" {
+		return human
+	}
+	return joinSyncBlocks(human, warning)
 }

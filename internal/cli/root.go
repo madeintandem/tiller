@@ -85,6 +85,7 @@ func NewRootCmd() *cobra.Command {
 		newEvalCmd(),
 		newAttestCmd(),
 		newSyncCmd(),
+		newUsageCmd(),
 		newDriftCmd(),
 		newMigrateCmd(),
 		newUpgradeCmd(),
