@@ -903,7 +903,9 @@ It reads, read-only, Claude Code's `~/.claude/projects` (honoring `CLAUDE_CONFIG
 `~/.codex/sessions` (honoring `CODEX_HOME`), and Pi's and OhMyPi's `~/.pi/agent/sessions` and
 `~/.omp/agent/sessions`, and only the sessions that ran in this checkout, one of its worktrees, or
 a path beneath them. Sessions active in the last 30 minutes and sessions older than the project's
-first event are skipped. A file is never deleted or shrunk, so a harness that cleaned up its logs
+first event are skipped, and a project with no event yet captures nothing. A log or folder that
+cannot be read is skipped and counted (`1 log could not be read`, JSON `unreadable`), then tried
+again next run. A file is never deleted or shrunk, so a harness that cleaned up its logs
 loses nothing already captured. Each line of output is this run's: `Claude Code: 12 sessions found,
 4 captured, 1.2B tokens captured, 71% tied to a work item`, `nothing new to capture`, or
 `no session logs found`. Commit the files it writes with the rest of `.tiller/`. `sync` runs the
