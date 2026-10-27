@@ -3,6 +3,7 @@ package usage
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -123,7 +124,7 @@ func TestClaudeParseDedupesByMessageID(t *testing.T) {
 	if c.Tokens.Input != 2 || c.Tokens.Output != 140 {
 		t.Errorf("usage counted more than once: %+v", c.Tokens)
 	}
-	if len(c.Markers) != 2 || c.Markers[0].Verb != "start" || c.Markers[0].Ref != "T-abc123" ||
+	if len(c.Markers) != 2 || c.Markers[0].Verb != "start" || !reflect.DeepEqual(c.Markers[0].Refs, []string{"T-abc123"}) ||
 		c.Markers[1].Kind != MarkSkill || c.Markers[1].Stage != Implementation {
 		t.Errorf("markers = %+v", c.Markers)
 	}

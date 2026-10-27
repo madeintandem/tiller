@@ -74,7 +74,7 @@ func TestPiParseMapsTokensAndMarkers(t *testing.T) {
 		t.Errorf("tokens = %+v", c.Tokens)
 	}
 	want := []Marker{
-		{Kind: MarkVerb, Stage: Implementation, Ref: "T-abc123", Verb: "start"},
+		{Kind: MarkVerb, Stage: Implementation, Refs: []string{"T-abc123"}, Verb: "start"},
 		{Kind: MarkSkill, Stage: Implementation, Verb: "execute"},
 	}
 	if !reflect.DeepEqual(c.Markers, want) {

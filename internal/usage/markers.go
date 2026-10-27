@@ -19,12 +19,14 @@ const (
 )
 
 // Marker is one signal, found in a tool call, that a session moved to
-// another work item or stage. Ref is the raw id or key token ("" when none).
-// For MarkRead, Stage is "".
+// another work item or stage. Refs holds every candidate id or key token, in
+// order: each non-flag argument after the verb and an optional noun word.
+// Flag values land here too, since the reader does not know which flags take
+// one; Credit picks the candidate that names a node. For MarkRead, Stage is "".
 type Marker struct {
 	Kind  MarkerKind
 	Stage Stage
-	Ref   string
+	Refs  []string
 	Verb  string
 }
 
@@ -63,18 +65,22 @@ var nouns = map[string]bool{
 	"task": true, "feature": true, "bug": true, "chore": true, "tweak": true, "epic": true,
 }
 
-// tillerCmd finds `tiller <verb> <rest of the simple command>`. The word must
-// start the string or follow whitespace or one of ;&|(`'" so that .tiller/
-// and ./cmd/tiller never match.
-var tillerCmd = regexp.MustCompile("(?:^|[\\s;&|(`'\"])tiller[ \\t]+([^\\s;&|()]+)([^;&|()\\n]*)")
+// tillerCmd finds `tiller [root flags] <verb> <rest of the simple command>`.
+// The word must start the string or follow whitespace or one of ;&|(`'" so
+// that .tiller/ and ./cmd/tiller never match. Root flags (only the boolean
+// --json today) may sit between tiller and the verb.
+var tillerCmd = regexp.MustCompile("(?:^|[\\s;&|(`'\"])tiller(?:[ \\t]+-[^\\s;&|()]*)*[ \\t]+([^\\s;&|()\\-][^\\s;&|()]*)([^;&|()\\n]*)")
 
-const quoteChars = "\"'`"
+// unescape turns the escapes a command picks up when it sits inside a JSON
+// or JS string back into the characters they stand for, so an escaped
+// newline separates two commands and an escaped quote ends a token.
+var unescape = strings.NewReplacer(`\n`, "\n", `\t`, "\t", `\"`, `"`, `\'`, `'`)
 
 // ShellMarkers returns the markers in a shell command, in order.
 func ShellMarkers(command string) []Marker {
 	var out []Marker
-	for _, m := range tillerCmd.FindAllStringSubmatch(command, -1) {
-		verb := strings.Trim(m[1], quoteChars)
+	for _, m := range tillerCmd.FindAllStringSubmatch(unescape.Replace(command), -1) {
+		verb := cleanToken(m[1])
 		args := strings.Fields(m[2])
 		if verb == "guide" {
 			if skill, ok := firstArg(args); ok {
@@ -88,9 +94,9 @@ func ShellMarkers(command string) []Marker {
 			continue
 		}
 		if stage, ok := verbStages[verb]; ok {
-			out = append(out, Marker{Kind: MarkVerb, Stage: stage, Ref: refOf(args), Verb: verb})
+			out = append(out, Marker{Kind: MarkVerb, Stage: stage, Refs: refsOf(args), Verb: verb})
 		} else if readVerbs[verb] {
-			out = append(out, Marker{Kind: MarkRead, Ref: refOf(args), Verb: verb})
+			out = append(out, Marker{Kind: MarkRead, Refs: refsOf(args), Verb: verb})
 		}
 	}
 	return out
@@ -108,36 +114,55 @@ func SkillMarker(skill, args string) (Marker, bool) {
 	if !ok {
 		return Marker{}, false
 	}
-	return Marker{Kind: MarkSkill, Stage: stage, Ref: refOf(strings.Fields(args)), Verb: name}, true
+	return Marker{Kind: MarkSkill, Stage: stage, Refs: refsOf(strings.Fields(args)), Verb: name}, true
+}
+
+// cleanToken cuts a token at its first backslash and trims it at both ends
+// to the characters an id, key or verb uses, which drops the quotes,
+// brackets and commas a command picks up inside JS or JSON text.
+func cleanToken(tok string) string {
+	if i := strings.IndexByte(tok, '\\'); i >= 0 {
+		tok = tok[:i]
+	}
+	return strings.TrimFunc(tok, func(r rune) bool { return !isRefRune(r) })
+}
+
+func isRefRune(r rune) bool {
+	return r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' ||
+		r == '/' || r == '_' || r == '.' || r == '-'
+}
+
+// arguments is the cleaned non-flag tokens of args, in order.
+func arguments(args []string) []string {
+	var out []string
+	for _, a := range args {
+		a = cleanToken(a)
+		if a == "" || strings.HasPrefix(a, "-") {
+			continue
+		}
+		out = append(out, a)
+	}
+	return out
 }
 
 // firstArg is the first token that is not a flag.
 func firstArg(args []string) (string, bool) {
-	for _, a := range args {
-		a = strings.Trim(a, quoteChars)
-		if a == "" || strings.HasPrefix(a, "-") {
-			continue
-		}
-		return a, true
+	rest := arguments(args)
+	if len(rest) == 0 {
+		return "", false
 	}
-	return "", false
+	return rest[0], true
 }
 
-// refOf takes the first non-flag argument, skipping a leading noun word.
-func refOf(args []string) string {
-	var rest []string
-	for _, a := range args {
-		a = strings.Trim(a, quoteChars)
-		if a == "" || strings.HasPrefix(a, "-") {
-			continue
-		}
-		rest = append(rest, a)
-	}
+// refsOf is the candidate refs: every non-flag argument, skipping a leading
+// noun word. It is nil when there are none.
+func refsOf(args []string) []string {
+	rest := arguments(args)
 	if len(rest) > 0 && nouns[rest[0]] {
 		rest = rest[1:]
 	}
 	if len(rest) == 0 {
-		return ""
+		return nil
 	}
-	return rest[0]
+	return rest
 }

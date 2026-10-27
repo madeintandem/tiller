@@ -103,7 +103,7 @@ func TestCodexInputExcludesCached(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Harness != "codex" || s.ID != "rollout" || len(s.Calls) != 2 {
+	if s.Harness != "codex" || s.ID != "rollout" || len(s.Calls) != 3 {
 		t.Fatalf("session = %+v", s)
 	}
 	c := s.Calls[0]
@@ -125,14 +125,46 @@ func TestCodexMarkersAttachToNextTokenCount(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []Marker{
-		{Kind: MarkVerb, Stage: Implementation, Ref: "T-abc123", Verb: "start"},
-		{Kind: MarkVerb, Stage: Checks, Ref: "T-abc123", Verb: "check"},
+		{Kind: MarkVerb, Stage: Implementation, Refs: []string{"T-abc123"}, Verb: "start"},
+		{Kind: MarkVerb, Stage: Checks, Refs: []string{"T-abc123"}, Verb: "check"},
 	}
 	if !reflect.DeepEqual(s.Calls[0].Markers, want) {
 		t.Errorf("markers = %+v, want %+v", s.Calls[0].Markers, want)
 	}
 	if len(s.Calls[1].Markers) != 0 {
 		t.Errorf("second call markers = %+v", s.Calls[1].Markers)
+	}
+}
+
+// TestCodexJSWrappedExecCreditsTheNode pins the real custom_tool_call shape:
+// the exec input is JS calling tools.exec_command with the command in a JS
+// string, escaped newline and all. Both commands mark, and Credit puts the
+// call on the node they name.
+func TestCodexJSWrappedExecCreditsTheNode(t *testing.T) {
+	path := filepath.Join("testdata", "codex", "rollout.jsonl")
+	s, err := NewCodexReader().Parse([]LogRef{{Harness: "codex", Path: path, Session: "rollout"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Calls) != 3 {
+		t.Fatalf("calls = %+v", s.Calls)
+	}
+	want := []Marker{
+		{Kind: MarkVerb, Stage: Implementation, Refs: []string{"T-def456"}, Verb: "start"},
+		{Kind: MarkVerb, Stage: Checks, Refs: []string{"T-def456"}, Verb: "check"},
+	}
+	if !reflect.DeepEqual(s.Calls[2].Markers, want) {
+		t.Errorf("markers = %+v, want %+v", s.Calls[2].Markers, want)
+	}
+	resolve := func(ref string) string {
+		if ref == "T-abc123" || ref == "T-def456" {
+			return ref
+		}
+		return ""
+	}
+	rows := Credit(s, resolve)
+	if r, ok := find(rows, "T-def456", Checks); !ok || r.Calls != 1 || r.Total() != 210 {
+		t.Errorf("rows = %+v", rows)
 	}
 }
 
@@ -160,7 +192,7 @@ func TestCodexCmdArgumentsStillYieldMarkers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []Marker{{Kind: MarkVerb, Stage: Implementation, Ref: "T-abc123", Verb: "start"}}
+	want := []Marker{{Kind: MarkVerb, Stage: Implementation, Refs: []string{"T-abc123"}, Verb: "start"}}
 	if len(calls) != 1 || !reflect.DeepEqual(calls[0].Markers, want) {
 		t.Fatalf("calls = %+v", calls)
 	}

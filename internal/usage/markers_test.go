@@ -5,31 +5,74 @@ import (
 	"testing"
 )
 
+func mv(stage Stage, verb string, refs ...string) Marker {
+	return Marker{Kind: MarkVerb, Stage: stage, Refs: refs, Verb: verb}
+}
+
 func TestShellMarkersVerbs(t *testing.T) {
 	cases := []struct {
 		cmd  string
 		want []Marker
 	}{
-		{"tiller start task T-abc123", []Marker{{MarkVerb, Implementation, "T-abc123", "start"}}},
-		{"cd x && tiller check T-abc123 --json", []Marker{{MarkVerb, Checks, "T-abc123", "check"}}},
-		{"tiller submit task T-abc123 --pr 4", []Marker{{MarkVerb, Publishing, "T-abc123", "submit"}}},
-		{"tiller sync", []Marker{{MarkVerb, Closeout, "", "sync"}}},
-		{"tiller sync --json", []Marker{{MarkVerb, Closeout, "", "sync"}}},
-		{"tiller show T-abc123", []Marker{{MarkRead, "", "T-abc123", "show"}}},
-		{"tiller guide specify", []Marker{{MarkSkill, SpecWriting, "", "guide"}}},
-		{"tiller guide", []Marker{{MarkRead, "", "", "guide"}}},
-		{"tiller attest F-abc123", []Marker{{MarkVerb, AcceptanceEvals, "F-abc123", "attest"}}},
-		{"tiller approve e/f/t", []Marker{{MarkVerb, Other, "e/f/t", "approve"}}},
-		{"tiller rename --json E-abc123 x", []Marker{{MarkVerb, Planning, "E-abc123", "rename"}}},
-		{"(tiller spec F-abc123)", []Marker{{MarkVerb, SpecWriting, "F-abc123", "spec"}}},
-		{`bash -c "tiller cancel T-abc123"`, []Marker{{MarkVerb, Closeout, "T-abc123", "cancel"}}},
+		{"tiller start task T-abc123", []Marker{mv(Implementation, "start", "T-abc123")}},
+		{"cd x && tiller check T-abc123 --json", []Marker{mv(Checks, "check", "T-abc123")}},
+		{"tiller submit task T-abc123 --pr 4", []Marker{mv(Publishing, "submit", "T-abc123", "4")}},
+		{"tiller sync", []Marker{mv(Closeout, "sync")}},
+		{"tiller sync --json", []Marker{mv(Closeout, "sync")}},
+		{"tiller show T-abc123", []Marker{{Kind: MarkRead, Refs: []string{"T-abc123"}, Verb: "show"}}},
+		{"tiller guide specify", []Marker{{Kind: MarkSkill, Stage: SpecWriting, Verb: "guide"}}},
+		{"tiller guide", []Marker{{Kind: MarkRead, Verb: "guide"}}},
+		{"tiller attest F-abc123", []Marker{mv(AcceptanceEvals, "attest", "F-abc123")}},
+		{"tiller approve e/f/t", []Marker{mv(Other, "approve", "e/f/t")}},
+		{"tiller rename --json E-abc123 x", []Marker{mv(Planning, "rename", "E-abc123", "x")}},
+		{"(tiller spec F-abc123)", []Marker{mv(SpecWriting, "spec", "F-abc123")}},
+		{`bash -c "tiller cancel T-abc123"`, []Marker{mv(Closeout, "cancel", "T-abc123")}},
 		{"tiller sync; tiller start T-abc123", []Marker{
-			{MarkVerb, Closeout, "", "sync"},
-			{MarkVerb, Implementation, "T-abc123", "start"},
+			mv(Closeout, "sync"),
+			mv(Implementation, "start", "T-abc123"),
 		}},
 		{"cat .tiller/tiller.yml", nil},
 		{"go run ./cmd/tiller status", nil},
 		{"tiller frobnicate T-abc123", nil},
+	}
+	for _, c := range cases {
+		got := ShellMarkers(c.cmd)
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%q: got %+v, want %+v", c.cmd, got, c.want)
+		}
+	}
+}
+
+// TestShellMarkersRealShapes pins the command shapes found in real harness
+// logs: commands wrapped in JS or JSON text, escaped newlines inside a quoted
+// string, flags with values before the ref, and root flags before the verb.
+func TestShellMarkersRealShapes(t *testing.T) {
+	cases := []struct {
+		cmd  string
+		want []Marker
+	}{
+		{`exec_command({cmd: "tiller start task T-abc123"})`,
+			[]Marker{mv(Implementation, "start", "T-abc123")}},
+		{"exec_command({cmd: `tiller start T-abc123`})",
+			[]Marker{mv(Implementation, "start", "T-abc123")}},
+		{`await tools.exec_command({"cmd":"tiller check T-abc123 --json"})`,
+			[]Marker{mv(Checks, "check", "T-abc123")}},
+		{`exec_command({cmd: "tiller start T-abc123\ntiller check T-abc123"})`,
+			[]Marker{mv(Implementation, "start", "T-abc123"), mv(Checks, "check", "T-abc123")}},
+		{`exec_command({cmd: "tiller start T-abc123\tnow"})`,
+			[]Marker{mv(Implementation, "start", "T-abc123", "now")}},
+		{`exec_command({cmd: "tiller sync\"})`, []Marker{mv(Closeout, "sync")}},
+		{`exec_command({cmd: 'tiller show \'T-abc123\''})`,
+			[]Marker{{Kind: MarkRead, Refs: []string{"T-abc123"}, Verb: "show"}}},
+		{`tiller submit --pr 4 T-abc123`, []Marker{mv(Publishing, "submit", "4", "T-abc123")}},
+		{`tiller start --contributor jc T-abc123`, []Marker{mv(Implementation, "start", "jc", "T-abc123")}},
+		{`tiller sync --contributor jc`, []Marker{mv(Closeout, "sync", "jc")}},
+		{`tiller --json start T-abc123`, []Marker{mv(Implementation, "start", "T-abc123")}},
+		{`tiller --json=true start task T-abc123`, []Marker{mv(Implementation, "start", "T-abc123")}},
+		{`tiller --json`, nil},
+		{`tiller start T-abc123,`, []Marker{mv(Implementation, "start", "T-abc123")}},
+		{`tiller start 'T-abc123'`, []Marker{mv(Implementation, "start", "T-abc123")}},
+		{`tiller start T-abc123\x`, []Marker{mv(Implementation, "start", "T-abc123")}},
 	}
 	for _, c := range cases {
 		got := ShellMarkers(c.cmd)
@@ -61,7 +104,7 @@ func TestSkillMarker(t *testing.T) {
 		}
 	}
 	m, _ := SkillMarker("tiller-execute", "T-abc123")
-	if m.Ref != "T-abc123" {
-		t.Errorf("ref = %q", m.Ref)
+	if !reflect.DeepEqual(m.Refs, []string{"T-abc123"}) {
+		t.Errorf("refs = %q", m.Refs)
 	}
 }

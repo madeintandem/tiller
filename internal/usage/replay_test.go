@@ -7,8 +7,8 @@ import (
 
 func at(h, m int) time.Time { return time.Date(2026, 10, 20, h, m, 0, 0, time.UTC) }
 
-func verb(stage Stage, ref string) Marker {
-	return Marker{Kind: MarkVerb, Stage: stage, Ref: ref}
+func verb(stage Stage, refs ...string) Marker {
+	return Marker{Kind: MarkVerb, Stage: stage, Refs: refs}
 }
 
 func call(t time.Time, ms ...Marker) Call {
@@ -64,7 +64,7 @@ func TestCreditMarkerCallBelongsToNewState(t *testing.T) {
 func TestCreditBareMutatingVerbClearsNode(t *testing.T) {
 	s := Session{Calls: []Call{
 		call(at(10, 0), verb(Implementation, "T-a")),
-		call(at(10, 1), verb(Closeout, "")),
+		call(at(10, 1), verb(Closeout)),
 		call(at(10, 2)),
 	}}
 	rows := Credit(s, idResolver)
@@ -75,9 +75,9 @@ func TestCreditBareMutatingVerbClearsNode(t *testing.T) {
 
 func TestCreditReadAndSkillMarkers(t *testing.T) {
 	s := Session{Calls: []Call{
-		call(at(10, 0), Marker{Kind: MarkRead, Ref: "T-a"}),
+		call(at(10, 0), Marker{Kind: MarkRead, Refs: []string{"T-a"}}),
 		call(at(10, 1), Marker{Kind: MarkSkill, Stage: CodeReview}),
-		call(at(10, 2), Marker{Kind: MarkRead, Ref: "T-b"}),
+		call(at(10, 2), Marker{Kind: MarkRead, Refs: []string{"T-b"}}),
 	}}
 	rows := Credit(s, idResolver)
 	if r, ok := find(rows, "T-a", Other); !ok || r.Calls != 1 {
@@ -127,6 +127,38 @@ func TestCreditUnresolvedIDKeptAsWritten(t *testing.T) {
 	}
 	if _, ok := find(rows, "", Planning); !ok {
 		t.Errorf("rows = %+v", rows)
+	}
+}
+
+// TestCreditTakesFirstResolvingCandidate pins the ref choice among a
+// marker's candidates: the first that resolves, else the first shaped like a
+// node id, else none, so a flag value never wins over the node it precedes.
+func TestCreditTakesFirstResolvingCandidate(t *testing.T) {
+	resolve := func(ref string) string {
+		if ref == "e/f/t" {
+			return "T-key001"
+		}
+		return ""
+	}
+	cases := []struct {
+		name string
+		refs []string
+		want string
+	}{
+		{"flag value before key", []string{"4", "e/f/t"}, "T-key001"},
+		{"flag value before unresolved id", []string{"jc", "T-zzzzzz"}, "T-zzzzzz"},
+		{"resolving key beats earlier id", []string{"T-zzzzzz", "e/f/t"}, "T-key001"},
+		{"nothing usable clears", []string{"jc"}, ""},
+	}
+	for _, c := range cases {
+		s := Session{Calls: []Call{
+			call(at(10, 0), verb(Implementation, "T-a")),
+			call(at(10, 1), verb(Checks, c.refs...)),
+		}}
+		rows := Credit(s, resolve)
+		if r, ok := find(rows, c.want, Checks); !ok || r.Calls != 1 {
+			t.Errorf("%s: rows = %+v", c.name, rows)
+		}
 	}
 }
 

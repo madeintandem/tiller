@@ -43,18 +43,24 @@ type bucket struct {
 
 // Credit replays the session and its subagents in time order and returns the
 // model calls aggregated per UTC hour, node, stage and model, sorted by that
-// key. A ref the resolver cannot resolve is kept as written when it is shaped
-// like a node id, so an id from a since-changed ledger is not dropped.
+// key. Of a marker's candidate refs, the first the resolver resolves wins;
+// failing that, the first shaped like a node id is kept as written, so an id
+// from a since-changed ledger is not dropped; failing that, the marker names
+// no node.
 func Credit(s Session, resolve Resolver) []Row {
-	res := func(ref string) string {
-		if ref == "" {
-			return ""
+	res := func(refs ...string) string {
+		for _, ref := range refs {
+			if ref == "" {
+				continue
+			}
+			if id := resolve(ref); id != "" {
+				return id
+			}
 		}
-		if id := resolve(ref); id != "" {
-			return id
-		}
-		if idShaped.MatchString(ref) {
-			return ref
+		for _, ref := range refs {
+			if idShaped.MatchString(ref) {
+				return ref
+			}
 		}
 		return ""
 	}
@@ -83,7 +89,7 @@ func Credit(s Session, resolve Resolver) []Row {
 
 // replay walks s's calls from the starting state, crediting each into acc,
 // and replays each subagent from the state s held at the subagent's first call.
-func replay(s Session, start state, resolve Resolver, acc map[bucket]*Row) {
+func replay(s Session, start state, resolve refResolver, acc map[bucket]*Row) {
 	calls := append([]Call(nil), s.Calls...)
 	sort.SliceStable(calls, func(i, j int) bool { return calls[i].At.Before(calls[j].At) })
 
@@ -125,20 +131,23 @@ func replay(s Session, start state, resolve Resolver, acc map[bucket]*Row) {
 	}
 }
 
-func apply(st state, markers []Marker, resolve Resolver) state {
+// refResolver picks the node a marker's candidate refs name, or "".
+type refResolver func(refs ...string) string
+
+func apply(st state, markers []Marker, resolve refResolver) state {
 	for _, m := range markers {
 		switch m.Kind {
 		case MarkVerb:
 			st.stage = m.Stage
-			st.node = resolve(m.Ref)
+			st.node = resolve(m.Refs...)
 		case MarkSkill:
 			st.stage = m.Stage
-			if m.Ref != "" {
-				st.node = resolve(m.Ref)
+			if len(m.Refs) > 0 {
+				st.node = resolve(m.Refs...)
 			}
 		case MarkRead:
-			if st.node == "" && m.Ref != "" {
-				st.node = resolve(m.Ref)
+			if st.node == "" && len(m.Refs) > 0 {
+				st.node = resolve(m.Refs...)
 			}
 			if st.stage == "" {
 				st.stage = Other
