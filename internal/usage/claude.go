@@ -40,13 +40,20 @@ func (claudeReader) Discover(r Roots) ([]LogRef, error) {
 	if err != nil {
 		return nil, err
 	}
-	var prefixes []string
+	var exact []string
 	for _, p := range r.Project {
-		prefixes = append(prefixes, claudeFolder(p))
+		exact = append(exact, claudeFolder(p))
+	}
+	// A removed worktree under a dot directory of the checkout root encodes as
+	// the root plus "--". Anything else must equal a listed path, so a sibling
+	// project such as /p/app-two is never captured.
+	var rootPrefix string
+	if len(exact) > 0 {
+		rootPrefix = exact[0] + "--"
 	}
 	var refs []LogRef
 	for _, e := range entries {
-		if !e.IsDir() || !matchesFolder(e.Name(), prefixes) {
+		if !e.IsDir() || !matchesFolder(e.Name(), exact, rootPrefix) {
 			continue
 		}
 		folder := filepath.Join(projects, e.Name())
@@ -82,13 +89,13 @@ func (claudeReader) Discover(r Roots) ([]LogRef, error) {
 	return refs, nil
 }
 
-func matchesFolder(name string, prefixes []string) bool {
-	for _, p := range prefixes {
-		if name == p || strings.HasPrefix(name, p+"-") {
+func matchesFolder(name string, exact []string, rootPrefix string) bool {
+	for _, p := range exact {
+		if name == p {
 			return true
 		}
 	}
-	return false
+	return rootPrefix != "" && strings.HasPrefix(name, rootPrefix)
 }
 
 func (c claudeReader) Parse(logs []LogRef) (Session, error) {

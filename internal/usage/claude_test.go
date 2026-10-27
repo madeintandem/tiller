@@ -30,8 +30,11 @@ func TestClaudeDiscoverMatchesRootAndWorktreePrefix(t *testing.T) {
 	mustWrite(t, filepath.Join(proj, "-p-app", "s1", "subagents", "agent-a.jsonl"), line)
 	mustWrite(t, filepath.Join(proj, "-p-app--worktrees-x", "s2.jsonl"), line)
 	mustWrite(t, filepath.Join(proj, "-p-other", "s3.jsonl"), line)
+	mustWrite(t, filepath.Join(proj, "-p-app-two", "s4.jsonl"), line)
+	mustWrite(t, filepath.Join(proj, "-p-app--claude-worktrees-gone", "s5.jsonl"), line)
+	mustWrite(t, filepath.Join(proj, "-p-app-wt", "s6.jsonl"), line)
 
-	refs, err := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
+	refs, err := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app", "/p/app-wt"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +45,20 @@ func TestClaudeDiscoverMatchesRootAndWorktreePrefix(t *testing.T) {
 		}
 		got[r.Path] = r
 	}
-	if len(got) != 3 {
-		t.Fatalf("refs = %+v, want 3", refs)
+	if len(got) != 5 {
+		t.Fatalf("refs = %+v, want 5", refs)
+	}
+	for _, folder := range []string{"-p-app-two", "-p-other"} {
+		for path := range got {
+			if strings.Contains(path, string(filepath.Separator)+folder+string(filepath.Separator)) {
+				t.Errorf("%s discovered", folder)
+			}
+		}
+	}
+	for _, folder := range []string{"-p-app--claude-worktrees-gone", "-p-app-wt"} {
+		if _, ok := got[filepath.Join(proj, folder, map[string]string{"-p-app--claude-worktrees-gone": "s5", "-p-app-wt": "s6"}[folder]+".jsonl")]; !ok {
+			t.Errorf("%s not discovered", folder)
+		}
 	}
 	top := got[filepath.Join(proj, "-p-app", "s1.jsonl")]
 	if top.Session != "s1" || top.Parent != "" {
