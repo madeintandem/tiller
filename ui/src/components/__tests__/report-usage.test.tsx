@@ -131,6 +131,15 @@ describe("Agent use tab headline figures", () => {
     expect(svg.querySelector("[data-kind='output']")).not.toBeNull();
   });
 
+  it("totals the fresh tokens in the tooltip and stripes the partial legend swatch", async () => {
+    await renderTab(usage({ coverage: ["none", "partial", "full", "full"] }));
+    const fresh = chart("Fresh input, cache writes and output");
+    fireEvent.pointerMove(fresh.querySelector('[data-week="2"]')!);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Total");
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Total 63.0M");
+    expect(fresh.querySelector("[data-swatch='partial'] line.report-hatch")).not.toBeNull();
+  });
+
   it("formats token counts", () => {
     expect(formatTokens(6_030_000_000)).toBe("6.03B");
     expect(formatTokens(186_000_000)).toBe("186M");

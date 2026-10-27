@@ -28,7 +28,7 @@ const WEEK_LABEL_SPACING = 56;
 
 export interface LegendEntry {
   label: string;
-  swatch: "solid" | "dashed" | "hollow" | "dot" | "bar" | "hatched" | "outline";
+  swatch: "solid" | "dashed" | "hollow" | "dot" | "bar" | "hatched" | "outline" | "partial";
   color: string;
 }
 
@@ -57,6 +57,16 @@ export function HatchPattern({ id, color }: { id: string; color: string }) {
     <pattern id={id} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="5" height="5" style={{ fill: color }} />
       <line className="report-hatch-stripe" x1="0" y1="0" x2="0" y2="5" />
+    </pattern>
+  );
+}
+
+// PartialPattern is the stripe fill of a partial week's band: stripes on the
+// panel, drawn inside <defs>.
+export function PartialPattern({ id }: { id: string }) {
+  return (
+    <pattern id={id} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line className="report-hatch" x1="0" y1="0" x2="0" y2="6" />
     </pattern>
   );
 }
@@ -159,6 +169,14 @@ function Swatch({ entry }: { entry: LegendEntry }) {
           <rect x="3" y="1" width="12" height="8" rx="2" fill={`url(#${hatch})`} />
         </>
       )}
+      {swatch === "partial" && (
+        <>
+          <defs>
+            <PartialPattern id={hatch} />
+          </defs>
+          <rect x="3" y="1" width="12" height="8" rx="2" fill={`url(#${hatch})`} />
+        </>
+      )}
       {swatch === "outline" && (
         <rect x="3.75" y="1.75" width="10.5" height="6.5" {...DOTTED} style={{ fill: "none", stroke: color }} />
       )}
@@ -178,6 +196,62 @@ function Swatch({ entry }: { entry: LegendEntry }) {
         />
       )}
     </svg>
+  );
+}
+
+export interface StackSegment {
+  key: string;
+  value: number;
+  color: string;
+  hatched?: boolean;
+}
+
+// The surface gap between stacked segments.
+const STACK_GAP = 2;
+// The shortest a non-zero segment draws, so a count of 1 beside a large week
+// never vanishes. Segments stack on the one below them, so a raised segment
+// lifts the rest of its bar rather than overlapping it.
+const MIN_SEGMENT = 2;
+
+// StackedColumn draws one week's stack, segments bottom-up, the top one with
+// the rounded data end. A hatched segment fills with the pattern `hatchId`,
+// which the caller defines. week, when given, tags each segment.
+export function StackedColumn({
+  plot,
+  x,
+  w,
+  segments,
+  hatchId,
+  week,
+}: {
+  plot: WeekPlot;
+  x: number;
+  w: number;
+  segments: StackSegment[];
+  hatchId: string;
+  week?: number;
+}) {
+  const top = segments.map((k) => k.value > 0).lastIndexOf(true);
+  let below = 0;
+  let cursor = plot.y(0);
+  return (
+    <g>
+      {segments.map((k, s) => {
+        if (k.value === 0) return null;
+        const bottom = below > 0 ? cursor - STACK_GAP : cursor;
+        below += k.value;
+        const h = Math.max(MIN_SEGMENT, bottom - plot.y(below));
+        const y = bottom - h;
+        cursor = y;
+        const paint = k.hatched ? { fill: `url(#${hatchId})` } : { style: { fill: k.color } };
+        const tag = week === undefined ? {} : { "data-week-bar": week };
+        return s === top ? (
+          <path key={k.key} data-kind={k.key} {...tag} d={columnPath(x, y, w, h)} {...paint} />
+        ) : (
+          <rect key={k.key} data-kind={k.key} {...tag} x={x} y={y} width={w} height={h} {...paint} />
+        );
+      })}
+    </g>
   );
 }
 
@@ -231,9 +305,7 @@ export function WeekAxis({
   return (
     <g className="report-axis">
       <defs>
-        <pattern id={partial} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line className="report-hatch" x1="0" y1="0" x2="0" y2="6" />
-        </pattern>
+        <PartialPattern id={partial} />
       </defs>
       <rect
         data-partial="true"

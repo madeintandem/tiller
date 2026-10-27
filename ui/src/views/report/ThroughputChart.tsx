@@ -7,9 +7,9 @@
 import type { Report, ReportThroughputWeek } from "../../api";
 import ChartFrame, {
   HatchPattern,
+  StackedColumn,
   WeekAxis,
   WeekHits,
-  columnPath,
   usePatternId,
   weekPlot,
   weekRows,
@@ -28,13 +28,6 @@ const LEGEND: LegendEntry[] = KINDS.map((k) => ({
   swatch: k.hatched ? "hatched" : "bar",
   color: k.color,
 }));
-// The surface gap between stacked segments.
-const GAP = 2;
-// The shortest a non-zero segment draws, so a count of 1 beside a large week
-// never vanishes. Segments stack on the one below them, so a raised segment
-// lifts the rest of its bar rather than overlapping it.
-const MIN_SEGMENT = 2;
-
 function total(w: ReportThroughputWeek): number {
   return w.feature_work + w.fixes + w.upkeep;
 }
@@ -65,31 +58,16 @@ export default function ThroughputChart({ report }: { report: Report }) {
                 <HatchPattern key={k.key} id={hatch} color={k.color} />
               ))}
             </defs>
-            {series.map((w, i) => {
-              const x = plot.x(i) - barWidth / 2;
-              const top = KINDS.map((k) => w[k.key] > 0).lastIndexOf(true);
-              let below = 0;
-              let cursor = plot.y(0);
-              return (
-                <g key={weeks[i]}>
-                  {KINDS.map((k, s) => {
-                    const value = w[k.key];
-                    if (value === 0) return null;
-                    const bottom = below > 0 ? cursor - GAP : cursor;
-                    below += value;
-                    const h = Math.max(MIN_SEGMENT, bottom - plot.y(below));
-                    const y = bottom - h;
-                    cursor = y;
-                    const paint = k.hatched ? { fill: `url(#${hatch})` } : { style: { fill: k.color } };
-                    return s === top ? (
-                      <path key={k.key} data-kind={k.key} d={columnPath(x, y, barWidth, h)} {...paint} />
-                    ) : (
-                      <rect key={k.key} data-kind={k.key} x={x} y={y} width={barWidth} height={h} {...paint} />
-                    );
-                  })}
-                </g>
-              );
-            })}
+            {series.map((w, i) => (
+              <StackedColumn
+                key={weeks[i]}
+                plot={plot}
+                x={plot.x(i) - barWidth / 2}
+                w={barWidth}
+                hatchId={hatch}
+                segments={KINDS.map((k) => ({ key: k.key, value: w[k.key], color: k.color, hatched: k.hatched }))}
+              />
+            ))}
             <WeekHits
               plot={plot}
               onMove={(i, e) =>

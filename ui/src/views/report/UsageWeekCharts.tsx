@@ -9,6 +9,8 @@
 import type { UsageReport, UsageWeek } from "../../api";
 import ChartFrame, {
   HatchPattern,
+  PartialPattern,
+  StackedColumn,
   WeekAxis,
   WeekHits,
   columnPath,
@@ -22,10 +24,9 @@ import { useTooltip } from "./ChartTooltip";
 import { formatTokens } from "./format";
 
 const CACHE_READS = "var(--st-active)";
-const PARTLY: LegendEntry = { label: "Partly measured", swatch: "hatched", color: "var(--ink-3)" };
-// The surface gap between stacked segments, and the shortest a non-zero
-// segment draws (as in ThroughputChart).
-const GAP = 2;
+const PARTLY: LegendEntry = { label: "Partly measured", swatch: "partial", color: "var(--ink-3)" };
+
+// The shortest a non-zero cache-reads bar draws.
 const MIN_SEGMENT = 2;
 
 // Bottom of the stack first.
@@ -50,9 +51,7 @@ function PartialBands({ usage, plot }: { usage: UsageReport; plot: WeekPlot }) {
   return (
     <g>
       <defs>
-        <pattern id={id} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line className="report-hatch" x1="0" y1="0" x2="0" y2="6" />
-        </pattern>
+        <PartialPattern id={id} />
       </defs>
       {usage.coverage.map((c, i) =>
         c === "partial" ? (
@@ -155,37 +154,27 @@ export function FreshTokensChart({ usage }: { usage: UsageReport }) {
                 <HatchPattern key={k.key} id={hatch} color={k.color} />
               ))}
             </defs>
-            {usage.weekly.map((w, i) => {
-              if (!measured(usage, i)) return null;
-              const x = plot.x(i) - barWidth / 2;
-              const top = KINDS.map((k) => w[k.key] > 0).lastIndexOf(true);
-              let below = 0;
-              let cursor = plot.y(0);
-              return (
-                <g key={usage.weeks[i]}>
-                  {KINDS.map((k, s) => {
-                    const value = w[k.key];
-                    if (value === 0) return null;
-                    const bottom = below > 0 ? cursor - GAP : cursor;
-                    below += value;
-                    const h = Math.max(MIN_SEGMENT, bottom - plot.y(below));
-                    const y = bottom - h;
-                    cursor = y;
-                    const paint = k.hatched ? { fill: `url(#${hatch})` } : { style: { fill: k.color } };
-                    return s === top ? (
-                      <path key={k.key} data-kind={k.key} data-week-bar={i} d={columnPath(x, y, barWidth, h)} {...paint} />
-                    ) : (
-                      <rect key={k.key} data-kind={k.key} data-week-bar={i} x={x} y={y} width={barWidth} height={h} {...paint} />
-                    );
-                  })}
-                </g>
-              );
-            })}
+            {usage.weekly.map((w, i) =>
+              measured(usage, i) ? (
+                <StackedColumn
+                  key={usage.weeks[i]}
+                  plot={plot}
+                  x={plot.x(i) - barWidth / 2}
+                  w={barWidth}
+                  hatchId={hatch}
+                  week={i}
+                  segments={KINDS.map((k) => ({ key: k.key, value: w[k.key], color: k.color, hatched: k.hatched }))}
+                />
+              ) : null,
+            )}
             <WeekHits
               plot={plot}
               onMove={(i, e) => {
                 const w = usage.weekly[i];
-                show(e, tipRows(usage, i, w ? KINDS.map((k) => ({ label: k.label, value: w[k.key] })) : []));
+                show(
+                  e,
+                  tipRows(usage, i, w ? [...KINDS.map((k) => ({ label: k.label, value: w[k.key] })), { label: "Total", value: fresh(w) }] : []),
+                );
               }}
               onLeave={hide}
             />
