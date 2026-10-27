@@ -137,6 +137,14 @@
   font-size: 12px;
 }
 
+/* A percent label inside a segment: panel ink on the series fill. */
+.report-seg-label {
+  fill: var(--panel);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .report-row-title {
   fill: var(--ink);
   font-size: 13px;

@@ -6,13 +6,10 @@ import type { UsageReport } from "../../api";
 import { usageReportPath } from "../../api";
 import { useFetch } from "../../hooks";
 import ChartCard from "./ChartCard";
-import { formatTokens, formatWeek } from "./format";
+import { formatPercent, formatTokens, formatWeek } from "./format";
 import { Tile } from "./KpiStrip";
+import { ModelStageChart, StageChart } from "./StageCharts";
 import { CacheReadsChart, FreshTokensChart } from "./UsageWeekCharts";
-
-function percent(part: number, whole: number): string {
-  return whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "0%";
-}
 
 export default function AgentUseTab() {
   const { data, error } = useFetch<UsageReport>(usageReportPath);
@@ -28,7 +25,7 @@ export default function AgentUseTab() {
       </p>
       <dl className="report-kpis">
         <Tile label="Total tokens" value={formatTokens(kpis.total)} />
-        <Tile label="Cache reads" value={formatTokens(kpis.cache_read)} sub={`${percent(kpis.cache_read, kpis.total)} of all`} />
+        <Tile label="Cache reads" value={formatTokens(kpis.cache_read)} sub={`${formatPercent(kpis.cache_read, kpis.total)} of all`} />
         <Tile label="Fresh input and cache writes" value={formatTokens(kpis.input + kpis.cache_write)} />
         <Tile label="Output" value={formatTokens(kpis.output)} />
         <Tile
@@ -48,6 +45,12 @@ export default function AgentUseTab() {
         </ChartCard>
         <ChartCard>
           <FreshTokensChart usage={data} />
+        </ChartCard>
+        <ChartCard>
+          <StageChart usage={data} />
+        </ChartCard>
+        <ChartCard>
+          <ModelStageChart usage={data} />
         </ChartCard>
       </div>
     </>

@@ -172,3 +172,78 @@ describe("Agent use tab headline figures", () => {
     expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
   });
 });
+
+const STAGES = [
+  ["intake", "Intake"],
+  ["spec", "Spec"],
+  ["plan", "Plan"],
+  ["execute", "Execute"],
+  ["checks", "Checks"],
+  ["review", "Review"],
+  ["fix", "Fix"],
+  ["release", "Release"],
+  ["other", "Other work"],
+] as const;
+
+function stageUsage(): UsageReport {
+  const totals = [0, 100, 200, 4000, 1000, 500, 0, 200, 0];
+  const reads = [0, 90, 190, 3800, 949, 450, 0, 100, 0];
+  return usage({
+    stages: STAGES.map(([key, label], i) => ({ key, label, total: totals[i], cache_read: reads[i] })),
+    models: ["Opus", "Sonnet", "Haiku", "GPT", "Other"],
+    model_stages: STAGES.map(([key], i) => ({
+      stage: key,
+      totals: [0.5, 0.3, 0.15, 0.04, 0.01].map((share) => totals[i] * share),
+    })),
+  });
+}
+
+function stageRow(card: HTMLElement, key: string): Element {
+  return card.querySelector(`g[data-stage='${key}']`)!;
+}
+
+describe("Agent use stage and model charts", () => {
+  it("lists every stage with its cache-read share", async () => {
+    await renderTab(stageUsage());
+    const card = chart("Tokens by stage");
+    expect([...card.querySelectorAll(".report-row-title")].map((t) => t.textContent)).toEqual(STAGES.map(([, l]) => l));
+    const checks = within(stageRow(card, "checks") as HTMLElement);
+    expect(checks.getByText("94.9%")).toBeInTheDocument();
+    expect(checks.getByText(formatTokens(1000))).toBeInTheDocument();
+    // A stage with no tokens is an empty track labeled 0.
+    const intake = stageRow(card, "intake");
+    expect(intake.querySelector(".report-track")).not.toBeNull();
+    expect(within(intake as HTMLElement).getByText("0")).toBeInTheDocument();
+  });
+
+  it("labels wide model segments and names every model in the legend", async () => {
+    await renderTab(stageUsage());
+    const card = chart("Tokens by stage and model");
+    expect([...card.querySelectorAll(".report-legend li")].map((li) => li.textContent)).toEqual(["Opus", "Sonnet", "Haiku", "GPT", "Other"]);
+    // Zero-token stages are omitted.
+    expect(card.querySelectorAll("g[data-stage]")).toHaveLength(6);
+    // 50, 30 and 15 percent clear the 12 percent floor; 4 and 1 do not.
+    const labels = [...stageRow(card, "execute").querySelectorAll(".report-seg-label")].map((t) => t.textContent);
+    expect(labels).toEqual(["50%", "30%", "15%"]);
+    fireEvent.pointerMove(stageRow(card, "execute"));
+    const tip = screen.getByRole("tooltip");
+    expect(tip).toHaveTextContent("Execute");
+    expect(tip).toHaveTextContent("Opus 50%");
+    expect(tip).toHaveTextContent("GPT 4%");
+  });
+
+  it("keeps a model's color the same across charts", async () => {
+    await renderTab(stageUsage());
+    const card = chart("Tokens by stage and model");
+    const swatch = card.querySelectorAll(".report-legend li")[1].querySelector("rect")!;
+    const segment = stageRow(card, "execute").querySelectorAll("rect:not(.report-hit)")[1];
+    expect(swatch.getAttribute("style")).toContain("var(--st-in_review)");
+    expect(segment.getAttribute("style")).toBe(swatch.getAttribute("style"));
+  });
+
+  it("draws no NaN and says so without stage data", async () => {
+    const { container } = await renderTab(usage());
+    expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
+    expect(screen.getAllByText("No stage usage measured yet")).toHaveLength(2);
+  });
+});

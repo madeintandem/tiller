@@ -5,7 +5,7 @@
 // from tokens.css, and every legend entry pairs its color with text and a
 // swatch shape so no series is told apart by hue alone.
 
-import { useContext, useId, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { Fragment, useContext, useId, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import type { Report } from "../../api";
 
 import "./charts.css";
@@ -384,5 +384,61 @@ export function WeekHits({
         />
       ))}
     </g>
+  );
+}
+
+// The row pitch and bar thickness of the horizontal, row-per-item charts.
+export const ROW_HEIGHT = 44;
+export const BAR_HEIGHT = 12;
+// The surface gap between a bar's segments.
+export const SEGMENT_GAP = 2;
+
+export interface BarSegment {
+  key: string;
+  value: number;
+  color: string;
+  // label, when given, is drawn centered in the segment.
+  label?: string;
+}
+
+// SegmentedBar draws one horizontal bar of side-by-side segments with the
+// surface gap between them. Segments share `width` in proportion to their
+// values, or to `scale` when the bar is only a share of the full width (a
+// bar measured against the largest row). A bar with no value draws the empty
+// track. Zero-value segments draw nothing.
+export function SegmentedBar({
+  y,
+  width,
+  segments,
+  scale,
+}: {
+  y: number;
+  width: number;
+  segments: BarSegment[];
+  scale?: number;
+}) {
+  const drawn = segments.filter((s) => s.value > 0);
+  const sum = drawn.reduce((total, s) => total + s.value, 0);
+  const room = width - SEGMENT_GAP * Math.max(drawn.length - 1, 0);
+  let x = 0;
+  return (
+    <>
+      {sum === 0 && <rect className="report-track" x={0} y={y} width={width} height={BAR_HEIGHT} />}
+      {drawn.map((s) => {
+        const w = (room * s.value) / (scale ?? sum);
+        const at = x;
+        x += w + SEGMENT_GAP;
+        return (
+          <Fragment key={s.key}>
+            <rect x={at} y={y} width={w} height={BAR_HEIGHT} style={{ fill: s.color }} />
+            {s.label !== undefined && (
+              <text className="report-seg-label" x={at + w / 2} y={y + BAR_HEIGHT / 2} textAnchor="middle" dominantBaseline="middle">
+                {s.label}
+              </text>
+            )}
+          </Fragment>
+        );
+      })}
+    </>
   );
 }

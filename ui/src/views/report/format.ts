@@ -33,6 +33,11 @@ export function formatTokens(n: number): string {
   return String(Math.round(n));
 }
 
+// formatPercent is part of whole to one decimal, "94.9%"; "0%" of nothing.
+export function formatPercent(part: number, whole: number): string {
+  return whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "0%";
+}
+
 // formatAsOf is the header's "As of" time in the reader's locale.
 export function formatAsOf(iso: string): string {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });

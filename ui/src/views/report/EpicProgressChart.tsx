@@ -10,7 +10,7 @@
 // reading as zero progress. The dotted outline and the label carry it, not hue.
 
 import type { Report, ReportEpic } from "../../api";
-import ChartFrame, { DOTTED, tint, type LegendEntry } from "./ChartFrame";
+import ChartFrame, { BAR_HEIGHT, DOTTED, ROW_HEIGHT, SegmentedBar, tint, type LegendEntry } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
 
 const DONE = "var(--st-done)";
@@ -18,12 +18,8 @@ const IN_PROGRESS = "var(--st-active)";
 const NOT_STARTED = tint("var(--st-draft)");
 const PLANNED = "var(--ink-3)";
 const PLANNED_LABEL = "Not yet approved";
-const ROW = 44;
-const BAR = 12;
 // Room at the bar's end for "12 of 12 features" / "No features yet".
 const COUNT_WIDTH = 132;
-// The surface gap between segments.
-const GAP = 2;
 // A rough width per title character, to shorten a title before it runs past
 // the card; the full title stays in the tooltip.
 const CHAR_WIDTH = 7.5;
@@ -79,13 +75,13 @@ export default function EpicProgressChart({ report }: { report: Report }) {
       summary={summary(epics)}
       empty={empty}
       legend={legend}
-      height={epics.length * ROW + 4}
+      height={epics.length * ROW_HEIGHT + 4}
       tip={tip}
     >
       {(width) => {
         const barWidth = Math.max(width - COUNT_WIDTH, 0);
         return epics.map((epic, i) => {
-          const y = i * ROW;
+          const y = i * ROW_HEIGHT;
           if (epic.planned) {
             return (
               <g
@@ -94,7 +90,7 @@ export default function EpicProgressChart({ report }: { report: Report }) {
                 onPointerMove={(e) => show(e, [{ label: epic.title, value: plannedLabel(epic) }])}
                 onPointerLeave={hide}
               >
-                <rect className="report-hit" x={0} y={y} width={width} height={ROW} />
+                <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
                 <text className="report-row-title report-row-planned" x={0} y={y + 14}>
                   {shorten(epic.title, width)}
                 </text>
@@ -103,13 +99,13 @@ export default function EpicProgressChart({ report }: { report: Report }) {
                   x={DOTTED.strokeWidth / 2}
                   y={y + 22 + DOTTED.strokeWidth / 2}
                   width={Math.max(barWidth - DOTTED.strokeWidth, 0)}
-                  height={BAR - DOTTED.strokeWidth}
+                  height={BAR_HEIGHT - DOTTED.strokeWidth}
                   {...DOTTED}
                 />
                 <text
                   className="report-row-count report-row-planned"
                   x={width}
-                  y={y + 22 + BAR / 2}
+                  y={y + 22 + BAR_HEIGHT / 2}
                   textAnchor="end"
                   dominantBaseline="middle"
                 >
@@ -120,12 +116,10 @@ export default function EpicProgressChart({ report }: { report: Report }) {
           }
           const m = features(epic);
           const segments = [
-            { value: epic.done, color: DONE },
-            { value: epic.in_progress, color: IN_PROGRESS },
-            { value: epic.not_started, color: NOT_STARTED },
-          ].filter((s) => s.value > 0);
-          const room = barWidth - GAP * Math.max(segments.length - 1, 0);
-          let x = 0;
+            { key: "done", value: epic.done, color: DONE },
+            { key: "in_progress", value: epic.in_progress, color: IN_PROGRESS },
+            { key: "not_started", value: epic.not_started, color: NOT_STARTED },
+          ];
           return (
             <g
               key={i}
@@ -139,18 +133,12 @@ export default function EpicProgressChart({ report }: { report: Report }) {
               }
               onPointerLeave={hide}
             >
-              <rect className="report-hit" x={0} y={y} width={width} height={ROW} />
+              <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
               <text className="report-row-title" x={0} y={y + 14}>
                 {shorten(epic.title, width)}
               </text>
-              {m === 0 && <rect className="report-track" x={0} y={y + 22} width={barWidth} height={BAR} />}
-              {segments.map((s) => {
-                const w = (room * s.value) / m;
-                const seg = <rect key={s.color} x={x} y={y + 22} width={w} height={BAR} style={{ fill: s.color }} />;
-                x += w + GAP;
-                return seg;
-              })}
-              <text className="report-row-count" x={width} y={y + 22 + BAR / 2} textAnchor="end" dominantBaseline="middle">
+              <SegmentedBar y={y + 22} width={barWidth} segments={segments} />
+              <text className="report-row-count" x={width} y={y + 22 + BAR_HEIGHT / 2} textAnchor="end" dominantBaseline="middle">
                 {m === 0 ? "No features yet" : `${epic.done} of ${m} features`}
               </text>
             </g>
