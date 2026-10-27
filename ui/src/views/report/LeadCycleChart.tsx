@@ -6,7 +6,7 @@
 // not hue.
 
 import type { Report, ReportFeatureTime } from "../../api";
-import ChartFrame, { WeekAxis, weekPlot } from "./ChartFrame";
+import ChartFrame, { MedianLine, WeekAxis, weekPlot } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
 import { formatDays } from "./format";
 
@@ -47,19 +47,8 @@ export default function LeadCycleChart({ report }: { report: Report }) {
         return (
           <>
             <WeekAxis plot={plot} unit="days" />
-            <polyline
-              className="report-line"
-              data-series="cycle-median"
-              points={median((f) => f.cycle_median_days)}
-              style={{ stroke: CYCLE }}
-            />
-            <polyline
-              className="report-line"
-              data-series="lead-median"
-              points={median((f) => f.lead_median_days)}
-              strokeDasharray="6 4"
-              style={{ stroke: LEAD }}
-            />
+            <MedianLine series="cycle-median" points={median((f) => f.cycle_median_days)} color={CYCLE} />
+            <MedianLine series="lead-median" points={median((f) => f.lead_median_days)} color={LEAD} dashed />
             {features.map((f, i) => {
               const x = plot.date(f.completed_at);
               const cycleY = plot.y(f.cycle_days);

@@ -1,5 +1,5 @@
 // Pure scales for the Report page's hand-written SVG charts (D14). No chart
-// library: these four functions are the whole of the positioning math.
+// library: these functions are the whole of the positioning math.
 
 // linearScale maps a numeric domain onto a pixel range. A zero-width domain
 // (an all-zero series) maps every value to the range's start rather than
@@ -10,6 +10,27 @@ export function linearScale(domain: [number, number], range: [number, number]): 
   if (d1 === d0) return () => r0;
   const k = (r1 - r0) / (d1 - d0);
   return (v) => r0 + (v - d0) * k;
+}
+
+// logScale maps a positive domain onto a pixel range by the logarithm, so
+// each power of ten takes the same distance. A value at or below zero, or a
+// degenerate domain, maps to the range's start rather than to NaN or
+// Infinity.
+export function logScale(domain: [number, number], range: [number, number]): (v: number) => number {
+  const [d0, d1] = domain;
+  if (!(d0 > 0) || !(d1 > 0)) return () => range[0];
+  const linear = linearScale([Math.log10(d0), Math.log10(d1)], range);
+  return (v) => (v > 0 ? linear(Math.log10(v)) : range[0]);
+}
+
+// decadeTicks returns the powers of ten that bracket the values: at least two,
+// so a single value still gets an axis with a decade above and below it.
+export function decadeTicks(values: number[]): number[] {
+  const positive = values.filter((v) => v > 0 && Number.isFinite(v));
+  if (positive.length === 0) return [1, 10];
+  const low = Math.floor(Math.log10(Math.min(...positive)));
+  const high = Math.max(Math.ceil(Math.log10(Math.max(...positive))), low + 1);
+  return Array.from({ length: high - low + 1 }, (_, i) => 10 ** (low + i));
 }
 
 // niceTicks returns whole-number gridline values from 0 up to the first step

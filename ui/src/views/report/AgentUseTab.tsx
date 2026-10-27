@@ -6,6 +6,8 @@ import type { UsageReport } from "../../api";
 import { usageReportPath } from "../../api";
 import { useFetch } from "../../hooks";
 import ChartCard from "./ChartCard";
+import FeatureUsageChart from "./FeatureUsageChart";
+import ItemUsageChart from "./ItemUsageChart";
 import { formatPercent, formatTokens, formatWeek } from "./format";
 import { Tile } from "./KpiStrip";
 import { ModelStageChart, StageChart } from "./StageCharts";
@@ -52,6 +54,16 @@ export default function AgentUseTab() {
         <ChartCard>
           <ModelStageChart usage={data} />
         </ChartCard>
+        <div className="report-wide">
+          <ChartCard>
+            <FeatureUsageChart usage={data} />
+          </ChartCard>
+        </div>
+        <div className="report-wide">
+          <ChartCard>
+            <ItemUsageChart usage={data} />
+          </ChartCard>
+        </div>
       </div>
     </>
   );

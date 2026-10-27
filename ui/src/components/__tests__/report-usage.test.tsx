@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UsageReport } from "../../api";
 import AgentUseTab from "../../views/report/AgentUseTab";
 import { formatTokens } from "../../views/report/format";
+import { logScale } from "../../views/report/scale";
 
 afterEach(() => {
   cleanup();
@@ -259,5 +260,81 @@ describe("Agent use stage and model charts", () => {
     const { container } = await renderTab(usage());
     expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
     expect(screen.getAllByText("No stage usage measured yet")).toHaveLength(2);
+  });
+});
+
+const FEATURES = [
+  { title: "Search results", done: "2026-10-07T12:00:00Z", total: 12_000_000, median: 12_000_000 },
+  { title: "Export to CSV", done: "2026-10-14T12:00:00Z", total: 240_000_000, median: 126_000_000 },
+  { title: "Saved filters", done: "2026-10-21T12:00:00Z", total: 3_000_000, median: 12_000_000 },
+];
+
+const BANDS = ["< 1M", "1-3M", "3-10M", "10-30M", "30-100M", "100-300M", "300M-1B", "1B+"].map((label, i) => ({
+  label,
+  count: i === 3 ? 5 : i % 3,
+}));
+
+describe("Agent use feature and work-item charts", () => {
+  it("plots features on a labeled log axis", async () => {
+    const { container } = await renderTab(usage({ features: FEATURES }));
+    const card = chart("Tokens per feature");
+    expect(within(card).getByText("Tokens (log scale)")).toBeInTheDocument();
+    expect(card.querySelectorAll("circle[data-feature]")).toHaveLength(3);
+    expect(within(card).getByText("10.0M")).toBeInTheDocument();
+    expect(within(card).getByText("1.0M")).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
+  });
+
+  it("names the feature and its total on hover", async () => {
+    await renderTab(usage({ features: FEATURES }));
+    const dot = chart("Tokens per feature").querySelector("circle[data-feature]")!;
+    fireEvent.pointerMove(dot.closest("g")!, { clientX: 10, clientY: 10 });
+    expect(await screen.findByText("Search results")).toBeInTheDocument();
+    expect(screen.getByText("12.0M")).toBeInTheDocument();
+  });
+
+  it("notes features left out", async () => {
+    await renderTab(usage({ features: FEATURES, features_left_out: 4 }));
+    expect(within(chart("Tokens per feature")).getByText("4 earlier features not shown")).toBeInTheDocument();
+  });
+
+  it("draws one or no features without NaN", async () => {
+    const one = await renderTab(usage({ features: [FEATURES[0]] }));
+    expect(one.container.innerHTML).not.toMatch(/NaN|Infinity/);
+    expect(chart("Tokens per feature").querySelectorAll("circle[data-feature]")).toHaveLength(1);
+    cleanup();
+    await renderTab(usage());
+    expect(screen.getByText("No features completed yet")).toBeInTheDocument();
+  });
+
+  it("shows every band with its count", async () => {
+    await renderTab(usage({ item_bands: BANDS, kpis: { ...usage().kpis, median_per_item: 8_900_000, items: 12 } }));
+    const card = chart("Tokens per work item");
+    const labels = [...card.querySelectorAll("[data-band] .report-tick")].map((t) => t.textContent);
+    expect(labels).toEqual(BANDS.map((b) => b.label));
+    expect(within(card).getByText("5")).toBeInTheDocument();
+    expect(within(card).getByText("Median 8.9M · 12 items")).toBeInTheDocument();
+  });
+
+  it("notes items left out and items with no usage", async () => {
+    await renderTab(usage({ item_bands: BANDS, items_left_out: 3, items_unmeasured: 2 }));
+    expect(
+      within(chart("Tokens per work item")).getByText("Median 8.9M · 12 items · 3 earlier items not shown · 2 items with no usage recorded"),
+    ).toBeInTheDocument();
+    cleanup();
+    await renderTab(usage({ item_bands: BANDS, items_unmeasured: 1 }));
+    expect(within(chart("Tokens per work item")).getByText("Median 8.9M · 12 items · 1 item with no usage recorded")).toBeInTheDocument();
+  });
+
+  it("says so without any finished work item", async () => {
+    const { container } = await renderTab(usage());
+    expect(screen.getByText("No work items finished yet")).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
+  });
+
+  it("logScale maps decades evenly", () => {
+    const scale = logScale([1e6, 1e8], [0, 100]);
+    expect(scale(1e7)).toBe(50);
+    expect(scale(0)).toBe(0);
   });
 });

@@ -81,6 +81,8 @@ interface FrameProps {
   title: string;
   summary: string;
   empty?: string;
+  // note is a line of small print beneath the plot.
+  note?: string;
   legend?: LegendEntry[];
   height?: number;
   tip?: Tip | null;
@@ -90,7 +92,7 @@ interface FrameProps {
   children: (width: number, height: number) => ReactNode;
 }
 
-export default function ChartFrame({ title, summary, empty, legend, height, tip, children }: FrameProps) {
+export default function ChartFrame({ title, summary, empty, note, legend, height, tip, children }: FrameProps) {
   const { expanded, onExpand, titleId } = useContext(ChartExpand);
   const drawHeight = height ?? (expanded ? CHART_HEIGHT * EXPANDED_SCALE : CHART_HEIGHT);
   const plot = useRef<HTMLDivElement>(null);
@@ -151,6 +153,7 @@ export default function ChartFrame({ title, summary, empty, legend, height, tip,
           <ChartTooltip tip={tip ?? null} />
         </div>
       )}
+      {note && !empty && <p className="report-chart-note">{note}</p>}
     </section>
   );
 }
@@ -285,6 +288,46 @@ export function weekPlot(report: Pick<Report, "weeks" | "week_boundaries">, widt
   };
 }
 
+// YGrid draws a gridline and its label at each tick, in the plot's margins.
+export function YGrid({
+  ticks,
+  y,
+  width,
+  format,
+}: {
+  ticks: number[];
+  y: (value: number) => number;
+  width: number;
+  format?: (tick: number) => string;
+}) {
+  return (
+    <>
+      {ticks.map((t) => (
+        <g key={t}>
+          <line className="report-grid" x1={MARGIN.left} x2={width - MARGIN.right} y1={y(t)} y2={y(t)} />
+          <text className="report-tick" x={MARGIN.left - 8} y={y(t)} textAnchor="end" dominantBaseline="middle">
+            {format ? format(t) : t}
+          </text>
+        </g>
+      ))}
+    </>
+  );
+}
+
+// MedianLine is a rolling-median line through points ("x,y x,y ..."); dashed
+// lines carry their identity in the dash, not the hue.
+export function MedianLine({ series, points, color, dashed }: { series: string; points: string; color: string; dashed?: boolean }) {
+  return (
+    <polyline
+      className="report-line"
+      data-series={series}
+      points={points}
+      strokeDasharray={dashed ? "6 4" : undefined}
+      style={{ stroke: color }}
+    />
+  );
+}
+
 // WeekAxis draws beneath a weekly chart's marks: gridlines at niceTicks, week
 // labels thinned to fit, and the current week's band hatched as partial
 // (D5) so a week in progress does not read as a slump.
@@ -315,14 +358,7 @@ export function WeekAxis({
         height={height - MARGIN.top - MARGIN.bottom}
         fill={`url(#${partial})`}
       />
-      {ticks.map((t) => (
-        <g key={t}>
-          <line className="report-grid" x1={MARGIN.left} x2={width - MARGIN.right} y1={plot.y(t)} y2={plot.y(t)} />
-          <text className="report-tick" x={MARGIN.left - 8} y={plot.y(t)} textAnchor="end" dominantBaseline="middle">
-            {format ? format(t) : t}
-          </text>
-        </g>
-      ))}
+      <YGrid ticks={ticks} y={plot.y} width={width} format={format} />
       {unit && (
         <text className="report-tick" x={MARGIN.left} y={MARGIN.top - 6}>
           {unit}

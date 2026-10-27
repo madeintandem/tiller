@@ -57,6 +57,12 @@
   font-size: 0.875rem;
 }
 
+.report-chart-note {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+
 .report-plot {
   position: relative;
   width: 100%;
