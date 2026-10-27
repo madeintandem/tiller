@@ -1038,17 +1038,23 @@ func humanSyncAwaiting(tree *store.Tree, res mutate.SyncResult) string {
 // work succeeded and returns the one warning line it earns, or "". When there
 // is something to write, the tree is reloaded first, because sync's commit
 // advanced the generation and the old tree's commit would be refused as stale.
-// A failure here is a warning, never a refusal.
-func syncCaptureUsage(tree *store.Tree) string {
+// A failure here is a warning, never a refusal, and so is a panic: sync has
+// already written its own state, so a reader bug must not crash it.
+func syncCaptureUsage(tree *store.Tree) (warning string) {
 	if !tree.Manifest.Usage.Capture {
 		return ""
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			warning = fmt.Sprintf("Agent usage not captured: %v", r)
+		}
+	}()
 	onIntegration, _, integration, err := usageBranch(tree)
 	if err != nil {
 		return "Agent usage not captured: " + err.Error()
 	}
 	if !onIntegration {
-		return fmt.Sprintf("Agent usage not captured: not on %s.", integration)
+		return fmt.Sprintf("Agent usage is captured on %s; skipped here.", integration)
 	}
 	res, err := captureUsage(tree, time.Now(), 2*time.Second, true)
 	if err != nil {

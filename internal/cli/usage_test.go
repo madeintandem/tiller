@@ -252,6 +252,22 @@ func TestSyncStaleCaptureIsAWarning(t *testing.T) {
 	require.NoFileExists(t, filepath.Join(dir, ".tiller", ".cache", "usage.yml"))
 }
 
+// A panic inside capture (a reader bug) must not crash a sync that already
+// wrote its own state: it becomes the usage_warning line, and no cursor is
+// saved.
+func TestSyncCapturePanicIsAWarning(t *testing.T) {
+	dir, home := usageRepo(t)
+	layClaudeSession(t, home)
+	usageBeforeCommit = func(*store.Tree) { panic("reader bug") }
+	t.Cleanup(func() { usageBeforeCommit = nil })
+
+	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, `"ok": true`)
+	require.Equal(t, "Agent usage not captured: reader bug", jsonData(t, out)["usage_warning"])
+	require.NoFileExists(t, filepath.Join(dir, ".tiller", ".cache", "usage.yml"))
+}
+
 // backdateEvents moves every recorded event to before the fixture session.
 func backdateEvents(t *testing.T, dir string) {
 	t.Helper()
@@ -338,7 +354,7 @@ func TestSyncNotesCaptureSkippedOffIntegrationBranch(t *testing.T) {
 
 	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--into", "main")
 	require.Equal(t, 0, code, out)
-	require.Contains(t, out, "Agent usage not captured: not on main.")
+	require.Contains(t, out, "Agent usage is captured on main; skipped here.")
 	require.NoDirExists(t, filepath.Join(dir, ".tiller", "usage"))
 }
 
