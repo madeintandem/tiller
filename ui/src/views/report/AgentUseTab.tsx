@@ -20,6 +20,10 @@ export default function AgentUseTab() {
   if (data.harnesses.length === 0) return <p className="muted">No agent usage recorded yet</p>;
   const { kpis } = data;
   const median = kpis.median_per_item;
+  // The tied share stays visible when no median exists yet; it is only
+  // unknown when nothing was measured at all.
+  const tied = kpis.total > 0 ? `${Math.round(kpis.tied_share * 100)}% of tokens tied to a work item` : undefined;
+  const items = `${kpis.items} ${kpis.items === 1 ? "item" : "items"}`;
   return (
     <>
       <p className="report-usage-note">
@@ -34,11 +38,7 @@ export default function AgentUseTab() {
           label="Median per work item"
           value={median === null ? "Not yet" : formatTokens(median)}
           muted={median === null}
-          sub={
-            median === null
-              ? undefined
-              : `${kpis.items} ${kpis.items === 1 ? "item" : "items"} · ${Math.round(kpis.tied_share * 100)}% of tokens tied to a work item`
-          }
+          sub={median === null || tied === undefined ? tied : `${items} · ${tied}`}
         />
       </dl>
       <div className="report-charts">

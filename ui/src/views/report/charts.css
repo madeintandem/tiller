@@ -143,6 +143,12 @@
   font-size: 12px;
 }
 
+/* A count that is unknown rather than zero, such as the cache-read share of
+   a stage with no tokens. */
+.report-row-count--muted {
+  fill: var(--ink-3);
+}
+
 /* A percent label inside a segment: panel ink on the series fill, which
    reaches 4.5:1 on the blue, plum and green fills in both themes. The gold
    and gray fills need their own ink (checked against tokens.css):

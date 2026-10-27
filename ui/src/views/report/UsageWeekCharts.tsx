@@ -3,11 +3,14 @@
 // stacked bottom-up. A week with partial coverage keeps its bar under the
 // hatched band the page already uses for a week in progress, and the legend
 // gains "Partly measured" only when such a week is present. An unmeasured
-// week draws nothing: missing usage is unknown, never zero. Series are told
-// apart by legend text and stack position, and Cache writes is also hatched.
+// week is never drawn as zero: its column is an empty dotted outline, the
+// idiom Epic progress uses for "Not yet approved", and the legend gains "Not
+// measured" only when such a week is present. Series are told apart by
+// legend text and stack position, and Cache writes is also hatched.
 
 import type { UsageReport, UsageWeek } from "../../api";
 import ChartFrame, {
+  DOTTED,
   HatchPattern,
   PartialPattern,
   StackedColumn,
@@ -25,6 +28,7 @@ import { formatTokens } from "./format";
 
 const CACHE_READS = "var(--st-active)";
 const PARTLY: LegendEntry = { label: "Partly measured", swatch: "partial", color: "var(--ink-3)" };
+const NOT_MEASURED: LegendEntry = { label: "Not measured", swatch: "outline", color: "var(--ink-3)" };
 
 // The shortest a non-zero cache-reads bar draws.
 const MIN_SEGMENT = 2;
@@ -38,9 +42,38 @@ const KINDS: { key: keyof UsageWeek; label: string; color: string; hatched?: boo
 
 const measured = (usage: UsageReport, i: number) => usage.coverage[i] !== "none" && usage.weekly[i] !== undefined;
 const hasPartial = (usage: UsageReport) => usage.coverage.includes("partial");
+const hasUnmeasured = (usage: UsageReport) => usage.coverage.includes("none");
 
-function withPartly(legend: LegendEntry[], usage: UsageReport): LegendEntry[] {
-  return hasPartial(usage) ? [...legend, PARTLY] : legend;
+// withCoverage adds the partial and unmeasured legend entries the chart
+// draws, each only when such a week is present.
+function withCoverage(legend: LegendEntry[], usage: UsageReport): LegendEntry[] {
+  return [...legend, ...(hasPartial(usage) ? [PARTLY] : []), ...(hasUnmeasured(usage) ? [NOT_MEASURED] : [])];
+}
+
+// UnmeasuredColumns draws each unmeasured week as an empty dotted column the
+// height of the plot, so the week reads as not measured rather than zero.
+function UnmeasuredColumns({ usage, plot, barWidth }: { usage: UsageReport; plot: WeekPlot; barWidth: number }) {
+  if (!hasUnmeasured(usage)) return null;
+  const top = plot.y(plot.ticks[plot.ticks.length - 1]);
+  return (
+    <g>
+      {usage.coverage.map((c, i) =>
+        c === "none" ? (
+          <rect
+            key={usage.weeks[i]}
+            data-not-measured={i}
+            className="report-ghost-track"
+            x={plot.x(i) - barWidth / 2 + DOTTED.strokeWidth / 2}
+            y={top + DOTTED.strokeWidth / 2}
+            width={Math.max(barWidth - DOTTED.strokeWidth, 0)}
+            height={Math.max(plot.y(0) - top - DOTTED.strokeWidth, 0)}
+            rx={2}
+            {...DOTTED}
+          />
+        ) : null,
+      )}
+    </g>
+  );
 }
 
 // PartialBands hatches each partially measured week's band.
@@ -89,10 +122,10 @@ export function CacheReadsChart({ usage }: { usage: UsageReport }) {
   const empty = peak(usage, (w) => w.cache_read) === 0 ? "No cache reads measured yet" : undefined;
   return (
     <ChartFrame
-      title="Cache reads by week"
+      title="Cache reads per week"
       summary={`${formatTokens(usage.kpis.cache_read)} cache reads over ${usage.weeks.length} weeks`}
       empty={empty}
-      legend={withPartly([{ label: "Cache reads", swatch: "bar", color: CACHE_READS }], usage)}
+      legend={withCoverage([{ label: "Cache reads", swatch: "bar", color: CACHE_READS }], usage)}
       tip={tip}
     >
       {(width, height) => {
@@ -102,6 +135,7 @@ export function CacheReadsChart({ usage }: { usage: UsageReport }) {
           <>
             <WeekAxis plot={plot} format={formatTokens} />
             <PartialBands usage={usage} plot={plot} />
+            <UnmeasuredColumns usage={usage} plot={plot} barWidth={barWidth} />
             {usage.weekly.map((w, i) => {
               if (!measured(usage, i) || w.cache_read === 0) return null;
               const y = plot.y(w.cache_read);
@@ -136,10 +170,10 @@ export function FreshTokensChart({ usage }: { usage: UsageReport }) {
   const legend: LegendEntry[] = KINDS.map((k) => ({ label: k.label, swatch: k.hatched ? "hatched" : "bar", color: k.color }));
   return (
     <ChartFrame
-      title="Fresh input, cache writes and output"
+      title="Fresh tokens per week"
       summary={`${formatTokens(kpis.input + kpis.cache_write)} fresh input and cache writes, ${formatTokens(kpis.output)} output over ${usage.weeks.length} weeks`}
       empty={empty}
-      legend={withPartly(legend, usage)}
+      legend={withCoverage(legend, usage)}
       tip={tip}
     >
       {(width, height) => {
@@ -149,6 +183,7 @@ export function FreshTokensChart({ usage }: { usage: UsageReport }) {
           <>
             <WeekAxis plot={plot} format={formatTokens} />
             <PartialBands usage={usage} plot={plot} />
+            <UnmeasuredColumns usage={usage} plot={plot} barWidth={barWidth} />
             <defs>
               {KINDS.filter((k) => k.hatched).map((k) => (
                 <HatchPattern key={k.key} id={hatch} color={k.color} />

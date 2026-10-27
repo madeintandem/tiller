@@ -94,14 +94,41 @@ describe("Agent use tab headline figures", () => {
     expect(screen.getByText("12 items · 84% of tokens tied to a work item")).toBeInTheDocument();
   });
 
-  it("reads Not yet when there is no median", async () => {
+  it("reads Not yet when there is no median and keeps the tied share", async () => {
     await renderTab(usage({ kpis: { ...usage().kpis, median_per_item: null, items: 0 } }));
     expect(screen.getByText("Not yet")).toBeInTheDocument();
+    expect(screen.getByText("84% of tokens tied to a work item")).toBeInTheDocument();
+  });
+
+  it("names the weekly charts as the design does", async () => {
+    await renderTab(usage());
+    for (const title of ["Cache reads per week", "Fresh tokens per week", "Tokens by stage", "Model by stage"]) {
+      expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
+    }
+  });
+
+  it("outlines an unmeasured week with dots and names it in the legend", async () => {
+    const { unmount } = await renderTab(usage());
+    for (const title of ["Cache reads per week", "Fresh tokens per week"]) {
+      const card = chart(title);
+      const ghosts = card.querySelectorAll(".report-plot svg [data-not-measured]");
+      // Only week 0 is not measured; its column is an empty dotted outline.
+      expect([...ghosts].map((g) => g.getAttribute("data-not-measured"))).toEqual(["0"]);
+      expect(ghosts[0].getAttribute("stroke-dasharray")).toBe("0.1 3.5");
+      expect(ghosts[0].getAttribute("class")).toContain("report-ghost-track");
+      const entry = within(card.querySelector(".report-legend")! as HTMLElement).getByText("Not measured");
+      expect(entry.closest("li")!.querySelector("[data-swatch='outline']")).not.toBeNull();
+    }
+    unmount();
+
+    await renderTab(usage({ coverage: ["full", "full", "full", "full"] }));
+    expect(document.querySelectorAll("[data-not-measured]")).toHaveLength(0);
+    expect(screen.queryByText("Not measured")).not.toBeInTheDocument();
   });
 
   it("marks partial weeks and adds the legend entry", async () => {
     const { unmount } = await renderTab(usage({ coverage: ["none", "partial", "full", "full"] }));
-    const fresh = chart("Fresh input, cache writes and output");
+    const fresh = chart("Fresh tokens per week");
     expect(within(fresh).getByText("Partly measured")).toBeInTheDocument();
     fireEvent.pointerMove(fresh.querySelector('[data-week="1"]')!);
     expect(screen.getByRole("tooltip")).toHaveTextContent("Partly measured");
@@ -113,7 +140,7 @@ describe("Agent use tab headline figures", () => {
 
   it("draws no bar for an unmeasured week", async () => {
     await renderTab(usage());
-    for (const title of ["Cache reads by week", "Fresh input, cache writes and output"]) {
+    for (const title of ["Cache reads per week", "Fresh tokens per week"]) {
       const svg = chart(title).querySelector(".report-plot svg")!;
       // Weeks 1 to 3 are measured; week 0 is not.
       expect(svg.querySelectorAll("[data-week-bar='0']")).toHaveLength(0);
@@ -126,7 +153,7 @@ describe("Agent use tab headline figures", () => {
 
   it("stacks fresh input, cache writes and output with cache writes hatched", async () => {
     await renderTab(usage());
-    const svg = chart("Fresh input, cache writes and output").querySelector(".report-plot svg")!;
+    const svg = chart("Fresh tokens per week").querySelector(".report-plot svg")!;
     expect(svg.querySelector("[data-kind='cache_write']")!.getAttribute("fill")).toMatch(/^url\(#/);
     expect(svg.querySelector("[data-kind='input']")).not.toBeNull();
     expect(svg.querySelector("[data-kind='output']")).not.toBeNull();
@@ -134,7 +161,7 @@ describe("Agent use tab headline figures", () => {
 
   it("totals the fresh tokens in the tooltip and stripes the partial legend swatch", async () => {
     await renderTab(usage({ coverage: ["none", "partial", "full", "full"] }));
-    const fresh = chart("Fresh input, cache writes and output");
+    const fresh = chart("Fresh tokens per week");
     fireEvent.pointerMove(fresh.querySelector('[data-week="2"]')!);
     expect(screen.getByRole("tooltip")).toHaveTextContent("Total");
     expect(screen.getByRole("tooltip")).toHaveTextContent("Total 63.0M");
@@ -211,15 +238,21 @@ describe("Agent use stage and model charts", () => {
     const checks = within(stageRow(card, "checks") as HTMLElement);
     expect(checks.getByText("94.9%")).toBeInTheDocument();
     expect(checks.getByText(formatTokens(1000))).toBeInTheDocument();
-    // A stage with no tokens is an empty track labeled 0.
+    // A stage with no tokens is an empty track labeled 0, and its cache-read
+    // share is unknown, not 0%: a muted n/a.
     const intake = stageRow(card, "intake");
     expect(intake.querySelector(".report-track")).not.toBeNull();
     expect(within(intake as HTMLElement).getByText("0")).toBeInTheDocument();
+    const na = within(intake as HTMLElement).getByText("n/a");
+    expect(na.getAttribute("class")).toContain("report-row-count--muted");
+    expect(within(intake as HTMLElement).queryByText("0%")).not.toBeInTheDocument();
+    fireEvent.pointerMove(intake);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Cache read share n/a");
   });
 
   it("labels wide model segments and names every model in the legend", async () => {
     await renderTab(stageUsage());
-    const card = chart("Tokens by stage and model");
+    const card = chart("Model by stage");
     expect([...card.querySelectorAll(".report-legend li")].map((li) => li.textContent)).toEqual(["Opus", "Sonnet", "Haiku", "GPT", "Other"]);
     // Zero-token stages are omitted.
     expect(card.querySelectorAll("g[data-stage]")).toHaveLength(6);
@@ -235,7 +268,7 @@ describe("Agent use stage and model charts", () => {
 
   it("keeps a model's color the same across charts", async () => {
     await renderTab(stageUsage());
-    const card = chart("Tokens by stage and model");
+    const card = chart("Model by stage");
     const swatch = card.querySelectorAll(".report-legend li")[1].querySelector("rect")!;
     const segment = stageRow(card, "execute").querySelectorAll("rect:not(.report-hit)")[1];
     expect(swatch.getAttribute("style")).toContain("var(--st-in_review)");
@@ -244,7 +277,7 @@ describe("Agent use stage and model charts", () => {
 
   it("inks labels on the gold and gray fills apart from the panel ink", async () => {
     await renderTab(stageUsage());
-    const row = stageRow(chart("Tokens by stage and model"), "execute");
+    const row = stageRow(chart("Model by stage"), "execute");
     const [opus, sonnet] = [...row.querySelectorAll(".report-seg-label")];
     expect(opus.getAttribute("class")).toBe("report-seg-label");
     expect(sonnet.getAttribute("class")).toContain("report-seg-label--on-gold");
@@ -252,7 +285,7 @@ describe("Agent use stage and model charts", () => {
     other.model_stages = other.model_stages.map((r) => ({ ...r, totals: [0, 0, 0, 0, r.totals.reduce((a, b) => a + b, 0)] }));
     cleanup();
     await renderTab(other);
-    const gray = stageRow(chart("Tokens by stage and model"), "execute").querySelector(".report-seg-label")!;
+    const gray = stageRow(chart("Model by stage"), "execute").querySelector(".report-seg-label")!;
     expect(gray.getAttribute("class")).toContain("report-seg-label--on-gray");
   });
 
