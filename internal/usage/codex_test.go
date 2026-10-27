@@ -3,6 +3,7 @@ package usage
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -97,5 +98,35 @@ func TestCodexMarkersAttachToNextTokenCount(t *testing.T) {
 	}
 	if len(s.Calls[1].Markers) != 0 {
 		t.Errorf("second call markers = %+v", s.Calls[1].Markers)
+	}
+}
+
+func TestCodexFirstLineNotSessionMetaOrTooLongIsNotDiscovered(t *testing.T) {
+	home := t.TempDir()
+	dir := filepath.Join(home, ".codex", "sessions", "2026", "09", "07")
+	mustWrite(t, filepath.Join(dir, "rollout-a.jsonl"), `{"type":"turn_context","payload":{"cwd":"/p/app"}}`+"\n")
+	big := `{"type":"session_meta","payload":{"cwd":"/p/app","instructions":"` + strings.Repeat("x", maxLineBytes+10) + `"}}` + "\n"
+	mustWrite(t, filepath.Join(dir, "rollout-b.jsonl"), big)
+	mustWrite(t, filepath.Join(dir, "rollout-c.jsonl"), codexRollout("/p/app"))
+	refs, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(refs) != 1 || refs[0].Session != "rollout-c" {
+		t.Fatalf("refs = %+v", refs)
+	}
+}
+
+func TestCodexCmdArgumentsStillYieldMarkers(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "r.jsonl")
+	mustWrite(t, path, `{"timestamp":"2026-09-07T19:41:19.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"tiller start task T-abc123\"}"}}`+"\n"+
+		`{"timestamp":"2026-09-07T19:41:22.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":10,"output_tokens":1}}}}`+"\n")
+	calls, err := parseCodexLog(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Marker{{Kind: MarkVerb, Stage: Implementation, Ref: "T-abc123", Verb: "start"}}
+	if len(calls) != 1 || !reflect.DeepEqual(calls[0].Markers, want) {
+		t.Fatalf("calls = %+v", calls)
 	}
 }

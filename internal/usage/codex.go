@@ -1,9 +1,11 @@
 package usage
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -22,7 +24,8 @@ func NewCodexReader() Reader { return codexReader{} }
 func (codexReader) Harness() string { return codexHarness }
 
 // codexSessionCwd returns the working directory recorded on the first line of
-// a rollout file, the session_meta line. It reads no further than that line.
+// a rollout file, the session_meta line. It reads only that line; a line over
+// maxLineBytes is an error, so the file is not ours.
 func codexSessionCwd(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -35,7 +38,22 @@ func codexSessionCwd(path string) (string, error) {
 			Cwd string `json:"cwd"`
 		} `json:"payload"`
 	}
-	if err := json.NewDecoder(f).Decode(&first); err != nil {
+	br := bufio.NewReaderSize(f, 64<<10)
+	var line []byte
+	for {
+		chunk, err := br.ReadSlice('\n')
+		line = append(line, chunk...)
+		if len(line) > maxLineBytes {
+			return "", errors.New("usage: first line of " + path + " is too long")
+		}
+		if err == nil || errors.Is(err, io.EOF) {
+			break
+		}
+		if !errors.Is(err, bufio.ErrBufferFull) {
+			return "", err
+		}
+	}
+	if err := json.Unmarshal(trimEOL(line), &first); err != nil {
 		return "", err
 	}
 	if first.Type != "session_meta" {
@@ -122,13 +140,20 @@ var codexKeep = [][]byte{
 }
 
 // codexCommand reads a shell tool's arguments. A JSON object with a command
-// array becomes the array joined with spaces; any other string passes through.
+// array becomes the array joined with spaces, one with a cmd string (Codex's
+// exec_command) yields that string; any other string passes through.
 func codexCommand(args string) string {
 	var a struct {
 		Command []string `json:"command"`
+		Cmd     string   `json:"cmd"`
 	}
-	if json.Unmarshal([]byte(args), &a) == nil && len(a.Command) > 0 {
-		return strings.Join(a.Command, " ")
+	if json.Unmarshal([]byte(args), &a) == nil {
+		if len(a.Command) > 0 {
+			return strings.Join(a.Command, " ")
+		}
+		if a.Cmd != "" {
+			return a.Cmd
+		}
 	}
 	return args
 }
