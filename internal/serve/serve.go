@@ -20,6 +20,7 @@ import (
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/readinput"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/usage"
 	"github.com/madeintandem/tiller/internal/vcs"
 	"github.com/madeintandem/tiller/internal/views"
 )
@@ -38,8 +39,10 @@ import (
 // assets: the Authority's Host set, plus Origin and fetch-metadata checks,
 // plus the Referer check and framing headers on network binds.
 func Handler(root string, assets fs.FS, version string, authz *Authority) http.Handler {
-	// The console is the one long-lived reader of the event stream.
+	// The console is the one long-lived reader of the event stream and of
+	// the committed usage files.
 	events.EnableProcessCache()
+	usage.EnableProcessCache()
 	return newMux(root, assets, newVisitState(), version, authz)
 }
 
@@ -84,6 +87,8 @@ func newMux(root string, assets fs.FS, visits *visitState, version string, authz
 	// line or it falls to the /api/ catch-all's 404.
 	mux.HandleFunc("/api/recap/peek", recapPeekHandler(root, visits))
 	mux.HandleFunc("/api/report", ReportHandler(root))
+	// Exact match again: the Agent use tab's payload needs its own line.
+	mux.HandleFunc("/api/report/usage", UsageReportHandler(root))
 	mux.HandleFunc("/api/search", SearchHandler(root))
 	mux.HandleFunc("/api/query", QueryHandler(root))
 	mux.HandleFunc("/api/prose", ProseHandler(root))

@@ -115,21 +115,35 @@ func Decode(data []byte) (File, error) {
 }
 
 // LoadFiles reads every .tiller/usage/<harness>/*.yml under root. A missing
-// usage directory is an empty result.
+// usage directory is an empty result. A file that does not parse fails the
+// whole read, naming its path. With the process cache on, an unchanged file
+// is not reparsed, and the returned Files are shared read-only values that
+// callers must not modify.
 func LoadFiles(root string) ([]File, error) {
-	harnesses, err := store.ReadRepositoryDirectory(root, usageDir)
+	reader, err := store.OpenRepositoryReader(root)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	harnesses, err := reader.ReadDirectory(usageDir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	cached := processCache.Load()
+	var known map[string]cachedFile
+	if cached != nil {
+		known = cached.known(root)
+	}
+	listed := map[string]cachedFile{}
 	var files []File
 	for _, h := range harnesses {
 		if !h.IsDir() {
 			continue
 		}
-		entries, err := store.ReadRepositoryDirectory(root, path.Join(usageDir, h.Name()))
+		entries, err := reader.ReadDirectory(path.Join(usageDir, h.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +152,16 @@ func LoadFiles(root string) ([]File, error) {
 				continue
 			}
 			rel := path.Join(usageDir, h.Name(), e.Name())
-			data, err := store.ReadRepositoryFile(root, rel)
+			info, err := e.Info()
+			if err != nil {
+				return nil, err
+			}
+			if prior, ok := known[rel]; ok && prior.matches(info) {
+				files = append(files, prior.file)
+				listed[rel] = prior
+				continue
+			}
+			data, err := reader.ReadFile(rel)
 			if err != nil {
 				return nil, err
 			}
@@ -146,8 +169,15 @@ func LoadFiles(root string) ([]File, error) {
 			if err != nil {
 				return nil, errors.New(rel + ": " + err.Error())
 			}
+			if cached != nil {
+				cached.countParsed()
+			}
 			files = append(files, f)
+			listed[rel] = cachedFile{info: info, file: f}
 		}
+	}
+	if cached != nil {
+		cached.replace(root, listed)
 	}
 	return files, nil
 }

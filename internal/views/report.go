@@ -115,38 +115,22 @@ type ReportEpic struct {
 // be a loaded tree, so it and its manifest are non-nil. An event with a zero
 // timestamp is malformed and neither widens the axis nor changes a status.
 func ReportOf(t *store.Tree, in ReportInput) Report {
-	loc := in.Location
-	if loc == nil {
-		loc = time.Local
-	}
-	first := in.Now
-	for _, ev := range in.Events {
-		if !ev.At.IsZero() && ev.At.Before(first) {
-			first = ev.At
-		}
-	}
-	weeks := weekStarts(first, in.Now, loc)
+	weeks := reportWeeks(in.Events, in.Now, in.Location)
 	last := len(weeks) - 1
 
 	// The replay is the shared foundation the metric builders read.
 	r := newReplay(t, in.Events, weeks, in.Now)
 
 	rep := Report{
-		Project:        t.Manifest.Project.Name,
-		AsOf:           in.Now.UTC().Format(time.RFC3339),
-		Weeks:          make([]string, len(weeks)),
-		WeekBoundaries: make([]string, len(weeks)+1),
-		BurnUp:         burnUp(t, r, weeks, in.Now),
-		Throughput:     throughput(t, r, weeks),
-		Bugs:           bugSeries(t, r, weeks, in.Now),
-		FeatureTimes:   featureTimes(t, r),
-		Epics:          epicProgress(observedOr(in.Observed, t)),
+		Project:      t.Manifest.Project.Name,
+		AsOf:         in.Now.UTC().Format(time.RFC3339),
+		BurnUp:       burnUp(t, r, weeks, in.Now),
+		Throughput:   throughput(t, r, weeks),
+		Bugs:         bugSeries(t, r, weeks, in.Now),
+		FeatureTimes: featureTimes(t, r),
+		Epics:        epicProgress(observedOr(in.Observed, t)),
 	}
-	for i, w := range weeks {
-		rep.Weeks[i] = w.Format("2006-01-02")
-		rep.WeekBoundaries[i] = w.Format(time.RFC3339)
-	}
-	rep.WeekBoundaries[len(weeks)] = weeks[last].AddDate(0, 0, 7).Format(time.RFC3339)
+	rep.Weeks, rep.WeekBoundaries = weekLabels(weeks)
 	var cycles, leads []float64
 	for _, ft := range rep.FeatureTimes {
 		cycles = append(cycles, ft.CycleDays)
@@ -171,6 +155,35 @@ func ReportOf(t *store.Tree, in ReportInput) Report {
 		rep.OffBranch = &ReportBranchNotice{Branch: branch, Integration: integration}
 	}
 	return rep
+}
+
+// reportWeeks is the week axis every Report payload shares: from the week of
+// the earliest event with a timestamp (now when there is none) through the
+// week of now, in loc (nil means time.Local).
+func reportWeeks(evs []events.Event, now time.Time, loc *time.Location) []time.Time {
+	if loc == nil {
+		loc = time.Local
+	}
+	first := now
+	for _, ev := range evs {
+		if !ev.At.IsZero() && ev.At.Before(first) {
+			first = ev.At
+		}
+	}
+	return weekStarts(first, now, loc)
+}
+
+// weekLabels renders the axis as date-only Monday labels and RFC3339
+// boundaries, one per Monday plus the Monday after the last week.
+func weekLabels(weeks []time.Time) (labels, boundaries []string) {
+	labels = make([]string, len(weeks))
+	boundaries = make([]string, len(weeks)+1)
+	for i, w := range weeks {
+		labels[i] = w.Format("2006-01-02")
+		boundaries[i] = w.Format(time.RFC3339)
+	}
+	boundaries[len(weeks)] = weeks[len(weeks)-1].AddDate(0, 0, 7).Format(time.RFC3339)
+	return labels, boundaries
 }
 
 // weekStarts returns the Mondays, at 00:00 in loc, from the week of first
