@@ -36,9 +36,9 @@ function stubFetch(routes: Record<string, unknown>) {
   return spy;
 }
 
-function renderReport() {
+function renderReport(entry = "/report") {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[entry]}>
       <ReportPage />
     </MemoryRouter>,
   );
@@ -145,6 +145,24 @@ function tile(label: string): HTMLElement {
   if (!term) throw new Error(`no KPI tile labeled ${label}`);
   return term.parentElement!;
 }
+
+const emptyUsage = {
+  weeks: [],
+  week_boundaries: [],
+  harnesses: [],
+  full_coverage: "",
+  coverage: [],
+  kpis: { total: 0, cache_read: 0, input: 0, cache_write: 0, output: 0, median_per_item: null, items: 0, tied_share: 0 },
+  weekly: [],
+  stages: [],
+  models: [],
+  model_stages: [],
+  features: [],
+  features_left_out: 0,
+  item_bands: [],
+  items_left_out: 0,
+  items_unmeasured: 0,
+};
 
 describe("Report page", () => {
   it("names Report while loading", () => {
@@ -268,5 +286,34 @@ describe("Report page", () => {
     renderReport();
 
     expect(await screen.findByText(/404/)).toHaveClass("error");
+  });
+
+  describe("tabs", () => {
+    it("shows the Project tab by default and does not fetch usage", async () => {
+      const spy = stubFetch({ "/api/report": fixtureReport(), "/api/report/usage": emptyUsage });
+      renderReport();
+
+      expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: "Report view" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Project" })).toHaveClass("active");
+      expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
+    });
+
+    it("opens Agent use from ?tab=agent-use", async () => {
+      stubFetch({ "/api/report": fixtureReport(), "/api/report/usage": emptyUsage });
+      renderReport("/report?tab=agent-use");
+
+      expect(await screen.findByText("No agent usage recorded yet")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: "Acme Platform" })).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "3 of 8 approved features done" })).toBeNull();
+    });
+
+    it("reads an unknown tab as Project", async () => {
+      const spy = stubFetch({ "/api/report": fixtureReport(), "/api/report/usage": emptyUsage });
+      renderReport("/report?tab=nonsense");
+
+      expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
+      expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
+    });
   });
 });

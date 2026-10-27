@@ -1680,6 +1680,76 @@ export const recapPeekPath = "/api/recap/peek";
 // The Report page's metrics payload (internal/serve, GET /api/report).
 export const reportPath = "/api/report";
 
+// The Agent use tab's payload (internal/views/report_usage.go, GET
+// /api/report/usage). Token counts are whole numbers; no field names a person.
+export const usageReportPath = "/api/report/usage";
+
+export interface UsageHarness {
+  harness: string;
+  label: string;
+  since: string; // YYYY-MM-DD
+}
+
+export interface UsageKPIs {
+  total: number;
+  cache_read: number;
+  input: number;
+  cache_write: number;
+  output: number;
+  median_per_item: number | null;
+  items: number;
+  tied_share: number; // fraction 0..1
+}
+
+export interface UsageWeek {
+  input: number;
+  cache_write: number;
+  cache_read: number;
+  output: number;
+}
+
+export interface UsageStage {
+  key: string;
+  label: string;
+  total: number;
+  cache_read: number;
+}
+
+export interface UsageModelStage {
+  stage: string;
+  totals: number[]; // aligned to UsageReport.models
+}
+
+export interface UsageFeature {
+  title: string;
+  done: string; // RFC3339
+  total: number;
+  median: number;
+}
+
+export interface UsageBand {
+  label: string;
+  count: number;
+}
+
+export interface UsageReport {
+  weeks: string[];
+  week_boundaries: string[];
+  harnesses: UsageHarness[];
+  full_coverage: string; // YYYY-MM-DD, "" with no usage
+  coverage: string[]; // per week: "none", "partial", or "full"
+  kpis: UsageKPIs;
+  weekly: UsageWeek[];
+  stages: UsageStage[];
+  models: string[];
+  model_stages: UsageModelStage[];
+  features: UsageFeature[];
+  features_left_out: number;
+  item_bands: UsageBand[];
+  items_left_out: number;
+  items_unmeasured: number;
+}
+
 // searchPath addresses the search, narrowed to one kind when the reader picks
 // a kind tab. It sends no limit and takes the API's own page (MaxResults),
 // the same page `tiller search` takes, so the console and the terminal never
