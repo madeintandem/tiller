@@ -3,9 +3,6 @@ package usage
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -35,15 +32,9 @@ func (claudeReader) Dirs(r Roots) []string {
 	return []string{filepath.Join(base, "projects")}
 }
 
-func (c claudeReader) Discover(r Roots) ([]LogRef, error) {
+func (c claudeReader) Discover(r Roots) ([]LogRef, int) {
 	projects := c.Dirs(r)[0]
-	entries, err := os.ReadDir(projects)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	entries, unreadable := listHarnessDir(projects)
 	m := newFolderMatcher(r.Project, claudeFolder)
 	var refs []LogRef
 	for _, e := range entries {
@@ -54,14 +45,12 @@ func (c claudeReader) Discover(r Roots) ([]LogRef, error) {
 		if !m.match(e.Name()) && !(m.maybe(e.Name()) && r.beneath(folder)) {
 			continue
 		}
-		found, err := folderLogs(claudeHarness, folder, "subagents")
-		if err != nil {
-			return nil, err
-		}
+		found, bad := folderLogs(claudeHarness, folder, "subagents")
 		refs = append(refs, found...)
+		unreadable += bad
 	}
 	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
-	return refs, nil
+	return refs, unreadable
 }
 
 func (claudeReader) Parse(logs []LogRef) (Session, error) {

@@ -40,14 +40,17 @@ type Options struct {
 
 // HarnessResult is what capture did for one harness. Sessions counts the
 // top-level sessions found for this project, Written the files planned,
-// Tokens their total, and Tied the part credited to a work item.
+// Tokens their total, and Tied the part credited to a work item. Unreadable
+// counts the folders and logs that could not be read; they were skipped,
+// stay out of the cursor, and are tried again next time.
 type HarnessResult struct {
-	Harness  string
-	Found    bool
-	Sessions int
-	Written  int
-	Tokens   int64
-	Tied     int64
+	Harness    string
+	Found      bool
+	Sessions   int
+	Written    int
+	Tokens     int64
+	Tied       int64
+	Unreadable int
 }
 
 // Result is a capture's planned writes. Partial is true when the budget
@@ -139,16 +142,15 @@ func anyDir(dirs []string) bool {
 }
 
 func (c *capture) harness(rd Reader, h *HarnessResult) error {
-	refs, err := rd.Discover(c.o.Roots)
-	if err != nil {
-		return err
-	}
+	refs, unreadable := rd.Discover(c.o.Roots)
+	h.Unreadable = unreadable
 	groups := groupLogs(refs)
 	h.Sessions = len(groups)
 	for _, g := range groups {
 		seen, changed, newest, err := c.stat(g)
 		if err != nil {
-			return err
+			h.Unreadable++ // skipped; tried again next time
+			continue
 		}
 		if seen == nil {
 			continue // a log vanished since discovery
@@ -277,7 +279,8 @@ func (c *capture) session(rd Reader, g []LogRef, seen logStats, h *HarnessResult
 		return nil // removed mid-capture; retried next time
 	}
 	if err != nil {
-		return err
+		h.Unreadable++ // left out of the cursor, so tried again next time
+		return nil
 	}
 	first, last, ok := callSpan(s)
 	if !ok {

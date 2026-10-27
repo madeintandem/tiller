@@ -22,9 +22,9 @@ func TestCodexMatchesByFirstLineCwd(t *testing.T) {
 	mustWrite(t, filepath.Join(dir, "rollout-d.jsonl"), codexRollout("/p/app-two"))
 	mustWrite(t, filepath.Join(dir, "rollout-e.jsonl"), "not json\n")
 
-	refs, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	var got []string
 	for _, r := range refs {
@@ -45,8 +45,8 @@ func TestCodexDiscoverReadsEachFirstLineOnce(t *testing.T) {
 	mustWrite(t, a, codexRollout("/p/app"))
 	mustWrite(t, b, codexRollout("/p/other"))
 	memo := newCwdMemo(nil)
-	if _, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo}); err != nil {
-		t.Fatal(err)
+	if _, bad := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo}); bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	if want := map[string]string{a: "/p/app", b: "/p/other"}; !reflect.DeepEqual(memo.seen, want) {
 		t.Fatalf("memo = %v, want %v", memo.seen, want)
@@ -57,9 +57,9 @@ func TestCodexDiscoverReadsEachFirstLineOnce(t *testing.T) {
 	c := filepath.Join(dir, "rollout-c.jsonl")
 	mustWrite(t, c, codexRollout("/p/app"))
 	next := newCwdMemo(memo.seen)
-	refs, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: next})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: next})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	var got []string
 	for _, r := range refs {
@@ -83,9 +83,9 @@ func TestCodexHonorsCodexHome(t *testing.T) {
 		}
 		return ""
 	}
-	refs, err := NewCodexReader().Discover(Roots{Home: home, Env: env, Project: []string{"/p/app"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewCodexReader().Discover(Roots{Home: home, Env: env, Project: []string{"/p/app"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	if len(refs) != 1 || refs[0].Session != "rollout-z" {
 		t.Fatalf("refs = %+v", refs)
@@ -176,9 +176,9 @@ func TestCodexFirstLineNotSessionMetaOrTooLongIsNotDiscovered(t *testing.T) {
 	big := `{"type":"session_meta","payload":{"cwd":"/p/app","instructions":"` + strings.Repeat("x", maxLineBytes+10) + `"}}` + "\n"
 	mustWrite(t, filepath.Join(dir, "rollout-b.jsonl"), big)
 	mustWrite(t, filepath.Join(dir, "rollout-c.jsonl"), codexRollout("/p/app"))
-	refs, err := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewCodexReader().Discover(Roots{Home: home, Project: []string{"/p/app"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	if len(refs) != 1 || refs[0].Session != "rollout-c" {
 		t.Fatalf("refs = %+v", refs)

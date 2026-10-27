@@ -1057,6 +1057,13 @@ func syncCaptureUsage(tree *store.Tree) string {
 	if res.Partial {
 		return "Agent usage capture ran out of time; run tiller usage to finish."
 	}
+	unreadable := 0
+	for _, h := range res.Harnesses {
+		unreadable += h.Unreadable
+	}
+	if unreadable > 0 {
+		return "Agent usage: " + unreadableLogs(unreadable) + "; run tiller usage for details."
+	}
 	return ""
 }
 

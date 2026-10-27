@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,8 +73,10 @@ type Reader interface {
 	// Dirs names the harness folders Discover reads; when none exists the
 	// harness is not on this machine.
 	Dirs(r Roots) []string
-	// Discover lists the logs whose working directory is under a project root.
-	Discover(r Roots) ([]LogRef, error)
+	// Discover lists the logs whose working directory is under a project
+	// root. A folder or log it cannot read is skipped and counted in
+	// unreadable, never fatal, so one bad file cannot stop every capture.
+	Discover(r Roots) (refs []LogRef, unreadable int)
 	// Parse receives one top-level log and its subagent logs.
 	Parse(logs []LogRef) (Session, error)
 }
@@ -248,15 +251,30 @@ func logCwd(path string) (string, error) {
 	return "", errNoCwd
 }
 
+// listHarnessDir reads a harness's base folder. A missing folder is empty;
+// one that cannot be read is empty and counts as one unreadable.
+func listHarnessDir(dir string) (entries []os.DirEntry, unreadable int) {
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, 0
+	}
+	if err != nil {
+		return nil, 1
+	}
+	return entries, 0
+}
+
 // folderLogs lists a matched folder's top-level *.jsonl logs and, for each
 // <stem> subdirectory, the *.jsonl logs in <stem>/<subagentDir> as subagents
-// of that stem. Other files are ignored.
-func folderLogs(harness, folder, subagentDir string) ([]LogRef, error) {
+// of that stem. Other files are ignored. A folder that cannot be read counts
+// as one unreadable; so does a session whose subagent folder cannot be read,
+// and that session is left out rather than captured without its subagents.
+func folderLogs(harness, folder, subagentDir string) (refs []LogRef, unreadable int) {
 	files, err := os.ReadDir(folder)
 	if err != nil {
-		return nil, err
+		return nil, 1
 	}
-	var refs []LogRef
+	broken := map[string]bool{}
 	for _, f := range files {
 		name := f.Name()
 		switch {
@@ -265,8 +283,12 @@ func folderLogs(harness, folder, subagentDir string) ([]LogRef, error) {
 		case f.IsDir():
 			dir := filepath.Join(folder, name, subagentDir)
 			subs, err := os.ReadDir(dir)
-			if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
 				continue // no subagents for this session
+			}
+			if err != nil {
+				broken[name] = true
+				continue
 			}
 			for _, s := range subs {
 				if s.IsDir() || !strings.HasSuffix(s.Name(), ".jsonl") {
@@ -276,7 +298,17 @@ func folderLogs(harness, folder, subagentDir string) ([]LogRef, error) {
 			}
 		}
 	}
-	return refs, nil
+	if len(broken) == 0 {
+		return refs, 0
+	}
+	kept := refs[:0]
+	for _, r := range refs {
+		if r.Parent == "" && broken[r.Session] {
+			continue
+		}
+		kept = append(kept, r)
+	}
+	return kept, len(broken)
 }
 
 // parseSession builds a Session from one top-level log and its subagent logs.

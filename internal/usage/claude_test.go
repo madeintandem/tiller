@@ -35,9 +35,9 @@ func TestClaudeDiscoverMatchesRootAndWorktreePrefix(t *testing.T) {
 	mustWrite(t, filepath.Join(proj, "-p-app--claude-worktrees-gone", "s5.jsonl"), line)
 	mustWrite(t, filepath.Join(proj, "-p-app-wt", "s6.jsonl"), line)
 
-	refs, err := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app", "/p/app-wt"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app", "/p/app-wt"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	got := map[string]LogRef{}
 	for _, r := range refs {
@@ -99,9 +99,9 @@ func TestClaudeDiscoverFindsSubdirectorySessions(t *testing.T) {
 
 	sessions := func(memo *cwdMemo) []string {
 		t.Helper()
-		refs, err := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo})
-		if err != nil {
-			t.Fatal(err)
+		refs, bad := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app"}, cwd: memo})
+		if bad != 0 {
+			t.Fatalf("unreadable = %d", bad)
 		}
 		var got []string
 		for _, r := range refs {
@@ -139,9 +139,9 @@ func TestClaudeHonorsConfigDir(t *testing.T) {
 		}
 		return ""
 	}
-	refs, err := NewClaudeReader().Discover(Roots{Home: home, Env: env, Project: []string{"/p/app"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewClaudeReader().Discover(Roots{Home: home, Env: env, Project: []string{"/p/app"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	if len(refs) != 1 || refs[0].Session != "new" {
 		t.Fatalf("refs = %+v", refs)
@@ -149,9 +149,9 @@ func TestClaudeHonorsConfigDir(t *testing.T) {
 }
 
 func TestClaudeDiscoverNoProjectsDir(t *testing.T) {
-	refs, err := NewClaudeReader().Discover(Roots{Home: t.TempDir(), Project: []string{"/p/app"}})
-	if err != nil || len(refs) != 0 {
-		t.Fatalf("refs = %v, err = %v", refs, err)
+	refs, bad := NewClaudeReader().Discover(Roots{Home: t.TempDir(), Project: []string{"/p/app"}})
+	if bad != 0 || len(refs) != 0 {
+		t.Fatalf("refs = %v, unreadable = %d", refs, bad)
 	}
 }
 

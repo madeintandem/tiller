@@ -167,6 +167,47 @@ func TestUsageHumanOutput(t *testing.T) {
 	require.Contains(t, again, "Claude Code: 1 session found, nothing new to capture")
 }
 
+// lockedSession lays a second Claude Code session whose log cannot be read.
+func lockedSession(t *testing.T, home string) {
+	t.Helper()
+	p := filepath.Join(claudeProjectFolder(t, home), "s2.jsonl")
+	require.NoError(t, os.WriteFile(p, []byte("{}\n"), 0o644))
+	old := time.Date(2026, 1, 2, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, os.Chtimes(p, old, old))
+	require.NoError(t, os.Chmod(p, 0o000))
+	t.Cleanup(func() { _ = os.Chmod(p, 0o644) })
+}
+
+// An unreadable log is skipped and counted, never fatal: the readable
+// session is still captured, and the count shows in both renderings.
+func TestUsageCountsUnreadableLogs(t *testing.T) {
+	dir, home := usageRepo(t)
+	layClaudeSession(t, home)
+	lockedSession(t, home)
+
+	out, _, code := execCLI(t, "usage", "--json")
+	require.Equal(t, 0, code, out)
+	require.Len(t, usageFiles(t, dir), 1)
+	hs := jsonData(t, out)["harnesses"].([]any)
+	require.EqualValues(t, 1, hs[0].(map[string]any)["unreadable"])
+	require.EqualValues(t, 0, hs[1].(map[string]any)["unreadable"])
+
+	human, _, code := execCLI(t, "usage")
+	require.Equal(t, 0, code)
+	require.Contains(t, human, "Claude Code: 2 sessions found, nothing new to capture, 1 log could not be read")
+}
+
+func TestSyncNotesUnreadableLogs(t *testing.T) {
+	dir, home := usageRepo(t)
+	layClaudeSession(t, home)
+	lockedSession(t, home)
+
+	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out)
+	require.Len(t, usageFiles(t, dir), 1)
+	require.Equal(t, "Agent usage: 1 log could not be read; run tiller usage for details.", jsonData(t, out)["usage_warning"])
+}
+
 // advanceGeneration makes the tree captureUsage holds stale by committing a
 // real write through a second loaded copy.
 func advanceGeneration(t *testing.T) func(*store.Tree) {
@@ -266,17 +307,16 @@ func TestSyncCapturesWhenEnabled(t *testing.T) {
 
 func TestSyncCaptureFailureIsAWarning(t *testing.T) {
 	dir, home := usageRepo(t)
-	// An unreadable session folder makes capture fail.
-	proj := claudeProjectFolder(t, home)
-	require.NoError(t, os.MkdirAll(proj, 0o755))
-	require.NoError(t, os.Chmod(proj, 0o000))
-	t.Cleanup(func() { _ = os.Chmod(proj, 0o755) })
+	layClaudeSession(t, home)
+	// A malformed usage file where the session's file goes makes capture fail.
+	bad := filepath.Join(dir, ".tiller", "usage", "claude-code", "s1.yml")
+	require.NoError(t, os.MkdirAll(filepath.Dir(bad), 0o755))
+	require.NoError(t, os.WriteFile(bad, []byte("rows: [not, a, file\n"), 0o644))
 
 	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
 	require.Contains(t, out, `"ok": true`)
-	require.NotEmpty(t, jsonData(t, out)["usage_warning"])
-	require.NoDirExists(t, filepath.Join(dir, ".tiller", "usage"))
+	require.Contains(t, jsonData(t, out)["usage_warning"], "Agent usage not captured: ")
 	require.NoFileExists(t, filepath.Join(dir, ".tiller", ".cache", "usage.yml"))
 }
 

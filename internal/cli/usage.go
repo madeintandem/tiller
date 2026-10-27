@@ -36,13 +36,16 @@ type UsageRefusedData struct {
 
 // UsageHarnessView is one harness's line in the `tiller usage` data block.
 // tied_share is null when the harness recorded no tokens: unknown, not zero.
+// unreadable counts the folders and logs skipped because they could not be
+// read; they are tried again on the next capture.
 type UsageHarnessView struct {
-	Harness   string   `json:"harness"`
-	Found     bool     `json:"found"`
-	Sessions  int      `json:"sessions"`
-	Written   int      `json:"written"`
-	Tokens    int64    `json:"tokens"`
-	TiedShare *float64 `json:"tied_share"`
+	Harness    string   `json:"harness"`
+	Found      bool     `json:"found"`
+	Sessions   int      `json:"sessions"`
+	Written    int      `json:"written"`
+	Tokens     int64    `json:"tokens"`
+	TiedShare  *float64 `json:"tied_share"`
+	Unreadable int      `json:"unreadable"`
 }
 
 // UsageView is the data block of a successful `tiller usage`.
@@ -236,7 +239,7 @@ func usageResolver(tree *store.Tree) usage.Resolver {
 func usageView(res usage.Result) UsageView {
 	v := UsageView{Harnesses: []UsageHarnessView{}, Partial: res.Partial}
 	for _, h := range res.Harnesses {
-		hv := UsageHarnessView{Harness: h.Harness, Found: h.Found, Sessions: h.Sessions, Written: h.Written, Tokens: h.Tokens}
+		hv := UsageHarnessView{Harness: h.Harness, Found: h.Found, Sessions: h.Sessions, Written: h.Written, Tokens: h.Tokens, Unreadable: h.Unreadable}
 		if h.Tokens > 0 {
 			share := float64(h.Tied) / float64(h.Tokens)
 			hv.TiedShare = &share
@@ -263,13 +266,17 @@ func humanUsage(res usage.Result) string {
 		if h.Sessions == 1 {
 			noun = "session"
 		}
+		var line string
 		if h.Written == 0 {
-			lines = append(lines, fmt.Sprintf("%s: %d %s found, nothing new to capture", label, h.Sessions, noun))
-			continue
+			line = fmt.Sprintf("%s: %d %s found, nothing new to capture", label, h.Sessions, noun)
+		} else {
+			line = fmt.Sprintf("%s: %d %s found, %d captured, %s tokens captured", label, h.Sessions, noun, h.Written, formatTokens(h.Tokens))
+			if h.Tokens > 0 {
+				line += fmt.Sprintf(", %d%% tied to a work item", int(float64(h.Tied)*100/float64(h.Tokens)+0.5))
+			}
 		}
-		line := fmt.Sprintf("%s: %d %s found, %d captured, %s tokens captured", label, h.Sessions, noun, h.Written, formatTokens(h.Tokens))
-		if h.Tokens > 0 {
-			line += fmt.Sprintf(", %d%% tied to a work item", int(float64(h.Tied)*100/float64(h.Tokens)+0.5))
+		if h.Unreadable > 0 {
+			line += ", " + unreadableLogs(h.Unreadable)
 		}
 		lines = append(lines, line)
 	}
@@ -277,6 +284,15 @@ func humanUsage(res usage.Result) string {
 		lines = append(lines, "Capture ran out of time; run tiller usage again to finish.")
 	}
 	return strings.Join(lines, "\n")
+}
+
+// unreadableLogs names a count of skipped folders and logs: "1 log could not
+// be read", "3 logs could not be read".
+func unreadableLogs(n int) string {
+	if n == 1 {
+		return "1 log could not be read"
+	}
+	return fmt.Sprintf("%d logs could not be read", n)
 }
 
 // formatTokens renders a token count compactly: 950, 412K, 8.9M, 186M, 1.2B.

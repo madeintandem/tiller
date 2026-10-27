@@ -22,9 +22,9 @@ func TestPiDiscoverBothEncodings(t *testing.T) {
 	mustWrite(t, filepath.Join(pi, "--"+piInner(app)+"--worktrees-gone--", "f.jsonl"), line)
 	mustWrite(t, filepath.Join(pi, "--"+piInner(filepath.Join(home, "dev", "app-two"))+"--", "g.jsonl"), line)
 
-	refs, err := NewPiReader().Discover(Roots{Home: home, Project: []string{app}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewPiReader().Discover(Roots{Home: home, Project: []string{app}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	got := map[string]bool{}
 	for _, r := range refs {
@@ -69,9 +69,9 @@ func TestPiDiscoverFindsSubdirectorySessions(t *testing.T) {
 
 	sessions := func(memo *cwdMemo) []string {
 		t.Helper()
-		refs, err := NewPiReader().Discover(Roots{Home: home, Project: []string{app}, cwd: memo})
-		if err != nil {
-			t.Fatal(err)
+		refs, bad := NewPiReader().Discover(Roots{Home: home, Project: []string{app}, cwd: memo})
+		if bad != 0 {
+			t.Fatalf("unreadable = %d", bad)
 		}
 		var got []string
 		for _, r := range refs {
@@ -94,9 +94,9 @@ func TestPiDiscoverFindsSubdirectorySessions(t *testing.T) {
 }
 
 func TestPiDiscoverMissingRoots(t *testing.T) {
-	refs, err := NewPiReader().Discover(Roots{Home: t.TempDir(), Project: []string{"/x/app"}})
-	if err != nil || len(refs) != 0 {
-		t.Fatalf("refs=%v err=%v", refs, err)
+	refs, bad := NewPiReader().Discover(Roots{Home: t.TempDir(), Project: []string{"/x/app"}})
+	if bad != 0 || len(refs) != 0 {
+		t.Fatalf("refs=%v unreadable=%d", refs, bad)
 	}
 }
 
@@ -141,9 +141,9 @@ func TestPiSubagentFolderIsParentStem(t *testing.T) {
 	mustWrite(t, filepath.Join(folder, "2026_parent", "meta.json"), "{}")
 	mustWrite(t, filepath.Join(folder, "2026_parent", "run.log"), "x")
 
-	refs, err := NewPiReader().Discover(Roots{Home: home, Project: []string{"/dev/app"}})
-	if err != nil {
-		t.Fatal(err)
+	refs, bad := NewPiReader().Discover(Roots{Home: home, Project: []string{"/dev/app"}})
+	if bad != 0 {
+		t.Fatalf("unreadable = %d", bad)
 	}
 	if len(refs) != 2 {
 		t.Fatalf("refs = %+v, want 2", refs)

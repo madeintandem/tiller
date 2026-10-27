@@ -280,6 +280,75 @@ func TestCaptureKeepsCodexCwdMemo(t *testing.T) {
 	}
 }
 
+// One unreadable log no longer stops the whole capture: its session is
+// skipped and counted, stays out of the cursor, and is captured once it can
+// be read.
+func TestCaptureSkipsAnUnreadableLogAndCountsIt(t *testing.T) {
+	e := newCaptureEnv(t)
+	bad := claudeSession(t, e.home, e.root, "bad", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	claudeSession(t, e.home, e.root, "good", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	unreadable(t, bad)
+
+	res, cur := mustCapture(t, e.options())
+	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "good.yml") {
+		t.Fatalf("writes = %+v, want only good", res.Writes)
+	}
+	if h := harnessResult(t, res, "claude-code"); h.Unreadable != 1 || h.Sessions != 2 {
+		t.Errorf("harness = %+v, want 1 unreadable of 2 sessions", h)
+	}
+	if _, ok := cur.Logs[bad]; ok {
+		t.Errorf("the unreadable log entered the cursor")
+	}
+	commitWrites(t, res)
+	if err := cur.Save(e.root); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Chmod(bad, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	res, _ = mustCapture(t, e.options())
+	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "bad.yml") {
+		t.Fatalf("writes = %+v, want bad once readable", res.Writes)
+	}
+	if h := harnessResult(t, res, "claude-code"); h.Unreadable != 0 {
+		t.Errorf("unreadable = %d, want 0", h.Unreadable)
+	}
+}
+
+// An unreadable harness folder is skipped and counted; the other folders
+// are still read.
+func TestCaptureSkipsAnUnreadableFolderAndCountsIt(t *testing.T) {
+	e := newCaptureEnv(t)
+	claudeSession(t, e.home, e.root, "good", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	wt := filepath.Join(e.root, ".claude", "worktrees", "x")
+	claudeSession(t, e.home, wt, "hidden", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
+	folder := filepath.Join(e.home, ".claude", "projects", claudeFolder(wt))
+	if err := os.Chmod(folder, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(folder, 0o755) })
+	codexDir := filepath.Join(e.home, ".codex", "sessions", "2026", "10")
+	mustWrite(t, filepath.Join(codexDir, "20", "rollout-ours.jsonl"), codexRollout(e.root)+codexCall(captureNow.Add(-3*time.Hour)))
+	touch(t, filepath.Join(codexDir, "20", "rollout-ours.jsonl"), captureNow.Add(-3*time.Hour))
+	locked := filepath.Join(codexDir, "21")
+	mustWrite(t, filepath.Join(locked, "rollout-x.jsonl"), codexRollout(e.root))
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(locked, 0o755) })
+
+	res, _ := mustCapture(t, e.options(NewClaudeReader(), NewCodexReader()))
+	if len(res.Writes) != 2 {
+		t.Fatalf("writes = %+v, want good and the readable rollout", res.Writes)
+	}
+	for _, name := range []string{"claude-code", "codex"} {
+		if h := harnessResult(t, res, name); h.Unreadable != 1 {
+			t.Errorf("%s unreadable = %d, want 1", name, h.Unreadable)
+		}
+	}
+}
+
 // A session started in a subdirectory of the checkout is captured, and the
 // cursor keeps its folder's working directory so the folder is read once.
 func TestCaptureFindsSubdirectorySessionAndRemembersItsFolder(t *testing.T) {

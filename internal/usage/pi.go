@@ -3,9 +3,6 @@ package usage
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -49,7 +46,7 @@ func (piReader) Dirs(r Roots) []string {
 	}
 }
 
-func (pr piReader) Discover(r Roots) ([]LogRef, error) {
+func (pr piReader) Discover(r Roots) (refs []LogRef, unreadable int) {
 	omp := newFolderMatcher(r.Project, func(p string) string { return ompFolder(r.Home, p) })
 	pi := newFolderMatcher(r.Project, piInner)
 	dirs := pr.Dirs(r)
@@ -59,7 +56,6 @@ func (pr piReader) Discover(r Roots) ([]LogRef, error) {
 	accept := func(m folderMatcher, name, folder string) bool {
 		return m.match(name) || (m.maybe(name) && r.beneath(folder))
 	}
-	var refs []LogRef
 	for _, base := range []struct {
 		dir     string
 		matches func(name, folder string) bool
@@ -72,27 +68,20 @@ func (pr piReader) Discover(r Roots) ([]LogRef, error) {
 			return accept(pi, name[2:len(name)-2], folder)
 		}},
 	} {
-		entries, err := os.ReadDir(base.dir)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
+		entries, bad := listHarnessDir(base.dir)
+		unreadable += bad
 		for _, e := range entries {
 			folder := filepath.Join(base.dir, e.Name())
 			if !e.IsDir() || !base.matches(e.Name(), folder) {
 				continue
 			}
-			found, err := folderLogs(piHarness, folder, "")
-			if err != nil {
-				return nil, err
-			}
+			found, bad := folderLogs(piHarness, folder, "")
 			refs = append(refs, found...)
+			unreadable += bad
 		}
 	}
 	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
-	return refs, nil
+	return refs, unreadable
 }
 
 func (piReader) Parse(logs []LogRef) (Session, error) {

@@ -86,15 +86,21 @@ func (codexReader) Dirs(r Roots) []string {
 	return []string{filepath.Join(base, "sessions")}
 }
 
-func (c codexReader) Discover(r Roots) ([]LogRef, error) {
+// Discover walks the sessions folder for rollouts whose first line records a
+// working directory under a project root. A folder the walk cannot read is
+// skipped and counted.
+func (c codexReader) Discover(r Roots) (refs []LogRef, unreadable int) {
 	dir := c.Dirs(r)[0]
-	var refs []LogRef
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			if path == dir && errors.Is(err, fs.ErrNotExist) {
 				return nil
 			}
-			return err
+			unreadable++
+			if d == nil || d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
 		}
 		name := d.Name()
 		if d.IsDir() || !strings.HasPrefix(name, "rollout-") || !strings.HasSuffix(name, ".jsonl") {
@@ -107,11 +113,8 @@ func (c codexReader) Discover(r Roots) ([]LogRef, error) {
 		refs = append(refs, LogRef{Harness: codexHarness, Path: path, Session: strings.TrimSuffix(name, ".jsonl")})
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
 	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
-	return refs, nil
+	return refs, unreadable
 }
 
 func (codexReader) Parse(logs []LogRef) (Session, error) {
