@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // LogRef names one harness log file. Parent is the session id of the
@@ -98,4 +100,94 @@ func trimEOL(b []byte) []byte {
 		b = b[:len(b)-1]
 	}
 	return b
+}
+
+// folderMatcher accepts a harness folder that equals the encoding of a
+// project path, or the root's encoding plus "--", which is how a path under
+// one of the root's dot directories (a removed worktree) encodes. A sibling
+// project such as /p/app-two never matches /p/app.
+type folderMatcher struct {
+	exact  map[string]bool
+	prefix string
+}
+
+// newFolderMatcher encodes each path with enc; paths[0] is the checkout root.
+func newFolderMatcher(paths []string, enc func(string) string) folderMatcher {
+	m := folderMatcher{exact: map[string]bool{}}
+	for i, p := range paths {
+		e := enc(p)
+		if e == "" || e == "-" {
+			continue
+		}
+		m.exact[e] = true
+		if i == 0 {
+			m.prefix = e + "--"
+		}
+	}
+	return m
+}
+
+func (m folderMatcher) match(s string) bool {
+	return m.exact[s] || (m.prefix != "" && strings.HasPrefix(s, m.prefix))
+}
+
+// folderLogs lists a matched folder's top-level *.jsonl logs and, for each
+// <stem> subdirectory, the *.jsonl logs in <stem>/<subagentDir> as subagents
+// of that stem. Other files are ignored.
+func folderLogs(harness, folder, subagentDir string) ([]LogRef, error) {
+	files, err := os.ReadDir(folder)
+	if err != nil {
+		return nil, err
+	}
+	var refs []LogRef
+	for _, f := range files {
+		name := f.Name()
+		switch {
+		case !f.IsDir() && strings.HasSuffix(name, ".jsonl"):
+			refs = append(refs, LogRef{Harness: harness, Path: filepath.Join(folder, name), Session: strings.TrimSuffix(name, ".jsonl")})
+		case f.IsDir():
+			dir := filepath.Join(folder, name, subagentDir)
+			subs, err := os.ReadDir(dir)
+			if err != nil {
+				continue // no subagents for this session
+			}
+			for _, s := range subs {
+				if s.IsDir() || !strings.HasSuffix(s.Name(), ".jsonl") {
+					continue
+				}
+				refs = append(refs, LogRef{Harness: harness, Path: filepath.Join(dir, s.Name()), Session: strings.TrimSuffix(s.Name(), ".jsonl"), Parent: name})
+			}
+		}
+	}
+	return refs, nil
+}
+
+// parseSession builds a Session from one top-level log and its subagent logs.
+func parseSession(harness string, logs []LogRef, parseLog func(path string) ([]Call, error)) (Session, error) {
+	var top *LogRef
+	for i := range logs {
+		if logs[i].Parent == "" {
+			top = &logs[i]
+			break
+		}
+	}
+	if top == nil {
+		return Session{}, errors.New("usage: no top-level " + harness + " log")
+	}
+	s := Session{Harness: harness, ID: top.Session}
+	var err error
+	if s.Calls, err = parseLog(top.Path); err != nil {
+		return Session{}, err
+	}
+	for _, l := range logs {
+		if l.Parent == "" {
+			continue
+		}
+		calls, err := parseLog(l.Path)
+		if err != nil {
+			return Session{}, err
+		}
+		s.Subagents = append(s.Subagents, Session{Harness: harness, ID: l.Session, Calls: calls})
+	}
+	return s, nil
 }

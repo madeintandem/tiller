@@ -41,34 +41,6 @@ func piInner(abs string) string {
 	return piEncoder.Replace(strings.TrimPrefix(abs, "/"))
 }
 
-// folderMatcher accepts a folder that equals the encoding of a project path,
-// or the root's encoding plus "--", which is how a path under one of the
-// root's dot directories (a removed worktree) encodes. A sibling project such
-// as /p/app-two never matches /p/app.
-type folderMatcher struct {
-	exact  map[string]bool
-	prefix string
-}
-
-func newFolderMatcher(paths []string, enc func(string) string) folderMatcher {
-	m := folderMatcher{exact: map[string]bool{}}
-	for i, p := range paths {
-		e := enc(p)
-		if e == "" || e == "-" {
-			continue
-		}
-		m.exact[e] = true
-		if i == 0 {
-			m.prefix = e + "--"
-		}
-	}
-	return m
-}
-
-func (m folderMatcher) match(s string) bool {
-	return m.exact[s] || (m.prefix != "" && strings.HasPrefix(s, m.prefix))
-}
-
 func (piReader) Discover(r Roots) ([]LogRef, error) {
 	omp := newFolderMatcher(r.Project, func(p string) string { return ompFolder(r.Home, p) })
 	pi := newFolderMatcher(r.Project, piInner)
@@ -96,7 +68,7 @@ func (piReader) Discover(r Roots) ([]LogRef, error) {
 			if !e.IsDir() || !base.matches(e.Name()) {
 				continue
 			}
-			found, err := piFolderLogs(filepath.Join(base.dir, e.Name()))
+			found, err := folderLogs(piHarness, filepath.Join(base.dir, e.Name()), "")
 			if err != nil {
 				return nil, err
 			}
@@ -107,65 +79,8 @@ func (piReader) Discover(r Roots) ([]LogRef, error) {
 	return refs, nil
 }
 
-func piFolderLogs(folder string) ([]LogRef, error) {
-	files, err := os.ReadDir(folder)
-	if err != nil {
-		return nil, err
-	}
-	var refs []LogRef
-	for _, f := range files {
-		name := f.Name()
-		switch {
-		case !f.IsDir() && strings.HasSuffix(name, ".jsonl"):
-			refs = append(refs, LogRef{Harness: piHarness, Path: filepath.Join(folder, name), Session: strings.TrimSuffix(name, ".jsonl")})
-		case f.IsDir():
-			subs, err := os.ReadDir(filepath.Join(folder, name))
-			if err != nil {
-				continue
-			}
-			for _, s := range subs {
-				if s.IsDir() || !strings.HasSuffix(s.Name(), ".jsonl") {
-					continue // the folder also holds .md, .json and .log files
-				}
-				refs = append(refs, LogRef{
-					Harness: piHarness,
-					Path:    filepath.Join(folder, name, s.Name()),
-					Session: strings.TrimSuffix(s.Name(), ".jsonl"),
-					Parent:  name,
-				})
-			}
-		}
-	}
-	return refs, nil
-}
-
 func (piReader) Parse(logs []LogRef) (Session, error) {
-	var top *LogRef
-	for i := range logs {
-		if logs[i].Parent == "" {
-			top = &logs[i]
-			break
-		}
-	}
-	if top == nil {
-		return Session{}, errors.New("usage: no top-level Pi log")
-	}
-	s := Session{Harness: piHarness, ID: top.Session}
-	var err error
-	if s.Calls, err = parsePiLog(top.Path); err != nil {
-		return Session{}, err
-	}
-	for _, l := range logs {
-		if l.Parent == "" {
-			continue
-		}
-		calls, err := parsePiLog(l.Path)
-		if err != nil {
-			return Session{}, err
-		}
-		s.Subagents = append(s.Subagents, Session{Harness: piHarness, ID: l.Session, Calls: calls})
-	}
-	return s, nil
+	return parseSession(piHarness, logs, parsePiLog)
 }
 
 type piLine struct {

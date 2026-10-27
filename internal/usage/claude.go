@@ -40,91 +40,24 @@ func (claudeReader) Discover(r Roots) ([]LogRef, error) {
 	if err != nil {
 		return nil, err
 	}
-	var exact []string
-	for _, p := range r.Project {
-		exact = append(exact, claudeFolder(p))
-	}
-	// A removed worktree under a dot directory of the checkout root encodes as
-	// the root plus "--". Anything else must equal a listed path, so a sibling
-	// project such as /p/app-two is never captured.
-	var rootPrefix string
-	if len(exact) > 0 {
-		rootPrefix = exact[0] + "--"
-	}
+	m := newFolderMatcher(r.Project, claudeFolder)
 	var refs []LogRef
 	for _, e := range entries {
-		if !e.IsDir() || !matchesFolder(e.Name(), exact, rootPrefix) {
+		if !e.IsDir() || !m.match(e.Name()) {
 			continue
 		}
-		folder := filepath.Join(projects, e.Name())
-		files, err := os.ReadDir(folder)
+		found, err := folderLogs(claudeHarness, filepath.Join(projects, e.Name()), "subagents")
 		if err != nil {
 			return nil, err
 		}
-		for _, f := range files {
-			name := f.Name()
-			switch {
-			case !f.IsDir() && strings.HasSuffix(name, ".jsonl"):
-				refs = append(refs, LogRef{Harness: claudeHarness, Path: filepath.Join(folder, name), Session: strings.TrimSuffix(name, ".jsonl")})
-			case f.IsDir():
-				subs, err := os.ReadDir(filepath.Join(folder, name, "subagents"))
-				if err != nil {
-					continue // no subagents for this session
-				}
-				for _, s := range subs {
-					if s.IsDir() || !strings.HasSuffix(s.Name(), ".jsonl") {
-						continue
-					}
-					refs = append(refs, LogRef{
-						Harness: claudeHarness,
-						Path:    filepath.Join(folder, name, "subagents", s.Name()),
-						Session: strings.TrimSuffix(s.Name(), ".jsonl"),
-						Parent:  name,
-					})
-				}
-			}
-		}
+		refs = append(refs, found...)
 	}
 	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
 	return refs, nil
 }
 
-func matchesFolder(name string, exact []string, rootPrefix string) bool {
-	for _, p := range exact {
-		if name == p {
-			return true
-		}
-	}
-	return rootPrefix != "" && strings.HasPrefix(name, rootPrefix)
-}
-
-func (c claudeReader) Parse(logs []LogRef) (Session, error) {
-	var top *LogRef
-	for i := range logs {
-		if logs[i].Parent == "" {
-			top = &logs[i]
-			break
-		}
-	}
-	if top == nil {
-		return Session{}, errors.New("usage: no top-level Claude Code log")
-	}
-	s := Session{Harness: claudeHarness, ID: top.Session}
-	var err error
-	if s.Calls, err = parseClaudeLog(top.Path); err != nil {
-		return Session{}, err
-	}
-	for _, l := range logs {
-		if l.Parent == "" {
-			continue
-		}
-		calls, err := parseClaudeLog(l.Path)
-		if err != nil {
-			return Session{}, err
-		}
-		s.Subagents = append(s.Subagents, Session{Harness: claudeHarness, ID: l.Session, Calls: calls})
-	}
-	return s, nil
+func (claudeReader) Parse(logs []LogRef) (Session, error) {
+	return parseSession(claudeHarness, logs, parseClaudeLog)
 }
 
 type claudeLine struct {

@@ -2,6 +2,7 @@ package usage
 
 import (
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -72,8 +73,12 @@ func TestPiParseMapsTokensAndMarkers(t *testing.T) {
 	if c.Tokens != (Tokens{Input: 20737, CacheWrite: 7, CacheRead: 11, Output: 194, Reasoning: 165}) {
 		t.Errorf("tokens = %+v", c.Tokens)
 	}
-	if len(c.Markers) != 2 {
-		t.Fatalf("markers = %+v, want 2", c.Markers)
+	want := []Marker{
+		{Kind: MarkVerb, Stage: Implementation, Ref: "T-abc123", Verb: "start"},
+		{Kind: MarkSkill, Stage: Implementation, Verb: "execute"},
+	}
+	if !reflect.DeepEqual(c.Markers, want) {
+		t.Errorf("markers = %+v, want %+v", c.Markers, want)
 	}
 }
 
