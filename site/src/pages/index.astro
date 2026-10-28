@@ -10,6 +10,9 @@ import mitLogoWhite from "../assets/mit-logo-website-white.svg";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const url = (path: string) => `${base}/${path}`;
+// Made In Tandem's training page; utm_content says which placement sent the visit.
+const trainingUrl = (placement: "nav" | "footer" | "install") =>
+  `https://madeintandem.com/training/?utm_source=tiller&utm_medium=docs&utm_campaign=training&utm_content=${placement}`;
 const description = "Tiller helps a team of people and coding agents deliver high-quality software fast, with the confidence to ship it. Open source, Apache 2.0.";
 ---
 <!doctype html>
@@ -424,6 +427,7 @@ h3 { font: 500 24px/1.2 var(--display); letter-spacing: -0.012em; margin: 0 0 10
     <a class="hide-sm" href={url("concepts/")}>Concepts</a>
     <a class="hide-sm" href={url("console/")}>Console</a>
     <a class="hide-sm" href="https://github.com/madeintandem/tiller">GitHub</a>
+    <a class="hide-sm" href={trainingUrl("nav")}>Training</a>
     <a class="install" href="#install">Install</a>
   </nav>
 </header>
@@ -736,6 +740,7 @@ $ <b>tiller start task</b> event-night/door-check-in/attendee-search</pre>
       <div class="next">
         <a class="btn" href={url("quickstart/")}>Follow the quickstart</a>
         <a href="https://github.com/madeintandem/tiller">Star it on GitHub</a>
+        <a href={trainingUrl("install")}>Bringing it to a team? Get training from the people who built it.</a>
       </div>
     </div>
   </div>
@@ -761,6 +766,7 @@ $ <b>tiller start task</b> event-night/door-check-in/attendee-search</pre>
     <a href={url("concepts/")}>Concepts</a>
     <a href={url("console/")}>Console</a>
     <a href="https://github.com/madeintandem/tiller">GitHub</a>
+    <a href={trainingUrl("footer")}>Training</a>
     <a href="#install">Install</a>
   </nav>
 </footer>
