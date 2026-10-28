@@ -13,6 +13,7 @@
 # Acme is the neutral stand-in the specs and fixtures use for the platform
 # build; nothing here names a real client.
 set -euo pipefail
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 
 DIR=${1:-/tmp/tiller-shots/acme}
 TILLER=${TILLER:-tiller}
@@ -35,59 +36,8 @@ printf '/%s\n' "$SENTINEL" >>.git/info/exclude
 git config user.email "docs@acme.example"
 git config user.name "Acme Docs"
 
-commit() { git add -A && git commit -qm "$1"; }
-
-# A feature's specify-stage output: the specification, the acceptance
-# contract, and one task.md per task already added under it.
-spec_feature() { # <epic/feature> "<Title>" "<summary sentence>"
-  local key=$1 title=$2 summary=$3
-  local dir=".tiller/epics/${key%%/*}/features/${key##*/}"
-  local id
-  id=$($TILLER show feature "$key" --json | grep -om1 'F-[a-z0-9]\{6\}')
-  cat > "$dir/feature.md" <<EOF
-# $title
-
-## Summary
-
-$summary
-
-## Specification
-
-The feature lands behind the existing application shell and reuses the
-project's own conventions for models, routes, and views. Every user-facing
-state is reachable from the primary navigation, and every write is covered
-by a request spec.
-EOF
-  cat > "$dir/feature.eval.md" <<EOF
----
-node: $id
-criteria:
-  - id: C1
-    statement: The feature's primary route renders and its request specs pass
-    polarity: introduce
-    binding: { type: command, run: "true" }
----
-
-# Acceptance
-
-The acceptance contract binds to the project's test command; the criterion
-above is satisfied when the route renders and its specs are green.
-EOF
-  for task in "$dir"/tasks/*/; do
-    [ -d "$task" ] || continue
-    local name
-    name=$(basename "$task")
-    cat > "$task/task.md" <<EOF
-# ${name//-/ }
-
-## Approach
-
-Implement the slice named in the title, prove it with a request spec, and
-leave the build green.
-EOF
-  done
-  $TILLER spec feature "$key" --contributor robin >/dev/null
-}
+# commit and spec_feature (the specify-stage output for one feature) live in lib.sh.
+source "$HERE/lib.sh"
 
 # ---------- project, contributors, design inputs ----------
 $TILLER init --name "Acme Platform" --key acme --kind greenfield >/dev/null

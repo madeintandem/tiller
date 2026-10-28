@@ -10,8 +10,16 @@ What to know before you touch it:
   (`docs/spec/`, `CONTRIBUTING.md`, `docs/releasing.md`,
   `docs/tiller-commands.md`) and are gitignored. Edit the source in the repo,
   never the copy; `npm run dev` and `npm run build` regenerate them.
-- `index.mdx`, `quickstart.md`, `concepts.md`, `skills.md`, and `console.md`
-  are authored here.
+- `quickstart.md`, `concepts.md`, `skills.md`, and `console.md` are authored
+  here.
+- The homepage is `src/pages/index.astro`, a standalone page rather than a
+  Starlight splash: its own chart-sheet frame, header, and footer, the same
+  fonts (`src/styles/fonts.css`, shared with `tiller.css`) and palette, and
+  light and dark from the system or the theme chosen on the docs pages. It
+  sells the outcomes (speed, quality, confidence, one shared plan), says how
+  Tiller delivers each, and sends readers to the docs or the install. Its
+  terminal walk-through is scripted in the page; keep its commands and
+  output true to what the binary prints.
 - The look is the console's visual system, mapped onto Starlight's variables
   in `src/styles/tiller.css` from `ui/src/styles/tokens.css`: paper, panel,
   and recess surfaces, the ink ramp, the heading navy, one magenta accent
@@ -27,6 +35,9 @@ gitignored), `npm run preview`. `npm run build` first fetches the Pagefind corre
 The console screenshots in `public/` (`console-home-*`, `console-map-*`,
 `console-fix-*`) are shot from an Acme stand-in project that
 `screenshots/acme.sh` builds through the tiller CLI, by `screenshots/shoot.mjs`
-in WebKit; `screenshots/README.md` has the reshoot steps. Reshoot them when
+in WebKit; the homepage's `console-build-*` and `console-explore-*` come from
+the same fixture carried on by `screenshots/homepage.sh` and shot by
+`screenshots/shoot-homepage.mjs`. `screenshots/README.md` has the reshoot
+steps. Reshoot them when
 the console changes shape, never edit a project's `.tiller/` by hand to pose
 a shot: add the state to the script.

@@ -1,0 +1,1017 @@
+---
+// The homepage. A standalone page rather than a Starlight splash: it carries
+// its own chart-sheet frame, header, and footer, and links into the docs.
+// Console screenshots come from site/screenshots (see its README).
+import "../styles/fonts.css";
+import tillerLogo from "../../../tiller-logo.svg";
+import tillerLogoInverted from "../../../tiller-logo-inverted.svg";
+import mitLogo from "../assets/mit-logo-dark-indigo.svg";
+import mitLogoWhite from "../assets/mit-logo-website-white.svg";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const url = (path: string) => `${base}/${path}`;
+const description = "Tiller helps a team of people and coding agents deliver high-quality software fast, with the confidence to ship it. Open source, Apache 2.0.";
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiller</title>
+<meta name="description" content={description}>
+<meta property="og:title" content="Tiller">
+<meta property="og:description" content={description}>
+<link rel="icon" href={url("favicon.svg")} type="image/svg+xml">
+<script is:inline>
+  // Follow the theme chosen on the docs pages (Starlight's own key), else the system.
+  try {
+    var t = localStorage.getItem("starlight-theme");
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<style is:global>
+/* Layout: a framed nautical chart. Four value legs run down a scroll-drawn course, each with
+   how Tiller delivers it; then an index of everything Tiller does (into the docs) and the install.
+   Light is a paper chart; dark is a night chart with the course in lamp ochre. */
+:root {
+  --paper: #FBFBF5;
+  --ink: #001129;
+  --ink-2: #3B4759;
+  --ink-3: #5F6B7A;
+  --frame: #0A2C49;
+  --hair: rgba(10, 44, 73, 0.2);
+  --hair-2: rgba(10, 44, 73, 0.1);
+  --land: #F3ECD6;
+  --shoal: #E7EFEE;
+  --inset: #F2F4F2;
+  --course: #191819;
+  --track: rgba(25, 24, 25, 0.42);
+  --heed: #9A1659;
+  --glow: none;
+  --sounding: rgba(10, 44, 73, 0.55);
+  --screen: #12151B;
+  --term-bg: #0A1626;
+  --term-fg: #E8EBF0;
+  --term-dim: #93A1B3;
+  --term-agent: #96BCBC;
+  --term-you: #F49BC0;
+  --term-pass: #A6D08F;
+  --term-fail: #F59A86;
+  --show-light: block;
+  --show-dark: none;
+
+  --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --text: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Space Mono", ui-monospace, Menlo, monospace;
+
+  --lane: 200px;
+  --gap: 48px;
+  --pad: 40px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #001129; --ink: #ECE8E2; --ink-2: #B3BECA; --ink-3: #8C9AAA; --frame: #96BCBC;
+    --hair: rgba(150, 188, 188, 0.22); --hair-2: rgba(150, 188, 188, 0.1); --land: #142630; --shoal: #05203D;
+    --inset: #031934; --course: #D3AD44; --track: rgba(211, 173, 68, 0.42); --heed: #EC7CA6;
+    --glow: drop-shadow(0 0 5px rgba(236, 124, 166, 0.65)); --sounding: rgba(150, 188, 188, 0.5);
+    --screen: #0B0F14; --term-bg: #000814; --show-light: none; --show-dark: block; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #001129; --ink: #ECE8E2; --ink-2: #B3BECA; --ink-3: #8C9AAA; --frame: #96BCBC;
+  --hair: rgba(150, 188, 188, 0.22); --hair-2: rgba(150, 188, 188, 0.1); --land: #142630; --shoal: #05203D;
+  --inset: #031934; --course: #D3AD44; --track: rgba(211, 173, 68, 0.42); --heed: #EC7CA6;
+  --glow: drop-shadow(0 0 5px rgba(236, 124, 166, 0.65)); --sounding: rgba(150, 188, 188, 0.5);
+  --screen: #0B0F14; --term-bg: #000814; --show-light: none; --show-dark: block; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.62 var(--text);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+img, video, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--hair); }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+code, pre { font-family: var(--mono); }
+p { margin: 0 0 1em; }
+.only-light { display: var(--show-light); }
+.only-dark { display: var(--show-dark); }
+
+/* The sheet: outer line, graduated border, inner neatline */
+.sheet { position: relative; max-width: 1400px; margin: 16px auto; border: 1.5px solid var(--frame); padding: 7px; }
+.sheet::before, .sheet::after {
+  content: ""; position: absolute; top: 7px; bottom: 7px; width: 7px;
+  background: repeating-linear-gradient(to bottom, var(--frame) 0 48px, transparent 48px 96px);
+}
+.sheet::before { left: 0; }
+.sheet::after { right: 0; }
+.neat { position: relative; border: 1px solid var(--frame); }
+.neat::before, .neat::after {
+  content: ""; position: absolute; left: -1px; right: -1px; height: 7px;
+  background: repeating-linear-gradient(to right, var(--frame) 0 48px, transparent 48px 96px);
+}
+.neat::before { top: -8px; }
+.neat::after { bottom: -8px; }
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px var(--pad); border-bottom: 1px solid var(--hair); position: relative; z-index: 3; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 600 21px/1 var(--display); letter-spacing: -0.01em; }
+.brand img { height: 26px; width: auto; }
+.top nav { display: flex; align-items: center; gap: 26px; font-size: 15px; }
+.top nav a { text-decoration: none; color: var(--ink-2); }
+.top nav a:hover { color: var(--ink); text-decoration: underline; }
+.top nav a.install { color: var(--ink); font-weight: 500; border: 1px solid var(--frame); padding: 7px 12px; }
+
+/* Chart body and the course overlay */
+.chart { position: relative; padding: 0 var(--pad); overflow: hidden; }
+.course { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
+.course .planned { fill: none; stroke: var(--track); stroke-width: 1.25; stroke-dasharray: 1.5 6; stroke-linecap: round; }
+.course .made { fill: none; stroke: var(--course); stroke-width: 1.75; stroke-linejoin: miter; }
+.chart > section, .chart > header { position: relative; z-index: 1; }
+
+/* Symbols */
+.sym { width: 30px; height: 30px; flex: none; color: var(--ink); overflow: visible; position: relative; z-index: 2; }
+symbol .flare { fill: var(--heed); filter: var(--glow); }
+symbol .bg { fill: var(--paper); }
+symbol .ln { fill: none; stroke: currentColor; stroke-width: 1.5; }
+symbol .fl { fill: currentColor; }
+.sym.sm { width: 22px; height: 22px; }
+
+/* Hero */
+.hero { padding: 76px 0 24px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; column-gap: 64px; align-items: start; }
+.hero-chart { position: absolute; top: 0; right: calc(-1 * var(--pad)); width: 60%; height: 100%; z-index: -1; pointer-events: none; }
+.hero-chart .land { fill: var(--land); }
+.hero-chart .coast { fill: none; stroke: var(--frame); stroke-width: 1.1; opacity: 0.8; }
+.hero-chart .shoal { fill: var(--shoal); }
+.hero-chart .c5 { fill: none; stroke: var(--frame); stroke-width: 0.9; stroke-dasharray: 1 4; stroke-linecap: round; opacity: 0.7; }
+.hero-chart .c10 { fill: none; stroke: var(--frame); stroke-width: 0.8; stroke-dasharray: 6 3 1 3; opacity: 0.45; }
+.hero-chart text { font: 400 12px var(--display); fill: var(--sounding); }
+h1 { font: 500 clamp(42px, 5.6vw, 84px)/1 var(--display); letter-spacing: -0.03em; margin: 0 0 32px; max-width: 12em; text-wrap: balance; }
+.lede { font-size: 21px; line-height: 1.5; color: var(--ink-2); max-width: 30em; margin-bottom: 32px; }
+.lede strong { color: var(--ink); font-weight: 500; }
+
+.cmd { display: flex; align-items: stretch; max-width: 100%; border: 1px solid var(--frame); background: var(--paper); font: 400 14.5px/1.4 var(--mono); }
+.cmd code { padding: 12px 14px; overflow-x: auto; white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+.cmd code::before { content: "$ "; color: var(--ink-3); }
+.cmd button { flex: none; font: 500 14px/1 var(--text); color: var(--ink); background: transparent; border: 0; border-left: 1px solid var(--frame); padding: 0 16px; cursor: pointer; min-width: 78px; }
+.cmd button:hover { background: var(--hair-2); }
+.cta { display: flex; flex-wrap: wrap; align-items: stretch; gap: 14px 18px; }
+.btn { display: inline-flex; align-items: center; font: 500 15.5px/1 var(--text); text-decoration: none; padding: 13px 18px; border: 1px solid var(--frame); background: var(--frame); color: var(--paper); }
+.btn:hover { background: var(--ink); }
+.fine { font-size: 14.5px; color: var(--ink-3); margin-top: 16px; }
+
+/* Title block: sailing directions for the page */
+.titleblock { background: var(--paper); border: 1px solid var(--frame); outline: 1px solid var(--frame); outline-offset: 4px; padding: 22px 22px 18px; margin-top: 6px; }
+.tb-title { font: 500 21px/1.15 var(--display); letter-spacing: -0.01em; margin: 0 0 12px; }
+.dirs { list-style: none; margin: 0; padding: 0; }
+.dirs li { border-top: 1px solid var(--hair); }
+.dirs a { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: center; padding: 10px 0; text-decoration: none; }
+.dirs a:hover .d-t { text-decoration: underline; }
+.dirs .d-t { font: 500 16px/1.25 var(--display); }
+.dirs .d-s { display: block; font: 400 14px/1.35 var(--text); color: var(--ink-2); }
+.tb-h { font: 600 13px/1 var(--text); color: var(--ink-2); margin: 10px 0 10px; padding-top: 14px; border-top: 1px solid var(--frame); }
+.key { display: grid; grid-template-columns: 22px 1fr; gap: 8px 12px; align-items: center; font-size: 14px; color: var(--ink-2); margin: 0; }
+.key dt { margin: 0; }
+.key dd { margin: 0; }
+.key .line { display: block; width: 22px; border-top: 1.75px solid var(--course); }
+.who { font-weight: 700; }
+.you .who { color: var(--heed); }
+
+/* Legs: a mark in the lane, the value, how it's delivered, and an inset */
+.leg { display: grid; grid-template-columns: var(--lane) minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--gap); align-items: start; padding: 30px 0; }
+.leg > .lane { grid-column: 1; grid-row: 1 / span 2; display: flex; align-items: flex-start; gap: 12px; padding-left: var(--dx, 12px); }
+.leg > .txt { grid-column: 2; grid-row: 1; min-width: 0; }
+.leg > .art { grid-column: 3; grid-row: 1; min-width: 0; }
+.leg > .full { grid-column: 2 / span 2; grid-row: 2; margin-top: 32px; min-width: 0; }
+.leg.wide > .txt { grid-column: 2 / span 2; max-width: 44em; }
+.lbl { font: 500 15px/1.3 var(--display); margin: 5px 0 0; max-width: 150px; }
+.lbl .who { font-weight: 700; }
+.txt > :last-child { margin-bottom: 0; }
+.txt p { max-width: 36em; }
+.txt code, .how code, .idx code { font-size: 0.86em; padding: 1px 5px; background: var(--inset); border: 1px solid var(--hair-2); overflow-wrap: anywhere; }
+
+.sec { padding-top: 110px; }
+h2 { font: 500 clamp(32px, 4vw, 54px)/1.04 var(--display); letter-spacing: -0.025em; margin: 0 0 20px; max-width: 15em; text-wrap: balance; }
+h3 { font: 500 24px/1.2 var(--display); letter-spacing: -0.012em; margin: 0 0 10px; text-wrap: balance; }
+.sub { font-size: 19px; color: var(--ink-2); max-width: 34em; }
+
+/* How Tiller delivers it */
+.how-h { font: 600 14px/1 var(--text); color: var(--ink-2); margin: 30px 0 4px; }
+.how { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--frame); }
+.how li { padding: 14px 0; border-bottom: 1px solid var(--hair); }
+.how a { font: 500 17px/1.3 var(--display); text-decoration-color: var(--hair); }
+.how p { margin: 4px 0 0; font-size: 15.5px; color: var(--ink-2); line-height: 1.5; }
+
+/* Insets */
+.inset { border: 1px solid var(--frame); background: var(--paper); margin: 0; }
+.inset-t { display: inline-block; font: 500 13px/1.3 var(--display); padding: 7px 12px; border-right: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
+.inset img { width: 100%; height: auto; margin-top: -1px; border-top: 1px solid var(--hair); }
+.inset pre { margin: -1px 0 0; padding: 16px 18px 18px; font-size: 13px; line-height: 1.65; overflow-x: auto; background: var(--inset); border-top: 1px solid var(--hair); }
+.inset pre i { font-style: normal; color: var(--ink-3); }
+.inset pre b { font-weight: 700; }
+.inset pre .h { color: var(--heed); font-weight: 700; }
+.inset figcaption { font-size: 14px; color: var(--ink-2); padding: 12px 14px; border-top: 1px solid var(--hair); }
+
+.shots { display: grid; gap: 28px; }
+.crew { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin: 20px 0 0; padding: 0; }
+.crew li { font: 500 15px/1 var(--display); border: 1px solid var(--frame); padding: 9px 14px; }
+
+/* Passage plan: the lifecycle, horizontal */
+.passage { list-style: none; margin: 0; padding: 22px 0 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); position: relative; border-top: 1px solid var(--frame); }
+.passage::before { content: ""; position: absolute; left: 4%; right: 4%; top: 37px; border-top: 1px dotted var(--track); }
+.passage li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; font: 400 15px/1.25 var(--display); padding: 0 6px; position: relative; }
+
+/* The faux terminal: one feature from plan to merge, played step by step */
+.passage button { appearance: none; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: var(--ink-2); cursor: pointer; display: flex; flex-direction: inherit; align-items: center; gap: 10px; text-align: inherit; }
+.passage button:hover .st { text-decoration: underline; text-underline-offset: 3px; }
+.passage button[aria-current="step"] { color: var(--ink); }
+.passage button[aria-current="step"] .st { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; text-decoration-color: var(--course); }
+.passage button.past { color: var(--ink); }
+.player { margin-top: 36px; }
+.term {
+  background: var(--term-bg); color: var(--term-fg);
+  font: 400 13.5px/1.62 var(--mono);
+  height: 460px; overflow-y: auto; overscroll-behavior: contain;
+  padding: 16px 20px 22px; margin-top: -1px; border-top: 1px solid var(--hair);
+  scrollbar-color: var(--term-dim) transparent;
+}
+.term .ln { white-space: pre-wrap; overflow-wrap: anywhere; padding-left: 8ch; text-indent: -8ch; min-height: 1.62em; }
+.term .who { display: inline-block; width: 8ch; text-indent: 0; font-weight: 700; }
+.term .agent .who, .term .agent.say .who { color: var(--term-agent); }
+.term .you .who, .term .you.say .who { color: var(--term-you); }
+.term .pr { color: var(--term-dim); }
+.term .out { color: var(--term-dim); }
+.term .out b { color: var(--term-fg); font-weight: 700; }
+.term .out .bad { color: var(--term-fail); font-weight: 700; }
+.term .out .good { color: var(--term-pass); font-weight: 700; }
+.term .say .msg { color: var(--term-fg); }
+.term .gap { min-height: 0.8em; }
+.term .stage-h { color: var(--term-dim); padding-left: 0; text-indent: 0; margin: 4px 0 2px; }
+.term .caret { display: inline-block; width: 0.6em; height: 1.1em; vertical-align: -0.2em; background: var(--term-fg); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.chapters { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); border-top: 1px solid var(--hair); }
+.chapters li + li { border-left: 1px solid var(--hair-2); }
+.chapters button { appearance: none; width: 100%; height: 100%; background: none; border: 0; border-top: 2px solid transparent; margin-top: -1px; padding: 9px 4px 11px; font: 500 13.5px/1.25 var(--text); color: var(--ink-3); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.chapters .n { font: 400 11.5px/1 var(--mono); }
+.chapters .you .n { color: var(--heed); }
+.chapters .g { display: inline-flex; align-items: center; gap: 5px; }
+.chapters svg { width: 13px; height: 13px; flex: none; }
+.chapters button:hover { color: var(--ink); }
+.chapters button.past { color: var(--ink-2); }
+.chapters button[aria-current="step"] { color: var(--ink); font-weight: 600; border-top-color: var(--course); }
+.term-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 14px; border-top: 1px solid var(--hair); }
+.term-bar button { font: 500 14px/1 var(--text); color: var(--ink); background: transparent; border: 1px solid var(--frame); padding: 8px 14px; cursor: pointer; }
+.term-bar button:hover { background: var(--hair-2); }
+.term-now { margin: 0 0 0 auto; font: 500 14px/1.3 var(--display); color: var(--ink-2); }
+.term-now .who { color: var(--ink); }
+.term-now.you .who { color: var(--heed); }
+.inset-note { font-size: 14px; color: var(--ink-2); padding: 12px 14px; margin: 0; border-top: 1px solid var(--hair); }
+
+/* Index of sheets: everything Tiller does, into the docs */
+.idx-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 48px; border-top: 2px solid var(--frame); border-bottom: 2px solid var(--frame); }
+.idx { list-style: none; margin: 0; padding: 0; min-width: 0; }
+.idx li { border-bottom: 1px solid var(--hair); }
+.idx li:last-child { border-bottom: 0; }
+.idx a { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 16px 0; text-decoration: none; }
+.idx .t { font: 500 18px/1.3 var(--display); }
+.idx a:hover .t { text-decoration: underline; text-underline-offset: 3px; }
+.idx .s { font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.idx-foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; margin-top: 26px; }
+.idx-foot a.text { font-weight: 500; }
+.map-inset { margin-top: 40px; }
+
+/* Fit: good water and shoal water */
+.fit { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
+.fit > div { padding: 28px 32px 30px 0; }
+.fit > div + div { padding-left: 32px; border-left: 1px solid var(--hair); }
+.buoy-row { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+.buoy { width: 36px; height: 60px; color: var(--ink); flex: none; }
+.buoy .ln { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.buoy .fl { fill: currentColor; }
+.buoy .bg { fill: var(--paper); }
+.fit h3 { margin: 0; }
+.fit ul { margin: 0; padding: 0 0 0 1.1em; }
+.fit li { margin: 0 0 6px; }
+
+/* Install */
+.one { font: 500 clamp(30px, 3.6vw, 48px)/1.06 var(--display); letter-spacing: -0.02em; margin: 0 0 10px; }
+.scale { margin: 18px 0 34px; max-width: 520px; }
+.scale-bar { display: grid; grid-template-columns: repeat(3, 1fr); height: 10px; border: 1px solid var(--frame); }
+.scale-bar span:nth-child(odd) { background: var(--frame); }
+.scale-ticks { display: grid; grid-template-columns: repeat(3, 1fr); font: 500 14px/1.3 var(--display); margin-top: 8px; }
+.installs { display: grid; gap: 18px; max-width: 760px; }
+.installs > div { min-width: 0; }
+.installs h3 { font: 600 14px/1.3 var(--text); color: var(--ink-2); margin: 0 0 8px; }
+.kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 40px 0 0; border-top: 1px solid var(--frame); }
+.kinds > div { padding: 18px 24px 0 0; min-width: 0; }
+.kinds > div + div { padding-left: 24px; border-left: 1px solid var(--hair); }
+.kinds code { font: 700 14px/1.4 var(--mono); display: block; margin-bottom: 6px; overflow-wrap: anywhere; }
+.kinds p { margin: 0; font-size: 15.5px; color: var(--ink-2); }
+.next { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: center; margin-top: 32px; }
+
+/* Close */
+.close { padding: 190px 0 90px; text-align: center; }
+.close .sym { width: 76px; height: 76px; margin: 0 auto; }
+.close .lbl { max-width: none; margin: 12px auto 0; font-size: 17px; }
+.close blockquote { margin: 56px auto 0; max-width: 17em; font: 500 clamp(34px, 5vw, 68px)/1.04 var(--display); letter-spacing: -0.03em; text-wrap: balance; }
+
+.imprint { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; padding: 22px var(--pad); border-top: 1px solid var(--hair); font-size: 14.5px; color: var(--ink-2); position: relative; z-index: 3; }
+.imprint .mit { display: flex; align-items: center; gap: 14px; }
+.imprint .mit img { height: 22px; width: auto; }
+.imprint nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.imprint a { text-decoration: none; }
+.imprint a:hover { text-decoration: underline; }
+.imprint a.mit-link { text-decoration: underline; text-decoration-color: var(--hair); color: var(--ink); }
+.imprint a.mit-link:hover { text-decoration-color: currentColor; }
+
+@media (max-width: 1180px) {
+  :root { --lane: 160px; --gap: 32px; --pad: 32px; }
+  .lbl { max-width: 120px; }
+  .hero-grid { grid-template-columns: minmax(0, 1fr) 330px; column-gap: 40px; }
+  .leg { grid-template-columns: var(--lane) minmax(0, 1fr); }
+  .leg > .art { grid-column: 2; grid-row: 2; margin-top: 28px; }
+  .leg > .full { grid-column: 2; grid-row: 3; }
+  .leg.wide > .txt { grid-column: 2; }
+  .leg.wide > .full { grid-row: 2; }
+  .passage { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 22px; }
+  .passage::before { display: none; }
+}
+@media (max-width: 920px) {
+  .chapters { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .chapters li:nth-child(7) { border-left: 0; }
+  .chapters li:nth-child(n+7) { border-top: 1px solid var(--hair-2); }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .titleblock { margin-top: 48px; max-width: 460px; }
+  .hero-chart { width: 100%; height: 360px; opacity: 0.8; }
+  .idx-wrap { grid-template-columns: 1fr; }
+  .idx + .idx li:first-child { border-top: 1px solid var(--hair); }
+  .kinds { grid-template-columns: 1fr; }
+  .kinds > div, .kinds > div + div { padding: 16px 0 0; border-left: 0; }
+}
+@media (max-width: 680px) {
+  .chapters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .chapters li + li { border-left: 1px solid var(--hair-2); border-top: 0; }
+  .chapters li:nth-child(4n+1) { border-left: 0; }
+  .chapters li:nth-child(n+5) { border-top: 1px solid var(--hair-2); }
+  .term { height: 400px; font-size: 12px; padding: 14px 12px 18px; }
+  .term-now { margin-left: 0; width: 100%; }
+  :root { --lane: 30px; --gap: 12px; --pad: 12px; }
+  body { font-size: 16.5px; }
+  .sheet { margin: 6px auto; padding: 4px; border-width: 1px; }
+  .sheet::before, .sheet::after { top: 4px; bottom: 4px; width: 4px; background: repeating-linear-gradient(to bottom, var(--frame) 0 32px, transparent 32px 64px); }
+  .neat::before, .neat::after { height: 4px; background: repeating-linear-gradient(to right, var(--frame) 0 32px, transparent 32px 64px); }
+  .neat::before { top: -5px; } .neat::after { bottom: -5px; }
+  .top { padding: 14px 12px; }
+  .top nav { gap: 14px; font-size: 14.5px; }
+  .top nav .hide-sm { display: none; }
+  .hero { padding-top: 40px; }
+  .hero-chart { display: none; }
+  h1 { font-size: clamp(36px, 10.6vw, 50px); margin-bottom: 24px; }
+  .lede { font-size: 18px; }
+  .cta .cmd { width: 100%; }
+  .titleblock { padding: 18px 16px 16px; margin-top: 40px; }
+  .leg { grid-template-columns: var(--lane) minmax(0, 1fr); column-gap: var(--gap); padding: 22px 0; }
+  .leg > .lane { display: contents; }
+  .leg .lane > .sym { grid-column: 1; grid-row: 1; justify-self: center; }
+  .leg .lane > .lbl { grid-column: 2; grid-row: 1; align-self: center; margin: 0 0 10px; max-width: none; }
+  .leg > .txt, .leg.wide > .txt { grid-column: 2; grid-row: 2; }
+  .leg > .art { grid-column: 2; grid-row: 3; margin-top: 20px; }
+  .leg > .full, .leg.wide > .full { grid-column: 2; grid-row: 3; margin-top: 20px; }
+  .sec { padding-top: 72px; }
+  h2 { font-size: clamp(29px, 8.4vw, 40px); }
+  .inset pre { font-size: 11.5px; padding: 14px 12px; }
+  .passage { grid-template-columns: 1fr; padding-top: 16px; row-gap: 12px; }
+  .passage li, .passage button { flex-direction: row; text-align: left; }
+  .fit { grid-template-columns: 1fr; }
+  .fit > div { padding: 24px 0; }
+  .fit > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--hair); }
+  .close { padding: 130px 0 60px; }
+  .imprint { padding: 18px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term .caret { animation: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="s-agent" viewBox="0 0 30 30"><circle class="bg" cx="15" cy="15" r="8"/><circle class="ln" cx="15" cy="15" r="7"/><circle class="fl" cx="15" cy="15" r="2"/></symbol>
+    <symbol id="s-you" viewBox="0 0 30 30"><path class="flare" d="M15 15 L27 2.5 Q31 6 28 10.5 Z"/><circle class="bg" cx="15" cy="15" r="7.5"/><path class="fl" d="M15 7.5 L16.8 12.6 L22.2 12.7 L17.9 16 L19.4 21.2 L15 18.1 L10.6 21.2 L12.1 16 L7.8 12.7 L13.2 12.6 Z"/></symbol>
+    <symbol id="s-both" viewBox="0 0 30 30"><path class="flare" d="M15 15 L27 2.5 Q31 6 28 10.5 Z"/><circle class="bg" cx="15" cy="15" r="8"/><circle class="ln" cx="15" cy="15" r="7"/><path class="fl" d="M15 10 L16.2 13.4 L19.8 13.5 L16.9 15.6 L17.9 19 L15 17 L12.1 19 L13.1 15.6 L10.2 13.5 L13.8 13.4 Z"/></symbol>
+    <symbol id="s-wp" viewBox="0 0 30 30"><circle class="bg" cx="15" cy="15" r="6"/><circle class="ln" cx="15" cy="15" r="5"/></symbol>
+  </defs>
+</svg>
+
+<div class="sheet"><div class="neat">
+
+<header class="top">
+  <a class="brand" href={url("")}>
+    <img class="only-light" src={tillerLogo.src} alt="">
+    <img class="only-dark" src={tillerLogoInverted.src} alt="">
+    <span>tiller</span>
+  </a>
+  <nav aria-label="Docs">
+    <a href={url("quickstart/")}>Quickstart</a>
+    <a class="hide-sm" href={url("concepts/")}>Concepts</a>
+    <a class="hide-sm" href={url("console/")}>Console</a>
+    <a class="hide-sm" href="https://github.com/madeintandem/tiller">GitHub</a>
+    <a class="install" href="#install">Install</a>
+  </nav>
+</header>
+
+<div class="chart" id="chart">
+<svg class="course" id="course" aria-hidden="true"><path class="planned" id="planned"/><path class="made" id="made"/></svg>
+
+<header class="hero">
+  <svg class="hero-chart" viewBox="0 0 600 420" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+    <path class="shoal" d="M600 0 V250 C560 262 520 240 480 214 C440 188 420 150 380 128 C340 106 300 98 288 62 C280 38 292 14 300 0 Z"/>
+    <path class="land" d="M600 0 V176 C570 186 540 170 516 150 C488 126 470 96 440 82 C410 68 380 56 372 30 C368 16 372 6 376 0 Z"/>
+    <path class="coast" d="M376 0 C372 6 368 16 372 30 C380 56 410 68 440 82 C470 96 488 126 516 150 C540 170 570 186 600 176"/>
+    <path class="c5" d="M300 0 C292 14 280 38 288 62 C300 98 340 106 380 128 C420 150 440 188 480 214 C520 240 560 262 600 250"/>
+    <path class="c10" d="M228 0 C218 30 214 70 236 104 C262 142 318 160 352 192 C392 230 420 280 470 304 C520 328 566 330 600 322"/>
+    <text x="318" y="40">3<tspan font-size="8.5" dy="2">2</tspan></text>
+    <text x="352" y="96">2<tspan font-size="8.5" dy="2">4</tspan></text>
+    <text x="268" y="128">7</text>
+    <text x="410" y="170">4<tspan font-size="8.5" dy="2">1</tspan></text>
+    <text x="300" y="196">12</text>
+    <text x="470" y="244">6</text>
+    <text x="388" y="272">14</text>
+    <text x="540" y="292">9<tspan font-size="8.5" dy="2">5</tspan></text>
+  </svg>
+  <div class="hero-grid">
+    <div>
+      <h1>Your team and your agents, shipping software you'd put your name on.</h1>
+      <p class="lede"><strong>Tiller helps a team of people and coding agents deliver high-quality software fast,</strong> with the confidence to ship it.</p>
+      <div class="cta">
+        <div class="cmd"><code id="c1">brew install --cask madeintandem/tap/tiller</code><button type="button" data-copy="c1">Copy</button></div>
+        <a class="btn" href={url("quickstart/")}>Read the quickstart</a>
+      </div>
+      <p class="fine">Open source, Apache 2.0. One binary for macOS and Linux. <a href="#install">Other ways to install</a></p>
+    </div>
+    <aside class="titleblock" aria-label="On this page">
+      <p class="tb-title">What you get</p>
+      <ul class="dirs">
+        <li><a href="#speed"><svg class="sym sm"><use href="#s-agent"/></svg><span><span class="d-t">Speed</span><span class="d-s">Move at agent speed, together</span></span></a></li>
+        <li><a href="#quality"><svg class="sym sm"><use href="#s-both"/></svg><span><span class="d-t">Quality</span><span class="d-s">Done means done, every time</span></span></a></li>
+        <li><a href="#confidence"><svg class="sym sm"><use href="#s-you"/></svg><span><span class="d-t">Confidence</span><span class="d-s">Know it's right before it ships</span></span></a></li>
+        <li><a href="#team"><svg class="sym sm"><use href="#s-agent"/></svg><span><span class="d-t">One crew</span><span class="d-s">People and agents on one plan</span></span></a></li>
+      </ul>
+      <p class="tb-h">Key</p>
+      <dl class="key">
+        <dt><svg class="sym sm"><use href="#s-agent"/></svg></dt><dd><span class="who">Agent:</span> does the work</dd>
+        <dt><svg class="sym sm"><use href="#s-you"/></svg></dt><dd><span class="who" style="color:var(--heed)">You:</span> a person decides</dd>
+        <dt><span class="line"></span></dt><dd>The course, drawn as you read</dd>
+      </dl>
+    </aside>
+  </div>
+</header>
+
+<!-- Speed -->
+<section class="sec" id="speed">
+  <div class="leg">
+    <div class="lane" style="--dx:12px"><svg class="sym wp"><use href="#s-agent"/></svg><p class="lbl"><span class="who">Speed</span></p></div>
+    <div class="txt">
+      <h2>Move at agent speed, together.</h2>
+      <p>An agent can finish a task in minutes. What slows a team down is everything around the code: what's next, who has it, and whether it's really done. Tiller keeps all of that straight, so the agents keep moving and nobody spends the morning chasing status.</p>
+      <p class="how-h">How Tiller does it</p>
+      <ul class="how">
+        <li><a href={url("concepts/#the-tree")}>Plan just far enough ahead</a><p>The work grows from epics to features to tasks. Each feature gets its spec when its turn comes, so nobody plans what will change anyway.</p></li>
+        <li><a href={url("skills/")}>Always a next move</a><p><code>tiller next</code> ranks every legal move for your checkout, the decisions waiting on you included.</p></li>
+        <li><a href={url("concepts/#contributors-and-claims")}>Work in parallel without collisions</a><p>Claim a task and it's yours. Each one runs on its own branch, so people and agents can work side by side.</p></li>
+      </ul>
+    </div>
+    <figure class="inset art">
+      <span class="inset-t">From the terminal</span>
+<pre><i># your ranked next moves, top five</i>
+$ <b>tiller next</b>
+
+<i># the same list, then the skill for the top agent move</i>
+$ <b>tiller guide</b>
+
+<i># take the next task and go</i>
+$ <b>tiller claim task</b> event-night/door-check-in/attendee-search
+$ <b>tiller start task</b> event-night/door-check-in/attendee-search</pre>
+      <figcaption>Your agent runs these as it works. You can too.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Quality -->
+<section class="sec" id="quality">
+  <div class="leg">
+    <div class="lane" style="--dx:40px"><svg class="sym wp"><use href="#s-both"/></svg><p class="lbl"><span class="who">Quality</span></p></div>
+    <div class="txt">
+      <h2>Done means done, every time.</h2>
+      <p>Speed only helps if the work holds up. With Tiller, every piece of work knows what done means before anyone starts it, and it can't get there without passing the checks you chose.</p>
+      <p class="how-h">How Tiller does it</p>
+      <ul class="how">
+        <li><a href={url("concepts/#the-lifecycle-and-its-gates")}>Acceptance criteria up front</a><p>A feature's spec, its acceptance criteria, and its tasks are written and approved before the first line of code.</p></li>
+        <li><a href={url("concepts/#gates-and-evidence")}>Checks that block done</a><p>Build, tests, and evals run on every task, and the result is recorded with the revision it ran against.</p></li>
+        <li><a href={url("concepts/#review-grain")}>Review at the grain that fits</a><p>A pull request per task, per feature, or per epic. There's a code review skill when you want a second set of eyes.</p></li>
+        <li><a href={url("concepts/#corrections-drift-and-amendments")}>Drift gets caught</a><p>Once a spec is approved, it's pinned. If it moves after that, Tiller flags it before work goes on.</p></li>
+      </ul>
+    </div>
+    <figure class="inset art">
+      <span class="inset-t">Gates, declared in tiller.yml</span>
+<pre>gates:
+  required:
+    evals: tiller eval …              on: [feature]
+    build: bin/rails zeitwerk:check   on: [feature, task]
+    tests: bin/rails test             on: [feature, task]
+  optional:
+    code_review: attestation
+    security_review: attestation</pre>
+      <figcaption>Your project's own commands. Tiller runs them and writes down what happened.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Confidence -->
+<section class="sec" id="confidence">
+  <div class="leg">
+    <div class="lane" style="--dx:16px"><svg class="sym wp"><use href="#s-you"/></svg><p class="lbl you"><span class="who">Confidence</span></p></div>
+    <div class="txt">
+      <h2>Know where things stand, and know it's right.</h2>
+      <p>You shouldn't need a status meeting to know how the project is going, or a leap of faith to merge. Tiller gives everyone the same picture and keeps a person's hand on every merge.</p>
+      <p class="how-h">How Tiller does it</p>
+      <ul class="how">
+        <li><a href={url("concepts/#who-does-what")}>A person merges, every time</a><p>An agent can carry the work right up to the line and turn every check green. Only a human merge gets it to done, and Tiller sees it by watching git.</p></li>
+        <li><a href={url("console/#build")}>A board everyone can read</a><p>Every feature from draft to done, who's on it, and how many of its tasks are finished. Home leads with the decisions waiting on you.</p></li>
+        <li><a href={url("console/#explore")}>Every detail one click deep</a><p>Explore walks the plan from epic to task, and every task carries its spec, its checks, and its history.</p></li>
+        <li><a href={url("console/#report")}>A report you can hand a client</a><p>Burn-up, throughput, bugs, lead and cycle time, and epic progress, with no people on it.</p></li>
+      </ul>
+    </div>
+    <div class="art shots">
+      <figure class="inset">
+        <span class="inset-t">Build, on a sample project</span>
+        <img class="only-light" src={url("console-build-light.webp")} alt="The Build board: features in six columns from Draft to Done, each card showing its epic, contributors, and tasks finished" width="1440" height="542">
+        <img class="only-dark" src={url("console-build-dark.webp")} alt="The Build board: features in six columns from Draft to Done, each card showing its epic, contributors, and tasks finished" width="1440" height="542">
+        <figcaption>The Build board. Every feature from draft to done, served locally by <code>tiller serve</code>.</figcaption>
+      </figure>
+      <figure class="inset">
+        <span class="inset-t">Explore, on the same project</span>
+        <img class="only-light" src={url("console-explore-light.webp")} alt="Explore: the project tree opened from epics to tasks, with the Alert routing task selected and its approach, steps, and done-when criteria in the reading pane" width="1440" height="780">
+        <img class="only-dark" src={url("console-explore-dark.webp")} alt="Explore: the project tree opened from epics to tasks, with the Alert routing task selected and its approach, steps, and done-when criteria in the reading pane" width="1440" height="780">
+        <figcaption>Explore. The whole plan as a tree, and every task with its spec, its checks, and its history.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Team -->
+<section class="sec" id="team">
+  <div class="leg">
+    <div class="lane" style="--dx:30px"><svg class="sym wp"><use href="#s-agent"/></svg><p class="lbl"><span class="who">One crew</span></p></div>
+    <div class="txt">
+      <h2>One plan for the whole crew.</h2>
+      <p>Agent work tends to live in one person's chat window. Tiller moves the plan, the decisions, and the state into the repo, where every person and every agent on the project reads the same thing.</p>
+      <p class="how-h">How Tiller does it</p>
+      <ul class="how">
+        <li><a href={url("concepts/#where-things-live")}>Plain files in git</a><p>Markdown for what you want, YAML for where it stands. No database and no hosted service, so cloning the repo clones the plan.</p></li>
+        <li><a href={url("skills/")}>Bring any agent</a><p>Tiller serves its skills to any harness through <code>tiller guide</code>, so everyone sees the same instructions.</p></li>
+        <li><a href={url("console/#explore")}>Questions that hold the work</a><p>When something needs an answer, it's written down and the work it blocks waits for it, instead of getting lost in a thread.</p></li>
+      </ul>
+      <ul class="crew" aria-label="Agents that work with Tiller">
+        <li>Claude Code</li><li>Codex</li><li>Pi</li><li>a plain shell</li>
+      </ul>
+    </div>
+    <figure class="inset art">
+      <span class="inset-t">The plan, in your repo</span>
+<pre>.tiller/epics/event-night/
+  epic.md                  <span class="h">yours:</span> intent
+  epic.yml                 <i>Tiller's:</i> state
+  features/door-check-in/
+    feature.md             the spec
+    feature.eval.md        acceptance criteria
+    feature.yml            status, gates
+    tasks/attendee-search/
+      task.md
+      task.yml</pre>
+      <figcaption>Versioned right alongside the code it describes.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- How it fits together -->
+<section class="sec" id="how">
+  <div class="leg wide">
+    <div class="lane" style="--dx:12px"><svg class="sym wp"><use href="#s-wp"/></svg><p class="lbl"><span class="who">The passage</span></p></div>
+    <div class="txt">
+      <h2>How it fits together</h2>
+      <p class="sub">Your agent does the thinking and the typing. You make the calls at each step. Tiller holds the plan, the checks, and the state in between.</p>
+    </div>
+    <div class="full">
+      <ol class="passage" id="passage" aria-label="The passage from plan to merge. Choose a step to jump the terminal to it.">
+        <li><button type="button" data-stage="0"><svg class="sym"><use href="#s-agent"/></svg><span class="st"><span class="who">Agent:</span> Decompose</span></button></li>
+        <li class="you"><button type="button" data-stage="1"><svg class="sym"><use href="#s-you"/></svg><span class="st"><span class="who">You:</span> Approve the shape</span></button></li>
+        <li><button type="button" data-stage="2"><svg class="sym"><use href="#s-agent"/></svg><span class="st"><span class="who">Agent:</span> Specify</span></button></li>
+        <li class="you"><button type="button" data-stage="3"><svg class="sym"><use href="#s-you"/></svg><span class="st"><span class="who">You:</span> Approve the plan</span></button></li>
+        <li><button type="button" data-stage="4"><svg class="sym"><use href="#s-agent"/></svg><span class="st"><span class="who">Agent:</span> Build and pass checks</span></button></li>
+        <li class="you"><button type="button" data-stage="5"><svg class="sym"><use href="#s-both"/></svg><span class="st"><span class="who">Agent + you:</span> Review</span></button></li>
+        <li class="you"><button type="button" data-stage="6"><svg class="sym"><use href="#s-you"/></svg><span class="st"><span class="who">You:</span> Merge</span></button></li>
+      </ol>
+
+      <figure class="inset player">
+        <span class="inset-t">Inset: one feature, plan to merge</span>
+        <div class="term" id="term" role="log" aria-label="A terminal session taking one feature from plan to merge" tabindex="0"></div>
+        <ol class="chapters" id="chapters" aria-label="Moments in the session"></ol>
+        <div class="term-bar">
+          <button type="button" id="termPlay">Play</button>
+          <button type="button" id="termReplay">Start over</button>
+          <p class="term-now" id="termNow" aria-live="polite"></p>
+        </div>
+        <p class="inset-note">A sample project, condensed. The commands and their output are Tiller's own; the notes between them summarize what the agent and the person are doing.</p>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Everything Tiller can do -->
+<section class="sec" id="docs">
+  <div class="leg wide">
+    <div class="lane" style="--dx:40px"><svg class="sym wp"><use href="#s-wp"/></svg><p class="lbl"><span class="who">Index of sheets</span></p></div>
+    <div class="txt">
+      <h2>Everything Tiller can do</h2>
+      <p class="sub">One binary with 44 commands, a local console, and eleven agent skills. Here's the lay of the land, and where to read more.</p>
+    </div>
+    <div class="full">
+      <div class="idx-wrap">
+        <ul class="idx">
+          <li><a href={url("concepts/#the-tree")}><span class="t">Plan the work</span><span class="s">An agent proposes epics and features from your design docs, and you approve the shape.</span></a></li>
+          <li><a href={url("concepts/#the-lifecycle-and-its-gates")}><span class="t">Specify just in time</span><span class="s">Spec, acceptance criteria, and tasks for one feature, when its turn comes.</span></a></li>
+          <li><a href={url("concepts/#gates-and-evidence")}><span class="t">Gates and evidence</span><span class="s">Required checks that block done, plus optional review attestations.</span></a></li>
+          <li><a href={url("concepts/#review-grain")}><span class="t">Review grain</span><span class="s">Review by task, feature, or epic, set per project, epic, or feature.</span></a></li>
+          <li><a href={url("concepts/#contributors-and-claims")}><span class="t">Claims and contributors</span><span class="s">Who's on what, how work changes hands, and what happens when it has to.</span></a></li>
+          <li><a href={url("concepts/#bugs-chores-and-tweaks")}><span class="t">Bugs, chores, and tweaks</span><span class="s">Unplanned work gets captured, triaged by a person, and run like any other task.</span></a></li>
+          <li><a href={url("concepts/#corrections-drift-and-amendments")}><span class="t">Drift and amendments</span><span class="s">Change the plan on purpose, with a reviewed amendment, and catch it when it changes by accident.</span></a></li>
+          <li><a href={url("concepts/#existing-code-baseline")}><span class="t">Existing codebases</span><span class="s">Start from code you already have. The agent writes down what it does today, and you confirm it.</span></a></li>
+        </ul>
+        <ul class="idx">
+          <li><a href={url("console/#home-the-desk")}><span class="t">Home</span><span class="s">The desk: what needs you, what's moving, what just happened.</span></a></li>
+          <li><a href={url("console/#build")}><span class="t">Build and Fix boards</span><span class="s">Planned work and shelf work, column by column, read-only.</span></a></li>
+          <li><a href={url("console/#the-map")}><span class="t">Explore and the map</span><span class="s">The whole project as a tree or a mind map, with every dependency one click away.</span></a></li>
+          <li><a href={url("console/#report")}><span class="t">Report</span><span class="s">The page to show a client, with an optional tab for agent token use.</span></a></li>
+          <li><a href={url("console/#history")}><span class="t">History</span><span class="s">What changed since you last looked.</span></a></li>
+          <li><a href={url("skills/")}><span class="t">Agent skills</span><span class="s">Eleven skills, from orienting to code review, served by the binary to any agent.</span></a></li>
+          <li><a href={url("cli/")}><span class="t">CLI reference</span><span class="s">All 44 commands.</span></a></li>
+          <li><a href={url("spec/cli-surface/")}><span class="t">Design specs</span><span class="s">The full contracts, for when you want every rule and refusal.</span></a></li>
+        </ul>
+      </div>
+      <div class="idx-foot">
+        <a class="btn" href={url("concepts/")}>Start with Concepts</a>
+        <a class="text" href={url("quickstart/")}>Or go straight to the quickstart</a>
+      </div>
+      <figure class="inset map-inset">
+        <span class="inset-t">Explore, the project as a mind map</span>
+        <img class="only-light" src={url("console-map-light.webp")} alt="The Explore map with the project at the center, epics to either side, and a selected feature showing what it depends on" width="1440" height="780">
+        <img class="only-dark" src={url("console-map-dark.webp")} alt="The Explore map with the project at the center, epics to either side, and a selected feature showing what it depends on" width="1440" height="780">
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- Fit -->
+<section class="sec" id="fit">
+  <div class="leg wide">
+    <div class="lane" style="--dx:20px"><svg class="sym wp"><use href="#s-wp"/></svg><p class="lbl"><span class="who">Where it fits</span></p></div>
+    <div class="txt">
+      <h2>Where it fits, and where it doesn't.</h2>
+    </div>
+    <div class="full fit">
+      <div>
+        <div class="buoy-row">
+          <svg class="buoy" viewBox="0 0 36 60" aria-hidden="true"><circle class="fl" cx="18" cy="8" r="5"/><path class="ln" d="M18 13 V20"/><path class="bg" d="M8 54 L12 22 H24 L28 54 Z"/><path class="ln" d="M8 54 L12 22 H24 L28 54 Z"/><path class="fl" d="M14 22 H18 V54 H11 Z" opacity=".85"/><path class="fl" d="M22 22 H24 L28 54 H22 Z" opacity=".85"/></svg>
+          <h3>Good water</h3>
+        </div>
+        <ul>
+          <li>Products where you can write down what you want before an agent builds it.</li>
+          <li>More than one person on the work.</li>
+          <li>Someone outside the team needs to see where things stand.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="buoy-row">
+          <svg class="buoy" viewBox="0 0 36 60" aria-hidden="true"><circle class="fl" cx="18" cy="4.5" r="3.6"/><circle class="fl" cx="18" cy="13" r="3.6"/><path class="ln" d="M18 16.6 V22"/><path class="bg" d="M8 54 L12 22 H24 L28 54 Z"/><path class="ln" d="M8 54 L12 22 H24 L28 54 Z"/><path class="fl" d="M10.7 32 H25.3 L26.6 42 H9.4 Z"/></svg>
+          <h3>Shoal water, skip it</h3>
+        </div>
+        <ul>
+          <li>Spikes, prototypes, and research code.</li>
+          <li>A solo tool still finding its shape (Tiller itself, for one).</li>
+          <li>Work where the plan changes faster than you can write it down.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section class="sec" id="install">
+  <div class="leg wide">
+    <div class="lane" style="--dx:12px"><svg class="sym wp"><use href="#s-you"/></svg><p class="lbl you"><span class="who">You:</span> Install</p></div>
+    <div class="txt">
+      <p class="one">Pick one feature this week.</p>
+      <p class="sub">Not your whole project. One feature, one spec, one merge.</p>
+      <div class="scale" aria-hidden="true">
+        <div class="scale-bar"><span></span><span></span><span></span></div>
+        <div class="scale-ticks"><span>One feature</span><span>One spec</span><span>One merge</span></div>
+      </div>
+      <div class="installs">
+        <div><h3>macOS, with Homebrew</h3><div class="cmd"><code id="c2">brew install --cask madeintandem/tap/tiller</code><button type="button" data-copy="c2">Copy</button></div></div>
+        <div><h3>macOS or Linux</h3><div class="cmd"><code id="c3">curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh | sh</code><button type="button" data-copy="c3">Copy</button></div></div>
+      </div>
+      <div class="kinds">
+        <div><code>tiller init --kind brownfield</code><p>An existing codebase. The agent writes down what's there, you confirm it, and every change proves the old behavior still works.</p></div>
+        <div><code>tiller init --kind greenfield</code><p>A new project. You write the design docs, and the agent proposes the epics and features.</p></div>
+        <div><code>tiller init --kind legacy-migration</code><p>Replacing an old system, which stays read-only as the yardstick.</p></div>
+      </div>
+      <div class="next">
+        <a class="btn" href={url("quickstart/")}>Follow the quickstart</a>
+        <a href="https://github.com/madeintandem/tiller">Star it on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="close">
+  <svg class="sym wp"><use href="#s-you"/></svg>
+  <p class="lbl you"><span class="who">You:</span> Merge</p>
+  <blockquote>A tiller steers the boat, but somebody's hand has to be on it.</blockquote>
+</section>
+</div>
+
+<footer class="imprint">
+  <div class="mit">
+    <a href="https://madeintandem.com">
+      <img class="only-light" src={mitLogo.src} alt="Made In Tandem">
+      <img class="only-dark" src={mitLogoWhite.src} alt="Made In Tandem">
+    </a>
+    <span>Tiller is made by <a class="mit-link" href="https://madeintandem.com">Made In Tandem</a> and released under Apache 2.0.</span>
+  </div>
+  <nav aria-label="Footer">
+    <a href={url("quickstart/")}>Quickstart</a>
+    <a href={url("concepts/")}>Concepts</a>
+    <a href={url("console/")}>Console</a>
+    <a href="https://github.com/madeintandem/tiller">GitHub</a>
+    <a href="#install">Install</a>
+  </nav>
+</footer>
+
+</div></div>
+
+<script is:inline>
+(function () {
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Copy buttons
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var el = document.getElementById(b.dataset.copy);
+      var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+      var pick = function () { var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+      try { navigator.clipboard.writeText(el.textContent).then(done, pick); } catch (e) { pick(); }
+    });
+  });
+
+  // The course: a planned track through every waypoint, drawn solid as you read
+  var chart = document.getElementById("chart"), svg = document.getElementById("course");
+  var planned = document.getElementById("planned"), made = document.getElementById("made");
+  var len = 0;
+  function draw() {
+    var r = chart.getBoundingClientRect();
+    var pts = Array.prototype.filter.call(chart.querySelectorAll(".wp"), function (e) { return e.getClientRects().length; })
+      .map(function (e) { var b = e.getBoundingClientRect(); return [Math.round(b.left - r.left + b.width / 2), Math.round(b.top - r.top + b.height / 2)]; });
+    if (pts.length < 2) return;
+    svg.setAttribute("width", r.width); svg.setAttribute("height", r.height);
+    svg.setAttribute("viewBox", "0 0 " + r.width + " " + r.height);
+    var d = "M" + pts.map(function (p) { return p.join(" "); }).join(" L");
+    planned.setAttribute("d", d); made.setAttribute("d", d);
+    len = made.getTotalLength();
+    made.style.strokeDasharray = len + " " + len;
+    progress();
+  }
+  function progress() {
+    if (!len) return;
+    if (reduce) { made.style.strokeDashoffset = 0; return; }
+    var target = innerHeight * 0.62 - chart.getBoundingClientRect().top;
+    var lo = 0, hi = len;
+    for (var i = 0; i < 22; i++) { var mid = (lo + hi) / 2; if (made.getPointAtLength(mid).y < target) lo = mid; else hi = mid; }
+    made.style.strokeDashoffset = len - lo;
+  }
+  var raf = 0;
+  addEventListener("scroll", function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; progress(); }); }, { passive: true });
+  addEventListener("resize", draw);
+  addEventListener("load", draw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  draw();
+
+  // The faux terminal: one feature from plan to merge. Commands and output are
+  // Tiller's own (captured from a real run, trimmed); notes summarize the agent.
+  var T = "event-night/door-check-in/attendee-search";
+  var STAGES = ["Agent: Decompose", "You: Approve the shape", "Agent: Specify", "You: Approve the plan", "Agent: Build and pass checks", "Agent + you: Review", "You: Merge"];
+  var steps = [
+    { s: 0, a: "agent", say: "Reading the design docs and proposing the work." },
+    { s: 0, a: "agent", cmd: 'tiller add epic event-night --title "Event night"', out: ["Created epic event-night (E-pm0kyk) in **draft**."] },
+    { s: 0, a: "agent", cmd: 'tiller add feature event-night/door-check-in --title "Door check-in"', out: ["Created feature event-night/door-check-in (F-jn1wyk) in **draft**."] },
+    { s: 0, a: "agent", cmd: 'tiller add feature event-night/attendance --title "Attendance" --depends-on event-night/door-check-in', out: ["Created feature event-night/attendance (F-bz7hud) in **draft**; depends on event-night/door-check-in (F-jn1wyk)."] },
+    { s: 0, a: "agent", say: "One epic, two features. Over to you to approve the shape." },
+    { s: 1, a: "you", cmd: "tiller approve epic event-night", out: ["epic event-night (E-pm0kyk) is now **ready**.", "", "**Next:**", "1. Agent: specify event-night/door-check-in (F-jn1wyk). `tiller guide specify`"] },
+    { s: 2, a: "agent", say: "Writing the spec and its acceptance criteria for door check-in." },
+    { s: 2, a: "agent", cmd: 'tiller add task ' + T + ' --title "Attendee search"', out: ["Created task " + T + " (T-9fbdmz) in **proposed**: \"Attendee search\""] },
+    { s: 2, a: "agent", cmd: 'tiller add task event-night/door-check-in/check-in-button --title "Check-in button" --depends-on ' + T, out: ["Created task event-night/door-check-in/check-in-button (T-54t6jh) in **proposed**: \"Check-in button\"; depends on " + T + " (T-9fbdmz)."] },
+    { s: 2, a: "agent", cmd: "tiller spec feature event-night/door-check-in", out: ["feature event-night/door-check-in (F-jn1wyk) is now **specced**."] },
+    { s: 2, a: "agent", say: "Spec, acceptance criteria, and two tasks are written. Ready for your review." },
+    { s: 3, a: "you", cmd: "tiller approve feature event-night/door-check-in", out: ["feature event-night/door-check-in (F-jn1wyk) is now **ready**. 2 task(s) in the plan moved to ready with it.", "", "**Next:**", "1. Agent: claim and start " + T + " (T-9fbdmz). `tiller claim task " + T + "`"] },
+    { s: 4, a: "agent", cmd: "tiller claim task " + T, out: ["Claimed " + T + " (T-9fbdmz) for robin."] },
+    { s: 4, a: "agent", cmd: "tiller start task " + T, out: ["task " + T + " (T-9fbdmz) is now **in_progress**. Work happens on branch tiller/" + T + "."] },
+    { s: 4, a: "agent", say: "Writing the tests first." },
+    { s: 4, a: "agent", cmd: "tiller check task " + T, out: ["gate tests: running (bin/test)...", "gate tests: !!fail!! (0s)", "!!Blocked:!! task " + T + " (T-9fbdmz) has unsatisfied required gate(s): tests."] },
+    { s: 4, a: "agent", say: "Red, as it should be. Now the implementation." },
+    { s: 4, a: "agent", cmd: "tiller check task " + T, out: ["gate tests: running (bin/test)...", "gate tests: ++pass++ (0s)", "Checked task " + T + " (T-9fbdmz): all required gates ++green++; state is now **check**."] },
+    { s: 5, a: "agent", cmd: "gh pr create --fill", out: ["https://github.com/acme/checkin/pull/42"] },
+    { s: 5, a: "agent", cmd: "tiller submit task " + T + " --pr 42", out: ["task " + T + " (T-9fbdmz) is now **in_review**.", "", "**Up next:**", "1. You: merge " + T + " (T-9fbdmz). Waiting on your merge."] },
+    { s: 5, a: "you", say: "Reading the diff on pull request 42. It does what the spec says." },
+    { s: 6, a: "you", cmd: "gh pr merge 42 --merge", out: ["++✓++ Merged pull request #42 (Attendee search)"] },
+    { s: 6, a: "you", cmd: "tiller sync", out: ["Sync: recorded 1 done crossing(s):", "  - task " + T + " (T-9fbdmz) -> **done**", "", "**Next:**", "1. Agent: claim and start event-night/door-check-in/check-in-button (T-54t6jh)."] }
+  ];
+
+  var term = document.getElementById("term"), nowEl = document.getElementById("termNow");
+  var playBtn = document.getElementById("termPlay"), replayBtn = document.getElementById("termReplay");
+  var stageBtns = Array.prototype.slice.call(document.querySelectorAll("#passage button"));
+  // The moments rail under the terminal: each starts at a step in the session.
+  var CHAPTERS = [
+    { at: 0, a: "agent", t: "Propose" }, { at: 5, a: "you", t: "Approve" }, { at: 6, a: "agent", t: "Specify" },
+    { at: 11, a: "you", t: "Approve" }, { at: 12, a: "agent", t: "Start" }, { at: 15, a: "agent", t: "Red", g: "red" },
+    { at: 17, a: "agent", t: "Green", g: "green" }, { at: 18, a: "agent", t: "Submit" }, { at: 20, a: "you", t: "Review" },
+    { at: 21, a: "you", t: "Merge" }, { at: 22, a: "agent", t: "Done", g: "green" }
+  ];
+  var GLYPH = {
+    red: '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3.8 7 H10.2" stroke="currentColor" stroke-width="2"/></svg>',
+    green: '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7.2 L6.2 9.4 L10.2 4.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'
+  };
+  var chapList = document.getElementById("chapters");
+  var chapBtns = CHAPTERS.map(function (c, k) {
+    var li = document.createElement("li"), b = document.createElement("button");
+    if (c.a === "you") li.className = "you";
+    b.type = "button";
+    b.innerHTML = '<span class="n">' + c.a + '</span><span class="g">' + (c.g ? GLYPH[c.g] : "") + c.t + "</span>";
+    b.setAttribute("aria-label", "Jump to " + c.t + " (" + c.a + ")");
+    b.addEventListener("click", function () {
+      if (reduce) {
+        var end = k + 1 < CHAPTERS.length ? CHAPTERS[k + 1].at : steps.length;
+        runId++; playing = false; playBtn.textContent = "Play"; started = true;
+        rebuild(end); pos = end; playBtn.hidden = pos >= steps.length;
+        return;
+      }
+      from(c.at);
+    });
+    li.appendChild(b); chapList.appendChild(li);
+    return b;
+  });
+  function markChapter(idx) {
+    var cur = -1;
+    CHAPTERS.forEach(function (c, k) { if (idx >= c.at) cur = k; });
+    chapBtns.forEach(function (b, k) {
+      if (k === cur) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+      b.classList.toggle("past", k < cur);
+    });
+  }
+  var esc = function (t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+  var fmt = function (t) {
+    return esc(t)
+      .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+      .replace(/!!(.+?)!!/g, '<span class="bad">$1</span>')
+      .replace(/\+\+(.+?)\+\+/g, '<span class="good">$1</span>');
+  };
+  var whoLabel = function (a) { return a === "you" ? "you" : "agent"; };
+
+  var pos = 0, playing = false, runId = 0, started = false, shownStage = -1;
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+  function line(cls, html) {
+    var d = document.createElement("div");
+    d.className = "ln " + cls;
+    d.innerHTML = html;
+    term.appendChild(d);
+    term.scrollTop = term.scrollHeight;
+    return d;
+  }
+  function stageHeader(i) {
+    if (i === shownStage) return;
+    shownStage = i;
+    if (term.childElementCount) line("gap", "");
+    line("stage-h", "# " + esc(STAGES[i]));
+  }
+  function markStage(i) {
+    stageBtns.forEach(function (b, k) {
+      if (k === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+      b.classList.toggle("past", k < i);
+    });
+    var who = STAGES[i].split(":")[0];
+    nowEl.className = "term-now" + (who === "You" ? " you" : "");
+    nowEl.innerHTML = 'Step ' + (i + 1) + ' of 7: <span class="who">' + esc(who) + ":</span>" + esc(STAGES[i].slice(who.length + 1));
+  }
+  function renderStep(st) {
+    stageHeader(st.s);
+    if (st.say) { line(st.a + " say", '<span class="who">' + whoLabel(st.a) + '</span><span class="msg">' + esc(st.say) + "</span>"); return; }
+    line(st.a + " tc", '<span class="who">' + whoLabel(st.a) + '</span><span class="pr">$ </span>' + esc(st.cmd));
+    st.out.forEach(function (o) { line("out", o ? fmt(o) : ""); });
+  }
+  function rebuild(n) {
+    term.innerHTML = ""; shownStage = -1;
+    for (var i = 0; i < n; i++) renderStep(steps[i]);
+    if (n > 0) { markStage(steps[Math.min(n, steps.length) - 1].s); markChapter(n - 1); }
+  }
+  async function animateStep(st, id, idx) {
+    stageHeader(st.s);
+    markStage(st.s);
+    markChapter(idx);
+    await sleep(st.a === "you" ? 900 : 450);
+    if (id !== runId) return false;
+    if (st.say) {
+      var d = line(st.a + " say", '<span class="who">' + whoLabel(st.a) + '</span><span class="msg"></span>');
+      var m = d.querySelector(".msg");
+      for (var k = 1; k <= st.say.length; k += 2) { if (id !== runId) return false; m.textContent = st.say.slice(0, k); await sleep(16); }
+      m.textContent = st.say;
+      await sleep(500);
+      return id === runId;
+    }
+    var c = line(st.a + " tc", '<span class="who">' + whoLabel(st.a) + '</span><span class="pr">$ </span><span class="typed"></span><span class="caret"></span>');
+    var typed = c.querySelector(".typed"), caret = c.querySelector(".caret");
+    for (var j = 1; j <= st.cmd.length; j++) { if (id !== runId) return false; typed.textContent = st.cmd.slice(0, j); await sleep(st.cmd.length > 70 ? 9 : 18); }
+    caret.remove();
+    await sleep(320);
+    for (var o = 0; o < st.out.length; o++) {
+      if (id !== runId) return false;
+      line("out", st.out[o] ? fmt(st.out[o]) : "");
+      await sleep(st.out[o].indexOf("running") >= 0 ? 700 : 90);
+    }
+    await sleep(500);
+    return id === runId;
+  }
+  async function run() {
+    var id = ++runId;
+    playing = true; playBtn.textContent = "Pause";
+    while (pos < steps.length) {
+      var ok = await animateStep(steps[pos], id, pos);
+      if (!ok) return;
+      pos++;
+    }
+    playing = false; playBtn.textContent = "Play";
+    playBtn.hidden = true;
+  }
+  function pause() {
+    runId++; playing = false; playBtn.textContent = "Play";
+    rebuild(Math.min(pos + 1, steps.length)); pos = Math.min(pos + 1, steps.length);
+    if (pos >= steps.length) playBtn.hidden = true;
+  }
+  function from(i) {
+    runId++; pos = i; playBtn.hidden = false; started = true;
+    rebuild(i);
+    run();
+  }
+  playBtn.addEventListener("click", function () {
+    if (playing) { pause(); return; }
+    if (!started) { started = true; from(0); return; }
+    run();
+  });
+  replayBtn.addEventListener("click", function () { from(0); });
+  stageBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var s = Number(b.dataset.stage), i = 0;
+      while (steps[i].s !== s) i++;
+      if (reduce) {
+        runId++; playing = false; playBtn.textContent = "Play"; playBtn.hidden = false; started = true;
+        var end = i; while (end < steps.length && steps[end].s === s) end++;
+        rebuild(end); pos = end; markStage(s);
+        if (pos >= steps.length) playBtn.hidden = true;
+        return;
+      }
+      from(i);
+    });
+  });
+
+  // At rest the whole session is printed, so it reads without motion. It plays
+  // once, from the top, the first time it scrolls into view.
+  rebuild(steps.length); pos = steps.length;
+  nowEl.textContent = "Seven steps, one feature. Press Play to watch it run.";
+  stageBtns.concat(chapBtns).forEach(function (b) { b.removeAttribute("aria-current"); b.classList.remove("past"); });
+  playBtn.hidden = false;
+  if (!reduce && "IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); if (!started) { started = true; from(0); } }
+    }, { threshold: 0.45 });
+    io.observe(term);
+  }
+})();
+</script>
+</body>
+</html>

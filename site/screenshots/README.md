@@ -3,7 +3,7 @@
 The machinery behind the console screenshots on the documentation site, kept
 here so they can be reshot as the console evolves instead of rebuilt by hand.
 
-Two parts:
+Two parts, plus a second pair for the homepage:
 
 - `acme.sh` builds the Acme Platform stand-in project, a greenfield project
   caught mid-flight, entirely through the `tiller` CLI: one feature merged and
@@ -14,6 +14,10 @@ Two parts:
 - `shoot.mjs` drives a running console in WebKit and writes the site's
   images: Home, the Explore map with a feature selected, and the Fix
   lens, each in light and dark, 1440x780, converted to WebP.
+- `homepage.sh` carries an Acme fixture further (more features in every
+  column, a task with a written-out plan), and `shoot-homepage.mjs` shoots
+  the homepage's Build board and Explore task page from it. `lib.sh` holds the
+  helpers both fixture scripts share.
 
 ## Reshoot
 
@@ -29,10 +33,23 @@ npm run shoot -- 4477                             # writes ../public/console-*.w
 ```
 
 Then look at the images, commit the ones that changed, and stop the serve.
-The site's pages reference them by name (`index.mdx` and `console.md`), so
-adding a shot means adding an `<img>` pair there as well, one per theme,
-using the `light:sl-hidden` and `dark:sl-hidden` classes the existing pairs
-use.
+The docs pages reference them by name (`console.md` and
+`source-quickstart.md`), so adding a shot means adding an `<img>` pair there
+as well, one per theme, using the `light:sl-hidden` and `dark:sl-hidden`
+classes the existing pairs use.
+
+The homepage (`site/src/pages/index.astro`) uses the map shot plus two of its
+own, Build and Explore, which want a busier project. Shoot the documentation
+images first, then carry the same fixture on and shoot those two:
+
+```sh
+TILLER=$(command -v tiller) npm run homepage      # carries /tmp/tiller-shots/acme on
+(cd /tmp/tiller-shots/acme && tiller serve --port 4477 &)   # restart the serve
+npm run shoot:homepage -- 4477                    # writes ../public/console-{build,explore}-*.webp
+```
+
+The homepage switches themes with its own `only-light` and `only-dark`
+classes, since it is not a Starlight page.
 
 The project script is deliberately verbose about state: every gate it takes
 is one the console shows, so if a screenshot needs a state the script does

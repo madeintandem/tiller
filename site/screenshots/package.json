@@ -6,7 +6,9 @@
   "scripts": {
     "project": "bash ./acme.sh",
     "shoot": "node ./shoot.mjs",
-    "test": "bash ./acme_test.sh"
+    "test": "bash ./acme_test.sh",
+    "homepage": "bash ./homepage.sh",
+    "shoot:homepage": "node ./shoot-homepage.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1"
