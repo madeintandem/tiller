@@ -161,13 +161,13 @@ func TestUsageReportCountsUnmeasuredItems(t *testing.T) {
 
 func TestUsageReportSumsSessionsWithoutPeople(t *testing.T) {
 	tr := flowTree(nil, nil, "T-aaaaaa")
-	tr.Tasks["T-aaaaaa"].Owner = "allen-dayag"
+	tr.Tasks["T-aaaaaa"].Owner = "dana-whitfield"
 	tr.Tasks["T-aaaaaa"].Title = "Wire the form"
-	tr.Manifest.Contributors = []store.Contributor{{ID: "allen-dayag", Name: "Allen Dayag"}, {ID: "jc-grubbs", Name: "JC Grubbs"}}
+	tr.Manifest.Contributors = []store.Contributor{{ID: "dana-whitfield", Name: "Dana Whitfield"}, {ID: "jc-grubbs", Name: "JC Grubbs"}}
 	start := statusEv("start.task", onDay(time.October, 6), "in_progress", "T-aaaaaa")
 	start.Contributor = "jc-grubbs"
 	done := statusEv("sync.task", onDay(time.October, 8), "done", "T-aaaaaa")
-	done.Contributor = "allen-dayag"
+	done.Contributor = "dana-whitfield"
 	hour := onDay(time.October, 6)
 	files := []usage.File{
 		usageFile("claude-code", "engineer-one", usageRow(hour, "T-aaaaaa", usage.Implementation, "m", input(100_000))),
@@ -183,7 +183,7 @@ func TestUsageReportSumsSessionsWithoutPeople(t *testing.T) {
 
 	raw, err := json.Marshal(got)
 	require.NoError(t, err)
-	for _, person := range []string{"allen-dayag", "Allen Dayag", "jc-grubbs", "JC Grubbs", "T-aaaaaa", "Wire the form"} {
+	for _, person := range []string{"dana-whitfield", "Dana Whitfield", "jc-grubbs", "JC Grubbs", "T-aaaaaa", "Wire the form"} {
 		require.NotContains(t, string(raw), person)
 	}
 }
@@ -327,7 +327,7 @@ func TestUsageReportFilesWithoutEvents(t *testing.T) {
 }
 
 // BenchmarkUsageReportOf is 100 session files of 25 rows over 50 done tasks,
-// the shape of CALCTP's usage at a few times its row count.
+// the shape of a client platform build's usage at a few times its row count.
 func BenchmarkUsageReportOf(b *testing.B) {
 	tr := reportTree("p", "main")
 	var evs []events.Event

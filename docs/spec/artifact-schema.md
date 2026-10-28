@@ -1128,7 +1128,7 @@ For agent usage, settled 2026-10-26 (rationale in [agent usage, aggregate and ne
 - Usage is summed across the team through committed files, and no usage file, payload, or chart attaches a metric to a person. (JC)
 - Raw token counts with cache reads kept apart from fresh input, cache writes, and output; no cost weighting and no dollars. (JC)
 - One committed file per top-level session, subagents folded in, created and grown but never shrunk or deleted.
-- Calls are credited by replaying the Tiller commands each session ran, with subagents inheriting their parent's state, a method a spike over CALCTP's real logs validated against Tiller's own event stream.
+- Calls are credited by replaying the Tiller commands each session ran, with subagents inheriting their parent's state, a method a spike over a client platform build's real logs validated against Tiller's own event stream.
 - Nine stages, with display labels kept out of the file format.
 - Capture records no event and needs no identity, skips sessions active in the last 30 minutes, writes only on the integration branch, and ignores sessions from before the ledger began.
 - Capture is off by default and turned on per project in `tiller.yml`. (JC)
