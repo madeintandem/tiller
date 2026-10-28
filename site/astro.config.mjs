@@ -66,6 +66,7 @@ export default defineConfig({
             { label: 'Search corresponding source', link: `/${pagefindSourceArchive()}` },
           ],
         },
+        { label: 'Training', link: 'https://madeintandem.com/training/?utm_source=tiller&utm_medium=docs&utm_campaign=training&utm_content=sidebar' },
       ],
     }),
     noticesIntegration(),
