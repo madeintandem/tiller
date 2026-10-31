@@ -56,3 +56,18 @@ is one the console shows, so if a screenshot needs a state the script does
 not reach, add the commands there rather than editing `.tiller/` by hand.
 Keep it runnable against the current binary; when a command's shape changes,
 this script is one of the places that finds out.
+
+## The link preview
+
+`social-preview.html` is the 1280x640 card that LinkedIn, X, and Slack show
+when someone shares a link. It reuses the homepage's chart sheet, its headline
+and lede, and `console-home-light.webp`, so reshoot the console images first
+when they change. Render it with:
+
+```sh
+npm run shoot:social                              # writes ../public/social-preview.png
+```
+
+The homepage and every docs page point `og:image` at it. GitHub's social
+preview is separate: upload the same PNG by hand under the repository's
+Settings, General, Social preview.

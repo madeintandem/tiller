@@ -8,7 +8,8 @@
     "shoot": "node ./shoot.mjs",
     "test": "bash ./acme_test.sh",
     "homepage": "bash ./homepage.sh",
-    "shoot:homepage": "node ./shoot-homepage.mjs"
+    "shoot:homepage": "node ./shoot-homepage.mjs",
+    "shoot:social": "node shoot-social.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1"

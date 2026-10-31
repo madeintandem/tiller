@@ -23,7 +23,14 @@ export default defineConfig({
         replacesTitle: false,
       },
       description:
-        'An opinionated SDLC workflow tool for humans and AI coding agents working together.',
+        'Tiller helps a team of people and coding agents deliver high-quality software fast, with the confidence to ship it.',
+      // The link preview, rendered by screenshots/shoot-social.mjs. Starlight sets twitter:card itself.
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://madeintandem.github.io/tiller/social-preview.png' } },
+        { tag: 'meta', attrs: { property: 'og:image:width', content: '1280' } },
+        { tag: 'meta', attrs: { property: 'og:image:height', content: '640' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://madeintandem.github.io/tiller/social-preview.png' } },
+      ],
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/madeintandem/tiller' },
       ],
