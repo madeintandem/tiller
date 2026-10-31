@@ -91,7 +91,7 @@ func layDriftFeature(t *testing.T, dir string) {
 
 	fdir := driftFeatureDir(dir)
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.md"),
-		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the FORM-A-100 form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(fdir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n"+
 			"    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))

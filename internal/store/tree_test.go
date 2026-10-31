@@ -250,7 +250,7 @@ func TestLoadReadsFolderBackedTasks(t *testing.T) {
 	require.NotNil(t, task)
 	require.NotNil(t, task.Key, "a task is a keyed, folder-backed node")
 	assert.Equal(t, "form-engine/certification-form-loading/schema-transcription", *task.Key)
-	assert.Equal(t, "Transcribe CERT-LTI-02-A (2025) into JSON Schema with computed-field bindings", task.Title)
+	assert.Equal(t, "Transcribe FORM-A-100 (2025) into JSON Schema with computed-field bindings", task.Title)
 	assert.Equal(t, "F-79dh3q", task.FeatureID, "the parent link comes from the folder path")
 }
 

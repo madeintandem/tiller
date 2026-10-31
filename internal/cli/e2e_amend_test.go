@@ -460,7 +460,7 @@ func reshapeAmendE2ESpec(t *testing.T, featureID string) {
 	t.Helper()
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# Certification form loading\n\nRender the CERT-LTI-02-A form from discrete tables.\n"), 0o644))
+		[]byte("# Certification form loading\n\nRender the FORM-A-100 form from discrete tables.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte(amendE2EEvalMD(featureID, "The table model renders every form")), 0o644))
 }

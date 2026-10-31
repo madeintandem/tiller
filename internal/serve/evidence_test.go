@@ -205,9 +205,9 @@ func TestEvidenceEndpointDeniesDotSegments(t *testing.T) {
 // file), nothing under artifacts/tiller/ at all, so the dot-segment deny
 // must not narrow the legitimate ref space to the artifacts tree.
 func TestEvidenceEndpointServesBareTestRefs(t *testing.T) {
-	const ref = "spec/form_definitions/cert_lti_02a_spec.rb"
+	const ref = "spec/form_definitions/form_a_100_spec.rb"
 	srv, root := evidenceFixture(t, ref)
-	const content = "RSpec.describe \"CERT LTI 02a\" do\nend\n"
+	const content = "RSpec.describe \"FORM A-100\" do\nend\n"
 	full := filepath.Join(root, filepath.FromSlash(ref))
 	require.NoError(t, os.MkdirAll(filepath.Dir(full), 0o755))
 	require.NoError(t, os.WriteFile(full, []byte(content), 0o644))

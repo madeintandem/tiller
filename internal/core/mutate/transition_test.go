@@ -57,7 +57,7 @@ func writeFeatureProse(t testing.TB, root string) {
 	t.Helper()
 	dir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the FORM-A-100 form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))
 }

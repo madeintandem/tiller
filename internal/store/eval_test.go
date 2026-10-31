@@ -25,7 +25,7 @@ func TestLoadEvalFile_Greenfield(t *testing.T) {
 	assert.Equal(t, "C1", c1.ID)
 	assert.Equal(t, PolarityIntroduce, c1.Polarity)
 	assert.Equal(t, BindingTest, c1.Binding.Type)
-	assert.Equal(t, BindingRefs{"spec/form_definitions/cert_lti_02a_spec.rb"}, c1.Binding.Ref)
+	assert.Equal(t, BindingRefs{"spec/form_definitions/form_a_100_spec.rb"}, c1.Binding.Ref)
 	assert.True(t, c1.Required)
 
 	c2 := ef.Criteria[1]

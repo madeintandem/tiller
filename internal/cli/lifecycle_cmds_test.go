@@ -40,7 +40,7 @@ func writeRealSpec(t *testing.T) {
 	t.Helper()
 	dir := featureDir(t)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.md"),
-		[]byte("# Certification form loading\n\nLoad the CERT-LTI-02-A form from its JSON Schema and render it.\n"), 0o644))
+		[]byte("# Certification form loading\n\nLoad the FORM-A-100 form from its JSON Schema and render it.\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "feature.eval.md"),
 		[]byte("---\nnode: F-aaaaaa\ncriteria:\n  - id: C1\n    statement: The form loads\n    polarity: introduce\n    binding: { type: test, ref: spec/form_spec.rb }\n---\n\n# Acceptance\n"), 0o644))
 }
@@ -1991,7 +1991,7 @@ func TestSubmitFeatureRefusesActiveBasisDriftAfterGreenCheck(t *testing.T) {
 	before, err := os.ReadFile(featurePath)
 	require.NoError(t, err)
 	after := strings.Replace(string(before),
-		"Load the CERT-LTI-02-A form from its JSON Schema and render it.",
+		"Load the FORM-A-100 form from its JSON Schema and render it.",
 		"Build materially different behavior.", 1)
 	require.NotEqual(t, string(before), after)
 	require.NoError(t, os.WriteFile(featurePath, []byte(after), 0o644))

@@ -525,7 +525,7 @@ The level where code gets written, and the terminus of the prose chain: a task's
 ```yaml
 id: T-k3p9w6
 key: form-engine/certification-form-loading/schema-transcription
-title: Transcribe CERT-LTI-02-A (2025) into JSON Schema
+title: Transcribe FORM-A-100 (2025) into JSON Schema
 status: done            # proposed | ready | in_progress | check | in_review | done | cancelled
 blocked: false
 owner: dana
@@ -541,7 +541,7 @@ accepted_against:        # the task.md blob the human approved, pinned at approv
   commit: { kind: git_commit, value: "git:7bc1a20", observed_at: "2026-06-23T00:00:00Z" }   # HEAD at approval, same anchor the feature record carries
 evidence:
   - { kind: diff, ref: "abc1234" }
-  - { kind: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
+  - { kind: test, ref: "spec/form_definitions/form_a_100_spec.rb" }
 gates:                  # same shape as feature.yml gates, written by `tiller check`
   build:
     required: true
@@ -668,9 +668,9 @@ An eval file is a structured contract of acceptance criteria. Each criterion has
 node: F-79dh3q
 criteria:
   - id: C1
-    statement: CERT-LTI-02-A (2025) validates against its JSON Schema
+    statement: FORM-A-100 (2025) validates against its JSON Schema
     polarity: introduce
-    binding: { type: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
+    binding: { type: test, ref: "spec/form_definitions/form_a_100_spec.rb" }
     required: true
   - id: C2
     statement: Page numbers are continuous when a parent and child render to a single PDF

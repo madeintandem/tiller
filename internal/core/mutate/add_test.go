@@ -222,7 +222,7 @@ func TestAddTaskLaysDownAProposedFolder(t *testing.T) {
 
 	res, err := mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
 		Key:   "form-engine/certification-form-loading/schema-transcription",
-		Title: "Transcribe CERT-LTI-02-A into JSON Schema",
+		Title: "Transcribe FORM-A-100 into JSON Schema",
 	})
 	require.NoError(t, err)
 	require.True(t, res.Created)
@@ -231,7 +231,7 @@ func TestAddTaskLaysDownAProposedFolder(t *testing.T) {
 	require.Equal(t, "proposed", res.Status)
 	require.Equal(t, "F-aaaaaa", res.Feature)
 	require.Equal(t, "form-engine/certification-form-loading/schema-transcription", res.Key)
-	require.Equal(t, "Transcribe CERT-LTI-02-A into JSON Schema", res.Title)
+	require.Equal(t, "Transcribe FORM-A-100 into JSON Schema", res.Title)
 
 	// Both files land in the task's own folder: the implementation spec beside
 	// the state (artifact-schema.md, Tasks).
@@ -263,7 +263,7 @@ func TestAddTaskStubCarriesReuses(t *testing.T) {
 	require.NoError(t, err)
 	_, err = mutate.AddTask(load(t, root), testDeps(), mutate.TaskInput{
 		Key:   "form-engine/certification-form-loading/schema-transcription",
-		Title: "Transcribe CERT-LTI-02-A into JSON Schema",
+		Title: "Transcribe FORM-A-100 into JSON Schema",
 	})
 	require.NoError(t, err)
 
@@ -315,7 +315,7 @@ func TestAddTaskIdempotentByKey(t *testing.T) {
 	_, err = mutate.AddFeature(load(t, root), testDeps(), mutate.FeatureInput{Key: "form-engine/certification-form-loading", ChangeType: "create"})
 	require.NoError(t, err)
 
-	in := mutate.TaskInput{Key: "form-engine/certification-form-loading/schema-transcription", Title: "Transcribe CERT-LTI-02-A into JSON Schema"}
+	in := mutate.TaskInput{Key: "form-engine/certification-form-loading/schema-transcription", Title: "Transcribe FORM-A-100 into JSON Schema"}
 	first, err := mutate.AddTask(load(t, root), testDeps(), in)
 	require.NoError(t, err)
 	require.True(t, first.Created)

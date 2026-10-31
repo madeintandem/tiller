@@ -2,9 +2,9 @@
 node: F-79dh3q
 criteria:
   - id: C1
-    statement: CERT-LTI-02-A (2025) validates against its JSON Schema
+    statement: FORM-A-100 (2025) validates against its JSON Schema
     polarity: introduce
-    binding: { type: test, ref: "spec/form_definitions/cert_lti_02a_spec.rb" }
+    binding: { type: test, ref: "spec/form_definitions/form_a_100_spec.rb" }
     required: true
   - id: C2
     statement: Parent + child render to a single PDF with continuous page numbers

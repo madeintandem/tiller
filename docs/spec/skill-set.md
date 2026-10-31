@@ -255,7 +255,7 @@ An explicit instruction naming several features, or every draft feature in one n
 ```
 # first named feature: extend feature.md, write feature.eval.md, and complete every task.md
 tiller add task form-engine/certification-form-loading/schema-transcription \
-  --title "Transcribe CERT-LTI-02-A (2025) into JSON Schema"
+  --title "Transcribe FORM-A-100 (2025) into JSON Schema"
 # final pass: record each decision only the human can make, pinned to the narrowest node
 tiller add question "<statement>" --title "<short title>" \
   --blocks form-engine/certification-form-loading/schema-transcription
