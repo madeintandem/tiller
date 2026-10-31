@@ -8,272 +8,168 @@
 [![CI](https://github.com/madeintandem/tiller/actions/workflows/ci.yml/badge.svg)](https://github.com/madeintandem/tiller/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 
-Tiller is an opinionated SDLC workflow tool for humans and AI coding agents
-working together. It holds the structure, the gates, and the state of a
-software project. The agent does the reasoning. The human approves at the
-gates. Everything it knows lives as files in your repo, under git, next to
-the code it describes.
+**Your team and your agents, shipping software you'd put your name on.**
+
+Tiller helps a team of people and coding agents deliver high-quality software
+fast, with the confidence to ship it. It's one binary, a CLI with agent skills
+and a local console, that keeps the plan, the checks, and the state of a
+project as plain files in your repo. Your agent does the work. A person makes
+the calls.
+
+[Website](https://madeintandem.github.io/tiller/) ·
+[Quickstart](https://madeintandem.github.io/tiller/quickstart/) ·
+[Concepts](https://madeintandem.github.io/tiller/concepts/) ·
+[Console](https://madeintandem.github.io/tiller/console/) ·
+[CLI reference](https://madeintandem.github.io/tiller/cli/)
 
 ![The tiller console showing an Acme Platform project: its counts and drift, the decisions that need a human, work in flight, and what is next](docs/assets/console-home.png)
 
-## The opinions
-
-**Files are the source of truth.** Markdown for prose, YAML for state, git as
-the spine. There's no database and no hosted service. `.tiller/` is a
-directory in your repository, so a clone carries the whole plan with it, and
-nothing about that plan lives anywhere a clone can't reach.
-
-**Prose and state never share a file.** A node's `.md` is yours: intent and
-acceptance criteria, in your words. Its `.yml` is Tiller's: status,
-ownership, and gate results, mutated by the machine. That split is what lets
-the CLI churn state all day without touching a sentence a human wrote, and
-it's what keeps two people's work from colliding in a merge.
-
-**One tree, progressively elaborated.** Epics, then features, then tasks. An
-epic is narrative. A feature is narrative plus a specification and an
-acceptance contract. A task carries the implementation detail. Features get
-specified and broken into tasks just in time, when their turn comes, and not
-a moment before.
-
-**Tiller is a gatekeeper, not an orchestrator.** It declares and records gates
-(build, tests, evals, review). It never runs the agent's reasoning, and it
-never drives someone else's tooling on the agent's behalf. Required gates
-block done. Optional review gates are visible and non-blocking, which is to
-say they're encouragement with a paper trail.
-
-**The done gate is the PR merge.** An agent can drive work right up to the
-edge of done and turn every gate green. Only a human merge crosses to done,
-and Tiller learns about it by watching git, not by being told.
-
-**Model and harness agnostic.** The agent surface is the `tiller` CLI, a set
-of skills served by `tiller guide`, and a generated `orientation.md` in the
-repo. Claude Code, Codex, and a bare shell with a local model all see the
-same thing, because nothing in Tiller depends on a capability only one vendor
-has. (Today `tiller join` auto-wires Claude Code. Another harness adapter is a
-small addition, and the bare-shell path works without one.)
-
-**Tiller guides; it does not control.** It can't make an agent follow the
-process and it doesn't pretend it can. The developer drives, the developer
-answers for the result, and the one boundary that actually holds is the merge
-a human performs. The name isn't an accident. A tiller steers the boat, but
-somebody's hand has to be on it.
-
 ## Install
 
-The current release is **v0.21.4**. Install it with either path below, then
-check that `tiller --version` reports 0.21.4. The
-[Quickstart](https://madeintandem.github.io/tiller/quickstart/) walks a
-scratch project from install to a merged, synced task, and the
-[source walkthrough](https://madeintandem.github.io/tiller/source-quickstart/)
-covers the same contract in more detail from a source build.
-
-macOS, with Homebrew:
+The current release is **v0.21.4**, for macOS and Linux on amd64 and arm64.
 
 ```sh
+# macOS, with Homebrew
 brew install --cask madeintandem/tap/tiller
-```
 
-macOS or Linux, with the one-shot installer. It fetches the right binary for
-your platform and verifies its checksum before placing it:
-
-```sh
+# macOS or Linux, with the installer
 curl -fsSL https://raw.githubusercontent.com/madeintandem/tiller/main/install.sh | sh
 ```
 
-Go users (Go 1.27 or later) can
-`go install github.com/madeintandem/tiller/cmd/tiller@latest`.
-Checksummed binaries for macOS and Linux, amd64 and arm64, are on the
-[releases page](https://github.com/madeintandem/tiller/releases). Tiller is a
-single static binary with the web console and the skills embedded, so there's
-no runtime to install and nothing else to place.
+The [installer](./install.sh) is short and worth reading first. It fetches the
+binary for your platform and verifies its checksum before placing it. Run as
+a regular user, it installs to `~/.local/bin`, so add that to your `PATH` if
+it isn't there already. Go 1.27 users can also run
+`go install github.com/madeintandem/tiller/cmd/tiller@latest`, and checksummed
+archives are on the [releases page](https://github.com/madeintandem/tiller/releases).
+Check that `tiller --version` reports 0.21.4.
 
-Distributed third-party components retain their upstream licenses. Full
-licenses and copyright notices are in
-[THIRD_PARTY_NOTICES.txt](./THIRD_PARTY_NOTICES.txt), included in release
-archives and served by the embedded console at `/THIRD_PARTY_NOTICES.txt`.
-Tiller's own code is licensed under Apache 2.0.
+## Start on the repo you already have
 
-## Your first tree
+Most projects aren't new, so this is the usual way in:
 
 ```sh
-mkdir acme && cd acme && git init -b main
-tiller init --name "Acme Platform" --key acme --kind greenfield
-tiller add contributor robin --name "Robin Hale"   # register yourself on the committed roster
-tiller join --as robin                             # select that identity here; wire your coding agent
-mkdir -p .tiller/design
-printf '# Acme\n\nA small application with a health route, sign-in, and invoicing.\n' \
-  > .tiller/design/overview.md
-git add -A && git commit -m "Initialize Acme planning"
-tiller check readiness
-tiller guide
+cd your-repo
+tiller init --name "Your App" --key yourapp --kind brownfield
+tiller add contributor robin --name "Robin Hale"   # use your own ID and name
+tiller join --as robin
+git add -A && git commit -m "Add Tiller"
 ```
 
-Use your own contributor ID and name. `init` scaffolds `.tiller/` and
-generates `.tiller/orientation.md`, the agent's front door. `join` writes a
-small managed block into your `AGENTS.md` and, for Claude Code today, installs
-eleven gitignored skill shims where the harness discovers them; any other
-harness reaches the same skills through `tiller guide`. With a design input
-and a contributor in place, readiness passes and `tiller guide` names the
-`decompose` skill. Ask your agent to run it: it proposes an epic and feature
-tree as drafts for you to approve. (For an existing codebase, use
-`--kind brownfield`. There `tiller guide` starts with `derive-baseline`, so
-existing docs and code are reconciled into a baseline you review before
-decomposition.) Then:
+`join` adds a clearly marked block to your `AGENTS.md` and `CLAUDE.md` and
+leaves the rest of each file alone. It also installs eleven gitignored skill
+shims for Claude Code beside any skills you already have. Then ask your agent:
 
-```sh
-tiller serve
-```
+> Run `tiller guide` and follow what it says.
 
-and watch the tree appear. Once you approve the Foundation epic and the plan
-for its first feature, and the agent starts a task, `tiller tree --status`
-reads something like this. An epic that reads `ready, active` has an approved
-shape and work already started under it.
+On an existing codebase, that starts the `derive-baseline` skill. The agent
+writes down what the code does today and you confirm it, so every later change
+can prove the old behavior still works. In Claude Code you can also name the
+skill directly, for example "use the tiller-derive-baseline skill." Any other
+harness reaches the same skills through `tiller guide`.
 
-```
-acme
-├─ billing (E-z4m5cj)               draft          Billing
-│  └─ invoices (F-q5rd9m)           draft          Invoices
-└─ foundation (E-m9a6fe)            ready, active  Foundation [contributors: robin]
-   ├─ app-scaffold (F-ewloz4)       active         App scaffold [contributors: robin]
-   │  ├─ health-route (T-ohxwup)    in_progress    Add the health route
-   │  └─ wire-the-build (T-25lqd0)  ready          Wire the build
-   └─ auth (F-6u8ier)               draft          Sign-in and sessions
-```
+Starting fresh instead? Use `--kind greenfield`, put a design doc or two in
+`.tiller/design/`, and `tiller guide` sends the agent to `decompose`, which
+proposes epics and features for you to approve. The
+[Quickstart](https://madeintandem.github.io/tiller/quickstart/) walks a
+scratch project from install to a merged task.
 
-## How a piece of work moves
+To watch it all, run `tiller serve` and open the console.
 
-**Decompose.** The agent proposes epics and features as narrative, and they
-land as `draft`. A human approves the epic gate (`tiller approve epic`),
-which is an approval of the tree's shape, not its details.
+## What you get
 
-**Specify.** When a feature's turn comes, the agent writes its specification
-(`feature.md`), its acceptance contract (`feature.eval.md`, criteria with
-bindings Tiller can run), and its tasks, then asserts the whole thing with
-`tiller spec feature`. A human approves the plan gate (`tiller approve
-feature`). That moves the feature and its initial tasks to `ready` and pins
-each one's spec as the basis it was approved against. Edit the spec after
-that and Tiller calls it drift until a human re-records the basis.
+**Move at agent speed, together.** An agent can finish a task in minutes. What
+slows a team down is everything around the code: what's next, who has it, and
+whether it's really done. Tiller plans just far enough ahead, with each feature
+specified when its turn comes. `tiller next` ranks every legal move, the
+decisions waiting on you included. Claimed tasks run on their own branches, so
+people and agents work side by side without collisions.
 
-**Execute.** A human, or their agent acting as them, claims one task and
-starts it. The first start fixes the task's owner for good and makes its
-feature active. Every task works on its own branch. The project's
-[review grain](https://madeintandem.github.io/tiller/concepts/#review-grain)
-decides what a pull request covers: one PR per task by default, or one PR
-for a whole feature or epic, which the agent assembles by merging each
-submitted task branch into a shared review branch. The agent creates the
-branches, runs the gates, resolves mechanical conflicts, and opens and
-updates the PR. The human accepts the work and performs the final merge into
-the integration branch. `tiller sync` observes that merge and records done;
-features and epics roll up as their children finish.
+**Done means done, every time.** Every piece of work knows what done means
+before anyone starts it. A feature's spec, acceptance criteria, and tasks are
+approved before the first line of code. Your own build, test, and eval commands
+are gates that block done, and Tiller records each result with the revision it
+ran against. Once a spec is approved it's pinned, so if it moves, Tiller flags
+the drift before work goes on.
 
-Different engineers can execute different tasks in the same feature, so a
-feature or epic lists its
-[contributors](https://madeintandem.github.io/tiller/concepts/#contributors-and-claims),
-the owners of its started tasks, instead of a single owner. Before a task
-starts, `tiller release` returns a claimed task to the unclaimed pool and
-`tiller reassign` moves the claim to someone else. After start, ownership
-never changes, through review, cancellation, or completion. When several
-people share one feature or epic PR, coordinate so one of them updates it at
-a time.
+**Know where things stand, and know it's right.** An agent can carry work right
+up to the line and turn every check green. Only a human merge gets it to done,
+and Tiller sees that merge by watching git. The console gives everyone the same
+picture: a board from draft to done, every task one click deep, and a report
+you can hand a client.
 
-Handing started, unfinished work to someone else is a human decision:
-`tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason "<why>"`.
-It keeps the original's attribution and creates an approved, unstarted
-replacement of the same scope for the recipient, with a fresh identity and no
-inherited review or passing checks. The agent runs it only on an explicit
-instruction naming the work and the recipient. See
-[exceptional transfer](https://madeintandem.github.io/tiller/concepts/#exceptional-transfer).
+**One plan for the whole crew.** Agent work tends to live in one person's chat
+window. Tiller moves the plan, the decisions, and the state into the repo,
+where every person and every agent reads the same thing. It works with Claude
+Code, Codex, Pi, or a plain shell, because the whole agent surface is the CLI,
+the files, and skills served by the binary.
 
-**Change.** Mid-flight pivots are forward work. Nobody edits history. An
-amendment stages operations against the plan (revise, cancel, supersede,
-add), a human approves it, and done work stays done.
+## How it fits together
 
-Throughout, `tiller status` says where things stand, `tiller guide` names
-the skill that fits the current state, and `tiller serve` shows the whole
-thing to the human in the loop. Tiller itself never branches, pushes, or
-merges. Git stays yours, and so does the hand on the tiller.
+1. **Agent: decompose.** Propose epics and features from your design docs.
+2. **You: approve the shape.**
+3. **Agent: specify.** Write one feature's spec, acceptance criteria, and tasks.
+4. **You: approve the plan.**
+5. **Agent: build and pass the checks.**
+6. **Agent and you: review.** Per task, per feature, or per epic.
+7. **You: merge.** `tiller sync` records done.
 
-## Choosing work
+Tiller itself never branches, pushes, or merges. Git stays yours.
 
-Choose a **Bug** for a defect: observed behavior violates an agreed
-expectation. Choose a **Chore** for housekeeping without code side effects,
-such as documentation or administrative upkeep. Choose a **Tweak** for a
-minor adjustment that may change code. Choose a **Task** under a feature for
-substantive planned work. These are choice guidelines, not file-diff
-restrictions: Tiller does not enforce a no-code rule for Chores.
+## Where it fits
 
-For example, changing a completed button from "Save" to "Save changes" to
-improve the wording is a Tweak, even when the label lives in application
-code. If the button text violates its agreed requirement, record a Bug
-instead. A new button or a broader interaction redesign belongs in planned
-Task work.
+Tiller is for building products. Finding them is a different job.
 
-Keep changes forward-only. Never reopen or rewrite done work to express a
-new request. Add a new bug, chore, tweak, or task, noting what it relates
-to; the completed record stays as history. Adding tasks under a done feature
-can change its rolled-up status, but never reopens merged work.
+**Reach for it when**
+- You can write down what you want before an agent builds it
+- More than one person is on the work
+- Someone outside the team needs to see where things stand
 
-Bugs, Chores, and Tweaks are
-[leaf work beside the tree](https://madeintandem.github.io/tiller/concepts/#bugs-chores-and-tweaks),
-each under its own directory (`.tiller/bugs/`, `.tiller/chores/`,
-`.tiller/tweaks/`) with `B-`, `CH-`, and `TW-` IDs. They follow the same
-ownership, approval, gate, branch, review, and completion rules as tasks. The
-console's **Fix** board shows all three together.
+**Skip it for**
+- Spikes, prototypes, and research code
+- A solo tool still finding its shape (Tiller itself, for one)
+- Work where the plan changes faster than you can write it down
 
-## Where things live
+## The opinions behind it
 
-```
-.tiller/
-  tiller.yml            project, contributors roster, gates, schema version
-  orientation.md        generated; the agent's front door (committed, do not hand-edit)
-  identity.yml          who you are on this checkout (gitignored)
-  local.yml             per-checkout settings such as console preferences (gitignored)
-  design/               your input documents
-  feedback/             documents landed by tiller intake
-  plans/                semi-ephemeral execution plans
-  amendments/           reviewed, recorded changes to the plan
-  decisions/            open questions and architecture decision records
-  reviews/              code review files written by the code-review skill
-  events/YYYY/MM/DD/    one immutable event per file
-  epics/<key>/
-    epic.md  epic.yml   narrative (yours) and state (Tiller's)
-    features/<key>/
-      feature.md  feature.eval.md  feature.yml
-      tasks/<key>/
-        task.md  task.yml
-  bugs/<key>/  chores/<key>/  tweaks/<key>/
-                        leaf work beside the tree
-```
+- **Files are the source of truth.** Markdown for prose, YAML for state, git as
+  the spine. No database and no hosted service, so cloning the repo clones the
+  plan.
+- **Prose and state never share a file.** A node's `.md` is yours. Its `.yml`
+  is Tiller's. The CLI churns state all day without touching a sentence a
+  person wrote.
+- **A gatekeeper, not an orchestrator.** Tiller declares and records gates. It
+  never runs the agent's reasoning or drives someone else's tooling.
+- **The merge is the done gate.** It's the one boundary that holds, and a
+  person controls it.
+- **Guidance, not control.** Tiller can't make an agent follow the process and
+  doesn't pretend to. The developer drives and answers for the result.
 
-Identity is per checkout. `tiller join` writes a gitignored
-`.tiller/identity.yml` saying who you are here, and the committed `contributors`
-roster in `tiller.yml` says who may hold work. There's no global config, no
-user config, and no machine default anywhere. Clone the repo and you have the
-whole plan; run `join` and you have a seat at it.
+The name isn't an accident. A tiller steers the boat, but somebody's hand has
+to be on it.
 
 ## Status
 
-Tiller is pre-1.0 and in active use on real projects. v1 targets the
-execution half of a project, from "we have specs and a plan" through "it's
-merged and done." The longer aim is continuous coverage from discovery to
-production. The schema may change between minor versions until 1.0, and a
-binary that meets a tree it can't safely write stops and says so instead of
-guessing. The [roadmap](./docs/roadmap.md) says what is built and what is
-not.
+Tiller is pre-1.0 and in active use on real projects. It covers the
+stretch from "we have specs and a plan" through "it's merged and done." The
+schema may change between minor versions until 1.0, and a binary that meets a
+tree it can't safely write stops and says so instead of guessing. The
+[roadmap](./docs/roadmap.md) says what's built and what isn't.
 
 ## Learn more
 
-- The docs site: [madeintandem.github.io/tiller](https://madeintandem.github.io/tiller/)
-- Current reference specs: [`docs/spec/`](./docs/spec/) (the artifact schema,
-  CLI surface, skill set, console, and distribution; unbuilt designs are labeled)
-- The decisions behind the design, and why: [Design history](./docs/design-history.md)
-- For contributors and coding agents: [`AGENTS.md`](./AGENTS.md), then
-  [`CONTRIBUTING.md`](./CONTRIBUTING.md)
-- Every command the binary exposes: [`docs/tiller-commands.md`](./docs/tiller-commands.md),
-  or `tiller --help`
+- [Concepts](https://madeintandem.github.io/tiller/concepts/): the tree, gates,
+  review grain, claims, bugs and chores, amendments, and existing-code baselines
+- [Design specs](./docs/spec/) and the [design history](./docs/design-history.md)
+- [Every command](./docs/tiller-commands.md), or `tiller --help`
+- Contributing: [`AGENTS.md`](./AGENTS.md), then [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 Tiller is built by [Made In Tandem](https://madeintandem.com), a software
 consultancy in Chicago, and it's how we run human-plus-AI delivery on our own
-client work. Licensed under [Apache 2.0](./LICENSE); see [NOTICE](./NOTICE)
-for attribution and [TRADEMARKS](./TRADEMARKS) for use of the Tiller name and
-logo.
+client work. Bringing it to a team?
+[Get training from the people who built it](https://madeintandem.com/training/?utm_source=tiller&utm_medium=github&utm_campaign=training&utm_content=readme).
+
+Licensed under [Apache 2.0](./LICENSE); see [NOTICE](./NOTICE) for attribution
+and [TRADEMARKS](./TRADEMARKS) for use of the Tiller name and logo. Bundled
+third-party components keep their upstream licenses, listed in
+[THIRD_PARTY_NOTICES.txt](./THIRD_PARTY_NOTICES.txt).
