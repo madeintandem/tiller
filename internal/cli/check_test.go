@@ -19,7 +19,7 @@ import (
 // gatedGitManifest is a manifest carrying the required command gates, with build
 // and tests bound to a substitutable shell command so a test can make the run pass
 // or fail. The evals gate is the `tiller eval` recursion point, recorded pending.
-const gatedGitManifest = `schema_version: 12
+const gatedGitManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Test Project

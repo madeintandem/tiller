@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const workItemsManifest = `schema_version: 12
+const workItemsManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Work Items Test

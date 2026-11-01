@@ -22,7 +22,7 @@ import (
 // working tree per request, and the embedded app is served with an SPA
 // fallback so client-side routes deep-link.
 
-const serveManifest = `schema_version: 12
+const serveManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Serve Test

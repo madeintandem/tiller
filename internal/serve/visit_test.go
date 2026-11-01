@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const visitManifest = `schema_version: 12
+const visitManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Visit Test

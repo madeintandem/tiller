@@ -431,7 +431,7 @@ func TestParseManifestUncheckedReadsAnOlderTree(t *testing.T) {
 }
 
 func TestParseManifestRefusesInvalidProjectReviewGrain(t *testing.T) {
-	data := []byte("schema_version: 12\nexecution:\n  review_grain: sideways\n")
+	data := []byte("schema_version: 13\nexecution:\n  review_grain: sideways\n")
 	_, err := ParseManifest("/repo", data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), ".tiller/tiller.yml")
@@ -451,7 +451,7 @@ func TestManifestAdoptionRoundTrip(t *testing.T) {
 		t.Run(anchor, func(t *testing.T) {
 			root := t.TempDir()
 			require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller"), 0o755))
-			data := []byte("schema_version: 12\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
+			data := []byte("schema_version: 13\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
 			path := filepath.Join(root, ".tiller", "tiller.yml")
 			require.NoError(t, os.WriteFile(path, data, 0o644))
 			m, err := LoadManifest(root)

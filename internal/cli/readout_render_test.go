@@ -220,7 +220,7 @@ func TestStableReadoutPrefersGenerationChangeAfterProjection(t *testing.T) {
 	root := t.TempDir()
 	tiller := filepath.Join(root, ".tiller")
 	require.NoError(t, os.MkdirAll(tiller, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(tiller, "tiller.yml"), []byte(`schema_version: 12
+	require.NoError(t, os.WriteFile(filepath.Join(tiller, "tiller.yml"), []byte(`schema_version: 13
 schema_epoch: initial
 project:
   name: Readout stability

@@ -23,7 +23,7 @@ import (
 // holds the pass-1 read-only posture. The fixture keeps node ids fixed while
 // minting every immutable event onto a distinct stable path.
 
-const searchTestManifest = `schema_version: 12
+const searchTestManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Search Serve Test

@@ -109,16 +109,16 @@ func TestValidReviewGrainPerNoun(t *testing.T) {
 
 func TestRenderExecutionReviewGrainRewritesOrAppendsSurgically(t *testing.T) {
 	// An existing execution block: only its review_grain line moves.
-	in := []byte("schema_version: 12\n\nexecution:\n  review_grain: task   # keep my comment\n\ncontributors: []\n")
+	in := []byte("schema_version: 13\n\nexecution:\n  review_grain: task   # keep my comment\n\ncontributors: []\n")
 	out, err := RenderExecutionReviewGrain(in, "feature")
 	require.NoError(t, err)
-	require.Equal(t, "schema_version: 12\n\nexecution:\n  review_grain: feature\n\ncontributors: []\n", string(out))
+	require.Equal(t, "schema_version: 13\n\nexecution:\n  review_grain: feature\n\ncontributors: []\n", string(out))
 	// No execution block: one is appended at the end, untouched everything else.
-	in2 := []byte("schema_version: 12\ncontributors: []\n")
+	in2 := []byte("schema_version: 13\ncontributors: []\n")
 	out2, err := RenderExecutionReviewGrain(in2, "epic")
 	require.NoError(t, err)
 	require.True(t, strings.HasSuffix(string(out2), "\nexecution:\n  review_grain: epic\n"))
-	require.True(t, strings.HasPrefix(string(out2), "schema_version: 12\ncontributors: []\n"))
+	require.True(t, strings.HasPrefix(string(out2), "schema_version: 13\ncontributors: []\n"))
 	// Round-trips: the parsed manifest carries the value.
 	m, err := ParseManifest("/repo", out2)
 	require.NoError(t, err)

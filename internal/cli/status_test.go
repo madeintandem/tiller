@@ -14,7 +14,7 @@ import (
 
 // readyManifest is a complete manifest (contributors and kind set) used to drive the
 // ready path of `check readiness`.
-const readyManifest = `schema_version: 12
+const readyManifest = `schema_version: 13
 schema_epoch: initial
 project:
   name: Ready Project

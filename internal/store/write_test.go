@@ -111,7 +111,7 @@ func mutationTree(t *testing.T) string {
 	require.NoError(t, os.MkdirAll(tillerDir, 0o755))
 	require.NoError(t, os.WriteFile(
 		filepath.Join(tillerDir, "tiller.yml"),
-		[]byte("schema_version: 12\n"),
+		[]byte("schema_version: 13\n"),
 		0o644,
 	))
 	return root

@@ -30,7 +30,7 @@ const allDriftChecks = "stale_spec, active_basis, answered_question, missing_sur
 // absent drift: block reads as "every check disabled" (drift.go's own
 // enabledSet doc comment) and every test in this file needs to control its
 // sweep scope deliberately.
-const driftManifestTemplate = `schema_version: 12
+const driftManifestTemplate = `schema_version: 13
 schema_epoch: initial
 project:
   name: Test Project

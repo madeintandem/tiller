@@ -21,7 +21,7 @@ import (
 // featureScopedManifestTmpl scopes the evals gate to features only: the shape a
 // rescoped project uses when the acceptance contract gates the feature and tasks
 // gate on build and tests alone.
-const featureScopedManifestTmpl = `schema_version: 12
+const featureScopedManifestTmpl = `schema_version: 13
 schema_epoch: initial
 project:
   name: Test Project

@@ -187,7 +187,7 @@ func TestMigrate11To12StampsOnly(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mutate.MigrateOutcomeMigrated, result.Outcome)
 	require.Equal(t, 11, result.From)
-	require.Equal(t, 12, result.To)
+	require.Equal(t, store.CurrentSchemaVersion, result.To)
 	after := snapshotDir(t, filepath.Join(root, ".tiller"))
 	for name, content := range before {
 		if name == "tiller.yml" || strings.HasPrefix(name, ".cache/") {
@@ -197,5 +197,41 @@ func TestMigrate11To12StampsOnly(t *testing.T) {
 	}
 	written, err := os.ReadFile(path)
 	require.NoError(t, err)
-	require.Equal(t, strings.Replace(string(data), "schema_version: 11", "schema_version: 12", 1), string(written))
+	require.Equal(t, strings.Replace(string(data), "schema_version: 11", fmt.Sprintf("schema_version: %d", store.CurrentSchemaVersion), 1), string(written))
+}
+
+func TestMigrate12To13StampsOnly(t *testing.T) {
+	root := schemaNineRecoveryFixture(t)
+	path := filepath.Join(root, ".tiller/tiller.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	data, err = store.RenderSchemaVersion(data, 12)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, data, 0o644))
+	gitCommitAllM(t, root, "schema twelve")
+	bugPath := filepath.Join(root, ".tiller/bugs/fixed/bug.yml")
+	bugBefore, err := os.ReadFile(bugPath)
+	require.NoError(t, err)
+	before := snapshotDir(t, filepath.Join(root, ".tiller"))
+	inspection, err := mutate.InspectMigration(root, testDeps())
+	require.NoError(t, err)
+	require.Contains(t, inspection.Notes, "stamp schema_version 13; bug severity is additive; preserve work, events, and active reviews without drain")
+	result, err := mutate.Migrate(root, testDeps())
+	require.NoError(t, err)
+	require.Equal(t, mutate.MigrateOutcomeMigrated, result.Outcome)
+	require.Equal(t, 12, result.From)
+	require.Equal(t, 13, result.To)
+	bugAfter, err := os.ReadFile(bugPath)
+	require.NoError(t, err)
+	require.Equal(t, bugBefore, bugAfter)
+	after := snapshotDir(t, filepath.Join(root, ".tiller"))
+	for name, content := range before {
+		if name == "tiller.yml" || strings.HasPrefix(name, ".cache/") {
+			continue
+		}
+		require.Equal(t, content, after[name], "work files stay byte-identical: %s", name)
+	}
+	written, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, strings.Replace(string(data), "schema_version: 12", "schema_version: 13", 1), string(written))
 }
