@@ -19,6 +19,7 @@ type WorkItem struct {
 	ID           string   `yaml:"id"`
 	Key          *string  `yaml:"key,omitempty"`
 	Title        string   `yaml:"title,omitempty"`
+	Severity     string   `yaml:"severity,omitempty"`
 	Status       string   `yaml:"status,omitempty"`
 	Blocked      bool     `yaml:"blocked"`
 	Started      bool     `yaml:"started"`
@@ -247,6 +248,14 @@ func (t *Tree) loadShelf(noun string, ids *nodeIDRegistry) error {
 		}
 		if w.Resolution != "" && !ValidResolution(w.Resolution) {
 			return fmt.Errorf("parse %s: resolution %q is not wontfix, invalid, duplicate, or transferred", yml, w.Resolution)
+		}
+		if w.Severity != "" {
+			if noun != NounBug {
+				return fmt.Errorf("parse %s: severity applies to bugs", yml)
+			}
+			if !ValidSeverity(w.Severity) {
+				return fmt.Errorf("parse %s: severity %q is not blocker, important, medium, or minor", yml, w.Severity)
+			}
 		}
 		switch n := node.(type) {
 		case *Bug:
