@@ -302,7 +302,10 @@ func (h *recoveryHistory) policySnapshots(rev vcs.HistoricalRevisions, head stri
 		if err := contract.ValidateContract(); err != nil {
 			return nil, recoveryRefusal("historical_policy_invalid", evalPath, err.Error())
 		}
-		if contract.Node != current.ID {
+		// An omitted node: belongs to the feature whose directory holds the
+		// contract, as spec, check, and eval accepted it while live (issue #9).
+		// Only a contract naming a different feature is refused.
+		if contract.Node != "" && contract.Node != current.ID {
 			return nil, recoveryRefusal("historical_policy_invalid", evalPath, "restore the historical acceptance contract for the owning feature")
 		}
 		contracts[current.ID] = contract

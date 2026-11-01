@@ -99,6 +99,17 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 			require.NoError(t, os.WriteFile(filepath.Join(filepath.Dir(filepath.Join(root, specPath)), "task.yml"), data, 0600))
 		}
 	}
+	if mode == "unowned_contract" || mode == "foreign_contract" {
+		// The reviewed contract either omits node: (as every MDown contract did,
+		// issue #9) or names a feature other than the one whose directory holds it.
+		feature := featureByKey(load(t, root), "pay/checkout")
+		replacement := ""
+		if mode == "foreign_contract" {
+			replacement = "node: F-elsewhere\n"
+		}
+		contract := strings.Replace(greenEvalMD(feature.ID), "node: "+feature.ID+"\n", replacement, 1)
+		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/epics/pay/features/checkout/feature.eval.md"), []byte(contract), 0600))
+	}
 	require.NoError(t, os.WriteFile(filepath.Join(root, "implementation.txt"), []byte("alpha\n"), 0600))
 	if mode == "schema9" {
 		data, err := os.ReadFile(filepath.Join(root, ".tiller/tiller.yml"))
@@ -576,6 +587,37 @@ func TestRecoverReviewConsolidatesSharedLineageAndProseGuards(t *testing.T) {
 			}
 		})
 	}
+}
+
+// A historical contract with no node: belongs to the feature whose directory
+// holds it, the same contract spec, check, and eval accepted while it was live
+// (issue #9). Recovery records it and sync then closes the reviewed work.
+func TestRecoverReviewAcceptsHistoricalContractWithoutNode(t *testing.T) {
+	t.Parallel()
+	for _, grain := range []string{store.ReviewGrainFeature, store.ReviewGrainEpic} {
+		t.Run(grain, func(t *testing.T) {
+			root, d, in := recoveryFixtureMode(t, grain, "unowned_contract")
+			recovered, err := mutate.RecoverReview(load(t, root), d, in)
+			require.NoError(t, err)
+			require.True(t, recovered.Changed)
+			gitCommitAllM(t, root, "record recovery of a contract without node")
+			_, err = mutate.Sync(load(t, root), d, vcs.New(root), mutate.SyncInput{})
+			require.NoError(t, err)
+			task := resolveNode(t, load(t, root), store.NounTask, "pay/checkout/alfa").(*store.Task)
+			require.Equal(t, "done", task.Status)
+		})
+	}
+}
+
+func TestRecoverReviewRefusesHistoricalContractNamingAnotherFeature(t *testing.T) {
+	t.Parallel()
+	root, d, in := recoveryFixtureMode(t, store.ReviewGrainFeature, "foreign_contract")
+	before := snapshotDir(t, filepath.Join(root, ".tiller"))
+	_, err := mutate.RecoverReview(load(t, root), d, in)
+	var refusal *mutate.RecoverReviewError
+	require.ErrorAs(t, err, &refusal)
+	require.Equal(t, "historical_policy_invalid", refusal.Reason)
+	requireNoWrites(t, before, snapshotDir(t, filepath.Join(root, ".tiller")))
 }
 
 func TestRecoverReviewExplicitEmptyHistoricalPolicyIsValid(t *testing.T) {
