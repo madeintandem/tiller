@@ -255,6 +255,30 @@ func TestApproveBugRegrades(t *testing.T) {
 	require.Equal(t, "blocker", ev.After["severity"])
 }
 
+func TestApproveReadyBugSeverityRefusedNotTriage(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "important")
+	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve"})
+	before, lerr := events.List(load(t, root))
+	require.NoError(t, lerr)
+	err := approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
+	require.Equal(t, "severity_not_triage", reasonOf(t, err))
+	require.Contains(t, err.Error(), "bug B-aaaaaa is ready; approve grades a bug only at triage. Change its severity with tiller grade bug bugs/alpha <level>")
+	require.Equal(t, "important", load(t, root).Bugs["B-aaaaaa"].Severity)
+	after, lerr := events.List(load(t, root))
+	require.NoError(t, lerr)
+	require.Len(t, after, len(before))
+}
+
+func TestApproveBugSameSeverityWritesNoPair(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "minor")
+	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
+	ev := lastEvent(t, root, "approve.bug")
+	require.NotContains(t, ev.Before, "severity")
+	require.NotContains(t, ev.After, "severity")
+}
+
 func TestApproveBugRefusesBadSeverity(t *testing.T) {
 	t.Parallel()
 	root := layBugGraded(t, "alpha", "")

@@ -49,6 +49,10 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		return TransitionResult{}, &lifecycle.IllegalTransitionError{Noun: noun, From: before, Verb: in.Verb, Legal: moves}
 	}
 
+	if in.Verb == "approve" && in.Severity != nil && before != statusProposed {
+		return TransitionResult{}, &SeverityNotTriageError{NodeID: w.ID, Key: deref(w.Key), CurrentState: before}
+	}
+
 	if in.Verb == "start" || in.Verb == "submit" {
 		if err := checkWorkBasis(tree.Root, target, rev); err != nil {
 			return TransitionResult{}, err
@@ -103,8 +107,13 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 	}
 	if in.Verb == "approve" && before == statusProposed {
 		if in.Severity != nil {
-			in.severityBefore = w.Severity
-			w.Severity = *in.Severity
+			if *in.Severity == w.Severity {
+				// Same grade: nothing changed, so the event carries no pair.
+				in.Severity = nil
+			} else {
+				in.severityBefore = w.Severity
+				w.Severity = *in.Severity
+			}
 		}
 		if noun == store.NounBug && w.Severity == "" {
 			return TransitionResult{}, &SeverityRequiredError{NodeID: w.ID, Key: deref(w.Key)}

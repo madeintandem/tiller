@@ -356,7 +356,8 @@ func newApproveCmd() *cobra.Command {
 			"applies the whole batch atomically; it takes exactly one address and\n" +
 			"none of the flags above.\n" +
 			"approve bug <node>... requires a severity (blocker, important, medium, or minor), set\n" +
-			"already or given with --severity; --severity on a bug regrades one already set.\n" +
+			"already or given with --severity; --severity grades or regrades a bug at triage only (a\n" +
+			"ready bug refuses it: use grade bug).\n" +
 			"approve design <doc>... confirms named design docs against the current code and project HEAD.\n" +
 			"All named docs are confirmed atomically; design approval never edits prose or changes work status,\n" +
 			"and accepts none of the work-node flags or --all.",
@@ -497,7 +498,7 @@ func newApproveCmd() *cobra.Command {
 	cmd.Flags().StringVar(&reviewGrain, "review-grain", "",
 		"set the epic's or feature's review_grain in the same act as the gate (task, feature, or epic)")
 	cmd.Flags().StringVar(&severity, "severity", "",
-		"grade the bug (blocker, important, medium, or minor) in the same act as triage; regrades one already set (bug only)")
+		"grade the bug (blocker, important, medium, or minor) in the same act as triage, grading or regrading a proposed bug (bug only; later changes use grade)")
 	addContributorFlag(cmd)
 	return cmd
 }
@@ -1649,7 +1650,8 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 	}
 	var sev *mutate.SeverityRequiredError
 	if errors.As(err, &sev) {
-		d := map[string]any{"noun": store.NounBug, "id": sev.NodeID, "key": sev.Key, "reason": sev.Reason()}
+		d := map[string]any{"noun": store.NounBug, "id": sev.NodeID, "key": sev.Key, "reason": sev.Reason(),
+			"command": "tiller approve bug " + sev.Key + " --severity <blocker|important|medium|minor>"}
 		return d, fmt.Sprintf("Blocked: bug %s has no severity; approve it with `tiller approve bug %s --severity <blocker|important|medium|minor>`.",
 			gen.RefByID(tree, sev.NodeID), sev.Key), true
 	}

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -2427,6 +2428,13 @@ func TestApproveUnratedBugRefusesAsBlocked(t *testing.T) {
 	out, _, code := execCLI(t, "approve", "bug", "alpha", "--contributor", "jc", "--json")
 	require.Equal(t, 1, code, out)
 	require.Contains(t, out, `"reason": "severity_required"`)
+	var env struct {
+		Data struct {
+			Command string `json:"command"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	require.Equal(t, "tiller approve bug bugs/alpha --severity <blocker|important|medium|minor>", env.Data.Command)
 	human, stderr, code := execCLI(t, "approve", "bug", "alpha", "--contributor", "jc")
 	require.Equal(t, 1, code)
 	require.Contains(t, human+stderr, "has no severity")
@@ -2498,6 +2506,26 @@ func TestApproveBatchCrossesGradedRefusesUnrated(t *testing.T) {
 	tree := loadTestTree(t)
 	require.Equal(t, "ready", tree.Bugs[bugIDByKey(t, "alpha")].Status)
 	require.Equal(t, "proposed", tree.Bugs[bugIDByKey(t, "beta")].Status)
+}
+
+func TestApproveSeverityBatchRefusesReadyBug(t *testing.T) {
+	layBugsCLI(t, "alpha", "beta")
+	mustRun(t, "approve", "bug", "beta", "--severity", "minor", "--contributor", "jc")
+	out, _, code := execCLI(t, "approve", "bug", "beta", "alpha", "--severity", "medium", "--contributor", "jc", "--json")
+	require.Equal(t, 1, code, out)
+	require.Contains(t, out, `"reason": "severity_not_triage"`)
+	require.Equal(t, "minor", bugSeverity(t, "beta"))
+	require.Equal(t, "medium", bugSeverity(t, "alpha"))
+	require.Equal(t, "ready", loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+}
+
+func TestApproveSeverityReadyBugSingleIsUsageError(t *testing.T) {
+	layBugsCLI(t, "alpha")
+	mustRun(t, "approve", "bug", "alpha", "--severity", "minor", "--contributor", "jc")
+	out, _, code := execCLI(t, "approve", "bug", "alpha", "--severity", "blocker", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code, out)
+	require.Contains(t, out, `"reason": "severity_not_triage"`)
+	require.Equal(t, "minor", bugSeverity(t, "alpha"))
 }
 
 func TestApproveSeverityAppliesToEveryNamedBug(t *testing.T) {

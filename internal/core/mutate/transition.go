@@ -100,7 +100,8 @@ type TransitionInput struct {
 	// verb ignores this field.
 	ReviewGrain *string
 	// Severity is set only by approve bug: the grade the triage gate requires,
-	// or a regrade of one already set. Nil names none and leaves the bug's
+	// or a regrade of one already set, at triage only (a bug past proposed
+	// refuses it with SeverityNotTriageError). Nil names none and leaves the bug's
 	// grade untouched; every other verb, a refresh-basis approve, and every
 	// noun but bug refuses it (Transition).
 	Severity *string

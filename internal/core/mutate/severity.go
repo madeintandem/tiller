@@ -8,7 +8,7 @@ import (
 
 // severityUsage is the shared refusal for a severity a write would set: it
 // applies to bugs only and must be one of the four grades. An empty value is
-// "not given" on any noun and passes. Add, grade, and amend all call it.
+// "not given" on any noun and passes. Add and grade call it.
 func severityUsage(noun, value string) error {
 	if value == "" {
 		return nil
@@ -54,3 +54,23 @@ func (e *SeverityRequiredError) Error() string {
 
 // Reason is the stable discriminator the CLI envelope carries.
 func (e *SeverityRequiredError) Reason() string { return "severity_required" }
+
+// SeverityNotTriageError refuses approve --severity on a bug past triage:
+// approve grades a bug only while it is proposed, and an approve on a ready
+// bug is an idempotent no-op that would silently drop the grade. It is misuse
+// (exit 2); a batch reports it as that node's blocked entry and goes on.
+type SeverityNotTriageError struct {
+	NodeID       string
+	Key          string
+	CurrentState string
+}
+
+func (e *SeverityNotTriageError) Error() string {
+	return fmt.Sprintf("bug %s is %s; approve grades a bug only at triage. Change its severity with tiller grade bug %s <level>", e.NodeID, e.CurrentState, e.Key)
+}
+
+// Reason is the stable discriminator the CLI envelope carries.
+func (e *SeverityNotTriageError) Reason() string { return "severity_not_triage" }
+
+// ExitCode is 2: a usage error, not a business answer.
+func (e *SeverityNotTriageError) ExitCode() int { return 2 }

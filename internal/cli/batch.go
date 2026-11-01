@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
@@ -143,6 +144,13 @@ func applyTransitionBatch(cmd *cobra.Command, command string, tree *store.Tree, 
 		res, err := mutate.Transition(tree, d, n, in)
 		if err != nil {
 			data, human, matched := transitionBlockedView(tree, n, err)
+			var nt *mutate.SeverityNotTriageError
+			if !matched && errors.As(err, &nt) {
+				// Misuse for one node, not the batch: report it and go on.
+				data = map[string]any{"noun": store.NounBug, "id": nt.NodeID, "key": nt.Key, "reason": nt.Reason(), "current_state": nt.CurrentState,
+					"command": "tiller grade bug " + nt.Key + " <level>"}
+				human, matched = "Blocked: "+nt.Error()+".", true
+			}
 			if !matched {
 				return emitFailure(cmd, command, err)
 			}
