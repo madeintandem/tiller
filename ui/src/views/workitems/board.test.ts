@@ -246,12 +246,13 @@ describe("work item board filters", () => {
       ({ noun: "bug", id, ref: id, status: "ready", added_at, added_event });
     const items = [
       mk("none"),
-      mk("old", "2026-10-01T00:00:00Z", "EV-1"),
-      mk("tieLow", "2026-10-05T00:00:00Z", "EV-2"),
-      mk("new", "2026-10-09T00:00:00Z", "EV-3"),
-      mk("tieHigh", "2026-10-05T00:00:00Z", "EV-9"),
+      mk("old", "2026-10-05T00:00:00.000000000Z", "EV-z"),
+      mk("tieLow", "2026-10-05T00:00:00.375577002Z", "EV-b"),
+      mk("new", "2026-10-05T00:00:01.000000000Z", "EV-0"),
+      mk("fractionOlder", "2026-10-05T00:00:00.375577001Z", "EV-y"),
+      mk("tieHigh", "2026-10-05T00:00:00.375577002Z", "EV-c"),
     ];
-    expect(sortWorkItems(items, "added").map((i) => i.id)).toEqual(["new", "tieHigh", "tieLow", "old", "none"]);
+    expect(sortWorkItems(items, "added").map((i) => i.id)).toEqual(["new", "tieHigh", "tieLow", "fractionOlder", "old", "none"]);
     expect(sortWorkItems(items, "shelf").map((i) => i.id)).toEqual(items.map((i) => i.id));
   });
 

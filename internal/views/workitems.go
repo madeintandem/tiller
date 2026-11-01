@@ -50,7 +50,8 @@ func WorkItemsBoardOf(tree *store.Tree, evs []events.Event) WorkItemsBoard {
 		for _, work := range orderedShelfNodes(tree, noun) {
 			card := workItemCardOf(tree, work)
 			if stamp, ok := added[terminalStampKey(card.Noun, card.ID)]; ok {
-				card.AddedAt = formatTime(stamp.At)
+				// Fixed-width UTC keeps string sorting chronological down to nanoseconds.
+				card.AddedAt = stamp.At.UTC().Format("2006-01-02T15:04:05.000000000Z")
 				card.AddedEvent = stamp.EventID
 			}
 			cards = append(cards, card)

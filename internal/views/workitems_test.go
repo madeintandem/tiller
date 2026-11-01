@@ -193,11 +193,29 @@ func TestWorkItemCardAddedAtFromAddEvent(t *testing.T) {
 	}
 	board := views.WorkItemsBoardOf(tree, evs)
 	bug := cardByID(board.Open, "B-task")
-	require.Equal(t, "2026-08-29T03:00:00Z", bug.AddedAt)
+	require.Equal(t, "2026-08-29T03:00:00.000000000Z", bug.AddedAt)
 	require.Equal(t, "EV-b", bug.AddedEvent)
 	chore := cardByID(board.Open, "CH-open")
-	require.Equal(t, "2026-08-29T04:00:00Z", chore.AddedAt)
+	require.Equal(t, "2026-08-29T04:00:00.000000000Z", chore.AddedAt)
 	require.Equal(t, "EV-c", chore.AddedEvent)
+}
+
+func TestWorkItemCardAddedAtPreservesNanosecondsInUTC(t *testing.T) {
+	tree := workItemsBoardTree()
+	at := time.Date(2026, 8, 29, 5, 0, 0, 375577001, time.FixedZone("UTC+2", 2*60*60))
+	evs := []events.Event{
+		{ID: "EV-z", Type: "add.bug", At: at, Targets: []string{"B-task"}},
+		{ID: "EV-a", Type: "add.chore", At: at.Add(time.Nanosecond), Targets: []string{"CH-open"}},
+	}
+
+	board := views.WorkItemsBoardOf(tree, evs)
+	older := cardByID(board.Open, "B-task")
+	newer := cardByID(board.Open, "CH-open")
+	require.Equal(t, "2026-08-29T03:00:00.375577001Z", older.AddedAt)
+	require.Equal(t, "2026-08-29T03:00:00.375577002Z", newer.AddedAt)
+	require.Greater(t, newer.AddedAt, older.AddedAt)
+	require.Equal(t, "EV-z", older.AddedEvent)
+	require.Equal(t, "EV-a", newer.AddedEvent)
 }
 
 func TestWorkItemCardAddedAtFollowsTransfer(t *testing.T) {
@@ -205,11 +223,11 @@ func TestWorkItemCardAddedAtFollowsTransfer(t *testing.T) {
 	// Listed transfer-first to prove the stamps sort before they chain.
 	evs := []events.Event{
 		{ID: "EV-xfer", Type: "transfer.bug", At: boardAt(10), Targets: []string{"B-feature", "B-task"}, After: map[string]any{"id": "B-feature", "replacement_id": "B-task"}},
-		{ID: "EV-add", Type: "add.bug", At: boardAt(2), Targets: []string{"B-feature"}},
+		{ID: "EV-add", Type: "add.bug", At: boardAt(2).Add(375577001 * time.Nanosecond), Targets: []string{"B-feature"}},
 	}
 	board := views.WorkItemsBoardOf(tree, evs)
 	got := cardByID(board.Open, "B-task")
-	require.Equal(t, "2026-08-29T02:00:00Z", got.AddedAt)
+	require.Equal(t, "2026-08-29T02:00:00.375577001Z", got.AddedAt)
 	require.Equal(t, "EV-add", got.AddedEvent)
 }
 
