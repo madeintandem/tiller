@@ -45,6 +45,7 @@ type nodeResult struct {
 	Feature    string   `json:"feature,omitempty"`
 	AttachedTo string   `json:"attached_to,omitempty"`
 	DependsOn  []string `json:"depends_on,omitempty"`
+	Severity   string   `json:"severity,omitempty"`
 	Path       string   `json:"path"`
 	Created    bool     `json:"created"`
 }
@@ -204,7 +205,7 @@ func newAddTweakCmd() *cobra.Command { return newAddWorkItemCmd(store.NounTweak)
 // epic, feature, or task it was found in, provenance only; --source is the
 // free-text citation amend already uses; --depends-on names bugs, chores, and tweaks.
 func newAddWorkItemCmd(noun string) *cobra.Command {
-	var title, attach, source string
+	var title, attach, source, severity string
 	var dependsOn []string
 	cmd := &cobra.Command{
 		Use:     noun + " <key>",
@@ -219,7 +220,7 @@ func newAddWorkItemCmd(noun string) *cobra.Command {
 			noun, store.ShelfDir(noun), store.ShelfProseFile(noun), store.ShelfStateFile(noun), store.ShelfDir(noun)),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAddWorkItem(cmd, noun, args[0], title, attach, source, dependsOn)
+			return runAddWorkItem(cmd, noun, args[0], title, attach, source, severity, dependsOn)
 		},
 	}
 	cmd.Flags().StringVar(&title, "title", "", "display title (required)")
@@ -227,11 +228,14 @@ func newAddWorkItemCmd(noun string) *cobra.Command {
 	cmd.Flags().StringVar(&attach, "attach", "", "the epic, feature, or task this was found in (id or key; provenance only)")
 	cmd.Flags().StringVar(&source, "source", "", "citation to the report or document this came from (path#Lstart-Lend by convention)")
 	cmd.Flags().StringSliceVar(&dependsOn, "depends-on", nil, "bugs, chores, or tweaks this one follows (id or shelf key, repeatable)")
+	if noun == store.NounBug {
+		cmd.Flags().StringVar(&severity, "severity", "", "grade the bug: blocker, important, medium, or minor (omit to leave it unrated)")
+	}
 	addContributorFlag(cmd)
 	return cmd
 }
 
-func runAddWorkItem(cmd *cobra.Command, noun, key, title, attach, source string, dependsOn []string) error {
+func runAddWorkItem(cmd *cobra.Command, noun, key, title, attach, source, severity string, dependsOn []string) error {
 	if strings.Contains(key, "/") || !keyRe.MatchString(key) {
 		return emitFailure(cmd, "add", &usageError{reason: "invalid_key",
 			msg: fmt.Sprintf("a %s key is one local segment (%s); the %s/ prefix is implied", noun, keyRe.String(), store.ShelfDir(noun))})
@@ -248,7 +252,7 @@ func runAddWorkItem(cmd *cobra.Command, noun, key, title, attach, source string,
 		return emitFailure(cmd, "add", err)
 	}
 	res, err := mutate.AddWorkItem(tree, d, mutate.WorkItemInput{
-		Noun: noun, Key: key, Title: title, AttachedTo: attach, Source: source, DependsOn: dependsOn,
+		Noun: noun, Key: key, Title: title, AttachedTo: attach, Source: source, DependsOn: dependsOn, Severity: severity,
 	})
 	if err != nil {
 		return emitFailure(cmd, "add", err)
@@ -296,6 +300,7 @@ func payload(r mutate.Result) nodeResult {
 		Feature:    r.Feature,
 		AttachedTo: r.AttachedTo,
 		DependsOn:  r.DependsOn,
+		Severity:   r.Severity,
 		Path:       r.Path,
 		Created:    r.Created,
 	}

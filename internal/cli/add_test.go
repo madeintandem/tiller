@@ -270,3 +270,21 @@ func TestTweakCommandsPreserveShelfPeers(t *testing.T) {
 	require.Equal(t, bugBefore, readFile(t, ".tiller/bugs/defect/bug.yml"))
 	require.Equal(t, choreBefore, readFile(t, ".tiller/chores/upkeep/chore.yml"))
 }
+
+func TestAddBugSeverityFlag(t *testing.T) {
+	initOwnedRepo(t)
+	out, stderr, code := execCLI(t, "add", "bug", "graded", "--title", "Graded", "--severity", "important", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	require.Equal(t, "important", jsonData(t, out)["severity"])
+
+	out, stderr, code = execCLI(t, "add", "bug", "ungraded", "--title", "Ungraded", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	require.NotContains(t, jsonData(t, out), "severity")
+
+	out, _, code = execCLI(t, "add", "bug", "bad", "--title", "Bad", "--severity", "High", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "invalid_severity"`)
+
+	_, _, code = execCLI(t, "add", "chore", "c", "--title", "C", "--severity", "minor", "--contributor", "jc")
+	require.Equal(t, 2, code)
+}

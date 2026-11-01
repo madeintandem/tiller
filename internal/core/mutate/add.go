@@ -203,6 +203,7 @@ type Result struct {
 	Feature    string
 	AttachedTo string
 	DependsOn  []string
+	Severity   string
 	Path       string
 	Created    bool
 }

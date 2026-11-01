@@ -440,3 +440,17 @@ func TestTransferRejectsSquashedImmutableReviewAfterBranchChanges(t *testing.T) 
 		})
 	}
 }
+
+func TestTransferKeepsSeverity(t *testing.T) {
+	t.Parallel()
+	root, deps, nid, dir := transferFixture(t, store.NounBug)
+	ymlPath := filepath.Join(root, dir, "bug.yml")
+	raw, err := os.ReadFile(ymlPath)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(ymlPath, append(raw, []byte("severity: important\n")...), 0o644))
+	res, err := mutate.Transfer(load(t, root), deps, mutate.TransferInput{Noun: store.NounBug, Node: nid, To: "sam", Reason: "Human directed handoff"})
+	require.NoError(t, err)
+	next, ok := load(t, root).WorkNode(res.Replacement.ID)
+	require.True(t, ok)
+	require.Equal(t, "important", next.Body().Severity)
+}

@@ -21,6 +21,9 @@ type WorkItemInput struct {
 	AttachedTo string
 	Source     string
 	DependsOn  []string
+	// Severity grades a bug (blocker, important, medium, minor); empty is
+	// unrated. Chores and tweaks refuse it.
+	Severity string
 }
 
 // AddWorkItem creates a proposed bug or chore on its shelf: the contract
@@ -55,6 +58,9 @@ func planAddWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, in Wo
 	if strings.TrimSpace(in.Title) == "" {
 		return plannedAdd{}, &usageError{reason: "invalid_title", msg: "add needs a non-blank --title"}
 	}
+	if err := severityUsage(in.Noun, in.Severity); err != nil {
+		return plannedAdd{}, err
+	}
 	attached, err := resolveAttachTarget(tree, in.AttachedTo)
 	if err != nil {
 		return plannedAdd{}, err
@@ -85,7 +91,7 @@ func planAddWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, in Wo
 		}
 		return plannedAdd{result: Result{
 			Noun: in.Noun, ID: b.ID, Key: deref(b.Key), Title: b.Title, Status: b.Status,
-			AttachedTo: b.AttachedTo, Source: b.Source, DependsOn: b.DependsOn, Path: relDir, Created: false,
+			AttachedTo: b.AttachedTo, Source: b.Source, DependsOn: b.DependsOn, Severity: b.Severity, Path: relDir, Created: false,
 		}}, nil
 	}
 
@@ -103,7 +109,7 @@ func planAddWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, in Wo
 	}
 	*doc.Body() = store.WorkItem{
 		ID: nid, Key: &canonical, Title: in.Title, Status: statusProposed,
-		ProposedBy: owner.ID, AttachedTo: attached, Source: strings.TrimSpace(in.Source), DependsOn: dependsOn,
+		ProposedBy: owner.ID, AttachedTo: attached, Source: strings.TrimSpace(in.Source), DependsOn: dependsOn, Severity: in.Severity,
 	}
 	ydata, err := yaml.Marshal(doc)
 	if err != nil {
@@ -116,6 +122,9 @@ func planAddWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, in Wo
 	if attached != "" {
 		after["attached_to"] = attached
 	}
+	if in.Severity != "" {
+		after["severity"] = in.Severity
+	}
 	ev.After = after
 	ev.Files = []events.FileChange{{Path: relMd}, {Path: relYml}}
 
@@ -123,7 +132,7 @@ func planAddWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, in Wo
 	return plannedAdd{
 		result: Result{
 			Noun: in.Noun, ID: nid, Key: canonical, Title: in.Title, Status: statusProposed,
-			AttachedTo: attached, Source: strings.TrimSpace(in.Source), DependsOn: dependsOn, Path: relDir, Created: true,
+			AttachedTo: attached, Source: strings.TrimSpace(in.Source), DependsOn: dependsOn, Severity: in.Severity, Path: relDir, Created: true,
 		},
 		prose:  store.PlanWrite(mdPath, store.AbsentSnapshot(), []byte(prose)),
 		state:  store.PlanWrite(ymlPath, store.AbsentSnapshot(), ydata),

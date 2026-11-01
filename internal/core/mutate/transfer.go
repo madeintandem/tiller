@@ -213,7 +213,7 @@ func Transfer(tree *store.Tree, deps Deps, in TransferInput) (TransferResult, er
 		if err != nil {
 			return TransferResult{}, err
 		}
-		*fresh.Body() = store.WorkItem{ID: nid, Key: &key, Title: w.Title, Status: "ready", Blocked: w.Blocked, Owner: recipient.ID, ProposedBy: w.ProposedBy, AttachedTo: w.AttachedTo, ResolvedBy: w.ResolvedBy, Source: w.Source, DependsOn: append([]string(nil), w.DependsOn...), Supersedes: []string{w.ID}, AcceptedAgainst: &accepted}
+		*fresh.Body() = store.WorkItem{ID: nid, Key: &key, Title: w.Title, Status: "ready", Blocked: w.Blocked, Owner: recipient.ID, ProposedBy: w.ProposedBy, AttachedTo: w.AttachedTo, ResolvedBy: w.ResolvedBy, Source: w.Source, Severity: w.Severity, DependsOn: append([]string(nil), w.DependsOn...), Supersedes: []string{w.ID}, AcceptedAgainst: &accepted}
 		replacement = fresh
 		w.Status, w.SupersededBy, w.Resolution = statusCancelled, &nid, store.ResolutionTransferred
 		if w.ResolvedBy != "" && (!carrierCanCarry(carrierState(p.tree, w.ResolvedBy)) || carrierState(p.tree, w.ResolvedBy) == statusDone) {

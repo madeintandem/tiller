@@ -176,3 +176,55 @@ func TestAddEpicRefusesReservedShelfKeys(t *testing.T) {
 		require.Equal(t, "reserved_key", reasonOf(t, err))
 	}
 }
+
+func TestAddBugRecordsSeverity(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	deps := testDeps()
+	deps.Mint = func(prefix string) string { return fixedMint(prefix) }
+	res, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "sev", Title: "Sev", Severity: "blocker"})
+	require.NoError(t, err)
+	require.Equal(t, "blocker", res.Severity)
+	raw, err := os.ReadFile(filepath.Join(root, ".tiller", "bugs", "sev", "bug.yml"))
+	require.NoError(t, err)
+	require.Contains(t, string(raw), "severity: blocker")
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	require.Equal(t, "add.bug", evs[len(evs)-1].Type)
+	require.Equal(t, "blocker", evs[len(evs)-1].After["severity"])
+}
+
+func TestAddBugWithoutSeverityIsUnrated(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	deps := testDeps()
+	deps.Mint = func(prefix string) string { return fixedMint(prefix) }
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "plain", Title: "Plain"})
+	require.NoError(t, err)
+	raw, err := os.ReadFile(filepath.Join(root, ".tiller", "bugs", "plain", "bug.yml"))
+	require.NoError(t, err)
+	require.NotContains(t, string(raw), "severity")
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	require.NotContains(t, evs[len(evs)-1].After, "severity")
+}
+
+func TestAddChoreRefusesSeverity(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	_, err := mutate.AddWorkItem(load(t, root), testDeps(), mutate.WorkItemInput{Noun: store.NounChore, Key: "c", Title: "C", Severity: "minor"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "severity applies to bugs")
+	require.Equal(t, "severity_not_bug", err.(interface{ Reason() string }).Reason())
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "chores", "c"))
+}
+
+func TestAddBugRefusesInvalidSeverity(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	_, err := mutate.AddWorkItem(load(t, root), testDeps(), mutate.WorkItemInput{Noun: store.NounBug, Key: "b", Title: "B", Severity: "High"})
+	require.Error(t, err)
+	require.Equal(t, "invalid_severity", err.(interface{ Reason() string }).Reason())
+	require.Contains(t, err.Error(), `"High" is not blocker, important, medium, or minor`)
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "bugs", "b"))
+}
