@@ -359,3 +359,20 @@ func writeLines(t *testing.T, file, format string, lines int) {
 	}
 	require.NoError(t, os.WriteFile(file, []byte(b.String()), 0o644))
 }
+
+func TestSearchNodeResultCarriesSeverity(t *testing.T) {
+	root, tree := searchShelfFixture(t)
+	tree.Bugs["B-aaaaaa"].Severity = store.SeverityImportant
+	res, err := search.Search(root, tree, "B-aaaaaa", search.Options{})
+	require.NoError(t, err)
+	require.Len(t, res.Nodes, 1)
+	require.Equal(t, "important", res.Nodes[0].Severity)
+	data, err := json.Marshal(res.Nodes[0])
+	require.NoError(t, err)
+	require.Contains(t, string(data), `"severity":"important"`)
+
+	res, err = search.Search(root, tree, "CH-bbbbbb", search.Options{})
+	require.NoError(t, err)
+	require.Len(t, res.Nodes, 1)
+	require.Empty(t, res.Nodes[0].Severity)
+}

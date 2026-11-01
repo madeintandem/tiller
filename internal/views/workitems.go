@@ -24,6 +24,8 @@ type WorkItemCard struct {
 	Attached      *RelatedNode `json:"attached,omitempty"`
 	AttachmentIDs []string     `json:"attachment_ids,omitempty"`
 	ClosedAt      string       `json:"closed_at,omitempty"`
+	AddedAt       string       `json:"added_at,omitempty"`
+	AddedEvent    string       `json:"added_event,omitempty"`
 	Resolution    string       `json:"resolution,omitempty"`
 	Supersedes    []string     `json:"supersedes,omitempty"`
 	SupersededBy  string       `json:"superseded_by,omitempty"`
@@ -41,11 +43,16 @@ func WorkItemsBoardOf(tree *store.Tree, evs []events.Event) WorkItemsBoard {
 		Attachments: []RelatedNode{},
 	}
 	stamps := terminalStamps(evs)
+	added := addStamps(evs)
 	cards := make([]WorkItemCard, 0, len(tree.Bugs)+len(tree.Chores)+len(tree.Tweaks))
 
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range orderedShelfNodes(tree, noun) {
 			card := workItemCardOf(tree, work)
+			if stamp, ok := added[terminalStampKey(card.Noun, card.ID)]; ok {
+				card.AddedAt = formatTime(stamp.At)
+				card.AddedEvent = stamp.EventID
+			}
 			cards = append(cards, card)
 			if !isTerminalWorkStatus(card.Status) {
 				board.Open = append(board.Open, card)
@@ -217,6 +224,38 @@ func terminalStamps(evs []events.Event) map[string]terminalStamp {
 		}
 		for _, target := range event.Targets {
 			stamps[terminalStampKey(noun, target)] = terminalStamp{At: event.At, EventID: event.ID}
+		}
+	}
+	return stamps
+}
+
+// addStamps maps each shelf item to the add event that created it. A transfer
+// carries the original's stamp to its replacement, so a replacement keeps the
+// date the work was first reported. Events sort first so a transfer always
+// sees its original's add.
+func addStamps(evs []events.Event) map[string]terminalStamp {
+	relevant := make([]events.Event, 0, len(evs))
+	for _, event := range evs {
+		verb, noun, ok := strings.Cut(event.Type, ".")
+		if ok && (verb == "add" || verb == "transfer") && slices.Contains(store.ShelfNouns(), noun) {
+			relevant = append(relevant, event)
+		}
+	}
+	events.Sort(relevant)
+
+	stamps := make(map[string]terminalStamp)
+	for _, event := range relevant {
+		verb, noun, _ := strings.Cut(event.Type, ".")
+		if verb == "add" {
+			for _, target := range event.Targets {
+				stamps[terminalStampKey(noun, target)] = terminalStamp{At: event.At, EventID: event.ID}
+			}
+			continue
+		}
+		original, _ := event.After["id"].(string)
+		replacement, _ := event.After["replacement_id"].(string)
+		if stamp, ok := stamps[terminalStampKey(noun, original)]; ok && replacement != "" {
+			stamps[terminalStampKey(noun, replacement)] = stamp
 		}
 	}
 	return stamps

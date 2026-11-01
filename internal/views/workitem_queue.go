@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
@@ -19,10 +20,14 @@ func queueApproveShelf(t *store.Tree, noun string) []QueueEntry {
 		if body.Status != "proposed" || gen.WorkActivity(t, work) == gen.ActivityCarried {
 			continue
 		}
+		command := fmt.Sprintf("tiller approve %s %s", noun, queueAddr(work))
+		if noun == store.NounBug && body.Severity == "" {
+			command += " --severity <" + strings.Join(store.Severities(), "|") + ">"
+		}
 		out = append(out, QueueEntry{
 			Kind: kind, Noun: noun, ID: body.ID, Key: Key(work),
 			Ref: gen.Ref(t, work), Prose: body.Title,
-			Command: fmt.Sprintf("tiller approve %s %s", noun, queueAddr(work)),
+			Command: command,
 		})
 	}
 	return out

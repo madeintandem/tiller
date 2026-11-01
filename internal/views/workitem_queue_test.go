@@ -26,7 +26,7 @@ func TestQueueCarriesShelfApprovalAndCancelledCarrierEntries(t *testing.T) {
 
 	entries := views.QueueOf(tree).Entries
 	require.Equal(t, []string{"approve_bug", "approve_chore", "carrier_cancelled"}, queueEntryKinds(entries))
-	require.Equal(t, "tiller approve bug bugs/alpha", entries[0].Command)
+	require.Equal(t, "tiller approve bug bugs/alpha --severity <blocker|important|medium|minor>", entries[0].Command)
 	require.Equal(t, "tiller approve chore chores/bump-go", entries[1].Command)
 	require.Equal(t, "tiller resolve bug bugs/zulu --clear", entries[2].Command)
 	require.Equal(t, gen.ActivityCarrierCancelled, gen.WorkActivity(tree, tree.Bugs["B-zulu00"]))
@@ -67,4 +67,29 @@ func TestQueueAttestGateIncludesAnInReviewBug(t *testing.T) {
 	require.Len(t, got, 1)
 	require.Equal(t, store.NounBug, got[0].Noun)
 	require.Equal(t, "tiller attest bug bugs/blank-on-reload --gate code_review --status pass", got[0].Command)
+}
+
+func TestApproveQueueNamesSeverityForUnratedBug(t *testing.T) {
+	unrated, rated, chore, tweak := "bugs/unrated", "bugs/rated", "chores/c", "tweaks/t"
+	tree := &store.Tree{
+		Manifest: &store.Manifest{},
+		Bugs: map[string]*store.Bug{
+			"B-unrated": {WorkItem: store.WorkItem{ID: "B-unrated", Key: &unrated, Title: "U", Status: "proposed"}},
+			"B-rated00": {WorkItem: store.WorkItem{ID: "B-rated00", Key: &rated, Title: "R", Status: "proposed", Severity: "minor"}},
+		},
+		Chores: map[string]*store.Chore{
+			"CH-c00000": {WorkItem: store.WorkItem{ID: "CH-c00000", Key: &chore, Title: "C", Status: "proposed"}},
+		},
+		Tweaks: map[string]*store.Tweak{
+			"TW-t00000": {WorkItem: store.WorkItem{ID: "TW-t00000", Key: &tweak, Title: "T", Status: "proposed"}},
+		},
+	}
+	cmds := map[string]string{}
+	for _, e := range views.QueueOf(tree).Entries {
+		cmds[e.ID] = e.Command
+	}
+	require.Equal(t, "tiller approve bug bugs/unrated --severity <blocker|important|medium|minor>", cmds["B-unrated"])
+	require.Equal(t, "tiller approve bug bugs/rated", cmds["B-rated00"])
+	require.Equal(t, "tiller approve chore chores/c", cmds["CH-c00000"])
+	require.Equal(t, "tiller approve tweak tweaks/t", cmds["TW-t00000"])
 }

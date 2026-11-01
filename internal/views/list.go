@@ -39,7 +39,10 @@ type ListItem struct {
 	Contributors []store.Contributor `json:"contributors,omitzero"`
 	// AttachedTo is a bug or chore's provenance: where it was found (a
 	// feature, task, or epic id), empty for every other noun.
-	AttachedTo                string                       `json:"attached_to,omitempty"`
+	AttachedTo string `json:"attached_to,omitempty"`
+	// Severity is a bug's triage grade (store.Severities), empty for an
+	// unrated bug and for every other noun. It never orders anything.
+	Severity                  string                       `json:"severity,omitempty"`
 	RecoveredReview           *workflow.RecoveredReview    `json:"recovered_review,omitempty"`
 	ReviewMissing             bool                         `json:"review_missing,omitempty"`
 	Gates                     map[string]GateView          `json:"gates,omitempty"`
@@ -260,6 +263,7 @@ func Item(tree *store.Tree, n store.Node) ListItem {
 		if w, ok := store.AsWorkNode(n); ok {
 			item.Title = w.Body().Title
 			item.AttachedTo = w.Body().AttachedTo
+			item.Severity = w.Body().Severity
 		}
 	}
 	return item

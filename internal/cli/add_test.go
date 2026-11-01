@@ -288,3 +288,19 @@ func TestAddBugSeverityFlag(t *testing.T) {
 	_, _, code = execCLI(t, "add", "chore", "c", "--title", "C", "--severity", "minor", "--contributor", "jc")
 	require.Equal(t, 2, code)
 }
+
+func TestShowBugTextNamesSeverity(t *testing.T) {
+	initOwnedRepo(t)
+	mustRun(t, "add", "bug", "graded", "--title", "Graded", "--severity", "important", "--contributor", "jc")
+	mustRun(t, "add", "bug", "ungraded", "--title", "Ungraded", "--contributor", "jc")
+	mustRun(t, "add", "chore", "upkeep", "--title", "Upkeep", "--contributor", "jc")
+	out, stderr, code := execCLI(t, "show", "bug", "graded")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "\n  severity: important")
+	out, stderr, code = execCLI(t, "show", "bug", "ungraded")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "\n  severity: unrated")
+	out, stderr, code = execCLI(t, "show", "chore", "upkeep")
+	require.Equal(t, 0, code, stderr)
+	require.NotContains(t, out, "severity")
+}

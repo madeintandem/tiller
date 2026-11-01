@@ -1,6 +1,7 @@
 package views_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -161,4 +162,64 @@ func TestShelfTransfersCloseOnlyOriginalsInEventOrder(t *testing.T) {
 	for _, card := range board.Closed[3:] {
 		require.Empty(t, card.ClosedAt)
 	}
+}
+
+func cardByID(cards []views.WorkItemCard, id string) views.WorkItemCard {
+	for _, c := range cards {
+		if c.ID == id {
+			return c
+		}
+	}
+	return views.WorkItemCard{}
+}
+
+func TestWorkItemCardCarriesSeverity(t *testing.T) {
+	tree := workItemsBoardTree()
+	tree.Bugs["B-task"].Severity = store.SeverityBlocker
+	board := views.WorkItemsBoardOf(tree, nil)
+	require.Equal(t, "blocker", cardByID(board.Open, "B-task").Severity)
+	require.Empty(t, cardByID(board.Open, "B-feature").Severity)
+	require.Empty(t, cardByID(board.Open, "CH-open").Severity)
+	node := views.Node(tree, tree.Bugs["B-task"])
+	require.Equal(t, "blocker", node.Severity)
+}
+
+func TestWorkItemCardAddedAtFromAddEvent(t *testing.T) {
+	tree := workItemsBoardTree()
+	evs := []events.Event{
+		{ID: "EV-b", Type: "add.bug", At: boardAt(3), Targets: []string{"B-task"}},
+		{ID: "EV-c", Type: "add.chore", At: boardAt(4), Targets: []string{"CH-open"}},
+		{ID: "EV-x", Type: "add.bug", At: boardAt(5), Targets: []string{"CH-open"}},
+	}
+	board := views.WorkItemsBoardOf(tree, evs)
+	bug := cardByID(board.Open, "B-task")
+	require.Equal(t, "2026-08-29T03:00:00Z", bug.AddedAt)
+	require.Equal(t, "EV-b", bug.AddedEvent)
+	chore := cardByID(board.Open, "CH-open")
+	require.Equal(t, "2026-08-29T04:00:00Z", chore.AddedAt)
+	require.Equal(t, "EV-c", chore.AddedEvent)
+}
+
+func TestWorkItemCardAddedAtFollowsTransfer(t *testing.T) {
+	tree := workItemsBoardTree()
+	// Listed transfer-first to prove the stamps sort before they chain.
+	evs := []events.Event{
+		{ID: "EV-xfer", Type: "transfer.bug", At: boardAt(10), Targets: []string{"B-feature", "B-task"}, After: map[string]any{"id": "B-feature", "replacement_id": "B-task"}},
+		{ID: "EV-add", Type: "add.bug", At: boardAt(2), Targets: []string{"B-feature"}},
+	}
+	board := views.WorkItemsBoardOf(tree, evs)
+	got := cardByID(board.Open, "B-task")
+	require.Equal(t, "2026-08-29T02:00:00Z", got.AddedAt)
+	require.Equal(t, "EV-add", got.AddedEvent)
+}
+
+func TestWorkItemCardNoAddEventOmitsAddedAt(t *testing.T) {
+	board := views.WorkItemsBoardOf(workItemsBoardTree(), nil)
+	for _, c := range board.Open {
+		require.Empty(t, c.AddedAt)
+		require.Empty(t, c.AddedEvent)
+	}
+	data, err := json.Marshal(board.Open[0])
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "added_at")
 }

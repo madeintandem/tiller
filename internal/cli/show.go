@@ -178,6 +178,13 @@ func renderNodeHuman(tree *store.Tree, v NodeView) string {
 	if v.ResolvedBy != "" {
 		fmt.Fprintf(&b, "\n  carried by: %s", gen.RefByID(tree, v.ResolvedBy))
 	}
+	if v.Noun == store.NounBug {
+		severity := v.Severity
+		if severity == "" {
+			severity = "unrated"
+		}
+		fmt.Fprintf(&b, "\n  severity: %s", severity)
+	}
 	if v.Resolution != "" {
 		fmt.Fprintf(&b, "\n  resolution: %s", v.Resolution)
 		if v.DuplicateOf != "" {

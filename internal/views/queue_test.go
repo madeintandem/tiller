@@ -381,7 +381,7 @@ func TestQueueOfPinsEveryKindAndOrder(t *testing.T) {
 	    {"kind":"approve_epic","noun":"epic","id":"E-aaaaaa","key":"form-engine","ref":"form-engine (E-aaaaaa)","prose":"Form Engine","command":"tiller approve epic form-engine"},
 	    {"kind":"approve_feature","noun":"feature","id":"F-aaaaaa","key":"form-engine/schema-engine","ref":"form-engine/schema-engine (F-aaaaaa)","prose":"Schema engine","command":"tiller approve feature form-engine/schema-engine"},
 	    {"kind":"approve_tasks","noun":"feature","id":"F-eeeeee","key":"form-engine/review-me","ref":"form-engine/review-me (F-eeeeee)","prose":"Review me","command":"tiller approve task --feature form-engine/review-me"},
-	    {"kind":"approve_bug","noun":"bug","id":"B-aaaaaa","key":"bugs/triage-bug","ref":"bugs/triage-bug (B-aaaaaa)","prose":"Triage bug","command":"tiller approve bug bugs/triage-bug"},
+	    {"kind":"approve_bug","noun":"bug","id":"B-aaaaaa","key":"bugs/triage-bug","ref":"bugs/triage-bug (B-aaaaaa)","prose":"Triage bug","command":"tiller approve bug bugs/triage-bug --severity <blocker|important|medium|minor>"},
 	    {"kind":"approve_chore","noun":"chore","id":"CH-aaaaaa","key":"chores/triage-chore","ref":"chores/triage-chore (CH-aaaaaa)","prose":"Triage chore","command":"tiller approve chore chores/triage-chore"},
 	    {"kind":"answer_question","noun":"question","id":"Q-bbbbbb","ref":"Q-bbbbbb","prose":"Canonical schema version","command":"tiller answer question Q-bbbbbb --answer \"...\"","due":"2026-07-10"},
 	    {"kind":"answer_question","noun":"question","id":"Q-aaaaaa","ref":"Q-aaaaaa","prose":"Currency rounding","command":"tiller answer question Q-aaaaaa --answer \"...\""},

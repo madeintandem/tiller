@@ -89,10 +89,12 @@ type NodeResult struct {
 	Key    string `json:"key,omitempty"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
-	Ref    string `json:"ref"`
-	Match  string `json:"match"`
-	Count  int    `json:"count"`
-	Hits   []Hit  `json:"hits"`
+	// Severity is a bug's triage grade; empty for unrated bugs and other nouns.
+	Severity string `json:"severity,omitempty"`
+	Ref      string `json:"ref"`
+	Match    string `json:"match"`
+	Count    int    `json:"count"`
+	Hits     []Hit  `json:"hits"`
 
 	rank rank
 }

@@ -398,7 +398,10 @@ export interface RecoveredReviewView {
 // shape across every noun, fields that do not apply omitted. A question's
 // answer is a Go *string under omitempty, so it is absent until answered and a
 // plain string after.
+export type Severity = "blocker" | "important" | "medium" | "minor";
+
 export interface NodeView {
+  severity?: Severity;
   noun: string;
   id: string;
   key?: string;
@@ -922,6 +925,7 @@ export function isEvalError(e: EvalPayload): e is EvalContractError {
 // status (views.activity, matching the status oracle); absent for a task, a
 // question, and for a feature or epic with no phase.
 export interface ListRow {
+  severity?: Severity;
   id: string;
   key?: string;
   title?: string;
@@ -1076,6 +1080,8 @@ export interface WorkItemCard extends ListRow {
   attached?: RelatedNode;
   attachment_ids?: string[];
   closed_at?: string;
+  added_at?: string;
+  added_event?: string;
   resolution?: string;
   supersedes?: string[];
   superseded_by?: string;
@@ -1434,6 +1440,7 @@ export type SearchMatch = "id" | "key" | "title" | "key_fragment" | "text";
 // every matching line and ledger field; hits is the first few of them. A
 // matching title is neither, since the title is already the row's label.
 export interface SearchNodeResult {
+  severity?: Severity;
   noun: string;
   id: string;
   key?: string;

@@ -51,6 +51,7 @@ type NodeView struct {
 	AttachedTo   string              `json:"attached_to,omitempty"`   // bug, chore: where it was found (provenance)
 	ResolvedBy   string              `json:"resolved_by,omitempty"`   // bug, chore: the carrier whose merge fixes it
 	Resolution   string              `json:"resolution,omitempty"`    // bug, chore: on cancelled only
+	Severity     string              `json:"severity,omitempty"`      // bug: triage grade, empty when unrated
 	DuplicateOf  string              `json:"duplicate_of,omitempty"`  // bug, chore: with resolution duplicate
 	Statement    string              `json:"statement,omitempty"`     // question
 	Answer       *string             `json:"answer,omitempty"`        // question: nil until answered
@@ -428,6 +429,7 @@ func Node(tree *store.Tree, n store.Node) NodeView {
 			v.AttachedTo = b.AttachedTo
 			v.ResolvedBy = b.ResolvedBy
 			v.Resolution = b.Resolution
+			v.Severity = b.Severity
 			v.DuplicateOf = b.DuplicateOf
 			v.DependsOn = b.DependsOn
 			v.Supersedes = b.Supersedes

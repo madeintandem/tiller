@@ -53,6 +53,9 @@ func (s nodeSet) add(tree *store.Tree, n store.Node, r rank) *NodeResult {
 			Noun: n.Noun(), ID: n.NodeID(), Key: keyOf(n), Title: titleOf(n),
 			Status: n.NodeStatus(), Ref: gen.Ref(tree, n), Hits: []Hit{}, rank: r,
 		}
+		if bug, ok := n.(*store.Bug); ok {
+			res.Severity = bug.Severity
+		}
 		s[n.NodeID()] = res
 	}
 	res.rank = min(res.rank, r)
