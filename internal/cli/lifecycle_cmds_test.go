@@ -2508,24 +2508,57 @@ func TestApproveBatchCrossesGradedRefusesUnrated(t *testing.T) {
 	require.Equal(t, "proposed", tree.Bugs[bugIDByKey(t, "beta")].Status)
 }
 
-func TestApproveSeverityBatchRefusesReadyBug(t *testing.T) {
-	layBugsCLI(t, "alpha", "beta")
-	mustRun(t, "approve", "bug", "beta", "--severity", "minor", "--contributor", "jc")
-	out, _, code := execCLI(t, "approve", "bug", "beta", "alpha", "--severity", "medium", "--contributor", "jc", "--json")
-	require.Equal(t, 1, code, out)
-	require.Contains(t, out, `"reason": "severity_not_triage"`)
-	require.Equal(t, "minor", bugSeverity(t, "beta"))
-	require.Equal(t, "medium", bugSeverity(t, "alpha"))
-	require.Equal(t, "ready", loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+func TestApproveSeverityBatchRefusesPastTriageBug(t *testing.T) {
+	for _, active := range []bool{false, true} {
+		t.Run(fmt.Sprintf("active=%t", active), func(t *testing.T) {
+			layBugsCLI(t, "alpha", "beta")
+			mustRun(t, "approve", "bug", "beta", "--severity", "minor", "--contributor", "jc")
+			status := "ready"
+			if active {
+				mustRun(t, "claim", "bug", "beta", "--contributor", "jc")
+				mustRun(t, "start", "bug", "beta", "--contributor", "jc")
+				status = "in_progress"
+			}
+			out, _, code := execCLI(t, "approve", "bug", "beta", "alpha", "--severity", "medium", "--contributor", "jc", "--json")
+			require.Equal(t, 1, code, out)
+			require.Contains(t, out, `"reason": "severity_not_triage"`)
+			require.Contains(t, out, "tiller grade bug bugs/beta ")
+			require.Equal(t, "minor", bugSeverity(t, "beta"))
+			require.Equal(t, status, loadTestTree(t).Bugs[bugIDByKey(t, "beta")].Status)
+			require.Equal(t, "medium", bugSeverity(t, "alpha"))
+			require.Equal(t, "ready", loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+		})
+	}
 }
 
-func TestApproveSeverityReadyBugSingleIsUsageError(t *testing.T) {
-	layBugsCLI(t, "alpha")
-	mustRun(t, "approve", "bug", "alpha", "--severity", "minor", "--contributor", "jc")
-	out, _, code := execCLI(t, "approve", "bug", "alpha", "--severity", "blocker", "--contributor", "jc", "--json")
-	require.Equal(t, 2, code, out)
-	require.Contains(t, out, `"reason": "severity_not_triage"`)
-	require.Equal(t, "minor", bugSeverity(t, "alpha"))
+func TestApproveSeverityPastTriageBugSingleIsUsageError(t *testing.T) {
+	for _, active := range []bool{false, true} {
+		t.Run(fmt.Sprintf("active=%t", active), func(t *testing.T) {
+			layBugsCLI(t, "alpha")
+			mustRun(t, "approve", "bug", "alpha", "--severity", "minor", "--contributor", "jc")
+			status := "ready"
+			if active {
+				mustRun(t, "claim", "bug", "alpha", "--contributor", "jc")
+				mustRun(t, "start", "bug", "alpha", "--contributor", "jc")
+				status = "in_progress"
+			}
+			out, _, code := execCLI(t, "approve", "bug", "alpha", "--severity", "blocker", "--contributor", "jc", "--json")
+			require.Equal(t, 2, code, out)
+			var env struct {
+				Error struct {
+					Code    int    `json:"code"`
+					Reason  string `json:"reason"`
+					Message string `json:"message"`
+				} `json:"error"`
+			}
+			require.NoError(t, json.Unmarshal([]byte(out), &env))
+			require.Equal(t, 2, env.Error.Code)
+			require.Equal(t, "severity_not_triage", env.Error.Reason)
+			require.Contains(t, env.Error.Message, "tiller grade bug bugs/alpha <level>")
+			require.Equal(t, "minor", bugSeverity(t, "alpha"))
+			require.Equal(t, status, loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+		})
+	}
 }
 
 func TestApproveSeverityAppliesToEveryNamedBug(t *testing.T) {

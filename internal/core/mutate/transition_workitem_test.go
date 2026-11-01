@@ -255,19 +255,37 @@ func TestApproveBugRegrades(t *testing.T) {
 	require.Equal(t, "blocker", ev.After["severity"])
 }
 
-func TestApproveReadyBugSeverityRefusedNotTriage(t *testing.T) {
+func TestApprovePastTriageBugSeverityRefusedNotTriage(t *testing.T) {
 	t.Parallel()
-	root := layBugGraded(t, "alpha", "important")
-	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve"})
-	before, lerr := events.List(load(t, root))
-	require.NoError(t, lerr)
-	err := approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
-	require.Equal(t, "severity_not_triage", reasonOf(t, err))
-	require.Contains(t, err.Error(), "bug B-aaaaaa is ready; approve grades a bug only at triage. Change its severity with tiller grade bug bugs/alpha <level>")
-	require.Equal(t, "important", load(t, root).Bugs["B-aaaaaa"].Severity)
-	after, lerr := events.List(load(t, root))
-	require.NoError(t, lerr)
-	require.Len(t, after, len(before))
+	for _, status := range []string{"ready", "in_progress", "check", "in_review", "done", "cancelled"} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+			root := layBugGraded(t, "alpha", "important")
+			if status == "ready" {
+				driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve"})
+			} else {
+				setBugStatus(t, root, "alpha", status)
+			}
+			before := snapshotDir(t, root)
+			err := approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
+			var notTriage *mutate.SeverityNotTriageError
+			require.ErrorAs(t, err, &notTriage)
+			require.Equal(t, "severity_not_triage", notTriage.Reason())
+			require.Equal(t, status, notTriage.CurrentState)
+			require.Contains(t, err.Error(), "tiller grade bug bugs/alpha <level>")
+			require.Equal(t, before, snapshotDir(t, root), "refusal must not write state or events")
+
+			// Without a grade, approval retains its lifecycle behavior.
+			err = approveBugErr(t, root, mutate.TransitionInput{Verb: "approve"})
+			if status == "ready" {
+				require.NoError(t, err)
+			} else {
+				var illegal *lifecycle.IllegalTransitionError
+				require.ErrorAs(t, err, &illegal)
+			}
+			require.Equal(t, before, snapshotDir(t, root))
+		})
+	}
 }
 
 func TestApproveBugSameSeverityWritesNoPair(t *testing.T) {

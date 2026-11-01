@@ -45,12 +45,12 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		return workResult(target, true), nil
 	}
 
-	if legal, moves := lifecycle.Legal(target, in.Verb); !legal {
-		return TransitionResult{}, &lifecycle.IllegalTransitionError{Noun: noun, From: before, Verb: in.Verb, Legal: moves}
-	}
-
 	if in.Verb == "approve" && in.Severity != nil && before != statusProposed {
 		return TransitionResult{}, &SeverityNotTriageError{NodeID: w.ID, Key: deref(w.Key), CurrentState: before}
+	}
+
+	if legal, moves := lifecycle.Legal(target, in.Verb); !legal {
+		return TransitionResult{}, &lifecycle.IllegalTransitionError{Noun: noun, From: before, Verb: in.Verb, Legal: moves}
 	}
 
 	if in.Verb == "start" || in.Verb == "submit" {
