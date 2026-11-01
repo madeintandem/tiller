@@ -24,7 +24,7 @@ func layStartedBug(t *testing.T, buildRun, testsRun string) string {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A", Severity: "medium"})
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "bugs", "alpha", "bug.md"), []byte("# A\n\n## Reproduction\n\nx\n"), 0o644))
 	gitCommitAllM(t, root, "lay bug")

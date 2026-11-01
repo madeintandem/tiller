@@ -18,7 +18,7 @@ func layTwoOwnerBug(t *testing.T) string {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A", Severity: "medium"})
 	require.NoError(t, err)
 	return root
 }

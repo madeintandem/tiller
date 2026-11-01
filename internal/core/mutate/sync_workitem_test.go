@@ -140,7 +140,7 @@ func TestSyncCrossesCarriedBugWhenCarrierIsDone(t *testing.T) {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "carried", Title: "Carried"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "carried", Title: "Carried", Severity: "medium"})
 	require.NoError(t, err)
 	_, err = mutate.Resolve(load(t, root), testDeps(), mutate.ResolveInput{Noun: store.NounBug, Node: "carried", By: "T-aaaaaa"})
 	require.NoError(t, err)
@@ -262,7 +262,7 @@ func TestSyncLeavesCarriedBugWhenCarrierIsNotDone(t *testing.T) {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "carried", Title: "Carried"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "carried", Title: "Carried", Severity: "medium"})
 	require.NoError(t, err)
 	_, err = mutate.Resolve(load(t, root), testDeps(), mutate.ResolveInput{Noun: store.NounBug, Node: "carried", By: "T-aaaaaa"})
 	require.NoError(t, err)

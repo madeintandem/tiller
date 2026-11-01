@@ -99,6 +99,14 @@ type TransitionInput struct {
 	// grain, leaving whatever the node already carries untouched; every other
 	// verb ignores this field.
 	ReviewGrain *string
+	// Severity is set only by approve bug: the grade the triage gate requires,
+	// or a regrade of one already set. Nil names none and leaves the bug's
+	// grade untouched; every other verb, a refresh-basis approve, and every
+	// noun but bug refuses it (Transition).
+	Severity *string
+	// severityBefore is the grade the bug carried before approve overwrote
+	// it, set by transitionWorkItem for transitionEvent's Before side.
+	severityBefore string
 	// Resolution and DuplicateOf are cancel's own fields on a bug or chore:
 	// wontfix, invalid, or duplicate, and on duplicate the surviving node
 	// (docs/spec/cli-surface.md). Every
@@ -185,6 +193,9 @@ func validateReason(in TransitionInput) error {
 // rather than a silent miss.
 func Transition(tree *store.Tree, deps Deps, node store.Node, in TransitionInput) (TransitionResult, error) {
 	if err := validateReason(in); err != nil {
+		return TransitionResult{}, err
+	}
+	if err := validateTransitionSeverity(node.Noun(), in); err != nil {
 		return TransitionResult{}, err
 	}
 	// Only a task rides an aggregate; a bug, chore, or tweak has none to adopt.
@@ -965,6 +976,10 @@ func transitionEvent(deps Deps, owner store.Contributor, in TransitionInput,
 	if in.Verb == "approve" && in.ReviewGrain != nil && noun != store.NounTask {
 		ev.Before["review_grain"] = reviewGrainBefore
 		afterMap["review_grain"] = *in.ReviewGrain
+	}
+	if in.Verb == "approve" && in.Severity != nil && noun == store.NounBug {
+		ev.Before["severity"] = in.severityBefore
+		afterMap["severity"] = *in.Severity
 	}
 	// basis is written on every sync crossing, "ancestry", "content", "rollup",
 	// "human_attested", or "carried" (a bug or chore crossed on its carrier's

@@ -72,7 +72,11 @@ func TestShelfClaimCommandsFreezeAtStart(t *testing.T) {
 		t.Run(noun, func(t *testing.T) {
 			initOwnedRepo(t)
 			mustRun(t, "add", "contributor", "pat", "--name", "Pat")
-			mustRun(t, "add", noun, "work", "--title", "Work", "--contributor", "jc")
+			addArgs := []string{"add", noun, "work", "--title", "Work", "--contributor", "jc"}
+			if noun == "bug" {
+				addArgs = append(addArgs, "--severity", "medium")
+			}
+			mustRun(t, addArgs...)
 			mustRun(t, "claim", noun, "work", "--contributor", "jc")
 			mustRun(t, "reassign", noun, "work", "--to", "pat", "--reason", "human handoff", "--contributor", "jc")
 			mustRun(t, "approve", noun, "work", "--contributor", "jc")

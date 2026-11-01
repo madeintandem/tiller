@@ -2148,7 +2148,7 @@ func TestSubmitEpicQuestionRefusalHumanNamesOnlySupportedRemedy(t *testing.T) {
 func layBugCLI(t *testing.T) {
 	t.Helper()
 	initOwnedRepo(t)
-	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--contributor", "jc")
+	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--severity", "medium", "--contributor", "jc")
 	require.NoError(t, os.WriteFile(filepath.Join(".tiller", "bugs", "alpha", "bug.md"), []byte("# Alpha\n\n## Reproduction\n\nx\n"), 0o644))
 	gitRun(t, ".", "add", "-A")
 	gitRun(t, ".", "commit", "-q", "-m", "lay bug")
@@ -2186,7 +2186,7 @@ func TestStartBugRefusesUnclaimedAsBlocked(t *testing.T) {
 func TestCheckSubmitResumeBugCommands(t *testing.T) {
 	dir := initGatedGitRepo(t, "true")
 	_ = dir
-	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--contributor", "jc")
+	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--severity", "medium", "--contributor", "jc")
 	require.NoError(t, os.WriteFile(filepath.Join(".tiller", "bugs", "alpha", "bug.md"), []byte("# Alpha\n\n## Reproduction\n\nx\n"), 0o644))
 	gitRun(t, ".", "add", "-A")
 	gitRun(t, ".", "commit", "-q", "-m", "lay bug")
@@ -2396,4 +2396,114 @@ func TestCoarseSubmitRefusesRemotelessTaskGrainReviewRef(t *testing.T) {
 			require.NotContains(t, human, "into the aggregate")
 		})
 	}
+}
+
+// layBugsCLI lays the named bugs with a written contract and no severity,
+// then commits: the unrated bugs approve refuses until they are graded.
+func layBugsCLI(t *testing.T, keys ...string) {
+	t.Helper()
+	initOwnedRepo(t)
+	for _, k := range keys {
+		mustRun(t, "add", "bug", k, "--title", k, "--contributor", "jc")
+		require.NoError(t, os.WriteFile(filepath.Join(".tiller", "bugs", k, "bug.md"), []byte("# "+k+"\n\n## Reproduction\n\nx\n"), 0o644))
+	}
+	gitRun(t, ".", "add", "-A")
+	gitRun(t, ".", "commit", "-q", "-m", "lay bugs")
+}
+
+func bugSeverity(t *testing.T, key string) string {
+	t.Helper()
+	for _, b := range loadTestTree(t).Bugs {
+		if b.Key != nil && (*b.Key == key || *b.Key == "bugs/"+key) {
+			return b.Severity
+		}
+	}
+	t.Fatalf("no bug %s", key)
+	return ""
+}
+
+func TestApproveUnratedBugRefusesAsBlocked(t *testing.T) {
+	layBugsCLI(t, "alpha")
+	out, _, code := execCLI(t, "approve", "bug", "alpha", "--contributor", "jc", "--json")
+	require.Equal(t, 1, code, out)
+	require.Contains(t, out, `"reason": "severity_required"`)
+	human, stderr, code := execCLI(t, "approve", "bug", "alpha", "--contributor", "jc")
+	require.Equal(t, 1, code)
+	require.Contains(t, human+stderr, "has no severity")
+	require.Contains(t, human+stderr, "tiller approve bug bugs/alpha --severity <blocker|important|medium|minor>")
+	require.Equal(t, "proposed", loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+}
+
+func bugIDByKey(t *testing.T, key string) string {
+	t.Helper()
+	for id, b := range loadTestTree(t).Bugs {
+		if b.Key != nil && (*b.Key == key || *b.Key == "bugs/"+key) {
+			return id
+		}
+	}
+	t.Fatalf("no bug %s", key)
+	return ""
+}
+
+func TestApproveBugSeverityGradesAndRegrades(t *testing.T) {
+	layBugsCLI(t, "alpha")
+	out, stderr, code := execCLI(t, "approve", "bug", "alpha", "--severity", "minor", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, "minor", bugSeverity(t, "alpha"))
+	require.Equal(t, "ready", loadTestTree(t).Bugs[bugIDByKey(t, "alpha")].Status)
+}
+
+func TestApproveSeverityRefusals(t *testing.T) {
+	layBugsCLI(t, "alpha")
+	for name, args := range map[string][]string{
+		"empty":         {"approve", "bug", "alpha", "--severity", ""},
+		"invalid":       {"approve", "bug", "alpha", "--severity", "urgent"},
+		"refresh basis": {"approve", "bug", "alpha", "--severity", "minor", "--refresh-basis"},
+		"not a bug":     {"approve", "chore", "alpha", "--severity", "minor"},
+		"task":          {"approve", "task", "--feature", "x/y", "--severity", "minor"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			out, _, code := execCLI(t, append(args, "--contributor", "jc", "--json")...)
+			require.Equal(t, 2, code, out)
+			if name == "invalid" {
+				require.Contains(t, out, `"reason": "invalid_severity"`)
+			} else {
+				require.Contains(t, out, `"reason": "bad_args"`)
+			}
+		})
+	}
+	require.Equal(t, "", bugSeverity(t, "alpha"))
+}
+
+func TestApproveSeverityRefusesWithRefreshBasis(t *testing.T) {
+	layBugsCLI(t, "alpha")
+	out, _, code := execCLI(t, "approve", "bug", "alpha", "--severity", "minor", "--refresh-basis", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code, out)
+	require.Contains(t, out, `"reason": "bad_args"`)
+	require.Contains(t, out, "--refresh-basis")
+}
+
+func TestApproveBatchCrossesGradedRefusesUnrated(t *testing.T) {
+	initOwnedRepo(t)
+	mustRun(t, "add", "bug", "alpha", "--title", "alpha", "--severity", "minor", "--contributor", "jc")
+	mustRun(t, "add", "bug", "beta", "--title", "beta", "--contributor", "jc")
+	for _, k := range []string{"alpha", "beta"} {
+		require.NoError(t, os.WriteFile(filepath.Join(".tiller", "bugs", k, "bug.md"), []byte("# "+k+"\n\n## Reproduction\n\nx\n"), 0o644))
+	}
+	gitRun(t, ".", "add", "-A")
+	gitRun(t, ".", "commit", "-q", "-m", "lay bugs")
+	out, _, code := execCLI(t, "approve", "bug", "alpha", "beta", "--contributor", "jc", "--json")
+	require.Equal(t, 1, code, out)
+	require.Contains(t, out, `"reason": "severity_required"`)
+	tree := loadTestTree(t)
+	require.Equal(t, "ready", tree.Bugs[bugIDByKey(t, "alpha")].Status)
+	require.Equal(t, "proposed", tree.Bugs[bugIDByKey(t, "beta")].Status)
+}
+
+func TestApproveSeverityAppliesToEveryNamedBug(t *testing.T) {
+	layBugsCLI(t, "alpha", "beta")
+	out, stderr, code := execCLI(t, "approve", "bug", "alpha", "beta", "--severity", "medium", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, "medium", bugSeverity(t, "alpha"))
+	require.Equal(t, "medium", bugSeverity(t, "beta"))
 }

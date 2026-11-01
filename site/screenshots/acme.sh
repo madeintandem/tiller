@@ -171,7 +171,7 @@ $TILLER add chore archive-notes --title "Archive resolved meeting notes" --attac
 $TILLER add chore rotate-keys --title "Rotate the staging API keys" --contributor robin >/dev/null
 $TILLER add tweak button-text --title "Change the scaffold button text" --attach foundation/app-scaffold --contributor robin >/dev/null
 $TILLER add tweak help-spacing --title "Adjust help text spacing" --contributor robin >/dev/null
-$TILLER approve bug session-expiry --contributor robin >/dev/null
+$TILLER approve bug session-expiry --severity important --contributor robin >/dev/null
 $TILLER claim bug session-expiry --contributor robin >/dev/null
 $TILLER start bug session-expiry --contributor robin >/dev/null
 $TILLER approve chore rotate-keys --contributor robin >/dev/null

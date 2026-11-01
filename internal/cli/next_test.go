@@ -51,7 +51,7 @@ func layNextEpics(t *testing.T, n int) {
 // layBobsBug adds an approved bug claimed by bob: bob's tier 2 Continue move.
 func layBobsBug(t *testing.T, dir string) {
 	t.Helper()
-	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--contributor", "jc")
+	mustRun(t, "add", "bug", "alpha", "--title", "Alpha", "--severity", "medium", "--contributor", "jc")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".tiller", "bugs", "alpha", "bug.md"), []byte("# Alpha\n\n## Reproduction\n\nx\n"), 0o644))
 	mustRun(t, "approve", "bug", "alpha", "--contributor", "jc")
 	mustRun(t, "claim", "bug", "alpha", "--contributor", "bob")

@@ -102,6 +102,13 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		in.DuplicateOf = resolved
 	}
 	if in.Verb == "approve" && before == statusProposed {
+		if in.Severity != nil {
+			in.severityBefore = w.Severity
+			w.Severity = *in.Severity
+		}
+		if noun == store.NounBug && w.Severity == "" {
+			return TransitionResult{}, &SeverityRequiredError{NodeID: w.ID, Key: deref(w.Key)}
+		}
 		if err := recordWorkBasis(filepath.Dir(ymlRel), target, deps, rev); err != nil {
 			return TransitionResult{}, err
 		}

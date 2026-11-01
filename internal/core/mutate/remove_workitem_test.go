@@ -26,7 +26,7 @@ func layRemovalShelf(t *testing.T) string {
 	}
 	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounChore, Key: "bump", Title: "Bump"})
 	require.NoError(t, err)
-	_, err = mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A",
+	_, err = mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A", Severity: "medium",
 		AttachedTo: "form-engine/loading", DependsOn: []string{"CH-aaaaaa"}})
 	require.NoError(t, err)
 	_, err = mutate.SetOrder(load(t, root), testDeps(), mutate.SetOrderInput{Noun: store.NounBug, Nodes: []string{"B-aaaaaa"}})
@@ -109,7 +109,7 @@ func addShelfBug(t *testing.T, root, key, id string) {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: key, Title: key})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: key, Title: key, Severity: "medium"})
 	require.NoError(t, err)
 }
 

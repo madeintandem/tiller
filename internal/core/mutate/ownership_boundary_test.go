@@ -138,7 +138,7 @@ func TestShelfOwnerBoundarySurvivesReviewResumeAndCancellation(t *testing.T) {
 	for _, noun := range []string{store.NounBug, store.NounChore} {
 		t.Run(noun, func(t *testing.T) {
 			root, deps := writeTwoOwnerRepo(t), claimDeps()
-			item, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: noun, Key: "work", Title: "Work"})
+			item, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: noun, Key: "work", Title: "Work", Severity: bugSeverityFor(noun)})
 			require.NoError(t, err)
 			_, err = mutate.ClaimWork(load(t, root), deps, noun, item.ID, "")
 			require.NoError(t, err)

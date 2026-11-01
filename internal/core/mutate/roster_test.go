@@ -216,7 +216,7 @@ func TestRemoveOwnerCensusCountsShelfClaims(t *testing.T) {
 	t.Parallel()
 	deps := claimDeps()
 	root := writeTwoOwnerRepo(t)
-	_, err := mutate.AddWorkItem(load(t, root), depsAs(deps, "jc"), mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "Alpha"})
+	_, err := mutate.AddWorkItem(load(t, root), depsAs(deps, "jc"), mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "Alpha", Severity: "medium"})
 	require.NoError(t, err)
 	_, err = mutate.AddWorkItem(load(t, root), depsAs(deps, "jc"), mutate.WorkItemInput{Noun: store.NounChore, Key: "bump", Title: "Bump"})
 	require.NoError(t, err)

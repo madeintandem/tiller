@@ -331,6 +331,7 @@ func newApproveCmd() *cobra.Command {
 	var feature string
 	var reviewedAssumption string
 	var reviewGrain string
+	var severity string
 	var assumeQuestion, assumptionReason string
 	allowed := []string{store.NounEpic, store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak}
 	cmd := &cobra.Command{
@@ -354,6 +355,8 @@ func newApproveCmd() *cobra.Command {
 			"operation's preconditions against the live tree and, if all hold,\n" +
 			"applies the whole batch atomically; it takes exactly one address and\n" +
 			"none of the flags above.\n" +
+			"approve bug <node>... requires a severity (blocker, important, medium, or minor), set\n" +
+			"already or given with --severity; --severity on a bug regrades one already set.\n" +
 			"approve design <doc>... confirms named design docs against the current code and project HEAD.\n" +
 			"All named docs are confirmed atomically; design approval never edits prose or changes work status,\n" +
 			"and accepts none of the work-node flags or --all.",
@@ -363,6 +366,21 @@ func newApproveCmd() *cobra.Command {
 				noun, ok := singularNoun(args[0])
 				if !ok || (noun != store.NounEpic && noun != store.NounFeature) {
 					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--review-grain applies only to approve epic or approve feature, not " + args[0]})
+				}
+			}
+			if cmd.Flags().Changed("severity") {
+				noun, ok := singularNoun(args[0])
+				if !ok || noun != store.NounBug {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--severity applies only to approve bug, not " + args[0]})
+				}
+				if strings.TrimSpace(severity) == "" {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--severity needs a value (blocker, important, medium, or minor); an empty value names none"})
+				}
+				if refreshBasis {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--refresh-basis and --severity are mutually exclusive: the refresh-basis path never grades a bug, so run them as separate acts"})
+				}
+				if cmd.Flags().Changed("reviewed-assumption") {
+					return emitFailure(cmd, "approve", &usageError{reason: "bad_args", msg: "--severity is mutually exclusive with --reviewed-assumption; one node and one act at a time"})
 				}
 			}
 			if cmd.Flags().Changed("feature") {
@@ -451,6 +469,10 @@ func newApproveCmd() *cobra.Command {
 				g := reviewGrain
 				in.ReviewGrain = &g
 			}
+			if cmd.Flags().Changed("severity") {
+				sv := severity
+				in.Severity = &sv
+			}
 			if cmd.Flags().Changed("feature") {
 				return runApproveTasksByFeature(cmd, feature, in)
 			}
@@ -474,6 +496,8 @@ func newApproveCmd() *cobra.Command {
 		"stamp an answered question's revision into the node's assumption_basis entry (feature only; one node at a time)")
 	cmd.Flags().StringVar(&reviewGrain, "review-grain", "",
 		"set the epic's or feature's review_grain in the same act as the gate (task, feature, or epic)")
+	cmd.Flags().StringVar(&severity, "severity", "",
+		"grade the bug (blocker, important, medium, or minor) in the same act as triage; regrades one already set (bug only)")
 	addContributorFlag(cmd)
 	return cmd
 }
@@ -1622,6 +1646,12 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 			human += "; a human-directed continuation uses `" + immutable.Seam + "`"
 		}
 		return d, "Blocked: " + human, true
+	}
+	var sev *mutate.SeverityRequiredError
+	if errors.As(err, &sev) {
+		d := map[string]any{"noun": store.NounBug, "id": sev.NodeID, "key": sev.Key, "reason": sev.Reason()}
+		return d, fmt.Sprintf("Blocked: bug %s has no severity; approve it with `tiller approve bug %s --severity <blocker|important|medium|minor>`.",
+			gen.RefByID(tree, sev.NodeID), sev.Key), true
 	}
 	var wu *mutate.WorkUnclaimedError
 	if errors.As(err, &wu) {

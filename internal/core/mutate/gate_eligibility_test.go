@@ -139,7 +139,7 @@ func layToggledUnit(t *testing.T, noun, extraGates string) gatedUnit {
 		}
 		return fixedMint(p)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: noun, Key: "alpha", Title: "A"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: noun, Key: "alpha", Title: "A", Severity: bugSeverityFor(noun)})
 	require.NoError(t, err)
 	prose := filepath.Join(root, store.ShelfRelDir(noun, "alpha"), store.ShelfProseFile(noun))
 	require.NoError(t, os.WriteFile(prose, []byte("# A\n\n## Reproduction\n\nx\n"), 0o644))

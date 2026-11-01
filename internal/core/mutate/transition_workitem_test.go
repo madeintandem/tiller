@@ -17,6 +17,13 @@ import (
 // tree, so approve has a blob to pin and start has a clean basis.
 func layBug(t *testing.T, key string) string {
 	t.Helper()
+	return layBugGraded(t, key, "medium")
+}
+
+// layBugGraded is layBug with the severity the bug is added at; "" lays an
+// unrated bug, the one approve refuses until it is graded.
+func layBugGraded(t *testing.T, key, severity string) string {
+	t.Helper()
 	root := writeOwnedRepo(t)
 	deps := testDeps()
 	deps.Mint = func(prefix string) string {
@@ -25,7 +32,7 @@ func layBug(t *testing.T, key string) string {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: key, Title: "Bug " + key})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: key, Title: "Bug " + key, Severity: severity})
 	require.NoError(t, err)
 	writeBugContract(t, root, key, "## Reproduction\n\nReload mid-entry.\n\n## Fixed when\n\nValues survive a reload.\n")
 	gitCommitAllM(t, root, "lay bug")
@@ -155,9 +162,9 @@ func TestCancelBugAsDuplicateNamesSurvivor(t *testing.T) {
 		}
 		return fixedMint(prefix)
 	}
-	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A"})
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "alpha", Title: "A", Severity: "medium"})
 	require.NoError(t, err)
-	_, err = mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "bravo", Title: "B"})
+	_, err = mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "bravo", Title: "B", Severity: "medium"})
 	require.NoError(t, err)
 	_, err = mutate.Transition(load(t, root), testDeps(), resolveNode(t, load(t, root), store.NounBug, "bravo"),
 		mutate.TransitionInput{Verb: "cancel", Reason: "same", Resolution: "duplicate", DuplicateOf: "bravo"})
@@ -190,4 +197,98 @@ func TestWorkItemIllegalVerbAnswersWithLegalNext(t *testing.T) {
 	require.ErrorAs(t, err, &illegal)
 	require.Equal(t, store.NounBug, illegal.Noun)
 	require.ElementsMatch(t, []string{"approve", "cancel"}, illegal.Legal)
+}
+
+func approveBugErr(t *testing.T, root string, in mutate.TransitionInput) error {
+	t.Helper()
+	tree := load(t, root)
+	_, err := mutate.Transition(tree, testDeps(), resolveNode(t, tree, store.NounBug, "B-aaaaaa"), in)
+	return err
+}
+
+func strp(s string) *string { return &s }
+
+func TestApproveUnratedBugRefuses(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "")
+	err := approveBugErr(t, root, mutate.TransitionInput{Verb: "approve"})
+	var sev *mutate.SeverityRequiredError
+	require.ErrorAs(t, err, &sev)
+	require.Equal(t, "severity_required", sev.Reason())
+	require.Contains(t, err.Error(), "tiller approve bug bugs/alpha --severity <blocker|important|medium|minor>")
+	b := load(t, root).Bugs["B-aaaaaa"]
+	require.Equal(t, "proposed", b.Status)
+	evs, lerr := events.List(load(t, root))
+	require.NoError(t, lerr)
+	require.Empty(t, eventsOfType(evs, "approve.bug"))
+}
+
+func TestApproveBugWithSeverityGrades(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "")
+	res := driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
+	require.Equal(t, "ready", res.Status)
+	require.Equal(t, "minor", load(t, root).Bugs["B-aaaaaa"].Severity)
+	ev := lastEvent(t, root, "approve.bug")
+	require.Equal(t, "", ev.Before["severity"])
+	require.Equal(t, "minor", ev.After["severity"])
+}
+
+func TestApproveRatedBugNeedsNoFlag(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "important")
+	res := driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve"})
+	require.Equal(t, "ready", res.Status)
+	require.Equal(t, "important", load(t, root).Bugs["B-aaaaaa"].Severity)
+	ev := lastEvent(t, root, "approve.bug")
+	require.NotContains(t, ev.Before, "severity")
+	require.NotContains(t, ev.After, "severity")
+}
+
+func TestApproveBugRegrades(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "minor")
+	driveTo(t, root, store.NounBug, "alpha", mutate.TransitionInput{Verb: "approve", Severity: strp("blocker")})
+	require.Equal(t, "blocker", load(t, root).Bugs["B-aaaaaa"].Severity)
+	ev := lastEvent(t, root, "approve.bug")
+	require.Equal(t, "minor", ev.Before["severity"])
+	require.Equal(t, "blocker", ev.After["severity"])
+}
+
+func TestApproveBugRefusesBadSeverity(t *testing.T) {
+	t.Parallel()
+	root := layBugGraded(t, "alpha", "")
+	require.Equal(t, "invalid_severity", reasonOf(t, approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", Severity: strp("urgent")})))
+	require.Equal(t, "invalid_severity", reasonOf(t, approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", Severity: strp("")})))
+	require.Equal(t, "bad_args", reasonOf(t, approveBugErr(t, root, mutate.TransitionInput{Verb: "approve", RefreshBasis: true, Severity: strp("minor")})))
+	require.Equal(t, "bad_args", reasonOf(t, approveBugErr(t, root, mutate.TransitionInput{Verb: "cancel", Reason: "no", Resolution: "wontfix", Severity: strp("minor")})))
+	require.Equal(t, "proposed", load(t, root).Bugs["B-aaaaaa"].Status)
+}
+
+func TestApproveChoreRefusesSeverity(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	deps := testDeps()
+	deps.Mint = func(prefix string) string {
+		if prefix == "CH" {
+			return "CH-aaaaaa"
+		}
+		return fixedMint(prefix)
+	}
+	_, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounChore, Key: "tidy", Title: "Tidy"})
+	require.NoError(t, err)
+	gitCommitAllM(t, root, "lay chore")
+	tree := load(t, root)
+	_, err = mutate.Transition(tree, testDeps(), resolveNode(t, tree, store.NounChore, "CH-aaaaaa"), mutate.TransitionInput{Verb: "approve", Severity: strp("minor")})
+	require.Equal(t, "severity_not_bug", reasonOf(t, err))
+	require.Equal(t, "proposed", load(t, root).Chores["CH-aaaaaa"].Status)
+}
+
+// bugSeverityFor grades a bug at add so a fixture can approve it; a chore or
+// tweak carries no severity.
+func bugSeverityFor(noun string) string {
+	if noun == store.NounBug {
+		return "medium"
+	}
+	return ""
 }
