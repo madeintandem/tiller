@@ -425,6 +425,8 @@ amendment approval. Ordinary feature/epic approval remains separate.
 ```sh
 tiller rename <epic|feature|task|bug|chore|tweak> <node> --title "<display title>"
 tiller rename <epic|feature|task|bug|chore|tweak> <node> --key <canonical-key>
+tiller grade bug <node> <blocker|important|medium|minor>   # any contributor: set or change a non-terminal
+                                                           # bug's severity; never routing
 tiller unlink <epic|feature|task|bug|chore|tweak> <node> --depends-on <target> [--depends-on <target>]...
 tiller unlink <bug|chore|tweak> <node> --detach                    # clear attached_to; legal at any state,
                                                                    # since attachment is provenance
@@ -791,6 +793,8 @@ tiller link <bug|chore|tweak> <node> --attach <epic|feature|task>  # record wher
                                                              # a blank --attach is a usage error
                                                              # (attach_target, exit 2), never a detach
 tiller link <bug|chore|tweak> <node> --depends-on <bug|chore|tweak> [--depends-on <bug|chore|tweak>]...
+tiller grade bug <node> <blocker|important|medium|minor>   # any contributor: set or change a non-terminal
+                                                           # bug's severity; never routing
 tiller order bug <b1> <b2> ...                               # the shelf's own soft order; no parent to
                                                              # name, so --clear takes none either
 tiller order bug --clear                                     # erase the bug shelf's list
