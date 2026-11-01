@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v0.21.4 exposes (schema 12, orientation generation 58, eleven embedded
+Every command Tiller v0.21.4 exposes (schema 13, orientation generation 59, eleven embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
@@ -780,14 +780,20 @@ anything and it is not parenthood. Amendments change the work tree; bugs, chores
 
 ```sh
 tiller add bug <key> --title "<title>" [--attach <epic|feature|task>] [--source <cite>] \
+  [--severity <blocker|important|medium|minor>] \
   [--depends-on <bug|chore|tweak>]...                        # lands proposed at .tiller/bugs/<key>/,
-                                                             # holding bug.md (the contract) and bug.yml
+                                                             # holding bug.md (the contract) and bug.yml;
+                                                             # omit --severity to leave it unrated
 tiller add chore <key> --title "<title>" [--attach <node>] [--source <cite>] [--depends-on <node>]...
 tiller add tweak <key> --title "<title>" [--attach <node>] [--source <cite>] [--depends-on <node>]...
                                                              # tweak.md and tweak.yml, with a TW- ID
 # On add bug|chore|tweak, a blank --attach is the same usage error as on link
 # (attach_target, exit 2, nothing written); omit --attach for no attachment.
 tiller approve <bug|chore|tweak> <node>                      # human: triage, proposed -> ready
+tiller approve bug <node> --severity <blocker|important|medium|minor>
+                                                             # an unrated bug refuses plain approve
+                                                             # (severity_required); --severity grades it,
+                                                             # or regrades a rated one, at triage
 tiller return <bug|chore|tweak> <node> --reason "<why>"      # human: ready -> proposed, before start
 tiller link <bug|chore|tweak> <node> --attach <epic|feature|task>  # record where it was found, after add time;
                                                              # a blank --attach is a usage error

@@ -57,14 +57,9 @@ Use capture's kinds exactly. A bug is behavior that violates expected product or
 
 #### Grade bugs by impact
 
-| Severity | Meaning |
-|---|---|
-| Blocker | Data loss or corruption, a broken security or permission boundary, a crash or hang on a main path, or any violation of an approved acceptance criterion or `preserve` criterion of the reviewed node. Should not merge, or should not stay shipped. |
-| Important | Wrong behavior on a realistic path without data loss, including a test that passes while proving nothing about the behavior it claims to cover. |
-| Medium | Wrong behavior on an edge case or unusual input, or a fragile construct likely to break under a plausible change. |
-| Minor | A real defect with negligible impact, such as a wrong message, a misleading log line, or an off-by-one in a display-only count. |
+Grade each bug Blocker, Important, Medium, or Minor from the severity table in `tiller guide capture`, the one definition of the scale. A violation of an approved acceptance criterion or `preserve` criterion of the reviewed node is a Blocker.
 
-Grade by impact, never by the size of the fix. Style and naming are never bugs. Severity is review prose only: it never becomes a record field or a queue position.
+Grade by impact, never by the size of the fix. Style and naming are never bugs. Severity becomes the bug's `severity` field when captured; it never becomes a queue position.
 
 Label every bug's confidence. Traced means you followed the failing path through the code and can name each step. Suspected means the pattern is wrong but the path is unproven. Proof by execution comes later, when the fix's regression test is written.
 
@@ -127,7 +122,7 @@ Never recheck an unselected row. A fix always rechecks, because execute is about
 
 #### Log bugs, tweaks, and chores through capture's shapes
 
-Follow `tiller guide capture` for keys, contracts, and its stopping point, except their commits: this disposition makes the one commit. Pass the row's Found in as `--attach` and cite the row's block in the current review file as `--source`, so the developer's edits to the file carry through. Write the contract from the block: a bug's Reproduction, Expected, Actual, and Fixed when; a tweak's or chore's What, Why, and Done when. Keep the review's severity and confidence as the opening line of `bug.md`; it is prose, never a field. For a row in unmerged code, warn that the new node cannot start until its unit merges, because a shelf branch is cut from the integration branch.
+Follow `tiller guide capture` for keys, contracts, and its stopping point, except their commits: this disposition makes the one commit. Pass the row's Found in as `--attach` and cite the row's block in the current review file as `--source`, so the developer's edits to the file carry through. Write the contract from the block: a bug's Reproduction, Expected, Actual, and Fixed when; a tweak's or chore's What, Why, and Done when. Pass the row's severity as `--severity`, lowercase. Keep the review's confidence as the opening line of `bug.md`; the severity lives in the field, not in the prose. For a row in unmerged code, warn that the new node cannot start until its unit merges, because a shelf branch is cut from the integration branch.
 
 #### Log plan changes through intake's shapes
 

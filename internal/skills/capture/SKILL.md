@@ -17,6 +17,17 @@ Choose `bug` when observed behavior violates expected product or system behavior
 
 Write one contract per independently triageable outcome. A bug contract records the reproduction, expected behavior, actual behavior, and the observable fixed-when condition. A chore or tweak contract records what must be done, why it matters, and the observable done-when condition. Do not write an implementation plan here.
 
+Grade every bug by impact with `--severity`, on this scale:
+
+| Severity | Meaning |
+|---|---|
+| Blocker | Data loss or corruption, a broken security or permission boundary, a crash or hang on a main path, or any violation of an approved acceptance criterion or `preserve` criterion of the node where it was found. Should not merge, or should not stay shipped. |
+| Important | Wrong behavior on a realistic path without data loss, including a test that passes while proving nothing about the behavior it claims to cover. |
+| Medium | Wrong behavior on an edge case or unusual input, or a fragile construct likely to break under a plausible change. |
+| Minor | A real defect with negligible impact, such as a wrong message, a misleading log line, or an off-by-one in a display-only count. |
+
+Grade by impact, never by the size of the fix. Always pass `--severity` when filing a bug. When its impact can't be known yet, leave the bug unrated and say so in `bug.md`'s Actual section, so the approver investigates before grading; `tiller approve bug` refuses an unrated bug until it is graded. Chores and tweaks carry no severity. Severity never routes: it sorts and filters the console's Fix board, and the shelf's soft order still decides what is next.
+
 Use `--attach` only when an epic, feature, or task is the honest place the finding came from. Attachment is provenance and reading context, not parenthood or a gate. Use `--source` when the finding came from an investigation note, review, issue, log, or other durable artifact; cite the narrowest useful path and line range. Record shelf dependencies only when another bug, chore, or tweak must settle first.
 
 The result remains `proposed`. Triage decides whether the contract is a bug, chore, or tweak, a duplicate, invalid, or ready to work. This skill must never approve, claim, start, resolve, or cancel the node.
@@ -30,7 +41,7 @@ On a refusal, follow `.tiller/orientation.md`. Fix an invalid local key, unresol
 Before changing files, inspect the existing index with `git diff --cached --name-status` and the working tree. Preserve unrelated staged and unstaged work, including other `.tiller/` proposals. Review this run's exact authored contract, command-written state, and event paths before staging. The path lists below must name only those reviewed files, never a directory. Use a path-limited commit to exclude unrelated staged files. If a named file contains someone else's edits too, isolate the authorized hunks with a reviewed index or stop; `--only` includes the whole named working-tree file.
 
 ```text
-tiller add bug blank-on-reload --title "Form is blank after reload" \
+tiller add bug blank-on-reload --title "Form is blank after reload" --severity important \
   --attach form-engine/certification-form-loading \
   --source docs/investigations/2026-08-29-reload.md#L12-L44
 # replace .tiller/bugs/blank-on-reload/bug.md with the complete contract:
@@ -61,4 +72,4 @@ git commit --only -m "capture: blank-on-reload" -- <same-exact-paths>
 
 ## Hand-off
 
-Up to the human for triage. Hand them the full shelf reference, the source and attachment you recorded, and the exact `tiller approve bug|chore|tweak <node>` command without running it. If they reject or redirect the finding, `cancel` remains human-only. `resolve` is delegable only on an explicit human instruction naming the shelf node and either `--clear` or the replacement carrier target.
+Up to the human for triage. Hand them the full shelf reference, the source and attachment you recorded, and the exact `tiller approve bug|chore|tweak <node>` command without running it. For a bug left unrated, that command is `tiller approve bug <node> --severity <level>`, since approve refuses an ungraded bug. If they reject or redirect the finding, `cancel` remains human-only. `resolve` is delegable only on an explicit human instruction naming the shelf node and either `--clear` or the replacement carrier target.

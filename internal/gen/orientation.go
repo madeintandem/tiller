@@ -42,7 +42,8 @@ import (
 // Generation 57 lets a human cancel a question that needs no decision and narrow what it blocks; an agent may only widen.
 // Generation 58 preserves settled gate-attestation guidance and permits explicit
 // feature epic grain, with exact-path staging and isolated commits.
-const orientationSchemaGen = 58
+// Generation 59 records bug severity: capture grades, approve bug requires one, and grade changes it; severity never routes.
+const orientationSchemaGen = 59
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -576,6 +577,15 @@ substantive planned work. Capture a forward adjustment with ` + "`tiller add twe
 and its ` + "`.tiller/tweaks/<key>/tweak.md`" + ` contract, then stop for human triage.
 Done work stays done: never reopen it to accommodate an adjustment. A tweak
 uses the same ownership, gates, lifecycle, and review as a chore.
+
+A bug carries a severity graded by impact: ` + "`blocker`" + `, ` + "`important`" + `, ` + "`medium`" + `,
+or ` + "`minor`" + `. Capture files it with ` + "`tiller add bug <key> --severity <level>`" + `, or
+leaves it unrated and says why in the contract when impact is not yet known.
+` + "`tiller approve bug`" + ` refuses an unrated bug (` + "`severity_required`" + `) until
+` + "`--severity <level>`" + ` grades it. Any contributor may set or change a
+non-terminal bug's severity with ` + "`tiller grade bug <key> <level>`" + `; a done or
+cancelled bug keeps its grade. Chores and tweaks carry none. Severity never routes:
+the next list, readouts, and the queue keep the shelf's soft order.
 
 Every new task is unclaimed, regardless of who created or approved it. Claim
 only the execution unit: ` + "`tiller claim task <key>`" + ` (or ` + "`bug`" + ` / ` + "`chore`" + ` / ` + "`tweak`" + `).

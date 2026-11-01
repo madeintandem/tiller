@@ -96,7 +96,6 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 		"--grep=<unit-id>",
 		"under Limitations",
 		"Judge findings against the code as it reads now",
-		"| Blocker |", "| Important |", "| Medium |", "| Minor |",
 		"Bug, always a blocker",
 		"Traced", "Suspected",
 		"Found in",
@@ -134,6 +133,53 @@ func TestOrientRoutesExplicitCodeReviews(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, text, "loads `tiller guide code-review` directly")
 	require.Contains(t, text, "For a `code-review` review, recovery is limited to corrected reads.")
+}
+
+// Capture owns the one severity table and grades every bug it files: it always
+// passes --severity, or leaves the bug unrated and says why in bug.md's Actual
+// section, and hands an unrated bug to triage with the grade the approve needs.
+func TestCaptureGradesBugsBySeverity(t *testing.T) {
+	text, ok := Lookup("capture")
+	require.True(t, ok)
+	for _, want := range []string{
+		"| Severity | Meaning |",
+		"| Blocker |", "| Important |", "| Medium |", "| Minor |",
+		"Grade by impact, never by the size of the fix.",
+		"--severity",
+		"leave the bug unrated and say so in `bug.md`'s Actual section",
+		"tiller approve bug <node> --severity <level>",
+		"Severity never routes",
+	} {
+		require.Containsf(t, text, want, "capture pins %q", want)
+	}
+}
+
+// Code review grades with capture's table rather than its own copy, and a
+// logged bug carries the review's severity as its field, never as prose.
+func TestCodeReviewSeverityBecomesTheBugsField(t *testing.T) {
+	text, ok := Lookup("code-review")
+	require.True(t, ok)
+	require.Contains(t, text, "Severity becomes the bug's `severity` field when captured; it never becomes a queue position.")
+	require.Contains(t, text, "the severity table in `tiller guide capture`")
+	require.Contains(t, text, "Pass the row's severity as `--severity`")
+	require.Contains(t, text, "Keep the review's confidence as the opening line of `bug.md`")
+	for _, gone := range []string{
+		"Severity is review prose only",
+		"| Severity | Meaning |",
+		"Keep the review's severity and confidence as the opening line",
+		"it is prose, never a field",
+	} {
+		require.NotContainsf(t, text, gone, "code-review no longer carries %q", gone)
+	}
+}
+
+// Orient names grade beside rename and link, and the severity approve bug needs.
+func TestOrientNamesGradeAndTheApproveBugSeverity(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	require.Contains(t, text, "tiller grade bug <node> <level>")
+	require.Contains(t, text, "`tiller approve bug` refuses an unrated bug")
+	require.Contains(t, text, "Severity never routes")
 }
 
 // Merged-ness is a Git fact, not a status: the merge that brought a head in is

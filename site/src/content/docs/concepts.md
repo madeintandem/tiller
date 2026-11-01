@@ -292,12 +292,13 @@ Under the surface bugs, chores, and tweaks carry the task's own lifecycle: `prop
 
 `attached_to` records where a bug, chore, or tweak was found (an epic, feature, or task id) and it's provenance only, reading context for the agent, never a parent and never a gate. `resolved_by` is a different pointer, the tree work whose merge actually fixes the shelf node, set with `tiller resolve`. A resolved node reads the derived phase `carried`. It keeps its own stored state, drops out of the queue, and moves with its carrier, crossing to `done` with `done_basis: carried` in the same run that records the carrier's own `done`.
 
-`capture` is the agent skill for this seam. Given an investigation or a developer's description, it writes one complete proposed contract, with source, attachment, and shelf dependencies where they apply, commits it, and stops. It never approves, claims, starts, resolves, or cancels the node it just wrote. Triage stays a human act. `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak` is what moves a captured contract from `proposed` to `ready`, the same way `approve feature` is the plan gate for a feature.
+`capture` is the agent skill for this seam. Given an investigation or a developer's description, it writes one complete proposed contract, with source, attachment, and shelf dependencies where they apply, commits it, and stops. It never approves, claims, starts, resolves, or cancels the node it just wrote. Triage stays a human act. `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak` is what moves a captured contract from `proposed` to `ready`, the same way `approve feature` is the plan gate for a feature. A bug also carries a severity, `blocker`, `important`, `medium`, or `minor`, graded by impact. Capture grades it when it can, `tiller approve bug` refuses a bug that is still unrated until `--severity` grades it, and anyone may change the grade of an open bug with `tiller grade bug <node> <level>`. Severity sorts and filters the Fix lens; it never changes what ranks next.
 
 Once claimed, a bug, chore, or tweak ranks like any other owned work. The reader's own ready or in-progress tasks come first, then their owned bugs, chores, and tweaks in shelf order. An unclaimed bug, chore, or tweak is never a ranked next move, and neither is a `carried` one, since its motion belongs to its carrier. The console's Fix lens is the board for all of it, six columns in task vocabulary, Proposed through Closed.
 
 ```sh
-tiller add bug blank-on-reload --title "Form blanks on reload" --attach foundation/app-scaffold
+tiller add bug blank-on-reload --title "Form blanks on reload" --severity important \
+  --attach foundation/app-scaffold
 tiller add tweak button-text --title "Clarify save button text" --attach foundation/app-scaffold
 # Complete .tiller/tweaks/button-text/tweak.md, then await human triage.
 tiller approve bug blank-on-reload

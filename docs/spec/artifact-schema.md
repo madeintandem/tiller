@@ -68,7 +68,7 @@ Everything Tiller owns lives under `.tiller/` at the repo root, beside the code 
       order.yml                    # the shelf's soft order; written only by `tiller order bug`
       <bug-key>/
         bug.md                     # prose: reproduction, expected, actual, fixed-when
-        bug.yml                    # state: id, status, owner, attached_to, resolved_by, gates, pr
+        bug.yml                    # state: id, status, severity, owner, attached_to, resolved_by, gates, pr
     chores/                        # the chore shelf, same shape
       order.yml
       <chore-key>/
@@ -176,7 +176,7 @@ observed_at: "2026-06-23T00:00:00Z"
 ## The root manifest: `tiller.yml`
 
 ```yaml
-schema_version: 10            # current on-disk format version; moved forward by reviewed `tiller migrate`
+schema_version: 13            # current on-disk format version; moved forward by reviewed `tiller migrate`
 schema_epoch: initial         # changed only by Class 3 migrations; used as the branch fence
 
 project:
@@ -596,7 +596,7 @@ A bug is **not an amendment**. An amendment changes the work tree; a bug, chore,
 
 **Where they live.** Each noun has its own shelf at the top of `.tiller/`, beside `epics/` and `feedback/`, and a bug lives there whether or not it is attached to anything (Directory layout). The manifest's `branch_pattern` interpolates the canonical key unchanged, so the default yields `tiller/bugs/<bug-key>`, which cannot collide with an epic's `tiller/<epic-key>`, and `bugs`, `chores`, and `tweaks` are refused as epic keys for the same reason (Keys and paths). An attached bug is deliberately not placed under the node it points at: two homes would make attachment a path, reattachment a folder move, and a mid-flight bug's branch derivation a moving target, against the rule that key moves stop at the proposal boundary. A field is a field.
 
-**Lifecycle, contract, gates.** The states are the task's, verbatim. The `proposed` set is the triage inbox and the `ready` set is the queue. `add bug` writes the folder in `proposed`, by agent or human. `approve bug` is triage, and it pins the `bug.md` blob into `accepted_against` exactly as `approve task` pins `task.md`, so a contract edited after triage surfaces as `active_basis` drift rather than diverging silently; `return` reverses a mistaken triage. The lighter lifecycle with no triage and no pinned contract is refused: triage is where "is this a bug, is it a duplicate, does it belong to a feature" gets decided, and without a pinned contract the agent has nothing to be held to.
+**Lifecycle, contract, gates.** The states are the task's, verbatim. The `proposed` set is the triage inbox and the `ready` set is the queue. `add bug` writes the folder in `proposed`, by agent or human. `approve bug` is triage: it refuses a bug with no `severity` (Severity, below), and it pins the `bug.md` blob into `accepted_against` exactly as `approve task` pins `task.md`, so a contract edited after triage surfaces as `active_basis` drift rather than diverging silently; `return` reverses a mistaken triage. The lighter lifecycle with no triage and no pinned contract is refused: triage is where "is this a bug, is it a duplicate, does it belong to a feature" gets decided, and without a pinned contract the agent has nothing to be held to.
 
 `start` moves `ready` to `in_progress` and records the node's own branch, computed from `branch_pattern` over the canonical key and cut from the integration branch, never from a workbench. `check` validates the active basis and runs the command-backed gates a task runs. The manifest's `on` list is read at task grain for all three shelf nouns, so a gate scoped `on: [feature, task]` applies to a bug, chore, and tweak unchanged, and the `evals` gate never does: a shelf node carries no `feature.eval.md`, and fixed-when is satisfied by a regression test, which is a `tests` gate. `submit --pr <n>` records the node's own `pr`, or its `review_ref` in a repo with no remote, and moves it to `in_review`; `resume` re-enters work after a requested-changes review. `sync` observes the merge against the node's own branch and the integration branch, ancestry first and content as the squash fallback, and records `done` with the basis it observed. Enforcement stays advisory: a merge with red required gates records `done` with `policy_violations`.
 
@@ -611,6 +611,7 @@ id: B-7k2p9x
 key: bugs/certification-form-blank-on-reload
 title: Certification form renders blank after a reload mid-entry
 status: ready              # proposed | ready | in_progress | check | in_review | done | cancelled
+severity: important        # blocker | important | medium | minor; bug only; absent means unrated
 blocked: false
 owner: dana
 started: false             # set at first independent start; never cleared
@@ -645,9 +646,11 @@ Fixed by its own PR is the ordinary case: `done`, basis `ancestry` or `content`,
 
 Not a fix is `cancel` with `--resolution wontfix | invalid | duplicate`, which a shelf node requires and no other noun accepts, and `duplicate` additionally requires `--duplicate-of` naming another node of the same noun. Duplicates are a cancel resolution rather than a carrier because "tracked over there" is a human ruling and the survivor's fate is visible on the survivor; letting duplicates ride carriers invites cascades. A regression of a `done` bug is a new bug; whether it records the earlier one is one of the bug-specific fields left to drift.
 
-**Queue and dependencies.** The queue is a soft order at shelf grain and nothing more, `.tiller/bugs/order.yml`, `.tiller/chores/order.yml`, and `.tiller/tweaks/order.yml`, written only by `tiller order bug`, `tiller order chore`, and `tiller order tweak`, with the precedence every other order carries: recorded `depends_on` edges first, then the list, then canonical key ascending for the unlisted, and it never gates. No `severity` or `priority` enum ships in v1, since an ordered list is a priority. Dependencies stay inside the shelves: a bug may `depends_on` other bugs, chores, and tweaks only, and no tree node may depend on one, because a cross-graph edge would let the frontier be gated by the queue. "The feature must wait for this fix" is a question with `blocks`, which already exists.
+**Queue and dependencies.** The queue is a soft order at shelf grain and nothing more, `.tiller/bugs/order.yml`, `.tiller/chores/order.yml`, and `.tiller/tweaks/order.yml`, written only by `tiller order bug`, `tiller order chore`, and `tiller order tweak`, with the precedence every other order carries: recorded `depends_on` edges first, then the list, then canonical key ascending for the unlisted, and it never gates. No `priority` enum ships in v1, since an ordered list is a priority, and a bug's `severity` never enters this order. Dependencies stay inside the shelves: a bug may `depends_on` other bugs, chores, and tweaks only, and no tree node may depend on one, because a cross-graph edge would let the frontier be gated by the queue. "The feature must wait for this fix" is a question with `blocks`, which already exists.
 
 **States, and who drives them.** `proposed` (captured) → `ready` (triaged) → `in_progress` → `check` → `in_review` → `done`, plus `ready → proposed` on return, `in_review → in_progress` on resume, and `cancelled` with a resolution. `done` arrives by the node's own observed merge (basis `ancestry`, `content`, or `human_attested`) or by its carrier's (`carried`), and `sync` writes it either way.
+
+**Severity.** A bug may carry `severity`, one of `blocker`, `important`, `medium`, or `minor`, stored lowercase and graded by impact, never by the size of the fix (the scale's meanings live in the capture skill). It is optional while the bug is `proposed`, because impact is often unknown when a bug is filed, and `approve bug` refuses an unrated bug with `severity_required`. Three writers set it: `add bug --severity`, `approve bug --severity` (which also regrades a rated bug, since triage is the human's call), and `grade bug`, open to any contributor from `proposed` through `in_review` and refused on a done or cancelled bug, whose grade is part of the closed record. There is no clearing a grade. `grade` records one `grade.bug` event with the old and new severity in `before` and `after`; an unchanged level writes nothing. Transfer copies the original's severity onto its replacement. Severity is bug only: a `chore.yml` or `tweak.yml` carrying one is a parse error, and any write that would set one refuses with `severity applies to bugs`. No migration writes a severity nobody chose, so a bug already past `proposed` when schema 13 arrived stays unrated until someone grades it. Severity never routes: `tiller next`, the readout, and the approve queue keep the shelf's soft order, and only the console's Fix board sorts or filters by it.
 
 **Transfer.** `tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>` is a human decision, explicitly delegable only for named work and recipient. It requires started unfinished work, a different owner, unchanged approved prose and applicable parent contract. In one guarded transaction it cancels the original (shelves use `resolution: transferred`), retains original identity/prose/owner/review/evidence/proposer, and creates a same-noun ready replacement with a new ID/key, recipient claim, copied prose, new accepted-basis path, and reciprocal lineage. The replacement is unstarted and has no branch, review, checks, attestations, evidence results, or completion basis.
 
@@ -1132,6 +1135,14 @@ For agent usage, settled 2026-10-26 (rationale in [agent usage, aggregate and ne
 - Nine stages, with display labels kept out of the file format.
 - Capture records no event and needs no identity, skips sessions active in the last 30 minutes, writes only on the integration branch, and ignores sessions from before the ledger began.
 - Capture is off by default and turned on per project in `tiller.yml`. (JC)
+
+For bug severity, settled 2026-11-01:
+
+- Severity orders the Fix board only; routing, the readout, and the approve queue keep the shelf's soft order. A human who wants severity to drive the work acts on it with `tiller order bug`. (JC)
+- The scale is the code-review skill's four levels, stored lowercase, graded by impact. (JC)
+- Bugs only. Chores and tweaks carry no severity. (JC)
+- Optional at add, required at approval, never backfilled: schema 12 to 13 is a stamp-only migration, and no code path writes a grade nobody chose. (JC)
+- Date added on the Fix board is derived from the `add.<noun>` event, a transfer replacement taking its original's date, never stored. (JC)
 
 ---
 

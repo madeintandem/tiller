@@ -136,3 +136,19 @@ func TestOrientationCorrectsDoneEvalBindingsThroughAmend(t *testing.T) {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
 }
+
+// Generation 59 records bug severity: capture grades, approve bug requires a
+// grade, any contributor regrades with grade, and severity never routes.
+func TestOrientationGeneration59RecordsBugSeverity(t *testing.T) {
+	require.Equal(t, 59, orientationSchemaGen)
+	text := Orientation()
+	for _, want := range []string{
+		"orientation generation 59",
+		"`tiller add bug <key> --severity <level>`",
+		"`tiller approve bug` refuses an unrated bug",
+		"`tiller grade bug <key> <level>`",
+		"Severity never routes",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+}

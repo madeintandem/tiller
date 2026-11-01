@@ -5,8 +5,8 @@ description: Run the current source build through project setup, human gates, ta
 
 From a repository to a tree you can see. The walkthrough uses a greenfield scratch project called Acme, with an existing-code path below; ids and commit hashes are illustrative.
 
-This page documents version **0.21.4**, schema **12**, orientation generation
-**58**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
+This page documents version **0.21.4**, schema **13**, orientation generation
+**59**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
 installs the v0.21.4 release instead of building from source.
 
 ## Build the matching source
@@ -452,7 +452,8 @@ Use a real registered recipient and unfinished started work. The original is can
 Foundation's app scaffold is live now, and someone notices the form goes blank on a hard reload. That isn't a plan change. It's a defect against work already merged, so it goes on the bug shelf instead of back into the tree. The agent runs `tiller guide capture`, which loads the capture skill, then writes one complete proposed contract and stops before triage:
 
 ```sh
-tiller add bug blank-on-reload --title "Form blanks on reload" --attach foundation/app-scaffold
+tiller add bug blank-on-reload --title "Form blanks on reload" --severity important \
+  --attach foundation/app-scaffold
 # write the complete Reproduction, Expected, Actual, and Fixed when contract into bug.md
 git add .tiller && git commit -m "capture: blank-on-reload"
 ```
@@ -461,7 +462,7 @@ git add .tiller && git commit -m "capture: blank-on-reload"
 Created bug bugs/blank-on-reload (B-4k2p9x) in proposed: "Form blanks on reload" (attached to foundation/app-scaffold (F-dv5ppv))
 ```
 
-Capture never approves, claims, or starts what it just wrote. Triage is yours:
+Capture grades the bug by impact (`blocker`, `important`, `medium`, or `minor`) and never approves, claims, or starts what it just wrote. Triage is yours. `tiller approve bug` refuses a bug nobody has graded, and its `--severity <level>` grades or regrades the bug at triage:
 
 ```sh
 tiller approve bug blank-on-reload
