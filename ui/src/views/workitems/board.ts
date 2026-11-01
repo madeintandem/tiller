@@ -1,4 +1,4 @@
-import type { NodeStatus, WorkItemCard, WorkItemsBoard } from "../../api";
+import type { NodeStatus, Severity, WorkItemCard, WorkItemsBoard } from "../../api";
 import { ROW_CAP } from "../../lib/disclosure";
 
 export type ShelfNounFilter = string;
@@ -17,12 +17,32 @@ function attachedList(value: string | null): string[] {
   const ids = (value ?? "").split(",").map((id) => id.trim()).filter((id) => id !== "");
   return [...new Set(ids)];
 }
+// Severity filter members, in canonical order; the order is also the sort
+// rank. UNRATED stands for a bug with no severity.
+export const UNRATED = "unrated";
+export const SEVERITY_ORDER: readonly Severity[] = ["blocker", "important", "medium", "minor"];
+const SEVERITY_MEMBERS: readonly string[] = [...SEVERITY_ORDER, UNRATED];
+
+function severityList(value: string | null): string[] {
+  const given = (value ?? "").split(",").map((member) => member.trim());
+  const selected = SEVERITY_MEMBERS.filter((member) => given.includes(member));
+  return selected.length === SEVERITY_MEMBERS.length ? [] : selected;
+}
+
+export type FixSort = "shelf" | "severity" | "added";
+
+function readSort(value: string | null): FixSort {
+  return value === "severity" || value === "added" ? value : "shelf";
+}
+
 export type ShelfColumnKey = "proposed" | "ready" | "in_progress" | "check" | "in_review" | "closed";
 
 export interface WorkItemFilters {
   noun: ShelfNounFilter;
   attached: string[];
   showAllTerminal: boolean;
+  sort: FixSort;
+  severity: string[];
 }
 
 export const SHELF_COLUMNS: ReadonlyArray<{ key: ShelfColumnKey; label: string }> = [
@@ -50,6 +70,8 @@ export function readWorkItemFilters(params: URLSearchParams): WorkItemFilters {
     noun: normalizedNouns(nounParam),
     attached: attachedList(params.get("attached")),
     showAllTerminal: params.get("terminal") === "all",
+    sort: readSort(params.get("sort")),
+    severity: severityList(params.get("severity")),
   };
 }
 
@@ -61,8 +83,38 @@ const matchesAttachment = (item: WorkItemCard, attached: string[]) => {
     id === UNATTACHED ? item.attached === undefined && ids.length === 0 : ids.includes(id));
 };
 
+const matchesSeverity = (item: WorkItemCard, severity: string[]) =>
+  severity.length === 0 || (item.noun === "bug" && severity.includes(item.severity ?? UNRATED));
+
 export function workItemMatchesFilters(item: WorkItemCard, filters: WorkItemFilters): boolean {
-  return (filters.noun === "all" || filters.noun.split(",").includes(item.noun)) && matchesAttachment(item, filters.attached);
+  return (filters.noun === "all" || filters.noun.split(",").includes(item.noun))
+    && matchesAttachment(item, filters.attached)
+    && matchesSeverity(item, filters.severity);
+}
+
+const UNRATED_RANK = SEVERITY_ORDER.length;
+
+function severityRank(item: WorkItemCard): number {
+  if (item.noun !== "bug" || item.severity === undefined) return UNRATED_RANK;
+  const rank = SEVERITY_ORDER.indexOf(item.severity);
+  return rank < 0 ? UNRATED_RANK : rank;
+}
+
+// Pure and stable: equal keys keep input (server) order. "added" is newest
+// first, ties broken by the higher EV id, items with no added_at last.
+export function sortWorkItems(items: WorkItemCard[], sort: FixSort): WorkItemCard[] {
+  if (sort === "shelf") return items;
+  const sorted = [...items];
+  if (sort === "severity") return sorted.sort((a, b) => severityRank(a) - severityRank(b));
+  return sorted.sort((a, b) => {
+    if (a.added_at === undefined || b.added_at === undefined) {
+      return (a.added_at === undefined ? 1 : 0) - (b.added_at === undefined ? 1 : 0);
+    }
+    if (a.added_at !== b.added_at) return a.added_at < b.added_at ? 1 : -1;
+    const ea = a.added_event ?? "";
+    const eb = b.added_event ?? "";
+    return ea === eb ? 0 : ea < eb ? 1 : -1;
+  });
 }
 
 export function workItemColumns(
@@ -72,19 +124,21 @@ export function workItemColumns(
   const open = board.open.filter((item) => workItemMatchesFilters(item, filters));
   const closed = board.closed.filter((item) => workItemMatchesFilters(item, filters));
 
+  const column = (status: string) => sortWorkItems(open.filter((item) => item.status === status), filters.sort);
+
   return {
-    proposed: open.filter((item) => item.status === "proposed"),
-    ready: open.filter((item) => item.status === "ready"),
-    in_progress: open.filter((item) => item.status === "in_progress"),
-    check: open.filter((item) => item.status === "check"),
-    in_review: open.filter((item) => item.status === "in_review"),
-    closed: filters.showAllTerminal ? closed : closed.slice(0, ROW_CAP),
+    proposed: column("proposed"),
+    ready: column("ready"),
+    in_progress: column("in_progress"),
+    check: column("check"),
+    in_review: column("in_review"),
+    closed: sortWorkItems(filters.showAllTerminal ? closed : closed.slice(0, ROW_CAP), filters.sort),
   };
 }
 
 export function setWorkItemFilter(
   params: URLSearchParams,
-  key: "noun" | "attached" | "terminal",
+  key: "noun" | "attached" | "terminal" | "sort" | "severity",
   value: string | null,
 ): URLSearchParams {
   const next = new URLSearchParams(params);
@@ -95,6 +149,12 @@ export function setWorkItemFilter(
   if (attached.length === 0) next.delete("attached");
   else next.set("attached", attached.join(","));
   if (next.get("terminal") !== "all") next.delete("terminal");
+  const sort = readSort(next.get("sort"));
+  if (sort === "shelf") next.delete("sort");
+  else next.set("sort", sort);
+  const severity = severityList(next.get("severity"));
+  if (severity.length === 0) next.delete("severity");
+  else next.set("severity", severity.join(","));
 
   if (key === "noun") {
     if (value !== null && SHELF_NOUNS.includes(value as typeof SHELF_NOUNS[number])) {
@@ -110,6 +170,16 @@ export function setWorkItemFilter(
     const toggled = id === "" ? [] : attached.includes(id) ? attached.filter((entry) => entry !== id) : [...attached, id];
     if (toggled.length === 0) next.delete(key);
     else next.set(key, toggled.join(","));
+  } else if (key === "sort") {
+    if (value === "severity" || value === "added") next.set(key, value);
+    else next.delete(key);
+  } else if (key === "severity") {
+    const member = value?.trim() ?? "";
+    const toggled = !SEVERITY_MEMBERS.includes(member) ? []
+      : severity.includes(member) ? severity.filter((entry) => entry !== member) : [...severity, member];
+    const normalized = severityList(toggled.join(","));
+    if (normalized.length === 0) next.delete(key);
+    else next.set(key, normalized.join(","));
   } else if (value === "all") {
     next.set(key, value);
   } else {

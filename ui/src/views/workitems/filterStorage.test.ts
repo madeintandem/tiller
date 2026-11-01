@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import { readWorkItemFilters } from "./board";
 import { filterQuery, filterStorageKey, hasFilterParams, readFilterQuery, writeFilterQuery } from "./filterStorage";
 
 afterEach(() => {
@@ -29,5 +30,21 @@ describe("Fix filter storage", () => {
     expect(hasFilterParams(new URLSearchParams("tab=x"))).toBe(false);
     expect(hasFilterParams(new URLSearchParams("terminal=all"))).toBe(true);
     expect(filterQuery(new URLSearchParams("noun=chore"))).toBe("noun=chore");
+  });
+
+  it("writes sort and severity in canonical order and omits defaults", () => {
+    expect(filterQuery(new URLSearchParams("sort=severity&severity=important,blocker"))).toBe(
+      "sort=severity&severity=blocker%2Cimportant");
+    expect(filterQuery(new URLSearchParams("sort=shelf&severity=bogus"))).toBe("");
+    expect(hasFilterParams(new URLSearchParams("sort=added"))).toBe(true);
+    expect(hasFilterParams(new URLSearchParams("severity=blocker"))).toBe(true);
+  });
+
+  it("restores a legacy stored noun with shelf sort and no severity", () => {
+    window.localStorage.setItem(filterStorageKey("acme"), "noun=bug");
+    expect(readFilterQuery("acme")).toBe("noun=bug");
+    expect(readWorkItemFilters(new URLSearchParams(readFilterQuery("acme") ?? ""))).toMatchObject({
+      noun: "bug", sort: "shelf", severity: [],
+    });
   });
 });

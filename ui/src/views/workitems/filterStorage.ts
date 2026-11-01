@@ -6,7 +6,7 @@
 // filters into another project's tab.
 //
 // The stored value is the filter axes' own URL query (noun, attached,
-// terminal), normalized through readWorkItemFilters, so storage and the URL
+// terminal, sort, severity), normalized through readWorkItemFilters, so storage and the URL
 // share one serialization and one parser. Unlike Build's `?epics=`, the Fix
 // board's default ("All" on every axis) is the EMPTY query, so an explicit
 // return to All is stored as the empty string, read back distinctly from no
@@ -15,7 +15,7 @@
 import { readWorkItemFilters } from "./board";
 
 const FILTER_STORAGE_PREFIX = "tiller-fix-filters";
-const FILTER_AXES = ["noun", "attached", "terminal"] as const;
+const FILTER_AXES = ["noun", "attached", "terminal", "sort", "severity"] as const;
 
 export function filterStorageKey(projectKey: string): string {
   return `${FILTER_STORAGE_PREFIX}:${projectKey}`;
@@ -35,6 +35,8 @@ export function filterQuery(params: URLSearchParams): string {
   if (filters.noun !== "all") query.set("noun", filters.noun);
   if (filters.attached.length > 0) query.set("attached", filters.attached.join(","));
   if (filters.showAllTerminal) query.set("terminal", "all");
+  if (filters.sort !== "shelf") query.set("sort", filters.sort);
+  if (filters.severity.length > 0) query.set("severity", filters.severity.join(","));
   return query.toString();
 }
 
