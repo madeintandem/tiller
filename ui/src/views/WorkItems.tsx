@@ -6,6 +6,7 @@ import { statusPath, workItemsPath } from "../api";
 import BoardGrid from "../components/BoardGrid";
 import BoardToolbar from "../components/BoardToolbar";
 import Chip from "../components/Chip";
+import SeverityChip from "../components/SeverityChip";
 import EmptyNote from "../components/EmptyNote";
 import PageLoading from "../components/PageLoading";
 import RefLink from "../components/RefLink";
@@ -13,6 +14,7 @@ import StateDot from "../components/StateDot";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { useBoardScrollMode } from "../lib/boardScroll";
 import { ROW_CAP } from "../lib/disclosure";
+import { formatAdded } from "../lib/added";
 import { has } from "../lib/has";
 import { PersonName } from "../people";
 import {
@@ -22,6 +24,7 @@ import {
   SHELF_COLUMN_STATUSES,
   workItemColumns,
   UNATTACHED,
+  UNRATED,
   workItemMatchesFilters,
 } from "./workitems/board";
 import AttachmentFilter from "./workitems/AttachmentFilter";
@@ -148,6 +151,14 @@ export default function WorkItems() {
   );
 }
 
+const SEVERITY_LINKS: [string, string][] = [
+  ["blocker", "Blocker"],
+  ["important", "Important"],
+  ["medium", "Medium"],
+  ["minor", "Minor"],
+  [UNRATED, "Unrated"],
+];
+
 function WorkItemFiltersPanel({
   board,
   open,
@@ -169,6 +180,20 @@ function WorkItemFiltersPanel({
     <aside id="fix-filters" className="work-items-filters" aria-label="Work item filters" inert={!open} aria-hidden={!open}>
       <h2>Filters</h2>
       <div className="work-item-filter-group">
+        <p className="work-item-filter-label">Sort</p>
+        <nav className="work-item-filter-links" aria-label="Sort">
+          <FilterLink params={params} axis="sort" value="shelf" active={filters.sort === "shelf"}>
+            Shelf order
+          </FilterLink>
+          <FilterLink params={params} axis="sort" value="severity" active={filters.sort === "severity"}>
+            Severity
+          </FilterLink>
+          <FilterLink params={params} axis="sort" value="added" active={filters.sort === "added"}>
+            Date added
+          </FilterLink>
+        </nav>
+      </div>
+      <div className="work-item-filter-group">
         <p className="work-item-filter-label">Noun</p>
         <nav className="work-item-filter-links" aria-label="Work item type">
           <FilterLink params={params} axis="noun" value="all" active={filters.noun === "all"}>
@@ -183,6 +208,26 @@ function WorkItemFiltersPanel({
           <FilterLink params={params} axis="noun" value="tweak" noun="tweak" active={filters.noun.split(",").includes("tweak")}>
             Tweaks
           </FilterLink>
+        </nav>
+      </div>
+      <div className="work-item-filter-group">
+        <p className="work-item-filter-label">Severity</p>
+        <nav className="work-item-filter-links" aria-label="Severity">
+          <FilterLink params={params} axis="severity" value={null} active={filters.severity.length === 0}>
+            All
+          </FilterLink>
+          {SEVERITY_LINKS.map(([value, label]) => (
+            <FilterLink
+              key={value}
+              params={params}
+              axis="severity"
+              value={value}
+              severity={value}
+              active={filters.severity.includes(value)}
+            >
+              {label}
+            </FilterLink>
+          ))}
         </nav>
       </div>
       <div className="work-item-filter-group">
@@ -220,13 +265,15 @@ function FilterLink({
   value,
   active,
   noun,
+  severity,
   children,
 }: {
   params: URLSearchParams;
-  axis: "noun" | "attached";
+  axis: "noun" | "attached" | "sort" | "severity";
   value: string | null;
   active: boolean;
   noun?: string;
+  severity?: string;
   children: ReactNode;
 }) {
   const next = setWorkItemFilter(params, axis, value).toString();
@@ -237,6 +284,7 @@ function FilterLink({
       className={`work-item-filter-link${active ? " active" : ""}`}
       aria-current={active ? "true" : undefined}
       data-noun={noun}
+      data-severity={severity}
     >
       {children}
     </Link>
@@ -310,8 +358,10 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
           Superseded by <Link to={`/node/${item.noun}/${item.superseded_by}`}>{item.superseded_by}</Link>
         </p>
       )}
-      {(has(item.activity) || terminal) && (
+      {has(item.added_at) && <p className="work-item-attachment">{formatAdded(item.added_at, new Date())}</p>}
+      {(item.noun === "bug" || has(item.activity) || terminal) && (
         <div className="work-item-card-chips">
+          {item.noun === "bug" && <SeverityChip severity={item.severity} />}
           {has(item.activity) && <Chip status={item.activity}>{item.activity}</Chip>}
           {terminal && <Chip status={item.status}>{item.status}</Chip>}
         </div>

@@ -241,3 +241,15 @@ describe("Explore search: totals", () => {
     expect(await screen.findByText("No matches.")).toBeInTheDocument();
   });
 });
+
+describe("Explore search: bug severity", () => {
+  it("shows the severity word on a bug hit, and none on other kinds", async () => {
+    const rated = { ...bug, severity: "blocker" as const };
+    const feat = node({ noun: "feature", id: "F-1", key: "admin/filters", title: "Filters", match: "text", count: 0 });
+    stubFetch({ "/api/search?q=payment": result([rated, feat]) });
+    renderAt("/explore?mode=search&q=payment");
+    const chip = await screen.findByText("Blocker");
+    expect(chip).toHaveClass("severity-chip");
+    expect(document.querySelectorAll(".severity-chip")).toHaveLength(1);
+  });
+});

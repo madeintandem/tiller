@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { SearchDocumentResult, SearchHit, SearchNodeResult, SearchResult } from "../../api";
 import Chip from "../../components/Chip";
+import SeverityChip from "../../components/SeverityChip";
 import SectionHead from "../../components/SectionHead";
 import { has } from "../../lib/has";
 import { kindLabel } from "../../lib/kind";
@@ -134,6 +135,7 @@ function NodeRow({
         <Link to={`/node/${node.noun}/${node.id}`} className="search-result-title">
           <Highlight text={has(node.title) ? node.title : node.ref} query={query} />
         </Link>
+        {node.noun === "bug" && <SeverityChip severity={node.severity} />}
         <span className="mono muted search-result-key">{address}</span>
         <Chip status={node.status} />
         {label !== "" && <span className="muted search-result-match">{label}</span>}

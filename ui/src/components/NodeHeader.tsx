@@ -24,6 +24,7 @@ import Chip from "./Chip";
 import Contributors from "./Contributors";
 import { CopyRef } from "./CopyCmd";
 import RefLink from "./RefLink";
+import SeverityChip from "./SeverityChip";
 import SourceLink from "./SourceLink";
 import StateBar from "./StateBar";
 
@@ -284,6 +285,9 @@ function Facts({ page }: { page: NodePage }) {
   // node has no owner yet, and a task's proposer is usually its owner.
   if (has(node.proposed_by) && node.proposed_by !== node.owner) {
     items.push({ label: "Proposed by", value: <b className="mono"><PersonName id={node.proposed_by} /></b> });
+  }
+  if (node.noun === "bug") {
+    items.push({ label: "Severity", value: <SeverityChip severity={node.severity} /> });
   }
   if (rel.attached_to !== undefined) {
     items.push({ label: "Found in", value: <RelationValue node={rel.attached_to} /> });

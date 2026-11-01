@@ -363,3 +363,54 @@ describe("Fix board", () => {
     expect(screen.queryByRole("region", { name: "Ready" })).not.toBeInTheDocument();
   });
 });
+
+describe("Fix board severity and date added", () => {
+  const sevBoard: WorkItemsBoard = {
+    ...board,
+    open: [
+      { ...board.open[0], severity: "blocker", added_at: "2025-10-12T15:00:00Z" },
+      { ...board.open[1] },
+      { ...board.open[2], added_at: "2025-10-13T15:00:00Z" },
+    ],
+  };
+
+  it("shows a bug's severity word (Unrated when none) and no chip on a chore", async () => {
+    renderWorkItems(sevBoard, "/fix");
+    const zulu = (await screen.findByText("Zulu")).closest("article") as HTMLElement;
+    expect(within(zulu).getByText("Blocker")).toHaveClass("severity-chip");
+    const alpha = screen.getByText("Alpha").closest("article") as HTMLElement;
+    expect(within(alpha).getByText("Unrated")).toBeInTheDocument();
+    const mike = screen.getByText("Mike").closest("article") as HTMLElement;
+    expect(mike.querySelector(".severity-chip")).toBeNull();
+    expect(mike.textContent).toMatch(/Added/);
+    expect(alpha.textContent).not.toMatch(/Added/);
+    expect(zulu.textContent).toMatch(/Added Oct 12/);
+  });
+
+  it("offers Sort and Severity groups in order, Shelf order active by default", async () => {
+    renderWorkItems(sevBoard, "/fix");
+    await screen.findByText("Zulu");
+    const labels = Array.from(document.querySelectorAll(".work-item-filter-label")).map((n) => n.textContent);
+    expect(labels).toEqual(["Sort", "Noun", "Severity", "Attached to"]);
+    const sort = screen.getByRole("navigation", { name: "Sort" });
+    expect(within(sort).getAllByRole("link").map((l) => l.textContent)).toEqual(["Shelf order", "Severity", "Date added"]);
+    expect(within(sort).getByRole("link", { name: "Shelf order" })).toHaveAttribute("aria-current", "true");
+    const sev = screen.getByRole("navigation", { name: "Severity" });
+    expect(within(sev).getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "All", "Blocker", "Important", "Medium", "Minor", "Unrated",
+    ]);
+    expect(within(sev).getByRole("link", { name: "All" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("navigates the sort and severity filters through the URL", async () => {
+    renderWorkItems(sevBoard, "/fix");
+    await screen.findByText("Zulu");
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Sort" })).getByRole("link", { name: "Date added" }));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("sort=added"));
+    expect(within(screen.getByRole("navigation", { name: "Sort" })).getByRole("link", { name: "Date added" })).toHaveAttribute("aria-current", "true");
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Severity" })).getByRole("link", { name: "Blocker" }));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("severity=blocker"));
+    await waitFor(() => expect(screen.queryByText("Alpha")).not.toBeInTheDocument());
+    expect(screen.getByText("Zulu")).toBeInTheDocument();
+  });
+});

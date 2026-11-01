@@ -1,0 +1,35 @@
+/* The severity word as a chip. Tints reuse the status tokens and are
+   decoration only; the label is always visible. */
+.severity-chip {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-btn);
+  border: 1px solid currentColor;
+  background: var(--recess);
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.severity-chip[data-severity="blocker"] {
+  color: var(--st-blocked-t);
+  background: color-mix(in srgb, var(--st-blocked) 14%, transparent);
+}
+
+.severity-chip[data-severity="important"] {
+  color: var(--st-specced-t);
+  background: color-mix(in srgb, var(--st-specced) 14%, transparent);
+}
+
+.severity-chip[data-severity="medium"] {
+  color: var(--st-active-t);
+}
+
+.severity-chip[data-severity="minor"] {
+  color: var(--ink-3);
+}

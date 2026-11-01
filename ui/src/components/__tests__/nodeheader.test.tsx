@@ -205,6 +205,18 @@ describe("Node header: the facts block", () => {
     expect(facts(execution.container).queryByText("Contributors")).not.toBeInTheDocument();
   });
 
+  it("lists a bug's severity as text, Unrated when missing, and nothing on a chore", () => {
+    const bugNode: NodeView = { noun: "bug", id: "B-1", title: "Crash", status: "proposed" };
+    const rated = mount(<NodeDetail page={pageOf({ ...bugNode, severity: "important" })} />);
+    expect(factValue(rated.container, "Severity")).toHaveTextContent("Important");
+    rated.unmount();
+    const unrated = mount(<NodeDetail page={pageOf(bugNode)} />);
+    expect(factValue(unrated.container, "Severity")).toHaveTextContent("Unrated");
+    unrated.unmount();
+    const chore = mount(<NodeDetail page={pageOf({ noun: "chore", id: "CH-1", title: "Tidy", status: "proposed" })} />);
+    expect(within(chore.container).queryByText("Severity")).not.toBeInTheDocument();
+  });
+
   it("labels every fact and keeps them in one block under one divider", () => {
     const { container } = mount(
       <NodeDetail
