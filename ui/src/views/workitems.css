@@ -287,7 +287,8 @@
   font-weight: 700;
 }
 
-.work-items-page .work-item-attachment {
+.work-items-page .work-item-attachment,
+.work-items-page .work-item-added {
   margin: 0;
   color: var(--ink-3);
   font-size: 11px;

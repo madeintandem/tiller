@@ -3,6 +3,7 @@ import { Link, MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { RelatedNode, WorkItemsBoard } from "../../api";
+import { formatAdded } from "../../lib/added";
 import WorkItems from "../../views/WorkItems";
 
 const attachment: RelatedNode = {
@@ -368,7 +369,7 @@ describe("Fix board severity and date added", () => {
   const sevBoard: WorkItemsBoard = {
     ...board,
     open: [
-      { ...board.open[0], severity: "blocker", added_at: "2025-10-12T15:00:00Z" },
+      { ...board.open[0], severity: "blocker", added_at: "2025-10-12T12:00:00Z" },
       { ...board.open[1] },
       { ...board.open[2], added_at: "2025-10-13T15:00:00Z" },
     ],
@@ -384,7 +385,8 @@ describe("Fix board severity and date added", () => {
     expect(mike.querySelector(".severity-chip")).toBeNull();
     expect(mike.textContent).toMatch(/Added/);
     expect(alpha.textContent).not.toMatch(/Added/);
-    expect(zulu.textContent).toMatch(/Added Oct 12/);
+    expect(zulu.textContent).toContain(formatAdded("2025-10-12T12:00:00Z", new Date()));
+    expect(zulu.querySelector(".work-item-added")).not.toBeNull();
   });
 
   it("offers Sort and Severity groups in order, Shelf order active by default", async () => {

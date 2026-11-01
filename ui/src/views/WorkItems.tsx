@@ -358,7 +358,7 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
           Superseded by <Link to={`/node/${item.noun}/${item.superseded_by}`}>{item.superseded_by}</Link>
         </p>
       )}
-      {has(item.added_at) && <p className="work-item-attachment">{formatAdded(item.added_at, new Date())}</p>}
+      {has(item.added_at) && <p className="work-item-added">{formatAdded(item.added_at, new Date())}</p>}
       {(item.noun === "bug" || has(item.activity) || terminal) && (
         <div className="work-item-card-chips">
           {item.noun === "bug" && <SeverityChip severity={item.severity} />}
