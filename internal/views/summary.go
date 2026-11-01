@@ -113,6 +113,9 @@ type NodeStatusView struct {
 	Blocked      bool                `json:"blocked,omitempty"`
 	Owner        string              `json:"owner,omitempty"`
 	Contributors []store.Contributor `json:"contributors,omitzero"`
+	// Severity is a bug's triage grade, empty when unrated and for every
+	// other noun; the text renderer prints "unrated" for a bug.
+	Severity string `json:"severity,omitempty"`
 	// Title is a task's, amendment's, or question's short title; Statement
 	// retains a question's full detail. An epic's and a feature's own handle is
 	// the key path their reference already renders.
@@ -183,7 +186,12 @@ func NodeStatus(tree *store.Tree, n store.Node, in workflow.Input) NodeStatusVie
 	} else {
 		recovered, missing = workflow.ReviewStateOf(tree, n)
 	}
+	severity := ""
+	if b, ok := n.(*store.Bug); ok {
+		severity = b.Severity
+	}
 	return NodeStatusView{
+		Severity:         severity,
 		Noun:             n.Noun(),
 		ID:               n.NodeID(),
 		Key:              Key(n),

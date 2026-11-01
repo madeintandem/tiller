@@ -178,7 +178,7 @@ func executeReason(t *store.Tree, top views.NextCandidate) string {
 
 // nextMove names a move's action and node; the move must have a node.
 func nextMove(c views.NextCandidate) string {
-	return "Next move: " + c.Action + " " + c.Node.Ref + "."
+	return "Next move: " + c.Action + " " + c.Node.Label() + "."
 }
 
 // nodeStatusByID is the status of a task or shelf node, "" when it is gone.

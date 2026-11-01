@@ -1830,6 +1830,7 @@ export interface NextNode {
   key?: string;
   ref: string;
   title?: string;
+  severity?: string;
 }
 
 // One legal next move (views.NextCandidate): who makes it, what it does, to

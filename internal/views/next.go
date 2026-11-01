@@ -21,6 +21,28 @@ type NextNode struct {
 	Key   string `json:"key,omitempty"`
 	Ref   string `json:"ref"`
 	Title string `json:"title,omitempty"`
+	// Severity is a bug's grade on its triage move, omitted when unrated.
+	Severity string `json:"severity,omitempty"`
+
+	// triageBug marks a bug awaiting triage, whose text line names its grade
+	// (or "unrated"). Severity is read for display only, never for ranking.
+	triageBug bool
+}
+
+// Label is the node as a text line names it: its ref, plus a triage bug's
+// severity so the reader sees the grade without opening the bug.
+func (n *NextNode) Label() string {
+	if n == nil || !n.triageBug {
+		if n == nil {
+			return ""
+		}
+		return n.Ref
+	}
+	sev := n.Severity
+	if sev == "" {
+		sev = "unrated"
+	}
+	return n.Ref + " (" + sev + ")"
 }
 
 // NextCandidate is one legal next move for the reader's checkout: who makes

@@ -304,3 +304,24 @@ func TestShowBugTextNamesSeverity(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	require.NotContains(t, out, "severity")
 }
+
+func TestStatusBugNamesSeverity(t *testing.T) {
+	initOwnedRepo(t)
+	mustRun(t, "add", "bug", "graded", "--title", "Graded", "--severity", "important", "--contributor", "jc")
+	mustRun(t, "add", "bug", "ungraded", "--title", "Ungraded", "--contributor", "jc")
+	mustRun(t, "add", "chore", "upkeep", "--title", "Upkeep", "--contributor", "jc")
+	out, stderr, code := execCLI(t, "status", "bug", "graded")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "\n  severity: important")
+	out, stderr, code = execCLI(t, "status", "bug", "ungraded")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "\n  severity: unrated")
+	out, stderr, code = execCLI(t, "status", "chore", "upkeep")
+	require.Equal(t, 0, code, stderr)
+	require.NotContains(t, out, "severity")
+	out, stderr, code = execCLI(t, "status", "bug", "graded", "--json")
+	require.Equal(t, 0, code, stderr)
+	require.Equal(t, "important", jsonData(t, out)["severity"])
+	out, _, _ = execCLI(t, "status", "bug", "ungraded", "--json")
+	require.NotContains(t, jsonData(t, out), "severity")
+}

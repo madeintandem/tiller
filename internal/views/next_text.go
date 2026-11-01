@@ -23,7 +23,7 @@ func NextLine(c NextCandidate) string {
 	}
 	b.WriteString(c.Action)
 	if c.Node != nil && c.Node.Ref != "" {
-		b.WriteString(" " + c.Node.Ref)
+		b.WriteString(" " + c.Node.Label())
 	}
 	b.WriteString(".")
 	if reason := Sentence(c.Reason); reason != "" {

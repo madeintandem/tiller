@@ -200,6 +200,12 @@ func queueCandidates(t *store.Tree, in NextInput) []NextCandidate {
 			c.Actor = actorHuman
 		}
 		node := gen.NodeByID(t, entry.ID)
+		if entry.Kind == "approve_bug" {
+			c.Node.triageBug = true
+			if b, ok := node.(*store.Bug); ok {
+				c.Node.Severity = b.Severity
+			}
+		}
 		if strings.HasPrefix(entry.Kind, "approve_") {
 			c.Node.Title = entry.Prose
 		} else if node != nil {

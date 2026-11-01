@@ -141,3 +141,20 @@ func TestEpiclessTreeContinuesAnOwnedBugWhoseCarrierIsGone(t *testing.T) {
 	require.Equal(t, "continue", top.Kind)
 	require.Equal(t, "B-aaaaaa", top.Node.ID)
 }
+
+func TestTriageBugLineNamesSeverity(t *testing.T) {
+	tree := shelfRouteTree()
+	tree.Bugs["B-aaaaaa"].Status = "proposed"
+	tree.Bugs["B-aaaaaa"].Owner = ""
+	for sev, want := range map[string]string{"blocker": "triage bugs/blank (B-aaaaaa) (blocker)", "": "triage bugs/blank (B-aaaaaa) (unrated)"} {
+		tree.Bugs["B-aaaaaa"].Severity = sev
+		top := topMove(t, tree, "jc", workflow.Input{})
+		require.Equal(t, "approve_bug", top.Kind)
+		require.Equal(t, sev, top.Node.Severity)
+		require.Contains(t, views.NextLine(top), want)
+	}
+	tree.Chores["CH-aaaaaa"].Status = "proposed"
+	tree.Bugs["B-aaaaaa"].Status = "ready"
+	top := topMove(t, tree, "jc", workflow.Input{})
+	require.NotContains(t, views.NextLine(top), "unrated")
+}

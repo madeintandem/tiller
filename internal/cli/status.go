@@ -163,6 +163,13 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Blocked {
 		fmt.Fprint(&b, " (blocked)")
 	}
+	if v.Noun == store.NounBug {
+		severity := v.Severity
+		if severity == "" {
+			severity = "unrated"
+		}
+		fmt.Fprintf(&b, "\n  severity: %s", severity)
+	}
 	// The review-state warning sits directly under state, the
 	// status this task carries while the warning applies, in the identical
 	// wording submit's own confirmation renders (unpushedReviewWarning): a
