@@ -394,9 +394,13 @@ describe("Fix board severity and date added", () => {
     await screen.findByText("Zulu");
     const labels = Array.from(document.querySelectorAll(".work-item-filter-label")).map((n) => n.textContent);
     expect(labels).toEqual(["Sort", "Noun", "Severity", "Attached to"]);
-    const sort = screen.getByRole("navigation", { name: "Sort" });
-    expect(within(sort).getAllByRole("link").map((l) => l.textContent)).toEqual(["Shelf order", "Severity", "Date added"]);
-    expect(within(sort).getByRole("link", { name: "Shelf order" })).toHaveAttribute("aria-current", "true");
+    const sort = screen.getByRole("combobox", { name: "Sort" });
+    expect(sort).toHaveTextContent("Shelf order");
+    expect(sort).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(sort);
+    const list = screen.getByRole("listbox", { name: "Sort" });
+    expect(within(list).getAllByRole("option").map((o) => o.textContent)).toEqual(["Shelf order", "Severity", "Date added"]);
+    expect(within(list).getByRole("option", { name: "Shelf order" })).toHaveAttribute("aria-selected", "true");
     const sev = screen.getByRole("navigation", { name: "Severity" });
     expect(within(sev).getAllByRole("link").map((l) => l.textContent)).toEqual([
       "All", "Blocker", "Important", "Medium", "Minor", "Unrated",
@@ -407,9 +411,14 @@ describe("Fix board severity and date added", () => {
   it("navigates the sort and severity filters through the URL", async () => {
     renderWorkItems(sevBoard, "/fix");
     await screen.findByText("Zulu");
-    fireEvent.click(within(screen.getByRole("navigation", { name: "Sort" })).getByRole("link", { name: "Date added" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Date added" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("sort=added"));
-    expect(within(screen.getByRole("navigation", { name: "Sort" })).getByRole("link", { name: "Date added" })).toHaveAttribute("aria-current", "true");
+    expect(screen.queryByRole("listbox", { name: "Sort" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Sort" })).toHaveTextContent("Date added");
+    fireEvent.click(screen.getByRole("combobox", { name: "Sort" }));
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Shelf order" }));
+    await waitFor(() => expect(screen.getByTestId("location")).not.toHaveTextContent("sort="));
     fireEvent.click(within(screen.getByRole("navigation", { name: "Severity" })).getByRole("link", { name: "Blocker" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("severity=blocker"));
     await waitFor(() => expect(screen.queryByText("Alpha")).not.toBeInTheDocument());

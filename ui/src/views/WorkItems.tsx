@@ -28,7 +28,8 @@ import {
   workItemMatchesFilters,
 } from "./workitems/board";
 import AttachmentFilter from "./workitems/AttachmentFilter";
-import type { ShelfColumnKey, WorkItemFilters } from "./workitems/board";
+import type { FixSort, ShelfColumnKey, WorkItemFilters } from "./workitems/board";
+import SortSelect, { type SortOption } from "./workitems/SortSelect";
 import { hasFilterParams, readFilterQuery, writeFilterQuery } from "./workitems/filterStorage";
 import { readPanelState, writePanelState } from "./build/panelStorage";
 import "./workitems.css";
@@ -123,6 +124,7 @@ export default function WorkItems() {
           filters={filters}
           params={viewParams}
           onToggleAttached={(id) => setParams(setWorkItemFilter(viewParams, "attached", id), { state: FILTER_NAVIGATION })}
+          onSort={(sort) => setParams(setWorkItemFilter(viewParams, "sort", sort), { state: FILTER_NAVIGATION })}
           hasOlder={filteredClosedTotal > ROW_CAP}
           onToggleOlder={(on) => setParams(setWorkItemFilter(viewParams, "terminal", on ? "all" : null), { state: FILTER_NAVIGATION })}
         />
@@ -151,6 +153,12 @@ export default function WorkItems() {
   );
 }
 
+const SORT_OPTIONS: SortOption<FixSort>[] = [
+  { value: "shelf", label: "Shelf order" },
+  { value: "severity", label: "Severity" },
+  { value: "added", label: "Date added" },
+];
+
 const SEVERITY_LINKS: [string, string][] = [
   ["blocker", "Blocker"],
   ["important", "Important"],
@@ -165,6 +173,7 @@ function WorkItemFiltersPanel({
   filters,
   params,
   onToggleAttached,
+  onSort,
   hasOlder,
   onToggleOlder,
 }: {
@@ -173,6 +182,7 @@ function WorkItemFiltersPanel({
   filters: WorkItemFilters;
   params: URLSearchParams;
   onToggleAttached: (id: string) => void;
+  onSort: (sort: FixSort) => void;
   hasOlder: boolean;
   onToggleOlder: (on: boolean) => void;
 }) {
@@ -181,17 +191,7 @@ function WorkItemFiltersPanel({
       <h2>Filters</h2>
       <div className="work-item-filter-group">
         <p className="work-item-filter-label">Sort</p>
-        <nav className="work-item-filter-links" aria-label="Sort">
-          <FilterLink params={params} axis="sort" value="shelf" active={filters.sort === "shelf"}>
-            Shelf order
-          </FilterLink>
-          <FilterLink params={params} axis="sort" value="severity" active={filters.sort === "severity"}>
-            Severity
-          </FilterLink>
-          <FilterLink params={params} axis="sort" value="added" active={filters.sort === "added"}>
-            Date added
-          </FilterLink>
-        </nav>
+        <SortSelect label="Sort" options={SORT_OPTIONS} value={filters.sort} onChange={onSort} />
       </div>
       <div className="work-item-filter-group">
         <p className="work-item-filter-label">Noun</p>
@@ -269,7 +269,7 @@ function FilterLink({
   children,
 }: {
   params: URLSearchParams;
-  axis: "noun" | "attached" | "sort" | "severity";
+  axis: "noun" | "attached" | "severity";
   value: string | null;
   active: boolean;
   noun?: string;

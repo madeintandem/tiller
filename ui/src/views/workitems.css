@@ -365,6 +365,94 @@
   outline-offset: 2px;
 }
 
+/* Sort: a select-only combobox in the rail's own register. The trigger
+   reads like the rail's active link; the popover borrows the Attached to
+   results' option treatment. Unlike that list it floats: it holds three
+   short rows and sits at the top of the rail, so it overlays the groups
+   below rather than shoving them down, and never reaches a clipping edge. */
+.work-items-page .sort-select {
+  position: relative;
+}
+
+.work-items-page .sort-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  background: var(--panel);
+  color: var(--heading);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.work-items-page .sort-select-trigger:hover,
+.work-items-page .sort-select-trigger[aria-expanded="true"] {
+  border-color: var(--ink-3);
+}
+
+/* A drawn chevron, so the glyph follows the theme's ink and turns with
+   the popover. */
+.work-items-page .sort-select-chevron {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(45deg);
+  transition: transform 0.12s ease;
+}
+
+.work-items-page .sort-select-trigger[aria-expanded="true"] .sort-select-chevron {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+
+.work-items-page .sort-select-options {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  left: 0;
+  margin: 0;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  background: var(--panel);
+  box-shadow: var(--shadow-panel);
+  list-style: none;
+}
+
+.work-items-page .sort-select-option {
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid transparent;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.work-items-page .sort-select-option.active {
+  background: var(--accent-soft);
+  color: var(--heading);
+}
+
+.work-items-page .sort-select-option[aria-selected="true"] {
+  border-left-color: var(--heading);
+  color: var(--heading);
+  font-weight: 700;
+}
+
 /* Attached to: picked nodes as chips over a search field. Both the chip
    tray and the result list hold a fixed max height and scroll inside, so
    the rail no longer grows with the project. The list sits in flow, not as
