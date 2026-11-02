@@ -462,7 +462,7 @@ git add .tiller && git commit -m "capture: blank-on-reload"
 Created bug bugs/blank-on-reload (B-4k2p9x) in proposed: "Form blanks on reload" (attached to foundation/app-scaffold (F-dv5ppv))
 ```
 
-Capture grades the bug by impact (`blocker`, `important`, `medium`, or `minor`) and never approves, claims, or starts what it just wrote. Triage is yours. `tiller approve bug` refuses a bug nobody has graded, and its `--severity <level>` grades or regrades the bug at triage:
+Capture grades the bug by impact (`blocker`, `important`, `medium`, or `minor`) and never approves, claims, or starts what it just wrote. Triage is yours. `tiller approve bug` refuses a bug nobody has graded, and its `--severity <level>` grades or regrades the bug at triage. Past triage, anyone can change an open bug's grade with `tiller grade bug blank-on-reload minor`. The grade sorts and filters the Fix lens; it never changes what `tiller next` hands out:
 
 ```sh
 tiller approve bug blank-on-reload

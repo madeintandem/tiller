@@ -29,6 +29,8 @@ This page covers what each skill does. [Concepts](/tiller/concepts/) owns the mo
 
 `orient` relays the ranked next list: every legal move for your checkout, human decisions included, ranked by where you have been working, at most five. It names any of your decisions that rank above the top agent move, ends its reply on the list, and starts that agent move once your reply does not redirect. Tiller ranks by a fixed rule and never calls a model; the agent may say it would take a different row first, but it reproduces the list as printed.
 
+`capture` grades every bug it files by impact, never by the size of the fix, and the grade lands on the record as the bug's severity: `blocker` (data loss, a broken security boundary, a crash on a main path, or a violated acceptance criterion), `important` (wrong behavior on a realistic path), `medium` (an edge case, or a construct likely to break), or `minor` (a real defect with negligible impact). When the impact can't be known yet, it leaves the bug unrated and says why in the contract, so you grade it at triage. Chores and tweaks carry no severity. Severity sorts and filters the console's Fix lens and never changes what ranks next. `tiller guide capture` holds the full scale.
+
 `capture` never approves, claims, starts, resolves, or cancels what it wrote; triage is the human's `tiller approve bug`, `tiller approve chore`, or `tiller approve tweak`. Once a bug, chore, or tweak is ready and claimed, `execute` runs it the way it runs a task, on its own branch, with the attached node's context read first, a regression test where the work is a fix, task-grade gates, and a stop at the human's merge. Shelf work ignores review grain and runs no eval.
 
 ## Plan outcomes through the known scope
@@ -205,7 +207,7 @@ Then say what to keep:
 
 > log bugs 1, 3, and 7, chore 2, tweaks 1-3, and plan change 1
 
-Bugs, tweaks, and chores become `proposed` records attached to where they were found, citing the review. Plan changes become one `proposed` amendment. "fix B2 on its branch" sends a finding in unmerged work back to its task, "drop CH1" declines one, and "commit the review" keeps a review that needs nothing logged. Each request is one commit, and every approval stays with you.
+Bugs, tweaks, and chores become `proposed` records attached to where they were found, citing the review, and each logged bug keeps the grade the review gave it as its severity. Plan changes become one `proposed` amendment. "fix B2 on its branch" sends a finding in unmerged work back to its task, "drop CH1" declines one, and "commit the review" keeps a review that needs nothing logged. Each request is one commit, and every approval stays with you.
 
 ```sh
 tiller guide code-review

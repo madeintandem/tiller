@@ -167,6 +167,9 @@ commit "payments/stripe-checkout: note refund events"
 # ---------- the shelves ----------
 $TILLER add bug blank-on-reload --title "Form blanks on a hard reload" --attach form-engine/certification-form-loading --contributor robin >/dev/null
 $TILLER add bug session-expiry --title "Session expires in the middle of a long form" --attach foundation/auth-and-roles --contributor robin >/dev/null
+# Graded at add and approved, so the Fix lens shows a spread of severity chips
+# (Unrated, Important, Minor) without a second triage row on Home's desk.
+$TILLER add bug footer-links --title "Footer links open in the same tab" --severity minor --attach foundation/app-scaffold --contributor robin >/dev/null
 $TILLER add chore archive-notes --title "Archive resolved meeting notes" --attach foundation/app-scaffold --contributor robin >/dev/null
 $TILLER add chore rotate-keys --title "Rotate the staging API keys" --contributor robin >/dev/null
 $TILLER add tweak button-text --title "Change the scaffold button text" --attach foundation/app-scaffold --contributor robin >/dev/null
@@ -174,10 +177,11 @@ $TILLER add tweak help-spacing --title "Adjust help text spacing" --contributor 
 $TILLER approve bug session-expiry --severity important --contributor robin >/dev/null
 $TILLER claim bug session-expiry --contributor robin >/dev/null
 $TILLER start bug session-expiry --contributor robin >/dev/null
+$TILLER approve bug footer-links --contributor robin >/dev/null
 $TILLER approve chore rotate-keys --contributor robin >/dev/null
 $TILLER approve chore archive-notes --contributor robin >/dev/null
 $TILLER approve tweak help-spacing --contributor robin >/dev/null
-commit "shelves: two bugs, two chores, two tweaks"
+commit "shelves: three bugs, two chores, two tweaks"
 
 # ---------- dana's branch, last, and the checkout stays on it: the console
 # reads the working tree, and her task is in review only where her work is ----------
