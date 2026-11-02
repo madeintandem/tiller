@@ -2,7 +2,7 @@
 
 **Scope.** This plan designs a second tab on the console's Report page, "Agent use", that shows roughly how many model tokens the project's agents spent and where they went: by work item, by stage of the workflow, by model, and over time. It also designs the capture that feeds it: small per-harness readers that turn coding-agent session logs into neutral usage records committed under `.tiller/usage/`. The existing Report content moves, unchanged, under a "Project" tab. The owning specs are [ui-surface.md](../spec/ui-surface.md) (Report), [artifact-schema.md](../spec/artifact-schema.md) (the usage files), and [cli-surface.md](../spec/cli-surface.md) (the capture command and the `sync` hook); this plan changes each of them, and where the code and those specs disagree after the build, the specs are corrected in the same commit.
 
-**Status.** Designed 2026-10-26 with JC. Not built. A spike over CALCTP's real logs validated the attribution method (numbers below).
+**Status.** Designed 2026-10-26 with JC. Not built. A spike over the client platform build's real logs validated the attribution method (numbers below).
 
 ## Why
 
@@ -42,7 +42,7 @@ These would make the feature a failure even if it technically worked.
 
 ## What the spike established
 
-A throwaway script read CALCTP's logs from all three harnesses (Claude Code, OhMyPi, Codex), cut each session at the Tiller commands it ran, and checked the result against Tiller's own event stream. Results for 2026-09-05 to 2026-10-22, after CALCTP's ledger was re-created on 2026-09-01 (40,857 model calls, 6.15 billion tokens):
+A throwaway script read the client platform build's logs from all three harnesses (Claude Code, OhMyPi, Codex), cut each session at the Tiller commands it ran, and checked the result against Tiller's own event stream. Results for 2026-09-05 to 2026-10-22, after the client platform build's ledger was re-created on 2026-09-01 (40,857 model calls, 6.15 billion tokens):
 
 - 74 percent of tokens landed on a work item: 49 percent on a task, bug, chore, or tweak; 19 percent on a feature (spec writing and feature acceptance); 6 percent on an epic. The remaining 26 percent is genuine project-level work (design conversations, orientation, planning, approvals) and is reported as its own bucket, "Not tied to a work item."
 - Of the tokens credited to a task's implementation, 99.2 percent fell between that task's first `start` and last `submit` event (plus or minus an hour). The method agrees with Tiller's own record.
@@ -53,7 +53,7 @@ A throwaway script read CALCTP's logs from all three harnesses (Claude Code, OhM
 
 What each harness records, per model call: Claude Code (`~/.claude/projects/<encoded path>/<session>.jsonl`, subagents in `<session>/subagents/*.jsonl`) gives model, input, cache creation, cache read, output, thinking tokens, timestamp, working directory, git branch, and every tool call. OhMyPi and Pi (`~/.omp/agent/sessions/<encoded path>/` and `~/.pi/agent/sessions/<encoded path>/`, subagents in a folder named after the parent session) share one format: provider, model, input, output, cache read, cache write, reasoning, timestamps, and tool calls. Codex (`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`) gives the model in `turn_context`, per-turn usage in `token_count` events (`last_token_usage`, where `input_tokens` includes `cached_input_tokens`), the working directory in `session_meta`, and tool calls.
 
-No existing library is usable as an abstraction. ccusage and tokscale read many harnesses but are Node and Rust programs that report daily or per-session totals, which is too coarse: one CALCTP session often spans many work items. The Go libraries found cover two or three harnesses and are months old. Their source is still a good map of each log format.
+No existing library is usable as an abstraction. ccusage and tokscale read many harnesses but are Node and Rust programs that report daily or per-session totals, which is too coarse: one the client platform build session often spans many work items. The Go libraries found cover two or three harnesses and are months old. Their source is still a good map of each log format.
 
 ## The design
 
@@ -145,7 +145,7 @@ Tiller otherwise reads nothing outside the repo except the launcher's binary cac
 
 ### Turning it on mid-project
 
-Most projects, CALCTP first, will turn capture on after work has begun. The first capture on each machine backfills every session still on disk that started on or after the ledger's first event, credited against the current tree like any other session. Each engineer's history arrives only when that engineer captures (new binary, a checkout on the integration branch, then a `sync` or `tiller usage`), and the page cannot show who has not, since that would put a person on it; the team should turn it on together and each run `tiller usage` once. The first `sync` captures what fits its time budget and `tiller usage` finishes the rest. Older binaries decode `tiller.yml` loosely and ignore the `usage:` block, so turning it on needs no schema bump or migration; an older binary simply does not capture. Because Claude Code keeps 30 days by default, every day capture stays off loses history for good, and the partial coverage rule under the Report page keeps what was lost from reading as low usage.
+Most projects, the client platform build first, will turn capture on after work has begun. The first capture on each machine backfills every session still on disk that started on or after the ledger's first event, credited against the current tree like any other session. Each engineer's history arrives only when that engineer captures (new binary, a checkout on the integration branch, then a `sync` or `tiller usage`), and the page cannot show who has not, since that would put a person on it; the team should turn it on together and each run `tiller usage` once. The first `sync` captures what fits its time budget and `tiller usage` finishes the rest. Older binaries decode `tiller.yml` loosely and ignore the `usage:` block, so turning it on needs no schema bump or migration; an older binary simply does not capture. Because Claude Code keeps 30 days by default, every day capture stays off loses history for good, and the partial coverage rule under the Report page keeps what was lost from reading as low usage.
 
 ### Turning it on
 
@@ -166,7 +166,7 @@ The Agent use tab reuses the Project tab's parts, not lookalikes: `KpiStrip`'s t
 
 **A note above the KPI strip** names each harness measured and the date of its earliest captured call, for example "Measured: Claude Code since Sep 30 · Pi since Sep 1 · Codex since Sep 8." The page cannot know about harnesses it has no files for, so it names what it measured rather than claiming completeness.
 
-**Partial coverage.** Harnesses keep their logs for different lengths of time: Claude Code deletes transcripts after 30 days by default, while Pi, OhMyPi, and Codex kept CALCTP's for months. A project that turns capture on mid-flight therefore backfills a lopsided history. On CALCTP, Claude Code (77 percent of tokens) reaches back only to Sep 30 while Pi reaches Sep 1, so its September would read as a quiet month when it was not. To keep "unknown, never zero" honest, the report computes a **full-coverage date**: the latest of the per-harness earliest-call dates, read from the committed files (the earliest `first_call` per harness). Then:
+**Partial coverage.** Harnesses keep their logs for different lengths of time: Claude Code deletes transcripts after 30 days by default, while Pi, OhMyPi, and Codex kept the client platform build's for months. A project that turns capture on mid-flight therefore backfills a lopsided history. On the client platform build, Claude Code (77 percent of tokens) reaches back only to Sep 30 while Pi reaches Sep 1, so its September would read as a quiet month when it was not. To keep "unknown, never zero" honest, the report computes a **full-coverage date**: the latest of the per-harness earliest-call dates, read from the committed files (the earliest `first_call` per harness). Then:
 
 - On the weekly charts, weeks wholly before the earliest harness date are not measured, and weeks from there up to the full-coverage date are **partially measured**: drawn with the hatch the page uses for the partial current week and labeled "Partly measured" in the legend and tooltip.
 - The per-feature chart plots only features whose first start is on or after the full-coverage date, and the per-work-item figures (the median tile and the histogram) count only items whose first start is on or after it, so older work never looks artificially cheap. The note beneath each says how many earlier items were left out.
@@ -189,13 +189,13 @@ Empty states: with no usage files at all, the tab reads "No agent usage recorded
 
 ### Serving it
 
-`GET /api/report/usage` serves the tab and is a thin shell over one views function, `views.UsageReportOf`, which is the only place a usage metric is defined, as `views.ReportOf` is for the Project tab. It reads `.tiller/usage/`, the current tree for node kinds and parentage, and the event stream through the process event cache for completion dates. It walks no Git history and never writes. The payload is ready-to-draw series on the same week axis the Project payload uses (`weeks` and `week_boundaries`). The tab fetches it only when selected. The target is the Project report's speed on CALCTP: well under a second cold.
+`GET /api/report/usage` serves the tab and is a thin shell over one views function, `views.UsageReportOf`, which is the only place a usage metric is defined, as `views.ReportOf` is for the Project tab. It reads `.tiller/usage/`, the current tree for node kinds and parentage, and the event stream through the process event cache for completion dates. It walks no Git history and never writes. The payload is ready-to-draw series on the same week axis the Project payload uses (`weeks` and `week_boundaries`). The tab fetches it only when selected. The target is the Project report's speed on the client platform build: well under a second cold.
 
 ## Performance
 
-JC's constraint: no major performance hit anywhere. The logs are large (CALCTP's are 1.6 GB across 900-odd files), the output is small (CALCTP's 91 top-level sessions since its ledger reset come to about 2,400 rows, roughly half a megabyte of YAML over seven weeks), and the work happens on commands people run constantly. These are requirements, each with a test or a measurement in the build.
+JC's constraint: no major performance hit anywhere. The logs are large (the client platform build's are 1.6 GB across 900-odd files), the output is small (the client platform build's 91 top-level sessions since its ledger reset come to about 2,400 rows, roughly half a megabyte of YAML over seven weeks), and the work happens on commands people run constantly. These are requirements, each with a test or a measurement in the build.
 
-**Capture is incremental.** A gitignored cursor in `.tiller/.cache/usage.yml` records, per log file, its size, modification time, and the project match already decided for it (Codex needs a first-line read of every rollout file to learn its working directory; that read happens once per file, ever). A log whose size and modification time are unchanged is not opened. A grown log is reparsed in full, which keeps the replay simple and correct; session logs are tens of megabytes at most. Budgets, measured on CALCTP-sized data: a capture with nothing new finishes in under 100 ms; a first full capture finishes in under 10 seconds.
+**Capture is incremental.** A gitignored cursor in `.tiller/.cache/usage.yml` records, per log file, its size, modification time, and the project match already decided for it (Codex needs a first-line read of every rollout file to learn its working directory; that read happens once per file, ever). A log whose size and modification time are unchanged is not opened. A grown log is reparsed in full, which keeps the replay simple and correct; session logs are tens of megabytes at most. Budgets, measured on client-platform-sized data: a capture with nothing new finishes in under 100 ms; a first full capture finishes in under 10 seconds.
 
 **Parsing streams.** Logs are read line by line with a bounded buffer and a cheap substring test before any JSON decode, so only assistant lines carrying usage or tool calls are decoded (the spike decoded about one line in ten this way). Oversized lines, such as a tool result of several megabytes, are skipped rather than buffered whole.
 
@@ -205,7 +205,7 @@ JC's constraint: no major performance hit anywhere. The logs are large (CALCTP's
 
 **Nothing else walks the usage files.** `.tiller/usage/` is excluded from keyword search and its corpus, the drift sweep, node inventory walks, and the event cache. Code identity already excludes all of `.tiller/`. A new walker over `.tiller/` must state whether it includes `usage/`, and a test pins the exclusions.
 
-**The Project tab is untouched.** `/api/report` reads no usage file and its payload does not change. The Agent use tab's own endpoint is fetched only when the tab is selected. `views.UsageReportOf` caches its parsed files keyed on the source generation token, as the console's other reads do. Budgets on CALCTP: under 500 ms cold and under 150 ms warm.
+**The Project tab is untouched.** `/api/report` reads no usage file and its payload does not change. The Agent use tab's own endpoint is fetched only when the tab is selected. `views.UsageReportOf` caches its parsed files keyed on the source generation token, as the console's other reads do. Budgets on the client platform build: under 500 ms cold and under 150 ms warm.
 
 ## What changes where
 
@@ -230,7 +230,7 @@ JC's constraint: no major performance hit anywhere. The logs are large (CALCTP's
 - **Raw tokens, cache reads split out.** No cost weighting and no dollars. (JC)
 - **Client-visible.** Agent use lives on the Report page, in its own tab after Project. (JC)
 - **A reader per harness, owned by Tiller, in Go.** No outside tool to install; ccusage and tokscale serve only as format references. (JC agreed to the shape.)
-- **Credit by replaying Tiller commands within each session,** with subagents inheriting their parent's state. Validated by the CALCTP spike.
+- **Credit by replaying Tiller commands within each session,** with subagents inheriting their parent's state. Validated by the client platform spike.
 - **One committed file per session, never shrunk.** (Builder's call, made in design.)
 - **Capture by `tiller usage` and best effort in `sync`.** (Builder's call, made in design.)
 - **Reading harness logs is a bounded exception to the self-contained principle.** Read-only, this project's sessions only. (JC)

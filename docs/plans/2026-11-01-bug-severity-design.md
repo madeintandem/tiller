@@ -82,7 +82,7 @@ The Fix board lists bugs, chores, and tweaks in each shelf's soft order. Nothing
     - Any active severity filter narrows the board to bugs. Unrated means unrated bugs, the "needs grading" view, and never matches chores or tweaks.
     - It combines with Noun as AND. `noun=chore&severity=blocker` is a legal empty board; no options are hidden or disabled.
 
-13. **Schema 12 to 13, with a no-op migration.** The YAML reader isn't strict, so an older binary would drop `severity` when rewriting a `bug.yml` (any claim, start, check, or submit). The schema fence makes older binaries refuse a schema-13 tree instead. The migration only bumps the stamp. Adoption on CALCTP, Tend, and Scratch is `tiller upgrade --project-only` and a commit. The decision 7 gen bump rides the same release.
+13. **Schema 12 to 13, with a no-op migration.** The YAML reader isn't strict, so an older binary would drop `severity` when rewriting a `bug.yml` (any claim, start, check, or submit). The schema fence makes older binaries refuse a schema-13 tree instead. The migration only bumps the stamp. Adoption on each managed project is `tiller upgrade --project-only` and a commit. The decision 7 gen bump rides the same release.
 
 14. **Read surfaces.** `--json` and text output of the read commands that show a bug's fields (`show` and status for a bug, the readout's bug lines, approve queue entries) include `severity` when set. Search results get a severity chip on bug hits, reusing the card's chip component. Report, Home desk rows, and readout ordering are out of scope.
 

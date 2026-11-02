@@ -100,7 +100,7 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 		}
 	}
 	if mode == "unowned_contract" || mode == "foreign_contract" {
-		// The reviewed contract either omits node: (as every MDown contract did,
+		// The reviewed contract either omits node: (as every contract in one brownfield trial did,
 		// issue #9) or names a feature other than the one whose directory holds it.
 		feature := featureByKey(load(t, root), "pay/checkout")
 		replacement := ""

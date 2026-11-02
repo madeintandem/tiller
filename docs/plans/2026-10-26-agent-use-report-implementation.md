@@ -19,7 +19,7 @@
 - Usage file path: `.tiller/usage/<harness>/<session-id>.yml`; harness ids `claude-code`, `codex`, `pi`.
 - Capture never deletes a usage file and never rewrites one with fewer calls than it records.
 - Capture skips sessions whose last call is under 30 minutes old, writes only on `git.integration_branch` (anywhere when none is configured), and ignores sessions whose first call precedes the project's earliest event.
-- Budgets: no-change capture under 100 ms; first full capture of CALCTP-sized logs under 10 s; sync's capture budget 2 s; `/api/report/usage` under 500 ms cold, 150 ms warm on CALCTP.
+- Budgets: no-change capture under 100 ms; first full capture of client-platform-sized logs under 10 s; sync's capture budget 2 s; `/api/report/usage` under 500 ms cold, 150 ms warm on the client platform build.
 - `/api/report` and its payload do not change.
 - Stage keys and page labels, in display order: `spec_writing` Spec writing, `planning` Planning, `implementation` Implementation, `checks` Checks, `acceptance_evals` Acceptance evals, `code_review` Code review, `publishing` Publishing, `closeout` Closeout, `other` Other.
 - Page copy: tabs "Project" and "Agent use" (URL `?tab=agent-use`, rail label "Report view"); empty tab "No agent usage recorded yet"; legend and tooltip label "Partly measured"; note "Measured: Claude Code since Sep 30 · Pi since Sep 1"; harness labels Claude Code, Codex, Pi. No node ids, keys, status names, or command names on the page.
@@ -660,7 +660,7 @@ git commit -s -m "Console: Agent use feature and work-item charts"
 
 ---
 
-### Task 14: Specs, docs, and the performance check on CALCTP
+### Task 14: Specs, docs, and the performance check on the client platform build
 
 **Files:**
 - Modify: `docs/spec/artifact-schema.md` (directory layout, root manifest, a new "Agent usage: `usage/`" section, settled decisions), `docs/spec/cli-surface.md` (`tiller usage`, sync, `init --capture-usage`), `docs/tiller-commands.md`, `docs/spec/ui-surface.md` (Report: tabs and an "Agent use" subsection; page-wide rules cover both tabs), `docs/spec/distribution.md` (the second self-contained exception), `docs/roadmap.md` (built; OpenCode and Gemini CLI readers not built)
@@ -673,9 +673,9 @@ git commit -s -m "Console: Agent use feature and work-item charts"
 Run: `grep -rn "$(printf '\342\200\224')" docs/spec docs/tiller-commands.md docs/roadmap.md | wc -l` (expect the same count as before this task) and `cd site && npm run build`.
 Expected: no new em dashes; the site builds.
 
-- [ ] **Step 3: Measure the budgets on CALCTP's real logs, read-only**
+- [ ] **Step 3: Measure the budgets on the client platform build's real logs, read-only**
 
-Build the binary, then in a throwaway clone of `~/dev/calctp-platform` with `usage: { capture: true }` (never in the real checkout; nothing from this run is committed or pushed anywhere): time `tiller usage` cold (expect under 10 s), then again (expect under 100 ms); time `tiller sync` with nothing new (expect no more than its pre-change time plus 100 ms); run `tiller serve` and time `/api/report/usage` cold and warm with `curl -w '%{time_total}'` (expect under 0.5 s and 0.15 s) and `/api/report` (expect unchanged from before). Also check that the share of tokens tied to a work item for 2026-09-05 to 2026-10-22 lands near the spike's 74 percent.
+Build the binary, then in a throwaway clone of the client platform build with `usage: { capture: true }` (never in the real checkout; nothing from this run is committed or pushed anywhere): time `tiller usage` cold (expect under 10 s), then again (expect under 100 ms); time `tiller sync` with nothing new (expect no more than its pre-change time plus 100 ms); run `tiller serve` and time `/api/report/usage` cold and warm with `curl -w '%{time_total}'` (expect under 0.5 s and 0.15 s) and `/api/report` (expect unchanged from before). Also check that the share of tokens tied to a work item for 2026-09-05 to 2026-10-22 lands near the spike's 74 percent.
 Expected: every budget met. A missed budget is fixed before this task closes, not recorded as a follow-up.
 
 - [ ] **Step 4: Run the full gates**
