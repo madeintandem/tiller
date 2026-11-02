@@ -65,7 +65,7 @@ REAL_GIT=$(command -v git)
 mkdir -p "$TMP/git-fail-bin"
 cat >"$TMP/git-fail-bin/git" <<'EOF'
 #!/usr/bin/env bash
-if [[ "${1-}" == "commit" ]] && [[ "$*" == *"shelves: two bugs, two chores"* ]]; then
+if [[ "${1-}" == "commit" ]] && [[ "$*" == *"shelves: three bugs, two chores"* ]]; then
   exit 24
 fi
 exec "$REAL_GIT" "$@"
