@@ -11,7 +11,7 @@ Reinstall dependencies and rebuild the console/site after dependency changes.
 Go runtime dependencies
 
 ================================================================
-Go standard library go1.27.2
+Go standard library go1.27.3
 ================================================================
 
 Copyright 2009 The Go Authors.
