@@ -145,7 +145,7 @@ SNAPSHOT_DIR=$(mktemp -d)
 cp .goreleaser.yaml "$SNAPSHOT_DIR/config.yaml"
 printf '\ndist: "%s/dist"\nsnapshot:\n  version_template: "%s-prelaunch"\n' \
   "$SNAPSHOT_DIR" "$VERSION" >> "$SNAPSHOT_DIR/config.yaml"
-HOMEBREW_TAP_GITHUB_TOKEN=dummy go run github.com/goreleaser/goreleaser/v2@v2.18.2 \
+HOMEBREW_TAP_GITHUB_TOKEN=dummy go run github.com/goreleaser/goreleaser/v2@v2.19.0 \
   release --snapshot --skip=publish,announce,validate,before \
   --config "$SNAPSHOT_DIR/config.yaml"
 printf 'Inspect archives, checksums, and rendered cask in %s/dist\n' "$SNAPSHOT_DIR"

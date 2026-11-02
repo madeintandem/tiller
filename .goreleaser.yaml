@@ -102,12 +102,15 @@ homebrew_casks:
       email: 41898282+github-actions[bot]@users.noreply.github.com
     commit_msg_template: "tiller {{ .Tag }}"
     homepage: https://github.com/madeintandem/tiller
-    description: "An opinionated SDLC workflow tool for humans and AI coding agents working together"
+    # brew style: under 80 characters and no leading article.
+    description: "Opinionated SDLC workflow tool for humans and AI coding agents"
     binaries:
       - tiller
+    # postflight_steps, not the deprecated postflight block. Homebrew older
+    # than 5.1.14 cannot load a cask that uses it.
     hooks:
       post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/tiller"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/tiller"]
           end
