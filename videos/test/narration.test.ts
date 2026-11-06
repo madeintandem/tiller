@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../src/config.js";
-import { narrate } from "../src/narration/elevenlabs.js";
+import { readdirSync, readFileSync, rmSync, truncateSync } from "node:fs";
+import { align, ffEnv, narrate } from "../src/narration/elevenlabs.js";
 import { cacheKey } from "../src/narration/cache.js";
 import { charsToWords } from "../src/narration/words.js";
 
@@ -88,7 +89,7 @@ describe("narrate (mocked fetch)", () => {
 describe("fake mode", () => {
   const probe = (p: string) =>
     parseFloat(
-      execFileSync("/opt/homebrew/bin/ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", p]).toString(),
+      execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", p], { env: ffEnv() }).toString(),
     );
 
   it("makes silent audio at 150 wpm with ordered words and no fetch", async () => {
@@ -117,6 +118,84 @@ describe("fake mode", () => {
     process.env.NARRATION_FAKE = "1";
     const fake = await narrate("same text", cfg, dir);
     expect(fake.audioPath).not.toBe(real.audioPath);
+  });
+});
+
+describe("cache atomicity", () => {
+  it("treats a truncated meta file as a miss and rewrites it", async () => {
+    const dir = tmp();
+    const f = vi.fn(async (_u: any, init: any) => okResponse(JSON.parse(init.body).text));
+    vi.stubGlobal("fetch", f);
+    const a = await narrate("hello there", cfg, dir);
+    const meta = a.audioPath.replace(/\.mp3$/, ".json");
+    truncateSync(meta, 5);
+    const b = await narrate("hello there", cfg, dir);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(b.words).toEqual(a.words);
+    expect(() => JSON.parse(readFileSync(meta, "utf8"))).not.toThrow();
+    expect(readdirSync(dir).filter((n) => n.includes(".tmp-"))).toEqual([]);
+  });
+
+  it("treats a missing mp3 as a miss", async () => {
+    const dir = tmp();
+    const f = vi.fn(async (_u: any, init: any) => okResponse(JSON.parse(init.body).text));
+    vi.stubGlobal("fetch", f);
+    const a = await narrate("hello there", cfg, dir);
+    rmSync(a.audioPath);
+    await narrate("hello there", cfg, dir);
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("align", () => {
+  const audio = () => {
+    const p = join(tmp(), "intro.mp3");
+    execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono", "-t", "4", "-c:a", "libmp3lame", p], { env: ffEnv() });
+    return p;
+  };
+
+  it("fake mode spreads transcript words over the probed duration, caches, no fetch", async () => {
+    process.env.NARRATION_FAKE = "1";
+    const f = vi.fn();
+    vi.stubGlobal("fetch", f);
+    const p = audio();
+    const dir = tmp();
+    const w = await align(p, "one two three four", "k", dir);
+    expect(w.map((x) => x.text)).toEqual(["one", "two", "three", "four"]);
+    expect(w[3].end).toBeGreaterThan(3.9);
+    expect(w[3].end).toBeLessThan(4.1);
+    for (let i = 1; i < w.length; i++) expect(w[i].start).toBeGreaterThan(w[i - 1].start);
+    expect(f).not.toHaveBeenCalled();
+    const before = readdirSync(dir);
+    expect(await align(p, "one two three four", "k", dir)).toEqual(w);
+    expect(readdirSync(dir)).toEqual(before);
+  });
+
+  it("real mode posts multipart audio and text, maps words, and caches", async () => {
+    const p = audio();
+    const f = vi.fn(async (_u: any, _init: any) =>
+      new Response(
+        JSON.stringify({ words: [{ text: "hi", start: 0.1, end: 0.4, loss: 0.2 }, { text: "there", start: 0.5, end: 1, loss: 0.1 }], characters: [], loss: 0 }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal("fetch", f);
+    const dir = tmp();
+    const w = await align(p, "hi there", "KEY", dir);
+    expect(w).toEqual([{ text: "hi", start: 0.1, end: 0.4 }, { text: "there", start: 0.5, end: 1 }]);
+    const [url, init] = f.mock.calls[0];
+    expect(String(url)).toBe("https://api.elevenlabs.io/v1/forced-alignment");
+    expect(init.headers["xi-api-key"]).toBe("KEY");
+    const form = init.body as FormData;
+    expect(form.get("text")).toBe("hi there");
+    expect((form.get("file") as Blob).size).toBe(readFileSync(p).length);
+    await align(p, "hi there", "KEY", dir);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws status and body on a non-200", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 422 })));
+    await expect(align(audio(), "x", "k", tmp())).rejects.toThrow(/422.*nope/s);
   });
 });
 

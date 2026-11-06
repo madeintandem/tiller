@@ -28,7 +28,7 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 
 - `npm run term-still -- <out.png> [stage] [frame]`: render one frame of the `TermSmoke` composition fed by a committed snapshot, to eyeball the terminal.
 
-- `npm run voice-test`: narrate a fixed ~60-second paragraph to `.local/voice-test.mp3` with the configured voice. Needs `.local/config.yaml` (or `NARRATION_FAKE=1` plus a config file, which yields silent audio).
+- `npm run voice-test`: narrate `voice-test.txt` (two paragraphs from the root README, about 60 seconds; JC can replace the file with his own text) to `.local/voice-test.mp3` with the configured voice. Needs `.local/config.yaml` (or `NARRATION_FAKE=1` plus a config file, which yields silent audio).
 
 More scripts are added here as the pipeline tasks land.
 

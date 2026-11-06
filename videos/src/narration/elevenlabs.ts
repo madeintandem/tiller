@@ -11,7 +11,7 @@ const API = "https://api.elevenlabs.io";
 const WPM = 150;
 
 const isFake = () => process.env.NARRATION_FAKE === "1";
-const ffEnv = () => ({ ...process.env, PATH: `${process.env.PATH ?? ""}:/opt/homebrew/bin:/usr/local/bin` });
+export const ffEnv =() => ({ ...process.env, PATH: `${process.env.PATH ?? ""}:/opt/homebrew/bin:/usr/local/bin` });
 
 async function failIfBad(res: Response, what: string): Promise<void> {
   if (res.status !== 200) throw new Error(`ElevenLabs ${what} failed: ${res.status} ${await res.text()}`);
