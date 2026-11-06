@@ -11,7 +11,8 @@ const API = "https://api.elevenlabs.io";
 const WPM = 150;
 
 const isFake = () => process.env.NARRATION_FAKE === "1";
-export const ffEnv =() => ({ ...process.env, PATH: `${process.env.PATH ?? ""}:/opt/homebrew/bin:/usr/local/bin` });
+import { ffEnv } from "../media/ffmpeg.js";
+export { ffEnv };
 
 async function failIfBad(res: Response, what: string): Promise<void> {
   if (res.status !== 200) throw new Error(`ElevenLabs ${what} failed: ${res.status} ${await res.text()}`);
