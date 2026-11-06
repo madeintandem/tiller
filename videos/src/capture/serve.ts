@@ -17,9 +17,9 @@ function freePort(): Promise<number> {
   });
 }
 
-async function waitFor200(url: string, ms: number): Promise<void> {
+async function waitFor200(url: string, ms: number, abort: { stopped: boolean }): Promise<void> {
   const end = Date.now() + ms;
-  while (Date.now() < end) {
+  while (Date.now() < end && !abort.stopped) {
     try {
       if ((await fetch(url)).status === 200) return;
     } catch {
@@ -27,14 +27,17 @@ async function waitFor200(url: string, ms: number): Promise<void> {
     }
     await new Promise((r) => setTimeout(r, 150));
   }
+  if (abort.stopped) return;
   throw new Error(`tiller serve did not answer 200 at ${url} within ${ms} ms`);
 }
 
 // Extracts a saved mark to a temp dir and serves it with the pinned binary.
-export async function serveMark(mark: string): Promise<{ url: string; stop(): Promise<void> }> {
+export async function serveMark(mark: string): Promise<{ url: string; dir: string; stop(): Promise<void> }> {
   const dir = mkdtempSync(join(tmpdir(), `tiller-mark-${mark}-`));
   let child: ReturnType<typeof spawn> | undefined;
+  const abort = { stopped: false };
   const stop = async () => {
+    abort.stopped = true;
     const c = child;
     if (c && c.exitCode === null && c.signalCode === null) {
       const exited = new Promise<void>((r) => c.once("exit", () => r()));
@@ -56,13 +59,13 @@ export async function serveMark(mark: string): Promise<{ url: string; stop(): Pr
     });
     child = c;
     await Promise.race([
-      waitFor200(`${url}/`, 20000),
+      waitFor200(`${url}/`, 20000, abort),
       new Promise<never>((_, rej) => {
         c.once("exit", (code) => rej(new Error(`tiller serve exited early (code ${code})`)));
         c.once("error", rej);
       }),
     ]);
-    return { url, stop };
+    return { url, dir, stop };
   } catch (e) {
     await stop();
     throw e;
