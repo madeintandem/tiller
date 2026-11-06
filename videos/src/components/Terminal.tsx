@@ -45,6 +45,8 @@ const lineStyle: React.CSSProperties = {
   minHeight: `${LINE}em`,
   flex: "none",
 };
+// A clipped column whose newest lines sit at the bottom; overflow leaves off the top.
+const scroller: React.CSSProperties = { minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", overflow: "hidden" };
 const who: React.CSSProperties = { display: "inline-block", width: GUTTER, textIndent: 0, fontWeight: 700 };
 
 const Line: React.FC<{ line: TermLine; caret: boolean }> = ({ line, caret }) => {
@@ -78,6 +80,9 @@ export const Terminal: React.FC<{ steps: Step[]; startFrame: number; endFrame: n
   const lines = termState(steps, startFrame, endFrame, frame, fps);
   const agentLane = steps.some((s) => s.actor === "agent");
   const last = lines.length - 1;
+  const split = lines.findIndex((l) => l.current);
+  const history = split < 0 ? lines : lines.slice(0, split);
+  const [head, ...tail] = split < 0 ? [] : lines.slice(split);
   return (
     <div
       style={{
@@ -106,11 +111,25 @@ export const Terminal: React.FC<{ steps: Step[]; startFrame: number; endFrame: n
           Claude Code
         </div>
       )}
-      {/* Pinned to the bottom so the newest line stays visible as older ones scroll off the top. */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "16px 32px 22px", overflow: "hidden" }}>
-        {lines.map((l, i) => (
-          <Line key={i} line={l} caret={i === last && l.kind === "cmd" && l.typed < l.text.length} />
-        ))}
+      {/* Earlier lines fill whatever room the current step leaves and scroll off the top. The
+          current step's head line (its command) stays in view while its output, pinned to the
+          bottom, scrolls beneath it. */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "16px 32px 22px", overflow: "hidden" }}>
+        <div style={{ ...scroller, flex: "1 1 0" }}>
+          {history.map((l, i) => (
+            <Line key={i} line={l} caret={false} />
+          ))}
+        </div>
+        {head && (
+          <div style={{ flex: "0 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <Line line={head} caret={head === lines[last] && head.kind === "cmd" && head.typed < head.text.length} />
+            <div style={{ ...scroller, flex: "0 1 auto" }}>
+              {tail.map((l, i) => (
+                <Line key={i} line={l} caret={false} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
