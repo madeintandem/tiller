@@ -6,10 +6,10 @@ import { LowerThird } from "./LowerThird";
 import { Outro } from "./Outro";
 import { Terminal } from "./Terminal";
 import { TitleCard } from "./TitleCard";
+import { chapterFrames } from "./timing";
 
 const INTRO_NAME = "JC Grubbs, Made In Tandem";
 const INTRO_NAME_SECONDS = 4;
-const CHAPTER_SECONDS = 3;
 
 // A console capture plays from the start of its slot; shorter than the slot, its last
 // frame holds; longer, the slot's end cuts it.
@@ -78,7 +78,7 @@ export const Video: React.FC<{ timeline: Timeline }> = ({ timeline }) => {
               <Html5Audio src={staticFile(seg.audio)} />
             </Sequence>
             {seg.chapter && (
-              <Sequence from={from} durationInFrames={f(CHAPTER_SECONDS)} name={`${seg.beatId} chapter`}>
+              <Sequence from={from} durationInFrames={chapterFrames(from, slotEnd, fps)} name={`${seg.beatId} chapter`}>
                 <LowerThird text={seg.chapter} />
               </Sequence>
             )}

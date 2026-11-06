@@ -1,13 +1,15 @@
 import React from "react";
-import { interpolate, useCurrentFrame } from "remotion";
+import { useCurrentFrame, useVideoConfig } from "remotion";
 import "../fonts";
 import { colors, fonts, wordmark } from "../theme";
+import { lowerThirdOpacity } from "./timing";
 
-const SLIDE_FRAMES = 9; // 300 ms at 30 fps
-
+// Slides up and fades in, then fades out before its sequence ends.
 export const LowerThird: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
-  const t = interpolate(frame, [0, SLIDE_FRAMES], [0, 1], { extrapolateRight: "clamp" });
+  const { durationInFrames } = useVideoConfig();
+  const t = lowerThirdOpacity(frame, durationInFrames);
+  const rise = Math.min(1, frame / 9);
   return (
     <div
       style={{
@@ -15,7 +17,7 @@ export const LowerThird: React.FC<{ text: string }> = ({ text }) => {
         left: wordmark.left,
         bottom: wordmark.clearTop,
         opacity: t,
-        transform: `translateY(${(1 - t) * 16}px)`,
+        transform: `translateY(${(1 - rise) * 16}px)`,
         background: colors.darkIndigo,
         color: colors.websiteWhite,
         fontFamily: fonts.body,

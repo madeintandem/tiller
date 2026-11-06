@@ -21,7 +21,8 @@ const SoftEdge: React.FC = () => (
   </svg>
 );
 
-export const Frame: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+// `wordmark={false}` drops the corner wordmark, for a scene that shows the full logo itself.
+export const Frame: React.FC<{ children?: React.ReactNode; wordmark?: boolean }> = ({ children, wordmark: showWordmark = true }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const opacity = interpolate(
@@ -34,10 +35,12 @@ export const Frame: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
     <div style={{ position: "absolute", inset: 0, background: colors.parchment, overflow: "hidden" }}>
       <SoftEdge />
       <div style={{ position: "absolute", inset: 0, padding: `96px 200px ${wordmark.clearTop}px 120px`, opacity }}>{children}</div>
-      <Img
-        src={staticFile("brand/mit-logo-dark-indigo.svg")}
-        style={{ position: "absolute", left: wordmark.left, bottom: wordmark.bottom, width: wordmark.width }}
-      />
+      {showWordmark && (
+        <Img
+          src={staticFile("brand/mit-logo-dark-indigo.svg")}
+          style={{ position: "absolute", left: wordmark.left, bottom: wordmark.bottom, width: wordmark.width }}
+        />
+      )}
     </div>
   );
 };
