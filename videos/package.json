@@ -9,7 +9,8 @@
     "preview": "tsx src/cli/preview.ts",
     "check": "tsx src/cli/check.ts",
     "term-still": "tsx src/cli/term-still.ts",
-    "voice-test": "tsx src/cli/voice-test.ts"
+    "voice-test": "tsx src/cli/voice-test.ts",
+    "capture": "tsx src/cli/capture.ts"
   },
   "devDependencies": {
     "@remotion/bundler": "^4.0.539",

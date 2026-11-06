@@ -59,3 +59,9 @@ Fake mode: with `NARRATION_FAKE=1`, `narrate` and `align` make no network reques
 ## The fixture
 
 `bash fixture/run.sh` rebuilds the Acme Orders repo from scratch with the `tiller` on `PATH` (or `TILLER=<binary>`), runs the three stages, and rewrites `snapshots/` and `fixture/marks/`. Commit both. `--out DIR` writes them under `DIR` instead; `--check` writes nothing and compares the fresh steps against the committed snapshots. `bash fixture/fixture_test.sh` builds Tiller from this repo and checks the whole run.
+
+## Console captures
+
+`npm run capture -- <script-id>` loads `scripts/<id>.yaml` and records every capture it names into `.local/build/<id>/captures/<capture-id>.webm`. Each capture extracts its fixture mark to a temp dir, runs `tiller serve` there on a free port (`$TILLER` overrides the binary), and records the real console in Chromium at 1920x1080, scale 1, light theme. The page is held until `seconds` have passed since it loaded. The server and the temp dir are cleaned up even when a capture throws.
+
+One-time setup: `npx playwright install chromium` (run from `videos/`).
