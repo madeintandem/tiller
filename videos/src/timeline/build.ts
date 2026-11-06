@@ -45,7 +45,9 @@ export const mss = (seconds: number, round: (n: number) => number = Math.floor):
 
 export class TooLongError extends Error {
   constructor(public readonly duration: number) {
-    super(`video runs ${mss(duration, Math.ceil)}, over the ${mss(MAX_SECONDS)} ceiling`);
+    // Round to the millisecond first so float noise (481.0000001) never reads as a second more.
+    const ceilMs = (s: number) => Math.ceil(Math.round(s * 1000) / 1000);
+    super(`video runs ${mss(duration, ceilMs)}, over the ${mss(MAX_SECONDS)} ceiling`);
     this.name = "TooLongError";
   }
 }
@@ -76,7 +78,10 @@ export function buildTimeline(
     if (!n) throw new Error(`beat ${beat.id}: no narration`);
     if (i > 0) at += BEAT_GAP;
     const seg: Segment = { beatId: beat.id, start: at, end: at + n.duration, audio: n.audio, words: n.words, show: beat.show };
-    if (beat.chapter) seg.chapter = beat.chapter;
+    if (beat.chapter) {
+      if (beat.show.kind !== "card") throw new Error(`beat ${beat.id}: chapter is only allowed on a card beat`);
+      seg.chapter = beat.chapter;
+    }
     if (beat.show.kind === "console") {
       const id = beat.show.capture;
       const path = captures[id];

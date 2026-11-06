@@ -6,7 +6,8 @@ export const MIN_CHAPTER_SECONDS = 10;
 
 // YouTube chapter lines for the description. YouTube silently drops the whole list
 // unless the first is 0:00, there are at least three, and each runs 10 s or more,
-// so those rules are enforced here on the whole seconds YouTube will read.
+// so those rules are enforced here on the whole seconds YouTube will read. A first
+// chapter starting under 10 s in absorbs the short intro and moves to 0:00.
 export function chapters(timeline: Timeline, script: Script): string[] {
   const marks: { at: number; name: string }[] = [{ at: 0, name: "Intro" }];
   for (const beat of script.beats) {
@@ -14,6 +15,10 @@ export function chapters(timeline: Timeline, script: Script): string[] {
     const seg = timeline.segments.find((s) => s.beatId === beat.id);
     if (!seg) throw new Error(`beat ${beat.id}: not on the timeline`);
     marks.push({ at: Math.floor(seg.start), name: beat.chapter });
+  }
+  if (marks.length > 1 && marks[1].at < MIN_CHAPTER_SECONDS) {
+    marks.shift();
+    marks[0].at = 0;
   }
   if (marks.length < MIN_CHAPTERS) {
     throw new Error(`YouTube needs at least ${MIN_CHAPTERS} chapters, script ${script.id} has ${marks.length}`);

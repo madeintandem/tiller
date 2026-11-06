@@ -15,8 +15,13 @@ const beats: Beat[] = [
     show: { kind: "card", kicker: "Tiller how-to", heading: "Plan in the repo" },
   },
   {
-    id: "init",
+    id: "setup",
     chapter: "Set up",
+    say: "Setting up takes one command and a few answers about who you are.",
+    show: { kind: "card", kicker: "Step one", heading: "Set up" },
+  },
+  {
+    id: "init",
     say: "First we set the project up. One command writes the ledger and tells you what to do next, step by step, so nothing is guessed.",
     show: { kind: "term", stage: "s1", from: "s1-init", to: "s1-add" },
   },
@@ -26,8 +31,13 @@ const beats: Beat[] = [
     show: { kind: "console", capture: "board" },
   },
   {
-    id: "bye",
+    id: "wrap",
     chapter: "Wrap up",
+    say: "So that is the loop, from an empty repo to a plan you can see.",
+    show: { kind: "card", kicker: "Recap", heading: "Wrap up" },
+  },
+  {
+    id: "bye",
     say: "That is the whole loop. Next time we write the first feature together and watch the agent pick it up.",
     show: { kind: "outro" },
   },
@@ -61,9 +71,11 @@ function narrationFor(bs: Beat[], secondsEach?: number): Record<string, Narratio
   return out;
 }
 
-const intro = { path: "intro.mp4", duration: 6, words: spreadWords(INTRO, 6) };
-const build = (s = script(), n = narrationFor(s.beats)) =>
-  buildTimeline(s, intro, n, { board: "captures/board.webm" }, { s1: steps });
+const introOf = (duration: number) => ({ path: "intro.mp4", duration, words: spreadWords(INTRO, duration) });
+const intro = introOf(6);
+const build = (s = script(), n = narrationFor(s.beats), i = intro) =>
+  buildTimeline(s, i, n, { board: "captures/board.webm" }, { s1: steps });
+const withChapter = (id: string, chapter: string) => beats.map((b) => (b.id === id ? { ...b, chapter } : b));
 
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
@@ -114,9 +126,14 @@ describe("buildTimeline", () => {
     expect(() => build(script(bad))).toThrow(/init/);
   });
 
+  it("guards against a chapter on a non-card beat", () => {
+    expect(() => build(script(withChapter("init", "Terminal")))).toThrow(/init/);
+  });
+
   it("throws TooLongError with m:ss past 8:00", () => {
-    // intro 6 + gap 0.4 + 4 beats + 3 gaps of 0.35 + outro 6 = 481 when the beats total 467.55.
-    const each = (481 - 6 - 0.4 - 0.35 * 3 - 6) / 4;
+    // intro 6 + gap 0.4 + the beats + the gaps of 0.35 between them + outro 6 = 481.
+    const n = beats.length;
+    const each = (481 - 6 - 0.4 - 0.35 * (n - 1) - 6) / n;
     const s = script();
     let err: unknown;
     try {
@@ -167,21 +184,37 @@ describe("chapters", () => {
     expect(list[0]).toBe("0:00 Intro");
     expect(list.length).toBeGreaterThanOrEqual(3);
     expect(list.map((l) => l.replace(/^\d+:\d\d /, ""))).toEqual(["Intro", "Set up", "Wrap up"]);
-    const setUp = tl.segments.find((s) => s.beatId === "init")!;
+    const setUp = tl.segments.find((s) => s.beatId === "setup")!;
     const m = Math.floor(setUp.start / 60);
     const s = Math.floor(setUp.start % 60);
     expect(list[1]).toBe(`${m}:${String(s).padStart(2, "0")} Set up`);
   });
 
   it("throws when two chapters are under 10 seconds apart", () => {
-    // Every beat is 4 s, so chapters land under 10 s apart.
-    const s = script();
-    const tl = build(s, narrationFor(s.beats, 4));
-    expect(() => chapters(tl, s)).toThrow(/10/);
+    // A 12 s intro keeps Intro; with 3 s beats "Why Tiller" (0:12) and "Set up" (0:15) collide.
+    const s = script(withChapter("open", "Why Tiller"));
+    const tl = build(s, narrationFor(s.beats, 3), introOf(12));
+    expect(() => chapters(tl, s)).toThrow(/"Why Tiller" \(0:12\) and "Set up" \(0:15\)/);
   });
 
-  it("throws when a chaptered first beat starts under 10 seconds after a short intro", () => {
-    const s = script(beats.map((b) => (b.id === "open" ? { ...b, chapter: "Why Tiller" } : b)));
-    expect(() => chapters(build(s), s)).toThrow(/Why Tiller/);
+  it("folds a short intro into a first chapter that starts under 10 s in", () => {
+    const s = script(withChapter("open", "Why Tiller"));
+    const list = chapters(build(s, narrationFor(s.beats), introOf(4)), s);
+    expect(list[0]).toBe("0:00 Why Tiller");
+    expect(list.map((l) => l.replace(/^\d+:\d\d /, ""))).toEqual(["Why Tiller", "Set up", "Wrap up"]);
+  });
+
+  it("keeps 0:00 Intro when the first chapter starts 10 s or more in", () => {
+    const s = script(withChapter("open", "Why Tiller").map((b) => (b.id === "setup" ? { ...b, chapter: undefined } : b)));
+    const list = chapters(build(s, narrationFor(s.beats), introOf(12)), s);
+    expect(list[0]).toBe("0:00 Intro");
+    expect(list[1]).toBe("0:12 Why Tiller");
+    expect(list.length).toBe(3);
+  });
+
+  it("still needs three chapters after folding the intro", () => {
+    const s = script(beats.map((b) => (b.id === "open" ? { ...b, chapter: "Why Tiller" } : { ...b, chapter: undefined })));
+    const list = () => chapters(build(s, narrationFor(s.beats), introOf(4)), s);
+    expect(list).toThrow(/at least 3/);
   });
 });

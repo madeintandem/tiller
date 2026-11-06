@@ -94,7 +94,11 @@ function validateBeat(raw: unknown, index: number): Beat {
     if (re.test(say)) throw new ScriptError(`say must not contain ${what} (matched ${re})`, id);
   }
   const beat: Beat = { id, say, show: validateShow(raw.show, id) };
-  if (raw.chapter !== undefined) beat.chapter = str(raw, "chapter", "beat", id);
+  if (raw.chapter !== undefined) {
+    beat.chapter = str(raw, "chapter", "beat", id);
+    // The chapter lower third would cover a terminal's newest line or a capture; cards only.
+    if (beat.show.kind !== "card") throw new ScriptError("chapter is only allowed on a card beat", id);
+  }
   return beat;
 }
 

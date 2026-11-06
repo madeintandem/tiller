@@ -30,7 +30,6 @@ beats:
       from: snapshots/start.txt
       to: snapshots/after.txt
   - id: b3
-    chapter: Wrapping up
     say: That is all for this one.
     show:
       kind: outro

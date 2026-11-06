@@ -52,6 +52,12 @@ describe("loadScript", () => {
     expect(() => loadScript(p)).toThrow(/b1/);
   });
 
+  it("rejects a chapter on a beat that is not a card", () => {
+    const p = variant((s) => s.replace("  - id: b2\n", "  - id: b2\n    chapter: Terminal\n"));
+    expect(() => loadScript(p)).toThrow(ScriptError);
+    expect(() => loadScript(p)).toThrow(/b2/);
+  });
+
   it("rejects a term show missing from/to", () => {
     const p = variant((s) => s.replace("      from: snapshots/start.txt\n", ""));
     expect(() => loadScript(p)).toThrow(ScriptError);
