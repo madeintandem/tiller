@@ -1,0 +1,36 @@
+id: v-test
+title: A test video
+description: A fixture for the script tests.
+tags: [tiller, test]
+intro:
+  transcript: Hi, I'm JC. This is a short test video.
+captures:
+  - id: board
+    mark: board-start
+    path: /build
+    seconds: 4
+    actions:
+      - click: "text=Build"
+      - waitFor: ".board"
+      - scroll: 200
+beats:
+  - id: b1
+    chapter: Getting started
+    say: Welcome to the test video about planning work.
+    show:
+      kind: card
+      kicker: Test
+      heading: Plan first
+      body: Write down what you want.
+  - id: b2
+    say: The agent reads the board and picks the next piece of work.
+    show:
+      kind: term
+      stage: start
+      from: snapshots/start.txt
+      to: snapshots/after.txt
+  - id: b3
+    chapter: Wrapping up
+    say: That is all for this one.
+    show:
+      kind: outro

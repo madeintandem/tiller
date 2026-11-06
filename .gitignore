@@ -67,3 +67,8 @@ site/src/content/docs/cli.md
 
 # Personal agent instructions, never committed
 CLAUDE.local.md
+
+# Videos pipeline (local assets, deps, renders)
+/videos/.local/
+/videos/node_modules/
+/videos/out/
