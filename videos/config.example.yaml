@@ -1,0 +1,17 @@
+# Copy to videos/.local/config.yaml (gitignored) and fill in. Never commit real values.
+elevenlabs:
+  # API key from the ElevenLabs dashboard. Required (unless NARRATION_FAKE=1).
+  apiKey: "sk_your_key_here"
+  # ID of JC's voice clone. Required (unless NARRATION_FAKE=1).
+  voiceId: "your_voice_id"
+  # TTS model. Optional; defaults to eleven_v4 (see README).
+  modelId: "eleven_v4"
+  # Pronunciation dictionary to apply. Optional.
+  dictionaryId: "your_dictionary_id"
+  # Pinned dictionary version. Optional; omit for the latest.
+  dictionaryVersion: "your_dictionary_version_id"
+youtube:
+  # "private" until the YouTube API audit passes, then "unlisted". Never "public". Default private.
+  privacy: private
+  # YouTube video category ID. Default "28" (Science & Technology).
+  categoryId: "28"

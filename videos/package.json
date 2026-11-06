@@ -8,7 +8,8 @@
     "approve": "tsx src/cli/approve.ts",
     "preview": "tsx src/cli/preview.ts",
     "check": "tsx src/cli/check.ts",
-    "term-still": "tsx src/cli/term-still.ts"
+    "term-still": "tsx src/cli/term-still.ts",
+    "voice-test": "tsx src/cli/voice-test.ts"
   },
   "devDependencies": {
     "@remotion/bundler": "^4.0.539",

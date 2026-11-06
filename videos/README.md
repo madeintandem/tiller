@@ -28,6 +28,8 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 
 - `npm run term-still -- <out.png> [stage] [frame]`: render one frame of the `TermSmoke` composition fed by a committed snapshot, to eyeball the terminal.
 
+- `npm run voice-test`: narrate a fixed ~60-second paragraph to `.local/voice-test.mp3` with the configured voice. Needs `.local/config.yaml` (or `NARRATION_FAKE=1` plus a config file, which yields silent audio).
+
 More scripts are added here as the pipeline tasks land.
 
 ## Layout
@@ -43,6 +45,16 @@ More scripts are added here as the pipeline tasks land.
 - `fixture/`: the brownfield Acme Orders demo repo the videos are recorded from. `app/` is the existing app, `content/` the authored files the agent and the human write, `stage1.sh` to `stage3.sh` one script per video, `lib.sh` their helpers (`run`, `say`, `put`, `mark`).
 - `snapshots/s1.jsonl` to `s3.jsonl`: every step each stage ran, one JSON object per line, with each Tiller command's real output.
 - `fixture/marks/*.tar.gz`: the whole fixture checkout, `.git` included, saved at named moments (`s1-end`, `s2-end`, `s3-review`, `s3-end`, and the steps between).
+
+## Narration
+
+Config lives in `videos/.local/config.yaml` (gitignored). `config.example.yaml` shows every key with a comment. Narration is cached under `.local/narration-cache/` keyed by voice ID, model ID, dictionary ID and version, and the text, so editing one beat's words or switching voice regenerates only what changed.
+
+- Text to speech: `POST /v1/text-to-speech/{voice_id}/with-timestamps?output_format=mp3_44100_128`. The response carries `audio_base64` and `alignment` with `characters`, `character_start_times_seconds`, `character_end_times_seconds`, which `charsToWords` groups into words. Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps
+- Forced alignment (intro clip): `POST /v1/forced-alignment`, multipart `file` and `text`, response `words[]` of `{text, start, end, loss}`. Docs: https://elevenlabs.io/docs/api-reference/forced-alignment/create
+- Default model: `eleven_v4`, listed as the newest and highest-quality model at https://elevenlabs.io/docs/overview/models (checked 2026-11-06). Not yet confirmed live that this model supports `with-timestamps`; if the first real call rejects it, set `modelId: eleven_multilingual_v2` in the config.
+
+Fake mode: with `NARRATION_FAKE=1`, `narrate` and `align` make no network request. Narration is silent mp3 (44.1 kHz) lasting words / 150 wpm (minimum 1 s) with evenly spaced word timings, cached separately from real audio. `loadConfig` then does not require `elevenlabs.apiKey` or `voiceId`. This lets the pipeline build and render end to end without a key.
 
 ## The fixture
 
