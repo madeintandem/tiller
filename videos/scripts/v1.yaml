@@ -21,7 +21,7 @@ captures:
     actions:
       # The behavior to preserve (with the 405 detail) is below the fold; bring it up as it is narrated.
       - waitFor: "text=Behavior to preserve"
-      - wait: 10
+      - wait: 8
       - scrollTo: "text=Behavior to preserve"
   - id: home
     mark: s1-end
@@ -35,10 +35,10 @@ beats:
   - id: install
     chapter: Install
     say: >-
-      On a Mac, Tiller comes from Homebrew, and it's the one line on the
-      screen. On Linux there's a short install script, linked from the
-      README, that does the same job. Either way you get a single binary. No account, no hosted
-      service, and no settings file hiding in your home directory.
+      On a Mac, Tiller comes from Homebrew; it's the one line on the screen.
+      Linux gets a short install script, linked from the README. Either way
+      you get a single binary. No account, no hosted service, no settings
+      file hiding in your home directory.
     show:
       kind: card
       kicker: Install
@@ -46,9 +46,8 @@ beats:
       body: brew install --cask madeintandem/tap/tiller
   - id: version
     say: >-
-      Ask it for its version to make sure it's on your path. This whole series
-      was recorded on version 0.22, so if yours is newer, a word here and there
-      might read differently.
+      Ask for its version to make sure it's on your path. This series was
+      recorded on version 0.22, so if yours is newer, some wording may differ.
     show:
       kind: term
       stage: s1
@@ -57,9 +56,9 @@ beats:
   - id: repo-card
     chapter: Join your repo
     say: >-
-      Here's the repo we'll use the whole way through. Acme Orders is a small
-      order service: a couple of routes, an order store, some tests, and one
-      doc somebody wrote a while ago and may or may not have kept up. So, a
+      Here's the repo for the whole series. Acme Orders is a small order
+      service: a couple of routes, an order store, some tests, and one old doc
+      somebody may or may not have kept up. So, a
       normal repo.
     show:
       kind: card
@@ -73,8 +72,7 @@ beats:
       design. This one starts from code that already works, so before anybody
       plans a change, Tiller wants an honest account of what's there. It's
       like buying an old house; you get the inspection before you start
-      knocking out walls. The output lays out the rest of the setup in order,
-      and we're going to follow it.
+      knocking out walls. The output lays out the rest of the setup, in order.
     show:
       kind: term
       stage: s1
@@ -82,12 +80,12 @@ beats:
       to: s1-init
   - id: contributor-join
     say: >-
-      Next I register myself as a contributor. That step is for a human, once
-      per project, because it records who gets to make the decisions. Then I
-      join. Joining records who I am in this checkout and wires up my agent.
-      I'm using Claude Code, so it gets Tiller's skills and a pointer in its
-      instructions. Any other agent reaches the same skills by asking Tiller
-      for its guide, which is exactly what we're about to do.
+      Next I register myself as a contributor. A human does that, once per
+      project, because it records who makes the decisions. Then I join, which
+      records who I am in this checkout and wires up my agent. I'm using
+      Claude Code, so it gets Tiller's skills and a pointer in its
+      instructions. Any other agent reaches the same skills through Tiller's
+      guide.
     show:
       kind: term
       stage: s1
@@ -95,10 +93,10 @@ beats:
       to: s1-join
   - id: first-commit
     say: >-
-      One small edit before I commit: I point the tests gate at the script
-      this repo already uses, so Tiller runs the same tests I do. Then I
-      commit. Everything Tiller knows lives in the repo, in plain files, and
-      it gets reviewed like any other change.
+      One small edit first: I point the tests gate at the script this repo
+      already uses, so Tiller runs the same tests I do. Then I commit.
+      Everything Tiller knows lives in the repo, in plain files, reviewed like
+      any other change.
     show:
       kind: term
       stage: s1
@@ -117,8 +115,8 @@ beats:
       body: As-is docs describe what the code does today.
   - id: ask-guide
     say: >-
-      I give the agent one instruction, and it's the same one I'll give it for
-      the whole series: read the guide and do what it says. The guide looks at
+      I give the agent one instruction, the same one for the whole series:
+      read the guide and do what it says. The guide looks at
       the project and ranks the next moves. Right now there's exactly one.
       Existing code needs a baseline a human has confirmed, and nothing else
       happens until it has one. So the agent loads the skill for deriving it.
@@ -130,7 +128,7 @@ beats:
   - id: readiness
     say: >-
       It reads the README, the old doc, and the source. Then it asks Tiller
-      whether the project is ready, and gets a no, which is the right answer.
+      whether the project is ready, and gets a no. The right answer.
       There's no design yet, and nobody has confirmed a baseline. That failure
       is the to-do list.
     show:
@@ -140,10 +138,9 @@ beats:
       to: s1-readiness-expect-fail
   - id: move-or-point
     say: >-
-      And here's a question I'm glad it asks. There's already a doc describing
-      the API. Should Tiller take it over, or leave it where it is and point to
-      it? If other things link to that file, you'd keep it. Nothing does here,
-      so I tell it to move it.
+      Then it asks a good question. There's already a doc describing the API:
+      should Tiller take it over, or leave it and point to it? If other things
+      link to that file, you'd keep it. Nothing does here, so I say move it.
     show:
       kind: term
       stage: s1
@@ -151,11 +148,11 @@ beats:
       to: s1-say-move
   - id: link-docs
     say: >-
-      The agent splits that one doc into two, one for the API and one for the
-      order store. Each new doc is linked to the source file it describes and
+      The agent splits that doc in two, one for the API and one for the order
+      store. Each new doc is linked to the source file it describes and
       to the old doc it came from, so you can always trace where a sentence
       started. Then the old doc goes. Git still has it, and Tiller records
-      exactly which version to recover. The agent commits its work.
+      exactly which version to recover.
     show:
       kind: term
       stage: s1
@@ -163,12 +160,11 @@ beats:
       to: s1-baseline-commit
   - id: readout
     say: >-
-      Then it stops and hands me a readout. Every skill ends this way. Its
-      note says nothing in the code
-      disagreed with the old doc. The readout says what it produced: two docs,
-      both unconfirmed. Where they came from, and how to get the original
-      back. And at the bottom, what's next. Both items start with the word
-      you. The agent is done. The rest is mine.
+      Then it stops and hands me a readout; every skill ends this way. Its
+      note says nothing in the code disagreed with the old doc. It made two
+      docs, both unconfirmed, and says where they came from and how to get
+      the original back. At the bottom, what's next. Both items start with
+      the word you. The agent is done. The rest is mine.
     show:
       kind: term
       stage: s1
@@ -188,12 +184,11 @@ beats:
   - id: doc-review
     say: >-
       So I read them. In the console, the API doc is still marked
-      unconfirmed. It says which file it describes and where it came from.
-      Then the part I care about, the behavior to
-      preserve: every route, every status code, and even a detail the old doc
-      missed about what happens when you send a method the API doesn't take.
-      If anything here is wrong, fix it now, because every later change gets
-      measured against this.
+      unconfirmed, with the file it describes and where it came from. Then
+      the part I care about, the behavior to preserve: every route, every
+      status code, even a detail the old doc missed about sending a method
+      the API doesn't take. If anything here is wrong, fix it now; every
+      later change gets measured against this.
     show:
       kind: console
       capture: doc-review
@@ -203,8 +198,8 @@ beats:
       word of the prose. It records that I read these docs at this commit,
       along with a fingerprint of each source file they describe. That
       fingerprint earns its keep later: when the code changes under a
-      confirmed doc, Tiller notices. And look at the bottom. Caught up, no work
-      planned yet, and three ways work can come in. That's the next video.
+      confirmed doc, Tiller notices. At the bottom: caught up, no work planned
+      yet, and three ways work can come in. That's the next video.
     show:
       kind: term
       stage: s1
@@ -212,9 +207,9 @@ beats:
       to: s1-approve-design
   - id: confirm-commit
     say: >-
-      I commit the confirmation, because it's just files like everything else,
-      and check the status. Zero epics, zero features, zero tasks. A clean
-      start, sitting on top of code Tiller now understands.
+      I commit the confirmation, since it's just files, and check the status.
+      Zero epics, zero features, zero tasks. A clean start, on top of code
+      Tiller now understands.
     show:
       kind: term
       stage: s1
@@ -233,9 +228,9 @@ beats:
   - id: home
     say: >-
       Home is where I start every day. What just happened: the docs I linked
-      and confirmed. What needs me: nothing. And what's up next: Tiller saying,
-      plainly, that no work is planned and how to bring some in. It's the same
-      answer the terminal gave, in a nicer font.
+      and confirmed. What needs me: nothing. What's up next: no work planned,
+      and how to bring some in. Same answer the terminal gave, in a nicer
+      font.
     show:
       kind: console
       capture: home

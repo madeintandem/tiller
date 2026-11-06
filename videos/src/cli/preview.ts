@@ -1,19 +1,7 @@
 import { layoutFor, scriptPath } from "../build/layout.js";
+import { previewMarkdown } from "../build/preview.js";
+import { checkScript } from "../build/validate.js";
 import { loadScript } from "../script/load.js";
-import type { Show } from "../script/schema.js";
-
-function onScreen(show: Show): string {
-  switch (show.kind) {
-    case "card":
-      return `Card: ${show.kicker} / ${show.heading}${show.body ? ` / ${show.body}` : ""}`;
-    case "term":
-      return `Terminal (${show.stage}): ${show.from} to ${show.to}`;
-    case "console":
-      return `Console capture: ${show.capture}`;
-    case "outro":
-      return "Outro";
-  }
-}
 
 const id = process.argv[2];
 if (!id) {
@@ -21,14 +9,11 @@ if (!id) {
   process.exit(2);
 }
 try {
-  const s = loadScript(scriptPath(layoutFor(), id));
-  const out: string[] = [`# ${s.title}`, "", s.description, "", `Tags: ${s.tags.join(", ")}`, ""];
-  out.push("## Live intro (JC)", "", s.intro.transcript, "");
-  for (const b of s.beats) {
-    if (b.chapter) out.push(`## ${b.chapter}`, "");
-    out.push(`**${b.id}:** ${b.say}`, "", `*${onScreen(b.show)}*`, "");
-  }
-  console.log(out.join("\n"));
+  const layout = layoutFor();
+  const s = loadScript(scriptPath(layout, id));
+  console.log(previewMarkdown(s, layout));
+  // The same checks approve runs; a script that cannot build exits non-zero.
+  if (checkScript(s, layout).problems.length) process.exit(1);
 } catch (e) {
   console.error((e as Error).message);
   process.exit(1);

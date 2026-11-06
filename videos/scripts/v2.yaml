@@ -244,7 +244,7 @@ beats:
     say: >-
       Back in the console, the feature now shows what I approved it against:
       the exact version of the spec, of the contract, and the commit. If
-      either one changes after today, Tiller can tell. I decided what gets
+      any of them changes after today, Tiller can tell. I decided what gets
       built, and it's written down.
     show:
       kind: console
