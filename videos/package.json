@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --dir test",
     "typecheck": "tsc --noEmit",
     "approve": "tsx src/cli/approve.ts",
     "preview": "tsx src/cli/preview.ts"

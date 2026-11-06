@@ -1,0 +1,8 @@
+#!/bin/sh
+# Run the whole test suite, or only the test files named as arguments.
+set -e
+cd "$(dirname "$0")/.."
+if [ "$#" -eq 0 ]; then
+  exec node --test test/
+fi
+exec node --test "$@"

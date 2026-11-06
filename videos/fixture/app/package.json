@@ -1,0 +1,15 @@
+{
+  "name": "acme-orders",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Acme's order service: a small HTTP API over the order book.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "bin/test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
