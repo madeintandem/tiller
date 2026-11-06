@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../src/config.js";
 import { readdirSync, readFileSync, rmSync, truncateSync } from "node:fs";
-import { align, ffEnv, narrate } from "../src/narration/elevenlabs.js";
+import { align, narrate } from "../src/narration/elevenlabs.js";
+import { ffEnv } from "../src/media/ffmpeg.js";
 import { cacheKey } from "../src/narration/cache.js";
 import { charsToWords } from "../src/narration/words.js";
 

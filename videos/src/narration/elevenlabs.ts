@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Config } from "../config.js";
+import { ffEnv, probeDuration } from "../media/ffmpeg.js";
 import { cacheKey, readCache, readJson, writeCache, writeJson } from "./cache.js";
 import { charsToWords, spreadWords, type Word } from "./words.js";
 
@@ -11,8 +12,6 @@ const API = "https://api.elevenlabs.io";
 const WPM = 150;
 
 const isFake = () => process.env.NARRATION_FAKE === "1";
-import { ffEnv } from "../media/ffmpeg.js";
-export { ffEnv };
 
 async function failIfBad(res: Response, what: string): Promise<void> {
   if (res.status !== 200) throw new Error(`ElevenLabs ${what} failed: ${res.status} ${await res.text()}`);
@@ -71,15 +70,6 @@ export async function narrate(text: string, cfg: Config["elevenlabs"], cacheDir:
   return writeCache(cacheDir, key, Buffer.from(json.audio_base64, "base64"), words, duration);
 }
 
-function probeDuration(audioPath: string): number {
-  const out = execFileSync(
-    "ffprobe",
-    ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", audioPath],
-    { env: ffEnv() },
-  );
-  return parseFloat(out.toString());
-}
-
 export async function align(audioPath: string, transcript: string, apiKey: string, cacheDir: string): Promise<Word[]> {
   const fake = isFake();
   const audio = readFileSync(audioPath);
@@ -93,7 +83,7 @@ export async function align(audioPath: string, transcript: string, apiKey: strin
   if (hit) return hit;
   let words: Word[];
   if (fake) {
-    words = spreadWords(transcript, probeDuration(audioPath));
+    words = spreadWords(transcript, await probeDuration(audioPath));
   } else {
     const form = new FormData();
     form.append("file", new Blob([audio]), "audio");

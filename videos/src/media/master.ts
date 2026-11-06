@@ -1,12 +1,17 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ffmpeg, probeDuration, run } from "./ffmpeg.js";
+import { ffmpeg, loudnormFilter, probeDuration } from "./ffmpeg.js";
+import { VOICE_LUFS } from "./intro.js";
 
-const TARGET_I = -14;
-const TARGET_TP = -1;
-const TARGET_LRA = 11;
-const MUSIC_LUFS = -24;
+// The bed sits 18 LU under the voice (the intro is normalized to VOICE_LUFS); the final
+// program normalization moves both by the same gain, so the gap holds. That needs loudnorm's
+// linear mode, which it drops for dynamic compression when the measured loudness range
+// exceeds the LRA target; a bed 18 LU under the voice gives the program a wide range, so the
+// LRA targets here are set wide enough to stay linear.
+export const MUSIC_UNDER_VOICE = 18;
+const PROGRAM = { I: -14, TP: -1, LRA: 20 };
+const MUSIC = { I: VOICE_LUFS - MUSIC_UNDER_VOICE, TP: -2, LRA: 20 };
 const FADE = 1;
 
 /** Music gain: 0 everywhere except 0..introEnd and outroStart..end, with FADE-second ramps at each edge. */
@@ -31,22 +36,18 @@ export async function master(
   try {
     const mixed = join(dir, "mix.wav");
     const gain = musicGain(introEnd, outro.start, end);
+    const music = await loudnormFilter(musicPath, MUSIC);
     await ffmpeg([
       "-i", renderPath, "-stream_loop", "-1", "-i", musicPath,
       "-filter_complex",
-      `[1:a]aformat=sample_rates=48000:channel_layouts=stereo,loudnorm=I=${MUSIC_LUFS}:TP=-2:LRA=${TARGET_LRA},` +
+      `[1:a]${music},aformat=sample_rates=48000:channel_layouts=stereo,` +
         `volume='${gain}':eval=frame[m];` +
         `[0:a]aformat=sample_rates=48000:channel_layouts=stereo[v];` +
         `[v][m]amix=inputs=2:duration=first:normalize=0[a]`,
       "-map", "[a]", "-t", String(end), "-c:a", "pcm_f32le", mixed,
     ]);
 
-    const norm = `loudnorm=I=${TARGET_I}:TP=${TARGET_TP}:LRA=${TARGET_LRA}`;
-    const { stderr } = await run("ffmpeg", ["-hide_banner", "-nostats", "-i", mixed, "-af", `${norm}:print_format=json`, "-f", "null", "-"]);
-    const m = JSON.parse(stderr.slice(stderr.lastIndexOf("{"), stderr.lastIndexOf("}") + 1));
-    const pass2 =
-      `${norm}:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:` +
-      `measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`;
+    const pass2 = await loudnormFilter(mixed, PROGRAM);
 
     await ffmpeg([
       "-i", renderPath, "-i", mixed, "-map", "0:v:0", "-map", "1:a:0",
