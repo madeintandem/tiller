@@ -33,3 +33,6 @@ More scripts are added here as the pipeline tasks land.
 - `scripts/`: one YAML script per video.
 - `src/script/`: schema, loader, hashing, approvals.
 - `.local/`, `out/`, `node_modules/`: gitignored.
+- `src/theme.ts`, `src/fonts.ts`, `src/components/`: MiT palette, fonts, and frame components (Frame, TitleCard, Kicker, LowerThird, Outro).
+- `src/index.ts`, `src/Root.tsx`: Remotion entry and compositions (`Smoke` for now).
+- `public/brand/`: MiT logo SVGs used by the frame.
