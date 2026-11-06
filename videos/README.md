@@ -26,6 +26,8 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 
 - `npm run check`: verify `tiller --version` matches `series.yaml`, rebuild the fixture into a temp dir, and diff every step against the committed snapshots after masking IDs, SHAs, timestamps, durations, and temp paths.
 
+- `npm run term-still -- <out.png> [stage] [frame]`: render one frame of the `TermSmoke` composition fed by a committed snapshot, to eyeball the terminal.
+
 More scripts are added here as the pipeline tasks land.
 
 ## Layout
