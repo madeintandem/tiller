@@ -8,11 +8,15 @@ export type Show =
 
 export type Beat = { id: string; chapter?: string; say: string; show: Show };
 
+// One step of a capture, run in order after the page loads. `wait` holds the picture for that
+// many seconds; `scroll` (pixels) and `scrollTo` (a selector) glide the page's scrolling content.
+export type CaptureAction = { click?: string; waitFor?: string; scroll?: number; scrollTo?: string; wait?: number };
+
 export type Capture = {
   id: string;
   mark: string;
   path: string;
-  actions?: { click?: string; waitFor?: string; scroll?: number }[];
+  actions?: CaptureAction[];
   seconds: number;
 };
 
@@ -117,13 +121,19 @@ function validateCapture(raw: unknown, index: number): Capture {
     if (!Array.isArray(raw.actions)) throw new ScriptError(`capture ${id} actions must be a list`);
     capture.actions = raw.actions.map((a) => {
       if (!isObj(a)) throw new ScriptError(`capture ${id} action must be a mapping`);
-      const action: { click?: string; waitFor?: string; scroll?: number } = {};
+      const action: CaptureAction = {};
       if (a.click !== undefined) action.click = str(a, "click", `capture ${id} action`);
       if (a.waitFor !== undefined) action.waitFor = str(a, "waitFor", `capture ${id} action`);
+      if (a.scrollTo !== undefined) action.scrollTo = str(a, "scrollTo", `capture ${id} action`);
       if (a.scroll !== undefined) {
         if (typeof a.scroll !== "number") throw new ScriptError(`capture ${id} scroll must be a number`);
         action.scroll = a.scroll;
       }
+      if (a.wait !== undefined) {
+        if (typeof a.wait !== "number" || !(a.wait > 0)) throw new ScriptError(`capture ${id} wait must be a positive number of seconds`);
+        action.wait = a.wait;
+      }
+      if (Object.keys(action).length === 0) throw new ScriptError(`capture ${id} has an action with no known key`);
       return action;
     });
   }

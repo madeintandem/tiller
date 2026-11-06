@@ -19,7 +19,10 @@ captures:
     path: /file/.tiller/design/as-is/orders-api.md#L1
     seconds: 26
     actions:
+      # The behavior to preserve (with the 405 detail) is below the fold; bring it up as it is narrated.
       - waitFor: "text=Behavior to preserve"
+      - wait: 10
+      - scrollTo: "text=Behavior to preserve"
   - id: home
     mark: s1-end
     path: /

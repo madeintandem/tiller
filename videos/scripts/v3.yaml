@@ -23,6 +23,10 @@ captures:
     mark: s3-end
     path: /build?epics=orders
     seconds: 14
+    actions:
+      # At 1280 wide the done column is off to the right of the board; slide it into view.
+      - wait: 1
+      - scrollTo: ".board-scroll >> text=Filter orders by status"
 beats:
   - id: build-card
     chapter: Build

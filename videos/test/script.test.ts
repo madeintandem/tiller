@@ -59,6 +59,14 @@ describe("loadScript", () => {
     expect(() => loadScript(p)).toThrow(/b2/);
   });
 
+  it("accepts wait and scrollTo capture actions and rejects a bad wait or an unknown action", () => {
+    const withActions = (actions: string) => variant((s) => s.replace("      - scroll: 200\n", actions));
+    const ok = loadScript(withActions('      - scroll: 200\n      - wait: 1.5\n      - scrollTo: "text=Edges"\n'));
+    expect(ok.captures[0].actions).toEqual([{ waitFor: "main" }, { scroll: 200 }, { wait: 1.5 }, { scrollTo: "text=Edges" }]);
+    expect(() => loadScript(withActions("      - wait: 0\n"))).toThrow(/wait/);
+    expect(() => loadScript(withActions("      - hover: main\n"))).toThrow(/no known key/);
+  });
+
   it("rejects a term show missing from/to", () => {
     const p = variant((s) => s.replace("      from: s1-add-contributor\n", ""));
     expect(() => loadScript(p)).toThrow(ScriptError);

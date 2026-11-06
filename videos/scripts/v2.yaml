@@ -18,6 +18,10 @@ captures:
     mark: s2-proposed
     path: /file/.tiller/design/status-filter.md#L1
     seconds: 22
+    actions:
+      # The out-of-scope list sits just below the fold; bring it up as it is narrated.
+      - wait: 12
+      - scroll: 200
   - id: approve-epic
     mark: s2-proposed
     path: /
@@ -26,6 +30,11 @@ captures:
     mark: s2-specced
     path: /node/feature/orders/status-filter
     seconds: 30
+    actions:
+      # The behavior list is below the fold; scroll the spec up as the narration reaches it.
+      - waitFor: "text=Summary"
+      - wait: 3
+      - scrollTo: "text=Summary"
   - id: contract
     mark: s2-specced
     path: /node/feature/orders/status-filter?tab=evals
