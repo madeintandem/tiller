@@ -1,11 +1,11 @@
 // Usage: npm run build -- <video-id>
-// Turns an approved script into videos/out/<id>.mp4, <id>.srt, and <id>.meta.json.
+// Turns an approved script into videos/out/<id>.mp4, <id>.srt, <id>.jpg (thumbnail), and <id>.meta.json.
 import { copyFileSync, cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { buildDir, introPath, layoutFor, scriptPath } from "../build/layout.js";
 import { metadata } from "../build/meta.js";
 import { preflight } from "../build/preflight.js";
-import { renderVideo } from "../build/render.js";
+import { renderThumbnail, renderVideo } from "../build/render.js";
 import { shoot } from "../capture/shoot.js";
 import { checkSnapshots } from "../check/run.js";
 import { readSnapshot, type Step } from "../check/diff.js";
@@ -14,7 +14,7 @@ import { probeDuration } from "../media/ffmpeg.js";
 import { prepareIntro } from "../media/intro.js";
 import { master } from "../media/master.js";
 import { align, narrate } from "../narration/elevenlabs.js";
-import { loadScript } from "../script/load.js";
+import { loadScript, scriptHash } from "../script/load.js";
 import { buildTimeline, type Narration } from "../timeline/build.js";
 import { toSrt } from "../timeline/captions.js";
 import { chapters as chapterLines } from "../timeline/chapters.js";
@@ -94,10 +94,13 @@ async function build(id: string): Promise<void> {
 
   await phase("outputs", async () => {
     writeFileSync(join(layout.out, `${id}.srt`), srt);
-    const meta = metadata(script, chapters, await probeDuration(mp4));
+    const provenance = { fake: process.env.NARRATION_FAKE === "1", scriptHash: scriptHash(scriptPath(layout, id)) };
+    const meta = metadata(script, chapters, await probeDuration(mp4), provenance);
     writeFileSync(join(layout.out, `${id}.meta.json`), JSON.stringify(meta, null, 2) + "\n");
     return meta;
   }, (m) => `${id}.srt, ${id}.meta.json, ${m.durationSeconds.toFixed(2)} s`);
+
+  await phase("thumbnail", () => renderThumbnail(script.title, dir, join(layout.out, `${id}.jpg`)), (p) => relative(layout.root, p));
 }
 
 const id = process.argv[2];

@@ -7,6 +7,8 @@ import { Frame } from "./components/Frame";
 import { Terminal } from "./components/Terminal";
 import { TitleCard } from "./components/TitleCard";
 import type { Step } from "./check/diff";
+import { Still } from "remotion";
+import { Thumbnail, THUMB } from "./components/Thumbnail";
 import { video } from "./theme";
 
 const Smoke: React.FC = () => (
@@ -71,5 +73,6 @@ export const RemotionRoot: React.FC = () => (
     width={video.width}
     height={video.height}
   />
+  <Still id="Thumbnail" component={Thumbnail} defaultProps={{ title: "Title" }} width={THUMB.width} height={THUMB.height} />
   </>
 );

@@ -32,7 +32,8 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 
 - `npm run capture -- <id>`: record the script's console captures (see Console captures).
 
-- `npm run build -- <id>`: turn an approved script into `out/<id>.mp4`, `out/<id>.srt`, and `out/<id>.meta.json` (see Building).
+- `npm run build -- <id>`: turn an approved script into `out/<id>.mp4`, `out/<id>.srt`, `out/<id>.jpg` (thumbnail), and `out/<id>.meta.json` (see Building).
+- `npm run publish -- <id>`: upload the built video, thumbnail, and captions to YouTube, never publicly (see Publishing).
 
 More scripts are added here as the pipeline tasks land.
 
@@ -86,7 +87,9 @@ One-time setup: `npx playwright install chromium` (run from `videos/`).
 6. **timeline**: lay out the program and validate the chapters against YouTube's rules (and the 8:00 ceiling) before rendering.
 7. **render**: Remotion `Video` composition, H.264 1920x1080 at 30 fps, to `.local/build/<id>/render.mp4`.
 8. **master**: music under the intro and outro, loudness to -14 LUFS, to `out/<id>.mp4`.
-9. **outputs**: `out/<id>.srt` and `out/<id>.meta.json` (`title`, `description`, `tags`, `chapters`, `durationSeconds`; the description is the script's, a blank line, the chapter list, a blank line, then "The narration is my words, in my voice, performed by AI.").
+9. **outputs**: `out/<id>.srt` and `out/<id>.meta.json` (`title`, `description`, `tags`, `chapters`, `durationSeconds`, `fake` (built with `NARRATION_FAKE=1`), `scriptHash` (the approved hash the render used); the description is the script's, a blank line, the chapter list, a blank line, then "The narration is my words, in my voice, performed by AI.").
+
+10. **thumbnail**: the `Thumbnail` still (title in Space Grotesk on the MiT dark indigo field, with the sigil) to `out/<id>.jpg`, 1280x720, under 2 MB.
 
 `.local/build/<id>/` is the build directory and Remotion's public directory: the prepared `intro.mp4`, `narration/<beat>.mp3`, `captures/<capture>.webm`, the brand assets, and `timeline.json` all sit there, and the timeline's paths are relative to it.
 
@@ -104,3 +107,11 @@ npm run build -- v-test
 ```
 
 Fake mode still needs a `.local/config.yaml`; one holding only the `youtube:` block will do.
+
+## Publishing
+
+`npm run publish -- <id>` uploads `out/<id>.mp4` with its thumbnail and `.srt` captions (language `en`, name "English") through the YouTube Data API, with `status.privacyStatus` from `youtube.privacy` (`private` or `unlisted`, never public), `containsSyntheticMedia: true`, and not made for kids. It records `{ youtubeId, uploadedAt, privacy }` in `published.json` and refuses an id already there.
+
+It refuses, before any API call and naming the reason, when: the build was a fake render (`meta.fake`); the script changed since the build (`meta.scriptHash`); the script's current hash is not approved in the committed `approvals.json` (`VIDEOS_APPROVALS` is ignored); or `out/<id>.mp4`, `.srt`, `.jpg`, or `.meta.json` is missing.
+
+Credentials: put a Google "Desktop app" OAuth client in `.local/youtube-client.json`. The first run opens the browser for consent and caches the token in `.local/youtube-token.json`.
