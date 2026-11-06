@@ -110,7 +110,7 @@ Fake mode still needs a `.local/config.yaml`; one holding only the `youtube:` bl
 
 ## Publishing
 
-`npm run publish -- <id>` uploads `out/<id>.mp4` with its thumbnail and `.srt` captions (language `en`, name "English") through the YouTube Data API, with `status.privacyStatus` from `youtube.privacy` (`private` or `unlisted`, never public), `containsSyntheticMedia: true`, and not made for kids. It records `{ youtubeId, uploadedAt, privacy }` in `published.json` and refuses an id already there.
+`npm run publish -- <id>` uploads `out/<id>.mp4` with its thumbnail and `.srt` captions (language `en`, name "English") through the YouTube Data API, with `status.privacyStatus` from `youtube.privacy` (`private` or `unlisted`, never public), `containsSyntheticMedia: true`, and not made for kids. The video goes up by YouTube's resumable protocol (8 MiB chunks, resume from the reported offset after a network error or 5xx, bounded retries). It records `{ youtubeId, uploadedAt, privacy, thumbnail, captions }` in `published.json` right after the video uploads; if the thumbnail or captions then fail, rerun the same command and only the missing steps run. A complete entry is refused: delete the video in YouTube Studio first if you truly want a new upload.
 
 It refuses, before any API call and naming the reason, when: the build was a fake render (`meta.fake`); the script changed since the build (`meta.scriptHash`); the script's current hash is not approved in the committed `approvals.json` (`VIDEOS_APPROVALS` is ignored); or `out/<id>.mp4`, `.srt`, `.jpg`, or `.meta.json` is missing.
 

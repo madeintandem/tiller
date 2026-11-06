@@ -89,8 +89,34 @@ describe("publish", () => {
   });
 
   it("refuses an id already in published.json, naming the YouTube ID", async () => {
-    writeFileSync(join(root, "published.json"), JSON.stringify({ "v-test": { youtubeId: "OLD99", uploadedAt: "x", privacy: "private" } }));
+    writeFileSync(join(root, "published.json"), JSON.stringify({ "v-test": { youtubeId: "OLD99", uploadedAt: "x", privacy: "private", thumbnail: true, captions: true } }));
     await refuses(/OLD99/);
+  });
+
+  it("a complete entry refusal tells the user to delete the video in Studio first", async () => {
+    writeFileSync(join(root, "published.json"), JSON.stringify({ "v-test": { youtubeId: "OLD99", uploadedAt: "x", privacy: "private", thumbnail: true, captions: true } }));
+    await expect(run()).rejects.toThrow(/YouTube Studio/);
+  });
+
+  it("a failed thumbnail keeps the entry (thumbnail false), names the ID, and a rerun finishes without re-uploading", async () => {
+    api.setThumbnail.mockRejectedValueOnce(new Error("quota"));
+    await expect(run()).rejects.toThrow(/uploaded as YT123; thumbnail failed: quota; rerun npm run publish -- v-test/);
+    const rec = () => JSON.parse(readFileSync(join(root, "published.json"), "utf8"))["v-test"];
+    expect(rec()).toMatchObject({ youtubeId: "YT123", thumbnail: false, captions: false });
+    expect(await run()).toBe("YT123");
+    expect(api.insertVideo).toHaveBeenCalledOnce();
+    expect(api.setThumbnail).toHaveBeenCalledTimes(2);
+    expect(api.insertCaption).toHaveBeenCalledOnce();
+    expect(rec()).toMatchObject({ thumbnail: true, captions: true });
+  });
+
+  it("a rerun after only captions failed performs captions alone", async () => {
+    api.insertCaption.mockRejectedValueOnce(new Error("boom"));
+    await expect(run()).rejects.toThrow(/captions failed: boom/);
+    await run();
+    expect(api.insertVideo).toHaveBeenCalledOnce();
+    expect(api.setThumbnail).toHaveBeenCalledOnce();
+    expect(api.insertCaption).toHaveBeenCalledTimes(2);
   });
 
   it("refuses a fake render", async () => {

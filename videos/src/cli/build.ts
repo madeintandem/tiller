@@ -45,6 +45,8 @@ async function build(id: string): Promise<void> {
   }, (m) => m);
 
   const script = loadScript(scriptPath(layout, id));
+  // The hash the render uses is the one read here, before the long phases.
+  const approvedHash = scriptHash(scriptPath(layout, id));
   const cfg = loadConfig(layout.config);
   const dir = buildDir(layout, id);
   mkdirSync(dir, { recursive: true });
@@ -94,7 +96,7 @@ async function build(id: string): Promise<void> {
 
   await phase("outputs", async () => {
     writeFileSync(join(layout.out, `${id}.srt`), srt);
-    const provenance = { fake: process.env.NARRATION_FAKE === "1", scriptHash: scriptHash(scriptPath(layout, id)) };
+    const provenance = { fake: process.env.NARRATION_FAKE === "1", scriptHash: approvedHash };
     const meta = metadata(script, chapters, await probeDuration(mp4), provenance);
     writeFileSync(join(layout.out, `${id}.meta.json`), JSON.stringify(meta, null, 2) + "\n");
     return meta;

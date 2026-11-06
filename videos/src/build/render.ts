@@ -1,4 +1,6 @@
-import { rmSync, statSync } from "node:fs";
+import { cpSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { resolve } from "node:path";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, renderStill, selectComposition } from "@remotion/renderer";
@@ -29,13 +31,20 @@ export async function renderVideo(timeline: Timeline, publicDir: string, outPath
 const JPEG_LIMIT = 2 * 1024 * 1024;
 
 // Render the Thumbnail still to a 1280x720 JPEG under YouTube's 2 MB limit. `publicDir`
-// supplies the brand assets, as for the video.
+// supplies the brand assets; only `brand/` is bundled, so the render and media in a build
+// directory never ride along.
 export async function renderThumbnail(title: string, publicDir: string, outPath: string): Promise<string> {
   rmSync(outPath, { force: true });
-  const serveUrl = await bundle({ entryPoint: ENTRY, publicDir });
-  const inputProps = { title };
-  const composition = await selectComposition({ serveUrl, id: "Thumbnail", inputProps });
-  await renderStill({ composition, serveUrl, output: outPath, inputProps, imageFormat: "jpeg", jpegQuality: 90 });
+  const brandOnly = mkdtempSync(join(tmpdir(), "thumb-public-"));
+  try {
+    cpSync(join(publicDir, "brand"), join(brandOnly, "brand"), { recursive: true });
+    const serveUrl = await bundle({ entryPoint: ENTRY, publicDir: brandOnly });
+    const inputProps = { title };
+    const composition = await selectComposition({ serveUrl, id: "Thumbnail", inputProps });
+    await renderStill({ composition, serveUrl, output: outPath, inputProps, imageFormat: "jpeg", jpegQuality: 90 });
+  } finally {
+    rmSync(brandOnly, { recursive: true, force: true });
+  }
   const size = statSync(outPath).size;
   if (size >= JPEG_LIMIT) throw new Error(`thumbnail ${outPath} is ${size} bytes, over YouTube's 2 MB limit`);
   return outPath;

@@ -5,9 +5,11 @@ import { dirname, join } from "node:path";
 import { google, type youtube_v3 } from "googleapis";
 import { layoutFor, type Layout } from "../build/layout.js";
 import { loadConfig, type Config } from "../config.js";
+import { resumableUpload, type Req } from "./resumable.js";
 import { loadPublishable, videoResource } from "./metadata.js";
 
-export type Published = Record<string, { youtubeId: string; uploadedAt: string; privacy: string }>;
+// `thumbnail` and `captions` record which post-insert steps are done, so a rerun finishes the rest.
+export type Published = Record<string, { youtubeId: string; uploadedAt: string; privacy: string; thumbnail?: boolean; captions?: boolean }>;
 
 // The three YouTube calls publish makes, so tests can stand in for the API.
 export type YouTubeApi = {
@@ -65,18 +67,17 @@ async function authorize(layout: Layout) {
 }
 
 export async function realApi(layout: Layout): Promise<YouTubeApi> {
-  const yt = google.youtube({ version: "v3", auth: await authorize(layout) });
+  const auth = await authorize(layout);
+  const yt = google.youtube({ version: "v3", auth });
+  // The OAuth client signs each request; statuses are returned, not thrown, so the
+  // resumable protocol can read 308s and 5xxs itself.
+  const request: Req = async (o) => {
+    const r: any = await auth.request({ ...o, validateStatus: () => true, redirect: "manual", responseType: "json" } as any);
+    const h = (n: string): string | undefined => (typeof r.headers?.get === "function" ? r.headers.get(n) : r.headers?.[n]) ?? undefined;
+    return { status: r.status, location: h("location"), range: h("range"), data: r.data };
+  };
   return {
-    async insertVideo(resource, mp4Path) {
-      // The googleapis media upload is resumable.
-      const r = await yt.videos.insert({
-        part: ["snippet", "status"],
-        requestBody: resource,
-        media: { body: createReadStream(mp4Path) },
-      });
-      if (!r.data.id) throw new Error("videos.insert returned no video id");
-      return r.data.id;
-    },
+    insertVideo: (resource, mp4Path) => resumableUpload(request, resource, mp4Path),
     async setThumbnail(videoId, jpgPath) {
       await yt.thumbnails.set({ videoId, media: { mimeType: "image/jpeg", body: createReadStream(jpgPath) } });
     },
@@ -91,7 +92,8 @@ export async function realApi(layout: Layout): Promise<YouTubeApi> {
 }
 
 // Upload the built video, its thumbnail, and its captions. Returns the YouTube video ID.
-// Every refusal happens before the first API call.
+// Every refusal happens before the first API call. A rerun on an entry whose thumbnail or
+// captions are not done performs only those steps; it never uploads the video again.
 export async function publish(
   id: string,
   opts: { layout?: Layout; api?: YouTubeApi; cfg?: Config } = {},
@@ -100,19 +102,39 @@ export async function publish(
   const layout = opts.layout ?? layoutFor(undefined, { ...process.env, VIDEOS_APPROVALS: undefined });
   const publishedFile = join(layout.root, "published.json");
   const published: Published = existsSync(publishedFile) ? JSON.parse(readFileSync(publishedFile, "utf8")) : {};
-  if (published[id]) {
-    throw new Error(`${id} is already published as YouTube video ${published[id].youtubeId}; remove its entry from published.json to upload again`);
+  const prior = published[id];
+  if (prior?.thumbnail && prior?.captions) {
+    throw new Error(
+      `${id} is already published as YouTube video ${prior.youtubeId}; to upload a new copy, delete that video in YouTube Studio first, then remove its published.json entry`,
+    );
   }
   const { mp4, srt, jpg, meta } = loadPublishable(id, layout);
   const cfg = opts.cfg ?? loadConfig(layout.config);
   const resource = videoResource(meta, cfg);
 
   const api = opts.api ?? (await realApi(layout));
-  const youtubeId = await api.insertVideo(resource, mp4);
-  // Recorded at once: a later failure must not let a retry upload a second copy.
-  published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy };
-  writeFileSync(publishedFile, JSON.stringify(published, null, 2) + "\n");
-  await api.setThumbnail(youtubeId, jpg);
-  await api.insertCaption(youtubeId, srt);
-  return youtubeId;
+  const save = () => writeFileSync(publishedFile, JSON.stringify(published, null, 2) + "\n");
+  let entry = prior;
+  if (!entry) {
+    const youtubeId = await api.insertVideo(resource, mp4);
+    // Recorded at once: a later failure must not let a retry upload a second copy.
+    entry = published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy, thumbnail: false, captions: false };
+    save();
+  }
+  const done = entry;
+  const steps: ["thumbnail" | "captions", () => Promise<void>][] = [
+    ["thumbnail", () => api.setThumbnail(done.youtubeId, jpg)],
+    ["captions", () => api.insertCaption(done.youtubeId, srt)],
+  ];
+  for (const [name, run] of steps) {
+    if (done[name]) continue;
+    try {
+      await run();
+    } catch (e) {
+      throw new Error(`uploaded as ${done.youtubeId}; ${name} failed: ${(e as Error).message}; rerun npm run publish -- ${id} to finish`);
+    }
+    done[name] = true;
+    save();
+  }
+  return done.youtubeId;
 }
