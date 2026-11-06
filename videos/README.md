@@ -24,6 +24,8 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 - `npm run approve -- <id>`: validate `scripts/<id>.yaml` and record its hash in `approvals.json`.
 - `npm run preview -- <id>`: print the script as Markdown (chapters, narration, then what is on screen in italics).
 
+- `npm run check`: verify `tiller --version` matches `series.yaml`, rebuild the fixture into a temp dir, and diff every step against the committed snapshots after masking IDs, SHAs, timestamps, durations, and temp paths.
+
 More scripts are added here as the pipeline tasks land.
 
 ## Layout

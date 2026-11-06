@@ -6,7 +6,8 @@
     "test": "vitest run --dir test",
     "typecheck": "tsc --noEmit",
     "approve": "tsx src/cli/approve.ts",
-    "preview": "tsx src/cli/preview.ts"
+    "preview": "tsx src/cli/preview.ts",
+    "check": "tsx src/cli/check.ts"
   },
   "devDependencies": {
     "@remotion/bundler": "^4.0.539",
