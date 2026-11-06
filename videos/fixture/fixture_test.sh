@@ -12,8 +12,11 @@ trap 'rm -rf "$TMP"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 go build -o "$TMP/bin/tiller" "$ROOT/cmd/tiller"
-TILLER="$TMP/bin/tiller" bash "$ROOT/videos/fixture/run.sh" --out "$TMP/out" >"$TMP/run.log" 2>&1 ||
+# A relative --out resolves against the caller's directory, not the fixture's.
+(cd "$TMP" && TILLER="$TMP/bin/tiller" bash "$ROOT/videos/fixture/run.sh" --out out) >"$TMP/run.log" 2>&1 ||
   { tail -40 "$TMP/run.log" >&2; fail "run.sh exited non-zero"; }
+[[ -d "$TMP/out/snapshots" && -d "$TMP/out/marks" ]] ||
+  fail "run.sh --out out did not write under the caller's directory"
 
 for stage in s1 s2 s3; do
   snap="$TMP/out/snapshots/$stage.jsonl"

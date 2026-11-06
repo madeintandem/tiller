@@ -23,7 +23,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Resolve --out before the build changes directory, so a relative path means
+# the caller's directory.
+if [[ -n "$OUT" ]]; then
+  mkdir -p "$OUT"
+  OUT=$(cd "$OUT" && pwd -P)
+fi
+
 TILLER=$(command -v "${TILLER:-tiller}") || { echo "no tiller binary found" >&2; exit 2; }
+# A relative TILLER path must survive the same change of directory.
+[[ "$TILLER" == /* ]] || TILLER="$(cd "$(dirname "$TILLER")" && pwd -P)/$(basename "$TILLER")"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/acme-orders-fixture.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 
