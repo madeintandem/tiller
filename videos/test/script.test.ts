@@ -25,13 +25,14 @@ function variant(edit: (s: string) => string): string {
 describe("loadScript", () => {
   it("loads a valid script", () => {
     const s = loadScript(FIXTURE);
-    expect(s.beats.length).toBe(3);
+    expect(s.beats.length).toBe(6);
     expect(s.beats[0].show.kind).toBe("card");
     expect(s.captures.length).toBe(1);
   });
 
   it("defaults captures to an empty array", () => {
-    const p = variant((s) => s.replace(/captures:[\s\S]*?beats:/, "beats:"));
+    // Drop the captures block and the one console beat that uses it.
+    const p = variant((s) => s.replace(/captures:[\s\S]*?beats:/, "beats:").replace(/  - id: b4\n[\s\S]*?(?=  - id: b5)/, ""));
     expect(loadScript(p).captures).toEqual([]);
   });
 
@@ -59,7 +60,7 @@ describe("loadScript", () => {
   });
 
   it("rejects a term show missing from/to", () => {
-    const p = variant((s) => s.replace("      from: snapshots/start.txt\n", ""));
+    const p = variant((s) => s.replace("      from: s1-add-contributor\n", ""));
     expect(() => loadScript(p)).toThrow(ScriptError);
     expect(() => loadScript(p)).toThrow(/b2/);
   });

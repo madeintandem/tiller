@@ -1,4 +1,5 @@
-import { loadScript, VIDEOS_DIR } from "../script/load.js";
+import { layoutFor, scriptPath } from "../build/layout.js";
+import { loadScript } from "../script/load.js";
 import type { Show } from "../script/schema.js";
 
 function onScreen(show: Show): string {
@@ -20,7 +21,7 @@ if (!id) {
   process.exit(2);
 }
 try {
-  const s = loadScript(`${VIDEOS_DIR}scripts/${id}.yaml`);
+  const s = loadScript(scriptPath(layoutFor(), id));
   const out: string[] = [`# ${s.title}`, "", s.description, "", `Tags: ${s.tags.join(", ")}`, ""];
   out.push("## Live intro (JC)", "", s.intro.transcript, "");
   for (const b of s.beats) {

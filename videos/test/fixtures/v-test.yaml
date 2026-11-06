@@ -1,22 +1,21 @@
 id: v-test
 title: A test video
-description: A fixture for the script tests.
+description: A fixture for the script tests and the end-to-end build.
 tags: [tiller, test]
 intro:
   transcript: Hi, I'm JC. This is a short test video.
 captures:
   - id: board
-    mark: board-start
-    path: /build
-    seconds: 4
+    mark: s1-end
+    path: /
+    seconds: 5
     actions:
-      - click: "text=Build"
-      - waitFor: ".board"
+      - waitFor: "main"
       - scroll: 200
 beats:
   - id: b1
     chapter: Getting started
-    say: Welcome to the test video about planning work.
+    say: Welcome to the test video about planning work. We set up a small project, register the person driving it, and join so the agent knows who it works for. Each step is short.
     show:
       kind: card
       kicker: Test
@@ -26,10 +25,29 @@ beats:
     say: The agent reads the board and picks the next piece of work.
     show:
       kind: term
-      stage: start
-      from: snapshots/start.txt
-      to: snapshots/after.txt
+      stage: s1
+      from: s1-add-contributor
+      to: s1-join
   - id: b3
+    chapter: The console
+    say: Next, the console. It shows the same project in a browser, read straight from the repository.
+    show:
+      kind: card
+      kicker: Console
+      heading: See the work
+  - id: b4
+    say: Home lists what needs you first, then what the agents are doing.
+    show:
+      kind: console
+      capture: board
+  - id: b5
+    chapter: Wrapping up
+    say: That covers the loop from a fresh project to a running console. The next video plans the first feature and takes it through review to a merge.
+    show:
+      kind: card
+      kicker: Recap
+      heading: That is the loop
+  - id: b6
     say: That is all for this one.
     show:
       kind: outro

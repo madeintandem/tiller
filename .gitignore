@@ -72,3 +72,5 @@ CLAUDE.local.md
 /videos/.local/
 /videos/node_modules/
 /videos/out/
+# videos/src/build is the build command's source, not build output (same name collision as ui/src/views/build).
+!/videos/src/build/

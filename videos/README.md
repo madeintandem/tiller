@@ -30,6 +30,10 @@ Node 26. From this directory: `npm install`. Playwright browsers are installed s
 
 - `npm run voice-test`: narrate `voice-test.txt` (two paragraphs from the root README, about 60 seconds; JC can replace the file with his own text) to `.local/voice-test.mp3` with the configured voice. Needs `.local/config.yaml` (or `NARRATION_FAKE=1` plus a config file, which yields silent audio).
 
+- `npm run capture -- <id>`: record the script's console captures (see Console captures).
+
+- `npm run build -- <id>`: turn an approved script into `out/<id>.mp4`, `out/<id>.srt`, and `out/<id>.meta.json` (see Building).
+
 More scripts are added here as the pipeline tasks land.
 
 ## Layout
@@ -43,6 +47,8 @@ More scripts are added here as the pipeline tasks land.
 - `src/index.ts`, `src/Root.tsx`: Remotion entry and compositions (`Smoke`, `TermSmoke`, and `Video`, whose length comes from the timeline passed as input props).
 - `src/timeline/`: `buildTimeline` (intro, 0.4 s gap, beats 0.35 s apart, 6 s outro, refused past 8:00), `toSrt` (captions from the spoken words only), `chapters` (YouTube chapter lines, checked against YouTube's rules). Asset paths in a timeline are relative to the build directory, which the render step serves as Remotion's public directory.
 - `src/components/Video.tsx`: the whole program: intro full bleed with a name lower third, then each beat's narration over its card, terminal, or console capture inside the frame, then the outro.
+- `src/build/`: `layoutFor` (every build path), `preflight`, `renderVideo` (Remotion bundle and render), `metadata` (the upload metadata and disclosure line); `src/cli/build.ts` runs the phases.
+- `src/check/run.ts`: `checkSnapshots` and `tillerVersion`, shared by `npm run check` and the build.
 - `public/brand/`: MiT logo SVGs used by the frame.
 - `fixture/`: the brownfield Acme Orders demo repo the videos are recorded from. `app/` is the existing app, `content/` the authored files the agent and the human write, `stage1.sh` to `stage3.sh` one script per video, `lib.sh` their helpers (`run`, `say`, `put`, `mark`).
 - `snapshots/s1.jsonl` to `s3.jsonl`: every step each stage ran, one JSON object per line, with each Tiller command's real output.
@@ -67,3 +73,34 @@ Fake mode: with `NARRATION_FAKE=1`, `narrate` and `align` make no network reques
 `npm run capture -- <script-id>` loads `scripts/<id>.yaml` and records every capture it names into `.local/build/<id>/captures/<capture-id>.webm`. Each capture extracts its fixture mark to a temp dir, runs `tiller serve` there on a free port (`$TILLER` overrides the binary), and records the real console in Chromium at 1920x1080, scale 1, light theme. The page is held until `seconds` have passed since it loaded. The server and the temp dir are cleaned up even when a capture throws.
 
 One-time setup: `npx playwright install chromium` (run from `videos/`).
+
+## Building
+
+`npm run build -- <id>` prints one line per phase with its elapsed time:
+
+1. **preflight**: everything checkable locally and for free, all failures reported at once, before any paid API call or long render: the script exists and validates; its hash matches `approvals.json`; `.local/config.yaml` loads (with `NARRATION_FAKE=1` it needs no ElevenLabs keys); `tiller --version` matches `series.yaml`; `.local/media/intros/<id>.mov` exists; `.local/media/music.mp3` exists; ffmpeg runs.
+2. **check**: the same snapshot check as `npm run check`.
+3. **intro**: trim and conform the intro clip, then align its transcript for captions.
+4. **narration**: each beat's `say`, cached (see Narration).
+5. **captures**: every console capture the script names.
+6. **timeline**: lay out the program and validate the chapters against YouTube's rules (and the 8:00 ceiling) before rendering.
+7. **render**: Remotion `Video` composition, H.264 1920x1080 at 30 fps, to `.local/build/<id>/render.mp4`.
+8. **master**: music under the intro and outro, loudness to -14 LUFS, to `out/<id>.mp4`.
+9. **outputs**: `out/<id>.srt` and `out/<id>.meta.json` (`title`, `description`, `tags`, `chapters`, `durationSeconds`; the description is the script's, a blank line, the chapter list, a blank line, then "The narration is my words, in my voice, performed by AI.").
+
+`.local/build/<id>/` is the build directory and Remotion's public directory: the prepared `intro.mp4`, `narration/<beat>.mp3`, `captures/<capture>.webm`, the brand assets, and `timeline.json` all sit there, and the timeline's paths are relative to it.
+
+Overrides: `VIDEOS_SCRIPTS=<dir>` and `VIDEOS_APPROVALS=<file>` point `approve`, `preview`, `capture`, and `build` at another scripts directory and approvals file; `TILLER=<binary>` picks the binary.
+
+End-to-end test build, with no ElevenLabs key and without touching the committed `approvals.json`:
+
+```
+# a generated intro (test pattern, a tone with half a second of silence at each end) and music
+ffmpeg -f lavfi -i testsrc2=size=1920x1080:rate=30:duration=6 -f lavfi -i "sine=frequency=440:duration=5,adelay=500,apad=whole_dur=6" -c:v libx264 -pix_fmt yuv420p -c:a aac -t 6 .local/media/intros/v-test.mov
+ffmpeg -f lavfi -i sine=frequency=220:duration=20 .local/media/music.mp3
+export VIDEOS_SCRIPTS=test/fixtures VIDEOS_APPROVALS=.local/approvals.json NARRATION_FAKE=1
+npm run approve -- v-test
+npm run build -- v-test
+```
+
+Fake mode still needs a `.local/config.yaml`; one holding only the `youtube:` block will do.
