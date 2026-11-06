@@ -1,0 +1,252 @@
+id: v3
+title: Build, review, and merge a feature with Tiller
+description: >-
+  Your agent builds an approved feature on its own branch, a code review finds
+  a real bug, the fix goes back to the same branch, and you merge. Then Tiller
+  runs the acceptance contract on main and marks the feature done. Last of
+  three videos that take one small feature on an existing codebase from an
+  empty plan to merged.
+tags: [tiller, ai coding agents, claude code, code review, acceptance testing]
+intro:
+  # DRAFT for JC to say on camera in his own words. After filming, replace this
+  # with what he actually said; it is aligned to the clip for the captions.
+  transcript: >-
+    Hi, I'm JC from Made In Tandem. This is the last one in the series: the
+    agent builds the feature, a review catches a bug, and I merge it. And yes,
+    the rest is my words, in my voice, performed by AI.
+captures:
+  - id: feature-done
+    mark: s3-end
+    path: /node/feature/orders/status-filter
+    seconds: 20
+  - id: board
+    mark: s3-end
+    path: /build?epics=orders
+    seconds: 14
+beats:
+  - id: build-card
+    chapter: Build
+    say: >-
+      We left off with an approved plan: a spec, a contract with two criteria,
+      and one task that's ready to go. Nobody has written a line of code yet.
+    show:
+      kind: card
+      kicker: Build
+      heading: The agent picks up the task
+      body: Claim it, start it, build it on its own branch.
+  - id: claim-start
+    say: >-
+      Same instruction as always: read the guide and do what it says. The top
+      move is to claim the task and start it. Claiming says whose it is.
+      Starting moves it to in progress and names the branch the work belongs
+      on. Notice Tiller doesn't create that branch itself. It never touches
+      your Git refs; the agent does that part.
+    show:
+      kind: term
+      stage: s3
+      from: s3-say-ask
+      to: s3-start
+  - id: branch-tests
+    say: >-
+      So the agent makes the branch, commits the start, and writes the tests
+      first. Those tests come straight out of the task the agent wrote last
+      time.
+    show:
+      kind: term
+      stage: s3
+      from: s3-branch
+      to: s3-tests-commit
+  - id: red
+    say: >-
+      Then it checks the task, and the tests fail. Good. They're supposed to,
+      because nothing is implemented yet. Tiller records the failing run as
+      evidence, with the commit it ran against, so the history shows the test
+      failing before the fix and not just passing after it.
+    show:
+      kind: term
+      stage: s3
+      from: s3-check-red-expect-fail
+      to: s3-red-commit
+  - id: green
+    say: >-
+      Now the implementation, two small changes in the two files the feature
+      named. Check again, and the gate is green. The task moves to its check
+      state, which means it's ready to submit.
+    show:
+      kind: term
+      stage: s3
+      from: s3-impl-add
+      to: s3-check-commit
+  - id: submit
+    say: >-
+      Then it submits. Submitting records the branch at a specific commit, so
+      whatever gets reviewed is exactly what was checked. The readout says the
+      gates are green, and the next move is mine: merge. It also lists a few
+      review gates I could sign off on; that's a story for another day. The
+      agent says it's over to me, and it's right.
+    show:
+      kind: term
+      stage: s3
+      from: s3-submit
+      to: s3-say-submitted
+  - id: review-card
+    chapter: Review
+    say: >-
+      But I don't merge on a green light alone. Green means the tests the agent
+      wrote pass. It doesn't mean the agent wrote the right tests.
+    show:
+      kind: card
+      kicker: Review
+      heading: Read it before you merge it
+      body: A code review against the spec and the contract.
+  - id: review-ask
+    say: >-
+      So I ask for a code review of the feature. The review reads the feature
+      and its task, the spec, the contract I approved, and the diff between the
+      branch and main. Three files changed. Not much code, which makes it a
+      good time to look hard.
+    show:
+      kind: term
+      stage: s3
+      from: s3-say-review
+      to: s3-review-diff
+  - id: finding
+    say: >-
+      And it finds one. Ask for a status that doesn't exist, and instead of an
+      error, you get every order back. That breaks the second criterion in the
+      contract, the one I told you to hang on to, so it's graded a blocker. The
+      tests passed because they never tried a bad status, even though the task
+      said they should. Because this work isn't merged yet, the fix doesn't
+      become a separate bug. It goes back to the branch it came from.
+    show:
+      kind: term
+      stage: s3
+      from: s3-say-finding
+      to: s3-say-unmerged
+  - id: fix-card
+    chapter: Fix
+    say: >-
+      This is my favorite part of the whole loop. The finding doesn't get lost
+      in a chat window. It's on the record.
+    show:
+      kind: card
+      kicker: Fix
+      heading: Back to its branch
+      body: The finding is noted on the review. The task goes back for the fix.
+  - id: send-back
+    say: >-
+      I tell the agent to fix it on its branch. It commits the review to main
+      first, with a note on the finding saying where the fix was requested.
+      Then it switches back to the branch and resumes the task, with a reason
+      that says what it's resuming for.
+    show:
+      kind: term
+      stage: s3
+      from: s3-say-fix
+      to: s3-resume
+  - id: fix
+    say: >-
+      The fix is small: an unknown status now gets the error, and the store no
+      longer falls back to the full list. The agent adds the tests that were
+      missing, a made-up status, the wrong capitalization, and an empty one.
+      Check again. Green.
+    show:
+      kind: term
+      stage: s3
+      from: s3-fix-add
+      to: s3-recheck-commit
+  - id: resubmit
+    say: >-
+      It submits again, at the new commit, and the readout puts the merge back
+      in my hands. Same branch, same task, one more commit on it, and a review
+      file that explains why.
+    show:
+      kind: term
+      stage: s3
+      from: s3-resubmit
+      to: s3-readout-resubmit
+  - id: merge-card
+    chapter: Merge
+    say: >-
+      This is the decision that matters. The agent can build and fix all day.
+      Merging is mine.
+    show:
+      kind: card
+      kicker: Your call
+      heading: Merge it
+      body: Tiller watches the merge. It never makes it for you.
+  - id: merge
+    say: >-
+      It reads right, so I merge it into main, the ordinary way, with Git. In
+      a real project that's usually a pull request; here it's a plain merge on
+      my machine. Tiller doesn't care which. It finds out from the history.
+    show:
+      kind: term
+      stage: s3
+      from: s3-say-merge
+      to: s3-say-merged
+  - id: sync
+    say: >-
+      The agent syncs, which is how Tiller notices. It sees the task's branch
+      in main and records the task as done. Then it points out that the
+      feature has every task done but hasn't been checked yet.
+    show:
+      kind: term
+      stage: s3
+      from: s3-sync
+      to: s3-sync-commit
+  - id: check-feature
+    say: >-
+      So the agent checks the feature. This is the acceptance contract from
+      last time, running on main, after the merge. Both criteria pass. Here's
+      the uncomfortable part: without the review, the second one would have
+      passed too, because the tests never tried a bad status. A contract is
+      only as good as the tests behind it, which is why I still read the
+      code.
+    show:
+      kind: term
+      stage: s3
+      from: s3-check-feature
+      to: s3-check-feature-commit
+  - id: done-card
+    chapter: Done
+    say: >-
+      One more sync, and the work rolls up.
+    show:
+      kind: card
+      kicker: Done
+      heading: From a page of notes to merged
+  - id: rollup
+    say: >-
+      The feature is done, and since it was the only feature in its epic, the
+      epic is done too. And there's a line I like here. The two as-is docs from
+      the first video describe code that just changed, so Tiller flags them
+      for a drift check. The inspection report knows the house was renovated.
+      The tree at the end shows all three done.
+    show:
+      kind: term
+      stage: s3
+      from: s3-sync-rollup
+      to: s3-tree
+  - id: feature-done
+    say: >-
+      In the console, the feature is done, with both of its gates passing:
+      the tests and the contract. It shows which version of the spec and
+      contract it was verified against, and at which commit. That's the whole
+      trail from the page I wrote to the code on main.
+    show:
+      kind: console
+      capture: feature-done
+  - id: board
+    say: >-
+      And on the build board, the feature sits in the done column. One page of
+      notes, a handful of decisions from me, and the agent did the rest.
+    show:
+      kind: console
+      capture: board
+  - id: outro
+    say: >-
+      That's the loop. Try it on your own repo, start with something small,
+      and let me know how it goes.
+    show:
+      kind: outro

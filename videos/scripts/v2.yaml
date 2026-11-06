@@ -1,0 +1,248 @@
+id: v2
+title: From idea to approved spec with Tiller
+description: >-
+  Write one page about a feature, let your agent turn it into an epic, a
+  feature, a spec, an acceptance contract, and a task, and approve each step
+  before any code gets written. Second of three videos that take one small
+  feature on an existing codebase from an empty plan to merged.
+tags: [tiller, ai coding agents, claude code, specs, acceptance criteria]
+intro:
+  # DRAFT for JC to say on camera in his own words. After filming, replace this
+  # with what he actually said; it is aligned to the clip for the captions.
+  transcript: >-
+    Hi, I'm JC from Made In Tandem. In this one I'll take an idea from a page
+    of notes to a plan the agent can build, and I'll approve every step. Same
+    as before: the rest is my words, in my voice, performed by AI.
+captures:
+  - id: design-doc
+    mark: s2-proposed
+    path: /file/.tiller/design/status-filter.md#L1
+    seconds: 22
+  - id: approve-epic
+    mark: s2-proposed
+    path: /
+    seconds: 20
+  - id: spec
+    mark: s2-specced
+    path: /node/feature/orders/status-filter
+    seconds: 30
+  - id: contract
+    mark: s2-specced
+    path: /node/feature/orders/status-filter?tab=evals
+    seconds: 22
+  - id: approved
+    mark: s2-end
+    path: /node/feature/orders/status-filter
+    seconds: 18
+beats:
+  - id: no-work-card
+    chapter: No work yet
+    say: >-
+      Last time we ended with a confirmed baseline: Tiller knows what the code
+      does today, and I signed off on it. What it doesn't have is anything to
+      do.
+    show:
+      kind: card
+      kicker: Where we left off
+      heading: A confirmed baseline and nothing to build
+  - id: guide-empty
+    say: >-
+      Ask the guide and it says so. Nothing is planned, and here are the three
+      ways work gets in. A document making the case for a change. A quick
+      capture, for a bug or a chore or a small tweak. Or a design for what the
+      code should become. I'm using a design. A capture is great for small
+      fixes, but it skips the acceptance contract, and I want one for this.
+    show:
+      kind: term
+      stage: s2
+      from: s2-guide-empty
+      to: s2-guide-empty
+  - id: idea-card
+    chapter: Write the idea down
+    say: >-
+      This part is mine, and it's about a page. Three short sections: the
+      problem, what we want, and what we're not doing.
+    show:
+      kind: card
+      kicker: Your job
+      heading: One page about what you want
+      body: The problem, what we want, what's out of scope.
+  - id: idea-commit
+    say: >-
+      The warehouse wants to see orders by status. Right now the warehouse
+      screen and the support desk both pull the whole order book and filter it
+      in the browser, which is fine at six orders and slow at six thousand. I
+      write that down and commit it next to the as-is docs from last time.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-idea
+      to: s2-design-commit
+  - id: design-doc
+    say: >-
+      Here it is in the console. Let a client ask for one status. Leave
+      today's behavior alone when it doesn't. And if it asks for a status we
+      don't recognize, say so with an error, instead of quietly handing back
+      everything. Then a short list of what's out of scope, so nobody gets
+      creative.
+    show:
+      kind: console
+      capture: design-doc
+  - id: proposes-card
+    chapter: The agent proposes
+    say: >-
+      Now I hand it to the agent, and the agent's first job is to propose the
+      shape of the work. Not the code. The shape.
+    show:
+      kind: card
+      kicker: Decompose
+      heading: The agent proposes the shape
+      body: Epics and features, as drafts.
+  - id: ask-guide
+    say: >-
+      Same instruction as always: read the guide and do what it says. This
+      time the guide sees a design nobody has broken down yet, and the top
+      move is to decompose it into epics and features. So that's the skill the
+      agent loads.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-ask
+      to: s2-guide
+  - id: decompose
+    say: >-
+      It reads the design and the as-is docs, then proposes one epic with one
+      feature in it. The feature is marked as a change to existing code, and
+      it names the two files it will touch. Everything it creates starts as a
+      draft. Drafts are cheap; nothing gets built from one.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-decompose
+      to: s2-decompose-commit
+  - id: decompose-readout
+    say: >-
+      Then the readout. One epic, one feature, readiness passed, no open
+      questions. And one thing waiting on me: approving the epic. A feature
+      this small doesn't need a big tree, and I like that the agent didn't
+      invent one.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-shape
+      to: s2-readout-decompose
+  - id: shape-card
+    chapter: Approve the shape
+    say: >-
+      Approving an epic isn't approving a plan. It's saying these are the
+      right pieces. You can still change your mind about the details.
+    show:
+      kind: card
+      kicker: Your call
+      heading: Are these the right pieces?
+  - id: approve-epic-home
+    say: >-
+      The console puts it right where I'll see it. Home has a needs-you
+      section, and the approval sits at the top with the exact command to
+      copy. If the shape were wrong, this is where I'd stop and tell the agent
+      why.
+    show:
+      kind: console
+      capture: approve-epic
+  - id: approve-epic
+    say: >-
+      It's right, so I approve it and commit. The epic is ready, and the guide
+      already knows what's next: the agent writes the spec for the one
+      feature.
+    show:
+      kind: term
+      stage: s2
+      from: s2-approve-epic
+      to: s2-approve-epic-commit
+  - id: spec-card
+    chapter: The spec
+    say: >-
+      Specifying is where the agent does the careful work, and where I get the
+      most out of reading closely.
+    show:
+      kind: card
+      kicker: Specify
+      heading: Spec, contract, and tasks
+      body: What it does, how we'll know, and the work to get there.
+  - id: specify
+    say: >-
+      I ask for the spec, and the agent writes three things. A spec that says
+      exactly how the feature behaves. An acceptance contract: the criteria
+      that have to pass on main before the feature counts as done. And the
+      task that does the work, with its approach and the tests it should add.
+      Then it marks the feature specced and commits.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-specify
+      to: s2-spec-commit
+  - id: specify-readout
+    say: >-
+      The readout says the contract is valid, it has two criteria, and both
+      are bound to tests, so they'll run as code instead of somebody's
+      opinion. And one more thing waits on me: the feature plan.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-planned
+      to: s2-readout-specify
+  - id: spec
+    say: >-
+      So I read it. The spec tab in the console spells out the behavior. Ask
+      for a known status and you get only those orders, oldest first. Ask for
+      none and nothing changes. Ask for anything else, including an empty
+      value, and you get an error that lists the valid statuses. It never
+      falls back to the full list. Matching is exact, so a capitalized status
+      counts as unknown. That level of detail is the point.
+    show:
+      kind: console
+      capture: spec
+  - id: contract
+    say: >-
+      The contract tab has the two criteria. The first says a known status
+      returns only its orders. The second says an unknown status gets an
+      error. Hang on to that second one. It comes back in the next video.
+    show:
+      kind: console
+      capture: contract
+  - id: plan-card
+    chapter: Approve the plan
+    say: >-
+      Here's the decision this video has been building to. Once I approve the
+      plan, the agent can start writing code.
+    show:
+      kind: card
+      kicker: Your call
+      heading: Approve the plan
+      body: Spec, contract, and task, approved together.
+  - id: approve-feature
+    say: >-
+      The spec says what I want, the contract would catch it if the code
+      didn't, and the task is sized right. So I approve the feature and commit.
+      The task moves to ready with it, and the guide's next move belongs to
+      the agent: claim the task and start.
+    show:
+      kind: term
+      stage: s2
+      from: s2-say-read
+      to: s2-approve-feature-commit
+  - id: approved
+    say: >-
+      Back in the console, the feature now shows what I approved it against:
+      the exact version of the spec, of the contract, and the commit. If
+      either one changes after today, Tiller can tell. I decided what gets
+      built, and it's written down.
+    show:
+      kind: console
+      capture: approved
+  - id: outro
+    say: >-
+      Next time the agent builds it, a code review finds a real bug, and I get
+      to merge.
+    show:
+      kind: outro
