@@ -14,6 +14,17 @@ describe("theme", () => {
     expect(theme.video).toEqual({ width: 1920, height: 1080, fps: 30 });
   });
 
+  it("keeps lower third and frame content clear of the wordmark by at least 1X", () => {
+    const w = theme.wordmark;
+    const x = w.height / 2;
+    const wordmarkTop = w.bottom + w.height;
+    const src = (f: string) => readFileSync(join(__dirname, "../src/components", f), "utf8");
+    // Both components must take their offset from the shared constant.
+    expect(src("LowerThird.tsx")).toContain("bottom: wordmark.clearTop");
+    expect(src("Frame.tsx")).toContain("${wordmark.clearTop}px");
+    expect(w.clearTop - wordmarkTop).toBeGreaterThanOrEqual(x);
+  });
+
   it.skipIf(!existsSync(guide))("matches the --color-* tokens in the MiT style guide", () => {
     const html = readFileSync(guide, "utf8");
     const parsed = new Map<string, string>();

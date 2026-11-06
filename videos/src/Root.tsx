@@ -1,10 +1,14 @@
 import React from "react";
 import { Composition } from "remotion";
+import { LowerThird } from "./components/LowerThird";
 import { TitleCard } from "./components/TitleCard";
 import { video } from "./theme";
 
 const Smoke: React.FC = () => (
-  <TitleCard kicker="Tiller how-to" heading="Smoke test" body="MiT theme and frame components." />
+  <>
+    <TitleCard kicker="Tiller how-to" heading="Smoke test" body="MiT theme and frame components." />
+    <LowerThird text="Lower third sample" />
+  </>
 );
 
 export const RemotionRoot: React.FC = () => (

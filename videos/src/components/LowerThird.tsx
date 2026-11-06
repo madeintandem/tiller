@@ -1,7 +1,7 @@
 import React from "react";
 import { interpolate, useCurrentFrame } from "remotion";
 import "../fonts";
-import { colors, fonts } from "../theme";
+import { colors, fonts, wordmark } from "../theme";
 
 const SLIDE_FRAMES = 9; // 300 ms at 30 fps
 
@@ -12,8 +12,8 @@ export const LowerThird: React.FC<{ text: string }> = ({ text }) => {
     <div
       style={{
         position: "absolute",
-        left: 120,
-        bottom: 140,
+        left: wordmark.left,
+        bottom: wordmark.clearTop,
         opacity: t,
         transform: `translateY(${(1 - t) * 16}px)`,
         background: colors.darkIndigo,

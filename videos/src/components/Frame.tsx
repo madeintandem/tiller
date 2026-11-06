@@ -1,7 +1,7 @@
 import React from "react";
 import { Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import "../fonts";
-import { colors } from "../theme";
+import { colors, wordmark } from "../theme";
 
 const FADE_FRAMES = 9; // 300 ms at 30 fps
 
@@ -33,10 +33,10 @@ export const Frame: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
   return (
     <div style={{ position: "absolute", inset: 0, background: colors.parchment, overflow: "hidden" }}>
       <SoftEdge />
-      <div style={{ position: "absolute", inset: 0, padding: "96px 200px 160px 120px", opacity }}>{children}</div>
+      <div style={{ position: "absolute", inset: 0, padding: `96px 200px ${wordmark.clearTop}px 120px`, opacity }}>{children}</div>
       <Img
         src={staticFile("brand/mit-logo-dark-indigo.svg")}
-        style={{ position: "absolute", left: 120, bottom: 56, width: 200 }}
+        style={{ position: "absolute", left: wordmark.left, bottom: wordmark.bottom, width: wordmark.width }}
       />
     </div>
   );
