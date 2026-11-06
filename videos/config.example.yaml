@@ -2,14 +2,18 @@
 elevenlabs:
   # API key from the ElevenLabs dashboard. Required (unless NARRATION_FAKE=1).
   apiKey: "sk_your_key_here"
-  # ID of JC's voice clone. Required (unless NARRATION_FAKE=1).
+  # ID of the voice to narrate with: a stock voice while testing, JC's clone once it exists.
+  # Required (unless NARRATION_FAKE=1).
   voiceId: "your_voice_id"
+  # ID of JC's clone, set once the voice test (npm run voice-test) confirms it. Publish
+  # refuses any build whose narration voice is not this one.
+  # approvedVoiceId: "jc_clone_voice_id"
   # TTS model. Optional; defaults to eleven_v4 (see README).
   modelId: "eleven_v4"
-  # Pronunciation dictionary to apply. Optional.
-  dictionaryId: "your_dictionary_id"
+  # Pronunciation dictionary to apply. Optional; uncomment and fill in to use one.
+  # dictionaryId: "your_dictionary_id"
   # Pinned dictionary version. Optional; omit for the latest.
-  dictionaryVersion: "your_dictionary_version_id"
+  # dictionaryVersion: "your_dictionary_version_id"
 youtube:
   # "private" until the YouTube API audit passes, then "unlisted". Never "public". Default private.
   privacy: private

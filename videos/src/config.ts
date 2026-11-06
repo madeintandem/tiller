@@ -8,6 +8,8 @@ export type Config = {
     modelId: string;
     dictionaryId?: string;
     dictionaryVersion?: string;
+    // JC's confirmed clone. Publish refuses a build narrated in any other voice.
+    approvedVoiceId?: string;
   };
   youtube: { privacy: "private" | "unlisted"; categoryId: string };
 };
@@ -45,6 +47,7 @@ export function loadConfig(path = "videos/.local/config.yaml"): Config {
       modelId: opt(el.modelId) ?? DEFAULT_MODEL_ID,
       dictionaryId: opt(el.dictionaryId),
       dictionaryVersion: opt(el.dictionaryVersion),
+      approvedVoiceId: opt(el.approvedVoiceId),
     },
     youtube: { privacy, categoryId: opt(yt.categoryId) ?? "28" },
   };

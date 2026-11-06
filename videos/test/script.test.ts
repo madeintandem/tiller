@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadScript, scriptHash } from "../src/script/load.js";
+import { hashText, loadScript, readScript, scriptHash } from "../src/script/load.js";
 import { ScriptError } from "../src/script/schema.js";
 import { approve, isApproved } from "../src/script/approval.js";
 
@@ -79,6 +79,22 @@ describe("scriptHash", () => {
     const original = scriptHash(FIXTURE);
     const p = variant((s) => s.split("\n").map((l) => l + "  ").join("\r\n"));
     expect(scriptHash(p)).toBe(original);
+  });
+
+  it("ignores trailing blank lines at the end of the file", () => {
+    const original = scriptHash(FIXTURE);
+    expect(scriptHash(variant((s) => s.replace(/\n*$/, "\n\n\n")))).toBe(original);
+    expect(scriptHash(variant((s) => s.replace(/\n*$/, "")))).toBe(original);
+  });
+
+  it("readScript hashes exactly the bytes it parsed", () => {
+    const p = variant((s) => s);
+    const { script, hash } = readScript(p);
+    writeFileSync(p, readFileSync(FIXTURE, "utf8").replace("planning", "shipping"));
+    // The file changed after the read; the pair still describes the original bytes.
+    expect(hash).toBe(scriptHash(FIXTURE));
+    expect(script.beats[0].say).toContain("planning");
+    expect(hashText(readFileSync(FIXTURE, "utf8"))).toBe(hash);
   });
 
   it("changes on a word change", () => {

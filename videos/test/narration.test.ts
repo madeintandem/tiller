@@ -213,6 +213,11 @@ describe("loadConfig", () => {
     const c = loadConfig(write("elevenlabs:\n  apiKey: k\n  voiceId: v\n"));
     expect(c.elevenlabs.modelId).toBe("eleven_v4");
     expect(c.youtube).toEqual({ privacy: "private", categoryId: "28" });
+    expect(c.elevenlabs.approvedVoiceId).toBeUndefined();
+  });
+  it("reads elevenlabs.approvedVoiceId", () => {
+    const c = loadConfig(write("elevenlabs:\n  apiKey: k\n  voiceId: v\n  approvedVoiceId: v\n"));
+    expect(c.elevenlabs.approvedVoiceId).toBe("v");
   });
   it("does not require credentials in fake mode", () => {
     process.env.NARRATION_FAKE = "1";

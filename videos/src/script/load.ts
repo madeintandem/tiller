@@ -6,26 +6,49 @@ import { ScriptError, validateScript, type Script } from "./schema.js";
 
 export const VIDEOS_DIR = fileURLToPath(new URL("../../", import.meta.url));
 
-export function loadScript(path: string): Script {
+function parseScript(text: string, path: string): Script {
   let raw: unknown;
   try {
-    raw = parse(readFileSync(path, "utf8"));
+    raw = parse(text);
   } catch (e) {
-    if (e instanceof ScriptError) throw e;
     throw new ScriptError(`cannot read ${path}: ${(e as Error).message}`);
   }
   return validateScript(raw);
 }
 
-// Hash of the script text with CRLF and trailing whitespace normalized away,
-// so an editor's line endings never void an approval but a wording change does.
-export function scriptHash(path: string): string {
-  const text = readFileSync(path, "utf8")
+function readText(path: string): string {
+  try {
+    return readFileSync(path, "utf8");
+  } catch (e) {
+    throw new ScriptError(`cannot read ${path}: ${(e as Error).message}`);
+  }
+}
+
+export function loadScript(path: string): Script {
+  return parseScript(readText(path), path);
+}
+
+// Hash of the script text with CRLF, trailing whitespace, and trailing blank lines
+// normalized away, so an editor's line endings never void an approval but a wording change does.
+export function hashText(text: string): string {
+  const normalized = text
     .replace(/\r\n/g, "\n")
     .split("\n")
     .map((l) => l.replace(/[ \t]+$/, ""))
-    .join("\n");
-  return createHash("sha256").update(text).digest("hex");
+    .join("\n")
+    .replace(/\n+$/, "");
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+export function scriptHash(path: string): string {
+  return hashText(readText(path));
+}
+
+// Reads the file once and both parses and hashes those same bytes, so the hash a build
+// checks and records is always the hash of the script it renders.
+export function readScript(path: string): { script: Script; hash: string } {
+  const text = readText(path);
+  return { script: parseScript(text, path), hash: hashText(text) };
 }
 
 export function loadSeries(path = `${VIDEOS_DIR}series.yaml`): { tiller: string } {

@@ -4,10 +4,16 @@ import { tillerVersion } from "../check/run.js";
 import { loadConfig } from "../config.js";
 import { ffEnv } from "../media/ffmpeg.js";
 import { isApproved } from "../script/approval.js";
-import { loadScript, loadSeries, scriptHash } from "../script/load.js";
+import { loadSeries, readScript } from "../script/load.js";
+import type { Script } from "../script/schema.js";
 import { introPath, layoutFor, scriptPath, type Layout } from "./layout.js";
+import { checkScript } from "./validate.js";
 
-export type PreflightResult = { ok: true } | { ok: false; problems: string[] };
+// On success, the script and its hash come from one read of the file: the build renders and
+// records exactly what was checked against the approval.
+export type PreflightResult =
+  | { ok: true; script: Script; hash: string; warnings: string[] }
+  | { ok: false; problems: string[]; warnings: string[] };
 
 const message = (e: unknown) => (e as Error).message;
 
@@ -15,21 +21,27 @@ const message = (e: unknown) => (e as Error).message;
 // paid API call or long render. Every failure is reported, in a fixed order.
 export function preflight(id: string, layout: Layout = layoutFor()): PreflightResult {
   const problems: string[] = [];
+  const warnings: string[] = [];
+  let read: { script: Script; hash: string } | undefined;
 
   const path = scriptPath(layout, id);
   if (!existsSync(path)) {
     problems.push(`no script at ${path}`);
   } else {
-    let valid = false;
     try {
-      const script = loadScript(path);
-      if (script.id !== id) problems.push(`${path} has id "${script.id}", expected "${id}"`);
-      else valid = true;
+      const r = readScript(path);
+      if (r.script.id !== id) problems.push(`${path} has id "${r.script.id}", expected "${id}"`);
+      else read = r;
     } catch (e) {
       problems.push(`script ${id} is invalid: ${message(e)}`);
     }
-    if (valid && !isApproved(id, scriptHash(path), layout.approvals)) {
+    if (read && !isApproved(id, read.hash, layout.approvals)) {
       problems.push(`script ${id} is not approved at its current content (run: npm run approve -- ${id})`);
+    }
+    if (read) {
+      const checked = checkScript(read.script, layout);
+      problems.push(...checked.problems);
+      warnings.push(...checked.warnings);
     }
   }
 
@@ -57,5 +69,6 @@ export function preflight(id: string, layout: Layout = layoutFor()): PreflightRe
     problems.push("ffmpeg not found; brew install ffmpeg");
   }
 
-  return problems.length === 0 ? { ok: true } : { ok: false, problems };
+  if (problems.length > 0 || !read) return { ok: false, problems, warnings };
+  return { ok: true, script: read.script, hash: read.hash, warnings };
 }

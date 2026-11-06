@@ -52,7 +52,8 @@ export class TooLongError extends Error {
   }
 }
 
-function termSteps(beatId: string, show: Extract<Show, { kind: "term" }>, snapshots: Record<string, Step[]>): Step[] {
+// The steps a term beat shows, from its `from` to its `to` step inclusive.
+export function termSteps(beatId: string, show: Extract<Show, { kind: "term" }>, snapshots: Record<string, Step[]>): Step[] {
   const stage = snapshots[show.stage];
   if (!stage) throw new Error(`beat ${beatId}: no snapshot for stage "${show.stage}"`);
   const from = stage.findIndex((s) => s.id === show.from);

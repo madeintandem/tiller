@@ -1,4 +1,4 @@
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,7 +31,9 @@ beforeEach(() => {
   const tiller = join(root, "fake-tiller");
   writeFileSync(tiller, "#!/bin/sh\necho 'tiller version 0.22.0'\n");
   chmodSync(tiller, 0o755);
-  layout = layoutFor(root, { TILLER: tiller });
+  // Step IDs and capture marks are checked against the committed snapshots and marks.
+  const real = layoutFor();
+  layout = { ...layoutFor(root, { TILLER: tiller }), snapshots: real.snapshots, marks: real.marks };
   fetchSpy = vi.fn(() => {
     throw new Error("preflight must not touch the network");
   });
@@ -45,7 +47,34 @@ afterEach(() => {
 describe("preflight", () => {
   it("passes a fully prepared layout", () => {
     prepare();
-    expect(preflight("v-test", layout)).toEqual({ ok: true });
+    const r = preflight("v-test", layout);
+    expect(r).toMatchObject({ ok: true, warnings: [], hash: scriptHash(join(root, "scripts", "v-test.yaml")) });
+    if (r.ok) expect(r.script.id).toBe("v-test");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("hands on the script and hash it read, not a later edit", () => {
+    prepare();
+    const path = join(root, "scripts", "v-test.yaml");
+    const before = scriptHash(path);
+    const r = preflight("v-test", layout);
+    writeFileSync(path, readFileSync(path, "utf8").replace("planning", "shipping"));
+    expect(r.ok && r.hash).toBe(before);
+    expect(r.ok && r.script.beats[0].say).toContain("planning");
+  });
+
+  it("reports a step missing from the snapshots and a missing capture mark before anything paid", () => {
+    prepare();
+    const path = join(root, "scripts", "v-test.yaml");
+    writeFileSync(path, readFileSync(path, "utf8").replace("to: s1-join", "to: s1-nope").replace("mark: s1-end", "mark: s1-gone"));
+    approve("v-test", scriptHash(path), join(root, "approvals.json"));
+    const r = preflight("v-test", layout);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.problems).toHaveLength(2);
+      expect(r.problems.join("\n")).toMatch(/s1-nope/);
+      expect(r.problems.join("\n")).toMatch(/s1-gone/);
+    }
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

@@ -18,6 +18,8 @@ export type YouTubeApi = {
   insertCaption(videoId: string, srtPath: string): Promise<void>;
 };
 
+class TokenFileError extends Error {}
+
 const SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl"];
 
 // OAuth with the client in .local/youtube-client.json (a Google "Desktop app" client).
@@ -41,7 +43,15 @@ async function authorize(layout: Layout) {
   });
   try {
     if (existsSync(tokenFile)) {
-      auth.setCredentials(JSON.parse(readFileSync(tokenFile, "utf8")));
+      let saved: unknown;
+      try {
+        saved = JSON.parse(readFileSync(tokenFile, "utf8"));
+      } catch (e) {
+        throw new TokenFileError(`${tokenFile} is not valid JSON`);
+      }
+      auth.setCredentials(saved as Parameters<typeof auth.setCredentials>[0]);
+      // Refresh now, so an expired or revoked token fails here rather than mid-upload.
+      await auth.getAccessToken();
     } else {
       const url = auth.generateAuthUrl({ access_type: "offline", scope: SCOPES, prompt: "consent" });
       console.log(`Opening the browser for YouTube consent. If it does not open, visit:\n${url}`);
@@ -91,50 +101,75 @@ export async function realApi(layout: Layout): Promise<YouTubeApi> {
   };
 }
 
+const isInvalidGrant = (e: unknown) =>
+  /invalid_grant/.test(String((e as Error)?.message ?? "")) || (e as any)?.response?.data?.error === "invalid_grant";
+
+// An expired or revoked refresh token (or a corrupt token file) becomes one actionable line.
+function explainAuth(e: unknown, id: string): Error {
+  if (!isInvalidGrant(e) && !(e instanceof TokenFileError)) return e as Error;
+  return new Error(
+    `YouTube refused the saved login (${e instanceof TokenFileError ? e.message : "invalid_grant: expired or revoked"}): ` +
+      `delete videos/.local/youtube-token.json and rerun npm run publish -- ${id} to sign in again`,
+  );
+}
+
 // Upload the built video, its thumbnail, and its captions. Returns the YouTube video ID.
-// Every refusal happens before the first API call. A rerun on an entry whose thumbnail or
-// captions are not done performs only those steps; it never uploads the video again.
+// Every refusal happens before the first API call. Thumbnail and captions are each
+// attempted and recorded; a rerun performs only the steps not yet done and never uploads
+// the video again.
 export async function publish(
   id: string,
   opts: { layout?: Layout; api?: YouTubeApi; cfg?: Config } = {},
 ): Promise<string> {
   // VIDEOS_APPROVALS never applies to a publish.
   const layout = opts.layout ?? layoutFor(undefined, { ...process.env, VIDEOS_APPROVALS: undefined });
-  const publishedFile = join(layout.root, "published.json");
+  const publishedFile = layout.published;
   const published: Published = existsSync(publishedFile) ? JSON.parse(readFileSync(publishedFile, "utf8")) : {};
   const prior = published[id];
   if (prior?.thumbnail && prior?.captions) {
     throw new Error(
-      `${id} is already published as YouTube video ${prior.youtubeId}; to upload a new copy, delete that video in YouTube Studio first, then remove its published.json entry`,
+      `${id} is already published as YouTube video ${prior.youtubeId}; to upload a new copy, delete that video in YouTube Studio first, then remove its entry from ${publishedFile}`,
     );
   }
-  const { mp4, srt, jpg, meta } = loadPublishable(id, layout);
   const cfg = opts.cfg ?? loadConfig(layout.config);
+  const { mp4, srt, jpg, meta } = loadPublishable(id, layout, cfg);
   const resource = videoResource(meta, cfg);
 
-  const api = opts.api ?? (await realApi(layout));
-  const save = () => writeFileSync(publishedFile, JSON.stringify(published, null, 2) + "\n");
+  const save = () => {
+    mkdirSync(dirname(publishedFile), { recursive: true });
+    writeFileSync(publishedFile, JSON.stringify(published, null, 2) + "\n");
+  };
   let entry = prior;
-  if (!entry) {
-    const youtubeId = await api.insertVideo(resource, mp4);
-    // Recorded at once: a later failure must not let a retry upload a second copy.
-    entry = published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy, thumbnail: false, captions: false };
-    save();
+  let api: YouTubeApi;
+  try {
+    api = opts.api ?? (await realApi(layout));
+    if (!entry) {
+      const youtubeId = await api.insertVideo(resource, mp4);
+      // Recorded at once: a later failure must not let a retry upload a second copy.
+      entry = published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy, thumbnail: false, captions: false };
+      save();
+    }
+  } catch (e) {
+    throw explainAuth(e, id);
   }
   const done = entry;
   const steps: ["thumbnail" | "captions", () => Promise<void>][] = [
     ["thumbnail", () => api.setThumbnail(done.youtubeId, jpg)],
     ["captions", () => api.insertCaption(done.youtubeId, srt)],
   ];
+  const failures: string[] = [];
   for (const [name, run] of steps) {
     if (done[name]) continue;
     try {
       await run();
+      done[name] = true;
+      save();
     } catch (e) {
-      throw new Error(`uploaded as ${done.youtubeId}; ${name} failed: ${(e as Error).message}; rerun npm run publish -- ${id} to finish`);
+      failures.push(`${name} failed: ${explainAuth(e, id).message}`);
     }
-    done[name] = true;
-    save();
+  }
+  if (failures.length) {
+    throw new Error(`uploaded as ${done.youtubeId}; ${failures.join("; ")}; rerun npm run publish -- ${id} to finish`);
   }
   return done.youtubeId;
 }
