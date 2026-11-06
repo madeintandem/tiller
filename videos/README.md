@@ -40,7 +40,9 @@ More scripts are added here as the pipeline tasks land.
 - `src/script/`: schema, loader, hashing, approvals.
 - `.local/`, `out/`, `node_modules/`: gitignored.
 - `src/theme.ts`, `src/fonts.ts`, `src/components/`: MiT palette, fonts, and frame components (Frame, TitleCard, Kicker, LowerThird, Outro).
-- `src/index.ts`, `src/Root.tsx`: Remotion entry and compositions (`Smoke` for now).
+- `src/index.ts`, `src/Root.tsx`: Remotion entry and compositions (`Smoke`, `TermSmoke`, and `Video`, whose length comes from the timeline passed as input props).
+- `src/timeline/`: `buildTimeline` (intro, 0.4 s gap, beats 0.35 s apart, 6 s outro, refused past 8:00), `toSrt` (captions from the spoken words only), `chapters` (YouTube chapter lines, checked against YouTube's rules). Asset paths in a timeline are relative to the build directory, which the render step serves as Remotion's public directory.
+- `src/components/Video.tsx`: the whole program: intro full bleed with a name lower third, then each beat's narration over its card, terminal, or console capture inside the frame, then the outro.
 - `public/brand/`: MiT logo SVGs used by the frame.
 - `fixture/`: the brownfield Acme Orders demo repo the videos are recorded from. `app/` is the existing app, `content/` the authored files the agent and the human write, `stage1.sh` to `stage3.sh` one script per video, `lib.sh` their helpers (`run`, `say`, `put`, `mark`).
 - `snapshots/s1.jsonl` to `s3.jsonl`: every step each stage ran, one JSON object per line, with each Tiller command's real output.

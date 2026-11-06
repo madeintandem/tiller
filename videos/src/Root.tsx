@@ -1,5 +1,7 @@
 import React from "react";
-import { Composition } from "remotion";
+import { Composition, type CalculateMetadataFunction } from "remotion";
+import { Video } from "./components/Video";
+import type { Timeline } from "./timeline/build";
 import { LowerThird } from "./components/LowerThird";
 import { Frame } from "./components/Frame";
 import { Terminal } from "./components/Terminal";
@@ -25,6 +27,21 @@ const TermSmoke: React.FC<{ steps: Step[] }> = ({ steps }) => (
   </Frame>
 );
 
+// The render step passes the built timeline.json as input props; its duration sets the length.
+const EMPTY_TIMELINE: Timeline = {
+  id: "empty",
+  fps: video.fps,
+  intro: { path: "intro.mp4", duration: 0, words: [] },
+  segments: [],
+  outro: { start: 0, end: 1 },
+  duration: 1,
+};
+
+const videoMetadata: CalculateMetadataFunction<{ timeline: Timeline }> = ({ props }) => ({
+  fps: props.timeline.fps,
+  durationInFrames: Math.max(1, Math.ceil(props.timeline.duration * props.timeline.fps)),
+});
+
 export const RemotionRoot: React.FC = () => (
   <>
   <Composition
@@ -40,6 +57,16 @@ export const RemotionRoot: React.FC = () => (
     component={TermSmoke}
     defaultProps={{ steps: [] as Step[] }}
     durationInFrames={TERM_FRAMES}
+    fps={video.fps}
+    width={video.width}
+    height={video.height}
+  />
+  <Composition
+    id="Video"
+    component={Video}
+    defaultProps={{ timeline: EMPTY_TIMELINE }}
+    calculateMetadata={videoMetadata}
+    durationInFrames={video.fps}
     fps={video.fps}
     width={video.width}
     height={video.height}
