@@ -18,7 +18,7 @@ These instructions match v0.22.0. Before publishing a newer release, update
 the release Quickstart to the reviewed artifact's exact command contract and
 complete it using the installed artifact, not a source binary.
 
-Install patched Node tooling first (CI uses Node 22.22.2 or newer in major 22),
+Install patched Node tooling first (CI uses Node 22.23.4 or newer in major 22),
 then rebuild notices and both asset surfaces:
 
 ```sh
