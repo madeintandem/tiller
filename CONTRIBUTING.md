@@ -9,7 +9,7 @@ test, how we work, and what a pull request needs.
 ## Set up
 
 You need Go (the version pinned in [`go.mod`](./go.mod), currently 1.27.2) and
-Node 22 (22.22.2 or newer in the 22 line, which is what CI runs) for the console
+Node 22 (22.23.4 or newer in the 22 line, which is what CI runs) for the console
 under `ui/` and the docs site under `site/`. Reshooting the site's screenshots
 also needs `cwebp` (`brew install webp`); nothing else does. Then:
 
