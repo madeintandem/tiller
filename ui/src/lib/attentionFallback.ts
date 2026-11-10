@@ -31,6 +31,9 @@ import { addrOf } from "./addr";
 
 export interface AttentionFallback {
   label: string;
+  // why is one plain sentence saying what the node is waiting on. A card
+  // that cannot say why is not shown: the last fallthrough returns null.
+  why: string;
   command: string;
 }
 
@@ -79,6 +82,7 @@ export function needsAttentionFallback(
     // combined with --gate.
     return {
       label: "Awaiting your attestation",
+      why: `Criterion ${first.criterion} is waiting on your sign-off.`,
       command: `tiller attest ${node.noun} ${addrOf(node)} --criterion ${first.criterion} --status pass`,
     };
   }
@@ -97,6 +101,7 @@ export function needsAttentionFallback(
     if ((node.noun === "feature" || node.noun === "task") && question !== undefined) {
       return {
         label: `Awaiting your answer · ${question.title ? `${question.title} (${question.id})` : question.id}`,
+        why: `This ${node.noun} is waiting on your answer to ${question.title ? `"${question.title}"` : question.id}.`,
         command: `tiller answer question ${question.id} --answer "..."`,
       };
     }
@@ -109,13 +114,13 @@ export function needsAttentionFallback(
     if (node.noun !== "feature" && node.held === undefined) {
       return {
         label: "Awaiting your approval",
+        why: `This ${node.noun} is waiting on your approval.`,
         command: `tiller approve ${node.noun} ${addrOf(node)}`,
       };
     }
   }
 
-  return {
-    label: "Needs your attention next",
-    command: `tiller show ${node.noun} ${addrOf(node)}`,
-  };
+  // No verb this page can name and no reason it can state: no card. A
+  // generic "needs your attention" over a `tiller show` command says nothing.
+  return null;
 }

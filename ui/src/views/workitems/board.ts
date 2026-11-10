@@ -136,6 +136,22 @@ export function workItemColumns(
   };
 }
 
+export interface BoardScope {
+  open: Record<"bug" | "chore" | "tweak", number>;
+  closedShown: number;
+}
+
+// boardScope names what the Fix board shows: open work by noun across the
+// five open columns, and how many closed cards the Closed column displays.
+export function boardScope(columns: Record<ShelfColumnKey, WorkItemCard[]>): BoardScope {
+  const open = { bug: 0, chore: 0, tweak: 0 };
+  for (const column of SHELF_COLUMNS) {
+    if (column.key === "closed") continue;
+    for (const item of columns[column.key]) open[item.noun]++;
+  }
+  return { open, closedShown: columns.closed.length };
+}
+
 export function setWorkItemFilter(
   params: URLSearchParams,
   key: "noun" | "attached" | "terminal" | "sort" | "severity",

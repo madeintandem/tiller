@@ -21,6 +21,7 @@ import {
   readWorkItemFilters,
   setWorkItemFilter,
   SHELF_COLUMNS,
+  boardScope,
   SHELF_COLUMN_STATUSES,
   workItemColumns,
   UNATTACHED,
@@ -104,10 +105,8 @@ export default function WorkItems() {
   const filteredClosedTotal = board.data.closed.filter((item) =>
     workItemMatchesFilters(item, { ...filters, showAllTerminal: true }),
   ).length;
-  const counts = { bug: 0, chore: 0, tweak: 0 };
-  for (const column of SHELF_COLUMNS) {
-    for (const item of columns[column.key]) counts[item.noun]++;
-  }
+  const scope = boardScope(columns);
+  const openTotal = scope.open.bug + scope.open.chore + scope.open.tweak;
 
   function togglePanel() {
     const next = !panelOpen;
@@ -136,7 +135,7 @@ export default function WorkItems() {
             onTogglePanel={togglePanel}
             scrollMode={scrollMode}
             onScrollMode={changeScrollMode}
-            summary={`Showing ${counts.bug} ${counts.bug === 1 ? "bug" : "bugs"}, ${counts.chore} ${counts.chore === 1 ? "chore" : "chores"}, and ${counts.tweak} ${counts.tweak === 1 ? "tweak" : "tweaks"}`}
+            summary={`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
           />
           <BoardGrid
             className="work-items-board"

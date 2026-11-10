@@ -39,6 +39,7 @@ describe("needsAttentionFallback: needs_attestation supersedes next_owner", () =
 
     expect(action).toEqual({
       label: "Awaiting your attestation",
+      why: "Criterion C6 is waiting on your sign-off.",
       command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C6 --status pass",
     });
   });
@@ -62,6 +63,7 @@ describe("needsAttentionFallback: needs_attestation supersedes next_owner", () =
 
     expect(action).toEqual({
       label: "Awaiting your attestation",
+      why: "Criterion C3 is waiting on your sign-off.",
       command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C3 --status pass",
     });
   });
@@ -97,12 +99,8 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
   // approve would refuse (an open question on the feature or any of its
   // tasks), so a queue silent about a specced feature never gets a
   // recomputed approve from here.
-  it("never offers approve feature for a specced feature", () => {
-    const action = needsAttentionFallback(node({ status: "specced", next_owner: "human" }));
-    expect(action).toEqual({
-      label: "Needs your attention next",
-      command: "tiller show feature foundation/app-skeleton-ci-boot",
-    });
+  it("never offers approve feature for a specced feature, and shows no card at all", () => {
+    expect(needsAttentionFallback(node({ status: "specced", next_owner: "human" }))).toBeNull();
   });
 
   it("names the approve command for a draft epic, addressed by key", () => {
@@ -111,6 +109,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     );
     expect(action).toEqual({
       label: "Awaiting your approval",
+      why: "This epic is waiting on your approval.",
       command: "tiller approve epic foundation",
     });
   });
@@ -127,6 +126,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     );
     expect(action).toEqual({
       label: "Awaiting your approval",
+      why: "This task is waiting on your approval.",
       command: "tiller approve task foundation/app-skeleton-ci-boot/boot-the-app",
     });
   });
@@ -137,6 +137,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     );
     expect(action).toEqual({
       label: "Awaiting your approval",
+      why: "This task is waiting on your approval.",
       command: "tiller approve task T-br7z1r",
     });
   });
@@ -166,6 +167,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     );
     expect(action).toEqual({
       label: "Awaiting your answer · Canonical schema version (Q-aaaaaa)",
+      why: 'This task is waiting on your answer to "Canonical schema version".',
       command: 'tiller answer question Q-aaaaaa --answer "..."',
     });
   });
@@ -176,6 +178,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     });
     expect(action).toEqual({
       label: "Awaiting your answer · Q-bbbbbb",
+      why: "This feature is waiting on your answer to Q-bbbbbb.",
       command: 'tiller answer question Q-bbbbbb --answer "..."',
     });
   });
@@ -187,6 +190,7 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
     );
     expect(action).toEqual({
       label: "Awaiting your approval",
+      why: "This task is waiting on your approval.",
       command: "tiller approve task foundation/app-skeleton-ci-boot/boot-the-app",
     });
   });
@@ -201,23 +205,17 @@ describe("needsAttentionFallback: plain next_owner gates", () => {
         held: { noun: "feature", id: "F-1", ref: "foundation/app-skeleton-ci-boot (F-1)", state: "cancelled" },
       }),
     );
-    expect(action).toEqual({
-      label: "Needs your attention next",
-      command: "tiller show task foundation/app-skeleton-ci-boot/boot-the-app",
-    });
+    expect(action).toBeNull();
   });
 
   // The case this fallback exists for: a ready epic's only legal verb is
   // cancel, which the queue never tracks as a row (ui-surface.md's action
   // queue never names it), so this is the one derivation left to say
   // anything on the page at all.
-  it("degrades to a safe show command for a human gate this task names no specific verb for", () => {
+  it("shows no card for a human gate this task names no specific verb for", () => {
     const action = needsAttentionFallback(
       node({ noun: "epic", key: "foundation", status: "ready", next_owner: "human" }),
     );
-    expect(action).toEqual({
-      label: "Needs your attention next",
-      command: "tiller show epic foundation",
-    });
+    expect(action).toBeNull();
   });
 });

@@ -1201,7 +1201,7 @@ describe("Home header band", () => {
 
     const { container } = renderHome(summary());
 
-    await screen.findByText("0 tasks across 102 features");
+    await screen.findByText("87 features in flow · 0 tasks");
 
     const segs = [...container.querySelectorAll(".funnel-row .fseg")];
     expect(segs.map((el) => el.querySelector(".lbl")?.textContent)).toEqual([
@@ -1248,7 +1248,7 @@ describe("Home header band", () => {
 
     renderHome(summary());
 
-    expect(await screen.findByText("1 task across 5 features · 2 retired")).toBeInTheDocument();
+    expect(await screen.findByText("3 features in flow, 2 retired · 1 task")).toBeInTheDocument();
   });
 
   // The feature word inflects by count the same way the task word does (and
@@ -1269,7 +1269,7 @@ describe("Home header band", () => {
 
     renderHome(summary());
 
-    expect(await screen.findByText("0 tasks across 1 feature")).toBeInTheDocument();
+    expect(await screen.findByText("1 feature in flow · 0 tasks")).toBeInTheDocument();
   });
 
   // FunnelStrip's own unresolved fallback is UnresolvedTile verbatim, the
@@ -1332,7 +1332,7 @@ describe("Home header band: shelf tile", () => {
     const link = await screen.findByRole("link", { name: /21.*Fix/ });
     expect(link).toHaveAttribute("href", "/fix");
     expect(link.textContent).toContain("21");
-    expect(link.textContent).toContain("6 bugs · 13 chores · 2 tweaks");
+    expect(link.textContent).toContain("open: 6 bugs · 13 chores · 2 tweaks");
   });
 
   it("shows a dash and unavailable, never a confident zero, when either shelf list fails", async () => {

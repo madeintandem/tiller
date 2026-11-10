@@ -202,11 +202,11 @@ describe("Fix board", () => {
       ...board,
       open: [...board.open, { noun: "tweak", id: "TW-1", ref: "TW-1", title: "Spacing", status: "ready", attachment_ids: ["F-1"] }],
     }, "/fix?attached=F-1");
-    expect(await screen.findByText("Showing 4 bugs, 3 chores, and 1 tweak")).toBeInTheDocument();
+    expect(await screen.findByText("3 open: 1 bug, 1 chore, 1 tweak. 5 recently closed shown.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("switch", { name: "Show older items" }));
-    expect(await screen.findByText("Showing 5 bugs, 4 chores, and 1 tweak")).toBeInTheDocument();
+    expect(await screen.findByText("3 open: 1 bug, 1 chore, 1 tweak. 7 recently closed shown.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "Tweaks" }));
-    expect(await screen.findByText("Showing 0 bugs, 0 chores, and 1 tweak")).toBeInTheDocument();
+    expect(await screen.findByText("1 open: 0 bugs, 0 chores, 1 tweak.")).toBeInTheDocument();
     expect(screen.queryByText("Zulu")).not.toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("attached=F-1&terminal=all&noun=tweak");
   });

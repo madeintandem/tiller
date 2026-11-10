@@ -78,7 +78,9 @@ function FunnelStrip({
 }) {
   if (features.data === null) return <UnresolvedTile label="Features" error={features.error} />;
   const { segments, retired } = composeFunnel(features.data.nodes);
-  const featureCount = features.data.nodes.length;
+  // In flow is every funnel stage but done; retired is cancelled plus
+  // archived, composeFunnel's own definition. Done features are neither.
+  const inFlow = segments.filter((s) => s.status !== "done").reduce((sum, s) => sum + s.n, 0);
   const taskCount = tasks.data?.nodes.length;
   return (
     <div className="funnel">
@@ -91,9 +93,9 @@ function FunnelStrip({
         ))}
       </div>
       <div className="cap muted">
-        {taskCount !== undefined && `${taskCount} ${taskCount === 1 ? "task" : "tasks"} across `}
-        {featureCount} {featureCount === 1 ? "feature" : "features"}
-        {retired > 0 && ` · ${retired} retired`}
+        {inFlow} {inFlow === 1 ? "feature" : "features"} in flow
+        {retired > 0 && `, ${retired} retired`}
+        {taskCount !== undefined && ` · ${taskCount} ${taskCount === 1 ? "task" : "tasks"}`}
       </div>
     </div>
   );
@@ -119,7 +121,7 @@ function ShelfStat({
       <div className="n">{s.open}</div>
       <div className="lbl">Fix</div>
       <div className="cap muted">
-        {s.bugs} {s.bugs === 1 ? "bug" : "bugs"} · {s.chores} {s.chores === 1 ? "chore" : "chores"}
+        open: {s.bugs} {s.bugs === 1 ? "bug" : "bugs"} · {s.chores} {s.chores === 1 ? "chore" : "chores"}
         {" · "}{s.tweaks} {s.tweaks === 1 ? "tweak" : "tweaks"}
       </div>
     </Link>

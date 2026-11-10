@@ -7,6 +7,7 @@ import {
   sortWorkItems,
   type WorkItemFilters,
   setWorkItemFilter,
+  boardScope,
   SHELF_COLUMN_STATUSES,
   workItemColumns,
 } from "./board";
@@ -270,5 +271,17 @@ describe("work item board filters", () => {
     const all = workItemColumns(b, fl({ sort: "severity", showAllTerminal: true })).closed;
     expect(all).toHaveLength(ROW_CAP + 3);
     expect(all[0].severity).toBe("blocker");
+  });
+});
+
+describe("boardScope", () => {
+  it("counts open work by noun across the five open columns and names how many closed cards show", () => {
+    const columns = workItemColumns(board, fl({}));
+    expect(boardScope(columns)).toEqual({ open: { bug: 2, chore: 1, tweak: 0 }, closedShown: ROW_CAP });
+  });
+
+  it("reports zero closed shown when the closed column is empty", () => {
+    const columns = workItemColumns({ ...board, closed: [] }, fl({}));
+    expect(boardScope(columns).closedShown).toBe(0);
   });
 });

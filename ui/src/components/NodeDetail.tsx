@@ -306,13 +306,12 @@ function WarnBox({ review, pr }: { review: UnpushedReviewView; pr: number | unde
 }
 
 // FallbackBox renders needsAttentionFallback's own {label, command} shape
-// in the loud register, the identical two-element anatomy the pre-task-17
-// strip always had (a label and a CopyCmd, no separate why sentence - there
-// never was one to reuse here, unlike a queue entry's own mechanical why).
+// in the loud register: a label, the one-sentence why, then the CopyCmd.
 function FallbackBox({ action }: { action: AttentionFallback }) {
   return (
     <div className="abox">
       <span className="kind">{action.label}</span>
+      <div className="why">{action.why}</div>
       <CopyCmd cmd={action.command} accent />
     </div>
   );

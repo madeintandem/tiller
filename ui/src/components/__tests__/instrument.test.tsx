@@ -1111,16 +1111,25 @@ describe("NodeDetail: the human-next-owner fallback", () => {
   // is a genuinely LOADED, genuinely silent queue (`{entries: []}`, never
   // `null`), the one case the null/failed-queue tests directly below this
   // one must NOT also suppress.
-  it("renders the fallback box for a ready epic (only legal verb: cancel), the queue silent about it", () => {
+  it("renders no attention card for a ready epic (only legal verb: cancel), the queue silent about it", () => {
     const { container } = withRouter(<NodeDetail page={readyEpicPage()} queue={queueOf([])} />);
+
+    expect(container.querySelector(".abox")).toBeNull();
+    expect(screen.queryByRole("button", { name: /tiller show/ })).toBeNull();
+  });
+
+  it("renders the fallback box with its why for a draft epic the queue is silent about", () => {
+    const page = readyEpicPage();
+    const { container } = withRouter(
+      <NodeDetail page={{ ...page, node: { ...page.node, status: "draft" } }} queue={queueOf([])} />,
+    );
 
     const box = container.querySelector(".abox") as HTMLElement;
     expect(box).not.toBeNull();
     expect(box).not.toHaveClass("warn");
-    expect(within(box).getByText("Needs your attention next")).toBeInTheDocument();
-    expect(
-      within(box).getByRole("button", { name: "tiller show epic foundation" }),
-    ).toBeInTheDocument();
+    expect(within(box).getByText("Awaiting your approval")).toBeInTheDocument();
+    expect(within(box).getByText("This epic is waiting on your approval.")).toBeInTheDocument();
+    expect(within(box).getByRole("button", { name: "tiller approve epic foundation" })).toBeInTheDocument();
   });
 
   // The fallback used to fire

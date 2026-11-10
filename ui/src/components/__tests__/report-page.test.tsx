@@ -211,6 +211,7 @@ describe("Report page", () => {
       "Open questions",
     ]);
     expect(tile("Features done")).toHaveTextContent("3 of 8");
+    expect(tile("Features done")).toHaveTextContent("of approved scope");
     expect(tile("Shipped, last 7 days")).toHaveTextContent("4");
     expect(tile("Median cycle time")).toHaveTextContent("4.8 d");
     expect(tile("Median cycle time")).toHaveTextContent("lead 11 d · 2 features");

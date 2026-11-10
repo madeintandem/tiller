@@ -21,6 +21,7 @@ export default function KpiStrip({ kpis }: { kpis: ReportKPIs }) {
             {kpis.features_done} <span className="report-kpi-of">of {kpis.features_total}</span>
           </>
         }
+        sub="of approved scope"
       />
       <Tile label="Shipped, last 7 days" value={kpis.shipped_last_7_days} />
       <Tile
