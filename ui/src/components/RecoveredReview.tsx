@@ -1,3 +1,4 @@
+import Time from "./Time";
 import type { CurrentAcceptanceView, GateView, RecoveredReviewView, WorkflowWork } from "../api";
 
 // Historical provenance is not current approval or a host observation.
@@ -22,7 +23,7 @@ export default function RecoveredReview({ record, acceptanceReady, outstanding, 
         : crossingsPending === false
           ? "; containment was not an observed merge; historical riders have crossed and need no further fast-forward assertion"
           : "; containment at recovery was not an observed merge; only still-pending historical riders need a human fast-forward assertion")}</p>
-      <p>Recorded by {record.recovered_by} at {record.recovered_at}: {record.reason}</p>
+      <p>Recorded by {record.recovered_by} at <Time iso={record.recovered_at} />: {record.reason}</p>
       <div>
         <span className="kind">Historical riding tasks</span>
         <ul>{record.tasks.map((task) => (

@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import type { ExecutionRecord, ExecutionSnapshot } from "../api";
 import type { FetchState } from "../hooks";
 import SectionHead from "./SectionHead";
+import Time from "./Time";
 import "./execution.css";
 
 const sourceLabels = {
@@ -35,7 +36,7 @@ export function ExecutionProvenance({ observation }: { observation: ExecutionRec
       <span className="mono" title={`Opaque source read token: ${observation.revision}`}>snapshot {observation.revision.slice(-12)}</span>{" · "}
       <span>{observation.uncommitted ? "uncommitted Tiller state" : "committed Tiller state"}</span>{" · "}
       {observation.freshness !== undefined && <><span>{freshnessLabels[observation.freshness]}</span>{" · "}</>}
-      <span title={observation.observed_at}>observed {new Date(observation.observed_at).toLocaleString()}</span>
+      <span>observed <Time iso={observation.observed_at} /></span>
     </div>
   );
 }

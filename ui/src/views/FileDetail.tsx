@@ -14,6 +14,7 @@ import Chip from "../components/Chip";
 import CopyCmd from "../components/CopyCmd";
 import { DriftCandidateDetails } from "../components/DriftFinding";
 import Prose from "../components/Prose";
+import Time from "../components/Time";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { PersonName } from "../people";
 import "../components/instrument.css";
@@ -106,7 +107,7 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
       <p>
         <Chip status="draft">{stamp === undefined ? "Unconfirmed" : "Confirmed"}</Chip>
         {stamp !== undefined && <> by <PersonName id={stamp.by} /> at commit <span className="mono">{stamp.commit.value}</span>
-          {stamp.commit.observed_at !== undefined && <> on <time dateTime={stamp.commit.observed_at}>{stamp.commit.observed_at}</time></>}
+          {stamp.commit.observed_at !== undefined && <> on <Time iso={stamp.commit.observed_at} /></>}
         </>}
       </p>
       {stamp !== undefined && <p className="muted">Confirmation records reviewed working-tree code, not a claim that those bytes were committed or remain current.</p>}
@@ -121,7 +122,7 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
             {baseline.derived_from?.map((ref) => (
               <li key={`${ref.path}-${ref.value}`}>
                 <span className="mono">{ref.path}</span>{" · "}<span className="mono">{ref.value}</span>
-                {ref.observed_at !== undefined && <> observed <time dateTime={ref.observed_at}>{ref.observed_at}</time></>}
+                {ref.observed_at !== undefined && <> observed <Time iso={ref.observed_at} /></>}
               </li>
             ))}
           </ul>

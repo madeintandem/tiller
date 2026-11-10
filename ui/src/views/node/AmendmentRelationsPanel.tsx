@@ -2,6 +2,7 @@ import type { AmendmentEffect, AmendmentRelation, Relationships } from "../../ap
 import Chip from "../../components/Chip";
 import InstrSection from "../../components/InstrSection";
 import RefLink from "../../components/RefLink";
+import Time from "../../components/Time";
 
 const roleLabels: Record<AmendmentEffect["role"], string> = {
   target: "target",
@@ -64,9 +65,9 @@ export default function AmendmentRelationsPanel({ relationships }: { relationshi
               {relation.amendment.key && <span className="mono muted">{relation.amendment.key}</span>}
             </div>
             <div className="instr-amendop-detail">
-              {relation.proposed_at && <p>Proposed <time dateTime={relation.proposed_at}>{relation.proposed_at}</time></p>}
-              {relation.approved_at && <p>Approved <time dateTime={relation.approved_at}>{relation.approved_at}</time></p>}
-              {relation.withdrawn_at && <p>Withdrawn <time dateTime={relation.withdrawn_at}>{relation.withdrawn_at}</time></p>}
+              {relation.proposed_at && <p>Proposed <Time iso={relation.proposed_at} /></p>}
+              {relation.approved_at && <p>Approved <Time iso={relation.approved_at} /></p>}
+              {relation.withdrawn_at && <p>Withdrawn <Time iso={relation.withdrawn_at} /></p>}
               <ul>
                 {relation.effects.map((effect, index) => (
                   <li key={index}>

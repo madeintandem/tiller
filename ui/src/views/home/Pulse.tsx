@@ -26,7 +26,8 @@ import { ROW_CAP } from "../../lib/disclosure";
 import { has } from "../../lib/has";
 import { sentence } from "../../lib/sentence";
 import { PersonName, usePersonName } from "../../people";
-import { composeJustHappened, formatClock, targetLabel } from "./justHappened";
+import { formatClock } from "../../lib/time";
+import { composeJustHappened, targetLabel } from "./justHappened";
 import { nextLabel, nextReason } from "./nextRow";
 
 // ---------- The pulse: just happened, in flight, up next ----------

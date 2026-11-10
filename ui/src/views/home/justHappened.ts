@@ -51,26 +51,3 @@ export function targetLabel(t: TargetRef): string {
   }
   return has(t.key) ? t.key : t.ref;
 }
-
-// formatClock is Just happened's own time voice: a bare clock reading ("2:
-// 10p"), never a date, since the column's own window is fixed at 24h and a
-// date would be redundant on every row. It reuses burstWhen's own
-// ends-match-or-span rule (lib/bursts.ts) by being handed to it as the
-// format function, the same way History.tsx's formatTime is; the two format
-// functions differ only in precision (History spans days, this column
-// never does), so the RULE stays shared even though the two views render
-// different text.
-//
-// toLocaleTimeString's AM/PM marker is locale-dependent (a 24-hour locale
-// renders none), so the trailing single-letter "a"/"p" is a best-effort
-// compaction for the common case rather than a guarantee; an unparseable
-// timestamp renders as-is; matches formatTime's own precedent of showing
-// the raw field over hiding it.
-export function formatClock(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return iso;
-  }
-  const s = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return s.replace(/\s+/g, "").replace(/([ap])m$/i, "$1").toLowerCase();
-}

@@ -19,6 +19,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { NodePage, ProjectSummary } from "../../api";
 import App, { scrollsUnderTopbar } from "../../App";
+import { formatAbsolute } from "../../lib/time";
 
 const nativeScrollIntoView = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
@@ -766,7 +767,7 @@ describe("App routing: loose Markdown files live under the Explore shell", () =>
     const baseline = await screen.findByRole("region", { name: "As-is baseline" });
     expect(within(baseline).getByText("Confirmed")).toBeInTheDocument();
     expect(within(baseline).getByText("retired-owner")).toBeInTheDocument();
-    expect(within(baseline).getByText("2026-09-02T10:00:00Z")).toBeInTheDocument();
+    expect(within(baseline).getByTitle(formatAbsolute("2026-09-02T10:00:00Z"))).toBeInTheDocument();
     expect(within(baseline).getByText("docs/retired.md")).toBeInTheDocument();
     expect(within(baseline).getByText("../legacy/input")).toBeInTheDocument();
     const stale = within(baseline).getByRole("button", { name: "stale_design" });

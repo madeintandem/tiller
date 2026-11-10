@@ -301,7 +301,7 @@ summary.hrow {
    burst's own sub-rows), which is why they live here rather than nested
    under .hrow specifically. */
 /* Fixed to a MEASURED width, not the mock's own 58px (mocks.html:616,
-   sized for their shorter "2:10p" clock format): History.tsx's formatTime
+   sized for their shorter "2:10p" clock format): History.tsx's formatWhen
    ({month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) tops
    out at 16 characters ("Dec 31, 06:59 PM", verified across every month/
    day/hour combination in en-US, the reader's browser locale being the

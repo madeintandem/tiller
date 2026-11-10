@@ -22,6 +22,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AmendmentRelation, EvalContractView, NodePage, NodeView, RelatedNode } from "../../api";
 import NodeDetail from "../NodeDetail";
 import NodeTabs from "../NodeTabs";
+import { formatAbsolute } from "../../lib/time";
 
 afterEach(() => {
   cleanup();
@@ -660,8 +661,8 @@ describe("NodeDetail amendment navigation", () => {
     expect(within(panel).getAllByRole("link", { name: "Reshape refunds" })).toHaveLength(1);
     expect(within(panel).getByRole("link", { name: "Reshape refunds" })).toHaveAttribute("href", "/node/amendment/A-new");
     expect(within(panel).getByRole("link", { name: "Earlier reshape" })).toHaveAttribute("href", "/node/amendment/A-old");
-    expect(within(panel).getByText("2026-09-07T10:00:00Z")).toHaveAttribute("datetime", proposal.proposed_at);
-    expect(within(panel).getByText("2026-09-06T11:00:00Z")).toHaveAttribute("datetime", approved.approved_at);
+    expect(within(panel).getByTitle(formatAbsolute("2026-09-07T10:00:00Z"))).toHaveAttribute("datetime", proposal.proposed_at);
+    expect(within(panel).getByTitle(formatAbsolute("2026-09-06T11:00:00Z"))).toHaveAttribute("datetime", approved.approved_at);
     expect(within(panel).getByText(/Operation 1 · revise · target · direct/)).toBeInTheDocument();
     expect(within(panel).getByText(/addition parent · descendant/)).toBeInTheDocument();
     expect(within(panel).queryByText(/Withdrawn/)).not.toBeInTheDocument();

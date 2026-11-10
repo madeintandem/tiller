@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { RelationshipSource } from "../../api";
 import { relationshipFileHref } from "../../lib/relationshipHref";
 import CopyCmd from "../CopyCmd";
+import Time from "../Time";
 import "./sourceCitation.css";
 
 export default function SourceCitation({ source, allowSourceNavigation = true, allowCitationNavigation = true }: {
@@ -46,7 +47,7 @@ export default function SourceCitation({ source, allowSourceNavigation = true, a
         <div className="muted">
           Pinned {source.revision.kind}: <span className="mono">{source.revision.value}</span>
           {source.revision.path && <> · <span className="mono">{source.revision.path}</span></>}
-          {source.revision.observed_at && <> · <span className="mono">{source.revision.observed_at}</span></>}
+          {source.revision.observed_at && <> · <span className="mono"><Time iso={source.revision.observed_at} /></span></>}
           {(href !== null || citationHref !== null) && " · File link opens current contents, not the pinned revision."}
         </div>
       )}

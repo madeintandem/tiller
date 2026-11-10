@@ -9,6 +9,7 @@
 import type { AttestationView, PolicyViolationView } from "../api";
 import { has } from "../lib/has";
 import { PersonName } from "../people";
+import Time from "./Time";
 
 // Mono carries the four things it is for on these rows and nothing else: the
 // attestation's id, its target id, and the evidence ref, which are addresses.
@@ -23,7 +24,7 @@ function AttestationRow({ attestation: a }: { attestation: AttestationView }) {
       {target !== "" && <span className="mono muted">{target}</span>}
       <span>{a.status ?? ""}</span>
       {has(a.by) && <span className="muted">by <PersonName id={a.by} /></span>}
-      {has(a.at) && <span className="muted integrity-at">{a.at}</span>}
+      {has(a.at) && <span className="muted integrity-at"><Time iso={a.at} /></span>}
       {has(a.evidence_ref) && <span className="mono muted">{a.evidence_ref}</span>}
     </li>
   );

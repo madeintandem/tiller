@@ -21,6 +21,7 @@
 import { useState } from "react";
 import type { HistoryEntry } from "../../api";
 import InstrSection from "../../components/InstrSection";
+import Time from "../../components/Time";
 import { eventPhrase } from "../../lib/eventPhrase";
 import { PersonName } from "../../people";
 
@@ -52,7 +53,7 @@ export default function HistorySection({
             {/* A timestamp is not a key, an id, a path, or a command, which
                 are mono's whole list. It keeps its column by tabular figures
                 (node.css) instead. */}
-            <span className="muted history-at">{e.at}</span>
+            <span className="muted history-at"><Time iso={e.at} /></span>
             <span className="history-type">{eventPhrase(e.type, 1).verb}</span>
             {e.contributor !== "" && <span className="muted"><PersonName id={e.contributor} /></span>}
             {e.command !== "" && <code className="history-command mono muted">{e.command}</code>}

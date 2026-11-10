@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BacklinkSource, BacklinksView, RelationshipVertex } from "../../api";
 import BacklinksPanel from "./BacklinksPanel";
+import { formatAbsolute } from "../../lib/time";
 
 afterEach(() => {
   cleanup();
@@ -126,7 +127,7 @@ describe("BacklinksPanel", () => {
     }] }] });
     expect(screen.getByText("abc123")).toBeInTheDocument();
     expect(screen.getByText("source.md")).toBeInTheDocument();
-    expect(screen.getByText("2026-09-19T12:00:00Z")).toBeInTheDocument();
+    expect(screen.getByTitle(formatAbsolute("2026-09-19T12:00:00Z"))).toBeInTheDocument();
     for (const link of screen.getAllByRole("link", { name: document.path! })) {
       expect(link).toHaveAttribute("href", "/file/.tiller/design/refund%20notes.md#L1");
     }

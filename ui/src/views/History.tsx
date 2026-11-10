@@ -171,6 +171,7 @@ import { burstWhen, burstsOf, leafKey } from "../lib/bursts";
 import { eventPhrase } from "../lib/eventPhrase";
 import { ROW_CAP } from "../lib/disclosure";
 import { has } from "../lib/has";
+import { formatWhen } from "../lib/time";
 import EmptyNote from "../components/EmptyNote";
 import RefLink from "../components/RefLink";
 import { PersonName } from "../people";
@@ -726,7 +727,7 @@ function BurstRow({
   const phrase = eventPhrase(burst.type, n);
   const lone = n === 1 ? burst.entries[0] : undefined;
   const subject = lone?.targets[0];
-  const when = burstWhen(burst.entries, formatTime);
+  const when = burstWhen(burst.entries, whenNow);
   const hasAsk = burst.asks > 0;
 
   // The ask clause, written out in WORDS at every run length: a magenta dot
@@ -943,7 +944,7 @@ function histSubFor(active: RecapWindow, recap: RecapModel): string {
   if (active === "visit") {
     // since is empty on a first visit, which recaps nothing; a blank "since"
     // would read as a claim about an instant nobody has.
-    const since = recap.since !== "" ? ` since ${formatTime(recap.since)}` : "";
+    const since = recap.since !== "" ? ` since ${formatWhen(recap.since, new Date())}` : "";
     return `${count}${since} · reading this view marks you caught up`;
   }
   const span = active === "24h" ? "in the last 24 hours" : "in the last 7 days";
@@ -966,20 +967,8 @@ function emptyTextFor(window: string): string {
   }
 }
 
-// Digest timestamps arrive as RFC3339 UTC; the console shows them in the
-// reader's local time. Minute precision is also the precision burstWhen
-// measures a run's span against, so the two must stay the same function. An
-// unparseable value renders as-is, because showing the raw field beats hiding
-// it.
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return iso;
-  }
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+// Burst rows state a run's ends and span at this one precision, so the same
+// function renders both ends.
+function whenNow(iso: string): string {
+  return formatWhen(iso, new Date());
 }
