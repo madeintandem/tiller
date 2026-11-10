@@ -868,6 +868,9 @@ describe("NodeDetail: the attention stack", () => {
     expect(screen.getByText("Workflow · Agent")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "tiller check feature F-pueftm" })).toBeInTheDocument();
     expect(screen.getAllByText("Build failed; C6 still needs human acceptance.")).toHaveLength(1);
+    // The human acceptance sits behind the fold until asked for.
+    expect(screen.queryByRole("button", { name: acceptance.command })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
     expect(screen.getByRole("button", { name: acceptance.command })).toBeInTheDocument();
 
     view.rerender(
@@ -971,6 +974,9 @@ describe("NodeDetail: the attention stack", () => {
     ]);
 
     const { container } = withRouter(<NodeDetail page={page} queue={queue} />);
+    // The stack folds to one box; the second sits behind "1 more".
+    expect(container.querySelectorAll(".abox:not(.warn)")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
     expect(container.querySelectorAll(".abox:not(.warn)")).toHaveLength(2);
   });
 
@@ -1047,6 +1053,8 @@ describe("NodeDetail: the attention stack", () => {
       <NodeDetail page={page} queue={queueOf([entry])} />,
     );
 
+    expect(container.querySelectorAll(".abox")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
     const boxes = container.querySelectorAll(".abox");
     expect(boxes).toHaveLength(2);
     expect(boxes[0]).not.toHaveClass("warn");

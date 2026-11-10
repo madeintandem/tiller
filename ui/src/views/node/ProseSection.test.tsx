@@ -293,3 +293,32 @@ describe("ProseSection: written prose", () => {
     expect(screen.queryByRole("button", { name: /Read the full/ })).not.toBeInTheDocument();
   });
 });
+
+describe("ProseSection: the outline", () => {
+  const SPEC = "## One\n\ntext\n\n## Two\n\ntext\n\n### Three\n\ntext\n";
+
+  it("renders an On this page nav, with linked headings, for three or more items", () => {
+    const { container } = renderSection(prose({ content: SPEC }), featureNode);
+    const nav = screen.getByRole("navigation", { name: "On this page" });
+    const links = Array.from(nav.querySelectorAll("a"));
+    expect(links.map((a) => a.textContent)).toEqual(["One", "Two", "Three"]);
+    expect(links.map((a) => a.getAttribute("href"))).toEqual(["#one", "#two", "#three"]);
+    for (const a of links) {
+      expect(container.querySelector(`.prose [id="${a.getAttribute("href")!.slice(1)}"]`)).not.toBeNull();
+    }
+  });
+
+  it("gives repeated headings the same ids the outline links to", () => {
+    const { container } = renderSection(prose({ content: "## Notes\n\n## Notes\n\n## Notes\n" }), featureNode);
+    const nav = screen.getByRole("navigation", { name: "On this page" });
+    const hrefs = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual(["#notes", "#notes-2", "#notes-3"]);
+    const ids = Array.from(container.querySelectorAll(".prose h3")).map((h) => h.id);
+    expect(ids).toEqual(["notes", "notes-2", "notes-3"]);
+  });
+
+  it("renders no nav for fewer than three items", () => {
+    renderSection(prose({ content: "## One\n\ntext\n\n## Two\n\ntext\n" }), featureNode);
+    expect(screen.queryByRole("navigation", { name: "On this page" })).not.toBeInTheDocument();
+  });
+});

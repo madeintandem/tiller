@@ -30,7 +30,7 @@
 // evals tab's wire key and `tab` param stay "evals" (amended ui-surface.md,
 // 2026-08-10); only its DISPLAY label reads "Contract" now.
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type {
   ActiveBasisView,
@@ -48,6 +48,7 @@ import { needsAttentionFallback, type AttentionFallback } from "../lib/attention
 import { refOf, shortSha } from "../lib/drift";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
+import AttentionFold from "./AttentionFold";
 import StartBox from "./StartBox";
 import NodeDetailHeader from "./NodeHeader";
 import { ExecutionProvenance } from "./ExecutionSources";
@@ -366,27 +367,31 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
   if (asks.length === 0 && fallback === null && review === undefined && workflow === undefined && start === undefined) {
     return null;
   }
-  return (
-    <div className="attn">
-      {workflow !== undefined && (
-        <div className={`abox${workflow.actor === "human" ? "" : " warn"}`}>
-          <span className="kind">
-            Workflow · {workflow.actor === "human" ? "Human" : workflow.actor === "agent" ? "Agent" : "Recorded"}
-          </span>
-          <div className="why"><ProseInline markdown={workflow.reason} /></div>
-          {workflow.command !== undefined && !asks.some((entry) => entry.command === workflow.command) && (
-            <CopyCmd cmd={workflow.command} accent={workflow.actor === "human"} />
-          )}
-        </div>
-      )}
-      {asks.map((e) => (
-        <AskBox key={`${e.kind}:${e.gate ?? ""}:${e.prose ?? ""}`} entry={e} showCommand={!observed} />
-      ))}
-      {fallback !== null && <FallbackBox action={fallback} />}
-      {start !== undefined && <StartBox start={start} owner={page.node.owner} ownerName={page.node.owner_name} />}
-      {review !== undefined && <WarnBox review={review} pr={page.node.pr} />}
-    </div>
-  );
+  // The stack folds to one decision at a time: the first box in this order
+  // shows, the rest wait behind "N more" (AttentionFold).
+  const boxes: ReactNode[] = [];
+  if (workflow !== undefined) {
+    boxes.push(
+      <div key="workflow" className={`abox${workflow.actor === "human" ? "" : " warn"}`}>
+        <span className="kind">
+          Workflow · {workflow.actor === "human" ? "Human" : workflow.actor === "agent" ? "Agent" : "Recorded"}
+        </span>
+        <div className="why"><ProseInline markdown={workflow.reason} /></div>
+        {workflow.command !== undefined && !asks.some((entry) => entry.command === workflow.command) && (
+          <CopyCmd cmd={workflow.command} accent={workflow.actor === "human"} />
+        )}
+      </div>,
+    );
+  }
+  for (const e of asks) {
+    boxes.push(<AskBox key={`${e.kind}:${e.gate ?? ""}:${e.prose ?? ""}`} entry={e} showCommand={!observed} />);
+  }
+  if (fallback !== null) boxes.push(<FallbackBox key="fallback" action={fallback} />);
+  if (start !== undefined) {
+    boxes.push(<StartBox key="start" start={start} owner={page.node.owner} ownerName={page.node.owner_name} />);
+  }
+  if (review !== undefined) boxes.push(<WarnBox key="review" review={review} pr={page.node.pr} />);
+  return <AttentionFold key={page.node.id} boxes={boxes} />;
 }
 
 // ---------------------------------------------------------------------------

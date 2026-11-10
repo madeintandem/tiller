@@ -31,6 +31,7 @@ import type { ReactNode } from "react";
 import type { Link as MarkdownLink, PhrasingContent, Root, RootContent } from "mdast";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import { slugger } from "../lib/outline";
 import { Link } from "react-router-dom";
 import remarkGfm from "remark-gfm";
 
@@ -114,6 +115,42 @@ function remarkWorkReferences() {
 
 const REMARK_PLUGINS = [remarkGfm, remarkWorkReferences];
 
+// A minimal view of a hast node: just what heading ids need, so no hast
+// types package is imported.
+interface HastNode {
+  type: string;
+  tagName?: string;
+  value?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+}
+
+// hastText is a heading's visible text; an image shows only its alt text in
+// Prose, so that is what counts here too.
+function hastText(node: HastNode): string {
+  if (node.type === "text") return node.value ?? "";
+  if (node.tagName === "img") return String(node.properties?.alt ?? "");
+  return (node.children ?? []).map(hastText).join("");
+}
+
+// rehypeHeadingIds gives each section heading (source `##` and `###`, before
+// the demotion below) the id outlineOf computes for it, from the same slugger
+// in document order, so the outline's links resolve and repeats take -2, -3.
+function rehypeHeadingIds() {
+  return (tree: HastNode) => {
+    const next = slugger();
+    const walk = (node: HastNode): void => {
+      if (node.type === "element" && (node.tagName === "h2" || node.tagName === "h3")) {
+        node.properties = { ...node.properties, id: next(hastText(node).replace(/\s+/g, " ").trim()) };
+      }
+      node.children?.forEach(walk);
+    };
+    walk(tree);
+  };
+}
+
+const REHYPE_PLUGINS = [rehypeHeadingIds];
+
 const COMPONENTS: Components = {
   h1: "h2",
   h2: "h3",
@@ -128,7 +165,7 @@ const COMPONENTS: Components = {
 export default function Prose({ markdown }: { markdown: string }) {
   return (
     <div className="prose">
-      <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={COMPONENTS}>
+      <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS} components={COMPONENTS}>
         {markdown}
       </ReactMarkdown>
     </div>

@@ -180,3 +180,76 @@
   border: none;
   border-top: 1px solid var(--hair);
 }
+
+/* The spec's outline (console UI plan, task 14). .prose-outline-host is the
+   size container the grid answers to: the reading pane declares none, and the
+   pane is narrower than the window (the tree takes the left side), so a
+   container query on the host measures the width the spec really has.
+   Under 1100px the outline is hidden and the spec runs single-column. */
+.prose-outline-host {
+  container-type: inline-size;
+}
+
+.prose-with-outline {
+  display: grid;
+  grid-template-columns: minmax(0, 72ch) 220px;
+  column-gap: 40px;
+  align-items: start;
+}
+
+/* Sticky below the pinned tab rail. The pin (.node-pin, top: -22px) is, once
+   stuck, about 99px of visible height: the one-line compact header (22px top
+   padding, a ~21px line, 6px bottom) plus the tab rail (12px top margin, ~36px
+   tab, 24px bottom margin), less the 22px it hides above the pane. 108px
+   clears that with a small gap. Estimated from those rules, not measured. */
+.prose-outline {
+  position: sticky;
+  top: 108px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.prose-outline-head {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.prose-outline ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--hair);
+}
+
+.prose-outline li {
+  padding: 3px 0 3px 12px;
+}
+
+.prose-outline li.sub {
+  padding-left: 24px;
+}
+
+.prose-outline a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.prose-outline a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+@container (max-width: 1099px) {
+  .prose-with-outline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .prose-outline {
+    display: none;
+  }
+}

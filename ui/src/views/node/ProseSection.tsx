@@ -39,10 +39,16 @@ import type { NodeView, ProseRef, RelationshipDiagnostic } from "../../api";
 import CopyCmd from "../../components/CopyCmd";
 import InstrSection, { InstrNote } from "../../components/InstrSection";
 import Prose from "../../components/Prose";
+import ProseOutline from "../../components/ProseOutline";
 import SourceLink from "../../components/SourceLink";
 import { addrOf } from "../../lib/addr";
 import { has } from "../../lib/has";
+import { outlineOf } from "../../lib/outline";
 import { stripLeadingTitle } from "../../lib/stripLeadingTitle";
+
+// A spec with fewer section headings than this reads straight through; an
+// outline of two entries is noise beside it.
+const OUTLINE_MIN = 3;
 
 export default function ProseSection({
   prose,
@@ -78,9 +84,20 @@ export default function ProseSection({
   // the head's lead slot now carries what a reader actually follows, the
   // source the prose came from, as a one-hop link (SourceLink). A node with
   // no source gets the bare head, so the prose simply begins.
+  const markdown = stripLeadingTitle(prose.content, node.title);
+  const outline = outlineOf(markdown);
   return (
     <InstrSection label={label} lead={sourceLead(node, diagnostics)}>
-      <Prose markdown={stripLeadingTitle(prose.content, node.title)} />
+      {outline.length >= OUTLINE_MIN ? (
+        <div className="prose-outline-host">
+          <div className="prose-with-outline">
+            <Prose markdown={markdown} />
+            <ProseOutline items={outline} />
+          </div>
+        </div>
+      ) : (
+        <Prose markdown={markdown} />
+      )}
     </InstrSection>
   );
 }

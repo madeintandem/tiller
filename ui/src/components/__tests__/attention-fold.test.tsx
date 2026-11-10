@@ -1,0 +1,101 @@
+// The attention stack folds to one box (console UI plan, task 14): the first
+// box the stack would render shows, the rest sit behind a "N more" button.
+
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import type { NodePage, Queue, QueueEntry } from "../../api";
+import NodeDetail from "../NodeDetail";
+
+afterEach(() => {
+  cleanup();
+});
+
+beforeEach(() => {
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: () => Promise.resolve() },
+    configurable: true,
+  });
+});
+
+function taskPage(overrides: Partial<NodePage> = {}): NodePage {
+  return {
+    node: {
+      noun: "task",
+      id: "T-h4k2wq",
+      key: "foundation/boot/boot-the-app",
+      title: "Boot the app",
+      status: "in_review",
+    },
+    ref: "foundation/boot/boot-the-app (T-h4k2wq)",
+    prose: null,
+    relationships: {},
+    backlinks: { groups: [], count: 0, diagnostics: [], complete: true },
+    history: [],
+    eval: null,
+    ...overrides,
+  };
+}
+
+function ask(command: string): QueueEntry {
+  return {
+    kind: "attest_criterion",
+    noun: "task",
+    id: "T-h4k2wq",
+    ref: "foundation/boot/boot-the-app (T-h4k2wq)",
+    prose: "C1",
+    statement: `Statement for ${command}`,
+    command,
+    actor: "human",
+  };
+}
+
+const workflow: NonNullable<NodePage["workflow"]> = {
+  phase: "acceptance",
+  actor: "human",
+  action: "attest",
+  command: "tiller attest first",
+  reason: "Acceptance is pending.",
+  review_id: "T-h4k2wq",
+  feature_id: "F-1",
+  contract_status: "valid",
+  acceptance_ready: true,
+  submission_recorded: false,
+};
+
+function renderPage(page: NodePage, queue: Queue) {
+  return render(
+    <MemoryRouter>
+      <NodeDetail page={page} queue={queue} />
+    </MemoryRouter>,
+  );
+}
+
+describe("NodeDetail: the attention fold", () => {
+  it("shows only the first box and a count of the rest, then all on press", () => {
+    renderPage(taskPage({ workflow }), { entries: [ask("tiller attest second"), ask("tiller attest third")] });
+    expect(screen.getByText("Workflow · Human")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "tiller attest second" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "tiller attest third" })).not.toBeInTheDocument();
+    const more = screen.getByRole("button", { name: "2 more" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "tiller attest third" })).toBeInTheDocument();
+    expect(screen.getByText("Workflow · Human")).toBeInTheDocument();
+  });
+
+  it("offers no button for exactly one box", () => {
+    renderPage(taskPage(), { entries: [ask("tiller attest second")] });
+    expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /more$/ })).not.toBeInTheDocument();
+  });
+
+  it("folds the followers of the first ask when there is no workflow box", () => {
+    renderPage(taskPage(), { entries: [ask("tiller attest second"), ask("tiller attest third")] });
+    expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "tiller attest third" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1 more" })).toBeInTheDocument();
+  });
+});
