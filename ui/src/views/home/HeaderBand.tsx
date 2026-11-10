@@ -3,6 +3,7 @@
 // tile links to the list it counts; the title lives in HomeTitle.tsx.
 
 import { Link } from "react-router-dom";
+import { useId } from "react";
 import type { FetchState } from "../../hooks";
 import type { DriftReportView, ListResult } from "../../api";
 import StateBar from "../../components/StateBar";
@@ -32,7 +33,7 @@ export default function HeaderBand({
 }) {
   return (
     <div className="home-head">
-      <div className="stats">
+      <div className="stats" role="group" aria-label="Project numbers">
         <StatTile
           label="Epics"
           state={epics}
@@ -43,7 +44,7 @@ export default function HeaderBand({
         <StatTile
           label="Questions"
           state={questions}
-          to="/questions?status=open"
+          to="/questions?status=all"
           name={{ one: "question", many: "questions", opens: "the questions list" }}
         />
         <ShelfStat bugs={bugs} chores={chores} tweaks={tweaks} />
@@ -57,10 +58,15 @@ export default function HeaderBand({
 // reread failed: the last good numbers stay, and this says they may be old.
 // The visible text carries the error (the title holds it whole), so the
 // warning is never color alone.
-function StaleNote({ error }: { error: string }) {
+//
+// Inside a link tile the note is the link's description (aria-describedby),
+// since the link's aria-label would otherwise replace its content for
+// assistive technology and the note would never be announced.
+function StaleNote({ error, id }: { error: string; id?: string }) {
+  const text = `out of date: ${error}`;
   return (
-    <div className="cap error stat-stale" title={error}>
-      out of date: {error}
+    <div id={id} className="cap error stat-stale" title={text}>
+      {text}
     </div>
   );
 }
@@ -148,6 +154,7 @@ function ShelfStat({
 // its dash/caption markup), never silence: this slot's only silent case is a
 // RESOLVED, genuinely all-zero report (composeDriftBand's own null case).
 function DriftStat({ state }: { state: FetchState<DriftReportView> }) {
+  const noteId = useId();
   if (state.data === null) {
     return <UnresolvedTile label="Drift" error={state.error} />;
   }
@@ -163,11 +170,12 @@ function DriftStat({ state }: { state: FetchState<DriftReportView> }) {
       to="/?tab=drift"
       className="stat drift"
       aria-label={`${band.total} drift items (${band.text}), open the drift tab`}
+      aria-describedby={state.error !== null ? noteId : undefined}
     >
       <div className="n">{band.total}</div>
       <div className="lbl">Drift</div>
       <div className="cap muted">{band.text}</div>
-      {state.error !== null && <StaleNote error={state.error} />}
+      {state.error !== null && <StaleNote error={state.error} id={noteId} />}
     </Link>
   );
 }
@@ -207,6 +215,7 @@ function StatTile({
   to: string;
   name: { one: string; many: string; opens: string };
 }) {
+  const noteId = useId();
   if (state.data === null) {
     return <UnresolvedTile label={label} error={state.error} />;
   }
@@ -216,13 +225,14 @@ function StatTile({
     <Link
       to={to}
       className="stat"
+      aria-describedby={state.error !== null ? noteId : undefined}
       aria-label={`${rows.length} ${rows.length === 1 ? name.one : name.many}, open ${name.opens}`}
     >
       <div className="n">{rows.length}</div>
       <div className="lbl">{label}</div>
       <StateBar mix={mix} caption={caption} width={96} />
       <div className="cap muted">{rows.length === 0 ? "none yet" : caption}</div>
-      {state.error !== null && <StaleNote error={state.error} />}
+      {state.error !== null && <StaleNote error={state.error} id={noteId} />}
     </Link>
   );
 }

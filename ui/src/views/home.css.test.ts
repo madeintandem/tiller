@@ -110,4 +110,8 @@ describe("home.css: the stat band holds one row inside its own box under 1200px"
   it("gives a link tile a visible focus ring", () => {
     expect(homeCss).toMatch(/\.stat:focus-visible,\s*\.fseg:focus-visible\s*\{[^}]*outline:/);
   });
+
+  it("keeps the stale note to one clipped line", () => {
+    expect(homeCss).toMatch(/\.stat-stale\s*\{[^}]*white-space:\s*nowrap;[^}]*text-overflow:\s*ellipsis;/);
+  });
 });

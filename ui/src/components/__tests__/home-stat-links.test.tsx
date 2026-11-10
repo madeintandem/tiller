@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DriftReportView, ListResult, ListRow, ProjectSummary } from "../../api";
 import { bumpFetchGeneration } from "../../api";
 import FilterMode from "../../views/explore/FilterMode";
-import { activeLedgerStatus, ledgerStatusTabs } from "../../views/explore/ledgerStatus";
+import QuestionsPane from "../../views/explore/QuestionsPane";
 import Home from "../../views/Home";
 
 afterEach(() => {
@@ -95,15 +95,24 @@ describe("Home stat tiles link to the list they count", () => {
     expect(link).toHaveTextContent("Epics");
   });
 
-  it("links Questions to the open questions ledger, which reads that same status", async () => {
-    stubFetch(table());
-    renderHome();
-    const link = await screen.findByRole("link", { name: "2 questions, open the questions list" });
-    const href = link.getAttribute("href") as string;
-    expect(href).toBe("/questions?status=open");
-    const rows = [row("Q-1", "open"), row("Q-2", "answered")];
-    const tabs = ledgerStatusTabs(rows, ["open", "answered", "cancelled"]);
-    expect(activeLedgerStatus(new URL(href, "http://x").searchParams, tabs)).toBe("open");
+  it("links Questions to the ledger's All view, stated in the URL, and shows as many rows as the tile counts", async () => {
+    // Fixed data: three questions, two open and one answered.
+    const questions = list("question", [row("Q-1", "open"), row("Q-2", "open"), row("Q-3", "answered")]);
+    stubFetch(table({ "/api/ls?noun=question": questions }));
+    const { container } = render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<Home summary={summary} summaryError={null} />} />
+          <Route path="/questions" element={<QuestionsPane />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const link = await screen.findByRole("link", { name: "3 questions, open the questions list" });
+    expect(link).toHaveAttribute("href", "/questions?status=all");
+    fireEvent.click(link);
+    const all = await screen.findByRole("button", { name: "All · 3" });
+    expect(all).toHaveAttribute("aria-current", "true");
+    expect(container.querySelectorAll(".qlist > *")).toHaveLength(3);
   });
 
   it("links a tile with a zero count", async () => {
@@ -139,16 +148,8 @@ describe("Home stat tiles link to the list they count", () => {
     }
   });
 
-  it("opens a funnel number as a list of exactly that many rows", async () => {
-    const features = table()["/api/ls?noun=feature"] as ListResult;
-    const active = features.nodes.filter((r) => (r.column ?? r.status) === "active");
-    const { spy } = stubFetch(table({
-      "/api/ls?noun=features&status=active": {
-        ...list("feature", active),
-        facets: [{ axis: "status", options: [{ value: "active", label: "active", count: active.length, selected: true }] }],
-      },
-    }));
-    render(
+  function renderWithExplore() {
+    return render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
           <Route path="/" element={<Home summary={summary} summaryError={null} />} />
@@ -156,13 +157,51 @@ describe("Home stat tiles link to the list they count", () => {
         </Routes>
       </MemoryRouter>,
     );
-    const seg = await screen.findByRole("link", { name: "2 Active features, open the list" });
-    fireEvent.click(seg);
-    expect(await screen.findByText("2 results")).toBeInTheDocument();
-    const urls = spy.mock.calls.map(([u]) => String(u));
-    expect(urls).toContain("/api/ls?noun=features&status=active");
-    expect(urls).not.toContain("/api/ls?noun=features");
+  }
+
+  it("opens the Epics number as a list of that many rows, cancelled and archived epics included", async () => {
+    // Fixed data, the same five epics under the singular noun Home reads and
+    // the plural noun Explore requests (the server maps both to one noun).
+    const epics = list("epic", [
+      row("E-1", "active"), row("E-2", "draft"), row("E-3", "done"), row("E-4", "cancelled"), row("E-5", "archived"),
+    ]);
+    const { spy } = stubFetch(table({
+      "/api/ls?noun=epic": epics,
+      "/api/ls?noun=epics": { ...epics, facets: [] },
+    }));
+    renderWithExplore();
+    const link = await screen.findByRole("link", { name: "5 epics, open the epic list" });
+    fireEvent.click(link);
+    expect(await screen.findByText("5 results")).toBeInTheDocument();
+    expect(spy.mock.calls.map(([u]) => String(u))).toContain("/api/ls?noun=epics");
   });
+
+  // A stored-ready feature with a task in flight reads Active (column
+  // active). Fixed responses per status, written by hand, not derived from the
+  // rule the tile applies: the server filters on displayed status.
+  const funnelFeatures = list("feature", [
+    row("F-1", "ready", "active"), row("F-2", "ready"), row("F-3", "active"), row("F-4", "draft"),
+  ]);
+  const byStatus: Record<string, ListRow[]> = {
+    ready: [row("F-2", "ready")],
+    active: [row("F-1", "ready", "active"), row("F-3", "active")],
+  };
+  for (const [status, expected] of [["ready", 1], ["active", 2]] as const) {
+    it(`opens the ${status} funnel number as a list of that many rows`, async () => {
+      const facet = { axis: "status", options: [{ value: status, label: status, count: expected, selected: true }] };
+      const { spy } = stubFetch(table({
+        "/api/ls?noun=feature": funnelFeatures,
+        [`/api/ls?noun=features&status=${status}`]: { ...list("feature", byStatus[status]), facets: [facet] },
+      }));
+      renderWithExplore();
+      const label = status === "ready" ? "Ready" : "Active";
+      const seg = await screen.findByRole("link", { name: `${expected} ${label} ${expected === 1 ? "feature" : "features"}, open the list` });
+      expect(seg).toHaveAttribute("href", `/explore?mode=filter&noun=features&status=${status}`);
+      fireEvent.click(seg);
+      expect(await screen.findByText(`${expected} ${expected === 1 ? "result" : "results"}`)).toBeInTheDocument();
+      expect(spy.mock.calls.map(([u]) => String(u))).toContain(`/api/ls?noun=features&status=${status}`);
+    });
+  }
 });
 
 describe("Home title sits above the tab rail", () => {
@@ -211,12 +250,16 @@ describe("Home tiles from retained reads say when a reread failed", () => {
 
     await waitFor(() => expect(container.querySelectorAll(".stat-stale")).toHaveLength(3));
     // The numbers stay.
-    expect(screen.getByRole("link", { name: "3 epics, open the epic list" })).toBeInTheDocument();
+    const epicsTile = screen.getByRole("link", { name: "3 epics, open the epic list" });
     expect(screen.getByRole("link", { name: "2 Active features, open the list" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^1 drift/i })).toBeInTheDocument();
+    const driftTile = screen.getByRole("link", { name: /^1 drift/i });
+    // Screen readers hear it: the link's description carries the note.
+    expect(epicsTile).toHaveAccessibleDescription(/out of date.*500/i);
+    expect(driftTile).toHaveAccessibleDescription(/out of date.*500/i);
     for (const note of container.querySelectorAll(".stat-stale")) {
       expect(note.textContent).toMatch(/out of date/i);
       expect(note.textContent).toMatch(/500/);
+      expect(note.getAttribute("title")).toMatch(/500/);
     }
     // A tile that is not from a retained read is not marked.
     expect(within(screen.getByRole("link", { name: "2 questions, open the questions list" })).queryByText(/out of date/i))
@@ -225,6 +268,15 @@ describe("Home tiles from retained reads say when a reread failed", () => {
     s.failing.clear();
     s.reread();
     await waitFor(() => expect(container.querySelectorAll(".stat-stale")).toHaveLength(0));
-    expect(screen.getByRole("link", { name: "3 epics, open the epic list" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "3 epics, open the epic list" })).not.toHaveAccessibleDescription(/out of date/i);
+  });
+});
+
+describe("the stat band is a named group", () => {
+  it("names the scrolling box Project numbers", async () => {
+    stubFetch(table());
+    renderHome();
+    const band = await screen.findByRole("group", { name: "Project numbers" });
+    expect(within(band).getByRole("link", { name: "3 epics, open the epic list" })).toBeInTheDocument();
   });
 });

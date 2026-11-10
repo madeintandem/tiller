@@ -76,3 +76,26 @@ func TestCancelledEpicsStayDiscoverableOutsideBrowseSurfaces(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "E-000001", gen.Tree(tree).Nodes[1].ID, "CLI tree retains cancelled history")
 }
+
+// Home's Epics tile reads /api/ls?noun=epic and its link opens Explore's bare
+// epics filter, /api/ls?noun=epics. The two must list the same set, cancelled
+// epics included, so the tile's number is the number of rows its link shows.
+func TestBareEpicListIncludesCancelledAndMatchesSingularNoun(t *testing.T) {
+	root := nodeFixture(t)
+	writeFixtureFile(t, root, ".tiller/epics/form-engine/epic.yml", []byte("id: E-000001\nkey: form-engine\ntitle: Form Engine\nstatus: cancelled\n"))
+	writeFixtureFile(t, root, ".tiller/epics/current/epic.yml", []byte("id: E-000002\nkey: current\ntitle: Current work\nstatus: ready\n"))
+	writeFixtureFile(t, root, ".tiller/epics/current/epic.md", []byte("# Current work\n"))
+	srv := buildServerAt(t, root)
+	ids := func(path string) []string {
+		var got struct{ Nodes []struct{ ID string } }
+		require.Equal(t, 200, getJSON(t, srv, path, &got))
+		out := []string{}
+		for _, n := range got.Nodes {
+			out = append(out, n.ID)
+		}
+		return out
+	}
+	singular, plural := ids("/api/ls?noun=epic"), ids("/api/ls?noun=epics")
+	require.Equal(t, singular, plural)
+	require.ElementsMatch(t, []string{"E-000001", "E-000002"}, plural)
+}
