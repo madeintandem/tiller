@@ -18,6 +18,7 @@ import { useBoardScrollMode } from "../lib/boardScroll";
 import { ROW_CAP } from "../lib/disclosure";
 import { formatAdded } from "../lib/added";
 import { has } from "../lib/has";
+import { statusLabel } from "../lib/statusLabel";
 import { PersonName } from "../people";
 import {
   readWorkItemFilters,
@@ -363,7 +364,7 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
       {(item.noun === "bug" || has(item.activity) || terminal) && (
         <div className="work-item-card-chips">
           {item.noun === "bug" && <SeverityChip severity={item.severity} />}
-          {has(item.activity) && <Chip status={item.activity}>{item.activity}</Chip>}
+          {has(item.activity) && <Chip status={item.activity}>{statusLabel(item.activity)}</Chip>}
           {terminal && <Chip status={item.status}>{item.status}</Chip>}
         </div>
       )}

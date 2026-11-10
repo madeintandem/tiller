@@ -1889,7 +1889,7 @@ describe("Home pulse: In flight", () => {
 
     expect(await screen.findByText(/blocked on/)).toBeInTheDocument();
     expect(screen.getByText("Q-h2n7m5")).toBeInTheDocument();
-    expect(screen.getByText(/held under legacy-intake \(E-9\) \(cancelled\)/)).toBeInTheDocument();
+    expect(screen.getByText(/held under legacy-intake \(E-9\) \(Cancelled\)/)).toBeInTheDocument();
   });
 
   it("renders a question hold separately from manual and retired rows with a distinct stable key", async () => {
@@ -1949,7 +1949,7 @@ describe("Home pulse: In flight", () => {
 
     expect(rowText).toHaveLength(3);
     expect(rowText.filter((text) => text.includes("blocked on widgets/dependency (F-dependency)"))).toHaveLength(1);
-    expect(rowText.filter((text) => text.includes("held under retired-widgets (E-retired) (cancelled)"))).toHaveLength(1);
+    expect(rowText.filter((text) => text.includes("held under retired-widgets (E-retired) (Cancelled)"))).toHaveLength(1);
     const questionRows = rowText.filter((text) => text.includes("Canonical schema"));
     expect(questionRows).toHaveLength(1);
     expect(questionRows[0]).toContain("Q-schema");

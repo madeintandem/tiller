@@ -28,6 +28,7 @@ import type { Burst } from "../../lib/bursts";
 import { ROW_CAP } from "../../lib/disclosure";
 import { has } from "../../lib/has";
 import { sentence } from "../../lib/sentence";
+import { statusLabel } from "../../lib/statusLabel";
 import { PersonName, usePersonName } from "../../people";
 import { formatClock } from "../../lib/time";
 import { featureKeyOf, groupByFeature, taskKeyTail } from "./inFlight";
@@ -232,7 +233,7 @@ function ActiveRow({ item, grouped }: { item: StreamItem; grouped: boolean }) {
         <b>
           <ItemRef item={item} grouped={grouped} />
         </b>{" "}
-        · {item.display}
+        · {statusLabel(item.display)}
       </span>
     </div>
   );
@@ -305,7 +306,7 @@ function BlockedWhy({ item }: { item: BlockedItem }) {
   if (item.held !== undefined) {
     return (
       <>
-        held under {item.held.ref} ({item.held.state})
+        held under {item.held.ref} ({statusLabel(item.held.state)})
       </>
     );
   }

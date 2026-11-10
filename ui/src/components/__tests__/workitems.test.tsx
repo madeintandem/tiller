@@ -333,7 +333,8 @@ describe("Fix board", () => {
 
     const ready = await screen.findByRole("region", { name: "Ready" });
     expect(within(ready).getByRole("link", { name: "Zulu" })).toHaveAttribute("href", "/node/bug/B-z");
-    expect(within(ready).getByText("awaiting_check")).toBeInTheDocument();
+    expect(within(ready).getByText("Awaiting check")).toBeInTheDocument();
+    expect(within(ready).queryByText("awaiting_check")).not.toBeInTheDocument();
     expect(within(ready).getAllByRole("link", { name: "Console" })[0]).toHaveAttribute(
       "href",
       "/node/feature/F-1",
