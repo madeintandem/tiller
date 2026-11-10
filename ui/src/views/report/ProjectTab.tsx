@@ -15,10 +15,9 @@ import LeadCycleChart from "./LeadCycleChart";
 import { RANGES, rangeValue, sliceWeeks, weeksNote, type Range } from "./range";
 import ThroughputChart from "./ThroughputChart";
 
+// printScope is the chart note's wording, for the printed page.
 function printScope(range: Range, weeks: number): string {
-  if (weeks < 1) return "";
-  if (range === "all") return `Charts show all ${weeks} ${weeks === 1 ? "week" : "weeks"}`;
-  return weeksNote(weeks).replace("Showing", "Charts show");
+  return weeksNote(weeks, range).replace("Showing", "Charts show");
 }
 
 export default function ProjectTab({
@@ -34,7 +33,8 @@ export default function ProjectTab({
   const scope = printScope(range, report.weeks.length);
   return (
     <>
-      <KpiStrip kpis={report.kpis} />
+      {/* Whole-project figures, sparkline included: the range never touches them. */}
+      <KpiStrip kpis={served.kpis} />
       <div className="report-range">
         <label htmlFor="report-range-select">Range</label>
         <select id="report-range-select" value={rangeValue(range)} onChange={(e) => onRange(e.target.value)}>
@@ -50,18 +50,18 @@ export default function ProjectTab({
       <div className="report-charts">
         <div className="report-wide">
           <ChartCard>
-            <BurnUpChart report={report} />
+            <BurnUpChart report={report} whole={served} range={range} />
           </ChartCard>
         </div>
         <ChartCard>
-          <ThroughputChart report={report} />
+          <ThroughputChart report={report} whole={served} range={range} />
         </ChartCard>
         <ChartCard>
-          <BugsChart report={report} />
+          <BugsChart report={report} whole={served} range={range} />
         </ChartCard>
         <div className="report-wide">
           <ChartCard>
-            <LeadCycleChart report={report} />
+            <LeadCycleChart report={report} whole={served} range={range} />
           </ChartCard>
         </div>
         <div className="report-wide">

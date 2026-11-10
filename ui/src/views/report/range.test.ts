@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Report, ReportEpic } from "../../api";
-import { DEFAULT_RANGE, parseRange, sliceWeeks, sortEpics, weeksNote } from "./range";
+import { DEFAULT_RANGE, parseRange, rangeWords, sliceWeeks, sortEpics, weeksNote } from "./range";
 
 const DAY = 24 * 3600 * 1000;
 const START = Date.parse("2026-04-06T00:00:00Z");
@@ -112,7 +112,21 @@ describe("sliceWeeks", () => {
 describe("weeksNote", () => {
   it("says how many weeks a chart shows", () => {
     expect(weeksNote(8)).toBe("Showing the last 8 weeks");
+    expect(weeksNote(26, 26)).toBe("Showing the last 26 weeks");
     expect(weeksNote(1)).toBe("Showing the last week");
+    expect(weeksNote(0)).toBe("");
+  });
+
+  it("says all N weeks when All is selected", () => {
+    expect(weeksNote(30, "all")).toBe("Showing all 30 weeks");
+    expect(weeksNote(1, "all")).toBe("Showing all 1 week");
+  });
+});
+
+describe("rangeWords", () => {
+  it("names the range in words", () => {
+    expect(rangeWords(8)).toBe("the last 8 weeks");
+    expect(rangeWords(26)).toBe("the last 26 weeks");
   });
 });
 

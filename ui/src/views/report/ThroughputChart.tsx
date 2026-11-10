@@ -4,7 +4,7 @@
 // legend alike, because its violet sits too close to Feature work's blue for
 // color-blind readers.
 
-import type { Report, ReportThroughputWeek } from "../../api";
+import type { ReportThroughputWeek } from "../../api";
 import ChartFrame, {
   HatchPattern,
   StackedColumn,
@@ -16,7 +16,7 @@ import ChartFrame, {
   type LegendEntry,
 } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
-import { weeksNote } from "./range";
+import { DEFAULT_RANGE, rangeWords, weeksNote, type WeeklyChartProps } from "./range";
 
 // Bottom of the stack first.
 const KINDS: { key: keyof ReportThroughputWeek; label: string; color: string; hatched?: boolean }[] = [
@@ -34,19 +34,25 @@ function total(w: ReportThroughputWeek): number {
   return w.feature_work + w.fixes + w.upkeep;
 }
 
-export default function ThroughputChart({ report }: { report: Report }) {
+export default function ThroughputChart({ report, whole = report, range = DEFAULT_RANGE }: WeeklyChartProps) {
   const { tip, show, hide } = useTooltip();
   const hatch = usePatternId("report-hatch");
   const { weeks, throughput: series } = report;
   const shipped = series.reduce((sum, w) => sum + total(w), 0);
-  const empty = shipped === 0 ? "Nothing shipped yet" : undefined;
+  // The whole project decides "yet"; the slice only decides what the range holds.
+  const everShipped = whole.throughput.some((w) => total(w) > 0);
+  const empty = !everShipped
+    ? "Nothing shipped yet"
+    : shipped === 0 && range !== "all"
+      ? `Nothing shipped in ${rangeWords(range)}`
+      : undefined;
 
   return (
     <ChartFrame
       title="Throughput"
       summary={`${shipped} items shipped over ${weeks.length} weeks; the vertical axis is items per week`}
       empty={empty}
-      note={weeksNote(weeks.length)}
+      note={weeksNote(weeks.length, range)}
       legend={LEGEND}
       tip={tip}
     >

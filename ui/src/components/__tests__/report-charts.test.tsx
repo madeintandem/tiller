@@ -12,6 +12,7 @@ import BurnUpChart from "../../views/report/BurnUpChart";
 import ChartCard from "../../views/report/ChartCard";
 import EpicProgressChart from "../../views/report/EpicProgressChart";
 import LeadCycleChart from "../../views/report/LeadCycleChart";
+import { sliceWeeks } from "../../views/report/range";
 import Sparkline from "../../views/report/Sparkline";
 import ThroughputChart from "../../views/report/ThroughputChart";
 
@@ -822,5 +823,54 @@ describe("Report labels, order, and units (R8)", () => {
     const { container } = render(<EpicProgressChart report={epicsReport([epicOf("Shipped", 2, 0, 0)])} />);
     expect(screen.getByText("Every epic is complete")).toBeInTheDocument();
     expect(container.querySelector("details")).not.toBeNull();
+  });
+});
+
+describe("an empty range says so (R8 fix)", () => {
+  // The slice holds nothing; the whole project has history.
+  const quiet = emptyReport();
+  const whole = fixtureReport();
+  const cases: [string, typeof ThroughputChart, string, string][] = [
+    ["Throughput", ThroughputChart, "Nothing shipped in the last 8 weeks", "Nothing shipped yet"],
+    ["Bugs", BugsChart, "No bugs reported in the last 8 weeks", "No bugs reported yet"],
+    ["Lead and cycle", LeadCycleChart, "No features completed in the last 8 weeks", "No features completed yet"],
+  ];
+
+  for (const [name, Chart, inRange, yet] of cases) {
+    it(`${name} names the range when only the range is empty`, () => {
+      render(<Chart report={quiet} whole={whole} range={8} />);
+      expect(screen.getByText(inRange)).toBeInTheDocument();
+      expect(screen.queryByText(yet)).toBeNull();
+    });
+
+    it(`${name} names the 26-week form`, () => {
+      render(<Chart report={quiet} whole={whole} range={26} />);
+      expect(screen.getByText(inRange.replace("8", "26"))).toBeInTheDocument();
+    });
+
+    it(`${name} keeps the yet sentence when the whole project is empty`, () => {
+      render(<Chart report={quiet} whole={quiet} range={8} />);
+      expect(screen.getByText(yet)).toBeInTheDocument();
+    });
+
+    it(`${name} says only the yet form under All`, () => {
+      render(<Chart report={quiet} whole={quiet} range="all" />);
+      expect(screen.getByText(yet)).toBeInTheDocument();
+    });
+  }
+
+  it("notes that the median lines include earlier work, only when the range trims", () => {
+    const { unmount } = render(<LeadCycleChart report={sliceWeeks(whole, 2)} whole={whole} range={2} />);
+    expect(
+      screen.getByText("Showing the last 2 weeks. Median lines include earlier work."),
+    ).toBeInTheDocument();
+    unmount();
+    render(<LeadCycleChart report={whole} whole={whole} range={26} />);
+    expect(screen.getByText("Showing the last 4 weeks")).toBeInTheDocument();
+  });
+
+  it("words All as all N weeks", () => {
+    render(<ThroughputChart report={whole} whole={whole} range="all" />);
+    expect(screen.getByText("Showing all 4 weeks")).toBeInTheDocument();
   });
 });

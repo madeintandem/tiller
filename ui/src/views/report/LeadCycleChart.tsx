@@ -5,22 +5,33 @@
 // a dashed (lead) line. Filled vs hollow and solid vs dashed carry identity,
 // not hue.
 
-import type { Report, ReportFeatureTime } from "../../api";
+import type { ReportFeatureTime } from "../../api";
 import ChartFrame, { MedianLine, WeekAxis, weekPlot } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
 import { formatDays } from "./format";
-import { weeksNote } from "./range";
+import { DEFAULT_RANGE, rangeWords, weeksNote, type WeeklyChartProps } from "./range";
 
 const CYCLE = "var(--st-active)";
 const LEAD = "var(--st-ready)";
 // The hover target around a dumbbell: wider than the 8px dots it carries.
 const HIT = 24;
 
-export default function LeadCycleChart({ report }: { report: Report }) {
+export default function LeadCycleChart({ report, whole = report, range = DEFAULT_RANGE }: WeeklyChartProps) {
   const { tip, show, hide } = useTooltip();
   const { feature_times: features } = report;
   const latest = features[features.length - 1];
-  const empty = features.length === 0 ? "No features completed yet" : undefined;
+  // The whole project decides "yet"; the slice only decides what the range holds.
+  const empty =
+    whole.feature_times.length === 0
+      ? "No features completed yet"
+      : features.length === 0 && range !== "all"
+        ? `No features completed in ${rangeWords(range)}`
+        : undefined;
+  // The dots are trimmed to the range; the median lines and the Median cycle
+  // figure are the server's, over all features, so say so when the range trims.
+  const trimmed = whole.weeks.length > report.weeks.length;
+  const shown = weeksNote(report.weeks.length, range);
+  const note = trimmed && shown ? `${shown}. Median lines include earlier work.` : shown;
   const summary = latest
     ? `${features.length} features completed; rolling median cycle ${formatDays(latest.cycle_median_days)}, lead ${formatDays(latest.lead_median_days)}`
     : "";
@@ -36,7 +47,7 @@ export default function LeadCycleChart({ report }: { report: Report }) {
         { label: "Median cycle, last 5", swatch: "solid", color: CYCLE },
         { label: "Median lead, last 5", swatch: "dashed", color: LEAD },
       ]}
-      note={weeksNote(report.weeks.length)}
+      note={note}
       tip={tip}
     >
       {(width, height) => {

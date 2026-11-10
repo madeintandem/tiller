@@ -30,10 +30,27 @@ export function rangeValue(range: Range): string {
   return String(range);
 }
 
-// weeksNote is the line a weekly chart carries to say what it shows ("" when
-// it shows no week, so the frame draws no note).
-export function weeksNote(weeks: number): string {
+// What every weekly chart is handed: the slice it draws, the served whole
+// (which decides whether the project has any history at all), and the range
+// chosen. The two default to the report itself and the default range.
+export interface WeeklyChartProps {
+  report: Report;
+  whole?: Report;
+  range?: Range;
+}
+
+// rangeWords names a numeric range in words, for an empty-range sentence.
+export function rangeWords(range: number): string {
+  return `the last ${range} weeks`;
+}
+
+// weeksNote is the line a weekly chart carries to say what it shows, and the
+// one the printed page's scope line is made from: "Showing the last 8 weeks",
+// or "Showing all 30 weeks" under All ("" when it shows no week, so the frame
+// draws no note).
+export function weeksNote(weeks: number, range: Range = DEFAULT_RANGE): string {
   if (weeks < 1) return "";
+  if (range === "all") return `Showing all ${weeks} ${weeks === 1 ? "week" : "weeks"}`;
   return weeks === 1 ? "Showing the last week" : `Showing the last ${weeks} weeks`;
 }
 

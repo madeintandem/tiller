@@ -18,7 +18,7 @@ What Tiller does today, what is designed but not built, and what it deliberately
 
 These are retained scope, not a promised sequence.
 
-- **Console writes and live updates.** Write actions that map one-to-one onto CLI commands, an explicit state-commit action, a filesystem watcher or polling refresh, separate tree and host freshness, and a general uncommitted-state indicator. Report export (print, Markdown, static HTML) and an executive summary. Map filters and export, and layouts that hold up at narrow widths.
+- **Console writes and live updates.** Write actions that map one-to-one onto CLI commands, an explicit state-commit action, a filesystem watcher or polling refresh, separate tree and host freshness, and a general uncommitted-state indicator. Report export as Markdown and static HTML (printing from the browser is built) and an executive summary. Map filters and export, and layouts that hold up at narrow widths.
 - **CLI commands.** `doctor`, `block` and `unblock`, `commit state`, and `add design`, `add adr`, and `add evidence`. [The command reference](tiller-commands.md) marks which verbs ship.
 - **Distribution.** A launcher with a per-project engine cache and version pin, an upgrade path that fetches the engine a project pins into that cache (a separate design from the shipped `upgrade --project-only`), update nudges, more harness discovery adapters, and lossless preservation of unknown YAML fields.
 - **Baseline coverage.** Automatic baseline routing for uncovered code roots, accepted-basis drift sweeps for shelf items, and completion fingerprints for submodules.

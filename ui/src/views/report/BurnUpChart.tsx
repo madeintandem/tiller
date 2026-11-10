@@ -3,17 +3,16 @@
 // them shaded as the work still to do, and both lines named at their right
 // end so the pair never relies on color.
 
-import type { Report } from "../../api";
 import ChartFrame, { WeekAxis, WeekHits, tint, weekPlot, weekRows } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
-import { weeksNote } from "./range";
+import { DEFAULT_RANGE, weeksNote, type WeeklyChartProps } from "./range";
 
 const SCOPE = "var(--ink-3)";
 const DONE = "var(--st-done)";
 // Two end labels closer than this are spread apart around their midpoint.
 const LABEL_GAP = 14;
 
-export default function BurnUpChart({ report }: { report: Report }) {
+export default function BurnUpChart({ report, range = DEFAULT_RANGE }: WeeklyChartProps) {
   const { tip, show, hide } = useTooltip();
   const { weeks, burn_up: series } = report;
   const last = series[series.length - 1] ?? { scope: 0, done: 0 };
@@ -28,7 +27,7 @@ export default function BurnUpChart({ report }: { report: Report }) {
         { label: "Scope", swatch: "dashed", color: SCOPE },
         { label: "Done", swatch: "solid", color: DONE },
       ]}
-      note={weeksNote(weeks.length)}
+      note={weeksNote(weeks.length, range)}
       tip={tip}
     >
       {(width, height) => {

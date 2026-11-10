@@ -4,10 +4,9 @@
 // their fixed position in each pair and the legend text beside their hue, and
 // Open is a line rather than a bar.
 
-import type { Report } from "../../api";
 import ChartFrame, { WeekAxis, WeekHits, columnPath, weekPlot, weekRows } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
-import { weeksNote } from "./range";
+import { DEFAULT_RANGE, rangeWords, weeksNote, type WeeklyChartProps } from "./range";
 
 const REPORTED = "var(--noun-bug)";
 const FIXED = "var(--st-done)";
@@ -17,13 +16,19 @@ const GAP = 2;
 // The narrowest a bar draws, so a long axis still shows every count.
 const MIN_BAR = 1;
 
-export default function BugsChart({ report }: { report: Report }) {
+export default function BugsChart({ report, whole = report, range = DEFAULT_RANGE }: WeeklyChartProps) {
   const { tip, show, hide } = useTooltip();
   const { weeks, bugs: series } = report;
   const reported = series.reduce((sum, w) => sum + w.reported, 0);
   const fixed = series.reduce((sum, w) => sum + w.fixed, 0);
   const open = series[series.length - 1]?.open ?? 0;
-  const empty = series.every((w) => w.reported === 0) ? "No bugs reported yet" : undefined;
+  // The whole project decides "yet"; the slice only decides what the range holds.
+  const everReported = whole.bugs.some((w) => w.reported > 0);
+  const empty = !everReported
+    ? "No bugs reported yet"
+    : series.every((w) => w.reported === 0) && range !== "all"
+      ? `No bugs reported in ${rangeWords(range)}`
+      : undefined;
 
   return (
     <ChartFrame
@@ -35,7 +40,7 @@ export default function BugsChart({ report }: { report: Report }) {
         { label: "Fixed", swatch: "bar", color: FIXED },
         { label: "Open", swatch: "solid", color: OPEN },
       ]}
-      note={weeksNote(weeks.length)}
+      note={weeksNote(weeks.length, range)}
       tip={tip}
     >
       {(width, height) => {

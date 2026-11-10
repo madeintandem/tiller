@@ -411,10 +411,22 @@ describe("range", () => {
     renderReport();
     await screen.findByRole("combobox", { name: "Range" });
     expect(screen.getByText("3 of 8", { exact: false })).toBeInTheDocument();
-    // The sparkline is a weekly series, so it follows the range and says so.
-    expect(screen.getByRole("img", { name: "Open questions by week, last 8 weeks" })).toBeInTheDocument();
+    // The strip is whole-project, sparkline included: it never follows the range.
+    expect(screen.getByRole("img", { name: "Open questions by week, last 30 weeks" })).toBeInTheDocument();
     // The control says it governs the charts below, not the figures.
     expect(screen.getByText("Applies to the charts below")).toBeInTheDocument();
+  });
+
+  it("changes nothing in the KPI strip, text or sparkline, when the range changes", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport();
+    await screen.findByRole("combobox", { name: "Range" });
+    const strip = () => document.querySelector(".report-kpis")!.innerHTML;
+    const before = strip();
+    for (const value of ["26", "all", "8"]) {
+      fireEvent.change(screen.getByRole("combobox", { name: "Range" }), { target: { value } });
+      expect(strip()).toBe(before);
+    }
   });
 
   it("is not offered on the Agent use tab", async () => {
