@@ -19,10 +19,11 @@ export type EditView = { isNew: boolean; removed: string[]; added: string[]; mor
 export const EDIT_MAX_LINES = 6;
 
 export function editView(s: Step): EditView {
-  const added = s.added ?? [];
-  // Blank lines would spend the few lines shown on nothing.
-  const shown = (s.new ? added.filter((l) => l.trim() !== "") : added).slice(0, EDIT_MAX_LINES);
-  return { isNew: s.new === true, removed: (s.removed ?? []).slice(0, EDIT_MAX_LINES), added: shown, more: added.length - shown.length };
+  // Blank lines would spend the few lines shown on nothing, so they are neither shown nor counted.
+  const real = (lines: string[] = []) => lines.filter((l) => l.trim() !== "");
+  const added = real(s.added);
+  const shown = added.slice(0, EDIT_MAX_LINES);
+  return { isNew: s.new === true, removed: real(s.removed).slice(0, EDIT_MAX_LINES), added: shown, more: added.length - shown.length };
 }
 
 export const TYPE_CPS = 40;

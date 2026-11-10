@@ -2,17 +2,17 @@ export type Actor = "agent" | "you";
 
 export type Show =
   // `points` turn a card into a slide: short lines that come up one at a time as the beat is narrated.
-  // `art` adds a graphic: beside the text (logo, repo) or under the heading (around, parts, cli, process).
-  // The graphics that reveal in steps (around, parts, process) take their labels and timing from `points`.
+  // `art` adds a graphic: beside the text (logo, repo) or under the heading (around, parts, cli, process, tree).
+  // The graphics that reveal in steps (around, parts, process, tree) take their labels and timing from `points`.
   | { kind: "card"; kicker: string; heading: string; body?: string; points?: Point[]; art?: Art }
   | { kind: "term"; stage: string; from: string; to: string }
   | { kind: "console"; capture: string }
   | { kind: "outro" };
 
-export const ARTS = ["logo", "repo", "around", "parts", "cli", "process"] as const;
+export const ARTS = ["logo", "repo", "around", "parts", "cli", "process", "tree"] as const;
 export type Art = (typeof ARTS)[number];
 // How many points each stepped graphic needs: one per thing it reveals.
-export const ART_POINTS: Partial<Record<Art, number>> = { around: 3, parts: 3, process: 3 };
+export const ART_POINTS: Partial<Record<Art, number>> = { around: 3, parts: 3, process: 3, tree: 3 };
 
 // One line of a slide. `on` is a phrase from the beat's `say`; the point comes up as the
 // narration reaches it. Without `on` the points are spread evenly over the narration.

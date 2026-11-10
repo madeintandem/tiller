@@ -312,22 +312,58 @@ const Process: React.FC<{ points: Point[]; frames?: number[]; current: number }>
   </div>
 );
 
+// --- tree: how Tiller sizes work, big to small ----------------------------------------------
+
+const LEVELS = ["Epic", "Feature", "Task"];
+
+const Tree: React.FC<{ points: Point[]; frames?: number[] }> = ({ points, frames }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    {LEVELS.map((level, i) => (
+      <Rise key={level} at={frames?.[i]} style={{ marginLeft: i * 110 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {i > 0 && (
+            <svg width={56} height={70} viewBox="0 0 56 70" style={{ flex: "none", marginLeft: -76, marginTop: -40 }}>
+              <path d="M8 0 V46 H52" fill="none" stroke={colors.gracefulOlive} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 30,
+              height: 112,
+              padding: "0 32px",
+              borderRadius: 10,
+              background: i === 0 ? colors.darkIndigo : colors.websiteWhite,
+              border: `2px solid ${i === 0 ? colors.darkIndigo : colors.frenchGrey}`,
+            }}
+          >
+            <div style={{ flex: "0 0 190px", fontFamily: fonts.display, fontWeight: 700, fontSize: 44, color: i === 0 ? colors.websiteWhite : colors.darkIndigo }}>{level}</div>
+            <div style={{ fontFamily: fonts.body, fontSize: 32, lineHeight: 1.25, color: i === 0 ? colors.websiteWhite : colors.sharpieBlack }}>{points[i]?.text}</div>
+          </div>
+        </div>
+      </Rise>
+    ))}
+  </div>
+);
+
 // --- tracker: where this chapter sits among the video's chapters -----------------------------
 
 export const Tracker: React.FC<{ names: string[]; index: number }> = ({ names, index }) => (
-  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 64 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 64 }}>
     {names.map((name, i) => {
       const now = i === index;
       const done = i < index;
       return (
         <React.Fragment key={name}>
-          {i > 0 && <div style={{ width: 22, height: 3, background: colors.frenchGrey }} />}
+          {i > 0 && <div style={{ flex: "none", width: 14, height: 3, background: colors.frenchGrey }} />}
           <div
             style={{
               fontFamily: fonts.body,
               fontWeight: now ? 700 : 500,
-              fontSize: 24,
-              padding: "10px 18px",
+              fontSize: 22,
+              padding: "9px 15px",
               borderRadius: 999,
               whiteSpace: "nowrap",
               background: now ? colors.darkIndigo : "transparent",
@@ -370,5 +406,7 @@ export const CardArt: React.FC<{
       return <Cli seen={seen} from={from} />;
     case "process":
       return <Process points={points} frames={pointFrames} current={videoIndex} />;
+    case "tree":
+      return <Tree points={points} frames={pointFrames} />;
   }
 };

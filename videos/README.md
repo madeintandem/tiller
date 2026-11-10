@@ -70,7 +70,7 @@ Node 26 and ffmpeg (`brew install ffmpeg`). From this directory: `npm install`, 
 - `public/brand/`: MiT logo SVGs used by the frame.
 - `fixture/`: the brownfield Acme Orders demo repo the videos are recorded from. `app/` is the existing app, `content/` the authored files the agent and the human write, `stage1.sh` to `stage3.sh` one script per video, `lib.sh` their helpers (`run`, `say`, `put`, `edit`, `serve_step`, `mark`). Anything a stage does to the repo that the viewer should know about goes through `run`, `edit`, or `serve_step` so it is recorded; a bare `put` or `sed` happens off screen.
 - `snapshots/s1.jsonl` to `s3.jsonl`: every step each stage ran, one JSON object per line, with each Tiller command's real output.
-- `fixture/marks/*.tar.gz`: the whole fixture checkout, `.git` included, saved at named moments (`s1-end`, `s2-end`, `s3-review`, `s3-end`, and the steps between).
+- `fixture/marks/*.tar.gz`: the whole fixture checkout, `.git` included, saved at named moments (`s1-end`, `s2-design`, `s2-end`, `s3-review`, `s3-end`, and the steps between).
 
 ## Slides
 

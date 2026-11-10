@@ -40,7 +40,7 @@ describe("an edit step", () => {
     expect(v.isNew).toBe(true);
     expect(v.added).toEqual(["# Title", "line 0", "line 1", "line 2", "line 3", "line 4"]);
     expect(v.added).toHaveLength(EDIT_MAX_LINES);
-    expect(v.more).toBe(5);
+    expect(v.more).toBe(4);
   });
 
   it("is in the committed stage 1 recording wherever a file changes off the command line", () => {

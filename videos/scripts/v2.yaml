@@ -4,18 +4,17 @@ description: >-
   Write one page about a feature, let your agent turn it into an epic, a
   feature, a spec, an acceptance contract, and a task, and approve each step
   before any code gets written. Second of three videos that take one small
-  feature on an existing codebase from an empty plan to merged.
+  feature on an existing codebase from an empty plan to merged. New to Tiller?
+  The first video covers what it is and how to set it up.
+
+
+  Install and docs: https://madeintandem.github.io/tiller/
+
+  Source: https://github.com/madeintandem/tiller
 tags: [tiller, ai coding agents, claude code, specs, acceptance criteria]
-intro:
-  # DRAFT for JC to say on camera in his own words. After filming, replace this
-  # with what he actually said; it is aligned to the clip for the captions.
-  transcript: >-
-    Hi, I'm JC from Made In Tandem. In this one I'll take an idea from a page
-    of notes to a plan the agent can build, and I'll approve every step. Same
-    as before: the rest is my words, in my voice, performed by AI.
 captures:
   - id: design-doc
-    mark: s2-proposed
+    mark: s2-design
     path: /file/.tiller/design/status-filter.md#L1
     seconds: 22
     actions:
@@ -44,12 +43,42 @@ captures:
     path: /node/feature/orders/status-filter
     seconds: 18
 beats:
+  - id: hello
+    say: >-
+      Hi, I'm JC Grubbs, Founder and CEO at Made In Tandem. In this video
+      we're going to take a feature from one page of notes to a plan a coding
+      agent can build, and I'll approve every step before any code gets
+      written. If you're new to Tiller, the first video covers what it is and
+      how to set it up.
+    show:
+      kind: card
+      kicker: Tiller how-to, video 2 of 3
+      heading: From an idea to an approved plan
+      art: logo
+  - id: series
+    say: >-
+      Here's where we are. In the first video I set Tiller up on a repo I
+      already had, the agent wrote down what the code does today, and I
+      confirmed it. This is the second. I write one page about a feature, the
+      agent turns it into a plan, and I approve it. In the third, the agent
+      builds it and I merge.
+    show:
+      kind: card
+      kicker: This series
+      heading: One small feature, from an idea to merged
+      art: process
+      points:
+        - text: Set up
+          on: In the first video
+        - text: Plan a feature
+          on: This is the second
+        - text: Build it
+          on: In the third
   - id: no-work-card
     chapter: No work yet
     say: >-
-      Last time we ended with a confirmed baseline: Tiller knows what the code
-      does today, and I signed off on it. What it doesn't have is anything to
-      do.
+      So we start with a confirmed baseline. Tiller knows what the code does
+      today, and I signed off on it. What it doesn't have is anything to do.
     show:
       kind: card
       kicker: Where we left off
@@ -81,12 +110,13 @@ beats:
       The warehouse wants to see orders by status. Right now the warehouse
       screen and the support desk both pull the whole order book and filter it
       in the browser, which is fine at six orders and slow at six thousand. I
-      write that down and commit it next to the as-is docs from last time.
+      write that down, commit it next to the as-is docs from last time, and
+      start the console so I can read it back.
     show:
       kind: term
       stage: s2
       from: s2-say-idea
-      to: s2-design-commit
+      to: s2-serve
   - id: design-doc
     say: >-
       Here it is in the console. Let a client ask for one status. Leave
@@ -100,16 +130,26 @@ beats:
   - id: proposes-card
     chapter: The agent proposes
     say: >-
-      Now I hand it to the agent, and the agent's first job is to propose the
-      shape of the work. Not the code. The shape.
+      Now I hand it to the agent, and its first job is to propose the shape
+      of the work. Not the code. The shape. Tiller sizes work in three
+      levels. An epic is a body of work. A feature is one thing the product
+      does, and it carries the spec. A task is a piece of the build.
     show:
       kind: card
       kicker: Decompose
       heading: The agent proposes the shape
-      body: Epics and features, as drafts.
+      art: tree
+      points:
+        - text: A body of work
+          on: An epic
+        - text: One thing the product does, with its spec
+          on: A feature
+        - text: A piece of the build
+          on: A task
   - id: ask-guide
     say: >-
-      Same instruction as always: read the guide and do what it says. This
+      I open my coding agent in the repo and give it the same instruction as
+      always: read the guide and do what it says. This
       time the guide sees a design nobody has broken down yet, and the top
       move is to decompose it into epics and features. So that's the skill the
       agent loads.
@@ -184,11 +224,18 @@ beats:
       exactly how the feature behaves. An acceptance contract: the criteria
       that have to pass on main before the feature counts as done. And the
       task that does the work, with its approach and the tests it should add.
-      Then it marks the feature specced and commits.
     show:
       kind: term
       stage: s2
       from: s2-say-specify
+      to: s2-write-task
+  - id: specify-commit
+    say: >-
+      Then it marks the feature specced and commits.
+    show:
+      kind: term
+      stage: s2
+      from: s2-spec
       to: s2-spec-commit
   - id: specify-readout
     say: >-
