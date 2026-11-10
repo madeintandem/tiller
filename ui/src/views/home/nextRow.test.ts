@@ -30,6 +30,17 @@ describe("nextReason", () => {
     expect(nextReason(candidate({ node: question, reason: "Which database?" }))).toBe("");
   });
 
+  it("drops a title that ends in a period, which the server joins as its own sentence", () => {
+    const port = { ...question, title: "Pick the port." };
+    expect(nextReason(candidate({ node: port, reason: "Due today. Pick the port." }))).toBe("Due today.");
+    expect(nextReason(candidate({ node: port, reason: "In your current epic. Pick the port." }))).toBe("In your current epic.");
+  });
+
+  it("keeps a reason that only happens to end on the title's words", () => {
+    const port = { ...question, title: "Pick the port." };
+    expect(nextReason(candidate({ node: port, reason: "Before you Pick the port." }))).toBe("Before you Pick the port.");
+  });
+
   it("keeps a reason that does not end on the title", () => {
     expect(nextReason(candidate({ node: { ...question, title: undefined }, reason: "due tomorrow; Which database?" }))).toBe(
       "Due tomorrow; Which database?",

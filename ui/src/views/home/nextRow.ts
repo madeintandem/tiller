@@ -15,7 +15,10 @@ export function nextLabel(node: NextNode): string {
 }
 
 // nextReason is the row's reason as a sentence. A reason that ends on the
-// node's title, which the link already shows, drops that tail. A move in flight on another branch names it, as the CLI line does.
+// node's title, which the link already shows, drops that tail: the server
+// joins the title as a clause ("due today; Title") or, when the title is
+// itself a sentence, as one ("Due today. Title."). A move in flight on
+// another branch names it, as the CLI line does.
 export function nextReason(candidate: NextCandidate): string {
   let reason = candidate.reason;
   const { node } = candidate;
@@ -25,6 +28,8 @@ export function nextReason(candidate: NextCandidate): string {
       reason = "";
     } else if (reason.endsWith("; " + title)) {
       reason = reason.slice(0, -("; " + title).length);
+    } else if (reason.endsWith(". " + title)) {
+      reason = reason.slice(0, -(" " + title).length);
     }
   }
   const parts = [sentence(reason)];

@@ -147,7 +147,7 @@ the top bar, and narrow by status from a rail of tabs, each with its count.
 
 The map draws the whole project as a mind map. The project sits at the center. Epics branch out to either side, each seated beside what it depends on rather than by strict left-right alternation, so a chain of dependent epics tends to land together and fewer arcs have to cross the middle. Features sit beside their epic, tasks beside their feature, and Bugs, Chores, and Tweaks are three more branches off the root. A question hold renders as a small accent badge on the node it holds, counting only the questions that name that node directly.
 
-Every card is sized to the map's density. A branch card carries a chevron, its kind, and a count in muted mono when it's closed. A leaf card (a task, bug, chore, or tweak) carries a state dot and its title, with the hold badge at the end when a question holds it. The fuller detail moves to the floating card once you select it.
+Every card is sized to the map's density. A branch card carries a chevron, its kind, and a count in muted mono when it's closed. A leaf card (a task, bug, chore, or tweak) carries a status glyph, whose shape says the state, and its title, with the hold badge at the end when a question holds it. The fuller detail moves to the floating card once you select it.
 
 Branch lines, project to epic, epic to feature, feature to task, are the only lines at rest.
 Click a card to select it and open its inspector at the map's top right. The map lights arcs to
