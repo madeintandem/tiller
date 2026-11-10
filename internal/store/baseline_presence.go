@@ -61,12 +61,34 @@ func BaselineDocTitle(root, doc string) string {
 		case strings.HasPrefix(trimmed, "~~~"):
 			fence = "~~~"
 		default:
-			if title, found := strings.CutPrefix(line, "# "); found {
-				return strings.TrimSpace(title)
+			if title, found := atxH1(line); found {
+				return title
 			}
 		}
 	}
 	return ""
+}
+
+// atxH1 reads line as a CommonMark level-one ATX heading: up to three spaces
+// of indent (four is a code block), "#" then a space, a tab, or the end of the
+// line ("#5" is not a heading, "##" is level two), and an optional closing run
+// of #s that follows a space or tab stripped from the text.
+func atxH1(line string) (string, bool) {
+	indent := len(line) - len(strings.TrimLeft(line, " "))
+	if indent > 3 {
+		return "", false
+	}
+	rest, ok := strings.CutPrefix(line[indent:], "#")
+	if !ok || (rest != "" && rest[0] != ' ' && rest[0] != '\t') {
+		return "", false
+	}
+	rest = strings.TrimSpace(rest)
+	if closed := strings.TrimRight(rest, "#"); closed == "" {
+		rest = ""
+	} else if closed != rest && (closed[len(closed)-1] == ' ' || closed[len(closed)-1] == '\t') {
+		rest = strings.TrimSpace(closed)
+	}
+	return rest, true
 }
 
 func openBaselineDoc(root, doc string) (*os.File, bool) {

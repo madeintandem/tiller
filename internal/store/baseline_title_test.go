@@ -25,6 +25,33 @@ func TestBaselineDocTitleReadsTheFirstHeading(t *testing.T) {
 	require.Equal(t, "", store.BaselineDocTitle(root, "../escape.md"))
 }
 
+// TestBaselineDocTitleFollowsATXRules pins the CommonMark ATX details: up to
+// three spaces of indent, a closing run of #s stripped, and the near misses
+// that are not a level-one heading.
+func TestBaselineDocTitleFollowsATXRules(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, ".tiller", "design")
+	require.NoError(t, os.MkdirAll(dir, 0o755))
+	cases := []struct{ body, want string }{
+		{"  # Routing design\n", "Routing design"},
+		{"   # Three spaces\n", "Three spaces"},
+		{"    # Code block\n# Real\n", "Real"},
+		{"# Routing design #\n", "Routing design"},
+		{"# Routing design ###   \n", "Routing design"},
+		{"# C#\n", "C#"},
+		{"# Routing design#\n", "Routing design#"},
+		{"#5 is not a heading\n# Real\n", "Real"},
+		{"## Second level\n# Real\n", "Real"},
+		{"#\n", ""},
+		{"# #\n", ""},
+		{"#\tTabbed\n", "Tabbed"},
+	}
+	for _, tc := range cases {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "t.md"), []byte(tc.body), 0o644))
+		require.Equal(t, tc.want, store.BaselineDocTitle(root, "t.md"), "%q", tc.body)
+	}
+}
+
 // TestBaselineDocTitleSkipsFencesAndFrontMatter pins that a "# " line inside
 // front matter or a fenced code block (a shell comment, a YAML comment) is
 // never taken for the document's title.
