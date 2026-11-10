@@ -72,6 +72,7 @@ import { RelationshipCard, RelationshipLegend } from "./map/RelationshipDetails"
 import ReferenceIssues from "./map/ReferenceIssues";
 import RelationshipResults from "./map/RelationshipResults";
 import type { MapRelationshipResults } from "./map/RelationshipResults";
+import { relationshipKindName } from "./map/relationshipPresentation";
 import { relationshipOverlay, WORK_LINK_PRESET } from "./map/relationships";
 import { useRelationshipContext } from "./map/useRelationshipContext";
 
@@ -763,7 +764,7 @@ export default function MapMode({
           <select aria-label="Relationship kind" value={relationshipKind} onChange={(event) => setOverlay(showAll, event.target.value)}>
             <option value="">All kinds</option>
             <option value={WORK_LINK_PRESET}>Work links</option>
-            {view.relationships.catalog.map((kind) => <option key={kind.name} value={kind.name}>{kind.name}</option>)}
+            {view.relationships.catalog.map((kind) => <option key={kind.name} value={kind.name}>{relationshipKindName(kind.name)}</option>)}
           </select>
         </label>
         <button type="button" aria-pressed={investigation === "relationships"} onClick={() => setInvestigation(investigation === "relationships" ? null : "relationships")}>

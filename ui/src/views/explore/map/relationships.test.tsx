@@ -218,7 +218,7 @@ describe("relationship overlays", () => {
     expect(global).toHaveAttribute("aria-pressed", "true");
     expect(arcKinds()).toEqual(["sourced_from"]);
     fireEvent.click(global);
-    expect(kind).toHaveDisplayValue("sourced_from");
+    expect(kind).toHaveDisplayValue("Sourced from");
     expect(arcKinds()).toEqual([]);
     fireEvent.change(kind, { target: { value: "depends_on" } });
     expect(arcKinds()).toEqual(["depends_on"]);

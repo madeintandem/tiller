@@ -5,7 +5,7 @@ import CopyCmd from "../../../components/CopyCmd";
 import SourceCitation from "../../../components/relationships/SourceCitation";
 import { relationshipFileHref, relationshipHref } from "../../../lib/relationshipHref";
 import { relationshipTitle } from "../../../lib/relationshipTitle";
-import { relationshipQueryCommand, scopedReferenceIssues } from "./relationshipPresentation";
+import { humanizeToken, relationshipQueryCommand, scopedReferenceIssues } from "./relationshipPresentation";
 
 // These are presentation causes, not severities or extraction-impact rules.
 function issueCause(issue: RelationshipDiagnostic): { label: string; next: string } {
@@ -69,7 +69,7 @@ function IssueOccurrence({ issue, byID, onSelect }: {
       {source.raw && <div><span className="map-copy-label">Copy original reference</span><CopyCmd cmd={source.raw} /></div>}
     </>}
     {querySubject && <div><span className="map-copy-label">Inspect subject and diagnostics (read-only, no traversal)</span><CopyCmd cmd={relationshipQueryCommand(querySubject.id, "mentioned_by", 0)} /></div>}
-    <small className="muted">{issue.facet} · {issue.code}{issue.incomplete ? " · Extraction incomplete" : ""}</small>
+    <small className="muted">{humanizeToken(issue.facet)} · {humanizeToken(issue.code)}{issue.incomplete ? " · Extraction incomplete" : ""}</small>
   </li>;
 }
 

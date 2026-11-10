@@ -6,7 +6,7 @@ import MapMode from "../MapMode";
 import ReferenceIssues from "./ReferenceIssues";
 import { SelectedRelationships } from "./RelationshipDetails";
 import RelationshipResults from "./RelationshipResults";
-import { scopedReferenceIssues } from "./relationshipPresentation";
+import { relationshipKindName, scopedReferenceIssues } from "./relationshipPresentation";
 
 const work = (id: string, title: string, status = "draft"): RelationshipVertex => ({ id, kind: "feature", title, status, destination: { kind: "node", noun: "feature", id } });
 const graph: RelationshipGraph = {
@@ -293,5 +293,78 @@ describe("bounded project relationships", () => {
     expect(screen.getByRole("heading", { name: "src/a.ts" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Clear mapped results (1)" })).toBeInTheDocument();
     expect(screen.getByText(/Extraction incomplete: unread or omitted/)).toBeInTheDocument();
+  });
+});
+
+// Every kind internal/relationships/catalog.go defines, and the inverse each one names.
+const GO_KINDS: Array<[string, string]> = [
+  ["contains", "contained_by"], ["depends_on", "depended_on_by"], ["supersedes", "superseded_by"],
+  ["attached_to", "attached_work"], ["resolved_by", "resolves"], ["duplicate_of", "duplicates"],
+  ["blocks", "blocked_by"], ["assumes", "assumed_by"], ["has_document", "document_of"],
+  ["covers", "covered_by"], ["mentions", "mentioned_by"], ["amends", "amended_by"],
+  ["triggered_by", "triggers"], ["amends_design", "amended_by_design"], ["implements", "implemented_by"],
+  ["sourced_from", "source_for"], ["derived_from", "derivation_of"], ["preserves", "preserved_by"],
+  ["at_path", "document_at"],
+];
+
+describe("map labels in plain words", () => {
+  it("names every relationship kind and inverse without an underscore, and an unknown one the same way", () => {
+    for (const name of GO_KINDS.flat()) {
+      expect(relationshipKindName(name)).not.toContain("_");
+    }
+    expect(relationshipKindName("depends_on")).toBe("Depends on");
+    expect(relationshipKindName("attached_to")).toBe("Attached to");
+    expect(relationshipKindName("has_document")).toBe("Has document");
+    expect(relationshipKindName("brand_new_kind")).toBe("Brand new kind");
+  });
+
+  it("shows plain-words options in the toolbar kind select and sends the raw kind", async () => {
+    const full: RelationshipGraph = { ...graph, catalog: GO_KINDS.map(([name, inverse]) => ({ name, inverse, from_kinds: [], to_kinds: [] })) };
+    vi.stubGlobal("fetch", vi.fn(async () => response(asView(full))));
+    render(<MemoryRouter initialEntries={["/explore?mode=map&sel=F-main"]}><MapMode projectKey="plain" projectName="Plain" ready /></MemoryRouter>);
+    await screen.findByRole("heading", { name: "Creation" });
+    const select = screen.getByRole("combobox", { name: "Relationship kind" });
+    const options = within(select).getAllByRole("option");
+    expect(options.length).toBe(GO_KINDS.length + 2);
+    for (const option of options) {
+      expect(option.textContent).not.toContain("_");
+    }
+    const depends = within(select).getByRole("option", { name: "Depends on" });
+    expect(depends).toHaveValue("depends_on");
+    fireEvent.change(select, { target: { value: "depends_on" } });
+    expect(select).toHaveDisplayValue("Depends on");
+  });
+
+  it("shows plain-words options in the result and follow selects, and none of the result row or its evidence names a raw kind", () => {
+    const full: RelationshipGraph = { ...graph, catalog: GO_KINDS.map(([name, inverse]) => ({ name, inverse, from_kinds: [], to_kinds: [] })) };
+    render(<MemoryRouter><RelationshipResults graph={full} selected="F-main" mode="relationships" onMode={() => undefined} onSelect={() => undefined} onShow={() => undefined} onClose={() => undefined} /></MemoryRouter>);
+    for (const name of ["Result kind", "Query follow direction"]) {
+      for (const option of within(screen.getByRole("combobox", { name })).getAllByRole("option")) {
+        expect(option.textContent).not.toContain("_");
+      }
+    }
+    expect(within(screen.getByRole("combobox", { name: "Query follow direction" })).getByRole("option", { name: "Depended on by" })).toHaveValue("depended_on_by");
+    const first = screen.getAllByRole("listitem").find((item) => item.className === "map-result-row") as HTMLElement;
+    expect(first.querySelector(".map-result-kind")?.textContent).not.toContain("_");
+    fireEvent.click(within(first).getByRole("button", { name: "Why linked?" }));
+    expect(within(first).getByText(/F-main → Depends on → /)).toBeInTheDocument();
+  });
+
+  it("says the dependency summary in plain words, in lower case mid-sentence", () => {
+    const flight: RelationshipGraph = {
+      ...graph,
+      vertices: [work("F-main", "Creation"), work("F-a", "A", "in_review"), { ...work("F-b", "B", "ready"), column: "in_review" }, work("F-c", "C", "ready")],
+      edges: ["F-a", "F-b", "F-c"].map((to) => ({ id: to, kind: "depends_on", from: "F-main", to, sources: [] })),
+    };
+    const byID = new Map(flight.vertices.map((vertex) => [vertex.id, vertex]));
+    render(<MemoryRouter><SelectedRelationships selected="F-main" edges={flight.edges} byID={byID} onSelect={() => undefined} /></MemoryRouter>);
+    expect(screen.getByText("2 in review · 1 ready")).toBeInTheDocument();
+  });
+
+  it("says a reference issue's facet and code in words", () => {
+    const issues: RelationshipGraph = { ...graph, diagnostics: [{ code: "future_loss_code", facet: "contracts", message: "new extraction failure", incomplete: true, subjects: ["F-main"] }] };
+    render(<MemoryRouter><ReferenceIssues graph={issues} selected="F-main" onSelect={() => undefined} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: /Other reference issues/ }));
+    expect(screen.getByText("Contracts · Future loss code · Extraction incomplete")).toBeInTheDocument();
   });
 });

@@ -6,11 +6,13 @@ import Chip from "../../../components/Chip";
 import Contributors from "../../../components/Contributors";
 import CopyCmd from "../../../components/CopyCmd";
 import SourceCitation from "../../../components/relationships/SourceCitation";
+import { displayStatus } from "../../../lib/displayStatus";
 import { kindLabel } from "../../../lib/kind";
 import { relationshipHref } from "../../../lib/relationshipHref";
 import { relationshipTitle } from "../../../lib/relationshipTitle";
+import { statusLabel } from "../../../lib/statusLabel";
 import { PersonName } from "../../../people";
-import { counterpartHref, relationshipLabel, relationshipQueryCommand, selectedRelationshipGroups } from "./relationshipPresentation";
+import { counterpartHref, relationshipKindName, relationshipLabel, relationshipQueryCommand, selectedRelationshipGroups } from "./relationshipPresentation";
 import type { SelectedRelationshipGroup } from "./relationshipPresentation";
 import { relationshipStroke, WORK_LINK_PRESET } from "./relationships";
 
@@ -19,7 +21,7 @@ export function RelationshipEvidence({ edge }: { edge: RelationshipEdge }): Reac
   return <div className="map-relation-evidence">
     <button type="button" className="map-card-link" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Why linked?</button>
     {expanded && <div className="map-relation">
-      <p className="mono">{edge.from} → {edge.kind} → {edge.to}</p>
+      <p className="mono">{edge.from} → {relationshipKindName(edge.kind)} → {edge.to}</p>
       <p>{edge.derived ? "Derived match" : "Recorded relationship"}{edge.declared_scope ? ` · Declared scope: ${edge.declared_scope}` : ""}</p>
       {(edge.kind === "covers" || edge.kind === "preserves") && <p>Recorded declaration, not verified implementation or file existence. The source identifies its work surface, baseline, or acceptance binding.</p>}
       {edge.kind === "blocks" && <p>Recorded question target, not an effective hold. Current work status determines operative holds.</p>}
@@ -39,7 +41,7 @@ export function RelationshipEndpoint({ vertex, edge, onSelect }: {
   return <>
     <div className="map-relation-title">
       <span>{relationshipTitle(vertex)}{vertex.unresolved ? " (unresolved)" : ""}</span>
-      {!vertex.unresolved && vertex.status && <Chip status={vertex.column ?? vertex.status} />}
+      {!vertex.unresolved && displayStatus(vertex) !== "" && <Chip status={displayStatus(vertex)} />}
     </div>
     {vertex.kind === "document" && <p className="map-relation-meta">{vertex.generated ? "Generated document" : "Authored document"}{vertex.path && ` · ${vertex.path}`}</p>}
     <div className="map-relation-actions">
@@ -59,14 +61,14 @@ function RelationshipGroup({ group, selected, byID, onSelect }: {
   const statuses = new Map<string, number>();
   for (const edge of group.edges) {
     const vertex = byID.get(edge.from === selected ? edge.to : edge.from);
-    if (vertex?.status && !vertex.unresolved) {
-      const status = vertex.column ?? vertex.status;
+    const status = vertex === undefined || vertex.unresolved ? "" : displayStatus(vertex);
+    if (status !== "") {
       statuses.set(status, (statuses.get(status) ?? 0) + 1);
     }
   }
   return <section className="map-dock-group" aria-label={group.label}>
     <div className="map-dock-label"><h3 className="eyebrow">{group.label}</h3><span className="map-dock-count">{group.edges.length}</span></div>
-    {group.kind === "depends_on" && statuses.size > 0 && <p className="map-relation-meta">{[...statuses].map(([status, count]) => `${count} ${status}`).join(" · ")}</p>}
+    {group.kind === "depends_on" && statuses.size > 0 && <p className="map-relation-meta">{[...statuses].map(([status, count]) => `${count} ${statusLabel(status).toLowerCase()}`).join(" · ")}</p>}
     <ul className="map-dock-tree">
       {group.edges.slice(0, limit).map((edge) => {
         const id = edge.from === selected ? edge.to : edge.from;
@@ -138,7 +140,7 @@ export function RelationshipCard({ vertex, edges, byID, kind, onSelect, onClose,
   const href = relationshipHref(vertex);
   return <aside className="map-dock map-endpoint-dock" aria-label="Selected relationship endpoint">
     <div className="map-dock-head">
-      <div className="kind-line"><span className="kind-pill">{kindLabel(vertex.kind)}</span>{!vertex.unresolved && vertex.status && <Chip status={vertex.column ?? vertex.status} />}</div>
+      <div className="kind-line"><span className="kind-pill">{kindLabel(vertex.kind)}</span>{!vertex.unresolved && displayStatus(vertex) !== "" && <Chip status={displayStatus(vertex)} />}</div>
       <button type="button" className="map-dock-close" aria-label="Close" onClick={onClose}>×</button>
     </div>
     <div className="map-dock-body">

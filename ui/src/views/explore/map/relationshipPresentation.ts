@@ -28,6 +28,19 @@ export function relationshipLabel(kind: string, inverse = false): string {
   return labels[kind]?.[inverse ? 1 : 0] ?? kind.replaceAll("_", " ");
 }
 
+// humanizeToken turns a wire token (a relationship kind, an issue facet or
+// code) into sentence-case words, so no underscore reaches the screen.
+export function humanizeToken(token: string): string {
+  const spaced = token.replaceAll("_", " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+// relationshipKindName is a kind's (or an inverse's) name in plain words, for
+// the selects that choose one. The value a select sends stays the raw kind.
+export function relationshipKindName(kind: string): string {
+  return humanizeToken(kind);
+}
+
 export function matchesRelationshipKind(edge: RelationshipEdge, kind: string): boolean {
   return kind === WORK_LINK_PRESET
     ? WORK_LINK_KINDS[edge.kind] === true

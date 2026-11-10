@@ -550,7 +550,7 @@ describe("Explore: the map mode", () => {
     // With a card up it is the middle of what that card leaves. Selecting on
     // the canvas moves nothing by itself, so the Fit beside it is what says
     // this: same layout, same frame, a different center.
-    fireEvent.click(screen.getByRole("button", { name: /^Epic\s*Foundation/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Epic \d+ of \d+, Foundation/ }));
     await screen.findByRole("heading", { name: "Foundation" });
     fireEvent.click(screen.getByRole("button", { name: "Fit" }));
     const drawn = drawnViewport(container);
@@ -644,7 +644,7 @@ describe("Explore: the map mode", () => {
     // the map still, then open the branch under it. The map is sitting on its
     // first-visit fit of the collapsed layout, which was taken with nothing
     // selected and so in the whole frame.
-    fireEvent.click(screen.getByRole("button", { name: /^Epic\s*Foundation/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Epic \d+ of \d+, Foundation/ }));
     await screen.findByRole("heading", { name: "Foundation" });
     const before = drawnViewport(container);
     expect(before.k).toBeCloseTo(fitOf(new Set(), { w: 1200, h: 800 }).k, 6);

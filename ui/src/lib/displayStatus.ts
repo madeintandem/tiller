@@ -4,6 +4,11 @@
 // sits on the unmerged review branch, so its stored status can read ready
 // while its tasks are in flight; the column reads active, the same answer
 // Build gives. A ready epic with a task in flight reads active the same way.
-export function displayStatus(node: { status: string; column?: string }): string {
-  return node.column ?? node.status;
+//
+// The status is optional because a relationship vertex's is (a document or a
+// path has none); a node with neither a column nor a status reads as the
+// empty string, so a caller asks displayStatus(vertex) !== "" rather than
+// repeating the rule.
+export function displayStatus(node: { status?: string; column?: string }): string {
+  return node.column ?? node.status ?? "";
 }

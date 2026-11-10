@@ -72,10 +72,12 @@ export interface MapLayout {
 }
 
 // Closed-card sizes per noun; a container's card never grows, since its
-// children stack beside it rather than inside it.
+// children stack beside it rather than inside it. An epic's card is wider than
+// a feature's because it carries, before its title, its place in the plan and
+// its status glyph beside the kind pill and the child count.
 export const CARD: Record<string, { w: number; h: number }> = {
   root: { w: 160, h: 44 },
-  epic: { w: 240, h: 40 },
+  epic: { w: 280, h: 40 },
   feature: { w: 232, h: 28 },
   task: { w: 216, h: 26 },
   bug: { w: 216, h: 26 },

@@ -48,11 +48,12 @@ import type {
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { MapView } from "../../../api";
-import StateDot from "../../../components/StateDot";
+import StateGlyph from "../../../components/StateGlyph";
 import { displayStatus } from "../../../lib/displayStatus";
 import { kindLabel } from "../../../lib/kind";
 import { relationshipHref } from "../../../lib/relationshipHref";
 import { relationshipTitle } from "../../../lib/relationshipTitle";
+import { statusLabel } from "../../../lib/statusLabel";
 import type { Chain } from "./chain";
 import type { Box, MapLayout } from "./layout";
 import { ROOT_ID, SHELF_BUG, SHELF_CHORE, SHELF_TWEAK, containers, parentMap } from "./layout";
@@ -101,6 +102,12 @@ interface Card {
   // leaves it at zero, since nothing reads it there.
   count: number;
   canToggle: boolean;
+  // An epic's 1-based place in the served epic order, and how many epics
+  // there are. Zero for every other card. It is the order the project's plan
+  // names, not the order on screen: the layout seats epics on either side of
+  // the root, so the digit says where an epic stands in the plan.
+  ordinal: number;
+  epicTotal: number;
 }
 
 const SHELF_TITLE = new Map([
@@ -195,6 +202,7 @@ export default function MapCanvas({
     }
   }
 
+  const epicOrder = view.nodes.filter((n) => n.noun === "epic").map((n) => n.id);
   const cards: Card[] = [];
   const shelved = new Set<string>();
   const pushShelf = (id: string) => {
@@ -210,6 +218,8 @@ export default function MapCanvas({
       holds: 0,
       count: childCount.get(id) ?? 0,
       canToggle: hasChildren.has(id),
+      ordinal: 0,
+      epicTotal: 0,
     });
   };
   for (const n of view.nodes) {
@@ -231,6 +241,8 @@ export default function MapCanvas({
       holds: n.holds ?? 0,
       count: n.noun === "epic" ? (childCount.get(n.id) ?? 0) : 0,
       canToggle: hasChildren.has(n.id),
+      ordinal: n.noun === "epic" ? epicOrder.indexOf(n.id) + 1 : 0,
+      epicTotal: n.noun === "epic" ? epicOrder.length : 0,
     });
   }
 
@@ -577,7 +589,7 @@ export default function MapCanvas({
                 onClick={() => onSelect(selected === vertex.id ? null : vertex.id)}
               >
                 <span className="kind-pill">{kindLabel(vertex.kind)}</span>
-                {vertex.status && <StateDot status={vertex.column ?? vertex.status} />}
+                {displayStatus(vertex) !== "" && <StateGlyph status={displayStatus(vertex)} />}
                 <span className="map-title" title={relationshipTitle(vertex)}>{relationshipTitle(vertex)}</span>
               </button>
               <div className="map-endpoint-meta">
@@ -593,19 +605,23 @@ export default function MapCanvas({
 }
 
 // CardFace is the one row inside a card's button. A branch wears its kind as
-// a pill and its size as a count; a leaf wears its state as a dot, since a
-// task among forty tasks needs its color more than it needs its noun spelled
-// out again. A shelf's pill IS its name, so it draws no separate title.
+// a pill and its size as a count; a leaf wears its state as a glyph, since a
+// task among forty tasks needs its state more than it needs its noun spelled
+// out again. An epic wears both: its place in the plan, then its state. The
+// glyph is shape-coded and named in words, never a color alone. A shelf's pill
+// IS its name, so it draws no separate title and no state.
 function CardFace({ card }: { card: Card }): ReactElement {
   const shelf = SHELF_TITLE.has(card.box.id);
   const branch = card.box.noun === "epic" || shelf;
   return (
     <>
-      {branch ? (
-        <span className="kind-pill">{shelf ? card.title : kindLabel(card.box.noun)}</span>
-      ) : (
-        <StateDot status={card.status} />
+      {branch && <span className="kind-pill">{shelf ? card.title : kindLabel(card.box.noun)}</span>}
+      {card.ordinal > 0 && (
+        <span className="map-ordinal" aria-hidden="true">
+          {card.ordinal}
+        </span>
       )}
+      {!shelf && <StateGlyph status={card.status} />}
       {!shelf && <span className="map-title">{card.title}</span>}
       {branch && card.count > 0 && <span className="map-count">{card.count}</span>}
       {card.holds > 0 && (
@@ -626,7 +642,12 @@ function cardLabel(card: Card): string {
   if (shelfNoun !== undefined) {
     return `${card.title}, ${plural(card.count, shelfNoun)}`;
   }
-  let said = `${kindLabel(card.box.noun)} ${card.title}, ${card.status}`;
+  // An epic says its place in the plan ("Epic 3 of 9, Title"), so the digit on
+  // the card is never read as a count.
+  const lead = card.ordinal > 0
+    ? `${kindLabel(card.box.noun)} ${card.ordinal} of ${card.epicTotal}, ${card.title}`
+    : `${kindLabel(card.box.noun)} ${card.title}`;
+  let said = `${lead}, ${statusLabel(card.status).toLowerCase()}`;
   if (card.box.noun === "epic" && card.count > 0) {
     said += `, ${plural(card.count, "feature")}`;
   }

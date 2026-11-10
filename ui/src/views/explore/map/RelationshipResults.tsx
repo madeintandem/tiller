@@ -6,7 +6,7 @@ import { useFetch } from "../../../hooks";
 import { relationshipTitle } from "../../../lib/relationshipTitle";
 import ReferenceIssues from "./ReferenceIssues";
 import { RelationshipEndpoint, RelationshipEvidence } from "./RelationshipDetails";
-import { matchesRelationshipKind, relationshipLabel, relationshipQueryCommand } from "./relationshipPresentation";
+import { matchesRelationshipKind, relationshipKindName, relationshipLabel, relationshipQueryCommand } from "./relationshipPresentation";
 import { WORK_LINK_PRESET } from "./relationships";
 
 const PAGE_SIZE = 25;
@@ -97,7 +97,7 @@ export default function RelationshipResults({ graph, issuesGraph = graph, select
           </select></label>
           <label>Kind<select aria-label="Result kind" value={kind} onChange={(event) => { setKind(event.target.value); setPage(0); }}>
             <option value="">All kinds (including coordinates)</option><option value={WORK_LINK_PRESET}>Work links</option>
-            {graph.catalog.map((entry) => <option key={entry.name} value={entry.name}>{relationshipLabel(entry.name)} · {entry.name}</option>)}
+            {graph.catalog.map((entry) => <option key={entry.name} value={entry.name}>{relationshipKindName(entry.name)}</option>)}
           </select></label>
           <label>Search<input type="search" aria-label="Search relationships" placeholder="Title, ID, path, source, or criterion" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} /></label>
         </div>
@@ -117,7 +117,7 @@ export default function RelationshipResults({ graph, issuesGraph = graph, select
             }}>{questions.map((entry, i) => <option key={entry.follow} value={i}>{entry.label}</option>)}</select></label>
             <label>Start address<input aria-label="Query start address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Immutable ID, doc:path, or path:code/file" required /></label>
             <label>Follow<select aria-label="Query follow direction" value={follow} onChange={(event) => setFollow(event.target.value)}>
-              {graph.catalog.flatMap((entry) => [<option key={entry.name} value={entry.name}>{entry.name}</option>, <option key={entry.inverse} value={entry.inverse}>{entry.inverse}</option>])}
+              {graph.catalog.flatMap((entry) => [<option key={entry.name} value={entry.name}>{relationshipKindName(entry.name)}</option>, <option key={entry.inverse} value={entry.inverse}>{relationshipKindName(entry.inverse)}</option>])}
             </select></label>
             {selected && <button type="button" onClick={() => setAddress(selected)}>Use selected ID</button>}
             <button type="submit">Run read-only query</button>
@@ -125,7 +125,7 @@ export default function RelationshipResults({ graph, issuesGraph = graph, select
           </form>
           <p className="muted">Queries traverse one recorded hop. Code-path queries also match enclosing declared scopes; they do not verify implementation. Generic question edges are not effective holds.</p>
         </details>
-        {scope === "query" && query && <p className="map-relation-meta">Query: {query.from} · {query.follow} · depth 1{result.data && ` · ${result.data.matched.length} matched endpoints`}</p>}
+        {scope === "query" && query && <p className="map-relation-meta">Query: {query.from} · {relationshipKindName(query.follow)} · depth 1{result.data && ` · ${result.data.matched.length} matched endpoints`}</p>}
         {scope === "query" && result.loading && <p role="status">Reading relationships…</p>}
         {scope === "query" && result.error && <p role="alert">Query unavailable: {result.error}</p>}
         {scope === "query" && queryGraph && (!queryGraph.complete || queryGraph.diagnostics.length > 0) && <ReferenceIssues graph={queryGraph} selected={selected} scope="query" onSelect={selectResult} />}
@@ -134,7 +134,7 @@ export default function RelationshipResults({ graph, issuesGraph = graph, select
         <p className="map-relation-meta">Maps this page only (up to {PAGE_SIZE} relationships). Browsing and searching do not expand the graph. Full graph is a separate toolbar choice.</p>
         <ol className="map-result-list" start={currentPage * PAGE_SIZE + 1}>
           {visible.map((edge) => <li key={edge.id} className="map-result-row">
-            <p className="map-result-kind">{relationshipLabel(edge.kind)} <span className="muted">· {edge.kind}</span></p>
+            <p className="map-result-kind">{relationshipLabel(edge.kind)}</p>
             <div className="map-result-endpoints">{[edge.from, edge.to].map((id, index) => <div key={`${id}:${index}`}><small className="muted">{index === 0 ? "From" : "To"}</small>{byID.has(id) ? <RelationshipEndpoint vertex={byID.get(id)!} edge={edge} onSelect={selectResult} /> : <code>{id}</code>}</div>)}</div>
             <RelationshipEvidence edge={edge} />
           </li>)}

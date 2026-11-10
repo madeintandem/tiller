@@ -243,8 +243,20 @@
   padding: 3px 7px 3px 8px;
 }
 
-.map-card-body .state-dot {
+.map-card-body .state-glyph {
   flex: none;
+}
+
+/* An epic's place in the plan, in the mono register like the count, so a
+   column of epics reads 1, 2, 3 down the page. It is a position, not a size:
+   the count at the far edge is the size, and the card's accessible name says
+   "Epic 3 of 9" so the two are never confused. */
+.map-ordinal {
+  flex: none;
+  min-width: 1.2ch;
+  font: 600 10.5px var(--font-mono);
+  color: var(--ink-3);
+  text-align: right;
 }
 
 /* The title takes the slack, one line, ellipsized, the full string on hover,

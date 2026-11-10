@@ -154,19 +154,116 @@ describe("MapCanvas: the mind map", () => {
     expect(within(e1).getByText("Epic")).toHaveClass("kind-pill");
     expect(within(e1).getByText("2")).toHaveClass("map-count");
     const f2 = container.querySelector('.map-card[data-id="F-2"]') as HTMLElement;
-    expect(f2.querySelector(".state-dot")).not.toBeNull();
+    expect(f2.querySelector(".state-glyph")).not.toBeNull();
+    expect(f2.querySelector(".state-dot")).toBeNull();
     expect(within(f2).getByText("CI")).toBeInTheDocument();
     expect((f2.querySelector(".map-holds") as HTMLElement).textContent).toBe("2");
     expect(f2.querySelector(".chip")).toBeNull();
     const b1 = container.querySelector('.map-card[data-id="B-1"]') as HTMLElement;
-    expect(b1.querySelector(".state-dot")).not.toBeNull();
+    expect(b1.querySelector(".state-glyph")).not.toBeNull();
+    expect(b1.querySelector(".state-dot")).toBeNull();
     expect(b1.querySelector(".kind-pill")).toBeNull();
+  });
+
+  it("draws the status glyph, in plain words, on every card that shows a status, never a color-only dot", () => {
+    const { container } = renderCanvas();
+    for (const [id, words] of [["E-1", "Ready"], ["F-1", "Ready"], ["F-2", "Draft"], ["B-1", "Proposed"]]) {
+      const card = container.querySelector(`.map-card[data-id="${id}"]`) as HTMLElement;
+      expect(card.querySelector(".state-dot")).toBeNull();
+      expect(within(card).getByRole("img", { name: words })).toHaveClass("state-glyph");
+    }
+    const shelf = container.querySelector(`.map-card[data-id="${SHELF_BUG}"]`) as HTMLElement;
+    expect(shelf.querySelector(".state-glyph")).toBeNull();
+  });
+
+  it("shows a stored-ready epic with work in flight as active, and says an in-review card in words", () => {
+    const flight: MapView = {
+      ...view,
+      nodes: [
+        { noun: "epic", id: "E-1", key: "foundation", title: "Foundation", status: "ready", column: "active" },
+        { noun: "feature", id: "F-1", key: "foundation/skeleton", title: "Skeleton", status: "in_review", parent: "E-1" },
+      ],
+      edges: [],
+    };
+    const { container } = renderCanvas({ view: flight });
+    const e1 = container.querySelector('.map-card[data-id="E-1"]') as HTMLElement;
+    expect(within(e1).getByRole("img", { name: "Active" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Epic 1 of 1, Foundation, active, 1 feature" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Feature Skeleton, in review" })).toBeInTheDocument();
+  });
+
+  describe("epic order", () => {
+    // Five epics in wire order. The dependency web seats them on both sides of
+    // the root, so screen order and ordinal order differ on purpose.
+    const epics: MapView = {
+      nodes: ["Alpha", "Bravo", "Charlie", "Delta", "Echo"].map((title, i) => ({
+        noun: "epic",
+        id: `E-${i + 1}`,
+        key: title.toLowerCase(),
+        title,
+        status: i === 2 ? "in_review" : "ready",
+      })),
+      edges: [],
+      relationships: { vertices: [], edges: [], catalog: [], diagnostics: [], complete: true },
+    };
+    epics.nodes.push({ noun: "feature", id: "F-1", key: "alpha/one", title: "One", status: "ready", parent: "E-1" });
+    epics.nodes.push({ noun: "bug", id: "B-1", key: "bugs/one", title: "Blank", status: "open" });
+
+    it("shows each epic's 1-based position in the served order, whichever side it sits on, with the glyph before the title", () => {
+      const { container } = renderCanvas({ view: epics, open: new Set() });
+      const sides = new Set<string>();
+      epics.nodes.filter((n) => n.noun === "epic").forEach((n, i) => {
+        const card = container.querySelector(`.map-card[data-id="${n.id}"]`) as HTMLElement;
+        sides.add(card.getAttribute("data-side") as string);
+        const ordinal = card.querySelector(".map-ordinal") as HTMLElement;
+        expect(ordinal.textContent).toBe(String(i + 1));
+        const glyph = card.querySelector(".state-glyph") as Element;
+        const title = card.querySelector(".map-title") as Element;
+        expect(glyph.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      });
+      expect(sides).toEqual(new Set(["left", "right"]));
+    });
+
+    it("names the ordinal in words so it is not mistaken for a count, and hides the bare digit", () => {
+      const { container } = renderCanvas({ view: epics, open: new Set() });
+      expect(screen.getByRole("button", { name: "Epic 3 of 5, Charlie, in review" })).toBeInTheDocument();
+      const card = container.querySelector('.map-card[data-id="E-3"]') as HTMLElement;
+      expect(card.querySelector(".map-ordinal")).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("gives a feature and a shelf branch no ordinal", () => {
+      const { container } = renderCanvas({ view: epics, open: new Set(["E-1"]) });
+      for (const id of ["F-1", SHELF_BUG]) {
+        const card = container.querySelector(`.map-card[data-id="${id}"]`) as HTMLElement;
+        expect(card.querySelector(".map-ordinal")).toBeNull();
+      }
+      const shelf = container.querySelector(`.map-card[data-id="${SHELF_BUG}"]`) as HTMLElement;
+      expect(shelf.querySelector(".state-glyph")).toBeNull();
+    });
+  });
+
+  it("draws the glyph, with the displayed status in words, on a relationship endpoint card", () => {
+    const withQuestion: MapView = {
+      ...view,
+      edges: [],
+      relationships: {
+        ...view.relationships,
+        vertices: [{ id: "Q-1", kind: "question", title: "Which currency?", status: "ready", column: "active" }],
+        edges: [{ id: "blocks:Q-1:F-1", kind: "blocks", from: "Q-1", to: "F-1", sources: [] }],
+      },
+    };
+    const layout = layoutMap(withQuestion, new Set(["E-1"]));
+    const overlay = relationshipOverlay(withQuestion, layout, null, true, "");
+    const { container } = renderCanvas({ view: withQuestion, layout: overlay.layout, overlay });
+    const card = container.querySelector('.map-endpoint-card[data-id="Q-1"]') as HTMLElement;
+    expect(card.querySelector(".state-dot")).toBeNull();
+    expect(within(card).getByRole("img", { name: "Active" })).toHaveClass("state-glyph");
   });
 
   it("names a card in words for assistive tech", () => {
     renderCanvas();
     expect(screen.getByRole("button", { name: "Feature CI, draft, 2 questions holding it" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Epic Foundation, ready, 2 features" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Epic 1 of 1, Foundation, ready, 2 features" })).toBeInTheDocument();
     // A shelf is not a node and has no status to say: its name and what is on
     // it is the whole sentence.
     expect(screen.getByRole("button", { name: "Bugs, 1 bug" })).toBeInTheDocument();
