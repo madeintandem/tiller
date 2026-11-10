@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ListResult } from "../../api";
 import QuestionsPane from "./QuestionsPane";
+import { stubScrolledPast } from "../../test/stubScrolledPast";
 
 vi.mock("../../hooks", async (orig) => {
   const actual = await orig<typeof import("../../hooks")>();
@@ -67,6 +68,32 @@ afterEach(() => {
 });
 
 describe("QuestionsPane", () => {
+  it("pins its tab rail and shows a one-line header once the page header scrolls away", () => {
+    const restore = stubScrolledPast(true);
+    try {
+      serve([open, answered]);
+      const { container } = renderPane();
+      expect(container.querySelector(".node-pin [role=tablist]")).not.toBeNull();
+      const compact = container.querySelector(".node-pin .node-compact");
+      expect(compact?.textContent).toBe("Questions1 open");
+      expect(compact?.getAttribute("aria-hidden")).toBe("true");
+    } finally {
+      restore();
+    }
+  });
+
+  it("shows no one-line header while the page header is in view", () => {
+    const restore = stubScrolledPast(false);
+    try {
+      serve([open, answered]);
+      const { container } = renderPane();
+      expect(container.querySelector(".node-pin [role=tablist]")).not.toBeNull();
+      expect(container.querySelector(".node-compact")).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
   it("shows All, Open, Answered, Cancelled tabs even with no cancelled row", () => {
     serve([open] as never);
     renderPane();

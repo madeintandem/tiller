@@ -19,6 +19,7 @@ import { titleOf, useDocumentTitle, useFetch } from "../../hooks";
 import { has } from "../../lib/has";
 import "../explore-ledgers.css";
 import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus } from "./ledgerStatus";
+import LedgerCompact from "./LedgerCompact";
 
 const AMENDMENT_STATUSES = ["proposed", "approved", "withdrawn"] as const;
 
@@ -120,6 +121,7 @@ export default function AmendmentsPane() {
           }))}
           active={status}
           onSelect={(key) => setParams(withLedgerStatus(params, key))}
+          pinned={<LedgerCompact title="Amendments" tally={`${proposed} proposed`} />}
         />
       )}
     </div>

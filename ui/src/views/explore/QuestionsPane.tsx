@@ -42,6 +42,7 @@ import { has } from "../../lib/has";
 import { PersonName } from "../../people";
 import "../explore-ledgers.css";
 import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus } from "./ledgerStatus";
+import LedgerCompact from "./LedgerCompact";
 
 const QUESTION_STATUSES = ["open", "answered", "cancelled"] as const;
 
@@ -119,6 +120,7 @@ export default function QuestionsPane() {
           }))}
           active={status}
           onSelect={(key) => setParams(withLedgerStatus(params, key))}
+          pinned={<LedgerCompact title="Questions" tally={`${open.length} open`} />}
         />
       )}
     </div>

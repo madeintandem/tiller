@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ListResult } from "../../api";
 import AmendmentsPane from "./AmendmentsPane";
+import { stubScrolledPast } from "../../test/stubScrolledPast";
 
 vi.mock("../../hooks", async (orig) => {
   const actual = await orig<typeof import("../../hooks")>();
@@ -49,6 +50,20 @@ afterEach(() => {
 });
 
 describe("AmendmentsPane", () => {
+  it("pins its tab rail and shows a one-line header once the page header scrolls away", () => {
+    const restore = stubScrolledPast(true);
+    try {
+      serve([row("A-1", "proposed", "2026-01-02T10:00:00Z"), row("A-2", "approved", "2026-01-01T10:00:00Z")]);
+      const { container } = renderPane();
+      expect(container.querySelector(".node-pin [role=tablist]")).not.toBeNull();
+      const compact = container.querySelector(".node-pin .node-compact");
+      expect(compact?.textContent).toBe("Amendments1 proposed");
+      expect(compact?.getAttribute("aria-hidden")).toBe("true");
+    } finally {
+      restore();
+    }
+  });
+
   it("is a four-column grid with named columns and the order caption", () => {
     serve([row("A-1", "proposed", "2026-01-02T10:00:00Z")]);
     const { container } = renderPane();
