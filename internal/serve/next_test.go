@@ -384,3 +384,26 @@ func TestNextHandlerCutsCandidatesToTheShortlist(t *testing.T) {
 	require.Greater(t, len(full.Candidates), 5, "the fixture must legalize more moves than the shortlist holds")
 	require.Len(t, getNext(t, nextServer(t, root)).Candidates, 5)
 }
+
+// TestNodeStartBoxFollowsTheServedReader pins the node page's start box to
+// the reader Up Next ranks for: jc owns the ready task, so only jc is shown
+// `tiller start task`, which start would refuse for anyone else.
+// Serial: t.Setenv.
+func TestNodeStartBoxFollowsTheServedReader(t *testing.T) {
+	root := nextFixture(t)
+	path := "/api/node/task/" + readyTaskID(t, root)
+	for _, tc := range []struct {
+		reader string
+		start  bool
+	}{{"jc", true}, {"bob", false}, {"", false}} {
+		t.Setenv("TILLER_CONTRIBUTOR", tc.reader)
+		var page views.NodePage
+		require.Equal(t, http.StatusOK, getJSON(t, nextServer(t, root), path, &page))
+		if !tc.start {
+			require.Nil(t, page.Start, "reader %q does not own the task", tc.reader)
+			continue
+		}
+		require.NotNil(t, page.Start)
+		require.Equal(t, "start", page.Start.Action)
+	}
+}

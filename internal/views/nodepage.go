@@ -114,12 +114,16 @@ type NodeStart struct {
 	Then    string `json:"then,omitempty"`
 }
 
-// StartOf says how to begin a ready task, or nil when it cannot begin: not
-// ready, held by a question, blocked, or already in flight on a branch. It
-// reuses the conditions Up Next's claim candidates check (gen.TaskClaimable
-// and claimMove), so the two surfaces cannot disagree. in carries the
-// observed eligibility and branches; an empty Input checks the tree alone.
-func StartOf(t *store.Tree, task *store.Task, in workflow.Input) *NodeStart {
+// StartOf says how reader begins a ready task, or nil when they cannot: not
+// ready, held by a question, blocked, already in flight on a branch, or
+// claimed by someone other than reader. It reuses the conditions Up Next
+// checks (gen.TaskClaimable and claimMove for an unclaimed task, the owner
+// match and assigned-task eligibility for a claimed one), so the two
+// surfaces cannot disagree. An empty reader is unpersonalized, as on Up
+// Next: it is offered an unclaimed task's claim but never a claimed task's
+// start. in carries the observed eligibility and branches; an empty Input
+// checks the tree alone.
+func StartOf(t *store.Tree, task *store.Task, reader string, in workflow.Input) *NodeStart {
 	if task == nil || task.Status != "ready" {
 		return nil
 	}
@@ -128,7 +132,7 @@ func StartOf(t *store.Tree, task *store.Task, in workflow.Input) *NodeStart {
 	}
 	start := "tiller start task " + queueAddr(task)
 	if task.Owner != "" {
-		if !gen.AssignedTaskEligible(t, task) || in.Eligibility[task.ID] != "" || in.Eligibility[task.FeatureID] != "" {
+		if task.Owner != reader || !gen.AssignedTaskEligible(t, task) || in.Eligibility[task.ID] != "" || in.Eligibility[task.FeatureID] != "" {
 			return nil
 		}
 		return &NodeStart{Actor: actorAgent, Action: "start", Command: start}
@@ -374,7 +378,9 @@ func NodePageOf(tree *store.Tree, evs []events.Event, n store.Node, index *relat
 		page.Relationships.AmendmentHistoryWarning = amendments.warning
 	}
 	if task, ok := n.(*store.Task); ok {
-		page.Start = StartOf(tree, task, workflow.Input{})
+		// No reader is known here, so a claimed task offers no start; the
+		// console's node handler recomputes Start for the served contributor.
+		page.Start = StartOf(tree, task, "", workflow.Input{})
 	}
 	if e, ok := n.(*store.Epic); ok {
 		page.Decomposition = decompositionOf(tree, order, e)

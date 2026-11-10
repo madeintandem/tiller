@@ -105,7 +105,7 @@ func NodeHandler(root string) http.HandlerFunc {
 		page.Eval = evalPayload(t, n, workflowInput)
 		page.Workflow = workflow.AdviceOf(snapshot.Base, baseNode, workflowInput)
 		if task, ok := baseNode.(*store.Task); ok {
-			page.Start = views.StartOf(snapshot.Base, task, workflowInput)
+			page.Start = views.StartOf(snapshot.Base, task, actingContributor(root), workflowInput)
 		}
 		page.ActiveBasis = basisPayload(snapshot.Base, baseNode)
 		if a, ok := n.(*store.Amendment); ok && page.Amendment != nil {
