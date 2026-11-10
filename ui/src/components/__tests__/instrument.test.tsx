@@ -893,6 +893,16 @@ describe("NodeDetail: the attention stack", () => {
     expect(screen.getAllByRole("button", { name: acceptance.command })).toHaveLength(1);
   });
 
+  it("shows the criterion statement in the ask box, clamped, in place of the why sentence", () => {
+    const page = featurePage();
+    const entry = queueEntry({ statement: "A signed-out applicant is redirected to sign-in." });
+    const { container } = withRouter(<NodeDetail page={page} queue={queueOf([entry])} />);
+    const box = container.querySelector(".abox") as HTMLElement;
+    expect(box.querySelector(".abox-statement")?.textContent).toBe("A signed-out applicant is redirected to sign-in.");
+    expect(within(box).queryByText("This criterion needs your attestation.")).toBeNull();
+    expect(box.querySelector(".why")).toBeNull();
+  });
+
   it("renders a queue ask as a loud box: kind (with its criterion qualifier), why, and command", () => {
     const page = featurePage();
     const { container } = withRouter(<NodeDetail page={page} queue={queueOf([queueEntry()])} />);

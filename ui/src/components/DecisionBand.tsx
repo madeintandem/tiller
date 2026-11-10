@@ -15,7 +15,8 @@ import RefLink from "./RefLink";
 
 // tabbed: the band sits under a tab that already names its kind and count
 // (Home's decision-kind rail, 2026-09-01), so the head keeps only the
-// shared why-line, the one thing the tab did not say.
+// shared why-line, the one thing the tab did not say. The tab also carries the
+// batch's Copy all, so a tabbed band has no foot repeating it.
 export default function DecisionBand({ group, tabbed = false }: { group: QueueCardGroup; tabbed?: boolean }) {
   const why = sharedWhy(group.entries);
   const batch = batchCommand(group.kind, group.entries);
@@ -31,7 +32,7 @@ export default function DecisionBand({ group, tabbed = false }: { group: QueueCa
       {group.entries.map((entry) => (
         <BandRow key={queueEntryKey(entry)} entry={entry} shownWhy={why} />
       ))}
-      {batch !== null && (
+      {batch !== null && !tabbed && (
         <div className="dband-foot">
           <span className="muted">approve all {group.entries.length} after review</span>
           <CopyCmd cmd={batch} accent />

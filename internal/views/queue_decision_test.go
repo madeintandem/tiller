@@ -67,6 +67,8 @@ func TestQueueApproveFeatureCarriesPlanCounts(t *testing.T) {
 	for i := 0; i < 7; i++ {
 		tree.FeatureTasks["F-big"] = append(tree.FeatureTasks["F-big"], &store.Task{ID: fmt.Sprintf("T-%d", i), FeatureID: "F-big"})
 	}
+	// Cancelled work is not part of the plan being approved.
+	tree.FeatureTasks["F-big"] = append(tree.FeatureTasks["F-big"], &store.Task{ID: "T-gone", FeatureID: "F-big", Status: "cancelled"})
 	contract := &store.EvalFile{Node: "F-big"}
 	for i := 0; i < 15; i++ {
 		contract.Criteria = append(contract.Criteria, store.EvalCriterion{ID: fmt.Sprintf("C%d", i)})

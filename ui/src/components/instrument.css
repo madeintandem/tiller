@@ -295,6 +295,18 @@
   margin-bottom: 9px;
 }
 
+/* The criterion statement, clamped to three lines like the Home card's. */
+.abox .abox-statement {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin: 0 0 9px;
+}
+
 .abox .copy-cmd {
   width: 100%;
   margin: 0;

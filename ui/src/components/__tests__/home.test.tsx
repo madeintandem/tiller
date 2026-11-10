@@ -1172,7 +1172,20 @@ describe("Home needs-you: Copy all", () => {
     const buttons = screen.getAllByRole("button", { name: "Copy all" });
     expect(buttons).toHaveLength(1);
     fireEvent.click(buttons[0]);
-    expect(writeText).toHaveBeenCalledWith(`tiller approve epic ${epics.map((e) => e.key).join(" ")}`);
+    const batch = `tiller approve epic ${epics.map((e) => e.key).join(" ")}`;
+    expect(writeText).toHaveBeenCalledWith(batch);
+    // Copy all is the only control that copies the batch: a tabbed band has
+    // no foot repeating it, as text or as a button.
+    expect(screen.queryByText(batch)).toBeNull();
+    expect(screen.queryAllByRole("button", { name: batch })).toHaveLength(0);
+    expect(document.querySelector(".dband-foot")).toBeNull();
+  });
+
+  it("keeps the foot on an untabbed band", async () => {
+    const epics = Array.from({ length: ROW_CAP + 1 }, (_, i) => epicEntry(i + 1));
+    await copyAllFor(epics);
+    expect(screen.queryByRole("button", { name: "Copy all" })).toBeNull();
+    expect(document.querySelector(".dband-foot")).not.toBeNull();
   });
 
   it("offers none for a kind without a batch verb, or with a single entry", async () => {

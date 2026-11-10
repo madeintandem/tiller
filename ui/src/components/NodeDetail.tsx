@@ -270,6 +270,7 @@ function AskBox({ entry, showCommand = true }: { entry: QueueEntry; showCommand?
           and the command for a kind this box cannot explain. Dropping the
           div rather than rendering it empty matches DecisionCard's own
           twin fix below. */}
+      {entry.kind === "attest_criterion" && has(entry.statement) && <p className="abox-statement">{entry.statement}</p>}
       {why !== "" && <div className="why"><ProseInline markdown={why} /></div>}
       {showCommand && has(entry.command) && <CopyCmd cmd={entry.command} accent={entry.actor !== "agent"} />}
     </div>

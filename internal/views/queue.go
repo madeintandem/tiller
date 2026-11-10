@@ -260,7 +260,7 @@ func queueApproveFeatures(t *store.Tree, order *gen.Order, contracts map[string]
 			Ref: gen.Ref(t, f), Prose: f.Title, Title: f.Title,
 			Command: "tiller approve feature " + queueAddr(f),
 			Plan: &QueuePlan{
-				Tasks:        len(t.FeatureTasks[f.ID]),
+				Tasks:        liveTaskCount(t.FeatureTasks[f.ID]),
 				Criteria:     contractCriteria(contracts, f.ID),
 				Dependencies: len(f.DependsOn),
 			},
@@ -618,4 +618,16 @@ func mergeProse(pr *int, ref *store.ReviewRef) string {
 	default:
 		return ""
 	}
+}
+
+// liveTaskCount counts the tasks a plan still asks the human to approve:
+// cancelled work is not part of it.
+func liveTaskCount(tasks []*store.Task) int {
+	n := 0
+	for _, task := range tasks {
+		if task.Status != "cancelled" {
+			n++
+		}
+	}
+	return n
 }
