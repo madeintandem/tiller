@@ -40,7 +40,7 @@ describe("needsAttentionFallback: needs_attestation supersedes next_owner", () =
     expect(action).toEqual({
       label: "Awaiting your attestation",
       why: "Criterion C6 is waiting on your sign-off.",
-      command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C6 --status pass",
+      command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C6 --status <pass|fail>",
     });
   });
 
@@ -64,7 +64,7 @@ describe("needsAttentionFallback: needs_attestation supersedes next_owner", () =
     expect(action).toEqual({
       label: "Awaiting your attestation",
       why: "Criterion C3 is waiting on your sign-off.",
-      command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C3 --status pass",
+      command: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C3 --status <pass|fail>",
     });
   });
 

@@ -79,7 +79,7 @@ func TestTweakReviewAndCarrierAttention(t *testing.T) {
 	gates := entriesOfKind(views.QueueOf(tree), "attest_gate")
 	require.Len(t, gates, 1)
 	require.Equal(t, store.NounTweak, gates[0].Noun)
-	require.Equal(t, "tiller attest tweak tweaks/tune --gate code_review --status pass", gates[0].Command)
+	require.Equal(t, "tiller attest tweak tweaks/tune --gate code_review --status <pass|fail>", gates[0].Command)
 	// Review still has agent legal moves (resume/sync), while the queue above
 	// separately records the human attestation waiting on this same node.
 	require.Equal(t, views.WhoseMoveCounts{Agent: 1}, views.WhoseMoveOf(tree))

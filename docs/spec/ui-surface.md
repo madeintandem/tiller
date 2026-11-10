@@ -319,7 +319,7 @@ Each chart keeps its note in its empty state, so a chart the coverage rule leave
 |---|---|
 | approve | A feature plan to ready with its initial tasks, a later-added task to ready, an epic decomposition to ready, an amendment (approve applies it), or an accepted-basis refresh. Approve the plan, the most common gate. |
 | return | Send a mistakenly approved feature or task back across its pre-work human gate, with a reason. |
-| attest | Sign off an optional review gate, a manual criterion, or a required eval criterion after reviewing its recorded rubric evidence. The target is either a review gate or a specific criterion, matching the CLI's `--gate` or `--criterion`. |
+| attest | Sign off an optional review gate, a manual criterion, or a required eval criterion after reviewing its recorded rubric evidence. The target is either a review gate or a specific criterion, matching the CLI's `--gate` or `--criterion`. The offered command reads `--status <pass|fail>`, never a prefilled `pass`, so the reader chooses the verdict. |
 | answer | Resolve an open question. |
 | block / unblock | Flag or clear a blocker, with a reason. |
 | cancel | Terminate an epic, feature, or task, behind a confirm. |

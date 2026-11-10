@@ -386,16 +386,16 @@ func TestQueueOfPinsEveryKindAndOrder(t *testing.T) {
 	    {"kind":"answer_question","noun":"question","id":"Q-bbbbbb","ref":"Q-bbbbbb","prose":"Canonical schema version","title":"Canonical schema version","command":"tiller answer question Q-bbbbbb --answer \"...\"","due":"2026-07-10"},
 	    {"kind":"answer_question","noun":"question","id":"Q-aaaaaa","ref":"Q-aaaaaa","prose":"Currency rounding","title":"Currency rounding","command":"tiller answer question Q-aaaaaa --answer \"...\""},
 	    {"kind":"carrier_cancelled","noun":"bug","id":"B-bbbbbb","key":"bugs/lost-carrier","ref":"bugs/lost-carrier (B-bbbbbb)","prose":"Lost carrier","title":"Lost carrier","command":"tiller resolve bug bugs/lost-carrier --clear"},
-	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate accessibility_review --status pass","gate":"accessibility_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate code_review --status pass","gate":"code_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate performance_review --status pass","gate":"performance_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate security_review --status pass","gate":"security_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate accessibility_review --status pass","gate":"accessibility_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate code_review --status pass","gate":"code_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate performance_review --status pass","gate":"performance_review","gate_status":"pending"},
-	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate security_review --status pass","gate":"security_review","gate_status":"pending"},
-	    {"kind":"attest_criterion","noun":"feature","id":"F-bbbbbb","key":"form-engine/audit-export","ref":"form-engine/audit-export (F-bbbbbb)","prose":"C1","title":"Audit export","criterion":"C1","command":"tiller attest feature form-engine/audit-export --criterion C1 --status pass"},
-	    {"kind":"attest_criterion","noun":"task","id":"T-aaaaaa","key":"form-engine/schema-engine/schema-loader","ref":"form-engine/schema-engine/schema-loader (T-aaaaaa)","prose":"TC1","title":"Wire the schema loader","criterion":"TC1","command":"tiller attest task form-engine/schema-engine/schema-loader --criterion TC1 --status pass"}
+	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate accessibility_review --status <pass|fail>","gate":"accessibility_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate code_review --status <pass|fail>","gate":"code_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate performance_review --status <pass|fail>","gate":"performance_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"task","id":"T-dddddd","key":"form-engine/review-me/review-me","ref":"form-engine/review-me/review-me (T-dddddd)","prose":"Review me","title":"Review me","command":"tiller attest task form-engine/review-me/review-me --gate security_review --status <pass|fail>","gate":"security_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate accessibility_review --status <pass|fail>","gate":"accessibility_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate code_review --status <pass|fail>","gate":"code_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate performance_review --status <pass|fail>","gate":"performance_review","gate_status":"pending"},
+	    {"kind":"attest_gate","noun":"chore","id":"CH-bbbbbb","key":"chores/review-chore","ref":"chores/review-chore (CH-bbbbbb)","prose":"Review chore","title":"Review chore","command":"tiller attest chore chores/review-chore --gate security_review --status <pass|fail>","gate":"security_review","gate_status":"pending"},
+	    {"kind":"attest_criterion","noun":"feature","id":"F-bbbbbb","key":"form-engine/audit-export","ref":"form-engine/audit-export (F-bbbbbb)","prose":"C1","title":"Audit export","criterion":"C1","command":"tiller attest feature form-engine/audit-export --criterion C1 --status <pass|fail>"},
+	    {"kind":"attest_criterion","noun":"task","id":"T-aaaaaa","key":"form-engine/schema-engine/schema-loader","ref":"form-engine/schema-engine/schema-loader (T-aaaaaa)","prose":"TC1","title":"Wire the schema loader","criterion":"TC1","command":"tiller attest task form-engine/schema-engine/schema-loader --criterion TC1 --status <pass|fail>"}
 	  ]
 	}`
 	require.JSONEq(t, want, string(got))
@@ -854,7 +854,7 @@ func queueReviewTaskFixture(t *testing.T) (root, taskPath string) {
 // TestQueueAttestGateStoredStatuses pins the attest_gate derivation over an
 // offline in_review task: absent gates queue pending, gate-sorted, then a
 // recorded pass drops out while fail, skipped, and stale pass through as
-// gate_status. The command always names --status pass (the affordance that
+// gate_status. The command always names --status <pass|fail> (the affordance that
 // clears the gate); gate_status carries the current state.
 func TestQueueAttestGateStoredStatuses(t *testing.T) {
 	root, taskPath := queueReviewTaskFixture(t)
@@ -867,7 +867,7 @@ func TestQueueAttestGateStoredStatuses(t *testing.T) {
 		require.Equal(t, "T-aaaaaa", g.ID)
 		require.Equal(t, "form-engine/schema-engine/schema-loader (T-aaaaaa)", g.Ref)
 		require.Equal(t, "pending", g.GateStatus, "an absent gate is pending")
-		require.Equal(t, "tiller attest task form-engine/schema-engine/schema-loader --gate "+g.Gate+" --status pass", g.Command)
+		require.Equal(t, "tiller attest task form-engine/schema-engine/schema-loader --gate "+g.Gate+" --status <pass|fail>", g.Command)
 	}
 
 	queueSetTaskGateStatuses(t, taskPath, map[string]string{

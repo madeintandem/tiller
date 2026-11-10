@@ -366,7 +366,7 @@ func TestCheckEvalsKeepsTeethUnsatisfied(t *testing.T) {
 		_, errOut, code := execCLI(t, "check", "feature", cliFeatureKey, "--contributor", "jc")
 		require.Equal(t, 1, code)
 		require.Contains(t, errOut, "C1 (needs_attestation)")
-		require.Contains(t, errOut, fmt.Sprintf("tiller attest feature %s --criterion C1 --status pass", soleFeatureID(t)))
+		require.Contains(t, errOut, fmt.Sprintf("tiller attest feature %s --criterion C1 --status <pass|fail>", soleFeatureID(t)))
 		require.NotContains(t, errOut, "C2", "optional criteria must not be presented as required acceptance")
 
 		tid := soleTaskID(t)
@@ -412,7 +412,7 @@ func TestCheckRubricRequiresHumanAttestation(t *testing.T) {
 	_, errOut, code := execCLI(t, "check", "feature", cliFeatureKey, "--contributor", "jc")
 	require.Equal(t, 1, code)
 	require.Contains(t, errOut, "C2 (needs_attestation)")
-	require.Contains(t, errOut, fmt.Sprintf("tiller attest feature %s --criterion C2 --status pass", soleFeatureID(t)))
+	require.Contains(t, errOut, fmt.Sprintf("tiller attest feature %s --criterion C2 --status <pass|fail>", soleFeatureID(t)))
 	require.NotContains(t, errOut, "--criterion C1", "settled criteria need no new attestation")
 
 	_, _, code = execCLI(t, "attest", "feature", cliFeatureKey, "--criterion", "C2", "--status", "pass", "--contributor", "jc")

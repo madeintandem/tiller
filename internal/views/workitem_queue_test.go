@@ -66,7 +66,7 @@ func TestQueueAttestGateIncludesAnInReviewBug(t *testing.T) {
 	got := entriesOfKind(views.QueueOf(tree), "attest_gate")
 	require.Len(t, got, 1)
 	require.Equal(t, store.NounBug, got[0].Noun)
-	require.Equal(t, "tiller attest bug bugs/blank-on-reload --gate code_review --status pass", got[0].Command)
+	require.Equal(t, "tiller attest bug bugs/blank-on-reload --gate code_review --status <pass|fail>", got[0].Command)
 }
 
 func TestApproveQueueNamesSeverityForUnratedBug(t *testing.T) {

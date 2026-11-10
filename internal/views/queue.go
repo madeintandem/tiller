@@ -405,7 +405,7 @@ func queueAttestGates(t *store.Tree, order *gen.Order) []QueueEntry {
 			out = append(out, QueueEntry{
 				Kind: "attest_gate", Noun: n.Noun(), ID: n.NodeID(), Key: Key(n),
 				Ref: gen.Ref(t, n), Prose: nodeProse(n), Title: nodeProse(n),
-				Command:    fmt.Sprintf("tiller attest %s %s --gate %s --status pass", n.Noun(), queueAddr(n), name),
+				Command:    fmt.Sprintf("tiller attest %s %s --gate %s --status <pass|fail>", n.Noun(), queueAddr(n), name),
 				Gate:       name,
 				GateStatus: status,
 			})
@@ -459,7 +459,7 @@ func queueAttestCriteria(t *store.Tree, order *gen.Order, contracts map[string]*
 				Kind: "attest_criterion", Noun: n.Noun(), ID: n.NodeID(), Key: Key(n),
 				Ref: gen.Ref(t, n), Prose: cid, Title: nodeProse(n),
 				Criterion: cid, Statement: criterionStatement(contracts, n.NodeID(), cid),
-				Command: fmt.Sprintf("tiller attest %s %s --criterion %s --status pass", n.Noun(), queueAddr(n), cid),
+				Command: fmt.Sprintf("tiller attest %s %s --criterion %s --status <pass|fail>", n.Noun(), queueAddr(n), cid),
 			})
 		}
 	}

@@ -78,12 +78,12 @@ export function needsAttentionFallback(
     // COMMAND GRAMMAR: byte-parity with the server's own attest_criterion
     // queue entry, internal/views/queue.go queueAttestCriteria (the
     // canonical source; mirror it exactly, never re-derive). A
-    // criterion-level attest is `--criterion <id> --status pass`, NEVER
+    // criterion-level attest is `--criterion <id> --status <pass|fail>`, NEVER
     // combined with --gate.
     return {
       label: "Awaiting your attestation",
       why: `Criterion ${first.criterion} is waiting on your sign-off.`,
-      command: `tiller attest ${node.noun} ${addrOf(node)} --criterion ${first.criterion} --status pass`,
+      command: `tiller attest ${node.noun} ${addrOf(node)} --criterion ${first.criterion} --status <pass|fail>`,
     };
   }
 
