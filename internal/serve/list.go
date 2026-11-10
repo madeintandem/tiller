@@ -12,6 +12,7 @@ import (
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/readinput"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/vcs"
 	"github.com/madeintandem/tiller/internal/views"
 )
 
@@ -116,6 +117,8 @@ func ListHandler(root string) http.HandlerFunc {
 			}
 		}
 
+		fillRecoveredPRURLs(root, items)
+
 		// views.Item already resolved each row's reference; the wrapper only
 		// lifts it into the JSON.
 		nodes := make([]listNode, len(items))
@@ -128,4 +131,28 @@ func ListHandler(root string) http.HandlerFunc {
 			Axes:   views.FilterAxesByNoun(), Unresolved: unresolved,
 		}, nil
 	})
+}
+
+// fillRecoveredPRURLs gives each row's recovered review its PR page from a
+// GitHub origin, read once and only when some row carries a record.
+func fillRecoveredPRURLs(root string, items []views.ListItem) {
+	var repo string
+	var read bool
+	for _, item := range items {
+		if item.RecoveredReview == nil || item.RecoveredReview.PR == nil {
+			continue
+		}
+		if !read {
+			read = true
+			origin, err := vcs.New(root).OriginURL()
+			if err != nil {
+				return
+			}
+			var ok bool
+			if repo, ok = githubRepoURL(origin); !ok {
+				return
+			}
+		}
+		fillRecoveredPRURL(item.RecoveredReview, repo)
+	}
 }

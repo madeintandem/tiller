@@ -127,7 +127,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
     { noun: "tweak", state: tweaks },
   ];
   // Riding tasks show by title; the task list is already read for the desk.
-  const taskTitles = new Map((tasks.data?.nodes ?? []).filter((row) => has(row.title)).map((row) => [row.id, row.title as string]));
+  const taskTitles = titlesOf(tasks.data?.nodes ?? []);
   const queueEntries = queue.data?.entries ?? [];
   // Gravity re-ranks the KIND buckets only (queueGroups.ts's own contract);
   // bandRuns turns that ranking into the runs the needs-you section draws,
@@ -336,7 +336,7 @@ function AllClearSlot({ whoseMove, lists }: { whoseMove: WhoseMoveCounts; lists:
   if (lists.some((l) => l.state.data === null)) {
     return <p className="muted">Loading project state...</p>;
   }
-  return <AllClear whoseMove={whoseMove} inReview={inReviewItems(lists)} />;
+  return <AllClear whoseMove={whoseMove} inReview={inReviewItems(lists)} titles={titlesOf(lists.find((l) => l.noun === "task")?.state.data?.nodes ?? [])} />;
 }
 
 // inReviewItems enumerates every node across all six noun lists
@@ -357,6 +357,10 @@ function inReviewItems(lists: NounList[]): AllClearReviewItem[] {
     }
   }
   return items;
+}
+
+function titlesOf(rows: ListRow[]): ReadonlyMap<string, string> {
+  return new Map(rows.filter((row) => has(row.title)).map((row) => [row.id, row.title as string]));
 }
 
 function sameRecovery(left: RecoveredReviewView | undefined, right: RecoveredReviewView | undefined): boolean {

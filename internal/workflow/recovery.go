@@ -12,6 +12,7 @@ import (
 // current acceptance and of host state. PR association is caller-supplied.
 type RecoveredReview struct {
 	PR                *int                       `json:"pr,omitempty"`
+	PRURL             string                     `json:"pr_url,omitempty"` // serve fills from a GitHub origin; CLI never emits
 	Branch            string                     `json:"branch"`
 	Head              string                     `json:"head"`
 	MergeCommit       string                     `json:"merge_commit"`

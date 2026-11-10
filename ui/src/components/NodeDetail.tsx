@@ -767,6 +767,7 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
       {recoveredReview !== undefined && (
         <RecoveredReview
           record={recoveredReview}
+          titles={new Map((page.relationships.tasks ?? []).filter((task) => has(task.title)).map((task) => [task.id, task.title as string]))}
           acceptanceReady={page.workflow?.acceptance_ready}
           outstanding={page.workflow?.outstanding}
           gates={page.node.gates}

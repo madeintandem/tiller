@@ -73,26 +73,46 @@ const riding: RecoveredReviewView = {
 };
 
 describe("leads with what matters", () => {
-  it("shows the reason, the PR, and riding tasks by title, with the rest in a closed Details", () => {
-    const { container } = render(<MemoryRouter><RecoveredReview record={riding} titles={new Map([["T-2il2d6", "Extract params"]])} /></MemoryRouter>);
+  it("keeps current-state items visible and folds only historical record detail into a closed Details", () => {
+    const { container } = render(<MemoryRouter><RecoveredReview record={{ ...riding, basis: "contained" }}
+      titles={new Map([["T-2il2d6", "Extract params"]])}
+      acceptanceReady={false} crossingsPending={true} historicalViolations={1} crossingViolations={2}
+      outstanding={[{ node_id: "F-review", kind: "criterion", id: "C2", status: "pending", actor: "human" }]}
+      currentAcceptance={[{ node_id: "F-review", contract_status: "valid", acceptance_ready: false }]}
+      gates={{ lint: { required: true, status: "pass" } }} /></MemoryRouter>);
     const details = container.querySelector("details") as HTMLDetailsElement;
     expect(details.open).toBe(false);
     expect(details.querySelector("summary")?.textContent).toBe("Details");
-    const body = screen.getByRole("region", { name: /recovered historical review/i });
-    expect(within(body).getByText(/Authorized recovery/).closest("details")).toBeNull();
-    expect(within(body).getByText(/PR #155/).closest("details")).toBeNull();
-    const title = within(body).getByRole("link", { name: "Extract params" });
-    expect(title).toHaveAttribute("href", "/node/task/T-2il2d6");
-    expect(title.closest("details")).toBeNull();
-    const bare = within(body).getByRole("link", { name: "T-notitle" });
-    expect(bare.closest("details")).toBeNull();
-    for (const text of ["git:historical-head", "git:integration-result", "git:submitted-state", ".tiller/epics/a/features/b/tasks/c/task.yml", "git:historical-policy"]) {
-      expect(within(details).getByText(text, { exact: false })).toBeInTheDocument();
-    }
-    expect(within(details).getByText(/Evidence basis/)).toBeInTheDocument();
     const outside = container.cloneNode(true) as HTMLElement;
     outside.querySelector("details")?.remove();
-    expect(outside.textContent).not.toMatch(/git:submitted-state|task\.yml|git:historical-head|Evidence basis/);
+    const visible = outside.textContent ?? "";
+    const folded = details.textContent ?? "";
+    // Visible: the reason, the PR, riding tasks by title (id when unknown),
+    // and every current-state item.
+    for (const text of ["Extract params", "T-notitle"]) expect(visible).toContain(text);
+    for (const text of ["Authorized recovery", "PR #155", "Current acceptance: unresolved",
+      "C2: Pending", "Participating feature acceptance", "F-review: unresolved", "Current recorded gates", "lint: Pass",
+      "source-pinned historical policy warnings: 1", "crossing-time policy warnings: 2"]) {
+      expect(visible).toContain(text);
+      expect(folded).not.toContain(text);
+    }
+    // Folded: the historical record detail, and none of it visible.
+    for (const text of ["git:historical-head", "git:integration-result", "Evidence basis: containment", "not an observed merge",
+      "task.yml", "git:submitted-state", "git:other-state", "git:historical-policy", "feature.yml", "evals: Needs attestation"]) {
+      expect(folded).toContain(text);
+      expect(visible).not.toContain(text);
+    }
+    expect(Array.from(details.querySelectorAll("a")).filter((a) => a.textContent === "evidence")).toHaveLength(2);
+  });
+
+  it("links the PR when its address is known, saying so in the accessible name, and reads as text when it is not", () => {
+    const { rerender } = render(<MemoryRouter><RecoveredReview record={{ ...riding, pr_url: "https://github.com/acme/app/pull/155" }} /></MemoryRouter>);
+    const link = screen.getByRole("link", { name: "Caller-supplied PR #155 (opens the pull request)" });
+    expect(link).toHaveAttribute("href", "https://github.com/acme/app/pull/155");
+    expect(link).toHaveTextContent("Caller-supplied PR #155");
+    rerender(<MemoryRouter><RecoveredReview record={riding} /></MemoryRouter>);
+    expect(screen.queryByRole("link", { name: /pull request/ })).toBeNull();
+    expect(screen.getByText(/Caller-supplied PR #155/)).toBeInTheDocument();
   });
 
   it("reads evidence refs as labels that keep the ref on the href and title", () => {

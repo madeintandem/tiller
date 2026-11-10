@@ -79,7 +79,8 @@ const recovered = {
     { id: "T-2il2d6", path: ".tiller/epics/a/features/b/tasks/c/task.yml", state: "git:submitted" },
     { id: "T-untitled", path: ".tiller/epics/a/features/b/tasks/d/task.yml", state: "git:submitted-two" },
   ],
-  policy_snapshots: [],
+  policy_snapshots: [{ node_id: "F-1", path: "feature.yml", source: "git:policy",
+    observations: [{ gate: "evals", status: "needs_attestation", evidence_refs: ["artifacts/out.txt"] }] }],
 };
 
 // Only node keys, ids, paths, and branch names may carry an underscore.
@@ -108,6 +109,7 @@ describe("Home Recovered reviews tab", () => {
   const features = { noun: "feature", count: 1, nodes: [{
     id: "F-1", key: "billing/refunds", ref: "billing/refunds (F-1)", title: "Refunds", status: "done", recovered_review: recovered,
     current_acceptance: { node_id: "F-1", contract_status: "valid", acceptance_ready: true },
+    gates: { evals: { required: true, status: "needs_attestation" } },
     recovered_crossings_pending: false,
   }] };
   const tasks = { noun: "task", count: 1, nodes: [{ id: "T-2il2d6", key: "a/b/c", ref: "a/b/c (T-2il2d6)", title: "Extract params", status: "done" }] };
@@ -125,6 +127,7 @@ describe("Home Recovered reviews tab", () => {
     expect(within(panel).getByRole("link", { name: "T-untitled" })).toBeInTheDocument();
     expect(spy.mock.calls.filter((call) => String(call[0]).startsWith("/api/node/task"))).toHaveLength(0);
     expect(panel.querySelector("details")).not.toHaveAttribute("open");
+    expect(panel).toHaveTextContent("evals: Needs attestation");
     expect((panel.textContent ?? "").replace(pathsAndBranches, "")).not.toMatch(underscoreToken);
   });
 });

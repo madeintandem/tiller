@@ -385,6 +385,8 @@ export interface ReviewRefView {
 
 export interface RecoveredReviewView {
   pr?: number;
+  // The PR's page, serve-filled from a GitHub origin only (absent otherwise).
+  pr_url?: string;
   branch: string;
   head: string;
   merge_commit: string;

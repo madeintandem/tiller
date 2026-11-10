@@ -45,9 +45,11 @@ function reviewLeadText(count: number): string {
 export default function AllClear({
   whoseMove,
   inReview,
+  titles,
 }: {
   whoseMove: WhoseMoveCounts;
   inReview: AllClearReviewItem[];
+  titles?: ReadonlyMap<string, string>;
 }) {
   return (
     <div className="all-clear">
@@ -66,7 +68,7 @@ export default function AllClear({
               {inReview.map((item) => (
                 <li key={`${item.noun}:${item.id}`}>
                   <Link to={`/node/${item.noun}/${item.id}`}>{item.label}</Link>
-                  {item.recovery !== undefined && <RecoveredReview record={item.recovery} />}
+                  {item.recovery !== undefined && <RecoveredReview record={item.recovery} titles={titles} />}
                   {item.reviewMissing === true && <p>Aggregate review is not recorded; sync has not inspected its merge state. If unmerged, complete ordinary submission; if already merged, explicitly authorized historical recovery is required.</p>}
                 </li>
               ))}

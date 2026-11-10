@@ -5,6 +5,15 @@ import { evidenceLabel } from "../lib/evidenceLabel";
 import { recoveryBasisLabel } from "../lib/executionWords";
 import { statusLabel } from "../lib/statusLabel";
 
+// The PR reads as a link when the console knows its address (a GitHub origin);
+// the label keeps the honest wording that the number was caller-supplied.
+function prLabel(record: RecoveredReviewView) {
+  if (record.pr === undefined) return "Local review ref";
+  const label = `Caller-supplied PR #${record.pr}`;
+  if (record.pr_url === undefined || record.pr_url === "") return label;
+  return <a href={record.pr_url} target="_blank" rel="noreferrer" aria-label={`${label} (opens the pull request)`}>{label}</a>;
+}
+
 // Historical provenance is not current approval or a host observation.
 // The body leads with the reason, the PR, and the riding tasks; the recorded
 // head, integration result, basis, and policy snapshots sit in a closed
@@ -26,7 +35,7 @@ export default function RecoveredReview({ record, titles, acceptanceReady, outst
     <section className="abox warn" aria-label="Recovered historical review">
       <span className="kind">Recovered historical review</span>
       <p>Recorded by {record.recovered_by} <Time iso={record.recovered_at} />: {record.reason}</p>
-      <p>{record.pr === undefined ? "Local review ref" : `Caller-supplied PR #${record.pr}`} · <span className="mono">{record.branch}</span></p>
+      <p>{prLabel(record)} · <span className="mono">{record.branch}</span></p>
       <div>
         <span className="kind">Historical riding tasks</span>
         <ul>{record.tasks.map((task) => (

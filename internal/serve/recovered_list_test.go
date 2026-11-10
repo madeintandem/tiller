@@ -16,7 +16,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestRecoveredCompletedListClassifiesCurrentAcceptanceIndependently(t *testing.T) {
+// recoveredFeatureFixture is nodeFixture with its one feature done and carrying
+// a recovered review, current acceptance, and policy warnings.
+func recoveredFeatureFixture(t *testing.T) (string, *store.Feature, func(string, any), string) {
+	t.Helper()
 	root := nodeFixture(t)
 	tree, err := store.Load(root)
 	require.NoError(t, err)
@@ -62,6 +65,11 @@ func TestRecoveredCompletedListClassifiesCurrentAcceptanceIndependently(t *testi
 	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/epics/form-engine/features/schema-engine/feature.eval.md"), []byte(contract), 0o644))
 	_, err = store.Load(root)
 	require.NoError(t, err)
+	return root, feature, save, featurePath
+}
+
+func TestRecoveredCompletedListClassifiesCurrentAcceptanceIndependently(t *testing.T) {
+	root, feature, save, featurePath := recoveredFeatureFixture(t)
 	srv := httptest.NewServer(serve.ListHandler(root))
 	t.Cleanup(srv.Close)
 	read := func() views.ListItem {
@@ -88,4 +96,64 @@ func TestRecoveredCompletedListClassifiesCurrentAcceptanceIndependently(t *testi
 	require.False(t, row.CurrentAcceptance.AcceptanceReady)
 	require.NotEmpty(t, row.CurrentAcceptance.Outstanding)
 	require.Equal(t, "pending", row.RecoveredReview.PolicySnapshots[1].Observations[0].Status)
+}
+
+// The recovered review's PR address derives from the origin the way a node's
+// pr_url does: a GitHub origin yields it, any other shape omits it.
+func TestRecoveredReviewCarriesThePRURLFromAGitHubOrigin(t *testing.T) {
+	root, feature, save, featurePath := recoveredFeatureFixture(t)
+	pr := 155
+	feature.PR, feature.ReviewRef = &pr, nil
+	save(featurePath, feature)
+	gitRun(t, root, "init", "-q", "-b", "main")
+	gitRun(t, root, "config", "user.name", "Smoke")
+	gitRun(t, root, "config", "user.email", "smoke@example.test")
+	gitRun(t, root, "add", ".")
+	gitRun(t, root, "commit", "-qm", "fixture")
+	srv := httptest.NewServer(serve.ListHandler(root))
+	t.Cleanup(srv.Close)
+	nodeSrv := httptest.NewServer(serve.NodeHandler(root))
+	t.Cleanup(nodeSrv.Close)
+	for _, c := range []struct{ name, origin, want string }{
+		{"github", "https://github.com/madeintandem/tiller.git", "https://github.com/madeintandem/tiller/pull/155"},
+		{"gitlab", "https://gitlab.com/madeintandem/tiller.git", ""},
+		{"no origin", "", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			setOrigin(t, root, c.origin)
+			var list struct {
+				Nodes []struct {
+					Recovered *struct {
+						PR    *int   `json:"pr"`
+						PRURL string `json:"pr_url"`
+					} `json:"recovered_review"`
+				} `json:"nodes"`
+			}
+			require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=features&status=done", &list))
+			require.Len(t, list.Nodes, 1)
+			require.NotNil(t, list.Nodes[0].Recovered)
+			require.Equal(t, c.want, list.Nodes[0].Recovered.PRURL)
+			var page struct {
+				Node struct {
+					Recovered *struct {
+						PRURL string `json:"pr_url"`
+					} `json:"recovered_review"`
+				} `json:"node"`
+			}
+			require.Equal(t, 200, getJSON(t, nodeSrv, "/api/node/feature/"+listFeatureID(t, srv), &page))
+			require.NotNil(t, page.Node.Recovered)
+			require.Equal(t, c.want, page.Node.Recovered.PRURL)
+		})
+	}
+}
+
+func listFeatureID(t *testing.T, srv *httptest.Server) string {
+	t.Helper()
+	var list struct {
+		Nodes []struct {
+			ID string `json:"id"`
+		} `json:"nodes"`
+	}
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=features&status=done", &list))
+	return list.Nodes[0].ID
 }

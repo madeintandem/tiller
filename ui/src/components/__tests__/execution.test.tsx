@@ -124,6 +124,12 @@ describe("Branches tab leads with what matters", () => {
     expect(observed[0]).toHaveAttribute("title");
   });
 
+  it("states no observed time when there are no observations, rather than inventing one", () => {
+    const { container } = render(<MemoryRouter><ExecutionSources state={settled({ observations: [], diagnostics: [{ id: "T-x", code: "branch_missing", message: "gone" }] })} /></MemoryRouter>);
+    expect(container.querySelector("time")).toBeNull();
+    expect(screen.queryByText(/^Observed/)).toBeNull();
+  });
+
   it("folds the two explanatory paragraphs into a closed disclosure", () => {
     const { container } = render(<MemoryRouter><ExecutionSources state={settled({ observations: rows, diagnostics: [] })} /></MemoryRouter>);
     const details = container.querySelector("details") as HTMLDetailsElement;

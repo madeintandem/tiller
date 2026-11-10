@@ -420,8 +420,9 @@ func githubRepoURL(origin string) (string, bool) {
 // its fact exists, so a page never carries a link to nothing.
 func fillGitHubLinks(n *views.NodeView, repo string) {
 	if n.PR != nil {
-		n.PRURL = fmt.Sprintf("%s/pull/%d", repo, *n.PR)
+		n.PRURL = prURL(repo, *n.PR)
 	}
+	fillRecoveredPRURL(n.RecoveredReview, repo)
 	if n.Branch != "" {
 		// Tiller cuts every branch itself as tiller/<epic>/<feature>, slugs
 		// only, so the name rides the path verbatim; a free-form branch name
@@ -433,6 +434,19 @@ func fillGitHubLinks(n *views.NodeView, repo string) {
 	}
 	if n.VerifiedAgainst != nil {
 		n.VerifiedAgainst.CommitURL = commitURL(repo, n.VerifiedAgainst.Commit)
+	}
+}
+
+// prURL is the one place a PR number becomes its GitHub page.
+func prURL(repo string, pr int) string {
+	return fmt.Sprintf("%s/pull/%d", repo, pr)
+}
+
+// fillRecoveredPRURL gives a recovered review its PR page by the same
+// derivation as pr_url, when the record names a PR.
+func fillRecoveredPRURL(record *workflow.RecoveredReview, repo string) {
+	if record != nil && record.PR != nil {
+		record.PRURL = prURL(repo, *record.PR)
 	}
 }
 
