@@ -5,7 +5,17 @@
 
 import { describe, expect, it } from "vitest";
 
-import { epicsParamValue, selectedEpicKeys, splitEpics, toggleEpicKey } from "./selection";
+import type { BuildEpic } from "../../api";
+import {
+  epicsParamValue,
+  isAllEpics,
+  resolveSelection,
+  selectedEpicKeys,
+  shouldStoreSelection,
+  showableEpics,
+  splitEpics,
+  toggleEpicKey,
+} from "./selection";
 
 describe("selectedEpicKeys", () => {
   it("absent (null) reads as the default selection", () => {
@@ -86,5 +96,51 @@ describe("splitEpics", () => {
     const { live, finished } = splitEpics([e("x", "cancelled")]);
     expect(live).toHaveLength(1);
     expect(finished).toHaveLength(0);
+  });
+});
+
+describe("epics=all", () => {
+  const epics = [
+    { id: "E-1", key: "intake" },
+    { id: "E-2" },
+    { id: "E-3", key: "ops" },
+  ] as unknown as BuildEpic[];
+
+  it("showableEpics drops epics with no key", () => {
+    expect(showableEpics(epics).map((e) => e.id)).toEqual(["E-1", "E-3"]);
+  });
+
+  it("selects every showable epic when it is the whole parameter", () => {
+    expect(resolveSelection("all", ["intake"], epics)).toEqual(["intake", "ops"]);
+  });
+
+  it("is not stored, while an explicit list and the empty selection are", () => {
+    expect(isAllEpics("all")).toBe(true);
+    expect(shouldStoreSelection("all")).toBe(false);
+    expect(shouldStoreSelection("a,b")).toBe(true);
+    expect(shouldStoreSelection("")).toBe(true);
+    expect(shouldStoreSelection(null)).toBe(false);
+  });
+
+  it("leaves an explicit list, the empty value, and the default exactly as before", () => {
+    expect(resolveSelection("a,b", ["x"], epics)).toEqual(["a", "b"]);
+    expect(resolveSelection("", ["x"], epics)).toEqual([]);
+    expect(resolveSelection(null, ["x"], epics)).toEqual(["x"]);
+  });
+
+  it("reads a key literally named all as a key whenever it is not the whole parameter", () => {
+    expect(isAllEpics("all,ops")).toBe(false);
+    expect(resolveSelection("ops,all", [], epics)).toEqual(["ops", "all"]);
+    // A selection that is just that one key serializes so it cannot be read as the special value.
+    expect(epicsParamValue(["all"])).toBe("all,");
+    expect(isAllEpics(epicsParamValue(["all"]))).toBe(false);
+    expect(selectedEpicKeys(epicsParamValue(["all"]), [])).toEqual(["all"]);
+  });
+
+  it("a reader's change from all becomes an explicit stored list", () => {
+    const next = toggleEpicKey(resolveSelection("all", [], epics), "ops");
+    expect(next).toEqual(["intake"]);
+    expect(epicsParamValue(next)).toBe("intake");
+    expect(shouldStoreSelection(epicsParamValue(next))).toBe(true);
   });
 });

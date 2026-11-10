@@ -60,7 +60,7 @@ const queue = (n: number): Queue => ({ entries: Array.from({ length: n }, (_, i)
 // A /api/build payload: one epic whose feature cards sit in the named columns.
 // A stored-ready feature with work in flight is served with column "active",
 // the board's own assignment, which the line must follow.
-function buildBoard(cols: { active?: number; readyActive?: number; review?: number; done?: number; tasks?: number }): BuildBoard {
+function buildBoard(cols: { active?: number; readyActive?: number; review?: number; done?: number; tasks?: number; keyless?: number }): BuildBoard {
   const features: BuildFeature[] = [];
   const add = (n: number | undefined, status: string, column: string, label: string) => {
     for (let i = 0; i < (n ?? 0); i++) {
@@ -78,12 +78,21 @@ function buildBoard(cols: { active?: number; readyActive?: number; review?: numb
   add(cols.readyActive, "ready", "active", "r");
   add(cols.review, "active", "in_review", "v");
   add(cols.done, "done", "done", "d");
-  return {
-    epics: [{
-      noun: "epic", id: "E-1", key: "intake", title: "Intake", ref: "intake (E-1)", status: "active",
-      contributors: [], features,
-    }],
-  } as unknown as BuildBoard;
+  // An epic with no key is on no Build selection, so its cards are never shown.
+  const keyless = Array.from({ length: cols.keyless ?? 0 }, (_, i) => ({
+    id: `F-k${i}`, title: `Keyless feature ${i}`, status: "active", column: "active", contributors: [],
+    ref: `F-k${i}`, task_done: 0, task_total: 0, open_work_items: 0, tasks: [],
+  }));
+  const epics = [{
+    noun: "epic", id: "E-1", key: "intake", title: "Intake", ref: "intake (E-1)", status: "active",
+    contributors: [], features,
+  }];
+  if (keyless.length > 0) {
+    epics.push({
+      noun: "epic", id: "E-2", title: "Keyless", ref: "E-2", status: "active", contributors: [], features: keyless,
+    } as unknown as (typeof epics)[number]);
+  }
+  return { epics } as unknown as BuildBoard;
 }
 
 function renderAt(path = "/explore") {
@@ -124,9 +133,9 @@ describe("Explore empty reading pane", () => {
     const needs = await screen.findByRole("link", { name: "3 decisions need you" });
     expect(needs).toHaveAttribute("href", "/");
     // In flight is the feature cards in Build's Active and In review columns,
-    // across every epic, so the link opens Build with all epics selected.
+    // across every epic, so the link opens Build with `?epics=all`.
     const flight = await screen.findByRole("link", { name: "3 features in flight" });
-    expect(flight).toHaveAttribute("href", "/build?epics=intake");
+    expect(flight).toHaveAttribute("href", "/build?epics=all");
   });
 
   it("with no history shows the two links and the old sentence", async () => {
@@ -135,14 +144,14 @@ describe("Explore empty reading pane", () => {
     expect(await screen.findByText(SENTENCE)).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Recently opened" })).not.toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "1 decision needs you" })).toHaveAttribute("href", "/");
-    expect(await screen.findByRole("link", { name: "1 feature in flight" })).toHaveAttribute("href", "/build?epics=intake");
+    expect(await screen.findByRole("link", { name: "1 feature in flight" })).toHaveAttribute("href", "/build?epics=all");
   });
 
   it("says nothing needs you and nothing is in flight at zero, still as links", async () => {
     stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/build": buildBoard({ done: 2 }) }));
     renderAt();
     expect(await screen.findByRole("link", { name: "Nothing needs you right now" })).toHaveAttribute("href", "/");
-    expect(await screen.findByRole("link", { name: "Nothing in flight" })).toHaveAttribute("href", "/build?epics=intake");
+    expect(await screen.findByRole("link", { name: "Nothing in flight" })).toHaveAttribute("href", "/build?epics=all");
   });
 
   it("renders the links without counts, and no spinner, while loading or after a failed read", async () => {
@@ -150,7 +159,7 @@ describe("Explore empty reading pane", () => {
     renderAt();
     const needs = await screen.findByRole("link", { name: "Decisions that need you" });
     expect(needs).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Work in flight" })).toHaveAttribute("href", "/build");
+    expect(screen.getByRole("link", { name: "Work in flight" })).toHaveAttribute("href", "/build?epics=all");
     expect(screen.queryByText(/Loading/)).not.toBeInTheDocument();
   });
 
@@ -185,6 +194,24 @@ describe("Explore empty reading pane", () => {
     // BUILD_COLUMNS order: draft, specified, ready, active, in review, done.
     const cards = (index: number) => columns[index].querySelectorAll('[role="link"]').length;
     expect(cards(3) + cards(4)).toBe(3);
+  });
+
+  it("counts a keyless epic's Active feature on neither side, and leaves the saved selection alone", async () => {
+    window.localStorage.setItem("tiller-build-epics:acme", "intake");
+    stubFetch(baseRoutes({
+      "/api/queue": queue(0),
+      "/api/build": buildBoard({ active: 1, review: 1, keyless: 2 }),
+      "/api/drift": { compared: 0 },
+    }));
+    renderAt();
+    const link = await screen.findByRole("link", { name: "2 features in flight" });
+    fireEvent.click(link);
+    await screen.findByText("Feature a0");
+    const columns = document.querySelectorAll(".board-column");
+    const cards = (index: number) => columns[index].querySelectorAll('[role="link"]').length;
+    expect(cards(3) + cards(4)).toBe(2);
+    expect(screen.queryByText("Keyless feature 0")).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("tiller-build-epics:acme")).toBe("intake");
   });
 
   it.each([

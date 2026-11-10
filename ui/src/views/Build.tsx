@@ -61,7 +61,14 @@ import FeatureCard from "./build/FeatureCard";
 import { composeMix, composeMixCaption } from "./build/mix";
 import { askLabelsFrom, driftIdsFrom } from "./build/overlays";
 import { readPanelState, writePanelState } from "./build/panelStorage";
-import { epicsParamValue, selectedEpicKeys, splitEpics, toggleEpicKey } from "./build/selection";
+import {
+  epicsParamValue,
+  resolveSelection,
+  selectedEpicKeys,
+  shouldStoreSelection,
+  splitEpics,
+  toggleEpicKey,
+} from "./build/selection";
 import { readSelectionKeys, writeSelectionKeys } from "./build/selectionStorage";
 import "./build.css";
 
@@ -142,10 +149,12 @@ export default function Build() {
   // (a pasted link's own selection must win on the next reload too, not
   // just this one).
   useEffect(() => {
-    if (rawEpics === null || projectKey === undefined) {
+    // `?epics=all` is a visit-only selection (build/selection.ts): never stored.
+    if (!shouldStoreSelection(rawEpics) || projectKey === undefined) {
       return;
     }
     writeSelectionKeys(projectKey, selectedEpicKeys(rawEpics, []));
+    // rawEpics is non-null here: shouldStoreSelection is false for null.
   }, [rawEpics, projectKey]);
 
   if (board.error !== null) {
@@ -175,7 +184,7 @@ export default function Build() {
   }
 
   const defaultKeys = summary.data?.active_epics ?? [];
-  const selected = selectedEpicKeys(rawEpics, defaultKeys);
+  const selected = resolveSelection(rawEpics, defaultKeys, board.data.epics);
   const selectedSet = new Set(selected);
   // Unknown keys are ignored gracefully (the URL semantics table's own
   // words): matchedEpics is a FILTER over board.data.epics, so it both

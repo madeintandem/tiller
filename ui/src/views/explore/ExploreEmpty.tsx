@@ -10,25 +10,25 @@ import { buildPath, queuePath } from "../../api";
 import { useFetch } from "../../hooks";
 import { readRecent } from "../../lib/recentNodes";
 import { columnCards, visibleCards } from "../build/columns";
-import { epicsParamValue } from "../build/selection";
+import { ALL_EPICS, showableEpics } from "../build/selection";
 import "../explore-empty.css";
 
 // "In flight" is the number of feature cards in Build's Active and In review
-// columns, across every epic: the board's own column assignment
+// columns for the epics Build can show when all are selected (showableEpics,
+// the filter Build's own `?epics=all` uses, so a keyless epic is in neither the
+// number nor the board). The column is the board's own assignment
 // (BuildFeature.column, which puts a stored-ready feature with work in flight in
 // Active) through the same visibleCards and columnCards Build runs. Tasks are
 // not counted; Home's In flight column lists those.
 export function inFlightCount(board: BuildBoard): number {
-  const cards = visibleCards(board.epics);
+  const cards = visibleCards(showableEpics(board.epics));
   return columnCards(cards, "active").length + columnCards(cards, "in_review").length;
 }
 
-// The link opens Build with every epic selected, so the board shows the cards
-// the number counts rather than Build's stored or default epic selection.
-function buildHref(board: BuildBoard | null): string {
-  const keys = board === null ? [] : board.epics.flatMap((epic) => (epic.key === undefined ? [] : [epic.key]));
-  return keys.length === 0 ? "/build" : `/build?epics=${epicsParamValue(keys)}`;
-}
+// The link opens Build with every epic selected for that visit (`?epics=all`),
+// so the board shows the cards the number counts, and Build does not replace
+// the reader's stored epic selection with it.
+const BUILD_HREF = `/build?epics=${ALL_EPICS}`;
 
 function nounLabel(noun: string): string {
   return noun === "" ? noun : noun.charAt(0).toUpperCase() + noun.slice(1);
@@ -58,7 +58,7 @@ export default function ExploreEmpty({ projectKey }: { projectKey: string | unde
     <div className="explore-detail">
       <p className="explore-empty-links">
         <Link to="/">{needs}</Link>
-        <Link to={buildHref(board.data)} title="Features in Build's Active and In review columns, across all epics">
+        <Link to={BUILD_HREF} title="Features in Build's Active and In review columns, across all epics">
           {flight}
         </Link>
       </p>

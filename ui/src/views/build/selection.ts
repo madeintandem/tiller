@@ -51,7 +51,43 @@ export function toggleEpicKey(selected: string[], key: string): string[] {
 // as absent again, silently reviving the default selection the human just
 // clicked away from.
 export function epicsParamValue(selected: string[]): string {
-  return selected.join(",");
+  const value = selected.join(",");
+  // An epic literally keyed "all", selected alone, must not read back as the
+  // special value below; the trailing comma is dropped by the parser.
+  return value === ALL_EPICS ? `${value},` : value;
+}
+
+// `?epics=all` selects every epic the board can show, for this visit only.
+// It is the special value ONLY when it is the whole parameter: "all,ops" is a
+// list that names a key "all" and a key "ops", and an epic keyed "all" is
+// selected alone through "all," (epicsParamValue). The value is never written
+// to the stored selection; the reader's own next change replaces it in the URL
+// with an explicit list, which is stored as usual.
+export const ALL_EPICS = "all";
+
+export function isAllEpics(raw: string | null): boolean {
+  return raw === ALL_EPICS;
+}
+
+// The epics Build can show at all: the board selects epics by key, so an
+// epic with none is on no selection. The Explore empty pane counts through
+// this same filter, so its number and the board cannot drift.
+export function showableEpics<T extends { key?: string }>(epics: readonly T[]): T[] {
+  return epics.filter((epic) => epic.key !== undefined);
+}
+
+// The selection a raw `epics` param means, given the board's epics.
+export function resolveSelection(raw: string | null, defaultKeys: string[], epics: readonly BuildEpic[]): string[] {
+  if (isAllEpics(raw)) {
+    return showableEpics(epics).map((epic) => epic.key as string);
+  }
+  return selectedEpicKeys(raw, defaultKeys);
+}
+
+// Whether an arrival's raw param becomes the remembered selection: any
+// explicit value (the empty one included) except the visit-only `all`.
+export function shouldStoreSelection(raw: string | null): boolean {
+  return raw !== null && !isAllEpics(raw);
 }
 
 // splitEpics separates the epics the rail lists from the finished ones it
