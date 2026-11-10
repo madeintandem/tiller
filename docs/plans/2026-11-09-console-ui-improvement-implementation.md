@@ -37,7 +37,7 @@ Building everything in the hunt also overturns sentences the console spec states
 
 Two hunt inferences did not survive reading the code, and the plan follows the code:
 
-- **"1000 events" is not a read cap.** `views.RecapOf` sets `Total` before any cap and `/api/recap` has no limit. Task 6 checks the number on CALCTP and changes nothing if it is the true count.
+- **"1000 events" is not a read cap.** `views.RecapOf` sets `Total` before any cap and `/api/recap` has no limit. Task 6 checks the number on Acme and changes nothing if it is the true count.
 - **Filter mode has no free-text inputs.** Each axis is a `FilterCombobox` fed by server facets. Task 32 makes it show its options on focus and adds the column header.
 
 ## Global Constraints
@@ -87,7 +87,7 @@ Diagnosed 2026-11-09 with a goroutine dump and a logging `git` shim. `NodeHandle
 - [ ] **Step 5: Run** `go test ./internal/execution ./internal/serve`. Expected: PASS.
 - [ ] **Step 6: Write the failing split tests.** Go, `TestNodeIntegrationHistorySkipsSourceRead`: with the git shim, `?history=integration` on an observed task makes no `cat-file` call for event blobs and sets `history_pending`. UI: the node page requests `?history=integration`, renders the header and spec from it, and the History tab of a node with `history_pending` then requests the full path, shows `Reading branch history...` as its last row until that answers, and shows the merged rows after. A node without `history_pending` makes one request.
 - [ ] **Step 7: Implement the split,** then run both suites. Expected: PASS.
-- [ ] **Step 8: Measure on CALCTP.** Build to the scratch directory, serve `~/dev/calctp-platform` with no other load on the machine, and time `curl` on an observed task for each source kind present. A committed source must answer the full path in under 2 seconds. Record the working-tree number in the commit body; if it is over 2 seconds, memoise parsed events per `(repo.common, commit oid)` beside `commitTrees` in `internal/execution/treecache.go` and measure again.
+- [ ] **Step 8: Measure on Acme.** Build to the scratch directory, serve the Acme checkout with no other load on the machine, and time `curl` on an observed task for each source kind present. A committed source must answer the full path in under 2 seconds. Record the working-tree number in the commit body; if it is over 2 seconds, memoise parsed events per `(repo.common, commit oid)` beside `commitTrees` in `internal/execution/treecache.go` and measure again.
 - [ ] **Step 9: Commit** `Execution: read a source's events in one batch; node pages no longer wait on branch history`.
 
 Not covered here: `newerIntegrationOwnership` (`snapshot.go:246`) calls the same `events` inside `execution.Load`. It did not fire in the diagnosis and it inherits the batch read.
@@ -172,7 +172,7 @@ Not covered here: `newerIntegrationOwnership` (`snapshot.go:246`) calls the same
 - [ ] **Step 1: Write the failing tests.** Fallback: the last fallthrough returns `null`, so no card names `tiller show`; attestation gives why `Criterion C2 is waiting on your sign-off.`; answer gives `This <noun> is waiting on your answer to "<question title>".`; approval gives `This <noun> is waiting on your approval.` Fix toolbar reads `25 open: 1 bug, 21 chores, 3 tweaks. 5 recently closed shown.` and drops the second sentence at zero closed. Home's Fix tile caption starts `open: `. Home's funnel caption reads `85 features in flow, 67 retired · 443 tasks`. Report's first tile carries the sub-line `of approved scope`.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement.** `FallbackBox` renders the why sentence above the command.
-- [ ] **Step 4: Check the events count on CALCTP.** `curl -s localhost:<port>/api/recap/peek` from a server on `~/dev/calctp-platform` and count events after its `since` with `tiller` or `ls .tiller/events`. If `total` matches, record "true count, no change" in the commit body. If it does not, stop and report: that is a server defect this plan does not cover.
+- [ ] **Step 4: Check the events count on Acme.** `curl -s localhost:<port>/api/recap/peek` from a server on the Acme checkout and count events after its `since` with `tiller` or `ls .tiller/events`. If `total` matches, record "true count, no change" in the commit body. If it does not, stop and report: that is a server defect this plan does not cover.
 - [ ] **Step 5: Run** `cd ui && npm test`. Expected: PASS.
 - [ ] **Step 6: Commit** `Console: attention card says why; counts name their scope`.
 

@@ -24,17 +24,17 @@ const sample = () =>
   recap([
     group({ id: "E-1", key: "audit", title: "Audit Engine" }, [
       entry("spec.feature", "jc"),
-      entry("approve.feature", "allen"),
+      entry("approve.feature", "dana"),
       entry("add.question", "jc", true),
     ]),
-    group({ id: "E-2", key: "billing" }, [entry("spec.feature", "allen"), entry("check.feature", "jc", true)]),
+    group({ id: "E-2", key: "billing" }, [entry("spec.feature", "dana"), entry("check.feature", "jc", true)]),
     group(null, [entry("add.epic", "jc")]),
   ]);
 
 describe("historyFacets", () => {
   it("lists contributors, phrase verbs with asked you first, and epics by title", () => {
     const f = historyFacets(sample());
-    expect(f.actors.slice().sort()).toEqual(["allen", "jc"]);
+    expect(f.actors.slice().sort()).toEqual(["dana", "jc"]);
     expect(f.kinds[0]).toBe(ASKED_YOU);
     expect(kindLabel(f.kinds[0])).toBe("asked you");
     expect(f.kinds.slice(1)).toEqual(f.kinds.slice(1).slice().sort());
@@ -68,7 +68,7 @@ describe("filterRecap", () => {
   });
 
   it("filters by actor and drops empty groups", () => {
-    const out = filterRecap(sample(), { actor: "allen" });
+    const out = filterRecap(sample(), { actor: "dana" });
     expect(out.groups.map((g) => g.entries.length)).toEqual([1, 1]);
     expect(out.shown).toBe(2);
     expect(out.total).toBe(1000);
@@ -76,7 +76,7 @@ describe("filterRecap", () => {
 
   it("filters by kind, asked you matching exactly the ask flag the tally counts", () => {
     expect(filterRecap(sample(), { kind: "specced" }).shown).toBe(2);
-    const withQuestion = recap([group(null, [entry("add.question", "allen"), entry("check.feature", "jc", true), entry("add.question", "jc", true)])]);
+    const withQuestion = recap([group(null, [entry("add.question", "dana"), entry("check.feature", "jc", true), entry("add.question", "jc", true)])]);
     const askedYou = filterRecap(withQuestion, { kind: ASKED_YOU });
     const tally = withQuestion.groups.flatMap((g) => g.entries).filter((e) => e.ask).length;
     expect(askedYou.shown).toBe(tally);
@@ -95,6 +95,6 @@ describe("filterRecap", () => {
 
   it("composes filters", () => {
     expect(filterRecap(sample(), { actor: "jc", kind: "specced", epic: "E-1" }).shown).toBe(1);
-    expect(filterRecap(sample(), { actor: "allen", epic: "E-1", kind: ASKED_YOU }).groups).toEqual([]);
+    expect(filterRecap(sample(), { actor: "dana", epic: "E-1", kind: ASKED_YOU }).groups).toEqual([]);
   });
 });
