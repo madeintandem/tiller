@@ -148,7 +148,7 @@ function DriftStat({ state }: { state: FetchState<DriftReportView> }) {
     return null;
   }
   return (
-    <Link to="/drift" className="stat drift">
+    <Link to="/?tab=drift" className="stat drift">
       <div className="n">{band.total}</div>
       <div className="lbl">Drift</div>
       <div className="cap muted">{band.text}</div>

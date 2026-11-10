@@ -9,7 +9,6 @@ import ThemeToggle from "./components/ThemeToggle";
 import { titleOf, useDocumentTitle, useFetch } from "./hooks";
 import { PeopleProvider } from "./people";
 import Build from "./views/Build";
-import Drift from "./views/Drift";
 import Explore, { NoSelectionPane } from "./views/Explore";
 import FileDetail from "./views/FileDetail";
 import History from "./views/History";
@@ -172,13 +171,9 @@ export default function App() {
               selection now rides the canonical /node/ address, so a
               pre-change bookmark redirects rather than 404s. */}
           <Route path="/explore/:noun/:id" element={<SelectionRedirect />} />
-          {/* The header band's drift count links here (ui-surface.md, the
-              header band sentence): the same candidates-and-uncovered answer
-              `tiller drift` gives. Not in the top nav (Home, Explore,
-              Build, Fix, Report, History): the band link is the
-              discovery path, matching how the queue and node pages already
-              surface without a standing nav entry of their own. */}
-          <Route path="/drift" element={<Drift />} />
+          {/* Drift is a tab on Home now; the old address forwards, hash and
+              all, so a bookmark or a pre-change link still lands on it. */}
+          <Route path="/drift" element={<DriftRedirect />} />
           {/* Without this, a path no route claims renders the chrome and an
               empty body: HTTP 200, header drawn, nothing inside, no error. A
               blank page is the one answer a router must never give. */}
@@ -212,6 +207,14 @@ function RecapRedirect() {
 function FixRedirect() {
   const location = useLocation();
   return <Navigate to={`/fix${location.search}${location.hash}`} replace />;
+}
+
+// The pre-tab /drift URL, a forwarding address on the same replace-not-push
+// rule. The hash rides along; a stray query string is dropped, since the
+// report took none and Home's own params are not the old page's.
+function DriftRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/?tab=drift${location.hash}`} replace />;
 }
 
 // The address nothing claims. It is deliberately not the node page's "No such

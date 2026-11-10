@@ -896,7 +896,7 @@
 /* The panel itself adds no chrome of its own: each finding is one
    .instr-drift row (the grammar the basis line set), so the panel only
    spaces the stack and carries the two quiet extras, the uncovered lines
-   and the /drift footer link. */
+   and the Drift tab footer link. */
 .instr-drift-uncovered {
   margin: 12px 0 0;
   font-size: 12px;

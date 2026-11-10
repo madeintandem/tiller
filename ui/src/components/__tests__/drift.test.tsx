@@ -1,4 +1,4 @@
-// Vitest/RTL coverage for the /drift page: the
+// Vitest/RTL coverage for the Drift report (Home's Drift tab): the
 // console's read of the exact sweep `tiller drift` renders. Written before
 // Drift.tsx exists, per the branch's TDD discipline (home.test.tsx's own
 // stubFetch-keyed-by-URL convention; no MSW in this harness).
@@ -16,7 +16,9 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DriftReportView } from "../../api";
-import Drift from "../../views/Drift";
+import { driftPath } from "../../api";
+import { useFetch } from "../../hooks";
+import { DriftReport } from "../../views/Drift";
 
 afterEach(() => {
   cleanup();
@@ -44,10 +46,16 @@ function stubFetch(routes: Record<string, unknown>) {
   return spy;
 }
 
+// Home holds the fetch and hands the report its state; this stands in for
+// that host so the report is tested the way it is mounted.
+function DriftHost() {
+  return <DriftReport state={useFetch<DriftReportView>(driftPath)} />;
+}
+
 function renderDrift() {
   return render(
     <MemoryRouter>
-      <Drift />
+      <DriftHost />
     </MemoryRouter>,
   );
 }

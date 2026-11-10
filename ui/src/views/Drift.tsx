@@ -6,17 +6,16 @@
 // and --json output both render, so the two surfaces cannot disagree about
 // what a sweep found.
 //
-// This page is a report, not a new surface grammar: rows
+// This report is not a new surface grammar: rows
 // reuse Explore's own list chrome (explore.css's rule-list and
 // explore-result-* classes) rather than inventing a layout, and drift.css
 // adds only what that flat, single-line row shape never needed, the
 // multi-line detail/files/since/context stack a candidate row carries.
 
 import type { CandidateView, DriftReportView, UncoveredView } from "../api";
-import { driftPath } from "../api";
 import EmptyNote from "../components/EmptyNote";
 import { DriftCandidateDetails, DriftTargetLink } from "../components/DriftFinding";
-import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import type { FetchState } from "../hooks";
 import { groupUncovered, markerCopy, reasonCopy } from "../lib/drift";
 import { has } from "../lib/has";
 import vocabulary from "../lib/vocabulary.json";
@@ -38,12 +37,13 @@ import "./drift.css";
 // server that this list lacks still renders, after the known ones.
 const MARKER_ORDER: string[] = vocabulary.drift_markers;
 
-export default function Drift() {
-  useDocumentTitle(titleOf("Drift"));
-  const { data, error, loading } = useFetch<DriftReportView>(driftPath);
+// DriftReport is the report as a Home tab (R4): Home already fetches
+// /api/drift for its Drift stat tile, so the tab renders from that same state
+// rather than asking again, and the page's own heading is the tab's name.
+export function DriftReport({ state }: { state: FetchState<DriftReportView> }) {
+  const { data, error, loading } = state;
   return (
     <section className="drift-page">
-      <h1>Drift</h1>
       {error !== null && <p className="error">{error}</p>}
       {error === null && loading && <p className="muted">Sweeping the working tree...</p>}
       {data !== null && <DriftReportBody report={data} />}

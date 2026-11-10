@@ -2024,7 +2024,7 @@ describe("NodeDetail: the drift panel", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /project-wide drift report/ })).toHaveAttribute(
       "href",
-      "/drift",
+      "/?tab=drift",
     );
 
     fireEvent.click(screen.getByText("Drifted").closest("button") as HTMLElement);

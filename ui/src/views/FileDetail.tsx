@@ -160,7 +160,7 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
           <CopyCmd cmd={approve} />
         </div>
       )}
-      <Link to="/drift" className="muted instr-drift-more">project-wide drift report</Link>
+      <Link to="/?tab=drift" className="muted instr-drift-more">project-wide drift report</Link>
     </section>
   );
 }

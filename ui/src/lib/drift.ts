@@ -1,7 +1,7 @@
 // Shared drift-row helpers, lifted from views/Drift.tsx when the node page's
 // drift panel became the second surface rendering candidate rows (JC's
 // chip-to-panel ask, 2026-08-06): one composer for the reference string and
-// one for the short sha, so the /drift page and the panel cannot render one
+// one for the short sha, so the Drift report and the panel cannot render one
 // candidate two ways.
 
 import type { RevisionRefView, UncoveredView } from "../api";

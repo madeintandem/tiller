@@ -347,7 +347,7 @@ func basisPayload(t *store.Tree, n store.Node) *views.ActiveBasisView {
 // they ride the detail payload beside the candidates. The badge contract is
 // unchanged: an uncovered row still never becomes a badge, so a node with
 // only uncovered rows stays chipless and its detail reaches the reader
-// through the /drift page alone.
+// through the Drift tab on Home alone.
 func driftViews(t *store.Tree, n store.Node) ([]views.DriftBadgeView, *views.NodeDriftView, error) {
 	candidates, uncovered, err := drift.ForNode(t, vcs.NewHeadSnapshot(vcs.New(t.Root)), n)
 	if err != nil {

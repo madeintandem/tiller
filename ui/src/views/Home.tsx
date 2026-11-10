@@ -34,6 +34,8 @@ import type {
   Streams,
   WhoseMoveCounts,
 } from "../api";
+import { DriftReport } from "./Drift";
+import { candidateCount, composeDriftBand } from "./home/driftBand";
 import { boardPath, driftPath, executionPath, listPath, nextPath, queuePath, recapPath } from "../api";
 import AllClear from "../components/AllClear";
 import type { AllClearReviewItem } from "../components/AllClear";
@@ -153,7 +155,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // Branches (JC, 2026-10-06; they used to sit above every page, and the tab
   // is about where each in-flight task's branch was found), and recovered
   // review records under Recovered reviews. The choice rides
-  // ?tab=branches or ?tab=recovered, absent for Overview, replace rather than push like
+  // ?tab=branches, ?tab=recovered, or ?tab=drift, absent for Overview, replace rather than push like
   // ?needs= above, and the two params leave each other alone. An unknown
   // value falls back to Overview through NodeTabs' own first-tab rule.
   const selectView = (key: string) => {
@@ -176,6 +178,15 @@ export default function Home({ summary, summaryError }: HomeProps) {
   const recoveryCount = recoveryOwners.length;
   const recoveryUnsettled = recoveryOwners.some(({ row }) => row.recovered_crossings_pending === true ||
     row.current_acceptance?.acceptance_ready === false);
+
+  // Drift is a tab here, not a page of its own (R4, replacing the old /drift
+  // address, which now forwards). It renders from the same /api/drift read the
+  // header band's tile uses. Present only while the sweep has something to
+  // show, like Recovered reviews; its count is candidates plus uncovered and
+  // warns when any candidate exists (an uncovered row is a gap in coverage,
+  // not a finding). The count stays text beside the name, never color alone.
+  const driftBand = drift.data === null ? null : composeDriftBand(drift.data);
+  const driftCandidates = drift.data === null ? 0 : candidateCount(drift.data);
 
   const overview = (
     <>
@@ -263,6 +274,15 @@ export default function Home({ summary, summaryError }: HomeProps) {
               count: recoveryCount,
               countTone: recoveryUnsettled ? "warning" as const : undefined,
               render: () => <RecoveredReviews owners={recoveryOwners} features={features.data?.nodes ?? []} />,
+            }]
+            : []),
+          ...(driftBand !== null
+            ? [{
+              key: "drift",
+              label: "Drift",
+              count: driftBand.total,
+              countTone: driftCandidates > 0 ? "warning" as const : undefined,
+              render: () => <DriftReport state={drift} />,
             }]
             : []),
         ]}

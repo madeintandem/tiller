@@ -1518,7 +1518,7 @@ describe("Home header band: shelf tile", () => {
 });
 
 describe("Home header band: drift slot", () => {
-  it("renders a count and text distinguishing candidates from uncovered, linking to /drift", async () => {
+  it("renders a count and text distinguishing candidates from uncovered, linking to the Drift tab", async () => {
     const drift: DriftReportView = {
       compared: 5,
       candidates: {
@@ -1532,7 +1532,7 @@ describe("Home header band: drift slot", () => {
     renderHome(summary());
 
     const link = await screen.findByRole("link", { name: /drift/i });
-    expect(link).toHaveAttribute("href", "/drift");
+    expect(link).toHaveAttribute("href", "/?tab=drift");
     expect(link.textContent).toContain("3");
     expect(link.textContent).toContain("2 drifted, 1 unchecked");
   });

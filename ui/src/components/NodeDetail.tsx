@@ -135,8 +135,8 @@ function BasisRow({ page }: { page: NodePage }) {
 // filtered out of the candidate rows so one finding never renders twice;
 // every other marker renders through DriftCandidateRow; uncovered rows
 // follow, muted, because "the sweep could not check this" is a fact worth a
-// line but never a drift claim; and the footer links the project-wide /drift
-// report. The panel renders nothing at all when there is nothing to say,
+// line but never a drift claim; and the footer links the project-wide drift
+// report (Home's Drift tab). The panel renders nothing at all when there is nothing to say,
 // the same absent-not-empty discipline the payload keeps.
 function DriftPanel({ page }: { page: NodePage }) {
   const basis = page.active_basis;
@@ -158,7 +158,7 @@ function DriftPanel({ page }: { page: NodePage }) {
           {has(u.detail) && <> ({u.detail})</>}
         </p>
       ))}
-      <Link to="/drift" className="muted instr-drift-more">
+      <Link to="/?tab=drift" className="muted instr-drift-more">
         project-wide drift report
       </Link>
     </div>
@@ -168,7 +168,7 @@ function DriftPanel({ page }: { page: NodePage }) {
 // DriftCandidateRow renders one non-active_basis finding in the same
 // .instr-drift row grammar BasisRow set: the marker said as a word, the
 // facts the sweep recorded (detail sentence, files as plain text - the
-// basenames nuance the /drift page documents holds here too - the since
+// basenames nuance the Drift tab documents holds here too - the since
 // anchor, context lines), and the clearing move as a copyable command where
 // one exists; where none does (stale_spec, orphan_eval) no command renders,
 // because inventing one is the thing the console must never do. A candidate

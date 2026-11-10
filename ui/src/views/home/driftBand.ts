@@ -32,7 +32,7 @@ export function composeDriftBand(report: DriftReportView): DriftBand | null {
   return { total, text: `${candidates} drifted, ${uncovered} unchecked` };
 }
 
-function candidateCount(report: DriftReportView): number {
+export function candidateCount(report: DriftReportView): number {
   if (report.candidates === undefined) {
     return 0;
   }

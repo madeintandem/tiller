@@ -509,25 +509,8 @@ describe("App routing: /bugs-chores, the pre-rename address of Fix", () => {
   });
 });
 
-describe("App routing: /drift, the header band's link target", () => {
-  it("reaches the Drift page rather than the catch-all", async () => {
-    stubFetch({
-      "/api/status": summary(),
-      "/api/drift": { compared: 3, disabled: [] },
-    });
-
-    render(
-      <MemoryRouter initialEntries={["/drift"]}>
-        <App />
-      </MemoryRouter>,
-    );
-
-    // A dropped or misplaced Route line (below the catch-all rather than
-    // above it) would render "No such page" here instead.
-    expect(await screen.findByRole("heading", { name: "Drift" })).toBeInTheDocument();
-    expect(screen.queryByText(/No such page/i)).not.toBeInTheDocument();
-  });
-});
+// The old /drift address forwards to Home's Drift tab; its scenarios (hash
+// kept, report rendered, no catch-all) live in home-drift-tab.test.tsx.
 
 describe("App routing: a noun with nothing after it", () => {
   it("renders 'No node addressed' rather than spinning forever", async () => {
@@ -781,7 +764,7 @@ describe("App routing: loose Markdown files live under the Explore shell", () =>
     expect(within(baseline).getByRole("button", { name: remedy })).toBeInTheDocument();
     fireEvent.click(shifted);
     expect(within(baseline).getByText("Working-tree code differs")).toBeInTheDocument();
-    expect(within(baseline).getByRole("link", { name: "project-wide drift report" })).toHaveAttribute("href", "/drift");
+    expect(within(baseline).getByRole("link", { name: "project-wide drift report" })).toHaveAttribute("href", "/?tab=drift");
   });
 
   it("keeps unconfirmed review and comparison failure visible without claiming a clean baseline", async () => {
