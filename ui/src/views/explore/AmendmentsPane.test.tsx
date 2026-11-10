@@ -31,7 +31,7 @@ function renderPane(url = "/amendments") {
   );
 }
 
-const pressed = () => screen.getByRole("button", { current: true }).textContent;
+const pressed = () => screen.getByRole("tab", { selected: true }).textContent;
 
 const row = (id: string, status: string, proposedAt?: string, title = `Title ${id}`) => ({
   noun: "amendment",
@@ -133,9 +133,9 @@ describe("AmendmentsPane", () => {
     it("pressing each tab writes it to the URL, All as status=all", () => {
       serve(rows);
       renderPane();
-      fireEvent.click(screen.getByRole("button", { name: /^Approved/ }));
+      fireEvent.click(screen.getByRole("tab", { name: /^Approved/ }));
       expect(screen.getByTestId("where").textContent).toBe("?status=approved");
-      fireEvent.click(screen.getByRole("button", { name: /^All/ }));
+      fireEvent.click(screen.getByRole("tab", { name: /^All/ }));
       expect(screen.getByTestId("where").textContent).toBe("?status=all");
       expect(pressed()).toMatch(/^All/);
     });

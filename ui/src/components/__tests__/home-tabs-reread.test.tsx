@@ -108,27 +108,27 @@ describe("Home tabs while the page rereads", () => {
 
     held.refetch();
 
-    expect(screen.getByRole("button", { name: /^Recovered reviews/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Recovered reviews/ })).toBeInTheDocument();
     expect(screen.getByText("Refund flow")).toBeInTheDocument();
 
     await held.settle(recoveredFeatures("Refund flow, renamed"));
     expect(await screen.findByText("Refund flow, renamed")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Recovered reviews/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Recovered reviews/ })).toBeInTheDocument();
   });
 
   it("keeps the Branches tab and its count on screen until the new read lands", async () => {
     const diagnostic = { id: "T-two", code: "branch_missing", message: "No branch for this task" };
     const held = stubHeld(routes({ "/api/execution": { observations: [], diagnostics: [diagnostic] } }), "/api/execution");
     renderHome("/?tab=branches");
-    const rail = screen.getByRole("navigation", { name: "Home view" });
-    expect(await within(rail).findByRole("button", { name: "Branches · 1" })).toBeInTheDocument();
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    expect(await within(rail).findByRole("tab", { name: "Branches · 1" })).toBeInTheDocument();
 
     held.refetch();
 
-    expect(within(rail).getByRole("button", { name: "Branches · 1" })).toHaveAttribute("aria-current", "true");
+    expect(within(rail).getByRole("tab", { name: "Branches · 1" })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText(/Loading execution sources/)).not.toBeInTheDocument();
 
     await held.settle({ observations: [], diagnostics: [] });
-    expect(await within(rail).findByRole("button", { name: "Branches" })).toBeInTheDocument();
+    expect(await within(rail).findByRole("tab", { name: "Branches" })).toBeInTheDocument();
   });
 });

@@ -31,7 +31,7 @@ function renderPane(url = "/questions") {
   );
 }
 
-const pressed = () => screen.getByRole("button", { current: true }).textContent;
+const pressed = () => screen.getByRole("tab", { selected: true }).textContent;
 
 const open = {
   noun: "question",
@@ -71,7 +71,7 @@ describe("QuestionsPane", () => {
     serve([open] as never);
     renderPane();
     for (const name of [/^All/, /^Open/, /^Answered/, /^Cancelled/]) {
-      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name })).toBeInTheDocument();
     }
   });
 
@@ -113,13 +113,13 @@ describe("QuestionsPane", () => {
     it("pressing each tab writes it to the URL, All as status=all, and the page follows", () => {
       serve([answered, open] as never);
       renderPane();
-      fireEvent.click(screen.getByRole("button", { name: /^All/ }));
+      fireEvent.click(screen.getByRole("tab", { name: /^All/ }));
       expect(screen.getByTestId("where").textContent).toBe("?status=all");
       expect(pressed()).toMatch(/^All/);
-      fireEvent.click(screen.getByRole("button", { name: /^Answered/ }));
+      fireEvent.click(screen.getByRole("tab", { name: /^Answered/ }));
       expect(screen.getByTestId("where").textContent).toBe("?status=answered");
       expect(pressed()).toMatch(/^Answered/);
-      fireEvent.click(screen.getByRole("button", { name: /^Open/ }));
+      fireEvent.click(screen.getByRole("tab", { name: /^Open/ }));
       expect(screen.getByTestId("where").textContent).toBe("?status=open");
       expect(pressed()).toMatch(/^Open/);
     });

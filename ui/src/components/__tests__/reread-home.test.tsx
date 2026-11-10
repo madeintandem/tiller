@@ -64,20 +64,20 @@ describe("The shell and Home while the page rereads", () => {
     const stub = stubReread({ ...homeRoutes(), "/api/drift": drift("Legacy calc") });
     renderApp("/?tab=drift#missing_surface");
     expect(await screen.findByText("Legacy calc")).toBeInTheDocument();
-    const rail = screen.getByRole("navigation", { name: "Home view" });
-    const tab = () => within(rail).getByRole("button", { name: /^Drift/ });
-    expect(tab()).toHaveAttribute("aria-current", "true");
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    const tab = () => within(rail).getByRole("tab", { name: /^Drift/ });
+    expect(tab()).toHaveAttribute("aria-selected", "true");
     const drifted = scrolls.mock.calls.length;
     expect(drifted).toBeGreaterThan(0);
 
     const watch = watchLoading();
     stub.reread();
     expect(screen.getByText("Legacy calc")).toBeInTheDocument();
-    expect(tab()).toHaveAttribute("aria-current", "true");
+    expect(tab()).toHaveAttribute("aria-selected", "true");
 
     await stub.release({ "/api/drift": drift("Legacy calc, renamed") });
     expect(await screen.findByText("Legacy calc, renamed")).toBeInTheDocument();
-    expect(tab()).toHaveAttribute("aria-current", "true");
+    expect(tab()).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift#missing_surface");
     expect(scrolls.mock.calls.length).toBe(drifted);
     expectNoLoading(watch);

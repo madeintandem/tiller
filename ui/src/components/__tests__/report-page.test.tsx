@@ -299,8 +299,8 @@ describe("Report page", () => {
       renderReport();
 
       expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
-      expect(screen.getByRole("navigation", { name: "Report view" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Project" })).toHaveClass("active");
+      expect(screen.getByRole("tablist", { name: "Report view" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Project" })).toHaveClass("active");
       expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
     });
 
@@ -318,8 +318,8 @@ describe("Report page", () => {
       renderReport("/report?tab=agent-use");
 
       expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
-      expect(screen.queryByRole("navigation", { name: "Report view" })).toBeNull();
-      expect(screen.queryByRole("button", { name: "Agent use" })).toBeNull();
+      expect(screen.queryByRole("tablist", { name: "Report view" })).toBeNull();
+      expect(screen.queryByRole("tab", { name: "Agent use" })).toBeNull();
       expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
     });
 

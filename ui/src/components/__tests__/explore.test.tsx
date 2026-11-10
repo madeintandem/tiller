@@ -768,7 +768,7 @@ describe("Navigator: status freshness across selection", () => {
     fireEvent.click(navigator.getByRole("button", { name: "Collapse Chores" }));
     fireEvent.click(navigator.getByRole("button", { name: "Expand Chores" }));
     await act(async () => { pending.forEach((finish) => finish()); });
-    fireEvent.click(screen.getByRole("button", { name: /Tasks/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Tasks/ }));
     await waitFor(() => {
       for (const node of [feature, ...feature.children]) {
         expect(navigator.getByRole("link", { name: node.title }).parentElement?.querySelector(".state-glyph"))
@@ -1600,18 +1600,18 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
 
     const { container } = renderExplore("/questions");
 
-    const rail = within(await screen.findByRole("navigation", { name: "Question status" }));
+    const rail = within(await screen.findByRole("tablist", { name: "Question status" }));
     // The ledger opens on Open when a question is open; All is one press away.
-    expect(rail.getByRole("button", { name: "Open · 1" })).toHaveAttribute("aria-current", "true");
+    expect(rail.getByRole("tab", { name: "Open · 1" })).toHaveAttribute("aria-selected", "true");
     expect(container.querySelectorAll(".qcard")).toHaveLength(1);
-    fireEvent.click(rail.getByRole("button", { name: "All · 2" }));
+    fireEvent.click(rail.getByRole("tab", { name: "All · 2" }));
     await waitFor(() => expect(container.querySelectorAll(".qcard")).toHaveLength(2));
 
-    fireEvent.click(rail.getByRole("button", { name: "Open · 1" }));
+    fireEvent.click(rail.getByRole("tab", { name: "Open · 1" }));
     await waitFor(() => expect(container.querySelectorAll(".qcard")).toHaveLength(1));
     expect(container.querySelector(".qcard.open-q")).not.toBeNull();
 
-    fireEvent.click(rail.getByRole("button", { name: "Answered · 1" }));
+    fireEvent.click(rail.getByRole("tab", { name: "Answered · 1" }));
     await waitFor(() => expect(container.querySelector(".qcard.open-q")).toBeNull());
     expect(container.querySelectorAll(".qcard")).toHaveLength(1);
   });
@@ -1622,14 +1622,14 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
     );
 
     const { container, unmount } = renderExplore("/questions?status=answered");
-    const rail = within(await screen.findByRole("navigation", { name: "Question status" }));
-    expect(rail.getByRole("button", { name: "Answered · 1" })).toHaveAttribute("aria-current", "true");
+    const rail = within(await screen.findByRole("tablist", { name: "Question status" }));
+    expect(rail.getByRole("tab", { name: "Answered · 1" })).toHaveAttribute("aria-selected", "true");
     expect(container.querySelectorAll(".qcard")).toHaveLength(1);
     unmount();
 
     renderExplore("/questions?status=bogus");
-    const rail2 = within(await screen.findByRole("navigation", { name: "Question status" }));
-    expect(rail2.getByRole("button", { name: "Open · 1" })).toHaveAttribute("aria-current", "true");
+    const rail2 = within(await screen.findByRole("tablist", { name: "Question status" }));
+    expect(rail2.getByRole("tab", { name: "Open · 1" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("keeps an answered question's answer visible and carries no copy command for it", async () => {
@@ -2002,7 +2002,7 @@ describe("Amendments: permanent navigation and identity-safe filter results", ()
     expect(screen.getByRole("link", { name: "Amendments" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("link", { name: "Earlier reshape" }));
     expect(await screen.findByText("Earlier amendment narrative.")).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Node detail tab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tablist", { name: "Node detail tab" })).not.toBeInTheDocument();
     expect(screen.queryByText(/tiller approve amendment/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Browser Back" }));
     expect(await screen.findByRole("link", { name: "Earlier reshape" })).toHaveAttribute("href", "/node/amendment/A-approved");
@@ -2014,16 +2014,16 @@ describe("Amendments: permanent navigation and identity-safe filter results", ()
     stubFetch(baseRoutes({ "/api/ls?noun=amendments": listResult("amendment", amendmentRows) }));
     renderExplore("/amendments?status=withdrawn");
 
-    const rail = within(await screen.findByRole("navigation", { name: "Amendment status" }));
-    expect(rail.getByRole("button", { name: "Withdrawn · 1" })).toHaveAttribute("aria-current", "true");
+    const rail = within(await screen.findByRole("tablist", { name: "Amendment status" }));
+    expect(rail.getByRole("tab", { name: "Withdrawn · 1" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("link", { name: "Withdrawn reshape" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "New reshape" })).not.toBeInTheDocument();
 
-    fireEvent.click(rail.getByRole("button", { name: "All · 3" }));
+    fireEvent.click(rail.getByRole("tab", { name: "All · 3" }));
     expect(await screen.findByRole("link", { name: "New reshape" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Earlier reshape" })).toBeInTheDocument();
-    expect(rail.getByRole("button", { name: "Proposed · 1" })).toBeInTheDocument();
-    expect(rail.getByRole("button", { name: "Approved · 1" })).toBeInTheDocument();
+    expect(rail.getByRole("tab", { name: "Proposed · 1" })).toBeInTheDocument();
+    expect(rail.getByRole("tab", { name: "Approved · 1" })).toBeInTheDocument();
   });
 
   it.each([false, true])("keeps the permanent entry usable with an empty project and failed fetches=%s", async (failed) => {
@@ -2240,7 +2240,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
 
     await screen.findByRole("heading", { level: 1, name: "First Ops Feature" });
     // Tab labels are Title Case.
-    fireEvent.click(screen.getByRole("button", { name: /Dependencies/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Dependencies/ }));
     // The dependency row's link leads with the target's title.
     fireEvent.click(await screen.findByRole("link", { name: "First Audit Feature" }));
 

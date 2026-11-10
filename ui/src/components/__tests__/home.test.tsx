@@ -618,8 +618,8 @@ describe("Home needs-you: decision bands", () => {
     await screen.findByText(`${entries.length} decisions`);
 
     // Two kinds past the cap: a rail, the amendment first.
-    const rail = screen.getByRole("navigation", { name: "Decision kind" });
-    const tabs = within(rail).getAllByRole("button");
+    const rail = screen.getByRole("tablist", { name: "Decision kind" });
+    const tabs = within(rail).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent?.replace(/\s+/g, " ").trim())).toEqual([
       "Approve · amendment · 1",
       `Approve · epic decomposition · ${epicCount}`,
@@ -653,7 +653,7 @@ describe("Home needs-you: decision bands", () => {
     const { container } = renderHome(summary());
     await screen.findByText(`${entries.length} decisions`);
 
-    expect(screen.queryByRole("navigation", { name: "Decision kind" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Decision kind" })).toBeNull();
     const body = container.querySelector(".needs-body") as HTMLElement;
     const columns = [...body.children] as HTMLElement[];
     expect(columns.map((c) => c.getAttribute("data-kind"))).toEqual(["approve_amendment", "approve_epic", "answer_question"]);
@@ -695,14 +695,14 @@ describe("Home needs-you: decision bands", () => {
     const { container } = renderHome(summary(), "/", <Probe />);
     await screen.findByText("7 decisions");
 
-    const rail = screen.getByRole("navigation", { name: "Decision kind" });
-    const tabs = within(rail).getAllByRole("button");
+    const rail = screen.getByRole("tablist", { name: "Decision kind" });
+    const tabs = within(rail).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent?.replace(/\s+/g, " ").trim())).toEqual([
       "Approve · amendment · 1",
       "Approve · epic decomposition · 3",
       "Answer · question · 3",
     ]);
-    expect(tabs[0]).toHaveAttribute("aria-current", "true");
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(container.querySelectorAll(".dcard")).toHaveLength(1);
     expect(container.querySelector(".dcard .kind")).toBeNull();
     expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_amendment");
@@ -711,7 +711,7 @@ describe("Home needs-you: decision bands", () => {
     await waitFor(() => expect(container.querySelectorAll(".dcard")).toHaveLength(3));
     expect(container.querySelector(".dcard .kind")).toBeNull();
     expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_epic");
-    expect(within(rail).getByRole("button", { name: /Approve · epic decomposition/ })).toHaveAttribute("aria-current", "true");
+    expect(within(rail).getByRole("tab", { name: /Approve · epic decomposition/ })).toHaveAttribute("aria-selected", "true");
     expect(new URLSearchParams(search).get("needs")).toBe("approve_epic");
   });
 
@@ -742,7 +742,7 @@ describe("Home needs-you: decision bands", () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: small } }));
     const { container, unmount } = renderHome(summary());
     await screen.findByText("3 decisions");
-    expect(screen.queryByRole("navigation", { name: "Decision kind" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Decision kind" })).toBeNull();
     expect(container.querySelectorAll(".dcard")).toHaveLength(3);
     unmount();
 
@@ -750,7 +750,7 @@ describe("Home needs-you: decision bands", () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: oneKind } }));
     const again = renderHome(summary());
     await screen.findByText(`${oneKind.length} decisions`);
-    expect(screen.queryByRole("navigation", { name: "Decision kind" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Decision kind" })).toBeNull();
     expect(again.container.querySelectorAll(".dband")).toHaveLength(1);
   });
 
@@ -2313,12 +2313,12 @@ describe("Home tabs: Overview and Branches", () => {
   }
 
   function viewRail() {
-    return screen.getByRole("navigation", { name: "Home view" });
+    return screen.getByRole("tablist", { name: "Home view" });
   }
 
   function tabNames() {
     return within(viewRail())
-      .getAllByRole("button")
+      .getAllByRole("tab")
       .map((tab) => tab.textContent?.replace(/\s+/g, " ").trim());
   }
 
@@ -2336,7 +2336,7 @@ describe("Home tabs: Overview and Branches", () => {
     await waitFor(() => expect(tabNames()).toEqual(["Overview", "Branches · 2"]));
     // Diagnostics are warnings, so their count reads in the warning tone.
     expect(within(viewRail()).getByText("· 2")).toHaveClass("tab-count-warning");
-    expect(within(viewRail()).getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "true");
+    expect(within(viewRail()).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Task state could not be read", { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByText(/The console does not fetch Git remotes/)).not.toBeInTheDocument();
   });
@@ -2356,17 +2356,17 @@ describe("Home tabs: Overview and Branches", () => {
 
     renderHome(summary(), "/", <LocationProbe onSearch={(s) => (search = s)} />);
     await screen.findByText(/all clear/i);
-    fireEvent.click(within(viewRail()).getByRole("button", { name: /Branches/ }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: /Branches/ }));
 
     expect(new URLSearchParams(search).get("tab")).toBe("branches");
-    expect(within(viewRail()).getByRole("button", { name: /Branches/ })).toHaveAttribute("aria-current", "true");
+    expect(within(viewRail()).getByRole("tab", { name: /Branches/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Task state could not be read", { exact: false })).toBeVisible();
     expect(screen.getByRole("link", { name: "epic/feature/task-one" })).toHaveAttribute("href", "/node/task/T-one");
     expect(screen.getByRole("link", { name: "T-two" })).toHaveAttribute("href", "/node/task/T-two");
     expect(screen.getByText(/The console does not fetch Git remotes/)).toBeInTheDocument();
     expect(screen.queryByText(/all clear/i)).not.toBeInTheDocument();
 
-    fireEvent.click(within(viewRail()).getByRole("button", { name: "Overview" }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: "Overview" }));
     expect(new URLSearchParams(search).has("tab")).toBe(false);
     expect(await screen.findByText(/all clear/i)).toBeInTheDocument();
   });
@@ -2377,7 +2377,7 @@ describe("Home tabs: Overview and Branches", () => {
     renderHome(summary(), "/?tab=branches");
 
     expect(await screen.findByText("Task state could not be read", { exact: false })).toBeVisible();
-    expect(within(viewRail()).getByRole("button", { name: /Branches/ })).toHaveAttribute("aria-current", "true");
+    expect(within(viewRail()).getByRole("tab", { name: /Branches/ })).toHaveAttribute("aria-selected", "true");
   });
 
   it("keeps ?needs=<kind> beside ?tab in both directions", async () => {
@@ -2396,14 +2396,14 @@ describe("Home tabs: Overview and Branches", () => {
     );
     await screen.findByText("Task state could not be read", { exact: false });
 
-    fireEvent.click(within(viewRail()).getByRole("button", { name: "Overview" }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: "Overview" }));
     await screen.findByText("7 decisions");
     expect(new URLSearchParams(search).get("needs")).toBe("answer_question");
     expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("answer_question");
 
-    const kinds = screen.getByRole("navigation", { name: "Decision kind" });
-    fireEvent.click(within(kinds).getByRole("button", { name: /Approve · epic/ }));
-    fireEvent.click(within(viewRail()).getByRole("button", { name: /Branches/ }));
+    const kinds = screen.getByRole("tablist", { name: "Decision kind" });
+    fireEvent.click(within(kinds).getByRole("tab", { name: /Approve · epic/ }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: /Branches/ }));
     const params = new URLSearchParams(search);
     expect(params.get("tab")).toBe("branches");
     expect(params.get("needs")).toBe("approve_epic");
@@ -2414,9 +2414,9 @@ describe("Home tabs: Overview and Branches", () => {
 
     renderHome(summary());
     await screen.findByText(/all clear/i);
-    fireEvent.click(within(viewRail()).getByRole("button", { name: /Branches/ }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: /Branches/ }));
     await screen.findByText("Task state could not be read", { exact: false });
-    fireEvent.click(within(viewRail()).getByRole("button", { name: "Overview" }));
+    fireEvent.click(within(viewRail()).getByRole("tab", { name: "Overview" }));
     await screen.findByText(/all clear/i);
 
     expect(spy.mock.calls.filter((c) => String(c[0]) === "/api/execution")).toHaveLength(1);
@@ -2428,8 +2428,8 @@ describe("Home tabs: Overview and Branches", () => {
 // Recovered reviews are provenance, not decisions: they live behind their own
 // Home tab, present only while a record exists, and never on the desk itself.
 async function openRecoveredTab() {
-  const rail = screen.getByRole("navigation", { name: "Home view" });
-  fireEvent.click(await within(rail).findByRole("button", { name: /Recovered reviews/ }));
+  const rail = screen.getByRole("tablist", { name: "Home view" });
+  fireEvent.click(await within(rail).findByRole("tab", { name: /Recovered reviews/ }));
 }
 
 it("shows recovered historical policy and current green acceptance on Home without a new merge handoff", async () => {
@@ -2580,8 +2580,8 @@ describe("Home tabs: Recovered reviews", () => {
   };
 
   function tabNames() {
-    return within(screen.getByRole("navigation", { name: "Home view" }))
-      .getAllByRole("button")
+    return within(screen.getByRole("tablist", { name: "Home view" }))
+      .getAllByRole("tab")
       .map((tab) => tab.textContent?.replace(/\s+/g, " ").trim());
   }
 
@@ -2605,7 +2605,7 @@ describe("Home tabs: Recovered reviews", () => {
     renderHome(summary());
     await waitFor(() => expect(tabNames()).toEqual(["Overview", "Branches", "Recovered reviews · 1"]));
     expect(screen.queryByRole("region", { name: /recovered historical review/i })).toBeNull();
-    const rail = screen.getByRole("navigation", { name: "Home view" });
+    const rail = screen.getByRole("tablist", { name: "Home view" });
     expect(within(rail).getByText("· 1")).not.toHaveClass("tab-count-warning");
     await openRecoveredTab();
     expect(await screen.findByText("git:done-head")).toBeInTheDocument();
@@ -2614,7 +2614,7 @@ describe("Home tabs: Recovered reviews", () => {
   it("warns on the tab count while a recovery leaves acceptance unresolved", async () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/ls?noun=feature": doneFeature(false) }));
     renderHome(summary());
-    const rail = screen.getByRole("navigation", { name: "Home view" });
+    const rail = screen.getByRole("tablist", { name: "Home view" });
     expect(await within(rail).findByText("· 1")).toHaveClass("tab-count-warning");
   });
 
@@ -2632,7 +2632,7 @@ describe("Home tabs: Recovered reviews", () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/ls?noun=feature": doneFeature(true), "/api/next": next }));
     renderHome(summary());
     await waitFor(() => expect(tabNames()).toEqual(["Overview", "Branches", "Recovered reviews · 1"]));
-    const rail = screen.getByRole("navigation", { name: "Home view" });
+    const rail = screen.getByRole("tablist", { name: "Home view" });
     expect(within(rail).getByText("· 1")).not.toHaveClass("tab-count-warning");
     expect(screen.queryByRole("link", { name: "Recovered review on record" })).not.toBeInTheDocument();
     await openRecoveredTab();

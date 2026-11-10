@@ -115,7 +115,7 @@ describe("Home Recovered reviews tab", () => {
   const tasks = { noun: "task", count: 1, nodes: [{ id: "T-2il2d6", key: "a/b/c", ref: "a/b/c (T-2il2d6)", title: "Extract params", status: "done" }] };
 
   async function openTab() {
-    fireEvent.click(await within(screen.getByRole("navigation", { name: "Home view" })).findByRole("button", { name: /Recovered reviews/ }));
+    fireEvent.click(await within(screen.getByRole("tablist", { name: "Home view" })).findByRole("tab", { name: /Recovered reviews/ }));
     return screen.findByRole("region", { name: /recovered historical review/i });
   }
 

@@ -655,7 +655,7 @@ describe("App routing: node pages live under the Explore shell", () => {
     // No tab row: an amendment stays flat (ui-surface.md, "an amendment ...
     // stays flat"), so NodeTabs' own nav (the tab shell every tabbed noun
     // renders) never mounts here.
-    expect(screen.queryByRole("navigation", { name: "Node detail tab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tablist", { name: "Node detail tab" })).not.toBeInTheDocument();
     // The amendment's own narrative renders through the flat body.
     expect(screen.getByText("Why this reshape exists.")).toBeInTheDocument();
   });

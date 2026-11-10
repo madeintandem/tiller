@@ -17,7 +17,7 @@
 // all (a stale link, a hand-edited URL) reads as the first tab rather than
 // rendering no panel at all, so the page never goes blank over a bad param.
 
-import { useRef, type ReactElement, type ReactNode } from "react";
+import { useId, useRef, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 import { useScrolledPast } from "../lib/useScrolledPast";
 import "../views/explore.css";
 
@@ -51,6 +51,47 @@ export default function NodeTabs({
   pinned?: ReactNode;
 }) {
   const activeTab = tabs.find((tab) => tab.key === active) ?? tabs[0];
+  // Real ARIA tabs (WAI-ARIA tabs pattern, automatic activation). One panel is
+  // rendered at a time, so every tab's aria-controls names that one panel id,
+  // and the panel is labelled by whichever tab is selected. Callers hand over
+  // their bodies through each tab's render(); the component owns the wrapper.
+  const baseId = useId();
+  const panelId = `${baseId}-panel`;
+  const tabId = (key: string) => `${baseId}-tab-${key}`;
+  const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+  // Selection follows focus. onSelect is the surface's own navigation (a
+  // replace, for every surface today), so arrowing never fills history. The
+  // buttons are keyed by tab, so the target survives the re-render the URL
+  // change causes and can be focused right away.
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const at = tabs.findIndex((tab) => tab.key === activeTab.key);
+    let next: number;
+    switch (event.key) {
+      case "ArrowRight":
+        next = (at + 1) % tabs.length;
+        break;
+      case "ArrowLeft":
+        next = (at - 1 + tabs.length) % tabs.length;
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    onSelect(tabs[next].key);
+    tabRefs.current.get(tabs[next].key)?.focus();
+  };
+  const panel = (
+    <div role="tabpanel" id={panelId} aria-labelledby={tabId(activeTab.key)} tabIndex={0}>
+      {activeTab.render()}
+    </div>
+  );
   // The sentinel sits one band above the rail's place in flow, so it leaves
   // the pane exactly when the rail pins (node-pin.css).
   const sentinelRef = useRef<HTMLSpanElement>(null);
@@ -58,15 +99,24 @@ export default function NodeTabs({
   const rail = (
     <>
       {railPinned && pinned}
-      <nav className="mode-nav" aria-label={label}>
+      <div className="mode-nav" role="tablist" aria-label={label}>
         {tabs.map((tab) => {
           const isActive = tab.key === activeTab.key;
           return (
             <button
               key={tab.key}
               type="button"
+              role="tab"
+              id={tabId(tab.key)}
+              ref={(el) => {
+                if (el) tabRefs.current.set(tab.key, el);
+                else tabRefs.current.delete(tab.key);
+              }}
               className={isActive ? "active" : undefined}
-              aria-current={isActive ? "true" : undefined}
+              aria-selected={isActive}
+              aria-controls={panelId}
+              tabIndex={isActive ? 0 : -1}
+              onKeyDown={onKeyDown}
               onClick={() => onSelect(tab.key)}
             >
               {tab.label}
@@ -87,14 +137,14 @@ export default function NodeTabs({
             </button>
           );
         })}
-      </nav>
+      </div>
     </>
   );
   if (pinned === undefined) {
     return (
       <>
         {rail}
-        {activeTab.render()}
+        {panel}
       </>
     );
   }
@@ -104,7 +154,7 @@ export default function NodeTabs({
     <div className="node-pinned">
       <span className="node-pin-sentinel" ref={sentinelRef} aria-hidden="true" />
       <div className="node-pin">{rail}</div>
-      {activeTab.render()}
+      {panel}
     </div>
   );
 }

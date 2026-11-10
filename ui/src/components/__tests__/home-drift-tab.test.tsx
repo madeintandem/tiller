@@ -128,7 +128,7 @@ describe("Home Drift tab", () => {
     stubFetch(routes(withCandidates));
     renderHome("/");
 
-    const tab = await screen.findByRole("button", { name: "Drift · 3" });
+    const tab = await screen.findByRole("tab", { name: "Drift · 3" });
     expect(tab.querySelector(".tab-count-warning")).not.toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe("Home Drift tab", () => {
     stubFetch(routes(uncoveredOnly));
     renderHome("/");
 
-    const tab = await screen.findByRole("button", { name: "Drift · 1" });
+    const tab = await screen.findByRole("tab", { name: "Drift · 1" });
     expect(tab.querySelector(".tab-count-warning")).toBeNull();
     expect(tab.querySelector(".tab-count")).not.toBeNull();
   });
@@ -145,9 +145,9 @@ describe("Home Drift tab", () => {
     stubFetch(routes({ compared: 4, uncovered: [] }));
     renderHome("/");
 
-    await screen.findByRole("button", { name: "Overview" });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Branches" })).toBeInTheDocument());
-    expect(screen.queryByRole("button", { name: /^Drift/ })).not.toBeInTheDocument();
+    await screen.findByRole("tab", { name: "Overview" });
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Branches" })).toBeInTheDocument());
+    expect(screen.queryByRole("tab", { name: /^Drift/ })).not.toBeInTheDocument();
   });
 
   it("renders the report from the response Home already holds, without a second request", async () => {
@@ -166,7 +166,7 @@ describe("Home Drift tab", () => {
     stubFetch(routes(withCandidates));
     renderHome("/");
 
-    const tab = await screen.findByRole("button", { name: "Drift · 3" });
+    const tab = await screen.findByRole("tab", { name: "Drift · 3" });
     tab.click();
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift"));
   });
@@ -176,8 +176,8 @@ describe("Home Drift tab", () => {
     renderHome("/?tab=drift");
 
     expect(await screen.findByText(/all clear/i)).toBeInTheDocument();
-    const rail = screen.getByRole("navigation", { name: "Home view" });
-    expect(within(rail).getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "true");
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    expect(within(rail).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("the Drift stat tile links to the tab", async () => {
@@ -197,12 +197,12 @@ describe("Home Drift tab while the page rereads", () => {
 
     held.refetch();
 
-    expect(screen.getByRole("button", { name: "Drift · 3" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Drift · 3" })).toBeInTheDocument();
     expect(screen.getByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
     expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift");
 
     await held.settle(uncoveredOnly);
-    expect(await screen.findByRole("button", { name: "Drift · 1" })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: "Drift · 1" })).toBeInTheDocument();
     expect(screen.queryByText(/Work rests on an older basis/)).not.toBeInTheDocument();
   });
 });
@@ -232,7 +232,7 @@ describe("App: the old /drift address", () => {
         <App />
       </MemoryRouter>,
     );
-    await screen.findByRole("button", { name: "Drift · 3" });
+    await screen.findByRole("tab", { name: "Drift · 3" });
     expect(screen.queryByRole("link", { name: /^Drift$/ })).not.toBeInTheDocument();
   });
 });

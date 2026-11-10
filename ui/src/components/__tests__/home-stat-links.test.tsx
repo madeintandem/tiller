@@ -110,8 +110,8 @@ describe("Home stat tiles link to the list they count", () => {
     const link = await screen.findByRole("link", { name: "3 questions, open the questions list" });
     expect(link).toHaveAttribute("href", "/questions?status=all");
     fireEvent.click(link);
-    const all = await screen.findByRole("button", { name: "All · 3" });
-    expect(all).toHaveAttribute("aria-current", "true");
+    const all = await screen.findByRole("tab", { name: "All · 3" });
+    expect(all).toHaveAttribute("aria-selected", "true");
     expect(container.querySelectorAll(".qlist > *")).toHaveLength(3);
   });
 
@@ -219,8 +219,8 @@ describe("Home title sits above the tab rail", () => {
     it(`renders one h1 and the meta line above the rail on ${tab || "overview"}`, async () => {
       stubFetch(withRecovered);
       renderHome(`/${tab}`);
-      const rail = await screen.findByRole("navigation", { name: "Home view" });
-      await screen.findByRole("button", { name: /^Drift/ });
+      const rail = await screen.findByRole("tablist", { name: "Home view" });
+      await screen.findByRole("tab", { name: /^Drift/ });
       const h1s = screen.getAllByRole("heading", { level: 1 });
       expect(h1s).toHaveLength(1);
       expect(h1s[0]).toHaveTextContent("Acme Platform");
@@ -233,7 +233,7 @@ describe("Home title sits above the tab rail", () => {
   it("keeps the stat band on Overview only", async () => {
     stubFetch(table());
     renderHome("/?tab=branches");
-    await screen.findByRole("navigation", { name: "Home view" });
+    await screen.findByRole("tablist", { name: "Home view" });
     expect(screen.queryByRole("link", { name: /open the epic list/ })).not.toBeInTheDocument();
   });
 });

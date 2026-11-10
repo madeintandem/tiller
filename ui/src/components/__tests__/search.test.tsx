@@ -110,8 +110,8 @@ describe("Explore search: grouped by kind", () => {
 
     renderAt("/explore?mode=search&q=payment");
 
-    const tabs = await screen.findByRole("navigation", { name: "Result kind" });
-    expect(within(tabs).getAllByRole("button").map((b) => b.textContent)).toEqual([
+    const tabs = await screen.findByRole("tablist", { name: "Result kind" });
+    expect(within(tabs).getAllByRole("tab").map((b) => b.textContent)).toEqual([
       "All · 4", "Epics · 1", "Tasks · 2", "Documents · 1",
     ]);
     expect(screen.getByRole("region", { name: "Epics" })).toBeInTheDocument();
@@ -134,8 +134,8 @@ describe("Explore search: grouped by kind", () => {
 
     expect(await screen.findByText("Task 7")).toBeInTheDocument();
     expect(fetchMock.mock.calls.map((c) => String(c[0]))).toContain("/api/search?q=payment&kind=task");
-    const tabs = screen.getByRole("navigation", { name: "Result kind" });
-    expect(within(tabs).getByRole("button", { name: "Tasks · 8" })).toHaveAttribute("aria-current", "true");
+    const tabs = screen.getByRole("tablist", { name: "Result kind" });
+    expect(within(tabs).getByRole("tab", { name: "Tasks · 8" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("reads the kind tab from the URL and asks the server for that kind", async () => {

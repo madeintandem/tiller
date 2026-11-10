@@ -61,8 +61,8 @@ describe("NodeTabs", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "spec" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "tasks · 4" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "spec" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "tasks · 4" })).toBeInTheDocument();
   });
 
   it("calls onSelect with the clicked tab's key", () => {
@@ -78,7 +78,7 @@ describe("NodeTabs", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "evals" }));
+    fireEvent.click(screen.getByRole("tab", { name: "evals" }));
     expect(onSelect).toHaveBeenCalledWith("evals");
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
@@ -112,7 +112,7 @@ describe("NodeTabs", () => {
     );
 
     expect(screen.getByText("Spec panel")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "spec" })).toHaveClass("active");
+    expect(screen.getByRole("tab", { name: "spec" })).toHaveClass("active");
   });
 });
 
@@ -305,9 +305,9 @@ const BLOCKER_QUESTION = {
 };
 
 function expectBlockerOnlyDependencies() {
-  expect(screen.queryByRole("button", { name: "Dependencies · 0" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("tab", { name: "Dependencies · 0" })).not.toBeInTheDocument();
 
-  const tab = screen.getByRole("button", { name: "Dependencies" });
+  const tab = screen.getByRole("tab", { name: "Dependencies" });
   fireEvent.click(tab);
 
   expect(screen.getByRole("heading", { name: /^Blocked by questions/ })).toBeInTheDocument();
@@ -324,15 +324,15 @@ describe("NodeDetail feature tabs", () => {
   it("shows the five settled tab labels with their counts, spec panel by default", () => {
     withRouter(<NodeDetail page={featurePage()} />);
 
-    expect(screen.getByRole("button", { name: "Spec" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Spec" })).toBeInTheDocument();
     // The evals tab's DISPLAY label reads "Contract" now (task 17's own
     // decision); its wire key and the `tab` search param stay "evals". Every
     // tab label is Title Case (the mock's
     // own tab row is Title Case throughout, not just Contract).
-    expect(screen.getByRole("button", { name: "Contract · 2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tasks · 1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Dependencies · 2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "History · 1" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Contract · 2" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Tasks · 1" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dependencies · 2" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "History · 1" })).toBeInTheDocument();
 
     // Spec is the default: its content shows with no click, and the evals
     // gate card (a different panel) has not rendered yet.
@@ -343,7 +343,7 @@ describe("NodeDetail feature tabs", () => {
   it("swaps to the Contract panel on click (the evals wire key, relabeled), and the spec panel leaves the document", () => {
     withRouter(<NodeDetail page={featurePage()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Contract · 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Contract · 2" }));
 
     expect(screen.getByText("required gate")).toBeInTheDocument();
     expect(screen.queryByText(/Spec body text/)).not.toBeInTheDocument();
@@ -352,7 +352,7 @@ describe("NodeDetail feature tabs", () => {
   it("swaps to the tasks panel on click", () => {
     withRouter(<NodeDetail page={featurePage()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tasks · 1" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Tasks · 1" }));
 
     expect(screen.getByText("Wire the refund job")).toBeInTheDocument();
   });
@@ -377,7 +377,7 @@ describe("NodeDetail feature tabs", () => {
     expect(screen.queryByRole("heading", { name: "Source" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /^Epic/ })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Dependencies · 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Dependencies · 2" }));
 
     // The two dependency directions the label counts.
     expect(screen.getByRole("heading", { name: /^Depends on/ })).toBeInTheDocument();
@@ -412,9 +412,9 @@ describe("NodeDetail feature tabs", () => {
 
     // Two more groups now carry rows, but the label's own count is untouched:
     // the settled formula is depends_on plus depended_on_by, nothing else.
-    expect(screen.getByRole("button", { name: "Dependencies · 2" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dependencies · 2" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Dependencies · 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Dependencies · 2" }));
 
     expect(screen.getByRole("heading", { name: /^Supersedes/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^Blocked by questions/ })).toBeInTheDocument();
@@ -455,9 +455,9 @@ describe("NodeDetail task tabs", () => {
   it("shows gates, not evals, and spec by default", () => {
     withRouter(<NodeDetail page={taskPage()} />);
 
-    expect(screen.getByRole("button", { name: "Spec" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Gates" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "evals" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Spec" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Gates" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "evals" })).not.toBeInTheDocument();
   });
 
   it("shows the parent-feature climb in the header, never as a Feature section in the dependencies tab", () => {
@@ -479,7 +479,7 @@ describe("NodeDetail task tabs", () => {
     expect(header.getByRole("link", { name: "Refund pipeline" })).toBeInTheDocument();
 
     expect(screen.queryByRole("heading", { name: "Feature" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Dependencies/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Dependencies/ }));
     expect(screen.queryByRole("heading", { name: "Feature" })).not.toBeInTheDocument();
   });
 });
@@ -491,8 +491,8 @@ describe("NodeDetail shelf and attached-work tabs", () => {
       const page = nodePage({ noun, attached_work: [bugRelated, choreRelated, tweakRelated] });
       const { container } = renderNode(page, "/?tab=work-items");
 
-      expect(screen.getByRole("button", { name: "Fix · 3" })).toHaveAttribute(
-        "aria-current",
+      expect(screen.getByRole("tab", { name: "Fix · 3" })).toHaveAttribute(
+        "aria-selected",
         "true",
       );
       expect(screen.getByRole("link", { name: "Blank on reload" })).toHaveAttribute(
@@ -509,7 +509,7 @@ describe("NodeDetail shelf and attached-work tabs", () => {
       );
 
       const nav = within(container.querySelector(".mode-nav") as HTMLElement);
-      const labels = nav.getAllByRole("button").map((button) => button.textContent);
+      const labels = nav.getAllByRole("tab").map((button) => button.textContent);
       const before =
         noun === "epic" ? "Features · 1" : noun === "feature" ? "Tasks · 1" : "Gates";
       expect(labels.indexOf("Fix · 3")).toBe(labels.indexOf(before) + 1);
@@ -520,18 +520,18 @@ describe("NodeDetail shelf and attached-work tabs", () => {
     "hides the Fix tab at zero on a %s page",
     (noun) => {
       renderNode(nodePage({ noun, attached_work: [] }));
-      expect(screen.queryByRole("button", { name: /^Fix/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: /^Fix/ })).not.toBeInTheDocument();
     },
   );
 
   it.each(["bug", "chore", "tweak"])("uses the task-shaped tab set for a %s", (noun) => {
     const { container } = renderNode(nodePage({ noun }));
     const nav = within(container.querySelector(".mode-nav") as HTMLElement);
-    expect(nav.getAllByRole("button").map((button) => button.textContent)).toEqual([
+    expect(nav.getAllByRole("tab").map((button) => button.textContent)).toEqual([
       "Spec",
       "Gates",
     ]);
-    expect(nav.queryByRole("button", { name: "Contract" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("tab", { name: "Contract" })).not.toBeInTheDocument();
   });
 
   it.each(["bug", "chore", "tweak"])("keeps the approval command reachable for a proposed %s", (noun) => {
@@ -552,27 +552,27 @@ describe("NodeDetail shelf and attached-work tabs", () => {
 describe("NodeDetail tabs: countable tabs hide at zero", () => {
   it("shows no Dependencies tab on a dependency-free node - the phase acceptance case", () => {
     withRouter(<NodeDetail page={taskPage()} />);
-    expect(screen.queryByRole("button", { name: /^Dependencies/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^Dependencies/ })).not.toBeInTheDocument();
   });
 
   it("shows no History tab with zero recorded events", () => {
     withRouter(<NodeDetail page={taskPage()} />);
-    expect(screen.queryByRole("button", { name: /^History/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^History/ })).not.toBeInTheDocument();
   });
 
   it("shows no Contract tab when the node carries no eval contract at all", () => {
     withRouter(<NodeDetail page={featurePage({ eval: null })} />);
-    expect(screen.queryByRole("button", { name: /^Contract/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^Contract/ })).not.toBeInTheDocument();
     // The wire key stays "evals"; no button reads that word either, since
     // the label is the only thing a reader (or this query) ever sees.
-    expect(screen.queryByRole("button", { name: /^evals/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^evals/ })).not.toBeInTheDocument();
   });
 
   it("shows no Tasks tab on a feature with no tasks", () => {
     withRouter(
       <NodeDetail page={featurePage({ relationships: { ...featurePage().relationships, tasks: [] } })} />,
     );
-    expect(screen.queryByRole("button", { name: /^Tasks/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^Tasks/ })).not.toBeInTheDocument();
   });
 
   it("shows no Features tab on an epic carving nothing yet", () => {
@@ -589,15 +589,15 @@ describe("NodeDetail tabs: countable tabs hide at zero", () => {
         }}
       />,
     );
-    expect(screen.queryByRole("button", { name: /^Features/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^Features/ })).not.toBeInTheDocument();
     // spec always renders regardless.
-    expect(screen.getByRole("button", { name: "Spec" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Spec" })).toBeInTheDocument();
   });
 
   it("still shows the Contract tab for a malformed contract - a validation failure is never hidden, even by this new rule", () => {
     withRouter(<NodeDetail page={featurePage({ eval: { path: "x", error: "malformed" } })} />);
     // No count: nothing to count when the file failed to load.
-    expect(screen.getByRole("button", { name: "Contract" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Contract" })).toBeInTheDocument();
   });
 
   // JC's ruling, 2026-08-11: a well-formed contract authored with zero
@@ -608,7 +608,7 @@ describe("NodeDetail tabs: countable tabs hide at zero", () => {
   it("shows a bare Contract tab for a well-formed contract with zero criteria - authored-empty is information, not absence", () => {
     withRouter(<NodeDetail page={featurePage({ eval: { path: "x", node: "F-1", criteria: [] } })} />);
 
-    const tab = screen.getByRole("button", { name: "Contract" });
+    const tab = screen.getByRole("tab", { name: "Contract" });
     expect(tab).toBeInTheDocument();
 
     fireEvent.click(tab);
@@ -619,7 +619,7 @@ describe("NodeDetail tabs: countable tabs hide at zero", () => {
     const { container } = withRouter(<NodeDetail page={taskPage()} />);
     const nav = container.querySelector(".mode-nav") as HTMLElement;
     const labels = within(nav)
-      .getAllByRole("button")
+      .getAllByRole("tab")
       .map((b) => b.textContent);
     expect(labels).toEqual(["Spec", "Gates"]);
   });
@@ -631,7 +631,7 @@ describe("NodeDetail question page: no tab row", () => {
     const { container } = withRouter(<NodeDetail page={questionPage()} />);
 
     expect(container.querySelector(".mode-nav")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Spec" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Spec" })).not.toBeInTheDocument();
     // QuestionBody itself renders no answer command in any state now: the
     // attention stack owns that command, covered by instrument.test.tsx's own
     // "the stack owns a question's answer command, never duplicated by the
@@ -656,7 +656,7 @@ describe("NodeDetail amendment navigation", () => {
 
   it("opens the direct tab URL with one row per amendment, reused-key ID links, actual dates and effect scopes", () => {
     renderNode(featurePage({ relationships: { amendments: [proposal, approved] } }), "/node/feature/F-1?tab=amendments");
-    expect(screen.getByRole("button", { name: "Amendments · 2" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("tab", { name: "Amendments · 2" })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("heading", { name: "Related amendments" }).parentElement!;
     expect(within(panel).getAllByRole("link", { name: "Reshape refunds" })).toHaveLength(1);
     expect(within(panel).getByRole("link", { name: "Reshape refunds" })).toHaveAttribute("href", "/node/amendment/A-new");
@@ -684,7 +684,7 @@ describe("NodeDetail amendment navigation", () => {
     expect(screen.getByText("Work rests on an older basis")).toBeInTheDocument();
     expect(screen.getByText(/tiller attest feature F-1 --criterion C2 --status pass/)).toBeInTheDocument();
     expect(screen.getByText(/Spec body text/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Contract · 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Contract · 2" }));
     expect(screen.getByRole("complementary", { name: "Proposed amendments" })).toHaveTextContent("Second proposal");
     expect(screen.getByText("Work rests on an older basis")).toBeInTheDocument();
     expect(screen.getByText(/tiller attest feature F-1 --criterion C2 --status pass/)).toBeInTheDocument();
@@ -694,7 +694,7 @@ describe("NodeDetail amendment navigation", () => {
   it("keeps incomplete history reachable without a count or empty-history assertion", () => {
     const warning = "Amendment history could not be loaded.";
     renderNode(featurePage({ relationships: { amendments: [], amendment_history_warning: warning } }), "/node/feature/F-1?tab=amendments");
-    expect(screen.getByRole("button", { name: "Amendments" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("tab", { name: "Amendments" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("status")).toHaveTextContent(warning);
     expect(screen.queryByText(/No amendments|Amendments · 0/)).not.toBeInTheDocument();
   });
@@ -702,8 +702,8 @@ describe("NodeDetail amendment navigation", () => {
   it.each(["epic", "feature", "task"])("hides known-empty history on %s and falls back from its unavailable tab", (noun) => {
     const page = nodePage({ noun });
     renderNode(page, `/node/${noun}/${page.node.id}?tab=amendments`);
-    expect(screen.queryByRole("button", { name: /^Amendments/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Spec" })).toHaveAttribute("aria-current", "true");
+    expect(screen.queryByRole("tab", { name: /^Amendments/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Spec" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText(/Shelf prose/)).toBeInTheDocument();
   });
 
@@ -711,8 +711,8 @@ describe("NodeDetail amendment navigation", () => {
     const page = nodePage({ noun });
     page.relationships.amendments = [approved];
     renderNode(page, `/node/${noun}/${page.node.id}?tab=unknown`);
-    expect(screen.getByRole("button", { name: "Spec" })).toHaveAttribute("aria-current", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Amendments · 1" }));
+    expect(screen.getByRole("tab", { name: "Spec" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("tab", { name: "Amendments · 1" }));
     expect(screen.getByRole("link", { name: "Earlier reshape" })).toHaveAttribute("href", "/node/amendment/A-old");
   });
 });
@@ -742,7 +742,7 @@ describe("NodeDetail backlink reachability", () => {
         { kind: "source_for", sources: [{ ...source, edges: [{ ...source.edges[0], id: "source", kind: "sourced_from" }] }] },
       ],
     } }), "/node/feature/F-1?tab=backlinks");
-    expect(screen.getByRole("button", { name: "Backlinks · 1" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("tab", { name: "Backlinks · 1" })).toHaveAttribute("aria-selected", "true");
   });
   it("opens an incomplete zero-source tab without hiding its diagnostics or changing dependency and amendment warnings", () => {
     renderNode(featurePage({
@@ -752,17 +752,17 @@ describe("NodeDetail backlink reachability", () => {
         amendment_history_warning: "Amendment history could not be loaded.",
       },
     }), "/node/feature/F-1?tab=backlinks");
-    expect(screen.getByRole("button", { name: "Backlinks" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("tab", { name: "Backlinks" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("status")).toHaveTextContent(/incomplete/);
     expect(screen.getByText(/Historical identities could not be loaded/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Dependencies · 2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Amendments" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dependencies · 2" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Amendments" })).toBeInTheDocument();
   });
 
   it("does not turn a complete empty result into a reachable empty tab", () => {
     renderNode(featurePage(), "/node/feature/F-1?tab=backlinks");
-    expect(screen.queryByRole("button", { name: /^Backlinks/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Spec" })).toHaveAttribute("aria-current", "true");
+    expect(screen.queryByRole("tab", { name: /^Backlinks/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Spec" })).toHaveAttribute("aria-selected", "true");
   });
 
   it.each(["question", "amendment"])("keeps incomplete backlinks visible on the flat %s page", (noun) => {
@@ -771,7 +771,7 @@ describe("NodeDetail backlink reachability", () => {
       backlinks: incomplete,
     }));
     expect(screen.getByRole("heading", { name: /^Backlinks/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Backlinks/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /^Backlinks/ })).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(/incomplete/);
   });
 });
@@ -788,7 +788,7 @@ describe("Transferred execution lineage", () => {
       backlinks: { groups: [], count: 0, diagnostics: [], complete: true },
     };
     withRouter(<NodeDetail page={page} />);
-    const dependencies = screen.getByRole("button", { name: "Dependencies" });
+    const dependencies = screen.getByRole("tab", { name: "Dependencies" });
     fireEvent.click(dependencies);
     expect(screen.getByRole("link", { name: "Original work" })).toHaveAttribute("href", `/node/${noun}/old-id`);
     expect(screen.getByRole("link", { name: "Replacement work" })).toHaveAttribute("href", `/node/${noun}/new-id`);

@@ -508,7 +508,7 @@ describe("NodeTabs: the rail's counts", () => {
         onSelect={() => undefined}
       />,
     );
-    const tab = screen.getByRole("button", { name: "Tasks · 4" });
+    const tab = screen.getByRole("tab", { name: "Tasks · 4" });
     const count = tab.querySelector(".tab-count") as HTMLElement;
     expect(count).not.toBeNull();
     expect(count.textContent).toContain("4");

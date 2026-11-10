@@ -1293,7 +1293,7 @@ describe("NodeDetail: header and attention stack render once, outside the tabs",
     expect(container.querySelectorAll(".instr-header")).toHaveLength(1);
     expect(container.querySelectorAll(".abox")).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tasks · 1" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Tasks · 1" }));
 
     expect(container.querySelectorAll(".instr-header")).toHaveLength(1);
     expect(container.querySelectorAll(".abox")).toHaveLength(1);
@@ -1317,7 +1317,7 @@ describe("NodeDetail: eval contract error state", () => {
     // whose DISPLAY label reads "Contract" now (task 17's own decision; the
     // wire key and `tab` param stay "evals"). A malformed contract is not
     // null, so the tab still renders (never hide a malformed contract).
-    fireEvent.click(screen.getByRole("button", { name: /^Contract/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Contract/ }));
 
     expect(screen.getByText("features/x/feature.eval.md")).toBeInTheDocument();
     expect(screen.getByText("criterion C1 has no statement")).toBeInTheDocument();
@@ -1338,7 +1338,7 @@ describe("NodeDetail: feature tasks render in ledger (payload) order", () => {
     withRouter(<NodeDetail page={page} />);
 
     // the tab shell: the task list lives on the tasks tab.
-    fireEvent.click(screen.getByRole("button", { name: /^Tasks/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Tasks/ }));
 
     const first = screen.getByText("Wire Redis and Sidekiq");
     const second = screen.getByText("Initialize the Rails app");
@@ -1395,7 +1395,7 @@ describe("NodeDetail epic: identity renders once, decomposition ordered as serve
 
     // the tab shell: the decomposition lives on the features
     // tab, not the default spec one.
-    fireEvent.click(screen.getByRole("button", { name: /^Features/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Features/ }));
 
     const zeta = screen.getByText("Zeta feature");
     const alpha = screen.getByText("Alpha feature");
@@ -1583,7 +1583,7 @@ describe("NodeDetail: Source is absent from the body", () => {
 
     expect(screen.queryByRole("heading", { name: "Source" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Dependencies/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Dependencies/ }));
     expect(screen.queryByRole("heading", { name: "Source" })).not.toBeInTheDocument();
   });
 
@@ -1730,7 +1730,7 @@ describe("NodeDetail shelf relationship metadata", () => {
       />,
     );
 
-    const tab = screen.getByRole("button", { name: "Dependencies" });
+    const tab = screen.getByRole("tab", { name: "Dependencies" });
     expect(screen.queryByRole("button", { name: "Dependencies · 1" })).not.toBeInTheDocument();
     fireEvent.click(tab);
     expect(screen.getByRole("link", { name: "Blank on reload" })).toHaveAttribute(
@@ -1765,7 +1765,7 @@ describe("NodeDetail shelf relationship metadata", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Dependencies · 1" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Dependencies · 1" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Dependencies · 2" })).not.toBeInTheDocument();
   });
 });
