@@ -96,7 +96,7 @@ describe("finished epics in the rail", () => {
   it("starts open when a finished epic is selected, from the URL", async () => {
     stub(epics, ["alpha"]);
     renderBuild("/build?epics=gamma");
-    const details = (await screen.findByText("2 finished")).closest("details") as HTMLDetailsElement;
+    const details = (await screen.findByText("2 finished, 1 selected")).closest("details") as HTMLDetailsElement;
     expect(details.open).toBe(true);
   });
 
@@ -115,5 +115,67 @@ describe("finished epics in the rail", () => {
     renderBuild();
     await screen.findByRole("button", { name: /Alpha/ });
     expect(screen.queryByText(/finished/)).toBeNull();
+  });
+
+  describe("the fold respects the reader and never hides a selection silently", () => {
+    const many = [...epics, epic("eps", "Epsilon", "done")];
+    const detailsOf = (text: string) => screen.getByText(text).closest("details") as HTMLDetailsElement;
+    const closeFold = (text: string) => {
+      const d = detailsOf(text);
+      d.open = false;
+      fireEvent(d, new Event("toggle"));
+    };
+    const openFold = (text: string) => {
+      const d = detailsOf(text);
+      d.open = true;
+      fireEvent(d, new Event("toggle"));
+    };
+    const toggleEpic = (name: RegExp) => fireEvent.click(screen.getByRole("button", { name, hidden: true }));
+
+    it("says how many are selected when the reader closes the fold, and stays closed", async () => {
+      stub(many, ["alpha"]);
+      renderBuild("/build?epics=gamma");
+      await screen.findByText("3 finished, 1 selected");
+      closeFold("3 finished, 1 selected");
+      expect(detailsOf("3 finished, 1 selected").open).toBe(false);
+      toggleEpic(/Alpha/);
+      expect(detailsOf("3 finished, 1 selected").open).toBe(false);
+    });
+
+    it("opens when another finished epic becomes selected", async () => {
+      stub(many, ["alpha"]);
+      renderBuild("/build?epics=gamma");
+      await screen.findByText("3 finished, 1 selected");
+      closeFold("3 finished, 1 selected");
+      toggleEpic(/Delta/);
+      expect(detailsOf("3 finished, 2 selected").open).toBe(true);
+    });
+
+    it("opens when a deselected finished epic is selected again", async () => {
+      stub(many, ["alpha"]);
+      renderBuild("/build?epics=gamma");
+      await screen.findByText("3 finished, 1 selected");
+      toggleEpic(/Gamma/);
+      closeFold("3 finished");
+      toggleEpic(/Gamma/);
+      expect(detailsOf("3 finished, 1 selected").open).toBe(true);
+    });
+
+    it("stays open under the reader when a finished selection ends", async () => {
+      stub(many, ["alpha"]);
+      renderBuild();
+      await screen.findByText("3 finished");
+      openFold("3 finished");
+      toggleEpic(/Gamma/);
+      toggleEpic(/Gamma/);
+      expect(detailsOf("3 finished").open).toBe(true);
+    });
+
+    it("reads N finished when nothing inside is selected", async () => {
+      stub(many, ["alpha"]);
+      renderBuild();
+      expect(await screen.findByText("3 finished")).toBeInTheDocument();
+      expect(screen.queryByText(/selected/)).toBeNull();
+    });
   });
 });

@@ -296,10 +296,22 @@ function EpicPanel({
 }) {
   const selectedCount = epics.filter((e) => e.key !== undefined && selected.has(e.key)).length;
   const { live, finished } = splitEpics(epics);
-  // Open on arrival when the selection reaches into the fold, so a selected
-  // epic is never hidden. Not stored: a fold the human closes stays their call
-  // until the selection changes it.
-  const finishedSelected = finished.some((e) => e.key !== undefined && selected.has(e.key));
+  // The fold's open state is component state, never stored. It opens
+  // whenever a finished epic becomes selected (a restored selection included,
+  // since that arrives as a change), and otherwise follows the reader's own
+  // toggle: it never closes by itself. While closed with a selection inside,
+  // the summary says so.
+  const selectedFinished = finished
+    .filter((e) => e.key !== undefined && selected.has(e.key))
+    .map((e) => e.key as string);
+  const [foldOpen, setFoldOpen] = useState(selectedFinished.length > 0);
+  const [seenFinished, setSeenFinished] = useState<string[]>(selectedFinished);
+  if (selectedFinished.join(",") !== seenFinished.join(",")) {
+    setSeenFinished(selectedFinished);
+    if (selectedFinished.some((k) => !seenFinished.includes(k))) {
+      setFoldOpen(true);
+    }
+  }
   const row = (epic: BuildEpic) => (
     <EpicRow key={epic.id} epic={epic} on={epic.key !== undefined && selected.has(epic.key)} onToggle={onToggle} />
   );
@@ -314,8 +326,16 @@ function EpicPanel({
       </div>
       {live.map(row)}
       {finished.length > 0 && (
-        <details className="epic-finished" open={finishedSelected}>
-          <summary>{finished.length} finished</summary>
+        <details
+          className="epic-finished"
+          open={foldOpen}
+          onToggle={(e) => {
+            setFoldOpen(e.currentTarget.open);
+          }}
+        >
+          <summary>
+            {finished.length} finished{selectedFinished.length > 0 ? `, ${selectedFinished.length} selected` : ""}
+          </summary>
           {finished.map(row)}
         </details>
       )}
