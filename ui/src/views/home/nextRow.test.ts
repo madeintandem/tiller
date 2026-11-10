@@ -17,9 +17,10 @@ describe("nextLabel", () => {
     expect(nextLabel(question)).toBe("Which database?");
   });
 
-  it("falls back to the address for an untitled question and for other nouns", () => {
+  it("names every noun by its title, and falls back to the address without one", () => {
     expect(nextLabel({ ...question, title: undefined })).toBe("Q-aaaaa0");
-    expect(nextLabel({ noun: "task", id: "T-aaaaa0", key: "e/f/t", ref: "e/f/t (T-aaaaa0)", title: "Wire it" })).toBe("e/f/t");
+    expect(nextLabel({ noun: "task", id: "T-aaaaa0", key: "e/f/t", ref: "e/f/t (T-aaaaa0)", title: "Wire it" })).toBe("Wire it");
+    expect(nextLabel({ noun: "task", id: "T-aaaaa0", key: "e/f/t", ref: "e/f/t (T-aaaaa0)" })).toBe("e/f/t");
   });
 });
 

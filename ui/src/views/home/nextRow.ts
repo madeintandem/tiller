@@ -5,18 +5,17 @@ import type { NextCandidate, NextNode } from "../../api";
 import { addrOf } from "../../lib/addr";
 import { sentence } from "../../lib/sentence";
 
-// nextLabel names a question by its title, since its Q-id says nothing, and
-// every other node by its address.
+// nextLabel names a node by its title, and falls back to its address when it
+// has none. The row shows the address after the title in mono.
 export function nextLabel(node: NextNode): string {
-  if (node.noun === "question" && node.title !== undefined && node.title !== "") {
+  if (node.title !== undefined && node.title !== "") {
     return node.title;
   }
   return addrOf(node);
 }
 
-// nextReason is the row's reason as a sentence. A question row's reason ends
-// on the question's title, which the link already shows, so that tail is
-// dropped. A move in flight on another branch names it, as the CLI line does.
+// nextReason is the row's reason as a sentence. A reason that ends on the
+// node's title, which the link already shows, drops that tail. A move in flight on another branch names it, as the CLI line does.
 export function nextReason(candidate: NextCandidate): string {
   let reason = candidate.reason;
   const { node } = candidate;

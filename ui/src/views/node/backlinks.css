@@ -23,15 +23,25 @@
   font-weight: 600;
 }
 
-.backlinks-owner,
+.backlinks-source-path,
 .backlinks-citations,
 .backlinks-diagnostics {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
 
-.backlinks-owner {
+.backlinks-source-path {
   margin-top: 4px;
+}
+
+.backlinks-integrity {
+  font-size: 12px;
+  margin-bottom: var(--space-4);
+}
+
+.backlinks-integrity summary {
+  cursor: pointer;
+  color: var(--ink-3);
 }
 
 .backlinks-citations {

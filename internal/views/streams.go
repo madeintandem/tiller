@@ -25,6 +25,8 @@ type UnclaimedItem struct {
 	Status     string `json:"status"`
 	FeatureID  string `json:"feature_id"`
 	FeatureKey string `json:"feature_key,omitempty"`
+	// FeatureTitle lets a row group by feature without a second fetch.
+	FeatureTitle string `json:"feature_title,omitempty"`
 }
 
 // ContributorStream is one contributor's four-part rollup.
@@ -38,23 +40,30 @@ type ContributorStream struct {
 
 // StreamItem is one unfinished assignment outside the separate review lens.
 type StreamItem struct {
-	Noun    string `json:"noun"`
-	ID      string `json:"id"`
-	Key     string `json:"key,omitempty"`
-	Ref     string `json:"ref"`
-	Status  string `json:"status"`
-	Display string `json:"display"`
+	Noun  string `json:"noun"`
+	ID    string `json:"id"`
+	Key   string `json:"key,omitempty"`
+	Ref   string `json:"ref"`
+	Title string `json:"title,omitempty"`
+	// FeatureID and FeatureTitle name a task's feature so rows can group.
+	FeatureID    string `json:"feature_id,omitempty"`
+	FeatureTitle string `json:"feature_title,omitempty"`
+	Status       string `json:"status"`
+	Display      string `json:"display"`
 }
 
 // BlockedItem is one row on the blocked lens. A manual blocked flag, a retired
 // ancestor, and operative open questions are independent condition families;
 // each occupies its own item so clearing one condition cannot hide another.
 type BlockedItem struct {
-	Noun      string   `json:"noun"`
-	ID        string   `json:"id"`
-	Key       string   `json:"key,omitempty"`
-	Ref       string   `json:"ref"`
-	DependsOn []string `json:"depends_on,omitempty"`
+	Noun         string   `json:"noun"`
+	ID           string   `json:"id"`
+	Key          string   `json:"key,omitempty"`
+	Ref          string   `json:"ref"`
+	Title        string   `json:"title,omitempty"`
+	FeatureID    string   `json:"feature_id,omitempty"`
+	FeatureTitle string   `json:"feature_title,omitempty"`
+	DependsOn    []string `json:"depends_on,omitempty"`
 	// DependsOnRefs carries the same targets as human references.
 	DependsOnRefs []string `json:"depends_on_refs,omitempty"`
 	// Held is set only on the retired-ancestor condition row.
@@ -75,11 +84,14 @@ type QuestionHoldItem struct {
 
 // GatesItem is one in-review node with its recorded gate results.
 type GatesItem struct {
-	Noun  string              `json:"noun"`
-	ID    string              `json:"id"`
-	Key   string              `json:"key,omitempty"`
-	Ref   string              `json:"ref"`
-	Gates map[string]GateView `json:"gates,omitempty"`
+	Noun         string              `json:"noun"`
+	ID           string              `json:"id"`
+	Key          string              `json:"key,omitempty"`
+	Ref          string              `json:"ref"`
+	Title        string              `json:"title,omitempty"`
+	FeatureID    string              `json:"feature_id,omitempty"`
+	FeatureTitle string              `json:"feature_title,omitempty"`
+	Gates        map[string]GateView `json:"gates,omitempty"`
 }
 
 // QuestionItem is one open question with a short scan title, its full
@@ -124,10 +136,22 @@ func UnclaimedOfInput(t *store.Tree, order *gen.Order, in workflow.Input) []Uncl
 		f := t.Features[task.FeatureID]
 		out = append(out, UnclaimedItem{
 			Noun: store.NounTask, ID: task.ID, Key: Key(task), Ref: gen.Ref(t, task),
-			Title: task.Title, Status: task.Status, FeatureID: f.ID, FeatureKey: Key(f),
+			Title: task.Title, Status: task.Status, FeatureID: f.ID, FeatureKey: Key(f), FeatureTitle: f.Title,
 		})
 	}
 	return out
+}
+
+// streamIdentity is a stream row's title and, for a task, its feature's id and
+// title. Only a task has a feature to group under.
+func streamIdentity(t *store.Tree, n store.Node) (title, featureID, featureTitle string) {
+	title = nodeTitle(n)
+	if task, ok := n.(*store.Task); ok {
+		if f := t.Features[task.FeatureID]; f != nil {
+			featureID, featureTitle = f.ID, f.Title
+		}
+	}
+	return title, featureID, featureTitle
 }
 
 func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) ContributorStream {
@@ -147,8 +171,10 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 		if !gen.OnActiveLens(status) {
 			return
 		}
+		title, featureID, featureTitle := streamIdentity(t, n)
 		s.Active = append(s.Active, StreamItem{
 			Noun: n.Noun(), ID: n.NodeID(), Key: Key(n), Ref: gen.Ref(t, n),
+			Title: title, FeatureID: featureID, FeatureTitle: featureTitle,
 			Status: status, Display: display,
 		})
 	}
@@ -169,6 +195,7 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 			return
 		}
 		item := BlockedItem{Noun: n.Noun(), ID: n.NodeID(), Key: Key(n), Ref: gen.Ref(t, n)}
+		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, n)
 		if len(dependsOn) > 0 {
 			// The two lists stay index-aligned, one edge per position, ordered
 			// by their rendered reference.
@@ -208,10 +235,12 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 		if held == nil {
 			return
 		}
-		s.Blocked = append(s.Blocked, BlockedItem{
+		item := BlockedItem{
 			Noun: n.Noun(), ID: n.NodeID(), Key: Key(n), Ref: gen.Ref(t, n),
 			Held: heldViewOf(held),
-		})
+		}
+		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, n)
+		s.Blocked = append(s.Blocked, item)
 	}
 	for _, tk := range t.Tasks {
 		addHeld(tk)
@@ -224,10 +253,12 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 		if Owner(n) != o.ID || len(blockers) == 0 {
 			return
 		}
-		s.Blocked = append(s.Blocked, BlockedItem{
+		item := BlockedItem{
 			Noun: n.Noun(), ID: n.NodeID(), Key: Key(n), Ref: gen.Ref(t, n),
 			QuestionHolds: questionHoldItems(blockers),
-		})
+		}
+		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, n)
+		s.Blocked = append(s.Blocked, item)
 	}
 	for _, tk := range t.Tasks {
 		if !taskQuestionGuardOperative(tk.Status) {
@@ -246,9 +277,9 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 		if Owner(tk) != o.ID || tk.Status != gen.ReviewState {
 			continue
 		}
-		s.GatesInReview = append(s.GatesInReview, GatesItem{
-			Noun: tk.Noun(), ID: tk.ID, Key: Key(tk), Ref: gen.Ref(t, tk), Gates: Gates(tk.GatesBlock),
-		})
+		item := GatesItem{Noun: tk.Noun(), ID: tk.ID, Key: Key(tk), Ref: gen.Ref(t, tk), Gates: Gates(tk.GatesBlock)}
+		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, tk)
+		s.GatesInReview = append(s.GatesInReview, item)
 	}
 	for _, noun := range store.ShelfNouns() {
 		for _, w := range t.WorkNodesOf(noun) {
@@ -256,9 +287,9 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 			if Owner(w) != o.ID || body.Status != gen.ReviewState || gen.WorkActivity(t, w) == gen.ActivityCarried {
 				continue
 			}
-			s.GatesInReview = append(s.GatesInReview, GatesItem{
-				Noun: w.Noun(), ID: body.ID, Key: Key(w), Ref: gen.Ref(t, w), Gates: Gates(body.GatesBlock),
-			})
+			item := GatesItem{Noun: w.Noun(), ID: body.ID, Key: Key(w), Ref: gen.Ref(t, w), Gates: Gates(body.GatesBlock)}
+			item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, w)
+			s.GatesInReview = append(s.GatesInReview, item)
 		}
 	}
 

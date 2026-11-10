@@ -334,7 +334,7 @@ describe("Fix board", () => {
     const ready = await screen.findByRole("region", { name: "Ready" });
     expect(within(ready).getByRole("link", { name: "Zulu" })).toHaveAttribute("href", "/node/bug/B-z");
     expect(within(ready).getByText("awaiting_check")).toBeInTheDocument();
-    expect(within(ready).getAllByRole("link", { name: "foundation/console (F-1)" })[0]).toHaveAttribute(
+    expect(within(ready).getAllByRole("link", { name: "Console" })[0]).toHaveAttribute(
       "href",
       "/node/feature/F-1",
     );
@@ -423,5 +423,15 @@ describe("Fix board severity and date added", () => {
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("severity=blocker"));
     await waitFor(() => expect(screen.queryByText("Alpha")).not.toBeInTheDocument());
     expect(screen.getByText("Zulu")).toBeInTheDocument();
+  });
+
+  it("leads the Attached to line with the node title and follows it with the key in mono", async () => {
+    renderWorkItems(board, "/fix");
+    const zulu = (await screen.findByText("Zulu")).closest("article") as HTMLElement;
+    const line = zulu.querySelector(".work-item-attachment") as HTMLElement;
+    expect(within(line).getByRole("link", { name: "Console" })).toHaveAttribute("href", "/node/feature/F-1");
+    const key = line.querySelector(".title-ref-key") as HTMLElement;
+    expect(key.textContent).toBe("foundation/console");
+    expect(key).toHaveClass("mono");
   });
 });

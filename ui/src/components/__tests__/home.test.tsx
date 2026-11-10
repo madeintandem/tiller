@@ -2129,10 +2129,11 @@ describe("Home pulse: Up next", () => {
     expect(rows[0].querySelector(".actor")?.textContent).toBe("You");
     expect(rows[1].querySelector(".actor")?.textContent).toBe("Agent");
     expect(spec).toHaveAttribute("href", "/node/feature/F-12");
-    expect(within(rows[1] as HTMLElement).getByRole("link", { name: "payments/ach/ledger" })).toHaveAttribute(
+    expect(within(rows[1] as HTMLElement).getByRole("link", { name: "Ledger" })).toHaveAttribute(
       "href",
       "/node/task/T-1",
     );
+    expect(rows[1].querySelector(".title-ref-key")?.textContent).toBe("payments/ach/ledger");
     expect(rows[0].textContent).toContain("approve the spec for");
     expect(rows[1].textContent).toContain("claim and start");
 
@@ -2142,9 +2143,9 @@ describe("Home pulse: Up next", () => {
     expect(why.textContent).toBe("Holds payments/ach/ledger in your current feature.");
     expect(rows[1].querySelector(".why")?.textContent).toBe("Next in your current feature.");
 
-    // Commands belong to Needs you and the CLI, never to an Up next row.
-    expect(within(column).queryByText(/tiller approve feature/)).not.toBeInTheDocument();
-    expect(within(column).queryByText(/tiller claim task/)).not.toBeInTheDocument();
+    // Each row carries its command as a copy control (R11).
+    expect(within(rows[0] as HTMLElement).getByRole("button", { name: "tiller approve feature payments/ach" })).toBeInTheDocument();
+    expect(within(rows[1] as HTMLElement).getByRole("button", { name: "tiller claim task payments/ach/ledger" })).toBeInTheDocument();
   });
 
   it("names the reader in the header", async () => {
@@ -2246,7 +2247,7 @@ describe("Home pulse: Up next", () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/next": next }));
     const { container } = renderHome(summary());
 
-    await screen.findByRole("link", { name: "payments/ach/ledger" });
+    await screen.findByRole("link", { name: "Ledger" });
     expect(screen.queryByText("Route says")).not.toBeInTheDocument();
     expect(container.querySelector(".route-strip")).toBeNull();
   });
@@ -2620,5 +2621,122 @@ describe("Home tabs: Recovered reviews", () => {
     await openRecoveredTab();
     expect(await screen.findByText("git:done-head")).toBeInTheDocument();
     expect(screen.queryByText("git:candidate-only-head")).not.toBeInTheDocument();
+  });
+});
+
+// ---------- Titles lead, keys follow (task 11) ----------
+
+describe("Home pulse: titles lead", () => {
+  const FEATURE_KEY = "reviewed-audits/selection-and-queues";
+
+  function sevenTasks(): StreamItem[] {
+    return Array.from({ length: 7 }, (_, i) => ({
+      noun: "task", id: `T-${i}`, key: `${FEATURE_KEY}/step-${i}`, ref: `${FEATURE_KEY}/step-${i} (T-${i})`,
+      title: `Step title ${i}`, feature_id: "F-sel", feature_title: "Selection and queues",
+      status: "in_progress", display: "in_progress",
+    }));
+  }
+
+  it("groups seven tasks of one feature under one heading and leads each row with its title", async () => {
+    const streams: Streams = { contributors: [
+      { contributor: { id: "sam", name: "Sam" }, active: sevenTasks(), blocked: [], gates_in_review: [], open_questions: [] },
+    ] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/board": streams }));
+    const { container } = renderHome(summary());
+
+    await screen.findByText("Sam");
+    const headings = container.querySelectorAll(".pulse-feature");
+    expect(headings).toHaveLength(1);
+    expect(headings[0].textContent).toContain("Selection and queues");
+    const rows = container.querySelectorAll(".contributor-group .prow");
+    expect(rows).toHaveLength(7);
+    for (let i = 0; i < 7; i++) {
+      expect(rows[i].querySelector("a")?.textContent).toBe(`Step title ${i}`);
+      expect(rows[i].querySelector(".title-ref-key")?.textContent).toBe(`step-${i}`);
+    }
+    const group = container.querySelector(".contributor-group") as HTMLElement;
+    expect(group.textContent?.split(FEATURE_KEY).length).toBeLessThanOrEqual(2);
+  });
+
+  it("renders a stream item with no title as its key once, with no empty link and no second key", async () => {
+    const streams: Streams = { contributors: [
+      { contributor: { id: "sam", name: "Sam" }, blocked: [], gates_in_review: [], open_questions: [], active: [
+        { noun: "task", id: "T-bare", key: "billing/refunds/bare", ref: "billing/refunds/bare (T-bare)", status: "ready", display: "ready" },
+      ] },
+    ] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/board": streams }));
+    const { container } = renderHome(summary());
+
+    await screen.findByText("Sam");
+    const row = container.querySelector(".contributor-group .prow") as HTMLElement;
+    const links = within(row).getAllByRole("link");
+    expect(links).toHaveLength(1);
+    expect(links[0].textContent).toBe("billing/refunds/bare");
+    expect(row.querySelector(".title-ref-key")).toBeNull();
+    expect(row.textContent?.split("billing/refunds/bare")).toHaveLength(2);
+  });
+
+  it("leads in review and blocked rows with the title too", async () => {
+    const streams: Streams = { contributors: [
+      { contributor: { id: "sam", name: "Sam" }, active: [], open_questions: [],
+        gates_in_review: [{ noun: "bug", id: "B-1", key: "login-crash", ref: "login-crash (B-1)", title: "Login crashes" }],
+        blocked: [{ noun: "task", id: "T-9", key: "a/b/c", ref: "a/b/c (T-9)", title: "Wire the thing", feature_id: "F-ab", feature_title: "Feature AB" }] },
+    ] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/board": streams }));
+    renderHome(summary());
+
+    expect(await screen.findByRole("link", { name: "Login crashes" })).toHaveAttribute("href", "/node/bug/B-1");
+    expect(screen.getByText("login-crash")).toHaveClass("title-ref-key");
+    expect(screen.getByRole("link", { name: "Wire the thing" })).toHaveAttribute("href", "/node/task/T-9");
+    expect(screen.getByText("Feature AB")).toBeInTheDocument();
+  });
+
+  it("leads an Up next row with the node title, key after it, and carries a copy control for the command", async () => {
+    const next: NextAnswer = { reader: "jc", caught_up: false, candidates: [
+      candidate({ node: { noun: "task", id: "T-1", key: "payments/ach/ledger", ref: "payments/ach/ledger (T-1)", title: "Ledger rows" } }),
+    ] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/next": next }));
+    renderHome(summary());
+
+    const link = await screen.findByRole("link", { name: "Ledger rows" });
+    expect(link).toHaveAttribute("href", "/node/task/T-1");
+    const row = link.closest(".prow") as HTMLElement;
+    expect(row.querySelector(".title-ref-key")?.textContent).toBe("payments/ach/ledger");
+    expect(within(row).getByRole("button", { name: "tiller claim task payments/ach/ledger" })).toBeInTheDocument();
+  });
+
+  it("leads Branches rows with the task title and the key in mono after it", async () => {
+    const snapshot: ExecutionSnapshot = { diagnostics: [], observations: [{
+      id: "T-one", key: "epic/feature/task-one", title: "First task", branch: "task-one", source: "local_branch",
+      revision: "abcdef123456", observed_at: "2026-10-06T12:00:00Z", uncommitted: false,
+      status: "in_progress", owner: "jc", integration_status: "ready",
+    }] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/execution": snapshot }));
+    renderHome(summary(), "/?tab=branches");
+
+    const link = await screen.findByRole("link", { name: "First task" });
+    expect(link).toHaveAttribute("href", "/node/task/T-one");
+    expect(link.closest("li")?.querySelector(".title-ref-key")?.textContent).toBe("epic/feature/task-one");
+  });
+
+  it("heads a recovered review with the owner's title and its key after it", async () => {
+    const recovered = {
+      pr: 155, branch: "tiller/reviews/features/billing/refunds", head: "git:done-head",
+      merge_commit: "git:done-result", integration_branch: "main", basis: "ancestry",
+      recovered_by: "jc", recovered_at: "2026-10-07T12:00:00Z", reason: "Authorized recovery",
+      tasks: [], policy_snapshots: [],
+    };
+    const list: ListResult = { noun: "feature", count: 1, nodes: [{
+      id: "F-1", key: "billing/refunds", ref: "billing/refunds (F-1)", title: "Refunds", status: "done", recovered_review: recovered,
+      current_acceptance: { node_id: "F-1", contract_status: "valid", acceptance_ready: true },
+      recovered_crossings_pending: false,
+    }] };
+    stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/ls?noun=feature": list }));
+    renderHome(summary());
+    await openRecoveredTab();
+
+    const link = await screen.findByRole("link", { name: "Refunds" });
+    expect(link).toHaveAttribute("href", "/node/feature/F-1");
+    expect(link.parentElement?.querySelector(".title-ref-key")?.textContent).toBe("billing/refunds");
   });
 });

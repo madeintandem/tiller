@@ -737,6 +737,25 @@
   color: var(--ink-3);
 }
 
+/* An Up next row's command: the copy control on its own line under the reason. */
+.prow .pcmd {
+  display: block;
+  margin-top: 4px;
+}
+
+/* In flight's feature heading: one line over a feature's tasks, so the
+   feature's name and path show once instead of on every row. */
+.pulse-feature {
+  padding: 6px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.pulse-feature a {
+  color: var(--ink-2);
+}
+
 /* Up next's one-sentence notes (not personalized, the caught-up hint): the
    .prow rhythm without its rule, margin 0 for the same <p> reason as
    .pool-line. */

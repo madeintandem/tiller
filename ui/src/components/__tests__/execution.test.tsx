@@ -41,6 +41,19 @@ describe("Execution sources", () => {
     expect(screen.getAllByRole("link", { name: observation.key })[0]).toHaveAttribute("href", "/node/task/T-one");
   });
 
+  it("leads an observation with the task title and follows it with the key; an untitled one shows its key once", () => {
+    render(<MemoryRouter><ExecutionSources state={settled({
+      observations: [{ ...observation, title: "Wire the form" }, { ...observation, id: "T-two", key: "epic/feature/other", branch: "origin/two" }],
+      diagnostics: [],
+    })} /></MemoryRouter>);
+    const titled = screen.getByRole("link", { name: "Wire the form" });
+    expect(titled).toHaveAttribute("href", "/node/task/T-one");
+    expect(titled.closest("li")?.querySelector(".title-ref-key")?.textContent).toBe("epic/feature/task");
+    const bare = screen.getByRole("link", { name: "epic/feature/other" }).closest("li") as HTMLElement;
+    expect(bare.querySelector(".title-ref-key")).toBeNull();
+    expect(bare.textContent?.split("epic/feature/other")).toHaveLength(2);
+  });
+
   it("names which related tip is behind on the observation itself", () => {
     render(<MemoryRouter><ExecutionSources state={settled({
       observations: [{ ...observation, source: "local_branch", freshness: "local_branch_behind" }],

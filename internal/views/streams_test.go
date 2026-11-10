@@ -209,3 +209,45 @@ func TestQuestionStreamsKeepActorAttributionAndFullStatement(t *testing.T) {
 	require.Equal(t, statement, past.OpenQuestions[0].Statement)
 	require.Empty(t, past.Active)
 }
+
+func TestStreamItemsCarryTitlesAndTaskFeatureIdentity(t *testing.T) {
+	tree := streamsTree()
+	tree.Features["F-shared"].Title = "Shared widgets"
+	tree.Tasks["T-in_progress"].Title = "Build the shared widget"
+	tree.Tasks["T-in_review"].Title = "Review the shared widget"
+	tree.Tasks["T-check"].Title = "Check the shared widget"
+	tree.Tasks["T-check"].Blocked = true
+	tree.Tasks["T-ready"].Owner = ""
+	tree.Tasks["T-ready"].Title = "Claim the shared widget"
+
+	streams := StreamsOf(tree)
+	current := contributorStreamByID(t, streams, "current")
+	var active *StreamItem
+	for i := range current.Active {
+		if current.Active[i].ID == "T-in_progress" {
+			active = &current.Active[i]
+		}
+	}
+	require.NotNil(t, active)
+	require.Equal(t, "Build the shared widget", active.Title)
+	require.Equal(t, "F-shared", active.FeatureID)
+	require.Equal(t, "Shared widgets", active.FeatureTitle)
+
+	require.Len(t, current.GatesInReview, 1)
+	require.Equal(t, "Review the shared widget", current.GatesInReview[0].Title)
+	require.Equal(t, "F-shared", current.GatesInReview[0].FeatureID)
+	require.Equal(t, "Shared widgets", current.GatesInReview[0].FeatureTitle)
+
+	require.Len(t, current.Blocked, 1)
+	require.Equal(t, "Check the shared widget", current.Blocked[0].Title)
+	require.Equal(t, "Shared widgets", current.Blocked[0].FeatureTitle)
+
+	require.Len(t, streams.Unclaimed, 1)
+	require.Equal(t, "Shared widgets", streams.Unclaimed[0].FeatureTitle)
+
+	// A feature is not its own feature: the grouping fields stay off it.
+	data, err := json.Marshal(StreamItem{Noun: store.NounFeature, ID: "F-x", Title: "A feature"})
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "feature_id")
+	require.NotContains(t, string(data), "feature_title")
+}

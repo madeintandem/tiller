@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import type { ExecutionRecord, ExecutionSnapshot } from "../api";
 import type { FetchState } from "../hooks";
 import SectionHead from "./SectionHead";
+import TitleRef from "./TitleRef";
 import Time from "./Time";
 import "./execution.css";
 
@@ -79,7 +80,11 @@ export default function ExecutionSources({ state }: { state: FetchState<Executio
               <ul>
                 {data.observations.map((observation) => (
                   <li key={`${observation.id}:${observation.source}:${observation.branch}`}>
-                    <Link to={`/node/task/${encodeURIComponent(observation.id)}`}>{observation.key || observation.id}</Link>
+                    <TitleRef
+                      node={{ noun: "task", id: observation.id, ref: observation.key }}
+                      title={observation.title}
+                      addr={observation.key || observation.id}
+                    />
                     <ExecutionProvenance observation={observation} />
                   </li>
                 ))}

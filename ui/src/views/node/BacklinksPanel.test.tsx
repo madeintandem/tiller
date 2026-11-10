@@ -43,6 +43,30 @@ describe("BacklinksPanel", () => {
     expect(screen.getByRole("link", { name: `${document.path}#L12` })).toHaveAttribute("href", "/file/.tiller/design/refund%20notes.md#L12");
   });
 
+  it("leads a source with its owner's title and puts the file path second", () => {
+    const { container } = mount({ count: 1, complete: true, diagnostics: [], groups: [{ kind: "mentioned_by", sources: [citations] }] });
+    const head = container.querySelector(".backlinks-source-head") as HTMLElement;
+    expect(within(head).getByRole("link", { name: "Billing design" })).toHaveAttribute("href", "/node/feature/F-other");
+    const path = container.querySelector(".backlinks-source-path") as HTMLElement;
+    expect(path.textContent).toContain(".tiller/design/refund notes.md");
+    expect(head.compareDocumentPosition(path) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("explains an unsupported recorded reference inside a closed Integrity notes disclosure", () => {
+    const { container } = mount({ count: 0, complete: true, groups: [], diagnostics: [
+      { code: "unresolved_reference", facet: "provenance", message: 'unsupported recorded reference "src/x.go@main"',
+        source: { file: ".tiller/design/source.md", line: 3 } },
+      { code: "invalid", facet: "documents", message: "Invalid coordinates", source: { file: "notes.md", line: 0 } },
+    ] });
+    const notes = container.querySelector("details") as HTMLDetailsElement;
+    expect(notes.open).toBe(false);
+    expect(within(notes).getByText("Integrity notes", { selector: "summary" })).toBeInTheDocument();
+    expect(within(notes).getByText("A recorded reference uses a form this version cannot resolve.")).toBeInTheDocument();
+    expect(screen.queryByText(/unsupported recorded reference/)).not.toBeInTheDocument();
+    // Other diagnostics keep their place outside the disclosure.
+    expect(notes.contains(screen.getByText(/Invalid coordinates/))).toBe(false);
+  });
+
   it("uses the relationship key before raw coordinates without changing the granted destination", () => {
     mount({ count: 1, complete: true, diagnostics: [], groups: [{
       kind: "mentioned_by", sources: [{

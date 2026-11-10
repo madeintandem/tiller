@@ -70,8 +70,8 @@ func newMux(root string, assets fs.FS, visits *visitState, version string, authz
 	mux.HandleFunc("/api/board", api(root, func(t *store.Tree, _ *http.Request) (any, error) {
 		return views.StreamsOfInput(t, readinput.Workflow(t)), nil
 	}))
-	mux.HandleFunc("/api/execution", api(root, func(_ *store.Tree, r *http.Request) (any, error) {
-		return executionSnapshot(r).Report(), nil
+	mux.HandleFunc("/api/execution", api(root, func(t *store.Tree, r *http.Request) (any, error) {
+		return titledExecutionReport(t, executionSnapshot(r).Report()), nil
 	}))
 	mux.HandleFunc("/api/tree", api(root, func(t *store.Tree, _ *http.Request) (any, error) { return gen.BrowseTree(t), nil }))
 	mux.HandleFunc("/api/map", MapHandler(root))

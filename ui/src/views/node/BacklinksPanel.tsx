@@ -31,9 +31,9 @@ function SourceGroup({ kind, sources, generated }: {
       <ul className="rule-list">
         {sources.map(({ vertex, owner_vertex, edges }) => (
           <li className="backlinks-source" key={vertex.id}>
-            <div className="backlinks-source-head"><VertexReference vertex={vertex} /></div>
+            <div className="backlinks-source-head"><VertexReference vertex={owner_vertex ?? vertex} /></div>
             {owner_vertex && (
-              <div className="backlinks-owner muted">Owned by <VertexReference vertex={owner_vertex} /></div>
+              <div className="backlinks-source-path muted"><VertexReference vertex={vertex} /></div>
             )}
             {edges.map((edge) => (
               <div key={edge.id}>
@@ -50,16 +50,39 @@ function SourceGroup({ kind, sources, generated }: {
   );
 }
 
+// The provenance pass records a form it cannot resolve as a diagnostic whose
+// message quotes the raw reference. That is an integrity note for the project,
+// not a problem with this node's backlinks, so it reads in a closed disclosure
+// in plain words instead of leading the list.
+function isUnsupportedReference(diagnostic: BacklinksView["diagnostics"][number]): boolean {
+  return diagnostic.facet === "provenance" && diagnostic.message.startsWith("unsupported recorded reference");
+}
+
 export default function BacklinksPanel({ backlinks }: { backlinks: BacklinksView }) {
   if (backlinks.count === 0 && backlinks.complete && backlinks.diagnostics.length === 0) return null;
+  const integrityNotes = backlinks.diagnostics.filter(isUnsupportedReference);
+  const diagnostics = backlinks.diagnostics.filter((diagnostic) => !isUnsupportedReference(diagnostic));
   return (
     <InstrSection label="Backlinks" caption={`${backlinks.complete ? "" : "at least "}${backlinks.count} ${backlinks.count === 1 ? "source" : "sources"}`}>
       {!backlinks.complete && (
         <p className="instr-warning" role="status">Backlinks are incomplete. Unavailable relationship inputs may hide other sources.</p>
       )}
-      {backlinks.diagnostics.length > 0 && (
+      {integrityNotes.length > 0 && (
+        <details className="backlinks-integrity">
+          <summary>Integrity notes</summary>
+          <ul className="backlinks-diagnostics">
+            {integrityNotes.map((diagnostic) => (
+              <li key={JSON.stringify(diagnostic)}>
+                <span>A recorded reference uses a form this version cannot resolve.</span>
+                {diagnostic.source && <ul className="backlinks-citations"><SourceCitation source={diagnostic.source} /></ul>}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {diagnostics.length > 0 && (
         <ul className="backlinks-diagnostics" aria-label="Relationship diagnostics">
-          {backlinks.diagnostics.map((diagnostic) => (
+          {diagnostics.map((diagnostic) => (
             <li key={JSON.stringify(diagnostic)}>
               <span>{diagnostic.facet}: {diagnostic.message}</span>
               {diagnostic.source && <ul className="backlinks-citations"><SourceCitation

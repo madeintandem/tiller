@@ -1,0 +1,9 @@
+/* The key that follows a title: quiet mono, set off from the title by a space
+   of its own so no separator character is needed. */
+.title-ref-key {
+  margin-left: 0.5em;
+  font-size: 0.85em;
+  font-weight: 400;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}

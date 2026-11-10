@@ -75,6 +75,7 @@ export interface ProjectSummary {
 export interface ExecutionRecord {
   id: string;
   key: string;
+  title?: string;
   branch: string;
   source: "working_tree" | "local_branch" | "remote_tracking";
   revision: string;
@@ -134,6 +135,10 @@ export interface StreamItem {
   id: string;
   key?: string;
   ref: string;
+  title?: string;
+  // A task's feature, for grouping; absent on every other noun.
+  feature_id?: string;
+  feature_title?: string;
   status: string;
   display: string;
 }
@@ -155,6 +160,9 @@ export interface BlockedItem {
   id: string;
   key?: string;
   ref: string;
+  title?: string;
+  feature_id?: string;
+  feature_title?: string;
   depends_on?: string[];
   depends_on_refs?: string[];
   held?: HeldView;
@@ -167,6 +175,9 @@ export interface GatesItem {
   id: string;
   key?: string;
   ref: string;
+  title?: string;
+  feature_id?: string;
+  feature_title?: string;
   gates?: Record<string, GateView>;
 }
 
@@ -199,6 +210,7 @@ export interface UnclaimedItem {
   status: string;
   feature_id: string;
   feature_key?: string;
+  feature_title?: string;
 }
 
 // GET /api/board (views.Streams). unclaimed is additive and omitted from the

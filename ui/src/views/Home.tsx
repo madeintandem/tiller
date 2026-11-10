@@ -45,9 +45,9 @@ import ExecutionSources from "../components/ExecutionSources";
 import NodeTabs from "../components/NodeTabs";
 import PageLoading from "../components/PageLoading";
 import RecapSignal from "../components/RecapSignal";
-import RefLink from "../components/RefLink";
 import RecoveredReview from "../components/RecoveredReview";
 import SectionHead from "../components/SectionHead";
+import TitleRef from "../components/TitleRef";
 import { addrOf } from "../lib/addr";
 import { has } from "../lib/has";
 import type { BandRun } from "./home/bands";
@@ -369,7 +369,7 @@ function RecoveredReviews({ owners, features }: {
     if (record === undefined) return null;
     return (
       <section key={row.id}>
-        <RefLink node={{ noun, id: row.id, ref: row.ref }} label={addrOf(row)} />
+        <TitleRef node={{ noun, id: row.id, ref: row.ref }} title={row.title} addr={addrOf(row)} />
         <RecoveredReview record={record} gates={row.gates}
           acceptanceReady={row.current_acceptance?.acceptance_ready}
           outstanding={row.current_acceptance?.outstanding}
@@ -380,7 +380,7 @@ function RecoveredReviews({ owners, features }: {
         />
         {noun === "epic" && recoveredEpicFeatures(row, features).map((feature) => (
           <section key={feature.id}>
-            <RefLink node={{ noun: "feature", id: feature.id, ref: feature.ref }} label={addrOf(feature)} />
+            <TitleRef node={{ noun: "feature", id: feature.id, ref: feature.ref }} title={feature.title} addr={addrOf(feature)} />
             <p>Current acceptance: {feature.current_acceptance === undefined ? "unavailable" : feature.current_acceptance.acceptance_ready ? "ready" : "unresolved"}.</p>
             <ul>{Object.entries(feature.gates ?? {}).map(([name, gate]) => <li key={name}>{name}: {gate.status ?? "pending"}</li>)}</ul>
           </section>

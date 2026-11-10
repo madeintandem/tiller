@@ -12,6 +12,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/execution"
+	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/views"
 )
 
@@ -23,6 +24,32 @@ func withExecutionSnapshot(r *http.Request, snapshot *execution.Snapshot) *http.
 
 func executionSnapshot(r *http.Request) *execution.Snapshot {
 	return r.Context().Value(executionContextKey{}).(*execution.Snapshot)
+}
+
+// titledObservation is an observation plus its task's title. The title is
+// added here, in the serve layer, so internal/execution stays free of the tree.
+type titledObservation struct {
+	execution.Record
+	Title string `json:"title,omitempty"`
+}
+
+type titledExecutionReportBody struct {
+	Observations []titledObservation    `json:"observations"`
+	Diagnostics  []execution.Diagnostic `json:"diagnostics"`
+}
+
+func titledExecutionReport(t *store.Tree, report execution.Report) titledExecutionReportBody {
+	out := titledExecutionReportBody{
+		Observations: make([]titledObservation, len(report.Observations)),
+		Diagnostics:  report.Diagnostics,
+	}
+	for i, record := range report.Observations {
+		out.Observations[i] = titledObservation{Record: record}
+		if task := t.Tasks[record.ID]; task != nil {
+			out.Observations[i].Title = task.Title
+		}
+	}
+	return out
 }
 
 type observedNodePage struct {

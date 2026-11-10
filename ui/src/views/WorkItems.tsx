@@ -11,6 +11,8 @@ import EmptyNote from "../components/EmptyNote";
 import PageLoading from "../components/PageLoading";
 import RefLink from "../components/RefLink";
 import StateDot from "../components/StateDot";
+import TitleRef from "../components/TitleRef";
+import { addrOf } from "../lib/addr";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { useBoardScrollMode } from "../lib/boardScroll";
 import { ROW_CAP } from "../lib/disclosure";
@@ -343,7 +345,7 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
       {has(item.owner) && <span className="work-item-owner">Owner: <PersonName id={item.owner} name={item.owner_name} /></span>}
       {item.attached !== undefined && (
         <p className="work-item-attachment">
-          Attached to <RefLink node={item.attached} />
+          Attached to <TitleRef node={item.attached} title={item.attached.title} addr={addrOf(item.attached)} />
         </p>
       )}
       {has(item.resolution) && <p className="work-item-attachment">Resolution: {item.resolution}</p>}

@@ -271,3 +271,18 @@ func TestObservedParentActivityAgreesWithoutAdvancingParentLifecycle(t *testing.
 	require.Equal(t, page.Node.Activity, list.Nodes[0].Activity)
 	require.Equal(t, "ready", list.Nodes[0].Status)
 }
+
+func TestExecutionObservationsCarryTheTaskTitle(t *testing.T) {
+	srv, _, worktree := observationFixture(t)
+	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\ntitle: One\nstatus: in_progress\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
+	var report struct {
+		Observations []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+		} `json:"observations"`
+	}
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/execution", &report))
+	require.Len(t, report.Observations, 1)
+	require.Equal(t, "T-cccccc", report.Observations[0].ID)
+	require.Equal(t, "One", report.Observations[0].Title)
+}

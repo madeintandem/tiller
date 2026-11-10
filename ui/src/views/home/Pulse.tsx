@@ -1,6 +1,7 @@
 // The desk's pulse: the Just happened, In flight, and Up next columns and
 // their rows, moved out of Home.tsx whole.
 
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { FetchState } from "../../hooks";
 import type {
@@ -13,11 +14,13 @@ import type {
   StreamItem,
   Streams,
 } from "../../api";
+import CopyCmd from "../../components/CopyCmd";
 import EmptyNote from "../../components/EmptyNote";
 import { ProseInline } from "../../components/Prose";
 import RefLink from "../../components/RefLink";
 import SectionHead from "../../components/SectionHead";
 import StateDot from "../../components/StateDot";
+import TitleRef from "../../components/TitleRef";
 import { addrOf } from "../../lib/addr";
 import { burstWhen } from "../../lib/bursts";
 import { eventPhrase } from "../../lib/eventPhrase";
@@ -27,8 +30,9 @@ import { has } from "../../lib/has";
 import { sentence } from "../../lib/sentence";
 import { PersonName, usePersonName } from "../../people";
 import { formatClock } from "../../lib/time";
+import { featureKeyOf, groupByFeature, taskKeyTail } from "./inFlight";
 import { composeJustHappened, targetLabel } from "./justHappened";
-import { nextLabel, nextReason } from "./nextRow";
+import { nextReason } from "./nextRow";
 
 // ---------- The pulse: just happened, in flight, up next ----------
 
@@ -149,15 +153,15 @@ function InFlightBody({ streams }: { streams: Streams }) {
               6: only the blocked register caps, at ROW_CAP, with an "N more"
               foot carrying the full remaining count; active and in-review
               rows are motion and are never capped. */}
-          {o.active.map((item) => (
-            <ActiveRow key={`active:${item.noun}:${item.id}`} item={item} />
-          ))}
-          {o.gates_in_review.map((item) => (
-            <GatesRow key={`gates:${item.noun}:${item.id}`} item={item} />
-          ))}
-          {o.blocked.slice(0, PULSE_CAP).map((item) => (
-            <BlockedRow key={blockedRowKey(item)} item={item} />
-          ))}
+          <FeatureGroups items={o.active}>
+            {(item, grouped) => <ActiveRow key={`active:${item.noun}:${item.id}`} item={item} grouped={grouped} />}
+          </FeatureGroups>
+          <FeatureGroups items={o.gates_in_review}>
+            {(item, grouped) => <GatesRow key={`gates:${item.noun}:${item.id}`} item={item} grouped={grouped} />}
+          </FeatureGroups>
+          <FeatureGroups items={o.blocked.slice(0, PULSE_CAP)}>
+            {(item, grouped) => <BlockedRow key={blockedRowKey(item)} item={item} grouped={grouped} />}
+          </FeatureGroups>
           {/* The foot always points at /build, even when a capped row is a
               shelf item, which lives on Fix instead: the
               remainder can mix all five work nouns, so no single page holds
@@ -174,14 +178,59 @@ function InFlightBody({ streams }: { streams: Streams }) {
   );
 }
 
-function ActiveRow({ item }: { item: StreamItem }) {
+type FlightItem = StreamItem | GatesItem | BlockedItem;
+
+// A feature's tasks sit under one heading; every other row (a shelf node, a
+// task with no feature) renders in place without one.
+function FeatureGroups<T extends FlightItem>({
+  items,
+  children,
+}: {
+  items: T[];
+  children: (item: T, grouped: boolean) => ReactNode;
+}) {
+  return (
+    <>
+      {groupByFeature(items).map((group) => {
+        const featureId = group.featureId;
+        if (featureId === null) {
+          return group.items.map((item) => children(item, false));
+        }
+        const featureKey = featureKeyOf(group.items[0].key);
+        return (
+          <div key={`feature:${featureId}`}>
+            <div className="pulse-feature">
+              <TitleRef
+                node={{ noun: "feature", id: featureId, ref: featureKey ?? featureId }}
+                title={group.featureTitle ?? undefined}
+                addr={featureKey ?? featureId}
+              />
+            </div>
+            {group.items.map((item) => children(item, true))}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+// A row's reference: title first, key in mono after it. Under a feature
+// heading a task's key shortens to its own segment, so the feature's path
+// shows once, on the heading.
+function ItemRef({ item, grouped }: { item: FlightItem; grouped: boolean }) {
+  const key = item.key;
+  const addr = grouped && item.noun === "task" && key !== undefined && key !== "" ? taskKeyTail(key) : addrOf(item);
+  return <TitleRef node={item} title={item.title} addr={addr} />;
+}
+
+function ActiveRow({ item, grouped }: { item: StreamItem; grouped: boolean }) {
   return (
     <div className="prow">
       <StateDot status={item.status} />
       <NounChip noun={item.noun} />
       <span className="what">
         <b>
-          <RefLink node={item} label={addrOf(item)} className="" />
+          <ItemRef item={item} grouped={grouped} />
         </b>{" "}
         · {item.display}
       </span>
@@ -200,14 +249,14 @@ function NounChip({ noun }: { noun: string }) {
 // GatesInReview holds tasks and shelf nodes alone, always at in_review by
 // construction (a PR always represents a task or a shelf node, streams.go's
 // own doc comment), so the status dot is a true fact rather than a guess.
-function GatesRow({ item }: { item: GatesItem }) {
+function GatesRow({ item, grouped }: { item: GatesItem; grouped: boolean }) {
   return (
     <div className="prow">
       <StateDot status="in_review" />
       <NounChip noun={item.noun} />
       <span className="what">
         <b>
-          <RefLink node={item} label={addrOf(item)} className="" />
+          <ItemRef item={item} grouped={grouped} />
         </b>{" "}
         · in review
       </span>
@@ -217,14 +266,14 @@ function GatesRow({ item }: { item: GatesItem }) {
 
 // Every blocked condition family paints the existing shared blocked register;
 // the structured detail supplies the truthful explanation beside it.
-function BlockedRow({ item }: { item: BlockedItem }) {
+function BlockedRow({ item, grouped }: { item: BlockedItem; grouped: boolean }) {
   return (
     <div className="prow">
       <StateDot status="blocked" />
       <NounChip noun={item.noun} />
       <span className="what">
         <b>
-          <RefLink node={item} label={addrOf(item)} className="" />
+          <ItemRef item={item} grouped={grouped} />
         </b>{" "}
         · <BlockedWhy item={item} />
       </span>
@@ -314,9 +363,9 @@ function UpNextBody({ next }: { next: NextAnswer }) {
   );
 }
 
-// One ranked move: its actor, then the action and a link to its node (a
-// question by its title), then why it ranks here, worded as `tiller next`
-// words it. The command stays off the row; Needs you and the CLI carry it.
+// One ranked move: its actor, then the action and a link to its node (title
+// first, key after it), then why it ranks here, worded as `tiller next` words
+// it, then the command as a copy control.
 function NextRow({ candidate }: { candidate: NextCandidate }) {
   const { node } = candidate;
   const reason = nextReason(candidate);
@@ -329,13 +378,18 @@ function NextRow({ candidate }: { candidate: NextCandidate }) {
           <>
             {" "}
             <b>
-              <RefLink node={node} label={nextLabel(node)} className="" />
+              <TitleRef node={node} title={node.title} addr={addrOf(node)} />
             </b>
           </>
         )}
         {has(reason) && (
           <span className="why">
             <ProseInline markdown={reason} />
+          </span>
+        )}
+        {has(candidate.command) && (
+          <span className="pcmd">
+            <CopyCmd cmd={candidate.command} />
           </span>
         )}
       </span>
