@@ -291,11 +291,21 @@ export function bumpFetchGeneration(): void {
 
 // How many reads are out right now, so the focus reread
 // (lib/useRefetchOnFocus.ts) never stacks a second reread on one the server
-// has not finished answering.
+// has not finished answering, and the moment the count falls back to zero,
+// whether the reads succeeded or failed, so the topbar's refresh control
+// (AsOf.tsx) comes back even when every read of a reread failed.
 let fetchesInFlight = 0;
+const settledListeners = new Set<() => void>();
 
 export function getFetchesInFlight(): number {
   return fetchesInFlight;
+}
+
+export function subscribeFetchesSettled(listener: () => void): () => void {
+  settledListeners.add(listener);
+  return () => {
+    settledListeners.delete(listener);
+  };
 }
 
 // init carries a read's optional headers and the abort signal useFetch uses
@@ -306,6 +316,11 @@ export async function fetchJSON<T>(path: string, init?: Pick<RequestInit, "heade
     return await readJSON<T>(path, init);
   } finally {
     fetchesInFlight -= 1;
+    if (fetchesInFlight === 0) {
+      for (const listener of settledListeners) {
+        listener();
+      }
+    }
   }
 }
 

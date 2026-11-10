@@ -2,14 +2,14 @@
 // filters stay on screen until the new answer lands, and a failed reread
 // keeps the board and says it is out of date.
 
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BuildBoard, BuildFeature, RelatedNode, WorkItemsBoard } from "../../api";
-import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes } from "./rereadHarness";
+import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes, settleReads } from "./rereadHarness";
 
-afterEach(() => {
-  cleanup();
+afterEach(async () => {
+  await settleReads();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   window.localStorage.clear();

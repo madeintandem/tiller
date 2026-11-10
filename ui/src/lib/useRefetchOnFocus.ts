@@ -7,9 +7,10 @@
 // Three guards keep it quiet. A page read within the minimum age is fresh
 // enough, and so is one this hook just reread, which is also what makes the
 // visibilitychange and focus pair that a tab switch fires count once. A
-// hidden document never rereads. And while any read is still out (the
-// previous reread's, or a slow one of the page's own), it waits rather than
-// stacking a second reread on it. The bump is a plain read for every view:
+// hidden document never rereads. And a return while any read is still out
+// (the previous reread's, or a slow one of the page's own) is skipped rather
+// than stacking a second reread on it; nothing is queued, so the next return
+// rereads. The bump is a plain read for every view:
 // History's visit horizon moves only on the Mark caught up press.
 
 import { useEffect } from "react";

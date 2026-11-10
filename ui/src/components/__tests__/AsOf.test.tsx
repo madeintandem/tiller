@@ -232,4 +232,42 @@ describe("AsOf: any reread in flight", () => {
     act(() => landed(new Date()));
     expect(button).toBeEnabled();
   });
+
+  // The server goes away during a reread: every read fails, none lands. The
+  // control must come back once the reads have settled, so the reader can
+  // retry the moment the server is back, rather than wait for navigation or
+  // another focus.
+  it("re-enables the refresh control once a reread's reads have all failed, and pressing it rereads", async () => {
+    function Consumer() {
+      useFetch<{ ok: boolean }>("/api/status");
+      return null;
+    }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ok: true }) })
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <>
+        <AsOf />
+        <Consumer />
+      </>,
+    );
+    const button = await screen.findByRole("button", { name: /refresh/i });
+    expect(button).toBeEnabled();
+
+    act(() => api.bumpFetchGeneration());
+    expect(button).toBeDisabled();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(button).toBeEnabled();
+
+    fireEvent.click(button);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });

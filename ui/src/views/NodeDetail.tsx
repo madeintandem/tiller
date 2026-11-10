@@ -64,6 +64,9 @@ export default function NodeDetail() {
   const merged = useFetch<NodePage>(mergedPath);
   const page = withBranchHistory(first.data, merged.data, merged.error);
   const { error } = first;
+  // What a failed reread left out of date: the page read itself, or else a
+  // merged read that failed while its last good branch history stays shown.
+  const staleError = error ?? (merged.data !== null ? merged.error : null);
   // Keyed to the node request path: navigating to another node rereads the
   // queue, so a snapshot taken on the previous node (perhaps before a CLI
   // mutation answered its ask) never drives this node's attention stack, and
@@ -101,7 +104,7 @@ export default function NodeDetail() {
   }, [projectKey, openedId]);
 
   return (
-    <div className="explore-detail">{paneContent(noun, addr, page, error, queue.data)}</div>
+    <div className="explore-detail">{paneContent(noun, addr, page, error, staleError, queue.data)}</div>
   );
 }
 
@@ -115,6 +118,7 @@ function paneContent(
   addr: string | undefined,
   page: NodePage | null,
   error: string | null,
+  staleError: string | null,
   queue: Queue | null,
 ) {
   if (noun === undefined || addr === undefined || addr === "") {
@@ -128,7 +132,7 @@ function paneContent(
   }
   return (
     <>
-      <OutOfDate error={error} />
+      <OutOfDate error={staleError} />
       <NodeDetailInstrument page={page} queue={queue} />
     </>
   );
@@ -136,10 +140,16 @@ function paneContent(
 
 // The page to draw: the merged answer once it lands, else the first answer,
 // which keeps its pending History row until then. A failed merged read ends
-// the wait with the failure named where the branch history would be.
+// the wait with the failure named where the branch history would be. A merged
+// reread that fails while the last merged answer is kept draws the fresh
+// first answer (header, status, spec) with only the last good branch history
+// and its execution provenance carried over; the pane marks it out of date.
 function withBranchHistory(first: NodePage | null, merged: NodePage | null, mergedError: string | null): NodePage | null {
   if (first === null) {
     return null;
+  }
+  if (merged !== null && mergedError !== null) {
+    return { ...first, history: merged.history, execution: merged.execution, history_pending: undefined };
   }
   if (merged !== null) {
     return merged;

@@ -8,6 +8,7 @@ import {
   getLastFetchAt,
   isAttestGate,
   isEvalError,
+  subscribeFetchesSettled,
   subscribeLastFetch,
 } from "./api";
 
@@ -150,9 +151,30 @@ describe("fetchJSON's last-fetch subscribable", () => {
   });
 });
 
-// The focus reread waits while any read is out, so the count must come back
-// down however a read ends: answered, refused, or the network failing.
+// The focus reread is skipped while any read is out, so the count must come
+// back down however a read ends: answered, refused, or the network failing.
 describe("fetchJSON's in-flight count", () => {
+  it("tells settled subscribers once the last read out ends, even when it failed", async () => {
+    const first = Promise.withResolvers<Response>();
+    const second = Promise.withResolvers<Response>();
+    vi.stubGlobal("fetch", vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise));
+    let settled = 0;
+    const unsubscribe = subscribeFetchesSettled(() => {
+      settled += 1;
+    });
+
+    const a = fetchJSON("/api/status");
+    const b = fetchJSON("/api/queue");
+    first.reject(new Error("offline"));
+    await expect(a).rejects.toThrow("offline");
+    expect(settled).toBe(0);
+    second.reject(new Error("offline"));
+    await expect(b).rejects.toThrow("offline");
+    expect(settled).toBe(1);
+
+    unsubscribe();
+  });
+
   it("counts a read while it is out and releases it on success, refusal, and failure", async () => {
     const held = Promise.withResolvers<Response>();
     vi.stubGlobal("fetch", vi.fn()

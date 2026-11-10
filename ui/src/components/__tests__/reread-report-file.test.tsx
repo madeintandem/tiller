@@ -3,14 +3,14 @@
 // and says they are out of date, and the file page does not scroll back to
 // its line on a reread.
 
-import { cleanup, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ProseFile, Report, UsageReport } from "../../api";
-import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes } from "./rereadHarness";
+import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes, settleReads } from "./rereadHarness";
 
-afterEach(() => {
-  cleanup();
+afterEach(async () => {
+  await settleReads();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   window.localStorage.clear();

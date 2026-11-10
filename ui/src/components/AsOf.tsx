@@ -30,15 +30,12 @@
 // goes true the moment this component's own click bumps the generation, and
 // the button disables for the duration - a second click in that window is a
 // no-op, belt-and-suspenders alongside `disabled` itself. It clears on the
-// SAME subscribeLastFetch signal the asof line already reads: the next
-// successful read landing anywhere in the app, not a tracker of this click's
-// own requests specifically (no new machinery - the two subscribables this
-// file already reads are the whole guard). That is the same honest
-// imprecision "synced" itself carries: a good-enough signal that something
-// just landed, not a per-request completion guarantee. A run where every
-// in-flight request happens to fail leaves the button disabled until the
-// next unrelated read succeeds - the same trade the rest of this file makes
-// rather than inventing a dedicated in-flight counter for one button.
+// SAME subscribeLastFetch signal the asof line already reads (the next
+// successful read landing anywhere in the app), and also when api.ts's
+// in-flight count falls back to zero, so a reread in which every read failed
+// still gives the control back. That is the same honest imprecision "synced"
+// itself carries: a good-enough signal that something just landed or that
+// nothing is out, not a per-request completion guarantee.
 //
 // Any reread holds the control the same way, not only this button's: the
 // window regaining focus bumps the same generation (lib/useRefetchOnFocus),
@@ -46,7 +43,13 @@
 // control is the one quiet sign a reread is out. Pages never draw a spinner
 // for it; they keep what they show until the answer lands.
 import { useEffect, useState } from "react";
-import { bumpFetchGeneration, getLastFetchAt, subscribeFetchGeneration, subscribeLastFetch } from "../api";
+import {
+  bumpFetchGeneration,
+  getLastFetchAt,
+  subscribeFetchesSettled,
+  subscribeFetchGeneration,
+  subscribeLastFetch,
+} from "../api";
 
 export default function AsOf() {
   const [at, setAt] = useState<Date | null>(() => getLastFetchAt());
@@ -66,6 +69,9 @@ export default function AsOf() {
   );
 
   useEffect(() => subscribeFetchGeneration(() => setRefreshing(true)), []);
+  // A reread whose every read failed lands nothing, so the control also comes
+  // back once no read is out: the reader can retry as soon as the server is.
+  useEffect(() => subscribeFetchesSettled(() => setRefreshing(false)), []);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);

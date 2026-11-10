@@ -60,7 +60,7 @@ export default function ExecutionSources({ state }: { state: FetchState<Executio
           {observedAt !== undefined && <p className="muted">Observed <Time iso={observedAt} /></p>}
           <details className="execution-fold">
             <summary>How branch observation works</summary>
-            <p className="muted">Navigation and manual Refresh reread local sources. The console does not fetch Git remotes. Fetch outside the console, then refresh to see updated remote-tracking observations. Observed state is not integration eligibility or permission to run commands on integration.</p>
+            <p className="muted">Navigation, the topbar refresh, and coming back to the window reread local sources. The console does not fetch Git remotes. Fetch outside the console, then refresh to see updated remote-tracking observations. Observed state is not integration eligibility or permission to run commands on integration.</p>
             <p className="muted">Global History shows integration history. A task's node History includes that task's events from its selected observation source.</p>
           </details>
           {data.diagnostics.length > 0 && (

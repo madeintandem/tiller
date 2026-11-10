@@ -3,15 +3,15 @@
 // the page, a reread (focus included) never carries the visit marker, and a
 // Caught up confirmation survives a reread that brings nothing new.
 
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "../../api";
 import type { Recap, RecapEntry } from "../../api";
-import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes } from "./rereadHarness";
+import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes, settleReads } from "./rereadHarness";
 
-afterEach(() => {
-  cleanup();
+afterEach(async () => {
+  await settleReads();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   window.localStorage.clear();

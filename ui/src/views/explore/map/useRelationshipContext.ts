@@ -7,19 +7,36 @@ function diagnosticKey(issue: RelationshipDiagnostic): string {
   return JSON.stringify([issue.code, issue.facet, issue.message, issue.source, issue.subjects]);
 }
 
+// The map payload carries no revision, so a payload is identified by its own
+// serialization: every node, edge, relationship vertex and edge, catalog
+// entry, diagnostic, and the completeness flag. The server writes the same
+// state in the same order, so an unchanged graph serializes identically. It
+// is computed only when a new payload object arrives, once per read.
+function graphFingerprint(view: MapView | null): string {
+  return JSON.stringify(view);
+}
+
 export function useRelationshipContext(view: MapView | null) {
   const [context, setContext] = useState<{
     base: MapView | null;
+    fingerprint: string;
     mapped: MapRelationshipResults | null;
     query: MapRelationshipResults | null;
     cleared: boolean;
-  }>({ base: view, mapped: null, query: null, cleared: false });
+  }>(() => ({ base: view, fingerprint: graphFingerprint(view), mapped: null, query: null, cleared: false }));
 
-  // A successful refresh replaces the graph. Do not merge a query from the
-  // previous working tree into it, or keep unreachable snapshots in state.
-  // Failed refreshes retain the same view and therefore retain the context.
+  // A successful refresh that changed the graph replaces it. Do not merge a
+  // query from the previous working tree into it, or keep unreachable
+  // snapshots in state. A reread that brings the same graph (every reread
+  // delivers a new payload object) keeps the reader's investigation, and a
+  // failed refresh retains the same view and therefore the context.
   if (context.base !== view) {
-    setContext({ base: view, mapped: null, query: null, cleared: context.cleared || context.mapped !== null || context.query !== null });
+    const fingerprint = graphFingerprint(view);
+    if (fingerprint === context.fingerprint) {
+      setContext({ ...context, base: view });
+    } else {
+      setContext({ base: view, fingerprint, mapped: null, query: null, cleared: context.cleared || context.mapped !== null || context.query !== null });
+    }
   }
 
   const inspectionView = useMemo(() => {
@@ -46,7 +63,7 @@ export function useRelationshipContext(view: MapView | null) {
     mappedResults: context.mapped,
     clearedOnRefresh: context.cleared,
     selectContext: (query: MapRelationshipResults) => setContext((previous) => ({ ...previous, query, cleared: false })),
-    mapResults: (results: MapRelationshipResults) => setContext({ base: view, mapped: results, query: results, cleared: false }),
+    mapResults: (results: MapRelationshipResults) => setContext((previous) => ({ ...previous, base: view, mapped: results, query: results, cleared: false })),
     clearMappedResults: () => setContext((previous) => ({ ...previous, mapped: null })),
   };
 }

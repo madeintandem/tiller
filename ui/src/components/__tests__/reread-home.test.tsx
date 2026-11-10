@@ -3,14 +3,15 @@
 // over the desk, no lost tab, no dropped #hash, no second scroll to the
 // section the reader arrived at.
 
-import { cleanup, screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DriftReportView, ListResult } from "../../api";
-import { expectNoLoading, homeRoutes, renderApp, stubReread, summary, watchLoading } from "./rereadHarness";
+import { getFetchesInFlight } from "../../api";
+import { expectNoLoading, homeRoutes, renderApp, stubReread, summary, watchLoading, settleReads } from "./rereadHarness";
 
-afterEach(() => {
-  cleanup();
+afterEach(async () => {
+  await settleReads();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   window.localStorage.clear();
@@ -31,6 +32,20 @@ function epics(n: number): ListResult {
     nodes: Array.from({ length: n }, (_, i) => ({ id: `E-${i}`, ref: `E-${i}`, title: `Epic ${i}`, status: "active" })),
   };
 }
+
+describe("The reread harness", () => {
+  it("lets a held read the page abandons leave the in-flight count", async () => {
+    const stub = stubReread(homeRoutes());
+    const { unmount } = renderApp("/");
+    expect(await screen.findByRole("heading", { level: 1, name: "Acme Platform" })).toBeInTheDocument();
+
+    stub.reread();
+    expect(getFetchesInFlight()).toBeGreaterThan(0);
+    unmount();
+
+    await waitFor(() => expect(getFetchesInFlight()).toBe(0));
+  });
+});
 
 describe("The shell and Home while the page rereads", () => {
   it("keeps the topbar's project and the desk on screen, then updates both in place", async () => {

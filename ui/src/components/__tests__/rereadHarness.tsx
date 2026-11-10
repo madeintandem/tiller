@@ -4,12 +4,12 @@
 // at a real address, bumps the fetch generation with every following read
 // held open, checks the page, then releases the reads with changed data.
 
-import { act, render } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { expect, vi } from "vitest";
 
 import type { ListResult, ProjectSummary } from "../../api";
-import { bumpFetchGeneration } from "../../api";
+import { bumpFetchGeneration, getFetchesInFlight } from "../../api";
 import App from "../../App";
 
 export type Routes = Record<string, unknown>;
@@ -61,20 +61,34 @@ export interface Call {
   marked: boolean;
 }
 
+const serverError = () => ({ ok: false, status: 500, statusText: "Internal Server Error", text: () => Promise.resolve("disk on fire") });
+
 // A fetch stub keyed by exact URL. reread() bumps the fetch generation and
 // holds every read that follows; release() answers them from the table with
-// the changes applied, and later reads answer at once again. fail() answers
-// the held reads with a server error instead; hold() holds without a bump.
+// the changes applied (and a server error for any URL it names as failing),
+// and later reads answer at once again. fail() answers every held read with a
+// server error; hold() holds without a bump. A held read whose signal aborts
+// (an unmount, or a newer read superseding it) rejects with an AbortError the
+// way a browser's fetch does, so it leaves the in-flight count.
 export function stubReread(table: Routes) {
   let current = table;
-  let held: { url: string; settle: (value: unknown) => void }[] | null = null;
+  type Held = { url: string; settle: (value: unknown) => void };
+  let held: Held[] | null = null;
   const calls: Call[] = [];
   vi.stubGlobal("fetch", vi.fn((input: unknown, init?: RequestInit) => {
     const url = String(input);
     calls.push({ url, marked: new Headers(init?.headers).get("X-Tiller-Visit") === "1" });
     if (held !== null) {
       const queue = held;
-      return new Promise((resolve) => queue.push({ url, settle: resolve }));
+      return new Promise((resolve, reject) => {
+        const entry: Held = { url, settle: resolve };
+        queue.push(entry);
+        init?.signal?.addEventListener("abort", () => {
+          const at = queue.indexOf(entry);
+          if (at >= 0) queue.splice(at, 1);
+          reject(new DOMException("The operation was aborted.", "AbortError"));
+        });
+      });
     }
     return answer(current, url);
   }));
@@ -91,21 +105,19 @@ export function stubReread(table: Routes) {
     heldUrls(): string[] {
       return (held ?? []).map((h) => h.url);
     },
-    async release(changes: Routes = {}) {
+    async release(changes: Routes = {}, failing: string[] = []) {
       current = { ...current, ...changes };
       const pending = held ?? [];
       held = null;
       await act(async () => {
-        for (const h of pending) h.settle(await answer(current, h.url));
+        for (const h of pending) h.settle(failing.includes(h.url) ? serverError() : await answer(current, h.url));
       });
     },
     async fail() {
       const pending = held ?? [];
       held = null;
       await act(async () => {
-        for (const h of pending) {
-          h.settle({ ok: false, status: 500, statusText: "Internal Server Error", text: () => Promise.resolve("disk on fire") });
-        }
+        for (const h of pending) h.settle(serverError());
       });
     },
   };
@@ -148,6 +160,14 @@ export function renderApp(entry: string) {
       <Where />
     </MemoryRouter>,
   );
+}
+
+// Every reread test file's afterEach: unmount (which aborts any read still
+// held), then require the module-level in-flight count back at zero, so no
+// test leaks an unsettled read into the next one's focus guard.
+export async function settleReads() {
+  cleanup();
+  await waitFor(() => expect(getFetchesInFlight()).toBe(0));
 }
 
 // The whole check most tests make: the page held what it showed and put no
