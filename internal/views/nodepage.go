@@ -132,7 +132,7 @@ func StartOf(t *store.Tree, task *store.Task, reader string, in workflow.Input) 
 	}
 	start := "tiller start task " + queueAddr(task)
 	if task.Owner != "" {
-		if task.Owner != reader || !gen.AssignedTaskEligible(t, task) || in.Eligibility[task.ID] != "" || in.Eligibility[task.FeatureID] != "" {
+		if task.Owner != reader || !assignedTaskEligible(t, task, in) {
 			return nil
 		}
 		return &NodeStart{Actor: actorAgent, Action: "start", Command: start}

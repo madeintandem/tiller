@@ -93,6 +93,13 @@ func TestStartOfHonorsObservedEligibilityAndBranches(t *testing.T) {
 		"an observed basis failure on the feature holds the claim")
 	require.Nil(t, views.StartOf(tree, task, "", observedOn(task.ID, "t/x", "robin")),
 		"work already in flight on a branch is not offered for claiming")
+
+	task.Owner = "robin"
+	require.NotNil(t, views.StartOf(tree, task, "robin", workflow.Input{}))
+	require.Nil(t, views.StartOf(tree, task, "robin", workflow.Input{Eligibility: map[string]string{f.ID: "basis drifted"}}),
+		"an observed basis failure on the feature holds the owner's start too")
+	require.Nil(t, views.StartOf(tree, task, "robin", workflow.Input{Eligibility: map[string]string{task.ID: "basis drifted"}}),
+		"an observed basis failure on the task holds its start")
 }
 
 func TestNodePageStartIsOmittedFromJSONWhenNil(t *testing.T) {
