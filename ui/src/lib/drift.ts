@@ -51,7 +51,7 @@ export const MARKER_COPY: Record<string, { name: string; meaning: string; next: 
   stale_spec: {
     name: "Spec changed after the work",
     meaning: "Finished work was verified against a spec, eval, or surface that has since changed or gone missing.",
-    next: "Review what changed against the finished work, then plan follow-up work, or correct a changed eval through an approved amendment.",
+    next: "Review what changed against the work, and for finished work make any correction through a reviewed amendment.",
   },
   active_basis: {
     name: "Work started from an older basis",
@@ -64,7 +64,7 @@ export const MARKER_COPY: Record<string, { name: string; meaning: string; next: 
     next: "Read the answer, then mark the assumption reviewed if the work still stands.",
   },
   missing_surface: {
-    name: "No surface recorded",
+    name: "Recorded file is gone",
     meaning: "A path this work recorded as its surface is no longer in the working tree.",
     next: "Link the work to the path it touches now, or drop the path that is gone.",
   },
@@ -83,12 +83,39 @@ export const MARKER_COPY: Record<string, { name: string; meaning: string; next: 
     meaning: "The code a design document describes has changed in the working tree since the document was confirmed.",
     next: "Read the document against the current code, reconcile it, then confirm it.",
   },
+  // Not a sweep marker: serve/prose.go reports a failed comparison of a design
+  // file's baseline panel under "design" (vocabulary.json drift_extra_markers).
+  design: {
+    name: "Design comparison failed",
+    meaning: "Comparing this design document with its code failed before it could finish.",
+    next: "Read the detail line, fix what it names, then check the document again.",
+  },
 };
 
+// REASON_COPY is the default sentence for a reason. A reason is scoped to its
+// marker (drift.Uncovered's doc comment), so where one sentence cannot be true
+// under every marker that emits it, REASON_COPY_BY_MARKER overrides it for the
+// markers that differ. Read both only through reasonCopy.
+//
+// Reason by marker, from drift.go, design.go, and serve/prose.go:
+//   no_completion_record: stale_spec
+//   spec_unreadable: stale_spec
+//   eval_unreadable: stale_spec (the recorded eval blob), orphan_eval (the whole contract)
+//   surface_unreadable: stale_spec, missing_surface, stale_design, shifted_design
+//   basis_unreadable: active_basis
+//   unknown_question: answered_question
+//   ref_unreadable: orphan_eval
+//   unconfirmed: stale_design, shifted_design
+//   surface_unrecorded: shifted_design
+//   history_unavailable: stale_design, shifted_design
+//   history_diverged: stale_design (against finished work), shifted_design (against HEAD)
+//   comparison_error: design
+// Defaults below read for the first marker that emits each reason, except
+// eval_unreadable (orphan_eval) and history_diverged (stale_design).
 export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
   no_completion_record: {
     cause: "This finished work has no record of what it was verified against, so there is nothing to compare.",
-    fix: "Review it by hand if it matters; the check resumes once new work records a completion.",
+    fix: "Review its spec and surface by hand if they matter.",
   },
   basis_unreadable: {
     cause: "A file the work started from could not be read.",
@@ -99,16 +126,16 @@ export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
     fix: "Remove or replace the reference to that question, then run the check again.",
   },
   spec_unreadable: {
-    cause: "The spec recorded at completion could not be read, so it could not be compared.",
-    fix: "Restore the spec file, then run the check again.",
+    cause: "The spec file could not be read or hashed, so it could not be compared with the one recorded when the work finished.",
+    fix: "Make the spec file readable, then run the check again.",
   },
   eval_unreadable: {
     cause: "The eval could not be loaded or is not a valid contract, so none of its criteria were checked.",
     fix: "Repair the eval file, then run the check again.",
   },
   surface_unreadable: {
-    cause: "A path the work records could not be read.",
-    fix: "Make sure the path exists and is readable, then run the check again.",
+    cause: "A file or folder recorded when the work finished could not be read, so it could not be compared.",
+    fix: "Make the path readable, then run the check again.",
   },
   ref_unreadable: {
     cause:
@@ -124,16 +151,49 @@ export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
     fix: "Confirm the document again so every path it describes is recorded.",
   },
   history_unavailable: {
-    cause: "The git history needed to place this check was not available.",
+    cause: "The git history needed to compare this document's confirmation was not available.",
     fix: "Make sure the project's history is present, then run the check again.",
   },
   history_diverged: {
-    cause: "The confirmation and the finished work sit on branches that have split, so no single range can be compared.",
+    cause: "The confirmation and the work finished since it sit on branches that have split, so no single range can be compared.",
     fix: "Bring the branches together, then run the check again.",
   },
   comparison_error: {
     cause: "The comparison failed before it could finish.",
     fix: "Fix what the detail line names, then run the check again.",
+  },
+};
+
+// Overrides keyed marker, then reason, for the pairs the default would
+// misstate.
+export const REASON_COPY_BY_MARKER: Record<string, Record<string, { cause: string; fix: string }>> = {
+  stale_spec: {
+    eval_unreadable: {
+      cause: "The eval file could not be read or hashed, so it could not be compared with the one recorded when the work finished.",
+      fix: "Make the eval file readable, then run the check again.",
+    },
+  },
+  missing_surface: {
+    surface_unreadable: {
+      cause: "A path this work records as its surface could not be checked.",
+      fix: "Make the path readable, then run the check again.",
+    },
+  },
+  stale_design: {
+    surface_unreadable: {
+      cause: "A path this document describes could not be read, so it could not be compared.",
+      fix: "Make the path readable, then run the check again.",
+    },
+  },
+  shifted_design: {
+    surface_unreadable: {
+      cause: "A path this document describes could not be read, so it could not be compared.",
+      fix: "Make the path readable, then run the check again.",
+    },
+    history_diverged: {
+      cause: "The confirmation is not an ancestor of the project's current commit, so no single range can be compared.",
+      fix: "Bring the branches together, then run the check again.",
+    },
   },
 };
 
@@ -154,8 +214,11 @@ export function markerCopy(marker: string): { name: string; meaning: string; nex
   );
 }
 
-export function reasonCopy(reason: string): { cause: string; fix: string } {
+// reasonCopy is the one lookup for a reason's words: the (marker, reason)
+// override if there is one, then the reason's default, then a generic line.
+export function reasonCopy(marker: string, reason: string): { cause: string; fix: string } {
   return (
+    REASON_COPY_BY_MARKER[marker]?.[reason] ??
     REASON_COPY[reason] ?? {
       cause: "This could not be checked, for a reason a newer version of Tiller reports.",
       fix: "Update Tiller to read what to do.",

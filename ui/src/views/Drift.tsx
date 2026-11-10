@@ -116,7 +116,7 @@ function UncoveredSection({ rows }: { rows: UncoveredView[] }) {
 // marker in plain words, then the cause and the fix, then one row per node.
 function UncoveredGroup({ group }: { group: { marker: string; reason: string; rows: UncoveredView[] } }) {
   const marker = markerCopy(group.marker);
-  const reason = reasonCopy(group.reason);
+  const reason = reasonCopy(group.marker, group.reason);
   return (
     <div className="drift-group">
       <h3 className="drift-group-head">

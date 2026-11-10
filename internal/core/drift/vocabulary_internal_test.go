@@ -10,8 +10,9 @@ import (
 )
 
 type driftVocabulary struct {
-	Markers []string `json:"drift_markers"`
-	Reasons []string `json:"drift_reasons"`
+	Markers      []string `json:"drift_markers"`
+	ExtraMarkers []string `json:"drift_extra_markers"`
+	Reasons      []string `json:"drift_reasons"`
 }
 
 func readDriftVocabulary(t *testing.T) driftVocabulary {
@@ -79,5 +80,29 @@ func TestVocabularyCoversEveryReason(t *testing.T) {
 		if !have[r] {
 			t.Errorf("vocabulary.json drift_reasons is missing %q", r)
 		}
+	}
+	for r := range have {
+		if !want[r] {
+			t.Errorf("vocabulary.json drift_reasons lists %q, which no sweep emits", r)
+		}
+	}
+}
+
+// outOfPackageMarkers are markers emitted outside the drift package:
+// serve/prose.go reports a failed design-file comparison under "design".
+// They are not sweep markers, so they live in drift_extra_markers.
+var outOfPackageMarkers = []string{"design"}
+
+func TestVocabularyExtraMarkersAreExactlyTheOutOfPackageEmitters(t *testing.T) {
+	got := readDriftVocabulary(t).ExtraMarkers
+	if strings.Join(got, ",") != strings.Join(outOfPackageMarkers, ",") {
+		t.Errorf("drift_extra_markers = %v, want %v", got, outOfPackageMarkers)
+	}
+}
+
+func TestVocabularyMarkersAreExactlyKnownMarkers(t *testing.T) {
+	got := readDriftVocabulary(t).Markers
+	if strings.Join(got, ",") != strings.Join(KnownMarkers, ",") {
+		t.Errorf("drift_markers = %v, want KnownMarkers %v", got, KnownMarkers)
 	}
 }

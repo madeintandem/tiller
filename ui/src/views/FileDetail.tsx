@@ -149,8 +149,8 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
       })}
       {uncovered.map((row, i) => (
         <p key={`${row.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{markerCopy(row.marker).name}</span> not checked. {reasonCopy(row.reason).cause}{" "}
-          {reasonCopy(row.reason).fix}
+          <span className="instr-drift-say">{markerCopy(row.marker).name}</span> not checked. {reasonCopy(row.marker, row.reason).cause}{" "}
+          {reasonCopy(row.marker, row.reason).fix}
           {row.detail && <> ({row.detail})</>}
         </p>
       ))}

@@ -153,8 +153,8 @@ function DriftPanel({ page }: { page: NodePage }) {
       ))}
       {uncovered.map((u, i) => (
         <p key={`${u.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{markerCopy(u.marker).name}</span> not checked. {reasonCopy(u.reason).cause}{" "}
-          {reasonCopy(u.reason).fix}
+          <span className="instr-drift-say">{markerCopy(u.marker).name}</span> not checked. {reasonCopy(u.marker, u.reason).cause}{" "}
+          {reasonCopy(u.marker, u.reason).fix}
           {has(u.detail) && <> ({u.detail})</>}
         </p>
       ))}

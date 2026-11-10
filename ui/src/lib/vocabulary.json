@@ -185,6 +185,9 @@
     "stale_design",
     "shifted_design"
   ],
+  "drift_extra_markers": [
+    "design"
+  ],
   "drift_reasons": [
     "no_completion_record",
     "basis_unreadable",

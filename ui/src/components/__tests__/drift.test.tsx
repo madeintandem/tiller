@@ -128,7 +128,7 @@ describe("Drift page: marker sections", () => {
     renderDrift();
 
     const activeBasisHead = await screen.findByText(/Work started from an older basis \(1\)/);
-    const missingSurfaceHead = await screen.findByText(/No surface recorded \(1\)/);
+    const missingSurfaceHead = await screen.findByText(/Recorded file is gone \(1\)/);
     const orphanEvalHead = await screen.findByText(/Eval no longer matches its spec \(1\)/);
 
     // Schema order is active_basis, then missing_surface, then orphan_eval;
@@ -441,7 +441,7 @@ describe("Drift page: the clearing move (R12)", () => {
     const { container } = renderDrift();
     await screen.findByText("No remedy");
 
-    expect(screen.getByText(/Review what changed against the finished work/)).toBeInTheDocument();
+    expect(screen.getByText(/Review what changed against the work, and for finished work/)).toBeInTheDocument();
     expect(screen.getByText(/Restore the file or correct the eval/)).toBeInTheDocument();
     // Only the one served remedy is a command; nothing else is invented.
     expect(container.querySelectorAll(".copy-cmd")).toHaveLength(1);
@@ -484,6 +484,36 @@ describe("Drift page: a shared cause is stated once", () => {
     stubFetch({ "/api/drift": report });
     renderDrift();
     await screen.findByText("One");
-    expect(screen.getAllByText(/could not be loaded or is not a valid contract/)).toHaveLength(2);
+    // One reason, two markers, two different true sentences.
+    expect(screen.getAllByText(/could not be loaded or is not a valid contract/)).toHaveLength(1);
+    expect(screen.getAllByText(/eval file could not be read or hashed/)).toHaveLength(1);
+  });
+
+  it("words history_diverged under each design marker for what that marker compares", async () => {
+    const report: DriftReportView = {
+      compared: 0,
+      compared_design: 2,
+      uncovered: [
+        { marker: "stale_design", noun: "design", id: "", key: "a.md", reason: "history_diverged" },
+        { marker: "shifted_design", noun: "design", id: "", key: "b.md", reason: "history_diverged" },
+      ],
+    };
+    stubFetch({ "/api/drift": report });
+    renderDrift();
+    await screen.findByRole("link", { name: "design/a.md" });
+    expect(screen.getByText(/work finished since it sit on branches that have split/)).toBeInTheDocument();
+    expect(screen.getByText(/not an ancestor of the project's current commit/)).toBeInTheDocument();
+  });
+
+  it("shows the design marker's own copy for a comparison error, never the newer-version wording", async () => {
+    const report: DriftReportView = {
+      compared: 0,
+      uncovered: [{ marker: "design", noun: "design", id: "", key: "a.md", reason: "comparison_error" }],
+    };
+    stubFetch({ "/api/drift": report });
+    const { container } = renderDrift();
+    await screen.findByRole("link", { name: "design/a.md" });
+    expect(container.textContent).not.toContain("newer version");
+    expect(screen.getByRole("heading", { name: /Design comparison failed/ })).toBeInTheDocument();
   });
 });
