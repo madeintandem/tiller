@@ -1,7 +1,8 @@
 // The lightweight history timeline (ui-surface.md, "Node detail"): the node's
 // events exactly as the payload orders them (the API serves newest first), the
-// recorded RFC3339 time rendered plainly, the event type, the actor, and the
-// literal command. The console never reaches out to GitHub for depth, and
+// recorded time, the event's verb, the actor, and the outcome chip (the status
+// the event produced, when its record names one). The literal command is the
+// row's hover title. The console never reaches out to GitHub for depth, and
 // nothing in a history entry is a URL, so every field here is text.
 //
 // A node with no events draws nothing: every node has at least its own add
@@ -20,6 +21,7 @@
 
 import { useState } from "react";
 import type { HistoryEntry } from "../../api";
+import Chip from "../../components/Chip";
 import InstrSection from "../../components/InstrSection";
 import Time from "../../components/Time";
 import { eventPhrase } from "../../lib/eventPhrase";
@@ -49,14 +51,16 @@ export default function HistorySection({
         {/* Entries carry no id and the list is static per fetch, so the
             index is a stable key. */}
         {shown.map((e, i) => (
-          <li key={i} className="history-entry">
+          // The literal command is the hover title only: the verb and the
+          // outcome say what happened, and the raw event type is not shown.
+          <li key={i} className="history-entry" title={e.command === "" ? undefined : e.command}>
             {/* A timestamp is not a key, an id, a path, or a command, which
                 are mono's whole list. It keeps its column by tabular figures
                 (node.css) instead. */}
             <span className="muted history-at"><Time iso={e.at} /></span>
             <span className="history-type">{eventPhrase(e.type, 1).verb}</span>
             {e.contributor !== "" && <span className="muted"><PersonName id={e.contributor} /></span>}
-            {e.command !== "" && <code className="history-command mono muted">{e.command}</code>}
+            {e.outcome !== undefined && e.outcome !== "" && <Chip status={e.outcome} />}
           </li>
         ))}
         {pending && (

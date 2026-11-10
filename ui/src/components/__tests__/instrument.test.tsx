@@ -2373,15 +2373,15 @@ describe("NodeDetail view: branch history follows the page", () => {
     const reads = stubNodeReads(taskPage({ history: [integrationEvent], history_pending: true }));
     const { container } = renderAt("/node/task/T-h4k2wq?tab=history");
 
-    await screen.findByText("tiller add task boot-the-app");
+    await screen.findByTitle("tiller add task boot-the-app");
     await waitFor(() => expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration", "/api/node/task/T-h4k2wq"]));
     const rows = container.querySelectorAll(".history li");
     expect(rows[rows.length - 1]).toHaveTextContent("Reading branch history...");
 
     await act(async () => reads.fullRead());
 
-    expect(await screen.findByText("tiller start task T-h4k2wq")).toBeInTheDocument();
-    expect(screen.getByText("tiller add task boot-the-app")).toBeInTheDocument();
+    expect(await screen.findByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
+    expect(screen.getByTitle("tiller add task boot-the-app")).toBeInTheDocument();
     expect(screen.queryByText("Reading branch history...")).not.toBeInTheDocument();
   });
 
@@ -2389,7 +2389,7 @@ describe("NodeDetail view: branch history follows the page", () => {
     const reads = stubNodeReads(taskPage({ history: [integrationEvent] }));
     renderAt("/node/task/T-h4k2wq?tab=history");
 
-    await screen.findByText("tiller add task boot-the-app");
+    await screen.findByTitle("tiller add task boot-the-app");
     expect(screen.queryByText("Reading branch history...")).not.toBeInTheDocument();
     expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration"]);
   });

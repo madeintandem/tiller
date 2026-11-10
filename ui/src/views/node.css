@@ -81,9 +81,8 @@
   overflow-wrap: anywhere;
 }
 
-/* One history event on one line: the timestamp leads in muted mono, the type
-   and actor follow, and the literal command takes the rest of the row and
-   ellipses rather than wrapping the row to a second line. */
+/* One history event on one line: the timestamp leads, the verb and actor
+   follow, and the outcome chip closes the row. The command is the row title. */
 .history {
   list-style: none;
   margin: 0;
@@ -116,12 +115,3 @@
   flex: none;
 }
 
-.history-command {
-  flex: 1;
-  min-width: 0;
-  font-size: 11.5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: right;
-}

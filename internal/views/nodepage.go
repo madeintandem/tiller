@@ -319,12 +319,31 @@ type Relationships struct {
 }
 
 // HistoryEntry is one event on the node's timeline: when (RFC3339 UTC), the
-// event type, the acting contributor, and the literal command.
+// event type, the acting contributor, and the literal command. Outcome is the
+// status the event produced, a raw token the console words through its status
+// labels; it is empty when the event's maps do not record one.
 type HistoryEntry struct {
 	At          string `json:"at"`
 	Type        string `json:"type"`
 	Contributor string `json:"contributor"`
 	Command     string `json:"command"`
+	Outcome     string `json:"outcome,omitempty"`
+}
+
+// eventOutcome reads the status an event produced from the one place the
+// mutations record it: After["status"] differing from Before["status"] (a
+// missing Before counts as different, so an add reports its starting status).
+// check, attest, and eval events record the node's unchanged status and no
+// gate or criterion result, so they yield "" rather than a guess.
+func eventOutcome(e events.Event) string {
+	after, ok := e.After["status"].(string)
+	if !ok || after == "" {
+		return ""
+	}
+	if before, ok := e.Before["status"].(string); ok && before == after {
+		return ""
+	}
+	return after
 }
 
 // NodePageOf assembles the uniform node page from the loaded tree, the event
@@ -385,6 +404,7 @@ func historyOf(evs []events.Event, nodeID string) []HistoryEntry {
 			Type:        e.Type,
 			Contributor: e.Contributor,
 			Command:     e.Command,
+			Outcome:     eventOutcome(e),
 		})
 	}
 	return out

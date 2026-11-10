@@ -619,6 +619,9 @@ export interface HistoryEntry {
   type: string;
   contributor: string;
   command: string;
+  // The status the event produced, a raw token shown through statusLabel;
+  // absent when the event's record does not name one.
+  outcome?: string;
 }
 
 // One node's active-basis drift report (views.ActiveBasisView): the pinned
