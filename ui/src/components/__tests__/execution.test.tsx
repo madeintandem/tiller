@@ -118,6 +118,7 @@ describe("Source-qualified evidence", () => {
     const evidence = [{ ref: "artifacts/missing.txt", url: "/wrong", unavailable: "Not present at observed revision" }];
     const { container } = render(<><GateCard name="tests" gate={{ required: true, evidence }} /><CriterionRow criterion={{ id: "C1", statement: "It works", polarity: "positive", required: true, binding: { type: "test" } }} result={{ evidence }} /></>);
     expect(within(container).queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.getAllByText(/artifacts\/missing.txt.*Evidence unavailable: Not present at observed revision/)).toHaveLength(2);
+    expect(screen.getByText("evidence · Evidence unavailable: Not present at observed revision")).toHaveAttribute("title", "artifacts/missing.txt");
+    expect(screen.getByText("eval C1 output · Evidence unavailable: Not present at observed revision")).toHaveAttribute("title", "artifacts/missing.txt");
   });
 });

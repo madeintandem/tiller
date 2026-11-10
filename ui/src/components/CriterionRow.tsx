@@ -29,6 +29,7 @@ import { useEffect, useRef } from "react";
 import { useInRouterContext, useSearchParams } from "react-router-dom";
 
 import type { AttestationView, CriterionStatusView, EvalCriterionView } from "../api";
+import { evidenceLabel } from "../lib/evidenceLabel";
 import { dotStateFor, resultStatus } from "../lib/gateDisplay";
 import { has } from "../lib/has";
 import { statusLabel } from "../lib/statusLabel";
@@ -96,6 +97,10 @@ function Row({
   const label = by !== undefined ? `attested · ${personName(by)}` : statusLabel(status);
   const evidence = result?.evidence ?? [];
   const firstEvidence = evidence.find((e) => has(e.ref));
+  const evidenceText =
+    firstEvidence === undefined
+      ? ""
+      : evidenceLabel({ ref: firstEvidence.ref ?? "", kind: firstEvidence.kind, criterion: criterion.id });
   return (
     <div className={isTarget ? "crow is-target" : "crow"} id={`criterion-${criterion.id}`} ref={ref}>
       <span className="cid mono">{criterion.id}</span>
@@ -103,15 +108,16 @@ function Row({
         {criterion.statement}
         {firstEvidence !== undefined && (
           firstEvidence.unavailable !== undefined ? (
-            <span className="instr-evid mono crow-evid">evidence: {firstEvidence.ref} · Evidence unavailable: {firstEvidence.unavailable}</span>
+            <span className="instr-evid crow-evid" title={firstEvidence.ref}>{evidenceText} · Evidence unavailable: {firstEvidence.unavailable}</span>
           ) : (
           <a
-            className="instr-evid mono crow-evid"
+            className="instr-evid crow-evid"
             href={firstEvidence.url ?? `/api/evidence?ref=${encodeURIComponent(firstEvidence.ref ?? "")}`}
+            title={firstEvidence.ref}
             target="_blank"
             rel="noreferrer"
           >
-            evidence: {firstEvidence.ref}
+            {evidenceText}
           </a>
           )
         )}

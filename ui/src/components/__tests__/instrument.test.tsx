@@ -246,7 +246,7 @@ describe("CriterionRow: per-criterion evidence (fix wave, Critical finding 1)", 
       />,
     );
 
-    const link = screen.getByRole("link", { name: `evidence: ${ref}` });
+    const link = screen.getByRole("link", { name: "eval C3 output" });
     expect(link).toHaveAttribute("href", `/api/evidence?ref=${encodeURIComponent(ref)}`);
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noreferrer");

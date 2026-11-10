@@ -7,9 +7,26 @@
 // is non-empty - a fresh draft carries neither.
 
 import type { AttestationView, PolicyViolationView } from "../api";
+import { evidenceLabel } from "../lib/evidenceLabel";
 import { has } from "../lib/has";
 import { PersonName } from "../people";
 import Time from "./Time";
+
+// EvidenceLink is one evidence ref read as a label: the ref rides on the href
+// and the title, never on the screen.
+function EvidenceLink({ evidenceRef, kind, criterion }: { evidenceRef: string; kind?: string; criterion?: string }) {
+  return (
+    <a
+      className="instr-evid muted"
+      href={`/api/evidence?ref=${encodeURIComponent(evidenceRef)}`}
+      title={evidenceRef}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {evidenceLabel({ ref: evidenceRef, kind, criterion })}
+    </a>
+  );
+}
 
 // Mono carries the four things it is for on these rows and nothing else: the
 // attestation's id, its target id, and the evidence ref, which are addresses.
@@ -25,7 +42,13 @@ function AttestationRow({ attestation: a }: { attestation: AttestationView }) {
       <span>{a.status ?? ""}</span>
       {has(a.by) && <span className="muted">by <PersonName id={a.by} /></span>}
       {has(a.at) && <span className="muted integrity-at"><Time iso={a.at} /></span>}
-      {has(a.evidence_ref) && <span className="mono muted">{a.evidence_ref}</span>}
+      {has(a.evidence_ref) && (
+        <EvidenceLink
+          evidenceRef={a.evidence_ref}
+          criterion={a.target_kind === "criterion" ? a.target_id : undefined}
+          kind={a.target_kind === "criterion" ? undefined : a.target_id}
+        />
+      )}
     </li>
   );
 }
@@ -36,10 +59,12 @@ function ViolationRow({ violation: v }: { violation: PolicyViolationView }) {
       <span className="instr-integrity-name">{v.gate ?? ""}</span>
       <span>{v.status ?? ""}</span>
       {has(v.observed) && <span className="muted">observed {v.observed}</span>}
-      {has(v.evidence_ref) && <span className="mono muted">{v.evidence_ref}</span>}
+      {has(v.evidence_ref) && <EvidenceLink evidenceRef={v.evidence_ref} kind={v.gate} />}
       {has(v.source_revision) && <span className="mono muted">historical source {v.source_revision}</span>}
       {(v.unresolved_criteria?.length ?? 0) > 0 && <span>unresolved criteria: {v.unresolved_criteria?.join(", ")}</span>}
-      {(v.evidence_refs?.length ?? 0) > 0 && <span className="mono muted">evidence: {v.evidence_refs?.join(", ")}</span>}
+      {(v.evidence_refs ?? []).map((r) => (
+        <EvidenceLink key={r} evidenceRef={r} kind={v.gate} />
+      ))}
     </li>
   );
 }

@@ -25,6 +25,7 @@ import type {
   EvidenceView,
   NodeView,
 } from "../api";
+import { evidenceLabel } from "../lib/evidenceLabel";
 import { deriveEvalsGateState, deriveFlatGateState } from "../lib/gateDisplay";
 import { has } from "../lib/has";
 import CriterionRow from "./CriterionRow";
@@ -68,20 +69,21 @@ function EvidenceRow({ kind, ref, url, unavailable }: EvidenceView) {
   if (ref === undefined || ref === "") {
     return null;
   }
+  const label = evidenceLabel({ ref, kind });
   return (
     <div className="instr-gate-evidence">
-      <span className="muted">{kind ?? "evidence"}</span>
       {unavailable !== undefined ? (
-        <span className="mono">{ref} · Evidence unavailable: {unavailable}</span>
+        <span className="muted" title={ref}>{label} · Evidence unavailable: {unavailable}</span>
       ) : (
-      <a
-        className="instr-evid mono"
-        href={url ?? `/api/evidence?ref=${encodeURIComponent(ref)}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {ref}
-      </a>
+        <a
+          className="instr-evid"
+          href={url ?? `/api/evidence?ref=${encodeURIComponent(ref)}`}
+          title={ref}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {label}
+        </a>
       )}
     </div>
   );
