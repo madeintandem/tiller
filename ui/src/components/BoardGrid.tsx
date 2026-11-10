@@ -11,7 +11,9 @@
 // Each lane supplies its own head and body elements with their own classes
 // and semantics; this component owns only the two-row structure and the
 // column template. A lane with no cards collapses to a slim rail so the
-// columns that hold work get the width. A board where every lane is empty
+// columns that hold work get the width. The rail's head keeps the heads
+// row's normal height (dot and count only) and its body carries the label
+// written vertically. A board where every lane is empty
 // collapses nothing: a row of rails would read as a broken board, so each
 // lane stays full width. The collapsed head stays in the same static heads
 // row, and keeps an accessible name of its label and count because its text
@@ -27,6 +29,7 @@ import "./board.css";
 export interface LaneMark {
   "data-collapsed"?: string;
   "aria-label"?: string;
+  "data-label"?: string;
 }
 
 export interface BoardLane {
@@ -62,20 +65,22 @@ export default function BoardGrid({
   const rowStyle = { gridTemplateColumns: collapsed.map((c) => (c ? RAIL_WIDTH : OPEN_WIDTH)).join(" ") };
   // A lane's own head and body elements carry the collapsed mark, so the
   // two-row grid keeps its direct-child structure.
-  const mark = (node: ReactNode, on: boolean, name?: string): ReactNode =>
+  // The head keeps the heads row's normal height, showing only the dot and
+  // count; the body writes the label vertically, where height is free.
+  const mark = (node: ReactNode, on: boolean, extra: Record<string, string>): ReactNode =>
     on && isValidElement<Record<string, unknown>>(node)
-      ? cloneElement(node, { "data-collapsed": "true", ...(name === undefined ? {} : { "aria-label": name }) })
+      ? cloneElement(node, { "data-collapsed": "true", ...extra })
       : node;
   return (
     <div className={`${className} board-scroll`} data-scroll-mode={scrollMode} style={style}>
       <div className="board-heads" style={rowStyle}>
         {lanes.map((lane, i) => (
-          <Fragment key={lane.key}>{mark(lane.head, collapsed[i], `${lane.label}, 0`)}</Fragment>
+          <Fragment key={lane.key}>{mark(lane.head, collapsed[i], { "aria-label": `${lane.label}, 0` })}</Fragment>
         ))}
       </div>
       <div className="board-body" style={rowStyle}>
         {lanes.map((lane, i) => (
-          <Fragment key={lane.key}>{mark(lane.body, collapsed[i])}</Fragment>
+          <Fragment key={lane.key}>{mark(lane.body, collapsed[i], { "data-label": lane.label })}</Fragment>
         ))}
       </div>
     </div>

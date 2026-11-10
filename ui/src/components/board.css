@@ -109,18 +109,22 @@
   overscroll-behavior-y: contain;
 }
 
-/* A lane with no cards is a rail: the head writes its label vertically with
-   the count beneath, in the same static heads row, and the body keeps its
-   recessed background but hides what it holds. */
+/* A lane with no cards is a rail, 44px wide. Its head stays in the heads row
+   at the row's normal height, showing only the dot and the count (the label
+   is hidden there and named by the head's aria-label); the body keeps its
+   recessed background, hides what it holds, and writes the label vertically
+   at its top, where vertical room is free. Both parts are text. */
 .board-heads > [data-collapsed="true"] {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 12px 0 10px;
-  writing-mode: vertical-rl;
+  justify-content: center;
+  gap: 6px;
+  padding-left: 0;
+  padding-right: 0;
   min-width: 0;
+}
+
+.board-heads > [data-collapsed="true"] .cn,
+.board-heads > [data-collapsed="true"] .work-item-column-label {
+  display: none;
 }
 
 .board-heads > [data-collapsed="true"] .cc,
@@ -135,4 +139,19 @@
 
 .board-body > [data-collapsed="true"] > * {
   display: none;
+}
+
+.board-body > [data-collapsed="true"]::before {
+  content: attr(data-label);
+  display: block;
+  writing-mode: vertical-rl;
+  margin: 4px auto 0;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
 }

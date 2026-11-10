@@ -29,8 +29,27 @@ describe("board.css", () => {
     }
   });
 
-  it("sets a collapsed lane's rail vertical and 44px-friendly, never hidden", () => {
-    expect(boardCss).toMatch(/\[data-collapsed="true"\][^{]*\{[^}]*writing-mode:\s*vertical-rl/);
+  function rule(selector: string): string {
+    const start = boardCss.indexOf(`${selector} {`);
+    expect(start).toBeGreaterThan(-1);
+    return boardCss.slice(start, boardCss.indexOf("}", start));
+  }
+
+  it("keeps a collapsed head horizontal at the normal head height, label hidden", () => {
+    // A vertical writing mode on the head would turn its flex column
+    // sideways and let the label's length stretch the whole heads row.
+    expect(rule('.board-heads > [data-collapsed="true"]')).not.toMatch(/writing-mode|flex-direction:\s*column/);
+    expect(rule('.board-heads > [data-collapsed="true"] .cn,\n.board-heads > [data-collapsed="true"] .work-item-column-label')).toMatch(/display:\s*none/);
+  });
+
+  it("writes a collapsed lane's label vertically at the top of its body", () => {
+    const label = rule('.board-body > [data-collapsed="true"]::before');
+    expect(label).toMatch(/content:\s*attr\(data-label\)/);
+    expect(label).toMatch(/writing-mode:\s*vertical-rl/);
+    expect(label).toMatch(/white-space:\s*nowrap/);
+  });
+
+  it("sizes the scroller's minimum width from BoardGrid's sum", () => {
     expect(boardCss).toMatch(/min-width:\s*var\(--board-min-width/);
   });
 

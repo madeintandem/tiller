@@ -309,7 +309,7 @@ function WorkItemColumnHeading({
   return (
     <h2 className="work-item-column-heading" {...mark}>
       <StateDot status={SHELF_COLUMN_STATUSES[column.key]} />
-      <span>{column.label}</span>
+      <span className="work-item-column-label">{column.label}</span>
       <span className="work-item-column-count">{count}</span>
     </h2>
   );
