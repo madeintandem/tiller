@@ -30,7 +30,10 @@ export default function TopbarSearch() {
     if (value.trim() !== "") {
       next.set("q", value.trim());
     }
-    navigate(`/explore?${next.toString()}`);
+    const target = `/explore?${next.toString()}`;
+    // The same address again refreshes the answer; it is not a new place to
+    // go back to.
+    navigate(target, { replace: target === location.pathname + location.search });
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {

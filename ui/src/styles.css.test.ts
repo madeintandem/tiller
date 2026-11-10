@@ -14,3 +14,21 @@ describe("site header", () => {
     expect(rule).toMatch(/z-index:/);
   });
 });
+
+// The topbar must stay one row at the supported 1024px minimum whatever the
+// project key's length; jsdom cannot lay it out, so the rules are pinned.
+describe("project key in the topbar", () => {
+  const rule = stylesCss.match(/\.project-key\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  it("truncates with an ellipsis instead of growing the row", () => {
+    expect(rule).toMatch(/overflow:\s*hidden/);
+    expect(rule).toMatch(/text-overflow:\s*ellipsis/);
+    expect(rule).toMatch(/white-space:\s*nowrap/);
+    expect(rule).toMatch(/min-width:\s*0/);
+  });
+
+  it("is capped by the room the row leaves it, measured from the row itself", () => {
+    expect(rule).toMatch(/max-width:[^;]*cqw/);
+    expect(stylesCss).toMatch(/\.header-row\s*\{[^}]*container-type:\s*inline-size/);
+  });
+});

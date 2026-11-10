@@ -86,7 +86,9 @@ export default function App() {
             Tiller
             {build !== null && <span className="wordmark-version">v{build.version}</span>}
           </Link>
-          {summary !== null && <span className="mono project-key">{summary.project.key}</span>}
+          {summary !== null && <span className="mono project-key" title={summary.project.key}>
+              {summary.project.key}
+            </span>}
           <nav className="site-nav">
             {/* NavLink marks the current view; end keeps Home from claiming
                 every route. Navigation labels carry no count badges. */}

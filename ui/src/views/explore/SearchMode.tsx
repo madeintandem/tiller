@@ -11,14 +11,14 @@
 // tab asks the server for that kind alone, so a kind is never cut short by
 // the others' share of the page.
 
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { SearchKindCount, SearchResult } from "../../api";
 import { searchPath } from "../../api";
 import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
 import { useFetch } from "../../hooks";
-import { readHideCancelled } from "./hideCancelled";
+import { readHideCancelled, writeHideCancelled } from "./hideCancelled";
 import { AllResults, KindResults, kindPlural, SEARCH_KINDS } from "./SearchResults";
 
 const ALL = "all";
@@ -35,7 +35,14 @@ export default function SearchMode() {
   );
   // The navigator's Hide cancelled preference applies here too, and the
   // summary counts what it took out so a filtered list never reads as whole.
-  const [hideCancelled] = useState(readHideCancelled);
+  // Read from storage on every render rather than frozen at mount; showing
+  // the hidden rows writes the same preference the navigator's toggle reads.
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  const hideCancelled = readHideCancelled();
+  function showCancelled() {
+    writeHideCancelled(false);
+    rerender();
+  }
   // Memoized: the kinds array's identity is how the rail's stand-in below
   // notices a new answer, so a fresh copy every render would loop.
   const { result: data, hidden } = useMemo(
@@ -67,7 +74,7 @@ export default function SearchMode() {
       {shownKinds !== null && shownKinds.length === 0 && fresh !== null && (
         <>
           <EmptyNote>No matches.</EmptyNote>
-          {hidden > 0 && <p className="muted search-summary">{hiddenNote(hidden)}</p>}
+          {hidden > 0 && <HiddenNote hidden={hidden} onShow={showCancelled} />}
         </>
       )}
       {shownKinds !== null && shownKinds.length > 0 && (
@@ -83,7 +90,7 @@ export default function SearchMode() {
                 <p className="muted">Searching...</p>
               ) : (
                 <>
-                  <Summary result={fresh} hidden={hidden} />
+                  <Summary result={fresh} hidden={hidden} onShowHidden={showCancelled} />
                   {kind === ALL ? (
                     <AllResults result={fresh} onShowKind={selectKind} />
                   ) : (
@@ -104,19 +111,42 @@ export default function SearchMode() {
 // Count is the number of results the query matched within the tab, which the
 // page may hold fewer of when the API's ceiling stands in front of it. A
 // truncated answer that poses as complete is worse than a long one.
-function Summary({ result, hidden }: { result: SearchResult; hidden: number }) {
+function Summary({
+  result,
+  hidden,
+  onShowHidden,
+}: {
+  result: SearchResult;
+  hidden: number;
+  onShowHidden: () => void;
+}) {
   const shown = result.nodes.length + result.documents.length;
   return (
     <p className="muted search-summary">
       {result.count} {result.count === 1 ? "result" : "results"}
       {result.truncated && ` · showing ${String(shown)}; narrow the query or pick a kind to see the rest`}
-      {hidden > 0 && ` · ${hiddenNote(hidden)}`}
+      {hidden > 0 && (
+        <>
+          {" · "}
+          <HiddenNote hidden={hidden} onShow={onShowHidden} inline />
+        </>
+      )}
     </p>
   );
 }
 
-function hiddenNote(hidden: number): string {
-  return `${String(hidden)} cancelled ${hidden === 1 ? "result" : "results"} hidden`;
+// Names the cause of the filtering and the way out of it.
+function HiddenNote({ hidden, onShow, inline = false }: { hidden: number; onShow: () => void; inline?: boolean }) {
+  const text = `${String(hidden)} cancelled ${hidden === 1 ? "result" : "results"} hidden by Hide cancelled.`;
+  const body = (
+    <>
+      {text}{" "}
+      <button type="button" className="search-hits-more" onClick={onShow}>
+        Show them
+      </button>
+    </>
+  );
+  return inline ? <span>{body}</span> : <p className="muted search-summary">{body}</p>;
 }
 
 // withoutCancelled drops the cancelled node rows the page holds and takes

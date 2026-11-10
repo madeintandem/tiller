@@ -114,6 +114,9 @@ a:hover {
    carried here directly instead of by the retired global .container: the
    header runs full width and this is the one row inside it. */
 .header-row {
+  /* The key's width cap below is measured against this row (cqw), not the
+     viewport, so a page scrollbar cannot throw the sum off. */
+  container-type: inline-size;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -185,6 +188,16 @@ a:hover {
 /* mock:67 - the project key is a keyed chip, not loose mono. Declared after
    .mono so its explicit size wins over .mono's 0.9em. */
 .project-key {
+  /* One row at 1024px whatever the key's length: it truncates, and its cap is
+     the room the rest of the row leaves it (row width minus 986px of
+     wordmark, nav, sync line, theme toggle, search floor, and gaps; 920px
+     under the compact rule below), never under 3rem and never over 24ch. The
+     full key is the element's title. */
+  min-width: 0;
+  max-width: clamp(3rem, 100cqw - 986px, 24ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11.5px;
   color: var(--ink-2);
   background: var(--recess);
@@ -229,12 +242,12 @@ a:hover {
 
 /* The search field: 260px wide where the row has room, and in the row's flow
    at every width, never wrapping to another line or resizing on focus. Flex
-   wrapping breaks lines on each item's basis, so the basis is the 132px floor
-   and the field grows into spare room up to 260px; at the supported 1024px
-   minimum the row (wordmark, key, nav, sync line, theme toggle) leaves about
-   140px (132px with margin to spare), which the compact rule below makes by tightening the nav and gutters.
-   The "/" key hint sits inside the field's right edge, over padding the input
-   reserves for it. */
+   wrapping breaks lines on each item's basis, so the basis is a 132px floor
+   and the field grows into spare room up to 260px. At the supported 1024px
+   minimum the row's other items leave only about 79px spare before the field,
+   so the compact rule below (under 1240px) tightens the gutters, gaps, and
+   nav until the 132px floor fits with a few pixels to spare. The "/" key hint
+   sits inside the field's right edge, over padding the input reserves for it. */
 .topbar-search {
   position: relative;
   flex: 1 1 132px;
@@ -246,6 +259,10 @@ a:hover {
   .header-row {
     gap: 10px;
     padding-inline: 20px;
+  }
+
+  .project-key {
+    max-width: clamp(3rem, 100cqw - 920px, 24ch);
   }
 
   .site-nav {

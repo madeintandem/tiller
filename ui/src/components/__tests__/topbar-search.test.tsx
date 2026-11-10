@@ -4,7 +4,7 @@
 // the removal of the old navigator and Search-mode inputs are under test.
 
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigationType } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SearchNodeResult, SearchResult } from "../../api";
 import App from "../../App";
@@ -32,7 +32,12 @@ function stubFetch(routes: Record<string, unknown> = {}) {
 
 function Where() {
   const location = useLocation();
-  return <output data-testid="where">{location.pathname + location.search}</output>;
+  const type = useNavigationType();
+  return (
+    <output data-testid="where" data-nav={type}>
+      {location.pathname + location.search}
+    </output>
+  );
 }
 
 function renderAt(path: string) {
@@ -144,6 +149,22 @@ describe("topbar search field", () => {
     expect(field()).toHaveValue("renewal");
   });
 
+  it("replaces rather than pushes when the submitted address is the current one", async () => {
+    stubFetch({ "/api/search?q=renewal": result([], "renewal") });
+    renderAt("/explore?mode=search&q=renewal");
+    fireEvent.submit(form());
+    expect(await screen.findByTestId("where")).toHaveAttribute("data-nav", "REPLACE");
+  });
+
+  it("pushes when the query is new", async () => {
+    stubFetch({ "/api/search?q=other": result([], "other") });
+    renderAt("/explore?mode=search&q=renewal");
+    fireEvent.change(field(), { target: { value: "other" } });
+    fireEvent.submit(form());
+    expect(await screen.findByText("No matches.")).toBeInTheDocument();
+    expect(screen.getByTestId("where")).toHaveAttribute("data-nav", "PUSH");
+  });
+
   it("fills from a direct load of the search URL", () => {
     stubFetch();
     renderAt("/explore?mode=search&q=x");
@@ -195,8 +216,21 @@ describe("search results with Hide cancelled", () => {
     expect(await screen.findByRole("link", { name: "Renewal flow" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Renewal old" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Renewal retired task" })).not.toBeInTheDocument();
-    expect(screen.getByText(/2 cancelled results hidden/)).toBeInTheDocument();
+    expect(screen.getByText(/2 cancelled results hidden by Hide cancelled\./)).toBeInTheDocument();
     expect(screen.getByText(/^1 result/)).toBeInTheDocument();
+  });
+
+  it("offers Show them, which reveals the rows, drops the note, and stores the preference off", async () => {
+    window.localStorage.setItem(HIDE_CANCELLED_STORAGE_KEY, "true");
+    stubFetch({ "/api/search?q=renewal": result(rows) });
+    renderAt("/explore?mode=search&q=renewal");
+    fireEvent.click(await screen.findByRole("button", { name: "Show them" }));
+    expect(screen.getByRole("link", { name: "Renewal old" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Renewal retired task" })).toBeInTheDocument();
+    expect(screen.queryByText(/hidden by Hide cancelled/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show them" })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(HIDE_CANCELLED_STORAGE_KEY)).toBe("false");
+    expect(screen.getByText(/^3 results/)).toBeInTheDocument();
   });
 
   it("shows everything, and no note, with it off", async () => {
@@ -204,13 +238,15 @@ describe("search results with Hide cancelled", () => {
     renderAt("/explore?mode=search&q=renewal");
     expect(await screen.findByRole("link", { name: "Renewal old" })).toBeInTheDocument();
     expect(screen.queryByText(/cancelled results? hidden/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show them" })).not.toBeInTheDocument();
   });
 
   it("says so when every result is hidden", async () => {
     window.localStorage.setItem(HIDE_CANCELLED_STORAGE_KEY, "true");
     stubFetch({ "/api/search?q=renewal": result([rows[1]]) });
     renderAt("/explore?mode=search&q=renewal");
-    expect(await screen.findByText(/1 cancelled result hidden/)).toBeInTheDocument();
+    expect(await screen.findByText(/1 cancelled result hidden by Hide cancelled\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show them" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Renewal old" })).not.toBeInTheDocument();
   });
 });
