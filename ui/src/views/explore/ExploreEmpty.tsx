@@ -13,8 +13,9 @@ import "../explore-empty.css";
 
 // "In flight" counts what Home's In flight column calls moving work: each
 // task an owner has active or in review, once. The blocked register and the
-// unclaimed pool are waiting, not in flight, so they are not counted; Build
-// shows the same tasks in its Active and In review columns.
+// unclaimed pool are waiting, not in flight, so they are not counted. Build's
+// cards are features, so its column counts are not task counts; this number
+// is Home's In flight rows, and the Build link is where the work is browsed.
 export function inFlightCount(streams: Streams): number {
   const ids = new Set<string>();
   for (const stream of streams.contributors) {
@@ -52,7 +53,7 @@ export default function ExploreEmpty({ projectKey }: { projectKey: string | unde
     <div className="explore-detail">
       <p className="explore-empty-links">
         <Link to="/">{needs}</Link>
-        <Link to="/build" title="Tasks active or in review, as Build's Active and In review columns show them">
+        <Link to="/build" title="Tasks active or in review, as Home's In flight column lists them">
           {flight}
         </Link>
       </p>

@@ -25,7 +25,7 @@
 // node request path, so each node arrival rereads it and clears the previous
 // node's asks while the read settles.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import type { NodePage, Queue } from "../api";
 import { nodePagePath, queuePath } from "../api";
@@ -79,8 +79,16 @@ export default function NodeDetail() {
   const openedTitle = page === null ? "" : handleOf(page.node);
   const openedNoun = page?.node.noun ?? "";
   const openedKey = page?.node.key;
+  // A ref remembers the last (project, node) recorded, so a reread that blanks
+  // the page and brings it back (the id goes id, undefined, id) is one visit.
+  const recorded = useRef("");
   useEffect(() => {
     if (projectKey !== undefined && openedId !== undefined) {
+      const visit = `${projectKey}\n${openedId}`;
+      if (recorded.current === visit) {
+        return;
+      }
+      recorded.current = visit;
       recordRecent(projectKey, { noun: openedNoun, id: openedId, title: openedTitle, key: openedKey });
     }
     // The title is read when the node arrives; a later change of it alone is

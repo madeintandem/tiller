@@ -24,6 +24,7 @@ const axes: Record<string, Facet["axis"][]> = {
   epic: ["status", "contributor"],
   feature: ["status", "contributor", "epic"],
   task: ["status", "owner", "epic", "feature"],
+  amendment: ["status"],
 };
 
 function list(noun: string, nodes: ListRow[]): ListResult {
@@ -87,6 +88,16 @@ describe("Filter results table", () => {
       .toEqual(["Title", "Key", "Status", "Owner"]);
     expect(within(table).getByText("JC Grubbs")).toBeInTheDocument();
     expect(table).not.toHaveTextContent("Owner:");
+  });
+
+  it("renders no people column for amendments, which have neither axis", async () => {
+    const row: ListRow = { id: "A-1", key: "a/one", title: "Widen scope", status: "proposed", ref: "A-1" } as ListRow;
+    stub({ "/api/ls?noun=amendments": list("amendment", [row]) });
+    renderFilter("amendments");
+    const table = await screen.findByRole("table");
+    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Title", "Key", "Status"]);
+    expect(within(within(table).getAllByRole("row")[1]).getAllByRole("cell")).toHaveLength(3);
+    expect(table).not.toHaveTextContent("Owner");
   });
 
   it("opens a status combobox on focus showing words, and a typed wire word still finds the option", async () => {

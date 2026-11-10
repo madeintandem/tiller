@@ -60,6 +60,7 @@ table.explore-results td {
   vertical-align: middle;
 }
 
-table.explore-results .explore-result-owner {
+table.explore-results td.explore-result-owner {
   margin-left: 0;
+  white-space: nowrap;
 }

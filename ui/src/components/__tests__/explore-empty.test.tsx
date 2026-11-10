@@ -2,10 +2,11 @@
 // useful links, and the recorder that feeds them. Rendered through <App/> for
 // the same reason explore.test.tsx is: the layout route is the contract.
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, useNavigate } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NodePage, ProjectSummary, Queue, QueueEntry, Streams } from "../../api";
+import { bumpFetchGeneration } from "../../api";
 import App from "../../App";
 import { readRecent, recentKey } from "../../lib/recentNodes";
 
@@ -200,7 +201,7 @@ describe("recording recently opened nodes", () => {
     expect(readRecent("acme")).toEqual([]);
   });
 
-  it("does not record again on a tab change", async () => {
+  it("records once per visit: a fetch-generation bump (reread) does not record again", async () => {
     stubFetch(baseRoutes({
       "/api/node/epic/E-u2w9wv?history=integration": page("epic", "E-u2w9wv", "Foundation", "foundation"),
       "/api/queue": queue(0),
@@ -209,8 +210,47 @@ describe("recording recently opened nodes", () => {
     await screen.findByRole("heading", { level: 1, name: "Foundation" });
     await waitFor(() => expect(readRecent("acme")).toHaveLength(1));
     const setItem = vi.spyOn(Storage.prototype, "setItem");
-    const tab = screen.queryAllByRole("tab")[1];
-    if (tab !== undefined) fireEvent.click(tab);
-    expect(setItem).not.toHaveBeenCalledWith(recentKey("acme"), expect.anything());
+    act(() => bumpFetchGeneration());
+    await screen.findByRole("heading", { level: 1, name: "Foundation" });
+    await waitFor(() => expect(screen.queryByText("Loading node...")).not.toBeInTheDocument());
+    expect(setItem.mock.calls.filter(([key]) => key === recentKey("acme"))).toHaveLength(0);
+  });
+
+  it("records a different node when navigating to it", async () => {
+    stubFetch(baseRoutes({
+      "/api/node/epic/E-1?history=integration": page("epic", "E-1", "First", "first"),
+      "/api/node/epic/E-2?history=integration": page("epic", "E-2", "Second", "second"),
+      "/api/queue": queue(0),
+    }));
+    render(<MemoryRouter initialEntries={["/node/epic/E-1"]}><Go /><App /></MemoryRouter>);
+    await screen.findByRole("heading", { level: 1, name: "First" });
+    await waitFor(() => expect(readRecent("acme")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "go-second" }));
+    await screen.findByRole("heading", { level: 1, name: "Second" });
+    await waitFor(() => expect(readRecent("acme").map((r) => r.id)).toEqual(["E-2", "E-1"]));
+  });
+
+  it("records exactly once, under the right key, when the project key arrives late", async () => {
+    let release: (value: unknown) => void = () => {};
+    const status = new Promise((resolve) => { release = resolve; });
+    stubFetch(baseRoutes({
+      "/api/status": status,
+      "/api/node/epic/E-u2w9wv?history=integration": page("epic", "E-u2w9wv", "Foundation", "foundation"),
+      "/api/queue": queue(0),
+    }));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    renderAt("/node/epic/E-u2w9wv");
+    await new Promise((r) => setTimeout(r, 50));
+    expect(setItem.mock.calls.filter(([key]) => String(key).startsWith("tiller-explore-recent"))).toHaveLength(0);
+    await act(async () => { release({ ok: true, json: () => Promise.resolve(summary) }); });
+    await screen.findByRole("heading", { level: 1, name: "Foundation" });
+    await waitFor(() => expect(readRecent("acme")).toHaveLength(1));
+    expect(setItem.mock.calls.filter(([key]) => String(key).startsWith("tiller-explore-recent"))
+      .map(([key]) => key)).toEqual([recentKey("acme")]);
   });
 });
+
+function Go() {
+  const navigate = useNavigate();
+  return <button type="button" onClick={() => navigate("/node/epic/E-2")}>go-second</button>;
+}

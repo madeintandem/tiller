@@ -133,9 +133,14 @@ function Results({ result }: { result: ListResult }) {
   if (result.nodes.length === 0) {
     return <EmptyNote>No matches.</EmptyNote>;
   }
-  // Epics and features answer to their contributors; every other noun has one
-  // owner (or none), the same split the rows made before they had a header.
-  const people = result.noun === "epic" || result.noun === "feature";
+  // The people column follows the noun's own axes: contributors for epics and
+  // features, one owner for tasks, questions, bugs, chores, and tweaks, and no
+  // column at all for a noun with neither (amendments). A payload without axes
+  // falls back to the epic/feature split.
+  const axes = result.axes?.[result.noun];
+  const people = axes === undefined ? result.noun === "epic" || result.noun === "feature" : axes.includes("contributor");
+  const owner = axes === undefined ? !people : axes.includes("owner");
+  const peopleColumn = people || owner;
   return (
     <>
       <p className="muted">
@@ -147,7 +152,7 @@ function Results({ result }: { result: ListResult }) {
             <th scope="col">Title</th>
             <th scope="col">Key</th>
             <th scope="col">Status</th>
-            <th scope="col">{people ? "Contributors" : "Owner"}</th>
+            {peopleColumn && <th scope="col">{people ? "Contributors" : "Owner"}</th>}
           </tr>
         </thead>
         <tbody>
@@ -172,13 +177,15 @@ function Results({ result }: { result: ListResult }) {
               <td>
                 <Chip status={displayStatus(row)}>{withActivityPhrase(row)}</Chip>
               </td>
-              <td className="muted explore-result-owner">
-                {people ? (
-                  <Contributors people={row.contributors ?? []} />
-                ) : (
-                  row.owner !== undefined && row.owner !== "" && <PersonName id={row.owner} name={row.owner_name} />
-                )}
-              </td>
+              {peopleColumn && (
+                <td className="muted explore-result-owner">
+                  {people ? (
+                    <Contributors people={row.contributors ?? []} />
+                  ) : (
+                    row.owner !== undefined && row.owner !== "" && <PersonName id={row.owner} name={row.owner_name} />
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
