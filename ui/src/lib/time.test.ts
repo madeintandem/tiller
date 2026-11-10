@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAbsolute, formatClock, formatWhen } from "./time";
+import { formatAbsolute, formatClock, formatDayHeading, formatWhen } from "./time";
 
 // Instants are built from local-time constructors so the wall-clock strings
 // are the same in every timezone the suite runs in.
@@ -35,6 +35,18 @@ describe("formatClock", () => {
   });
   it("returns an unparseable value unchanged", () => {
     expect(formatClock("nope")).toBe("nope");
+  });
+});
+
+describe("formatDayHeading", () => {
+  it("names the weekday and date", () => {
+    expect(formatDayHeading(at(2026, 11, 9, 14, 6), now)).toBe("Monday · Nov 9");
+  });
+  it("adds the year when it is not this year", () => {
+    expect(formatDayHeading(at(2025, 11, 9, 14, 6), now)).toBe("Sunday · Nov 9, 2025");
+  });
+  it("returns an unparseable value unchanged", () => {
+    expect(formatDayHeading("nope", now)).toBe("nope");
   });
 });
 

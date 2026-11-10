@@ -83,19 +83,16 @@
 // History as a flat day-grouped timeline. The served payload and the spec group
 // by (epic, stream) instead, and that reconciliation was made deliberately, not
 // by this file: option (a), keep the served groups as sections and restyle
-// their rows, day subheads only WITHIN a group where it helps a reader.
+// their rows, with day headings within each group.
 // So a RecapGroupBlock renders its section head (restyled,
-// not removed) and then either a flat burst list (its bursts all fall on one
-// calendar day) or a sequence of `.day`/`.day-h` subheads, one per calendar day
-// its bursts touch, each holding that day's own bursts - never both at once, so
-// a reader never has to ask which regime a given group is in (dayGroupsOf
-// below, and its own doc comment, states the exact rule).
+// not removed) and then a `.day`/`.day-h` heading for every calendar day its
+// bursts touch (a one-day group included), each holding that day's own bursts
+// (dayGroupsOf, and its own doc comment, states the exact rule).
 //
-// The row itself moved from a numeral-led column grammar to the mock's own
-// `.hrow` anatomy: mono time, a decorative dot, the bold "what" (the count
-// folded in), the leaf key as a trailing mono ref where one exists, and the
-// owner right-aligned. A burst of more than one expands in place exactly as
-// before, just with the mock's own "+ open" / "– close" wording
+// The row itself is the `.hrow` anatomy: the clock alone (the day lives in the
+// heading), the bold verb, the title with its key after it, and the actor
+// right-aligned. A run of several reads the clock, then one label spanning the
+// verb and title columns. A burst of more than one expands in place, with the mock's own "+ open" / "– close" wording
 // (`.burst-toggle`) in place of the chevron the row used to draw - the GROUP
 // head's own chevron is untouched, since the mock draws no equivalent for it
 // to restyle against and it already works.
@@ -396,8 +393,8 @@ function flatBurstsOf(groups: RecapGroup[]): FlatBurst[] {
   return out;
 }
 
-// Milliseconds for sort purposes only (display still goes through burstWhen/
-// formatTime, never this). An unparseable timestamp sorts as the oldest
+// Milliseconds for sort purposes only (display still goes through Time,
+// never this). An unparseable timestamp sorts as the oldest
 // possible instant rather than throwing off the whole list around a NaN
 // comparison - a defensive fallback for malformed data the server does not
 // actually send, mirrored from dayKey's own "give it a bucket, do not crash"

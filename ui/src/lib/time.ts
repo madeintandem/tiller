@@ -54,6 +54,23 @@ export function formatClock(iso: string): string {
   return plain(d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
 }
 
+// formatDayHeading names a calendar day for a day heading: "Monday · Nov 9",
+// with the year added when it is not now's year ("Monday · Nov 9, 2025").
+export function formatDayHeading(iso: string, now: Date): string {
+  const d = parse(iso);
+  if (d === null) {
+    return iso;
+  }
+  const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+  const sameYear = d.getFullYear() === now.getFullYear();
+  const date = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+  return `${weekday} · ${date}`;
+}
+
 // formatAbsolute is the full instant, used as the hover title.
 export function formatAbsolute(iso: string): string {
   const d = parse(iso);

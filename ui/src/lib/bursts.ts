@@ -21,10 +21,8 @@
 //
 // NO TIME TOLERANCE. A tolerance constant would be a magic number with no
 // measurement behind it, and the payload is already time-ordered, so adjacency
-// in the list IS adjacency in time. What replaces it is a display rule that
-// cannot lie: burstWhen states one timestamp when the run's ends render
-// identically at the view's own minute precision, and "earliest to latest"
-// when they do not. The precision decides, not a constant.
+// in the list IS adjacency in time. A burst row shows the clock of its latest
+// event (entries[0]); the rows beneath it carry the rest.
 
 import type { RecapEntry } from "../api";
 import { eventPhrase } from "./eventPhrase";
@@ -134,25 +132,6 @@ export function tierBursts<T>(
     }
   }
   return out;
-}
-
-// burstWhen is the run's time, stated at the view's own precision. One stamp
-// when the ends render identically there, "earliest to latest" when they do
-// not, so the row can never claim a span happened at an instant. Verified on
-// the live tree: add.feature spans 21:37:02 to 21:37:04 and reads as one
-// stamp, while a week of done.task in one lane would read "Jul 20, 9:12 AM to
-// Jul 25, 4:40 PM", which is the correct thing to say about it.
-//
-// entries arrive newest first, so the head is the latest and the tail the
-// earliest. format is injected because it is the caller's display precision
-// that decides, and the two have to be the same function or the rule is a lie.
-export function burstWhen(entries: RecapEntry[], format: (iso: string) => string): string {
-  if (entries.length === 0) {
-    return "";
-  }
-  const latest = format(entries[0].at);
-  const earliest = format(entries[entries.length - 1].at);
-  return latest === earliest ? latest : `${earliest} to ${latest}`;
 }
 
 // leafKey drops the owning group's key prefix from a node's key, so a row

@@ -1,4 +1,5 @@
 import type { Burst } from "../../lib/bursts";
+import { formatDayHeading } from "../../lib/time";
 
 // A burst's OWN timestamp for bucketing/sorting purposes: entries[0] - the
 // newest end, since a burst keeps its entries in the group's own
@@ -23,9 +24,8 @@ export interface DayGroup<T> {
 
 // Buckets an already-collapsed, already-ordered item list by the LOCAL
 // calendar day atOf reports for each item - not a per-entry split: an item
-// that spans several days (a burst whose "span vs instant" case burstWhen
-// already renders as "earliest to latest") still reads as ONE row and lives
-// under the day its own atOf instant fell on, exactly where a reader
+// that spans several days still reads as ONE row (its clock is its latest
+// event) and lives under the day its own atOf instant fell on, exactly where a reader
 // scanning newest-first would look for it first. Because the source list
 // is already newest-first and a day boundary can only be crossed walking
 // down it, never re-crossed, one linear walk buckets the whole list; no
@@ -69,17 +69,9 @@ function dayKey(iso: string): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-// The eyebrow text a day subhead reads (mock:1147's own "Today · Sat Aug 9"
-// idiom, minus the "Today" special case: that reading depends on the wall
-// clock at render time rather than the entries themselves, which is a claim
-// this mechanical, never-narrative page does not need to make to be useful -
-// "Saturday · Aug 9" already answers "which day was this").
+// The eyebrow text a day heading reads: "Monday · Nov 9", with the year added
+// for a day outside the current year. There is no "Today" special case: that
+// reading depends on the wall clock rather than the entries themselves.
 function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return iso;
-  }
-  const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
-  const monthDay = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return `${weekday} · ${monthDay}`;
+  return formatDayHeading(iso, new Date());
 }

@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RecapEntry } from "../api";
-import { burstWhen, burstsOf, leafKey, tierBursts } from "./bursts";
+import { burstsOf, leafKey, tierBursts } from "./bursts";
 import type { BookkeepingRun } from "./bursts";
 
 function entry(overrides: Partial<RecapEntry> = {}): RecapEntry {
@@ -98,40 +98,6 @@ describe("burstsOf", () => {
 
   it("returns nothing for nothing", () => {
     expect(burstsOf([])).toEqual([]);
-  });
-});
-
-describe("burstWhen", () => {
-  const minutes = (iso: string) => iso.slice(11, 16);
-
-  it("states ONE time when the run's ends render identically at the display precision", () => {
-    // Measured on the live tree: add.feature spans 21:37:02 to 21:37:04, which
-    // is one moment at the minute precision the view prints.
-    const entries = [
-      entry({ at: "2026-07-25T21:37:04Z" }),
-      entry({ at: "2026-07-25T21:37:03Z" }),
-      entry({ at: "2026-07-25T21:37:02Z" }),
-    ];
-
-    expect(burstWhen(entries, minutes)).toBe("21:37");
-  });
-
-  it("states the span when they do not, so a week in one lane can never read as an instant", () => {
-    const entries = [
-      entry({ at: "2026-07-25T16:40:00Z" }),
-      entry({ at: "2026-07-20T09:12:00Z" }),
-    ];
-
-    expect(burstWhen(entries, minutes)).toBe("09:12 to 16:40");
-  });
-
-  it("reads the ends off a newest-first list, earliest named first", () => {
-    const entries = [entry({ at: "2026-07-25T16:40:00Z" }), entry({ at: "2026-07-25T09:12:00Z" })];
-    expect(burstWhen(entries, minutes)).toBe("09:12 to 16:40");
-  });
-
-  it("says nothing about nothing", () => {
-    expect(burstWhen([], minutes)).toBe("");
   });
 });
 

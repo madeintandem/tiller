@@ -675,6 +675,22 @@
   color: var(--heading);
 }
 
+/* Just happened's verb column, History's own: a fixed 9ch bold cell after the
+   clock; a longer verb wraps inside it rather than clipping. A run's single
+   label (.what-run) spans the verb and title columns. */
+.prow .verb {
+  flex: none;
+  width: 9ch;
+  font-weight: 700;
+  color: var(--heading);
+  overflow-wrap: anywhere;
+}
+
+.prow .what-run {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .prow .who {
   font-family: var(--font-mono);
   font-size: 10.5px;

@@ -50,3 +50,19 @@ describe("history.css: the mobile .hrow override actually wins the cascade", () 
     expect(baseMatch!.index, ".hrow's base rule must precede the 48rem block").toBeLessThan(mediaIndex);
   });
 });
+
+describe("history.css: the verb column", () => {
+  const rule = historyCss.match(/\.hrow \.verb\s*\{([^}]*)\}/);
+
+  it("fixes .hrow .verb at 9ch and bold", () => {
+    expect(rule, "no .hrow .verb rule in history.css").not.toBeNull();
+    expect(rule![1]).toMatch(/width:\s*9ch;/);
+    expect(rule![1]).toMatch(/font-weight:\s*(700|600|bold);/);
+  });
+
+  it("lets a long verb wrap inside its cell instead of clipping", () => {
+    expect(rule![1]).toMatch(/overflow-wrap:\s*anywhere;/);
+    expect(rule![1]).not.toMatch(/overflow:\s*hidden/);
+    expect(rule![1]).not.toMatch(/white-space:\s*nowrap/);
+  });
+});

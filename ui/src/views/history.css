@@ -321,29 +321,14 @@ summary.hrow {
    Used by both .hrow (the burst row itself) and .recap-entry (an expanded
    burst's own sub-rows), which is why they live here rather than nested
    under .hrow specifically. */
-/* Fixed to a MEASURED width, not the mock's own 58px (mocks.html:616,
-   sized for their shorter "2:10p" clock format): History.tsx's formatWhen
-   ({month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) tops
-   out at 16 characters ("Dec 31, 06:59 PM", verified across every month/
-   day/hour combination in en-US, the reader's browser locale being the
-   actual formatter since formatTime calls toLocaleString(undefined, ...) -
-   a different locale can render wider, which is what the wrap below is for,
-   not a truncation risk this measurement pretends to rule out), and 16ch is
-   exact rather than approximate because Space Mono is monospace - every
-   glyph, including the comma and the space, advances the same width as the
-   "0" ch is measured from. Without a real
-   width here every row's dot/what/ref/who started at a different x,
-   because a single stamp (~16ch) and burstWhen's span form ("earliest to
-   latest", ~2x that) rendered at whatever width their own text needed.
-   The span form still needs somewhere to go: it WRAPS inside the fixed
-   column (plain text with spaces in it wraps by default; no extra CSS
-   required) rather than truncating, the same anti-truncation call the
-   entry title already makes below - a burst that spans days is rare
-   enough that a taller row is a fair trade for never hiding when it
-   happened. */
+/* The clock column: a row's time of day only ("12:59 PM", 8 characters, so
+   9ch has a character of slack; Space Mono is monospace, so the width is
+   exact). The day lives in the day heading, so no row repeats a date. Every
+   row, the bookkeeping fold's empty cell included, holds this same width so
+   the verb column starts at one x down the page. */
 .history-page .t {
   flex: none;
-  width: 16ch;
+  width: 9ch;
   overflow-wrap: break-word;
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -380,6 +365,41 @@ summary.hrow {
   color: var(--heading);
 }
 
+/* The verb column, first after the clock: a fixed 9ch cell, bold. A longer
+   verb ("review recovered") wraps inside the cell rather than clipping or
+   overlapping the title beside it. An asking row lights its verb in the
+   accent; the words "asked you" still carry the fact, never color alone. */
+.hrow .verb {
+  flex: none;
+  width: 9ch;
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--heading);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hrow .verb.ask,
+.what-run.ask b {
+  color: var(--accent);
+}
+
+/* A run's (or the bookkeeping fold's) single label spans the verb and title
+   columns: it starts where .verb starts and takes the rest of the row. */
+.what-run {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The title cell holds the node's title, then its mono key, an ask clause and
+   an origin label, each separated by one gap. */
+.history-page .hrow .what {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-4);
+}
+
 .history-page .who {
   flex: none;
   margin-left: auto;
@@ -413,7 +433,8 @@ summary.hrow {
 
 /* The folded bookkeeping run (BookkeepingRow): a real button dressed as a row,
    quieter than a burst because it stands for upkeep. Its bursts open beneath
-   it, indented one step. */
+   it, in the same columns as every other row (its bursts open beneath it
+   with no indent). */
 .recap-bookkeeping-toggle {
   width: 100%;
   background: none;
@@ -429,10 +450,6 @@ summary.hrow {
   background: var(--recess);
 }
 
-.recap-bookkeeping > .recap-bursts {
-  padding-left: var(--space-5);
-}
-
 .burst-toggle {
   flex: none;
   font-family: var(--font-mono);
@@ -441,23 +458,18 @@ summary.hrow {
   color: var(--accent);
 }
 
-/* Indented to where the dot starts on the row above it (the .t column's own
-   16ch width plus the one gap ahead of it - the mock's own arithmetic too:
-   mocks.html's .burst-body left-pads 68px against a 58px .t, the same
-   "column width plus one gap" shape, just against their shorter clock
-   format), so an expanded burst reads as a detail of its own row rather
-   than a new list starting at the left edge. Not .what's own start (a
-   dot's-width-and-a-gap further in): the entries below carry their own
-   dot on the same leading edge, so lining the block up with the ROW's
-   dot column is what keeps the two dot columns themselves aligned.
+/* Indented to where the verb column starts on the row above it (the .t
+   column's own 9ch width plus the one gap ahead of it), so an expanded burst
+   reads as a detail of its own row rather than a new list starting at the
+   left edge.
 
    The `ch` unit resolves against the ELEMENT'S OWN font (family and size),
-   not whatever font its content happens to render in, so `16ch` here only
-   lands at the same px as `.t`'s own `16ch` if `.burst-body` is given the
+   not whatever font its content happens to render in, so `9ch` here only
+   lands at the same px as `.t`'s own `9ch` if `.burst-body` is given the
    identical font context `.t` uses - Space Mono at 10.5px, restated below
    rather than left to inherit. Left to inherit, `.burst-body` picked up
    Inter 14px from body (nothing between it and body sets a font), whose
-   "0" glyph is both a different typeface AND a third larger, so its 16ch
+   "0" glyph is both a different typeface AND a third larger, so its 9ch
    landed 25-35px right of the head row's own dot column (found on real
    pixels: no screenshot up to that point showed
    an OPEN burst). Nothing below leaks this font change visibly: every
@@ -467,7 +479,7 @@ summary.hrow {
 .burst-body {
   font-family: var(--font-mono);
   font-size: 10.5px;
-  padding: 2px 0 8px calc(16ch + var(--space-5));
+  padding: 2px 0 8px calc(9ch + var(--space-5));
 }
 
 /* ---------- Day subheads: within a group whose bursts span more than one calendar day ---------- */
@@ -607,7 +619,7 @@ summary.hrow {
 
    The fix is not a redesign of the row's own anatomy (unlike Explore's
    frame, nothing here needs a second column or a stacked layout - .t's own
-   comment already measured its 16ch width against this exact same font,
+   comment already measured its 9ch width against this exact same font,
    and that measurement is untouched): flex-wrap: wrap alone is enough.
    Wrapped, the browser's line-breaking runs on each child's own natural
    (max-content) width BEFORE any shrinking happens, so a child that does

@@ -21,9 +21,9 @@ import { ProseInline } from "../../components/Prose";
 import RefLink from "../../components/RefLink";
 import SectionHead from "../../components/SectionHead";
 import StateDot from "../../components/StateDot";
+import Time from "../../components/Time";
 import TitleRef from "../../components/TitleRef";
 import { addrOf } from "../../lib/addr";
-import { burstWhen } from "../../lib/bursts";
 import { eventPhrase } from "../../lib/eventPhrase";
 import type { Burst } from "../../lib/bursts";
 import { ROW_CAP } from "../../lib/disclosure";
@@ -31,7 +31,6 @@ import { has } from "../../lib/has";
 import { sentence } from "../../lib/sentence";
 import { statusLabel } from "../../lib/statusLabel";
 import { PersonName, usePersonName } from "../../people";
-import { formatClock } from "../../lib/time";
 import { featureKeyOf, groupByFeature, taskKeyTail } from "./inFlight";
 import { composeJustHappened, targetLabel } from "./justHappened";
 import { nextReason } from "./nextRow";
@@ -75,9 +74,11 @@ function JustHappenedBody({ recap }: { recap: Recap }) {
   );
 }
 
-// One collapsed-burst row, History.tsx's own grammar (eventPhrase/burstWhen,
-// lib/bursts.ts) reshaped into the pulse's .prow markup: a clock time, what
-// happened, who. No status dot: unlike the board streams below, a
+// One collapsed-burst row, History.tsx's own grammar (eventPhrase,
+// lib/bursts.ts) reshaped into the pulse's .prow markup, in History's order:
+// the clock (the latest event's, absolute time on hover), the verb, the node
+// title, who. A run reads the clock then one label spanning verb and title.
+// No status dot: unlike the board streams below, a
 // RecapEntry carries no status field to paint honestly, and inventing one
 // from the event's verb would be exactly the narration ui-surface.md's
 // "mechanical, never narrative" rule forbids.
@@ -97,20 +98,21 @@ function JustHappenedRow({ burst }: { burst: Burst }) {
   const subject = lone?.targets[0];
   return (
     <div className="prow">
-      <span className="t">{burstWhen(burst.entries, formatClock)}</span>
-      <span className="what">
-        {subject !== undefined ? (
-          <>
-            <RefLink node={subject} label={targetLabel(subject)} className="" /> <b>{phrase.verb}</b>
-          </>
-        ) : n > 1 ? (
-          <b>
-            {n} {phrase.subject}
-          </b>
-        ) : (
-          <b>{phrase.subject}</b>
-        )}
+      <span className="t">
+        <Time iso={burst.entries[0].at} mode="clock" />
       </span>
+      {subject !== undefined ? (
+        <>
+          <span className="verb">{phrase.verb}</span>
+          <span className="what">
+            <RefLink node={subject} label={targetLabel(subject)} className="" />
+          </span>
+        </>
+      ) : (
+        <span className="what what-run">
+          <b>{n > 1 ? `${n} ${phrase.subject}` : phrase.subject}</b>
+        </span>
+      )}
       <span className="who"><PersonName id={burst.contributor} /></span>
     </div>
   );

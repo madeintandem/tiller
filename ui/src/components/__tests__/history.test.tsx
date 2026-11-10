@@ -392,9 +392,11 @@ describe("History view: burst collapsing", () => {
     // The count folds into the row's own bold "what" now (phase-5 restyle),
     // rather than a separate numeral column - it is still the first thing a
     // reader learns about the row.
-    expect(Array.from(rows, (r) => r.querySelector(".hrow .what")?.textContent)).toEqual([
+    // Row anatomy changed (task 24): a run's spanning label is .what-run, and a
+    // lone row's verb now has its own .verb cell ahead of its title.
+    expect(Array.from(rows, (r) => r.querySelector(".hrow .what-run, .hrow .verb")?.textContent)).toEqual([
       "8 features added",
-      "Audit Engine added",
+      "added",
     ]);
     // The three columns that used to repeat on every row are stated once or
     // not at all: no row prints the raw event type.
@@ -424,7 +426,8 @@ describe("History view: burst collapsing", () => {
     await screen.findByText(/12 events/);
 
     const lone = container.querySelector(".recap-burst-lone")!;
-    expect(lone.textContent).toContain("Audit Engine added");
+    expect(lone.querySelector(".verb")?.textContent).toBe("added");
+    expect(lone.querySelector(".what")?.textContent).toBe("Audit Engine");
     // The epic's own key equals the group's, so it does not repeat one line
     // below the head: no ref slot renders.
     expect(lone.querySelector(".recap-burst-key")).toBeNull();
@@ -434,7 +437,7 @@ describe("History view: burst collapsing", () => {
     expect(lone.querySelector(".burst-toggle")).toBeNull();
   });
 
-  it("states one time for a run inside a minute and a span for a run that is not", async () => {
+  it("states the latest event's clock alone for a run that spans days", async () => {
     const spread: Recap = {
       since: "2026-07-20T00:00:00Z",
       window: "7d",
@@ -457,9 +460,12 @@ describe("History view: burst collapsing", () => {
     const { container } = renderHistory("/history?window=7d");
     await screen.findByText(/tasks synced/);
 
-    // A burst row can never claim a five-day span happened at an instant.
-    // burstWhen's output rides the row's own leading .t slot now.
-    expect(container.querySelector(".hrow .t")?.textContent).toContain(" to ");
+    // The row's .t is one clock (the latest event's), never a range; the
+    // hover title carries the absolute time.
+    const t = container.querySelector(".hrow .t")!;
+    expect(t.textContent).not.toContain(" to ");
+    expect(t.textContent).toMatch(/^\d{1,2}:\d{2} (AM|PM)$/);
+    expect(t.querySelector("time")?.getAttribute("dateTime")).toBe("2026-07-25T16:40:00Z");
   });
 });
 
@@ -473,17 +479,15 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
     // Mono time, leading.
     const t = lone.querySelector(".t")!;
     expect(t.textContent).not.toBe("");
-    // A decorative dot - never a status claim (see History.tsx's own note on
-    // why), aria-hidden so the words beside it carry the accessible content.
-    const dot = lone.querySelector(".dot")!;
-    expect(dot).toHaveAttribute("aria-hidden", "true");
-    expect(dot.className).not.toContain("ask"); // add.epic never asks
-    // Bold what: the node's own name, then the verb.
+    // No dot on the row (task 24): the verb leads, and an ask lights it.
+    expect(lone.querySelector(".dot")).toBeNull();
+    expect(lone.querySelector(".verb")?.className).not.toContain("ask"); // add.epic never asks
+    // The verb, then the node's own name.
     expect(within(lone).getByRole("link", { name: "Audit Engine" })).toHaveAttribute(
       "href",
       "/node/epic/E-1",
     );
-    expect(lone.querySelector(".what b")?.textContent).toBe("added");
+    expect(lone.querySelector(".verb")?.textContent).toBe("added");
     // Right-aligned who, trailing.
     expect(lone.querySelector(".who")?.textContent).toBe("jc");
   });
@@ -509,7 +513,8 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
     await screen.findByRole("link", { name: "Feature 7" });
 
     const lone = container.querySelector(".recap-burst-lone")!;
-    expect(lone.textContent).toContain("Feature 7 added");
+    expect(lone.querySelector(".verb")?.textContent).toBe("added");
+    expect(lone.querySelector(".what")?.textContent).toContain("Feature 7");
     expect(lone.querySelector(".recap-burst-key")?.textContent).toBe("feature-7");
     expect(lone.querySelector(".who")?.textContent).toBe("jc");
   });
@@ -523,8 +528,8 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
       ".recap-burst summary.hrow",
     )!;
     expect(groupRow.querySelector(".t")?.textContent).not.toBe("");
-    expect(groupRow.querySelector(".dot")).not.toBeNull();
-    expect(groupRow.querySelector(".what b")?.textContent).toBe("8 features added");
+    expect(groupRow.querySelector(".dot")).toBeNull();
+    expect(groupRow.querySelector(".what-run b")?.textContent).toBe("8 features added");
     expect(groupRow.querySelector(".who")?.textContent).toBe("jc");
     // No ref at the collapsed level: a run of many has no single key to show
     // until it is expanded.
@@ -545,8 +550,9 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
     await screen.findByText(/12 events/);
 
     const project = container.querySelectorAll(".recap-group")[1];
-    const headDot = project.querySelector(".recap-burst .dot")!;
-    expect(headDot.className).toContain("ask");
+    // The head row has no dot now (task 24); an asking run lights its label.
+    const head = project.querySelector(".recap-burst summary .what-run")!;
+    expect(head.className).toContain("ask");
 
     fireEvent.click(project.querySelector(".recap-burst summary")!);
 
@@ -588,13 +594,15 @@ describe("History view: burst expand-in-place with toggle wording", () => {
 });
 
 describe("History view: day subheads under option (a)", () => {
-  it("adds no day subhead when a served group's bursts fall on one calendar day", async () => {
+  it("adds one day heading to a served group whose bursts fall on one calendar day", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
     const { container } = renderHistory();
     await screen.findByText(/12 events/);
 
-    expect(container.querySelectorAll(".day-h")).toHaveLength(0);
-    expect(container.querySelectorAll(".day")).toHaveLength(0);
+    // Task 24: a one-day group still carries its heading, since rows hold the
+    // clock only. loadedRecap serves two groups.
+    expect(container.querySelectorAll(".day-h")).toHaveLength(2);
+    expect(container.querySelectorAll(".day")).toHaveLength(2);
   });
 
   it("adds a day subhead per calendar day WITHIN a group whose bursts span days, newest first", async () => {

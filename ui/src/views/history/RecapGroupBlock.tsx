@@ -28,6 +28,7 @@ export default function RecapGroupBlock({
   const groupKey = group.epic === null ? "" : group.epic.key;
   const bursts = burstsOf(group.entries);
   const days = dayGroupsOf(bursts, burstAt);
+  // days is empty only for a group with no entries, which renders no rows.
 
   return (
     // open is bound, not just defaulted: the group starts open, so React would
@@ -69,33 +70,24 @@ export default function RecapGroupBlock({
           {open ? "▾" : "▸"}
         </span>
       </summary>
-      {days.length > 1 ? (
-        days.map((d) => (
-          <div className="day" key={d.key}>
-            <div className="day-h">
-              <span className="eyebrow">{d.label}</span>
-            </div>
-            <ul className="recap-bursts">
-              <TieredBursts
-                bursts={d.bursts}
-                showAll={showAll}
-                renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
-              />
-            </ul>
+      {/* Every day gets its heading, a one-day group included: rows carry the
+          clock only, so the date has to live somewhere. Index keys are safe
+          here: a burst has no id of its own, the list is rebuilt wholesale
+          from a refetched payload, and its order never changes in place. */}
+      {days.map((d) => (
+        <div className="day" key={d.key}>
+          <div className="day-h">
+            <span className="eyebrow">{d.label}</span>
           </div>
-        ))
-      ) : (
-        <ul className="recap-bursts">
-          {/* Index keys are safe here: a burst has no id of its own, the
-              list is rebuilt wholesale from a refetched payload, and its
-              order never changes in place. */}
-          <TieredBursts
-            bursts={bursts}
-            showAll={showAll}
-            renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
-          />
-        </ul>
-      )}
+          <ul className="recap-bursts">
+            <TieredBursts
+              bursts={d.bursts}
+              showAll={showAll}
+              renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
+            />
+          </ul>
+        </div>
+      ))}
       {group.omitted > 0 && (
         <p className="recap-omitted muted">{group.omitted} older not carried in this digest</p>
       )}

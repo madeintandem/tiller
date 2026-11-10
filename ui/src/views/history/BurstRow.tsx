@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { RecapEntry, TargetRef } from "../../api";
 import type { Burst } from "../../lib/bursts";
-import { burstWhen, leafKey } from "../../lib/bursts";
+import { leafKey } from "../../lib/bursts";
 import { eventPhrase } from "../../lib/eventPhrase";
 import { ROW_CAP } from "../../lib/disclosure";
 import { has } from "../../lib/has";
-import { formatWhen } from "../../lib/time";
 import RefLink from "../../components/RefLink";
+import Time from "../../components/Time";
 import { PersonName } from "../../people";
 import { historyPath, viewOf } from "./controls";
 
@@ -47,7 +47,9 @@ export default function BurstRow({
   const phrase = eventPhrase(burst.type, n);
   const lone = n === 1 ? burst.entries[0] : undefined;
   const subject = lone?.targets[0];
-  const when = burstWhen(burst.entries, whenNow);
+  // A burst row shows the clock of its latest event (entries[0]); the day
+  // lives in the day heading above it and the absolute time on hover.
+  const when = burst.entries.length > 0 ? burst.entries[0].at : "";
   const hasAsk = burst.asks > 0;
 
   // The ask clause, written out in WORDS at every run length: a magenta dot
@@ -82,21 +84,25 @@ export default function BurstRow({
     return (
       <li className="recap-burst">
         <div className="hrow recap-burst-lone">
-          <span className="t">{when}</span>
-          <span className={hasAsk ? "dot ask" : "dot"} aria-hidden="true" />
-          <span className="what">
-            {subject !== undefined ? (
-              <>
-                <RefLink node={subject} label={targetLabel(subject)} className="recap-burst-node" />{" "}
-                <b>{phrase.verb}</b>
-              </>
-            ) : (
+          <TimeCell iso={when} />
+          {subject !== undefined ? (
+            <>
+              <span className={hasAsk ? "verb ask" : "verb"}>{phrase.verb}</span>
+              <span className="what">
+                <RefLink node={subject} label={targetLabel(subject)} className="recap-burst-node" />
+                {askClause}
+                <EntryAddresses entry={lone} groupKey={groupKey} className="recap-burst-key" />
+                {originSpan}
+              </span>
+            </>
+          ) : (
+            <span className={hasAsk ? "what what-run ask" : "what what-run"}>
               <b>{phrase.subject}</b>
-            )}
-          </span>
-          {askClause}
-          <EntryAddresses entry={lone} groupKey={groupKey} className="recap-burst-key" />
-          {originSpan}
+              {askClause}
+              <EntryAddresses entry={lone} groupKey={groupKey} className="recap-burst-key" />
+              {originSpan}
+            </span>
+          )}
           <span className="who"><PersonName id={burst.contributor} /></span>
         </div>
       </li>
@@ -112,15 +118,14 @@ export default function BurstRow({
         }}
       >
         <summary className="hrow">
-          <span className="t">{when}</span>
-          <span className={hasAsk ? "dot ask" : "dot"} aria-hidden="true" />
-          <span className="what">
+          <TimeCell iso={when} />
+          <span className={hasAsk ? "what what-run ask" : "what what-run"}>
             <b>
               {n} {phrase.subject}
             </b>
+            {askClause}
+            {originSpan}
           </span>
-          {askClause}
-          {originSpan}
           <span className="who"><PersonName id={burst.contributor} /></span>
           {/* The mock's own wording (mocks.html:1149), in place of the
               chevron the row used to draw: a run of more than one is the
@@ -253,8 +258,12 @@ function targetLabel(t: TargetRef): string {
   return has(t.key) ? t.key : t.ref;
 }
 
-// Burst rows state a run's ends and span at this one precision, so the same
-// function renders both ends.
-function whenNow(iso: string): string {
-  return formatWhen(iso, new Date());
+// The row's leading clock cell: the time of day only, the absolute time on
+// hover (Time carries the title). A row never repeats its day.
+export function TimeCell({ iso }: { iso: string }) {
+  return (
+    <span className="t">
+      <Time iso={iso} mode="clock" />
+    </span>
+  );
 }

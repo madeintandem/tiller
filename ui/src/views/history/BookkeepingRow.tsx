@@ -24,7 +24,8 @@ export default function BookkeepingRow<T>({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <span className="what">
+        <span className="t" aria-hidden="true" />
+        <span className="what what-run">
           <b>
             {run.count} bookkeeping {run.count === 1 ? "change" : "changes"}
           </b>{" "}
