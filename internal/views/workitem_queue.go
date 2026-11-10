@@ -26,7 +26,7 @@ func queueApproveShelf(t *store.Tree, noun string) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: kind, Noun: noun, ID: body.ID, Key: Key(work),
-			Ref: gen.Ref(t, work), Prose: body.Title,
+			Ref: gen.Ref(t, work), Prose: body.Title, Title: body.Title,
 			Command: command,
 		})
 	}
@@ -43,7 +43,7 @@ func queueCarrierCancelled(t *store.Tree) []QueueEntry {
 			body := work.Body()
 			out = append(out, QueueEntry{
 				Kind: "carrier_cancelled", Noun: noun, ID: body.ID, Key: Key(work),
-				Ref: gen.Ref(t, work), Prose: body.Title,
+				Ref: gen.Ref(t, work), Prose: body.Title, Title: body.Title,
 				Command: fmt.Sprintf("tiller resolve %s %s --clear", noun, queueAddr(work)),
 			})
 		}

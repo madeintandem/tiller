@@ -143,10 +143,11 @@ func TestQueueHandlerPinsThePayload(t *testing.T) {
 	want := `{
 	  "entries": [
 	    {"kind":"approve_epic","noun":"epic","id":"E-aaaaaa","key":"form-engine",
-	     "ref":"form-engine (E-aaaaaa)","prose":"Form Engine",
+	     "ref":"form-engine (E-aaaaaa)","prose":"Form Engine","title":"Form Engine",
 	     "command":"tiller approve epic form-engine"},
 	    {"kind":"approve_feature","noun":"feature","id":"F-aaaaaa","key":"form-engine/schema-engine",
-	     "ref":"form-engine/schema-engine (F-aaaaaa)","prose":"Schema engine",
+	     "ref":"form-engine/schema-engine (F-aaaaaa)","prose":"Schema engine","title":"Schema engine",
+	     "plan":{"tasks":1,"criteria":1,"dependencies":0},
 	     "command":"tiller approve feature form-engine/schema-engine"}
 	  ]
 	}`

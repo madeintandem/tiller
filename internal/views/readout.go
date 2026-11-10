@@ -895,7 +895,7 @@ func attestContent(t *store.Tree, in ReadoutInput, r *Readout) {
 		}
 	}
 	criteria := 0
-	for _, e := range queueAttestCriteria(t, order) {
+	for _, e := range queueAttestCriteria(t, order, nil) {
 		if e.ID == at.NodeID && !(at.TargetKind == "criterion" && e.Prose == at.TargetID) {
 			criteria++
 		}

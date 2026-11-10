@@ -1329,6 +1329,20 @@ export interface QueueEntry {
   gate_status?: string;
   actor?: string;
   phase?: string;
+  // The node's own title on every kind whose node has one. statement and
+  // criterion ride only on attest_criterion; plan only on approve_feature.
+  title?: string;
+  statement?: string;
+  criterion?: string;
+  plan?: QueuePlan;
+}
+
+// The size of the plan an approve_feature entry asks the human to approve
+// (views.QueuePlan). criteria is 0 when no eval file was observed.
+export interface QueuePlan {
+  tasks: number;
+  criteria: number;
+  dependencies: number;
 }
 
 // GET /api/queue (views.Queue). Entries is always an array, empty when nothing

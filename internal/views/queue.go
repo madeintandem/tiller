@@ -98,6 +98,24 @@ type QueueEntry struct {
 	GateStatus string `json:"gate_status,omitempty"`
 	Actor      string `json:"actor,omitempty"`
 	Phase      string `json:"phase,omitempty"`
+	// Title is the node's own title on every kind whose node has one, so a
+	// decision card can lead with it whatever Prose carries. Statement and
+	// Criterion ride only on attest_criterion: the criterion id and, when the
+	// feature's eval file was observed, its statement. Plan rides only on
+	// approve_feature: the size of the plan being approved.
+	Title     string     `json:"title,omitempty"`
+	Statement string     `json:"statement,omitempty"`
+	Criterion string     `json:"criterion,omitempty"`
+	Plan      *QueuePlan `json:"plan,omitempty"`
+}
+
+// QueuePlan counts what approving a feature's plan signs off: its tasks, its
+// acceptance criteria (zero when no contract was observed), and the features
+// it depends on.
+type QueuePlan struct {
+	Tasks        int `json:"tasks"`
+	Criteria     int `json:"criteria"`
+	Dependencies int `json:"dependencies"`
 }
 
 // QueueInput carries I/O observations across the pure view boundary. Workflow
@@ -138,7 +156,7 @@ func QueueOfInput(t *store.Tree, in QueueInput) Queue {
 	entries := []QueueEntry{}
 	entries = append(entries, queueApproveAmendments(t)...)
 	entries = append(entries, queueApproveEpics(t, order)...)
-	entries = append(entries, queueApproveFeatures(t, order)...)
+	entries = append(entries, queueApproveFeatures(t, order, in.Workflow.Contracts)...)
 	entries = append(entries, queueApproveTaskBatches(t, order)...)
 	entries = append(entries, queueApproveShelf(t, store.NounBug)...)
 	entries = append(entries, queueApproveShelf(t, store.NounChore)...)
@@ -157,7 +175,7 @@ func QueueOfInput(t *store.Tree, in QueueInput) Queue {
 			}
 		}
 	}
-	for _, group := range [][]QueueEntry{queueAttestGates(t, order), queueAttestCriteria(t, order)} {
+	for _, group := range [][]QueueEntry{queueAttestGates(t, order), queueAttestCriteria(t, order, in.Workflow.Contracts)} {
 		for _, entry := range group {
 			if !shared[entry.ID] {
 				entries = append(entries, entry)
@@ -187,7 +205,7 @@ func queueApproveAmendments(t *store.Tree) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: "approve_amendment", Noun: store.NounAmendment, ID: a.ID, Key: Key(a),
-			Ref: gen.Ref(t, a), Prose: a.Title,
+			Ref: gen.Ref(t, a), Prose: a.Title, Title: a.Title,
 			Command: "tiller approve amendment " + queueAddr(a),
 		})
 	}
@@ -205,7 +223,7 @@ func queueApproveEpics(t *store.Tree, order *gen.Order) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: "approve_epic", Noun: store.NounEpic, ID: e.ID, Key: Key(e),
-			Ref: gen.Ref(t, e), Prose: e.Title,
+			Ref: gen.Ref(t, e), Prose: e.Title, Title: e.Title,
 			Command: "tiller approve epic " + queueAddr(e),
 		})
 	}
@@ -215,7 +233,7 @@ func queueApproveEpics(t *store.Tree, order *gen.Order) []QueueEntry {
 
 // queueApproveFeatures lists the specced features awaiting the human's spec
 // approval, the most common gate.
-func queueApproveFeatures(t *store.Tree, order *gen.Order) []QueueEntry {
+func queueApproveFeatures(t *store.Tree, order *gen.Order, contracts map[string]*store.EvalFile) []QueueEntry {
 	var out []QueueEntry
 	for _, f := range t.Features {
 		if f.Status != "specced" {
@@ -239,8 +257,13 @@ func queueApproveFeatures(t *store.Tree, order *gen.Order) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: "approve_feature", Noun: store.NounFeature, ID: f.ID, Key: Key(f),
-			Ref: gen.Ref(t, f), Prose: f.Title,
+			Ref: gen.Ref(t, f), Prose: f.Title, Title: f.Title,
 			Command: "tiller approve feature " + queueAddr(f),
+			Plan: &QueuePlan{
+				Tasks:        len(t.FeatureTasks[f.ID]),
+				Criteria:     contractCriteria(contracts, f.ID),
+				Dependencies: len(f.DependsOn),
+			},
 		})
 	}
 	sortQueueByOrder(order, out)
@@ -292,7 +315,7 @@ func queueApproveTaskBatches(t *store.Tree, order *gen.Order) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: "approve_tasks", Noun: store.NounFeature, ID: f.ID, Key: Key(f),
-			Ref: gen.Ref(t, f), Prose: f.Title,
+			Ref: gen.Ref(t, f), Prose: f.Title, Title: f.Title,
 			Command: "tiller approve task --feature " + queueAddr(f),
 		})
 	}
@@ -320,7 +343,7 @@ func queueAnswerQuestions(t *store.Tree) []QueueEntry {
 		}
 		out = append(out, QueueEntry{
 			Kind: "answer_question", Noun: store.NounQuestion, ID: q.ID,
-			Ref: gen.Ref(t, q), Prose: gen.QuestionTitle(q),
+			Ref: gen.Ref(t, q), Prose: gen.QuestionTitle(q), Title: gen.QuestionTitle(q),
 			Command: `tiller answer question ` + q.ID + ` --answer "..."`,
 			Due:     gen.QuestionDue(q),
 		})
@@ -381,7 +404,7 @@ func queueAttestGates(t *store.Tree, order *gen.Order) []QueueEntry {
 			}
 			out = append(out, QueueEntry{
 				Kind: "attest_gate", Noun: n.Noun(), ID: n.NodeID(), Key: Key(n),
-				Ref: gen.Ref(t, n), Prose: nodeProse(n),
+				Ref: gen.Ref(t, n), Prose: nodeProse(n), Title: nodeProse(n),
 				Command:    fmt.Sprintf("tiller attest %s %s --gate %s --status pass", n.Noun(), queueAddr(n), name),
 				Gate:       name,
 				GateStatus: status,
@@ -417,7 +440,7 @@ func queueAttestGates(t *store.Tree, order *gen.Order) []QueueEntry {
 // grain, and fall to criterion id between two entries on the same node. The
 // leading grain term is what keeps rank and reference from deciding the same
 // pair from different sides; grainOf (views/streams.go) carries the reason.
-func queueAttestCriteria(t *store.Tree, order *gen.Order) []QueueEntry {
+func queueAttestCriteria(t *store.Tree, order *gen.Order, contracts map[string]*store.EvalFile) []QueueEntry {
 	var out []QueueEntry
 	add := func(n store.Node) {
 		g, ok := NodeGates(n)["evals"]
@@ -434,7 +457,8 @@ func queueAttestCriteria(t *store.Tree, order *gen.Order) []QueueEntry {
 		for _, cid := range ids {
 			out = append(out, QueueEntry{
 				Kind: "attest_criterion", Noun: n.Noun(), ID: n.NodeID(), Key: Key(n),
-				Ref: gen.Ref(t, n), Prose: cid,
+				Ref: gen.Ref(t, n), Prose: cid, Title: nodeProse(n),
+				Criterion: cid, Statement: criterionStatement(contracts, n.NodeID(), cid),
 				Command: fmt.Sprintf("tiller attest %s %s --criterion %s --status pass", n.Noun(), queueAddr(n), cid),
 			})
 		}
@@ -502,6 +526,30 @@ func optionalGateApplies(on store.StringList, noun string) bool {
 
 // nodeProse is an attest_gate entry's one line of human meaning: the node's
 // title. The gate identity rides the Gate field, never here.
+// contractCriteria counts the criteria in a feature's observed eval file; zero
+// when none was observed.
+func contractCriteria(contracts map[string]*store.EvalFile, featureID string) int {
+	if c := contracts[featureID]; c != nil {
+		return len(c.Criteria)
+	}
+	return 0
+}
+
+// criterionStatement is the statement of one criterion in a node's observed
+// eval file, or empty when the file was not observed or names no such id.
+func criterionStatement(contracts map[string]*store.EvalFile, nodeID, criterionID string) string {
+	c := contracts[nodeID]
+	if c == nil {
+		return ""
+	}
+	for _, crit := range c.Criteria {
+		if crit.ID == criterionID {
+			return crit.Statement
+		}
+	}
+	return ""
+}
+
 func nodeProse(n store.Node) string {
 	if work, ok := store.AsWorkNode(n); ok {
 		return work.Body().Title
@@ -545,7 +593,7 @@ func queueWorkflowCloseout(t *store.Tree, order *gen.Order, in QueueInput) []Que
 		}
 		out = append(out, QueueEntry{
 			Kind: kind, Noun: node.Noun(), ID: node.NodeID(), Key: Key(node),
-			Ref: gen.Ref(t, node), Prose: prose, Command: command,
+			Ref: gen.Ref(t, node), Prose: prose, Title: nodeTitle(node), Command: command,
 			Actor: advice.Actor, Phase: advice.Phase,
 		})
 	}
