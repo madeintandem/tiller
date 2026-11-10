@@ -405,7 +405,7 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
   }
   if (fallback !== null) boxes.push(<FallbackBox key="fallback" action={fallback} />);
   if (start !== undefined) {
-    boxes.push(<StartBox key="start" start={start} owner={page.node.owner} ownerName={page.node.owner_name} />);
+    boxes.push(<StartBox key="start" start={start} />);
   }
   if (review !== undefined) boxes.push(<WarnBox key="review" review={review} pr={page.node.pr} />);
   return <AttentionFold key={page.node.id} boxes={boxes} />;
