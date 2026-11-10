@@ -34,8 +34,6 @@ import type {
   Streams,
   WhoseMoveCounts,
 } from "../api";
-import { DriftReport } from "./Drift";
-import { candidateCount, composeDriftBand } from "./home/driftBand";
 import { boardPath, driftPath, executionPath, listPath, nextPath, queuePath, recapPath } from "../api";
 import AllClear from "../components/AllClear";
 import type { AllClearReviewItem } from "../components/AllClear";
@@ -52,8 +50,10 @@ import SectionHead from "../components/SectionHead";
 import TitleRef from "../components/TitleRef";
 import { addrOf } from "../lib/addr";
 import { has } from "../lib/has";
+import { DriftReport } from "./Drift";
 import type { BandRun } from "./home/bands";
 import { bandRuns, batchCommand, queueEntryKey } from "./home/bands";
+import { candidateCount, composeDriftBand } from "./home/driftBand";
 import HeaderBand from "./home/HeaderBand";
 import { needsTabs, runCount, runKind } from "./home/needsTabs";
 import { InFlightColumn, JustHappenedColumn, UpNextColumn } from "./home/Pulse";
@@ -75,14 +75,22 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // Every fetch is unconditional so hook order never depends on whether
   // summary has arrived yet (App.tsx's own useFetch resolves independently).
   const queue = useFetch<Queue>(queuePath);
-  const epics = useFetch<ListResult>(listPath("epic"));
-  const features = useFetch<ListResult>(listPath("feature"));
+  // Four reads decide which tabs exist and what their counts say (epics and
+  // features for Recovered reviews, execution for Branches, drift for Drift),
+  // so they keep their last answer while a refetch is pending (a refresh, or
+  // the window regaining focus). Dropping it would remove the tab under the
+  // reader and let NodeTabs' unknown-tab fallback flip the pane to Overview.
+  // A refetch that fails keeps the last good data and also sets the error,
+  // which each panel states above its content.
+  const retain = { retainData: true };
+  const epics = useFetch<ListResult>(listPath("epic"), retain);
+  const features = useFetch<ListResult>(listPath("feature"), retain);
   const tasks = useFetch<ListResult>(listPath("task"));
   const questions = useFetch<ListResult>(listPath("question"));
   const bugs = useFetch<ListResult>(listPath("bug"));
   const chores = useFetch<ListResult>(listPath("chore"));
   const tweaks = useFetch<ListResult>(listPath("tweak"));
-  const drift = useFetch<DriftReportView>(driftPath);
+  const drift = useFetch<DriftReportView>(driftPath, retain);
 
   // The pulse's three reads. recapPath("24h") is a FIXED window - never
   // "visit" - so it never advances the last-visit mark (the invariant this
@@ -98,7 +106,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // tab's own label carries the diagnostics count. Like every read above it
   // refetches on mount and on the topbar's manual refresh, never on a tab
   // switch.
-  const execution = useFetch<ExecutionSnapshot>(executionPath);
+  const execution = useFetch<ExecutionSnapshot>(executionPath, retain);
 
   if (summaryError !== null) {
     return <p className="error">{summaryError}</p>;

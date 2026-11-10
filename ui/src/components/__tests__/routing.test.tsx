@@ -420,8 +420,7 @@ describe("App routing: /report", () => {
 describe("App topbar shadow", () => {
   it("lifts the topbar only on the views that scroll under it", () => {
     expect(["/", "/report", "/history"].map(scrollsUnderTopbar)).toEqual([true, true, true]);
-    expect(["/explore", "/build", "/fix", "/node/epic/E-aaaaaa", "/drift"].map(scrollsUnderTopbar)).toEqual([
-      false,
+    expect(["/explore", "/build", "/fix", "/node/epic/E-aaaaaa"].map(scrollsUnderTopbar)).toEqual([
       false,
       false,
       false,

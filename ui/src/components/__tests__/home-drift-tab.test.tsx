@@ -3,11 +3,12 @@
 // holds for its Drift stat tile, and the old /drift address forwards there.
 // Split from home.test.tsx, which is well past the file-size ceiling.
 
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DriftReportView, ProjectSummary } from "../../api";
+import { bumpFetchGeneration } from "../../api";
 import App from "../../App";
 import Home from "../../views/Home";
 
@@ -62,6 +63,36 @@ function stubFetch(table: Record<string, unknown>) {
   });
   vi.stubGlobal("fetch", spy);
   return spy;
+}
+
+// A stub whose next read of one path is held pending until the test settles
+// it: the shape of a refetch in flight after a generation bump.
+function stubHeld(table: Record<string, unknown>, heldPath: string) {
+  let pending: ((body: unknown) => void) | null = null;
+  let armed = false;
+  vi.stubGlobal("fetch", vi.fn((input: unknown) => {
+    const url = String(input);
+    if (url === heldPath && armed) {
+      armed = false;
+      return new Promise((resolve) => {
+        pending = (body) => resolve({ ok: true, json: () => Promise.resolve(body) });
+      });
+    }
+    if (url in table) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(table[url]) });
+    }
+    return Promise.resolve({ ok: false, status: 404, statusText: "Not Found", text: () => Promise.resolve("") });
+  }));
+  return {
+    refetch: () => {
+      armed = true;
+      act(() => bumpFetchGeneration());
+    },
+    settle: async (body: unknown) => {
+      await waitFor(() => expect(pending).not.toBeNull());
+      await act(async () => pending?.(body));
+    },
+  };
 }
 
 function Where() {
@@ -153,6 +184,24 @@ describe("Home Drift tab", () => {
 
     const link = await screen.findByRole("link", { name: /drift/i });
     expect(link).toHaveAttribute("href", "/?tab=drift");
+  });
+});
+
+describe("Home Drift tab while the page rereads", () => {
+  it("keeps the tab, its count, and the report on screen until the new answer lands", async () => {
+    const held = stubHeld(routes(withCandidates), "/api/drift");
+    renderHome("/?tab=drift");
+    expect(await screen.findByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+
+    held.refetch();
+
+    expect(screen.getByRole("button", { name: "Drift · 3" })).toBeInTheDocument();
+    expect(screen.getByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+    expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift");
+
+    await held.settle(uncoveredOnly);
+    expect(await screen.findByRole("button", { name: "Drift · 1" })).toBeInTheDocument();
+    expect(screen.queryByText(/Work started from an older basis/)).not.toBeInTheDocument();
   });
 });
 
