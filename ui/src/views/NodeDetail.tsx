@@ -44,9 +44,19 @@ export default function NodeDetail() {
   // The route guarantees both, but the types do not; a null path keeps useFetch
   // idle rather than fetching a malformed address. An empty splat (`/node/task/`
   // with nothing after it) is malformed in exactly that way.
+  //
+  // The first read leaves out an observed task's branch history, which can
+  // take far longer than the rest of the page; that answer says
+  // history_pending, and a second read of the plain path brings the merged
+  // history, whose page then replaces the first.
   const path =
-    noun !== undefined && addr !== undefined && addr !== "" ? nodePagePath(noun, addr) : null;
-  const { data: page, error, loading } = useFetch<NodePage>(path);
+    noun !== undefined && addr !== undefined && addr !== "" ? nodePagePath(noun, addr, "integration") : null;
+  const first = useFetch<NodePage>(path);
+  const mergedPath =
+    first.data?.history_pending === true && noun !== undefined && addr !== undefined ? nodePagePath(noun, addr) : null;
+  const merged = useFetch<NodePage>(mergedPath);
+  const page = withBranchHistory(first.data, merged.data, merged.error);
+  const { error, loading } = first;
   // Keyed to the node request path: navigating to another node rereads the
   // queue, so a snapshot taken on the previous node (perhaps before a CLI
   // mutation answered its ask) never drives this node's attention stack, and
@@ -84,6 +94,22 @@ function paneContent(
     return <p className="muted">Loading node...</p>;
   }
   return <NodeDetailInstrument page={page} queue={queue} />;
+}
+
+// The page to draw: the merged answer once it lands, else the first answer,
+// which keeps its pending History row until then. A failed merged read ends
+// the wait with the failure named where the branch history would be.
+function withBranchHistory(first: NodePage | null, merged: NodePage | null, mergedError: string | null): NodePage | null {
+  if (first === null) {
+    return null;
+  }
+  if (merged !== null) {
+    return merged;
+  }
+  if (mergedError !== null) {
+    return { ...first, history_pending: undefined, execution_history_error: mergedError };
+  }
+  return first;
 }
 
 function tabHandle(addr: string | undefined, page: NodePage | null, error: string | null): string {

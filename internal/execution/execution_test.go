@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -106,7 +107,7 @@ func requireSettledAway(t *testing.T, s *execution.Snapshot, id, revision, reaso
 	require.True(t, found, "source_unstable diagnostic naming %q: %+v", reason, s.Diagnostics)
 	_, err = s.ReadFile(id, revision, evidencePath, evidenceLimit)
 	require.Error(t, err)
-	_, err = s.Events(id)
+	_, err = s.Events(context.Background(), id)
 	require.Error(t, err)
 	dropped, err = s.Settle()
 	require.NoError(t, err)
@@ -417,7 +418,7 @@ func TestSourceFilesAndEventsAreConfinedAndTaskScoped(t *testing.T) {
 				_, err := s.ReadFile(firstID, record.Revision, path, evidenceLimit)
 				require.Error(t, err, path)
 			}
-			evs, err := s.Events(firstID)
+			evs, err := s.Events(context.Background(), firstID)
 			require.NoError(t, err)
 			require.Len(t, evs, 1)
 			require.Equal(t, "EV-aaaaaa", evs[0].ID)
@@ -458,7 +459,7 @@ func TestUnsafeCandidateAndSupportAreUnavailableWithoutBlocking(t *testing.T) {
 				_, err := s.ReadFile(firstID, s.Observations[firstID].Revision, evidencePath, evidenceLimit)
 				require.Error(t, err)
 			} else {
-				_, err := s.Events(firstID)
+				_, err := s.Events(context.Background(), firstID)
 				require.Error(t, err)
 			}
 		})
@@ -556,7 +557,7 @@ func TestRefCandidateSymlinkAndMalformedHistoryAreRejected(t *testing.T) {
 				require.Empty(t, s.Observations)
 				require.True(t, hasDiagnostic(s, "source_unavailable"))
 			} else {
-				_, err := s.Events(firstID)
+				_, err := s.Events(context.Background(), firstID)
 				require.Error(t, err)
 			}
 		})

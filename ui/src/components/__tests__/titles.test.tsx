@@ -119,7 +119,7 @@ describe("Page titles", () => {
   });
 
   it("a node page carries the header's handle", async () => {
-    stubFetch({ ...exploreRoutes, "/api/node/feature/F-9": featurePage() });
+    stubFetch({ ...exploreRoutes, "/api/node/feature/F-9?history=integration": featurePage() });
     renderAt("/node/feature/F-9");
     await waitFor(() => expect(document.title).toBe("Wire the billing webhook · Tiller"));
   });
@@ -151,7 +151,7 @@ describe("Explore mode titles", () => {
   const fileRoute = "/api/prose?path=.tiller%2Fdesign%2Fas-is%2Fapp.md&line=12";
   const routes = {
     ...exploreRoutes,
-    "/api/node/feature/F-9": featurePage(),
+    "/api/node/feature/F-9?history=integration": featurePage(),
     [fileRoute]: {
       path: ".tiller/design/as-is/app.md",
       content: "# App\n\nline\n",

@@ -1,13 +1,16 @@
 package execution
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -67,8 +70,106 @@ func gitReadAtMost(root string, limit int64, args ...string) ([]byte, error) {
 	return out, nil
 }
 
+// maxBatchBlobBytes bounds each blob gitBatchBlobs returns. It matches the
+// console's served-file cap, the limit readAtMost is given for evidence: an
+// event file is a few hundred bytes, so only a hostile branch reaches it.
+const maxBatchBlobBytes = 8 << 20
+
+// gitBatchBlobs reads many blobs through one `git cat-file --batch` process,
+// keyed by object id. A missing object, a non-blob, or a blob over
+// maxBatchBlobBytes refuses the whole read; ErrTooLarge names the last case.
+// Cancelling ctx stops Git.
+func gitBatchBlobs(ctx context.Context, root string, oids []string) (map[string][]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	var unique []string
+	seen := make(map[string]bool, len(oids))
+	var input bytes.Buffer
+	for _, oid := range oids {
+		if !seen[oid] {
+			seen[oid] = true
+			unique = append(unique, oid)
+			input.WriteString(oid + "\n")
+		}
+	}
+	if len(unique) == 0 {
+		return map[string][]byte{}, nil
+	}
+	args := []string{"cat-file", "--batch"}
+	cmd, stderr := gitCommandContext(ctx, root, args...)
+	cmd.Stdin = &input
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, gitError(args, err, stderr)
+	}
+	blobs, readErr := readBatch(bufio.NewReader(stdout), unique)
+	if readErr != nil {
+		_ = cmd.Process.Kill()
+	}
+	waitErr := cmd.Wait()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if readErr != nil {
+		return nil, readErr
+	}
+	if waitErr != nil {
+		return nil, gitError(args, waitErr, stderr)
+	}
+	return blobs, nil
+}
+
+// readBatch reads cat-file --batch's answer to each requested object id, in
+// request order: "<oid> <type> <size>\n<bytes>\n", or "<oid> missing\n".
+func readBatch(out *bufio.Reader, oids []string) (map[string][]byte, error) {
+	blobs := make(map[string][]byte, len(oids))
+	for _, oid := range oids {
+		header, err := out.ReadString('\n')
+		if err != nil {
+			return nil, fmt.Errorf("git cat-file --batch: %w", err)
+		}
+		fields := strings.Fields(header)
+		if len(fields) == 0 || fields[0] != oid {
+			return nil, fmt.Errorf("git cat-file --batch: expected object %s, got %q", oid, strings.TrimSpace(header))
+		}
+		if len(fields) == 2 && fields[1] == "missing" {
+			return nil, fmt.Errorf("git object %s is unavailable", oid)
+		}
+		if len(fields) != 3 {
+			return nil, fmt.Errorf("git cat-file --batch: invalid header %q", strings.TrimSpace(header))
+		}
+		if fields[1] != "blob" {
+			return nil, fmt.Errorf("git object %s is a %s, not a blob", oid, fields[1])
+		}
+		size, err := strconv.ParseInt(fields[2], 10, 64)
+		if err != nil || size < 0 {
+			return nil, fmt.Errorf("git object %s has an unreadable size %q", oid, fields[2])
+		}
+		if size > maxBatchBlobBytes {
+			return nil, fmt.Errorf("git object %s: %w", oid, ErrTooLarge)
+		}
+		data := make([]byte, size+1)
+		if _, err := io.ReadFull(out, data); err != nil {
+			return nil, fmt.Errorf("git object %s: %w", oid, err)
+		}
+		if data[size] != '\n' {
+			return nil, fmt.Errorf("git cat-file --batch: object %s is not newline-terminated", oid)
+		}
+		blobs[oid] = data[:size]
+	}
+	return blobs, nil
+}
+
 func gitCommand(root string, args ...string) (*exec.Cmd, *bytes.Buffer) {
-	cmd := exec.Command("git", append([]string{"-c", "core.fsmonitor=false"}, args...)...)
+	return gitCommandContext(context.Background(), root, args...)
+}
+
+func gitCommandContext(ctx context.Context, root string, args ...string) (*exec.Cmd, *bytes.Buffer) {
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-c", "core.fsmonitor=false"}, args...)...)
 	cmd.Dir = root
 	for _, variable := range os.Environ() {
 		name, _, _ := strings.Cut(variable, "=")

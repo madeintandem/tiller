@@ -140,7 +140,7 @@ describe("Person labels across roster refreshes", () => {
     page.node.owner = "jc";
     page.node.proposed_by = "former-owner";
     const routes = emptyExploreRoutes({
-      "/api/node/task/T-h4k2wq": page,
+      "/api/node/task/T-h4k2wq?history=integration": page,
     });
     stubFetch(routes);
     render(<MemoryRouter initialEntries={["/node/task/T-h4k2wq"]}><App /></MemoryRouter>);
@@ -212,7 +212,7 @@ describe("App routing: a task's key, not just its id, addresses the node page", 
   it("reaches the node page on a four-segment, key-addressed task URL", async () => {
     stubFetch({
       "/api/status": summary(),
-      "/api/node/task/form-engine/certification-form-loading/transcribe-the-schema": taskPage(),
+      "/api/node/task/form-engine/certification-form-loading/transcribe-the-schema?history=integration": taskPage(),
     });
 
     render(
@@ -241,7 +241,7 @@ describe("App routing: a plain id, the shape every console link emits, still res
   it("reaches the node page on a single-segment id URL rather than the catch-all", async () => {
     stubFetch({
       "/api/status": summary(),
-      "/api/node/feature/F-9": featurePage(),
+      "/api/node/feature/F-9?history=integration": featurePage(),
     });
 
     render(
@@ -582,7 +582,7 @@ describe("App routing: node pages live under the Explore shell", () => {
   }
 
   it("renders the navigator beside a node page, opened to the selection", async () => {
-    stubFetch(shellRoutes({ "/api/node/feature/F-9": featurePage() }));
+    stubFetch(shellRoutes({ "/api/node/feature/F-9?history=integration": featurePage() }));
 
     const { container } = render(
       <MemoryRouter initialEntries={["/node/feature/F-9"]}>
@@ -599,7 +599,7 @@ describe("App routing: node pages live under the Explore shell", () => {
   });
 
   it("marks Explore active in the top nav on a /node/ address", async () => {
-    stubFetch(shellRoutes({ "/api/node/feature/F-9": featurePage() }));
+    stubFetch(shellRoutes({ "/api/node/feature/F-9?history=integration": featurePage() }));
 
     render(
       <MemoryRouter initialEntries={["/node/feature/F-9"]}>
@@ -626,7 +626,7 @@ describe("App routing: node pages live under the Explore shell", () => {
   });
 
   it("redirects the retired /explore/:noun/:id selection route to /node/", async () => {
-    stubFetch(shellRoutes({ "/api/node/feature/F-9": featurePage() }));
+    stubFetch(shellRoutes({ "/api/node/feature/F-9?history=integration": featurePage() }));
 
     render(
       <MemoryRouter initialEntries={["/explore/feature/F-9"]}>
@@ -660,7 +660,7 @@ describe("App routing: node pages live under the Explore shell", () => {
       eval: null,
       amendment: { operations: [] },
     };
-    stubFetch(shellRoutes({ "/api/node/amendment/A-000001": page }));
+    stubFetch(shellRoutes({ "/api/node/amendment/A-000001?history=integration": page }));
 
     render(
       <MemoryRouter initialEntries={["/node/amendment/A-000001"]}>

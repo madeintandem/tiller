@@ -13,6 +13,10 @@
 // expand in place with no refetch. A day-old feature has two events and a
 // six-month one has fifty, and the payload is uncapped, so this is the cap
 // that keeps a mature node's page from ending in a scroll of its own past.
+//
+// pending marks an observed task whose branch history is still being read:
+// the integration rows show at once, a last row says the rest is coming, and
+// the head carries no count until the merged history replaces them.
 
 import { useState } from "react";
 import type { HistoryEntry } from "../../api";
@@ -21,15 +25,23 @@ import { PersonName } from "../../people";
 
 const ROW_CAP = 8;
 
-export default function HistorySection({ history, executionError }: { history: HistoryEntry[]; executionError?: string }) {
+export default function HistorySection({
+  history,
+  executionError,
+  pending = false,
+}: {
+  history: HistoryEntry[];
+  executionError?: string;
+  pending?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
-  if (history.length === 0 && executionError === undefined) {
+  if (history.length === 0 && executionError === undefined && !pending) {
     return null;
   }
   const shown = expanded ? history : history.slice(0, ROW_CAP);
   const hidden = history.length - shown.length;
   return (
-    <InstrSection label={`History · ${history.length}`} caption="newest first">
+    <InstrSection label={pending ? "History" : `History · ${history.length}`} caption="newest first">
       {executionError !== undefined && <p role="alert">Execution history unavailable: {executionError}</p>}
       <ol className="history">
         {/* Entries carry no id and the list is static per fetch, so the
@@ -45,6 +57,11 @@ export default function HistorySection({ history, executionError }: { history: H
             {e.command !== "" && <code className="history-command mono muted">{e.command}</code>}
           </li>
         ))}
+        {pending && (
+          <li className="history-entry muted">
+            Reading branch history...
+          </li>
+        )}
       </ol>
       {hidden > 0 && (
         <button type="button" className="instr-more" onClick={() => setExpanded(true)}>

@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -80,59 +81,11 @@ func regularFileAtMost(root, path string, keepBytes bool, limit int64) ([]byte, 
 		return nil, fileState{}, err
 	}
 	defer anchored.Close()
-	read := func(keepBytes bool) ([]byte, fileState, error) {
-		file, err := (rootpath.Walker{}).Open(anchored, path, false)
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, fileState{}, nil
-		}
-		if err != nil {
-			return nil, fileState{}, err
-		}
-		defer file.Close()
-		before, err := file.Stat()
-		if err != nil {
-			return nil, fileState{}, err
-		}
-		var content io.Reader = file
-		if limit > 0 {
-			content = io.LimitReader(file, limit+1)
-		}
-		var data []byte
-		var digest [sha256.Size]byte
-		var read int64
-		if keepBytes {
-			data, err = io.ReadAll(content)
-			if err == nil {
-				read = int64(len(data))
-				digest = sha256.Sum256(data)
-			}
-		} else {
-			hash := sha256.New()
-			read, err = io.Copy(hash, content)
-			if err == nil {
-				hash.Sum(digest[:0])
-			}
-		}
-		if err != nil {
-			return nil, fileState{}, err
-		}
-		if limit > 0 && read > limit {
-			return nil, fileState{}, fmt.Errorf("execution file %s: %w", path, ErrTooLarge)
-		}
-		after, err := file.Stat()
-		if err != nil {
-			return nil, fileState{}, err
-		}
-		if before.Mode() != after.Mode() || before.Size() != after.Size() || !before.ModTime().Equal(after.ModTime()) {
-			return nil, fileState{}, fmt.Errorf("execution file %s changed while being read", path)
-		}
-		return data, fileState{exists: true, digest: digest, info: after}, nil
-	}
-	data, before, err := read(keepBytes)
+	data, before, err := readRegular(anchored, path, keepBytes, limit)
 	if err != nil {
 		return nil, fileState{}, err
 	}
-	_, after, err := read(false)
+	_, after, err := readRegular(anchored, path, false, limit)
 	if err != nil {
 		return nil, fileState{}, err
 	}
@@ -140,6 +93,70 @@ func regularFileAtMost(root, path string, keepBytes bool, limit int64) ([]byte, 
 		return nil, fileState{}, fmt.Errorf("execution file %s changed while being read", path)
 	}
 	return data, after, nil
+}
+
+// regularFileOnce reads and hashes a file in one pass, without
+// regularFileAtMost's second open. It suits a source read that the closing
+// checkFiles pass confirms anyway, since that pass opens the file again and
+// compares the same state.
+func regularFileOnce(root, path string) ([]byte, fileState, error) {
+	anchored, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, fileState{}, err
+	}
+	defer anchored.Close()
+	return readRegular(anchored, path, true, 0)
+}
+
+// readRegular opens one file under anchored and reads it, keeping its bytes
+// or only hashing them. A file absent at any segment reads as not existing.
+func readRegular(anchored *os.Root, path string, keepBytes bool, limit int64) ([]byte, fileState, error) {
+	file, err := (rootpath.Walker{}).Open(anchored, path, false)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, fileState{}, nil
+	}
+	if err != nil {
+		return nil, fileState{}, err
+	}
+	defer file.Close()
+	before, err := file.Stat()
+	if err != nil {
+		return nil, fileState{}, err
+	}
+	var content io.Reader = file
+	if limit > 0 {
+		content = io.LimitReader(file, limit+1)
+	}
+	var data []byte
+	var digest [sha256.Size]byte
+	var read int64
+	if keepBytes {
+		data, err = io.ReadAll(content)
+		if err == nil {
+			read = int64(len(data))
+			digest = sha256.Sum256(data)
+		}
+	} else {
+		hash := sha256.New()
+		read, err = io.Copy(hash, content)
+		if err == nil {
+			hash.Sum(digest[:0])
+		}
+	}
+	if err != nil {
+		return nil, fileState{}, err
+	}
+	if limit > 0 && read > limit {
+		return nil, fileState{}, fmt.Errorf("execution file %s: %w", path, ErrTooLarge)
+	}
+	after, err := file.Stat()
+	if err != nil {
+		return nil, fileState{}, err
+	}
+	if before.Mode() != after.Mode() || before.Size() != after.Size() || !before.ModTime().Equal(after.ModTime()) {
+		return nil, fileState{}, fmt.Errorf("execution file %s changed while being read", path)
+	}
+	return data, fileState{exists: true, digest: digest, info: after}, nil
 }
 
 func generation(root, prefix string) (fileState, error) {
@@ -322,39 +339,17 @@ func (s *source) read(path string) ([]byte, error) {
 // readAtMost reads one source file, refusing with ErrTooLarge a file larger
 // than a positive limit before its bytes are loaded. Zero means no limit.
 func (s *source) readAtMost(path string, limit int64) ([]byte, error) {
-	if !fs.ValidPath(filepath.ToSlash(path)) || filepath.IsAbs(path) || filepath.Clean(path) != path || strings.ContainsAny(path, "\\\x00") {
-		return nil, fmt.Errorf("unsafe execution path %q", path)
+	if err := safeSourcePath(path); err != nil {
+		return nil, err
 	}
 	if s.kind == "working_tree" {
-		if err := s.checkWorktreePath(path); err != nil {
-			return nil, err
-		}
-		data, state, err := regularFileAtMost(s.worktreeRoot, s.gitPath(path), true, limit)
-		if err != nil {
-			return nil, err
-		}
-		if !state.exists {
-			return nil, fmt.Errorf("execution file %s: %w", path, fs.ErrNotExist)
-		}
-		if expected, ok := s.files[path]; ok && !expected.equal(state) {
-			return nil, fmt.Errorf("execution file %s changed; refresh the observation", path)
-		}
-		s.files[path] = state
-		return data, nil
+		return s.readWorktree(path, func(name string) ([]byte, fileState, error) {
+			return regularFileAtMost(s.worktreeRoot, name, true, limit)
+		})
 	}
-	name := s.gitPath(path)
-	entry, ok := s.entries[name]
-	if !ok {
-		return nil, fmt.Errorf("execution file %s: %w", path, fs.ErrNotExist)
-	}
-	if entry.kind != "blob" || (entry.mode != "100644" && entry.mode != "100755") {
-		return nil, fmt.Errorf("execution file %s is not a regular Git blob", path)
-	}
-	for parent := filepath.ToSlash(filepath.Dir(name)); parent != "."; parent = filepath.ToSlash(filepath.Dir(parent)) {
-		entry, ok := s.entries[parent]
-		if !ok || entry.kind != "tree" || entry.mode != "040000" {
-			return nil, fmt.Errorf("execution file %s has an unsafe Git tree component", path)
-		}
+	entry, err := s.committedBlob(path)
+	if err != nil {
+		return nil, err
 	}
 	if limit > 0 {
 		// A blob is immutable under its object id, so its recorded size is
@@ -378,6 +373,53 @@ func (s *source) readAtMost(path string, limit int64) ([]byte, error) {
 		return data, err
 	}
 	return gitRead(s.repo.root, "cat-file", "blob", entry.oid)
+}
+
+func safeSourcePath(path string) error {
+	if !fs.ValidPath(filepath.ToSlash(path)) || filepath.IsAbs(path) || filepath.Clean(path) != path || strings.ContainsAny(path, "\\\x00") {
+		return fmt.Errorf("unsafe execution path %q", path)
+	}
+	return nil
+}
+
+// readWorktree reads one worktree file through read and records its state, so
+// the closing checkFiles pass confirms it was not changed afterwards.
+func (s *source) readWorktree(path string, read func(name string) ([]byte, fileState, error)) ([]byte, error) {
+	if err := s.checkWorktreePath(path); err != nil {
+		return nil, err
+	}
+	data, state, err := read(s.gitPath(path))
+	if err != nil {
+		return nil, err
+	}
+	if !state.exists {
+		return nil, fmt.Errorf("execution file %s: %w", path, fs.ErrNotExist)
+	}
+	if expected, ok := s.files[path]; ok && !expected.equal(state) {
+		return nil, fmt.Errorf("execution file %s changed; refresh the observation", path)
+	}
+	s.files[path] = state
+	return data, nil
+}
+
+// committedBlob returns the tree entry of one committed source file: a
+// regular blob whose every parent is an ordinary Git directory.
+func (s *source) committedBlob(path string) (treeEntry, error) {
+	name := s.gitPath(path)
+	entry, ok := s.entries[name]
+	if !ok {
+		return treeEntry{}, fmt.Errorf("execution file %s: %w", path, fs.ErrNotExist)
+	}
+	if entry.kind != "blob" || (entry.mode != "100644" && entry.mode != "100755") {
+		return treeEntry{}, fmt.Errorf("execution file %s is not a regular Git blob", path)
+	}
+	for parent := filepath.ToSlash(filepath.Dir(name)); parent != "."; parent = filepath.ToSlash(filepath.Dir(parent)) {
+		entry, ok := s.entries[parent]
+		if !ok || entry.kind != "tree" || entry.mode != "040000" {
+			return treeEntry{}, fmt.Errorf("execution file %s has an unsafe Git tree component", path)
+		}
+	}
+	return entry, nil
 }
 
 func evidencePath(path string) error {
@@ -476,17 +518,24 @@ func (s *source) eventPaths() ([]string, error) {
 	return paths, nil
 }
 
-func (s *source) events(taskID string) ([]events.Event, error) {
+// events reads every event file in the source and keeps those targeting
+// taskID. A committed source reads them all through one Git process; a
+// worktree source reads each file once. Cancelling ctx stops the read.
+func (s *source) events(ctx context.Context, taskID string) ([]events.Event, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	paths, err := s.eventPaths()
 	if err != nil {
 		return nil, err
 	}
+	contents, err := s.eventContents(ctx, paths)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]events.Event, 0)
-	for _, path := range paths {
-		data, err := s.read(path)
-		if err != nil {
-			return nil, err
-		}
+	for i, path := range paths {
+		data := contents[i]
 		var event events.Event
 		if err := yaml.Unmarshal(data, &event); err != nil {
 			return nil, fmt.Errorf("execution event %s: %w", path, err)
@@ -502,6 +551,45 @@ func (s *source) events(taskID string) ([]events.Event, error) {
 	}
 	events.Sort(out)
 	return out, nil
+}
+
+// eventContents returns each event file's bytes, in the order of paths.
+func (s *source) eventContents(ctx context.Context, paths []string) ([][]byte, error) {
+	contents := make([][]byte, len(paths))
+	if s.kind == "working_tree" {
+		for i, path := range paths {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			if err := safeSourcePath(path); err != nil {
+				return nil, err
+			}
+			data, err := s.readWorktree(path, func(name string) ([]byte, fileState, error) {
+				return regularFileOnce(s.worktreeRoot, name)
+			})
+			if err != nil {
+				return nil, err
+			}
+			contents[i] = data
+		}
+		return contents, nil
+	}
+	oids := make([]string, len(paths))
+	for i, path := range paths {
+		entry, err := s.committedBlob(path)
+		if err != nil {
+			return nil, err
+		}
+		oids[i] = entry.oid
+	}
+	blobs, err := gitBatchBlobs(ctx, s.repo.root, oids)
+	if err != nil {
+		return nil, fmt.Errorf("execution events: %w", err)
+	}
+	for i, oid := range oids {
+		contents[i] = blobs[oid]
+	}
+	return contents, nil
 }
 
 // hasEvent reports whether the source carries an event file at its dated path.

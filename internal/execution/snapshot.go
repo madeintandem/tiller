@@ -4,6 +4,7 @@
 package execution
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"maps"
@@ -243,7 +244,7 @@ func (s *Snapshot) newerIntegrationOwnership(src *source, taskID string) (*event
 	if err != nil || seen {
 		return nil, err
 	}
-	branchEvents, err := src.events(taskID)
+	branchEvents, err := src.events(context.Background(), taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -452,10 +453,10 @@ func (s *Snapshot) ReadFile(id, revision, path string, limit int64) ([]byte, err
 
 // Events returns only events targeting this task from its selected source,
 // confirmed by a later CheckStable or Settle like ReadFile.
-func (s *Snapshot) Events(id string) ([]events.Event, error) {
+func (s *Snapshot) Events(ctx context.Context, id string) ([]events.Event, error) {
 	src := s.sources[id]
 	if src == nil {
 		return nil, fmt.Errorf("execution history for %s is unavailable", id)
 	}
-	return src.events(id)
+	return src.events(ctx, id)
 }

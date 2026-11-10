@@ -1,6 +1,7 @@
 package execution_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"io/fs"
 	"os"
@@ -64,7 +65,7 @@ func TestPopulatedWorktreeGitlinksAreUnavailable(t *testing.T) {
 					if support == "evidence" {
 						_, err = s.ReadFile(firstID, s.Observations[firstID].Revision, evidencePath, evidenceLimit)
 					} else {
-						_, err = s.Events(firstID)
+						_, err = s.Events(context.Background(), firstID)
 					}
 					require.ErrorContains(t, err, "gitlink")
 				}
@@ -153,7 +154,7 @@ func TestNestedProjectSourcesNeverUseCopiedOuterPlan(t *testing.T) {
 			data, err := s.ReadFile(firstID, r.Revision, evidencePath, evidenceLimit)
 			require.NoError(t, err)
 			require.Equal(t, "selected nested evidence\n", string(data))
-			events, err := s.Events(firstID)
+			events, err := s.Events(context.Background(), firstID)
 			require.NoError(t, err)
 			require.Len(t, events, 1)
 			require.Equal(t, "EV-aaaaaa", events[0].ID)

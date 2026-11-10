@@ -821,6 +821,9 @@ export interface NodePage {
   workflow?: WorkflowAdvice;
   execution?: ExecutionRecord;
   execution_history_error?: string;
+  // Set on a ?history=integration answer for an observed task: history holds
+  // integration events only, and the plain node path merges the branch's.
+  history_pending?: boolean;
   active_basis?: ActiveBasisView;
   drift?: DriftBadgeView[];
   // The panel behind the chip: the same ForNode call's findings at candidate
@@ -1636,10 +1639,13 @@ export const nextPath = "/api/next";
 
 // nodePagePath addresses a node page. The address is usually an id, but a
 // canonical key's slashes are real path segments to the API, so each segment
-// is encoded on its own and the slashes survive.
-export function nodePagePath(noun: string, addr: string): string {
+// is encoded on its own and the slashes survive. history "integration" asks
+// for the page without an observed task's branch history, which answers with
+// history_pending set; the plain path carries the merged history.
+export function nodePagePath(noun: string, addr: string, history?: "integration"): string {
   const encoded = addr.split("/").map(encodeURIComponent).join("/");
-  return `/api/node/${encodeURIComponent(noun)}/${encoded}`;
+  const query = history === undefined ? "" : `?history=${history}`;
+  return `/api/node/${encodeURIComponent(noun)}/${encoded}${query}`;
 }
 
 // prosePath addresses one exact line in a repo-relative Markdown file. The

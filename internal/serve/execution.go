@@ -29,13 +29,16 @@ type observedNodePage struct {
 	views.NodePage
 	Execution             *execution.Record `json:"execution,omitempty"`
 	ExecutionHistoryError string            `json:"execution_history_error,omitempty"`
+	// HistoryPending marks an integration-only answer for an observed node:
+	// its branch history was not read, and the plain node path merges it.
+	HistoryPending bool `json:"history_pending,omitempty"`
 }
 
-func observedEvents(snapshot *execution.Snapshot, id string, base []events.Event) ([]events.Event, error) {
+func observedEvents(ctx context.Context, snapshot *execution.Snapshot, id string, base []events.Event) ([]events.Event, error) {
 	if _, ok := snapshot.Observations[id]; !ok {
 		return base, nil
 	}
-	source, err := snapshot.Events(id)
+	source, err := snapshot.Events(ctx, id)
 	if err != nil {
 		return base, err
 	}

@@ -60,11 +60,18 @@ func NodeHandler(root string) http.HandlerFunc {
 			historyError = historyErr.Error()
 			evs = nil
 		}
+		// ?history=integration answers without the observed source's events,
+		// which on a committed branch can take far longer than the rest of
+		// the page; the console asks for the merged history separately.
+		_, observed := snapshot.Observations[n.NodeID()]
+		historyPending := observed && r.URL.Query().Get("history") == "integration"
 		executionHistoryError := ""
-		if merged, err := observedEvents(snapshot, n.NodeID(), evs); err != nil {
-			executionHistoryError = err.Error()
-		} else {
-			evs = merged
+		if !historyPending {
+			if merged, err := observedEvents(r.Context(), snapshot, n.NodeID(), evs); err != nil {
+				executionHistoryError = err.Error()
+			} else {
+				evs = merged
+			}
 		}
 		workflowInput := mutate.ObserveWorkflowForNodesLimited(snapshot.Base, []store.Node{baseNode}, maxServedFileBytes)
 		index, err := readinput.Relationships(r.Context(), t, readinput.RelationshipOptions{
@@ -132,7 +139,7 @@ func NodeHandler(root string) http.HandlerFunc {
 				fillGitHubLinks(&page.Node, repo)
 			}
 		}
-		result := observedNodePage{NodePage: page, ExecutionHistoryError: executionHistoryError}
+		result := observedNodePage{NodePage: page, ExecutionHistoryError: executionHistoryError, HistoryPending: historyPending}
 		if record, ok := snapshot.Observations[n.NodeID()]; ok {
 			result.Execution = &record
 			result.Workflow = nil

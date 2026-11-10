@@ -2197,8 +2197,8 @@ describe("NodeDetail view: the attention queue follows the node", () => {
       vi.fn((input: unknown) => {
         const url = String(input);
         const ok = (body: unknown) => ({ ok: true, json: () => Promise.resolve(body) });
-        if (url === "/api/node/feature/F-A") return Promise.resolve(ok(pageA));
-        if (url === "/api/node/feature/F-B") return Promise.resolve(ok(pageB));
+        if (url === "/api/node/feature/F-A?history=integration") return Promise.resolve(ok(pageA));
+        if (url === "/api/node/feature/F-B?history=integration") return Promise.resolve(ok(pageB));
         if (url === "/api/queue") {
           return new Promise((resolve) => queueReads.push({ resolve: (body) => resolve(ok(body)) }));
         }
@@ -2263,3 +2263,79 @@ describe("NodeDetail view: the attention queue follows the node", () => {
   });
 });
 
+
+// A node page answers from integration history first, so an observed task's
+// header and spec never wait on its branch history. The merged history follows
+// in a second read, and only for a node whose first answer says it is pending.
+describe("NodeDetail view: branch history follows the page", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const integrationEvent = { at: "2026-10-06T11:00:00Z", type: "add.task", contributor: "", command: "tiller add task boot-the-app" };
+  const branchEvent = { at: "2026-10-06T12:00:00Z", type: "start.task", contributor: "", command: "tiller start task T-h4k2wq" };
+
+  function stubNodeReads(fast: NodePage): { fullRead: () => void; nodeCalls: () => string[] } {
+    let answerFull: (() => void) | undefined;
+    const ok = (body: unknown) => ({ ok: true, json: () => Promise.resolve(body) });
+    const spy = vi.fn((input: unknown) => {
+      const url = String(input);
+      if (url === "/api/node/task/T-h4k2wq?history=integration") return Promise.resolve(ok(fast));
+      if (url === "/api/node/task/T-h4k2wq") {
+        return new Promise((resolve) => {
+          answerFull = () => resolve(ok(taskPage({ history: [branchEvent, integrationEvent] })));
+        });
+      }
+      if (url === "/api/queue") return Promise.resolve(ok(queueOf([])));
+      return Promise.resolve({ ok: false, status: 404, statusText: "Not Found", text: () => Promise.resolve("") });
+    });
+    vi.stubGlobal("fetch", spy);
+    return {
+      fullRead: () => answerFull?.(),
+      nodeCalls: () => spy.mock.calls.map((call) => String(call[0])).filter((url) => url.startsWith("/api/node/")),
+    };
+  }
+
+  function renderAt(path: string) {
+    return render(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/node/:noun/*" element={<NodeDetailView />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  it("renders the header and spec from the integration-only answer", async () => {
+    stubNodeReads(taskPage({ history: [integrationEvent], history_pending: true }));
+    renderAt("/node/task/T-h4k2wq");
+
+    expect(await screen.findByRole("heading", { level: 1, name: /Boot the app on its datastores/ })).toBeInTheDocument();
+    expect(screen.getByText("Implementation spec")).toBeInTheDocument();
+  });
+
+  it("shows a pending last row in History until the merged history answers", async () => {
+    const reads = stubNodeReads(taskPage({ history: [integrationEvent], history_pending: true }));
+    const { container } = renderAt("/node/task/T-h4k2wq?tab=history");
+
+    await screen.findByText("tiller add task boot-the-app");
+    await waitFor(() => expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration", "/api/node/task/T-h4k2wq"]));
+    const rows = container.querySelectorAll(".history li");
+    expect(rows[rows.length - 1]).toHaveTextContent("Reading branch history...");
+
+    await act(async () => reads.fullRead());
+
+    expect(await screen.findByText("tiller start task T-h4k2wq")).toBeInTheDocument();
+    expect(screen.getByText("tiller add task boot-the-app")).toBeInTheDocument();
+    expect(screen.queryByText("Reading branch history...")).not.toBeInTheDocument();
+  });
+
+  it("makes one node request for a node with nothing pending", async () => {
+    const reads = stubNodeReads(taskPage({ history: [integrationEvent] }));
+    renderAt("/node/task/T-h4k2wq?tab=history");
+
+    await screen.findByText("tiller add task boot-the-app");
+    expect(screen.queryByText("Reading branch history...")).not.toBeInTheDocument();
+    expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration"]);
+  });
+});

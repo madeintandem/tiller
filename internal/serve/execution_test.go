@@ -200,6 +200,61 @@ func TestConsoleTaskHistoryReadsExecutionEventsAndDisclosesFailure(t *testing.T)
 	require.Empty(t, page.History)
 }
 
+// TestNodeIntegrationHistorySkipsSourceRead pins the node page's fast first
+// answer: ?history=integration serves an observed task without reading the
+// branch's event blobs and says its history is still pending; the plain path
+// then merges the branch history as before.
+func TestNodeIntegrationHistorySkipsSourceRead(t *testing.T) {
+	srv, root, worktree := observationFixture(t)
+	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\ntitle: One\nstatus: in_review\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
+	const eventPath = ".tiller/events/2026/10/06/EV-dddddd.yml"
+	observationFile(t, worktree, eventPath, "id: EV-dddddd\ntype: start.task\nat: 2026-10-06T12:00:00Z\ncontributor: jc\ncommand: tiller start task T-cccccc\ntargets: [T-cccccc]\n")
+	observationGit(t, worktree, "add", ".")
+	observationGit(t, worktree, "commit", "-qm", "submitted execution")
+	observationGit(t, root, "worktree", "remove", worktree)
+	eventBlob := strings.TrimSpace(observationGit(t, root, "rev-parse", "tiller/work/build/one:"+eventPath))
+
+	realGit, err := exec.LookPath("git")
+	require.NoError(t, err)
+	shim := t.TempDir()
+	calls := filepath.Join(t.TempDir(), "calls")
+	script := "#!/bin/sh\necho \"$*\" >> \"" + calls + "\"\nexec \"" + realGit + "\" \"$@\"\n"
+	require.NoError(t, os.WriteFile(filepath.Join(shim, "git"), []byte(script), 0o755))
+	t.Setenv("PATH", shim+string(os.PathListSeparator)+os.Getenv("PATH"))
+	gitCalls := func() string {
+		data, err := os.ReadFile(calls)
+		require.NoError(t, err)
+		require.NoError(t, os.Remove(calls))
+		return string(data)
+	}
+
+	type nodePage struct {
+		History        []views.HistoryEntry `json:"history"`
+		HistoryPending bool                 `json:"history_pending"`
+		Execution      struct {
+			Source string `json:"source"`
+		} `json:"execution"`
+	}
+	var fast nodePage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc?history=integration", &fast))
+	require.Equal(t, "local_branch", fast.Execution.Source)
+	require.True(t, fast.HistoryPending)
+	require.Empty(t, fast.History)
+	fastCalls := gitCalls()
+	require.NotContains(t, fastCalls, "cat-file --batch")
+	require.NotContains(t, fastCalls, eventBlob)
+
+	var full nodePage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc", &full))
+	require.False(t, full.HistoryPending)
+	require.Equal(t, []views.HistoryEntry{{At: "2026-10-06T12:00:00Z", Type: "start.task", Contributor: "jc", Command: "tiller start task T-cccccc"}}, full.History)
+	require.Contains(t, gitCalls(), "cat-file --batch", "the plain path still reads the branch history")
+
+	var epic nodePage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/epic/E-aaaaaa?history=integration", &epic))
+	require.False(t, epic.HistoryPending, "a node with no observation has nothing pending")
+}
+
 func TestObservedParentActivityAgreesWithoutAdvancingParentLifecycle(t *testing.T) {
 	srv, _, worktree := observationFixture(t)
 	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\nstatus: in_progress\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")

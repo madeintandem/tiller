@@ -490,7 +490,7 @@ describe("Navigator + reading pane: selecting a node routes and renders NodeDeta
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore();
 
@@ -518,7 +518,7 @@ describe("Navigator + reading pane: selecting a node routes and renders NodeDeta
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/epic/E-u2w9wv": page }));
+    stubFetch(baseRoutes({ "/api/node/epic/E-u2w9wv?history=integration": page }));
 
     renderExplore();
 
@@ -545,7 +545,7 @@ describe("Navigator + reading pane: selecting a node routes and renders NodeDeta
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore("/node/feature/F-pueftm");
 
@@ -618,7 +618,7 @@ describe("Navigator: the third tier, tasks under their feature", () => {
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/task/T-boot": page }));
+    stubFetch(baseRoutes({ "/api/node/task/T-boot?history=integration": page }));
 
     renderExplore();
 
@@ -651,7 +651,7 @@ describe("Navigator: the third tier, tasks under their feature", () => {
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/task/T-health": page }));
+    stubFetch(baseRoutes({ "/api/node/task/T-health?history=integration": page }));
 
     const { container } = renderExplore("/node/task/T-health");
 
@@ -690,7 +690,7 @@ describe("Navigator: status freshness across selection", () => {
       
     };
     const routes = baseRoutes({
-      "/api/node/feature/F-pueftm": page,
+      "/api/node/feature/F-pueftm?history=integration": page,
       "/api/ls?noun=bug": listResult("bug", [bugRow]),
       "/api/ls?noun=chore": listResult("chore", [choreRow]),
     });
@@ -878,7 +878,7 @@ describe("Navigator: manual expansion survives selection navigation", () => {
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore();
 
@@ -920,7 +920,7 @@ describe("Navigator: selecting a feature expands its own tasks (not just an ance
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore("/node/feature/F-pueftm");
 
@@ -948,7 +948,7 @@ describe("Navigator: selecting a feature expands its own tasks (not just an ance
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore();
 
@@ -1010,8 +1010,8 @@ describe("Navigator: sticky expansion (an unrelated selection does not close wha
     };
     stubFetch(
       baseRoutes({
-        "/api/node/task/T-boot": taskPage,
-        "/api/node/epic/E-audit1": auditPage,
+        "/api/node/task/T-boot?history=integration": taskPage,
+        "/api/node/epic/E-audit1?history=integration": auditPage,
       }),
     );
 
@@ -1104,8 +1104,8 @@ describe("Navigator: open-all and close-all controls", () => {
     };
     stubFetch(
       baseRoutes({
-        "/api/node/feature/F-pueftm": page,
-        "/api/node/epic/E-audit1": auditPage,
+        "/api/node/feature/F-pueftm?history=integration": page,
+        "/api/node/epic/E-audit1?history=integration": auditPage,
       }),
     );
 
@@ -1943,7 +1943,7 @@ describe("Amendments: permanent navigation and identity-safe filter results", ()
     };
     stubFetch(baseRoutes({
       "/api/ls?noun=amendments": listResult("amendment", amendmentRows),
-      "/api/node/amendment/A-approved": page,
+      "/api/node/amendment/A-approved?history=integration": page,
     }));
     render(
       <MemoryRouter initialEntries={["/explore?owner=someone&epic=unrelated&feature=elsewhere&status=active&q=old"]}>
@@ -2075,7 +2075,7 @@ describe("Reading pane: load failures", () => {
       "fetch",
       vi.fn((input: unknown) => {
         const url = String(input);
-        if (url === "/api/node/feature/F-500") {
+        if (url === "/api/node/feature/F-500?history=integration") {
           return Promise.resolve({
             ok: false,
             status: 500,
@@ -2099,7 +2099,7 @@ describe("Reading pane: load failures", () => {
 
     expect(
       await screen.findByText(
-        "GET /api/node/feature/F-500 failed (500 Internal Server Error): boom",
+        "GET /api/node/feature/F-500?history=integration failed (500 Internal Server Error): boom",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("No such node")).not.toBeInTheDocument();
@@ -2126,7 +2126,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
     };
     stubFetch(
       baseRoutes({
-        "/api/node/task/foundation/app-skeleton-ci-boot/serve-the-health-check": page,
+        "/api/node/task/foundation/app-skeleton-ci-boot/serve-the-health-check?history=integration": page,
       }),
     );
 
@@ -2191,8 +2191,8 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
     };
     stubFetch(
       baseRoutes({
-        "/api/node/feature/F-ops1": opsFeature,
-        "/api/node/feature/F-aud1": auditFeature,
+        "/api/node/feature/F-ops1?history=integration": opsFeature,
+        "/api/node/feature/F-aud1?history=integration": auditFeature,
       }),
     );
 
@@ -2231,7 +2231,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/question/Q-1": page }));
+    stubFetch(baseRoutes({ "/api/node/question/Q-1?history=integration": page }));
 
     const { container } = renderExplore("/node/question/Q-1");
 
@@ -2267,7 +2267,7 @@ describe("The hierarchy persists on every node page (JC, 2026-08-05)", () => {
       eval: null,
       
     };
-    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm": page }));
+    stubFetch(baseRoutes({ "/api/node/feature/F-pueftm?history=integration": page }));
 
     renderExplore("/explore/feature/F-pueftm");
 
@@ -2464,7 +2464,7 @@ describe("Explore: restore composes with auto-open regardless of fetch arrival o
     // it says nothing about Foundation or its App Skeleton feature, the
     // ancestry this deep link needs auto-open to materialize on its own.
     window.localStorage.setItem("tiller-explore-open:acme", JSON.stringify([["E-audit1", true]]));
-    stubFetchWithDelay(baseRoutes({ "/api/node/task/T-health": taskPage }), ["/api/status"]);
+    stubFetchWithDelay(baseRoutes({ "/api/node/task/T-health?history=integration": taskPage }), ["/api/status"]);
 
     renderExplore("/node/task/T-health");
 
@@ -2577,7 +2577,7 @@ describe("Explore: the hand-closed rule holds deterministically regardless of fe
   // itself stayed shut" apart from "the whole branch never opened."
   async function assertHandCloseHolds(delayedPaths: string[]) {
     window.localStorage.setItem("tiller-explore-open:acme", JSON.stringify([["F-pueftm", false]]));
-    stubFetchWithDelay(baseRoutes({ "/api/node/task/T-health": taskPage }), delayedPaths);
+    stubFetchWithDelay(baseRoutes({ "/api/node/task/T-health?history=integration": taskPage }), delayedPaths);
 
     const { container } = renderExplore("/node/task/T-health");
 

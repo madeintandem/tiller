@@ -505,6 +505,27 @@ function backlinksTab(page: NodePage): NodeTab {
   };
 }
 
+// While the branch history is pending the event count is not known yet, so
+// the tab shows none rather than a number about to change.
+function historyTab(page: NodePage): NodeTab {
+  return {
+    key: "history",
+    label: "History",
+    count: page.history_pending === true ? undefined : page.history.length,
+    render: () => <NodeHistory page={page} />,
+  };
+}
+
+function NodeHistory({ page }: { page: NodePage }) {
+  return (
+    <HistorySection
+      history={page.history}
+      executionError={page.execution_history_error}
+      pending={page.history_pending === true}
+    />
+  );
+}
+
 // Every tab label below is Title Case (the
 // mock's own tab row is Title Case throughout - "Spec", "Contract",
 // "Tasks", "History", the retired console mock
@@ -542,12 +563,7 @@ function featureTabs(page: NodePage): NodeTab[] {
       render: () => <DependenciesPanel page={page} />,
     },
     backlinksTab(page),
-    {
-      key: "history",
-      label: "History",
-      count: page.history.length,
-      render: () => <HistorySection history={page.history} executionError={page.execution_history_error} />,
-    },
+    historyTab(page),
   );
   return withCounts(tabs);
 }
@@ -582,12 +598,7 @@ function epicTabs(page: NodePage): NodeTab[] {
       render: () => <DependenciesPanel page={page} />,
     },
     backlinksTab(page),
-    {
-      key: "history",
-      label: "History",
-      count: page.history.length,
-      render: () => <HistorySection history={page.history} executionError={page.execution_history_error} />,
-    },
+    historyTab(page),
   );
   return withCounts(tabs);
 }
@@ -605,12 +616,7 @@ function taskTabs(page: NodePage): NodeTab[] {
       render: () => <DependenciesPanel page={page} />,
     },
     backlinksTab(page),
-    {
-      key: "history",
-      label: "History",
-      count: page.history.length,
-      render: () => <HistorySection history={page.history} executionError={page.execution_history_error} />,
-    },
+    historyTab(page),
   ];
   return withCounts(tabs);
 }
@@ -626,12 +632,7 @@ function workItemTabs(page: NodePage): NodeTab[] {
       render: () => <DependenciesPanel page={page} />,
     },
     backlinksTab(page),
-    {
-      key: "history",
-      label: "History",
-      count: page.history.length,
-      render: () => <HistorySection history={page.history} executionError={page.execution_history_error} />,
-    },
+    historyTab(page),
   ];
   return withCounts(tabs);
 }
@@ -747,7 +748,7 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
             claimed={claimedGroups[page.node.noun] ?? []}
           />
           <BacklinksPanel backlinks={page.backlinks} />
-          <HistorySection history={page.history} executionError={page.execution_history_error} />
+          <NodeHistory page={page} />
         </>
       )}
     </article>
