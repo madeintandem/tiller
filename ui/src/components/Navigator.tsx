@@ -48,7 +48,7 @@
 // behavior documented above - same two click targets, same held-open state,
 // same served order - only how a row paints.
 
-import { useState, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { ListResult, ProjectSummary, TreeModel, TreeNode } from "../api";
 import type { FetchState } from "../hooks";
@@ -110,6 +110,29 @@ export default function Navigator({
     writeHideCancelled(!hideCancelled);
     setHideCancelled(!hideCancelled);
   }
+  const treeRef = useRef<HTMLDivElement>(null);
+  const revealedKey = useRef<string | null>(null);
+  const pendingReveal = useRef<string | null>(null);
+  // Reveal the current row once per selection. The key is armed when the
+  // selection changes; the effect has no dependency list because the row may
+  // only exist on a later render, after Explore's autoOpen has opened its
+  // ancestors (or a shelf fetch has landed). Chevron clicks leave the key
+  // alone, so they never scroll.
+  useLayoutEffect(() => {
+    const key = selected === null ? null : `${selected.noun}:${selected.addr}`;
+    if (key !== revealedKey.current) {
+      revealedKey.current = key;
+      pendingReveal.current = key;
+    }
+    if (pendingReveal.current === null) {
+      return;
+    }
+    const row = treeRef.current?.querySelector('[aria-current="page"]');
+    if (row) {
+      pendingReveal.current = null;
+      row.scrollIntoView({ block: "nearest" });
+    }
+  });
   return (
     <nav className="explore-nav" aria-label="Definition navigator">
       {/* Search and tree controls stay outside the tree's scroll area. */}
@@ -130,7 +153,7 @@ export default function Navigator({
           <ResourceStatus label="Project summary" state={summary} />
         </div>
       </div>
-      <div className="explore-nav-tree" aria-busy={tree.loading || bugs.loading || chores.loading || tweaks.loading}>
+      <div ref={treeRef} className="explore-nav-tree" aria-busy={tree.loading || bugs.loading || chores.loading || tweaks.loading}>
         <DefinitionBody
           tree={tree}
           selected={selected}
@@ -354,6 +377,7 @@ function ShelfBranch({
           <Link
             key={row.id}
             to={`/node/${noun}/${row.id}`}
+            aria-current={isSelected(selected, noun, row) ? "page" : undefined}
             className={rowClass("explore-shelf-node", row.status, isSelected(selected, noun, row) && "current")}
           >
             <StateGlyph status={row.status} />
@@ -433,7 +457,12 @@ function EpicRow({
           }}
         />
         <StateGlyph status={epic.status} size={15} />
-        <Link to={`/node/epic/${epic.id}`} className="explore-epic-title" title={epic.key}>
+        <Link
+          to={`/node/epic/${epic.id}`}
+          className="explore-epic-title"
+          title={epic.key}
+          aria-current={selectedHere ? "page" : undefined}
+        >
           {label}
         </Link>
         <span className="explore-epic-count">{features.length}</span>
@@ -518,7 +547,12 @@ function FeatureRow({
           <ChevronSpacer />
         )}
         <StateGlyph status={feature.status} />
-        <Link to={`/node/feature/${feature.id}`} className="explore-feat-title" title={feature.key}>
+        <Link
+          to={`/node/feature/${feature.id}`}
+          className="explore-feat-title"
+          title={feature.key}
+          aria-current={selectedHere ? "page" : undefined}
+        >
           {label}
         </Link>
         {hasChildren && <span className="explore-feat-count">{tasks.length}</span>}
@@ -547,7 +581,12 @@ function TaskRow({ task, selected }: { task: TreeNode; selected: NavigatorSelect
     <div className={rowClass("explore-task", task.status, selectedHere && "is-selected")}>
       <ChevronSpacer />
       <StateGlyph status={task.status} />
-      <Link to={`/node/task/${task.id}`} className="explore-feat-title" title={localKey(task.key)}>
+      <Link
+        to={`/node/task/${task.id}`}
+        className="explore-feat-title"
+        title={localKey(task.key)}
+        aria-current={selectedHere ? "page" : undefined}
+      >
         {label}
       </Link>
     </div>
