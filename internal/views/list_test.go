@@ -401,3 +401,33 @@ func TestItemCancelReason(t *testing.T) {
 	open := views.Item(tree, tree.Questions["Q-000002"])
 	require.Nil(t, open.CancelReason, "an open question carries no cancel reason")
 }
+
+// TestCLIListMatchesAndReportsTheStoredStatus pins the CLI half of the board
+// column ruling: with a task in progress under a stored-ready epic and
+// feature, `tiller ls --status ready` (ListFilters without ByBoardStatus)
+// still finds both, `--status active` finds neither, and a question row's
+// blocks_refs carry no column. Only the console's list matches the board
+// column (serve.ListHandler).
+func TestCLIListMatchesAndReportsTheStoredStatus(t *testing.T) {
+	tree := epicFilterTree()
+	feature := tree.Features["F-000001"]
+	feature.Status = "ready"
+	taskKey := "form-engine/schema-engine/parse"
+	task := &store.Task{ID: "T-000001", Key: &taskKey, FeatureID: "F-000001", Status: "in_progress", Owner: "jc"}
+	tree.Tasks = map[string]*store.Task{task.ID: task}
+	tree.FeatureTasks = map[string][]*store.Task{feature.ID: {task}}
+	tree.Questions = map[string]*store.Question{
+		"Q-000001": {ID: "Q-000001", Statement: "Which dialect?", Status: "open", Blocks: []string{"E-000001", "F-000001"}},
+	}
+	epic := tree.Epics["E-000001"]
+
+	for _, n := range []store.Node{epic, feature} {
+		require.True(t, views.Matches(tree, n, views.ListFilters{Status: "ready"}), n.NodeID())
+		require.False(t, views.Matches(tree, n, views.ListFilters{Status: "active"}), n.NodeID())
+		require.True(t, views.Matches(tree, n, views.ListFilters{Status: "active", ByBoardStatus: true}), n.NodeID())
+	}
+
+	raw, err := json.Marshal(views.Item(tree, tree.Questions["Q-000001"]))
+	require.NoError(t, err)
+	require.NotContains(t, string(raw), `"column"`)
+}

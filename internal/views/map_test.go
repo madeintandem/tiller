@@ -186,3 +186,32 @@ func TestMapOfEmptyTreeHasEmptyListsNotNulls(t *testing.T) {
 	require.NotNil(t, payload.Relationships.Vertices)
 	require.Empty(t, payload.Relationships.Vertices)
 }
+
+// TestMapOfColumnFollowsWorkInFlight pins the map's board column on both the
+// containment node and the relationship vertex: F-1 is stored ready with T-1
+// in progress, so it and its ready epic E-1 read active; a draft feature and
+// a draft epic read draft; a task carries no column.
+func TestMapOfColumnFollowsWorkInFlight(t *testing.T) {
+	view := views.MapOf(mapTree(), nil)
+	columns := map[string]string{}
+	statuses := map[string]string{}
+	for _, n := range view.Nodes {
+		columns[n.ID], statuses[n.ID] = n.Column, n.Status
+	}
+	require.Equal(t, "ready", statuses["F-1"], "the stored status is never replaced")
+	require.Equal(t, "active", columns["F-1"])
+	require.Equal(t, "draft", columns["F-2"])
+	require.Equal(t, "ready", statuses["E-1"], "the stored status is never replaced")
+	require.Equal(t, "active", columns["E-1"])
+	require.Equal(t, "draft", columns["E-2"])
+	require.Empty(t, columns["T-1"])
+
+	vertices := map[string]string{}
+	for _, v := range view.Relationships.Vertices {
+		vertices[v.ID] = v.Column
+	}
+	require.Equal(t, "active", vertices["F-1"])
+	require.Equal(t, "draft", vertices["F-2"])
+	require.Equal(t, "active", vertices["E-1"])
+	require.Empty(t, vertices["T-1"])
+}

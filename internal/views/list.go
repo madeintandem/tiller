@@ -82,12 +82,17 @@ type ListItem struct {
 // name their target by key or id; ResolveParentFilters rewrites them to the
 // stable identity the match compares against (the parent feature's id, the
 // parent epic's key) before the match runs.
+//
+// ByBoardStatus is the console's switch: an epic or a feature then matches
+// Status on its board column (gen.BoardStatus), the status every console
+// surface draws. The CLI leaves it false and matches the stored status.
 type ListFilters struct {
-	Status      string
-	Owner       string
-	Contributor string
-	Feature     string
-	Epic        string
+	Status        string
+	Owner         string
+	Contributor   string
+	Feature       string
+	Epic          string
+	ByBoardStatus bool
 }
 
 // Collect gathers every node of the named class from the tree as the common
@@ -198,7 +203,7 @@ func Matches(tree *store.Tree, n store.Node, f ListFilters) bool {
 		default:
 			return false
 		}
-	} else if f.Status != "" && n.NodeStatus() != f.Status {
+	} else if f.Status != "" && filterStatus(tree, n, f) != f.Status {
 		return false
 	}
 	if f.Owner != "" && Owner(n) != f.Owner {
@@ -223,6 +228,15 @@ func Matches(tree *store.Tree, n store.Node, f ListFilters) bool {
 		return false
 	}
 	return true
+}
+
+// filterStatus is the status the status axis compares and counts: the board
+// status under ByBoardStatus, the stored status otherwise.
+func filterStatus(tree *store.Tree, n store.Node, f ListFilters) string {
+	if f.ByBoardStatus {
+		return gen.BoardStatus(tree, n)
+	}
+	return n.NodeStatus()
 }
 
 // Item projects a node onto a list row.
@@ -256,7 +270,7 @@ func Item(tree *store.Tree, n store.Node) ListItem {
 			item.CancelReason = &reason
 		}
 		item.Due = gen.QuestionDue(t)
-		item.BlocksRefs = relatedByIDs(tree, t.Blocks)
+		item.BlocksRefs = withoutBoardColumn(relatedByIDs(tree, t.Blocks))
 	case *store.Amendment:
 		item.Title = t.Title
 	default:

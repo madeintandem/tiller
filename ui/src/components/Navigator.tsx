@@ -52,6 +52,7 @@ import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { ListResult, ProjectSummary, TreeModel, TreeNode } from "../api";
 import type { FetchState } from "../hooks";
+import { displayStatus } from "../lib/displayStatus";
 import { composeStat } from "../views/home/stat";
 import type { Expansion } from "../views/explore/expansion";
 import { isOpen } from "../views/explore/expansion";
@@ -445,10 +446,11 @@ function EpicRow({
   // the rows and their count follow the toggle.
   const { mix, caption } = composeStat(epic.children);
   const features = visibleRows(epic.children, hideCancelled);
+  const status = displayStatus(epic);
 
   return (
     <div className={selectedHere ? "explore-epic is-selected" : "explore-epic"}>
-      <div className={rowClass("explore-epic-row", epic.status)}>
+      <div className={rowClass("explore-epic-row", status)}>
         <Chevron
           open={open}
           label={label}
@@ -456,7 +458,7 @@ function EpicRow({
             onToggleBranch(epic.id, !open);
           }}
         />
-        <StateGlyph status={epic.status} size={15} />
+        <StateGlyph status={status} size={15} />
         <Link
           to={`/node/epic/${epic.id}`}
           className="explore-epic-title"
@@ -532,9 +534,10 @@ function FeatureRow({
   const label = feature.title ?? feature.key ?? feature.id;
   const tasks = visibleRows(feature.children, hideCancelled);
   const hasChildren = tasks.length > 0;
+  const status = displayStatus(feature);
   return (
     <>
-      <div className={rowClass("explore-feat", feature.status, selectedHere && "is-selected")}>
+      <div className={rowClass("explore-feat", status, selectedHere && "is-selected")}>
         {hasChildren ? (
           <Chevron
             open={open}
@@ -546,7 +549,7 @@ function FeatureRow({
         ) : (
           <ChevronSpacer />
         )}
-        <StateGlyph status={feature.status} />
+        <StateGlyph status={status} />
         <Link
           to={`/node/feature/${feature.id}`}
           className="explore-feat-title"

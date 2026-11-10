@@ -493,3 +493,19 @@ func TestBuildColumnShowsReadyFeatureWithWorkInFlightAsActive(t *testing.T) {
 	require.Equal(t, "active", card.Features[0].Column)
 	require.Equal(t, map[string]int{"active": 1}, card.FeatureCounts)
 }
+
+// TestBuildEpicColumnShowsReadyEpicWithWorkInFlightAsActive pins the epic
+// panel's board status (gen.BoardStatus): a stored-ready epic reads ready
+// with nothing in flight and active once a task under it is.
+func TestBuildEpicColumnShowsReadyEpicWithWorkInFlightAsActive(t *testing.T) {
+	tree := buildRollupTree()
+	tree.Features["F-gizmo0"].Status = "ready"
+	tree.Tasks["T-alfa00"].Status = "ready"
+	epic := BuildBoardOf(tree).Epics[0]
+	require.Equal(t, "ready", epic.Column)
+
+	tree.Tasks["T-bravo0"].Status = "in_progress"
+	epic = BuildBoardOf(tree).Epics[0]
+	require.Equal(t, "ready", epic.Status, "the stored status is never replaced")
+	require.Equal(t, "active", epic.Column)
+}

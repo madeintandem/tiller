@@ -59,4 +59,15 @@ describe("composeStat", () => {
     expect(caption).toBe("");
     expect(mix.every((m) => m.n === 0)).toBe(true);
   });
+
+  it("counts a feature by its board column when the row carries one", () => {
+    const { mix, caption } = composeStat([
+      { status: "ready", column: "active" },
+      { status: "ready", column: "ready" },
+      { status: "draft" },
+    ]);
+    expect(caption).toBe("1 draft · 1 ready · 1 active");
+    expect(mix.find((m) => m.state === "active")?.n).toBe(1);
+    expect(mix.find((m) => m.state === "ready")?.n).toBe(1);
+  });
 });

@@ -585,6 +585,41 @@ describe("Navigator: the third tier, tasks under their feature", () => {
     expect(screen.getByText("App Skeleton & Green CI Boot")).toBeInTheDocument();
   });
 
+  // A feature's stored status can still read ready while its tasks are in
+  // flight on their branches (feature-grain review); the served column
+  // (gen.FeatureBoardStatus) is what its glyph draws, the same answer Build gives.
+  it("draws a feature's glyph from its board column, not its stored status", async () => {
+    const tree = acmeTree();
+    const foundation = tree.nodes.find((n) => n.title === "Foundation")!;
+    const skeleton = foundation.children.find((n) => n.id === "F-pueftm")!;
+    skeleton.status = "ready";
+    skeleton.column = "active";
+    stubFetch(baseRoutes({ "/api/tree": tree }));
+
+    renderExplore();
+
+    await screen.findByText("Foundation");
+    fireEvent.click(screen.getByRole("button", { name: /Expand Foundation/i }));
+    const title = await screen.findByText("App Skeleton & Green CI Boot");
+    expect(title.parentElement?.querySelector(".state-glyph")).toHaveAttribute("data-status", "active");
+  });
+
+  // gen.BoardStatus: a stored-ready epic with a task in flight is served
+  // column active, and its row glyph draws that, the same word its node
+  // header chip gives.
+  it("draws an epic's glyph from its board column, not its stored status", async () => {
+    const tree = acmeTree();
+    const foundation = tree.nodes.find((n) => n.title === "Foundation")!;
+    foundation.status = "ready";
+    foundation.column = "active";
+    stubFetch(baseRoutes({ "/api/tree": tree }));
+
+    renderExplore();
+
+    const title = await screen.findByText("Foundation");
+    expect(title.parentElement?.querySelector(".state-glyph")).toHaveAttribute("data-status", "active");
+  });
+
   it("draws no chevron on a feature with no tasks", async () => {
     stubFetch(baseRoutes());
 

@@ -10,6 +10,7 @@ import Contributors from "../../components/Contributors";
 import EmptyNote from "../../components/EmptyNote";
 import { useFetch } from "../../hooks";
 import { withActivityPhrase } from "../../lib/activityPhrase";
+import { displayStatus } from "../../lib/displayStatus";
 import { PersonName } from "../../people";
 import FilterCombobox from "./FilterCombobox";
 
@@ -150,7 +151,7 @@ function Results({ result }: { result: ListResult }) {
               row.key !== undefined &&
               row.key !== "" && <span className="mono muted explore-result-key">{row.key}</span>
             )}
-            <Chip status={row.status}>{withActivityPhrase(row)}</Chip>
+            <Chip status={displayStatus(row)}>{withActivityPhrase(row)}</Chip>
             {result.noun === "epic" || result.noun === "feature" ? (
               <span className="muted explore-result-owner">Contributors: <Contributors people={row.contributors ?? []} /></span>
             ) : row.owner !== undefined && row.owner !== "" && (

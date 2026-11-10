@@ -33,6 +33,9 @@ type NodeView struct {
 	Key    string `json:"key,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Status string `json:"status"`
+	// Column is an epic's or a feature's board column (gen.BoardColumn), set
+	// only on the console's node page; the CLI's show leaves it empty.
+	Column string `json:"column,omitempty"`
 	// Activity is the derived phase this node carries: a feature's rollup
 	// phase (awaiting_check / awaiting_sync, gen.FeatureActivity), an epic's
 	// derived active/idle working status (gen.EpicActivity), or a bug's or

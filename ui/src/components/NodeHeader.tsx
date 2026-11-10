@@ -14,6 +14,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
 import { withActivityPhrase } from "../lib/activityPhrase";
+import { displayStatus } from "../lib/displayStatus";
 import { gateChipsFor } from "../lib/gateChips";
 import { has } from "../lib/has";
 import { kindLabel } from "../lib/kind";
@@ -81,7 +82,7 @@ function Crumbs({ page }: { page: NodePage }) {
       {parents.map((parent, i) => (
         <Fragment key={`${parent.noun}-${parent.id || parent.ref}-${i}`}>
           <RefLink node={parent} label={crumbLabel(parent)} className="" />
-          <Chip status={parent.status} />
+          <Chip status={displayStatus(parent)} />
           {/* A separator only between crumbs, never after the last: the
               chain ends on the ancestor, and the node's own kind line and
               title follow beneath (node header pass, 2026-08-30). */}
@@ -213,7 +214,7 @@ function KindLine({
   return (
     <div className="kind-line">
       <span className="kind-pill">{kindLabel(node.noun)}</span>
-      <Chip status={node.status} size="hero">
+      <Chip status={displayStatus(node)} size="hero">
         {withActivityPhrase(node)}
       </Chip>
       {chips.length > 0 && (
@@ -347,7 +348,7 @@ function RelationValue({ node }: { node: RelatedNode }) {
   return (
     <>
       <RefLink node={node} label={crumbLabel(node)} className="" />
-      <Chip status={node.status} />
+      <Chip status={displayStatus(node)} />
     </>
   );
 }

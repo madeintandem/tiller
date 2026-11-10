@@ -8,6 +8,7 @@
 import type { RelatedNode } from "../../api";
 import Chip from "../../components/Chip";
 import RefLink from "../../components/RefLink";
+import { displayStatus } from "../../lib/displayStatus";
 import { has } from "../../lib/has";
 
 
@@ -28,7 +29,7 @@ export default function RelatedList({ items }: { items: RelatedNode[] }) {
           )}
           {/* A dangling edge carries no status; a chip with no word would be
               color alone, which the palette rule forbids outright. */}
-          {has(node.status) && <Chip status={node.status} />}
+          {has(node.status) && <Chip status={displayStatus(node)} />}
         </li>
       ))}
     </ul>

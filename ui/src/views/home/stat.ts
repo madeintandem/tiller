@@ -10,6 +10,7 @@
 
 import type { NodeStatus } from "../../api";
 import type { StateMixEntry } from "../../components/StateBar";
+import { displayStatus } from "../../lib/displayStatus";
 import { foldStatus } from "../../lib/states";
 
 const LEGEND_ORDER: NodeStatus[] = [
@@ -38,11 +39,13 @@ export interface ComposedStat {
 // to, and separately sums the same rows into the seven-state mix StateBar
 // paints. Both orderings and both groupings share one fold, so "open" (->
 // in_review) always sits before "answered" (-> done) in the caption, the
-// same order the bar's segments carry.
-export function composeStat(rows: Array<{ status: string }>): ComposedStat {
+// same order the bar's segments carry. A feature row counts by its board
+// column when served (lib/displayStatus), so a bar agrees with the glyphs.
+export function composeStat(rows: Array<{ status: string; column?: string }>): ComposedStat {
   const wordCounts = new Map<string, number>();
   for (const row of rows) {
-    wordCounts.set(row.status, (wordCounts.get(row.status) ?? 0) + 1);
+    const word = displayStatus(row);
+    wordCounts.set(word, (wordCounts.get(word) ?? 0) + 1);
   }
 
   const words = Array.from(wordCounts.keys()).sort((a, b) => {

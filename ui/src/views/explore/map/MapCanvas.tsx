@@ -49,6 +49,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { MapView } from "../../../api";
 import StateDot from "../../../components/StateDot";
+import { displayStatus } from "../../../lib/displayStatus";
 import { kindLabel } from "../../../lib/kind";
 import { relationshipHref } from "../../../lib/relationshipHref";
 import { relationshipTitle } from "../../../lib/relationshipTitle";
@@ -226,7 +227,7 @@ export default function MapCanvas({
     cards.push({
       box,
       title: n.title ?? n.key ?? n.id,
-      status: n.status,
+      status: displayStatus(n),
       holds: n.holds ?? 0,
       count: n.noun === "epic" ? (childCount.get(n.id) ?? 0) : 0,
       canToggle: hasChildren.has(n.id),
@@ -576,7 +577,7 @@ export default function MapCanvas({
                 onClick={() => onSelect(selected === vertex.id ? null : vertex.id)}
               >
                 <span className="kind-pill">{kindLabel(vertex.kind)}</span>
-                {vertex.status && <StateDot status={vertex.status} />}
+                {vertex.status && <StateDot status={vertex.column ?? vertex.status} />}
                 <span className="map-title" title={relationshipTitle(vertex)}>{relationshipTitle(vertex)}</span>
               </button>
               <div className="map-endpoint-meta">

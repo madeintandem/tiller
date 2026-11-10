@@ -10,6 +10,7 @@ import type { SearchDocumentResult, SearchHit, SearchNodeResult, SearchResult } 
 import Chip from "../../components/Chip";
 import SeverityChip from "../../components/SeverityChip";
 import SectionHead from "../../components/SectionHead";
+import { displayStatus } from "../../lib/displayStatus";
 import { has } from "../../lib/has";
 import { kindLabel } from "../../lib/kind";
 
@@ -137,7 +138,7 @@ function NodeRow({
         </Link>
         {node.noun === "bug" && <SeverityChip severity={node.severity} />}
         <span className="mono muted search-result-key">{address}</span>
-        <Chip status={node.status} />
+        <Chip status={displayStatus(node)} />
         {label !== "" && <span className="muted search-result-match">{label}</span>}
       </div>
       <Hits hits={node.hits} count={node.count} query={query} compact={compact} />

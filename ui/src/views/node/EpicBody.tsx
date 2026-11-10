@@ -35,6 +35,7 @@ import InstrSection, { InstrNote } from "../../components/InstrSection";
 import IntegrityNotes from "../../components/IntegrityNotes";
 import ProvenanceLine from "../../components/ProvenanceLine";
 import StateBar from "../../components/StateBar";
+import { displayStatus } from "../../lib/displayStatus";
 import { has } from "../../lib/has";
 import { composeStat } from "../home/stat";
 import ProseSection from "./ProseSection";
@@ -165,7 +166,7 @@ function FeatureRow({ feature }: { feature: NodeView }) {
         {label}
       </Link>
       {has(feature.key) && <span className="mono muted instr-decomp-key">{feature.key}</span>}
-      <Chip status={feature.status} />
+      <Chip status={displayStatus(feature)} />
     </div>
   );
 }

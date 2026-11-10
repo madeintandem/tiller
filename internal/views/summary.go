@@ -223,7 +223,7 @@ func statusRelationships(tree *store.Tree, n store.Node) *Relationships {
 	var relationships Relationships
 	switch node := n.(type) {
 	case *store.Question:
-		relationships.Blocks = relatedByIDs(tree, node.Blocks)
+		relationships.Blocks = withoutBoardColumn(relatedByIDs(tree, node.Blocks))
 	case *store.Epic, *store.Feature, *store.Task:
 		relationships.BlockedByQuestions = blockingQuestions(tree, n)
 	}

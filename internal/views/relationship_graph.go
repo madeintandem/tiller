@@ -3,7 +3,9 @@ package views
 import (
 	"sort"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/relationships"
+	"github.com/madeintandem/tiller/internal/store"
 )
 
 // RelationshipGraph carries semantic facts separately from the map display tree.
@@ -15,7 +17,10 @@ type RelationshipGraph struct {
 	Complete    bool                         `json:"complete"`
 }
 
-func RelationshipGraphOf(index *relationships.Index) RelationshipGraph {
+// RelationshipGraphOf projects the index. An epic or feature vertex also
+// carries its board column, which the index cannot derive (relationships sits
+// below gen).
+func RelationshipGraphOf(t *store.Tree, index *relationships.Index) RelationshipGraph {
 	out := RelationshipGraph{
 		Vertices:    make([]relationships.Vertex, 0, len(index.Vertices)),
 		Edges:       make([]relationships.Edge, 0, len(index.Edges)),
@@ -24,6 +29,7 @@ func RelationshipGraphOf(index *relationships.Index) RelationshipGraph {
 		Complete:    index.Complete,
 	}
 	for _, v := range index.Vertices {
+		v.Column = gen.BoardColumnByID(t, v.Kind, v.ID)
 		out.Vertices = append(out.Vertices, v)
 	}
 	for _, e := range index.Edges {

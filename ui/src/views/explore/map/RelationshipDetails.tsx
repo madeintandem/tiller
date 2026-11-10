@@ -39,7 +39,7 @@ export function RelationshipEndpoint({ vertex, edge, onSelect }: {
   return <>
     <div className="map-relation-title">
       <span>{relationshipTitle(vertex)}{vertex.unresolved ? " (unresolved)" : ""}</span>
-      {!vertex.unresolved && vertex.status && <Chip status={vertex.status} />}
+      {!vertex.unresolved && vertex.status && <Chip status={vertex.column ?? vertex.status} />}
     </div>
     {vertex.kind === "document" && <p className="map-relation-meta">{vertex.generated ? "Generated document" : "Authored document"}{vertex.path && ` · ${vertex.path}`}</p>}
     <div className="map-relation-actions">
@@ -59,7 +59,10 @@ function RelationshipGroup({ group, selected, byID, onSelect }: {
   const statuses = new Map<string, number>();
   for (const edge of group.edges) {
     const vertex = byID.get(edge.from === selected ? edge.to : edge.from);
-    if (vertex?.status && !vertex.unresolved) statuses.set(vertex.status, (statuses.get(vertex.status) ?? 0) + 1);
+    if (vertex?.status && !vertex.unresolved) {
+      const status = vertex.column ?? vertex.status;
+      statuses.set(status, (statuses.get(status) ?? 0) + 1);
+    }
   }
   return <section className="map-dock-group" aria-label={group.label}>
     <div className="map-dock-label"><h3 className="eyebrow">{group.label}</h3><span className="map-dock-count">{group.edges.length}</span></div>
@@ -135,7 +138,7 @@ export function RelationshipCard({ vertex, edges, byID, kind, onSelect, onClose,
   const href = relationshipHref(vertex);
   return <aside className="map-dock map-endpoint-dock" aria-label="Selected relationship endpoint">
     <div className="map-dock-head">
-      <div className="kind-line"><span className="kind-pill">{kindLabel(vertex.kind)}</span>{!vertex.unresolved && vertex.status && <Chip status={vertex.status} />}</div>
+      <div className="kind-line"><span className="kind-pill">{kindLabel(vertex.kind)}</span>{!vertex.unresolved && vertex.status && <Chip status={vertex.column ?? vertex.status} />}</div>
       <button type="button" className="map-dock-close" aria-label="Close" onClick={onClose}>×</button>
     </div>
     <div className="map-dock-body">

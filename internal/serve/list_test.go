@@ -65,6 +65,7 @@ func TestListEpicsPayload(t *testing.T) {
 	      "key": "form-engine",
 	      "title": "Form Engine",
 	      "status": "draft",
+	      "column": "draft",
 	      "activity": "idle",
 	      "contributors": [],
 	      "ref": "form-engine (E-000001)"
@@ -345,4 +346,87 @@ func TestListFeatureColumnFollowsWorkInFlight(t *testing.T) {
 	setTaskPR(t, root, "schema-engine", "transcribe-the-schema", 11)
 	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=features", &got))
 	require.Contains(t, got.Nodes, row{Key: "form-engine/schema-engine", Status: "ready", Column: "in_review"})
+}
+
+// setTaskInProgress starts one task by round-trip through the store type,
+// the write-then-reload idiom setTaskPR uses, leaving it in flight without a
+// review recorded.
+func setTaskInProgress(t *testing.T, root, featureKey, taskKey string) {
+	t.Helper()
+	path := filepath.Join(root, store.TaskRelDir("form-engine", featureKey, taskKey), store.TaskStateFile)
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var tk store.Task
+	require.NoError(t, yaml.Unmarshal(data, &tk))
+	tk.Status = "in_progress"
+	tk.Started = true
+	tk.Owner = "jc"
+	out, err := yaml.Marshal(&tk)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, out, 0o644))
+}
+
+// listRowsAndStatusFacet decodes the rows' keys and the status axis counts.
+type listRowsAndStatusFacet struct {
+	Nodes []struct {
+		Key    string `json:"key"`
+		Status string `json:"status"`
+		Column string `json:"column"`
+	} `json:"nodes"`
+	Facets []views.Facet `json:"facets"`
+}
+
+func (p listRowsAndStatusFacet) keys() []string {
+	out := []string{}
+	for _, n := range p.Nodes {
+		out = append(out, n.Key)
+	}
+	return out
+}
+
+func (p listRowsAndStatusFacet) statusCounts(t *testing.T) map[string]int {
+	t.Helper()
+	require.Equal(t, views.AxisStatus, p.Facets[0].Axis)
+	out := map[string]int{}
+	for _, o := range p.Facets[0].Options {
+		out[o.Value] = o.Count
+	}
+	return out
+}
+
+// TestListStatusFilterMatchesTheDisplayedStatus pins the console's filter on
+// the status every surface draws: a stored-ready feature with a task in
+// progress, and its stored-ready epic, answer status=active and not
+// status=ready, and the status facet counts them the same way. The CLI's
+// `tiller ls --status` keeps matching the stored status.
+func TestListStatusFilterMatchesTheDisplayedStatus(t *testing.T) {
+	root := nextFixture(t)
+	srv := httptest.NewServer(serve.ListHandler(root))
+	t.Cleanup(srv.Close)
+	setTaskInProgress(t, root, "schema-engine", "transcribe-the-schema")
+
+	var got listRowsAndStatusFacet
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=feature&status=active", &got))
+	require.Equal(t, []string{"form-engine/schema-engine"}, got.keys())
+	require.Equal(t, "ready", got.Nodes[0].Status, "the stored status is never replaced")
+	require.Equal(t, "active", got.Nodes[0].Column)
+
+	got = listRowsAndStatusFacet{}
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=feature&status=ready", &got))
+	require.Empty(t, got.Nodes)
+
+	got = listRowsAndStatusFacet{}
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=feature", &got))
+	require.Equal(t, map[string]int{"draft": 1, "active": 1}, got.statusCounts(t))
+
+	got = listRowsAndStatusFacet{}
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=epic&status=active", &got))
+	require.Equal(t, []string{"form-engine"}, got.keys())
+	require.Equal(t, "ready", got.Nodes[0].Status, "the stored status is never replaced")
+	require.Equal(t, "active", got.Nodes[0].Column)
+	require.Equal(t, map[string]int{"active": 1}, got.statusCounts(t))
+
+	got = listRowsAndStatusFacet{}
+	require.Equal(t, 200, getJSON(t, srv, "/api/ls?noun=epic&status=ready", &got))
+	require.Empty(t, got.Nodes)
 }

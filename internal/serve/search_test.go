@@ -112,7 +112,8 @@ func searchFixture(t *testing.T) *httptest.Server {
 }
 
 // TestSearchEndpointAnswersTheSearch pins the 200 payload byte for byte: the
-// same grouped result `tiller search --json` carries in Data.
+// same grouped result `tiller search --json` carries in Data, plus the
+// console-only column on a feature hit.
 func TestSearchEndpointAnswersTheSearch(t *testing.T) {
 	srv := searchFixture(t)
 
@@ -141,6 +142,7 @@ func TestSearchEndpointAnswersTheSearch(t *testing.T) {
       "key": "form-engine/certification-form-loading",
       "title": "Certification form loading",
       "status": "draft",
+      "column": "draft",
       "ref": "form-engine/certification-form-loading (F-aaaaaa)",
       "match": "title",
       "count": 1,
@@ -270,4 +272,28 @@ func TestSearchEndpointIsReadOnly(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, 405, resp.StatusCode)
 	require.Equal(t, "GET, HEAD", resp.Header.Get("Allow"))
+}
+
+// TestSearchEndpointFeatureColumnFollowsWorkInFlight pins the console-only
+// column on a feature hit, the same board column Build and the list carry: a
+// ready feature reads ready until a task under it is in flight, and in_review
+// once its only task is in review, while its stored status stays ready.
+func TestSearchEndpointFeatureColumnFollowsWorkInFlight(t *testing.T) {
+	root := nextFixture(t)
+	srv := httptest.NewServer(serve.SearchHandler(root))
+	t.Cleanup(srv.Close)
+	type hit struct {
+		Key    string `json:"key"`
+		Status string `json:"status"`
+		Column string `json:"column"`
+	}
+	var got struct {
+		Nodes []hit `json:"nodes"`
+	}
+	query := "/api/search?q=" + url.QueryEscape("form-engine/schema-engine")
+	require.Equal(t, 200, getJSON(t, srv, query, &got))
+	require.Contains(t, got.Nodes, hit{Key: "form-engine/schema-engine", Status: "ready", Column: "ready"})
+	setTaskPR(t, root, "schema-engine", "transcribe-the-schema", 11)
+	require.Equal(t, 200, getJSON(t, srv, query, &got))
+	require.Contains(t, got.Nodes, hit{Key: "form-engine/schema-engine", Status: "ready", Column: "in_review"})
 }

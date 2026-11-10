@@ -16,6 +16,7 @@ type MapNode struct {
 	Key          string              `json:"key,omitempty"`
 	Title        string              `json:"title,omitempty"`
 	Status       string              `json:"status"`
+	Column       string              `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
 	Owner        string              `json:"owner,omitempty"`
 	Contributors []store.Contributor `json:"contributors,omitzero"`
 	Parent       string              `json:"parent,omitempty"` // a feature's epic id, a task's feature id; empty for an epic or a shelf node
@@ -60,7 +61,7 @@ func MapOf(t *store.Tree, index *relationships.Index) MapView {
 			continue
 		}
 		nodes = append(nodes, MapNode{
-			Noun: store.NounEpic, ID: e.ID, Key: Key(e), Title: e.Title, Status: e.Status, Contributors: Contributors(t, e),
+			Noun: store.NounEpic, ID: e.ID, Key: Key(e), Title: e.Title, Status: e.Status, Column: gen.BoardStatus(t, e), Contributors: Contributors(t, e),
 			Holds: gen.DirectQuestionHolds(t, e),
 		})
 		for _, featureID := range order.Features(Key(e)) {
@@ -69,7 +70,7 @@ func MapOf(t *store.Tree, index *relationships.Index) MapView {
 				continue
 			}
 			nodes = append(nodes, MapNode{
-				Noun: store.NounFeature, ID: f.ID, Key: Key(f), Title: f.Title, Status: f.Status, Contributors: Contributors(t, f),
+				Noun: store.NounFeature, ID: f.ID, Key: Key(f), Title: f.Title, Status: f.Status, Column: gen.BoardStatus(t, f), Contributors: Contributors(t, f),
 				Parent: e.ID, Holds: gen.DirectQuestionHolds(t, f),
 			})
 			for _, tk := range order.Tasks(f.ID) {
@@ -86,7 +87,7 @@ func MapOf(t *store.Tree, index *relationships.Index) MapView {
 			Noun: w.Noun(), ID: b.ID, Key: Key(w), Title: b.Title, Status: b.Status, Owner: b.Owner,
 		})
 	}
-	return MapView{Nodes: nodes, Edges: mapEdges(index, nodes), Relationships: RelationshipGraphOf(index)}
+	return MapView{Nodes: nodes, Edges: mapEdges(index, nodes), Relationships: RelationshipGraphOf(t, index)}
 }
 
 // Layout affinity uses only its original three relationship kinds. The full

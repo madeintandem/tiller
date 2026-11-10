@@ -94,7 +94,7 @@ describe("Node header: the kind line", () => {
     const node: NodeView = { noun, id, title: "Rotate keys", status: "ready" };
     const { container } = mount(<NodeDetail page={pageOf(node)} />);
     expect(header(container).getByText(label)).toHaveClass("kind-pill");
-    expect(container.querySelector(".kind-line .chip-hero")?.textContent).toBe("ready");
+    expect(container.querySelector(".kind-line .chip-hero")?.textContent).toBe("Ready");
   });
 
   it("gives an amendment the same kind line and nothing it does not have: no facts block, no mix", () => {
@@ -116,7 +116,7 @@ describe("Node header: the kind line", () => {
     const line = container.querySelector(".kind-line") as HTMLElement;
     const hero = line.querySelector(".chip.chip-hero") as HTMLElement;
     expect(hero).not.toBeNull();
-    expect(hero.textContent).toBe("in_progress");
+    expect(hero.textContent).toBe("In progress");
     expect(container.querySelector(".node-title .chip")).toBeNull();
   });
 
@@ -191,6 +191,30 @@ describe("Node header: the kind line", () => {
     expect(container.querySelectorAll(".crumbs .sep")).toHaveLength(1);
     const chain = (container.querySelector(".crumbs") as HTMLElement).textContent ?? "";
     expect(chain.trim().endsWith("›")).toBe(false);
+  });
+
+  // gen.BoardStatus: a stored-ready epic with a task in flight beneath it
+  // reads active wherever the console draws it, the same word the navigator
+  // glyph and `tiller status` give (D6).
+  it("draws a ready epic with work in flight as Active on its own hero chip", () => {
+    const epic: NodeView = { noun: "epic", id: "E-1", key: "secure-access", title: "Secure access", status: "ready", column: "active" };
+    const { container } = mount(<NodeDetail page={pageOf(epic)} />);
+    const hero = container.querySelector(".kind-line .chip-hero") as HTMLElement;
+    expect(hero.textContent).toBe("Active");
+    expect(hero).toHaveAttribute("data-status", "active");
+  });
+
+  it("draws that epic as Active on a task's breadcrumb chip", () => {
+    const page = pageOf(task, {
+      relationships: {
+        epic: { ...related("epic", "E-1", "ready", "Secure access"), column: "active" },
+        feature: related("feature", "F-1", "active", "Sign in"),
+      },
+    });
+    const { container } = mount(<NodeDetail page={page} />);
+    const crumbChips = container.querySelectorAll(".crumbs .chip");
+    expect(crumbChips[0]?.textContent).toBe("Active");
+    expect(crumbChips[0]).toHaveAttribute("data-status", "active");
   });
 });
 

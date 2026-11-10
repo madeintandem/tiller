@@ -89,6 +89,10 @@ type NodeResult struct {
 	Key    string `json:"key,omitempty"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
+	// Column is an epic's or a feature's board column, set only by the
+	// console's search endpoint (serve.SearchHandler); the CLI's search
+	// leaves it empty.
+	Column string `json:"column,omitempty"`
 	// Severity is a bug's triage grade; empty for unrated bugs and other nouns.
 	Severity string `json:"severity,omitempty"`
 	Ref      string `json:"ref"`

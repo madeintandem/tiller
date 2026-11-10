@@ -3,16 +3,18 @@ package serve
 // This file is the console's Explore search endpoint (ui-surface.md,
 // "Explore"): GET /api/search?q=<query>, the same keyword scan `tiller
 // search` runs and the same payload shape its --json Data carries, so the two
-// surfaces answer identically. It rides the shared api() wrapper like every
-// other read endpoint: the query parameter is the only thing it reads off the
-// request, plus the optional kind filter and limit, and search.Search does the
-// rest over the freshly loaded tree.
+// surfaces answer identically, except that an epic or feature hit here also
+// carries its board column (gen.BoardColumnByID). It rides the shared api()
+// wrapper like every other read endpoint: the query parameter is the only
+// thing it reads off the request, plus the optional kind filter and limit,
+// and search.Search does the rest over the freshly loaded tree.
 
 import (
 	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/search"
 	"github.com/madeintandem/tiller/internal/store"
 )
@@ -38,6 +40,9 @@ func SearchHandler(root string) http.HandlerFunc {
 				return nil, &httpError{http.StatusBadRequest, unknown.Error()}
 			}
 			return nil, err
+		}
+		for i, node := range res.Nodes {
+			res.Nodes[i].Column = gen.BoardColumnByID(t, node.Noun, node.ID)
 		}
 		return res, nil
 	})

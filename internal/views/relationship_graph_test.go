@@ -46,7 +46,7 @@ func TestBacklinksScopeWarningsToNodeAndOwnedDocumentsWhileMapStaysGlobal(t *tes
 	require.Equal(t, file, owner.Diagnostics[0].Source.File)
 	require.ElementsMatch(t, []string{"doc:" + file, "F-zzzzzz"}, owner.Diagnostics[0].Subjects)
 	require.Empty(t, BacklinksOf(index, "F-other").Diagnostics)
-	require.Equal(t, owner.Diagnostics, RelationshipGraphOf(index).Diagnostics)
+	require.Equal(t, owner.Diagnostics, RelationshipGraphOf(tree, index).Diagnostics)
 
 	relationships.AddContracts(tree, index, nil, map[string]string{"F-other": "malformed frontmatter"})
 	index.Finalize()

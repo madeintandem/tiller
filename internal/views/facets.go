@@ -40,10 +40,12 @@ var filterAxes = map[string][]string{
 var assignmentStatuses = []string{statusUnfinished, "proposed", "ready", "in_progress", "check", "in_review", "done", "cancelled"}
 
 // statusOrder is each noun's stored statuses in lifecycle order
-// (artifact-schema.md, the per-node status enums).
+// (artifact-schema.md, the per-node status enums), plus the board statuses
+// the console's status axis counts by (gen.BoardStatus): an epic's active and
+// a feature's in_review.
 var statusOrder = map[string][]string{
-	store.NounEpic:      {"draft", "ready", "done", "archived", "cancelled"},
-	store.NounFeature:   {"draft", "specced", "ready", "active", "done", "cancelled"},
+	store.NounEpic:      {"draft", "ready", "active", "done", "archived", "cancelled"},
+	store.NounFeature:   {"draft", "specced", "ready", "active", "in_review", "done", "cancelled"},
 	store.NounTask:      assignmentStatuses,
 	store.NounBug:       assignmentStatuses,
 	store.NounChore:     assignmentStatuses,
@@ -117,7 +119,7 @@ func Facets(t *store.Tree, noun string, f ListFilters, viewer string, unresolved
 			}
 			switch axis {
 			case AxisStatus:
-				counts[n.NodeStatus()]++
+				counts[filterStatus(t, n, f)]++
 				if (noun == store.NounTask || store.IsWorkNoun(noun)) && gen.UnfinishedAssignment(n.NodeStatus()) {
 					counts[statusUnfinished]++
 				}

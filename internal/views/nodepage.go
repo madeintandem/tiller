@@ -228,6 +228,7 @@ type RelatedNode struct {
 	Key       string `json:"key,omitempty"`
 	Ref       string `json:"ref"`
 	Status    string `json:"status"`
+	Column    string `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
 	Title     string `json:"title,omitempty"`
 	Statement string `json:"statement,omitempty"`
 }
@@ -302,7 +303,7 @@ func NodePageOf(tree *store.Tree, evs []events.Event, n store.Node, index *relat
 	}
 	order := gen.DependencyOrder(tree)
 	page := NodePage{
-		Node:          Node(tree, n),
+		Node:          pageNode(tree, n),
 		Ref:           gen.Ref(tree, n),
 		Prose:         prose,
 		Relationships: relationshipsOf(tree, order, n, index),
@@ -475,6 +476,7 @@ func relatedOf(t *store.Tree, n store.Node) RelatedNode {
 		Key:    Key(n),
 		Ref:    gen.Ref(t, n),
 		Status: n.NodeStatus(),
+		Column: gen.BoardColumn(t, n),
 		Title:  handleOf(n),
 	}
 	if q, ok := n.(*store.Question); ok {
@@ -533,6 +535,16 @@ func relatedByIDs(t *store.Tree, ids []string) []RelatedNode {
 	return out
 }
 
+// withoutBoardColumn blanks the console-only board column on rows a CLI
+// payload carries (status's question blocks, ls's blocks_refs): the CLI
+// reports the stored status alone.
+func withoutBoardColumn(rows []RelatedNode) []RelatedNode {
+	for i := range rows {
+		rows[i].Column = ""
+	}
+	return rows
+}
+
 // owningEpic finds the epic a key names, nil when the layout link dangles.
 func owningEpic(t *store.Tree, epicKey string) *RelatedNode {
 	if epicKey == "" {
@@ -577,11 +589,20 @@ func decompositionOf(t *store.Tree, order *gen.Order, e *store.Epic) *Decomposit
 	if e.Key != nil && *e.Key != "" {
 		for _, id := range order.Features(*e.Key) {
 			if f, ok := t.Features[id]; ok {
-				features = append(features, Node(t, f))
+				features = append(features, pageNode(t, f))
 			}
 		}
 	}
 	return &DecompositionView{Features: features}
+}
+
+// pageNode is Node plus the console-only board column an epic or a feature
+// carries. The CLI's show projects Node alone, so its JSON keeps the stored
+// status only.
+func pageNode(t *store.Tree, n store.Node) NodeView {
+	v := Node(t, n)
+	v.Column = gen.BoardColumn(t, n)
+	return v
 }
 
 // AmendmentPageView is a proposed reshape's own node-page content, filling

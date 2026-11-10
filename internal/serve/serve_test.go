@@ -12,8 +12,10 @@ import (
 	"testing/fstest"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
+	"github.com/madeintandem/tiller/internal/readinput"
 	"github.com/madeintandem/tiller/internal/serve"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
 
@@ -345,13 +347,13 @@ func TestTreeEndpointPinsThePayload(t *testing.T) {
 	  "nodes": [
 	    {
 	      "noun": "epic", "id": "E-000001", "key": "form-engine", "title": "Form Engine",
-	      "status": "draft", "contributors": [], "activity": "idle",
+	      "status": "draft", "column": "draft", "contributors": [], "activity": "idle",
 	      "path": ".tiller/epics/form-engine/epic.md",
 	      "files": [".tiller/epics/form-engine/epic.md", ".tiller/epics/form-engine/epic.yml"],
 	      "children": [
 	        {
 	          "noun": "feature", "id": "F-000001", "key": "form-engine/schema-engine", "title": "Schema engine",
-	          "status": "draft", "contributors": [],
+	          "status": "draft", "column": "draft", "contributors": [],
 	          "path": ".tiller/epics/form-engine/features/schema-engine/feature.md",
 	          "files": [
 	            ".tiller/epics/form-engine/features/schema-engine/feature.md",
@@ -373,7 +375,7 @@ func TestTreeEndpointPinsThePayload(t *testing.T) {
 	        },
 	        {
 	          "noun": "feature", "id": "F-000002", "key": "form-engine/form-loading", "title": "Form loading",
-	          "status": "draft", "contributors": [],
+	          "status": "draft", "column": "draft", "contributors": [],
 	          "path": ".tiller/epics/form-engine/features/form-loading/feature.md",
 	          "files": [
 	            ".tiller/epics/form-engine/features/form-loading/feature.md",
@@ -396,4 +398,35 @@ func TestWritesAreRefused(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, 405, resp.StatusCode, "pass 1 has no write endpoints")
+}
+
+// TestStatusJSONCarriesNoBoardColumn pins the 2026-10-20 ruling on the one
+// projection the console and `tiller status` share: a question blocking a
+// stored-ready epic and feature with a task in progress shows both blocks as
+// active on the console's node page, while the status JSON
+// (views.statusRelationships) reports the stored status with no column.
+func TestStatusJSONCarriesNoBoardColumn(t *testing.T) {
+	root := nextFixture(t)
+	setTaskInProgress(t, root, "schema-engine", "transcribe-the-schema")
+	tree, err := store.Load(root)
+	require.NoError(t, err)
+	res, err := mutate.AddQuestion(tree, mutate.Deps{Contributor: "jc"}, mutate.QuestionInput{
+		Title: "Dialect", Statement: "Which schema dialect?", Blocks: []string{"form-engine", "form-engine/schema-engine"}})
+	require.NoError(t, err)
+	tree, err = store.Load(root)
+	require.NoError(t, err)
+	question := tree.Questions[res.ID]
+	require.NotNil(t, question)
+
+	page := views.NodePageOf(tree, nil, question, nil)
+	require.Len(t, page.Relationships.Blocks, 2)
+	for _, block := range page.Relationships.Blocks {
+		require.Equal(t, "active", block.Column, "the console draws %s as active", block.Ref)
+	}
+
+	status := views.NodeStatus(tree, question, readinput.WorkflowForNode(tree, question))
+	require.Len(t, status.Relationships.Blocks, 2)
+	raw, err := json.Marshal(status)
+	require.NoError(t, err)
+	require.NotContains(t, string(raw), `"column"`)
 }

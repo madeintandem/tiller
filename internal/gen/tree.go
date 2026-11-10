@@ -28,17 +28,19 @@ type TreeModel struct {
 
 // TreeNode is one node in the work tree: its identity (noun, id, and key
 // for the keyed nouns), title, status, task owner or ancestor contributors, and
-// derived epic Activity ("active"/"idle", epics only). Path is the prose drill
-// target, the node's own .md at every grain. Files is the full footprint (the
-// prose .md first, then the .yml, and the *.eval.md when a feature carries one).
-// Children are the node's descendants on the axis, always a non-nil slice so the
-// JSON shape is stable.
+// derived epic Activity ("active"/"idle", epics only). Column is an epic's or
+// a feature's board column (BoardStatus), set only by the console's BrowseTree.
+// Path is the prose drill target, the node's own .md at every grain. Files is
+// the full footprint (the prose .md first, then the .yml, and the *.eval.md
+// when a feature carries one). Children are the node's descendants on the
+// axis, always a non-nil slice so the JSON shape is stable.
 type TreeNode struct {
 	Noun         string              `json:"noun"`
 	ID           string              `json:"id"`
 	Key          string              `json:"key,omitempty"`
 	Title        string              `json:"title,omitempty"`
 	Status       string              `json:"status"`
+	Column       string              `json:"column,omitempty"`
 	Owner        string              `json:"owner,omitempty"`
 	Contributors []store.Contributor `json:"contributors,omitzero"`
 	Activity     string              `json:"activity,omitempty"`
@@ -54,9 +56,20 @@ func Tree(t *store.Tree) TreeModel {
 }
 
 // BrowseTree omits cancelled epics and their descendants from console browsing.
-// Tree remains the complete CLI view, including cancelled work.
+// Tree remains the complete CLI view, including cancelled work. Each epic and
+// feature also carries its board Column, which the console draws in place of
+// the stored status.
 func BrowseTree(t *store.Tree) TreeModel {
-	return projectTree(t, false)
+	model := projectTree(t, false)
+	for i := range model.Nodes {
+		epic := &model.Nodes[i]
+		epic.Column = BoardStatus(t, t.Epics[epic.ID])
+		for j := range epic.Children {
+			feature := &epic.Children[j]
+			feature.Column = BoardStatus(t, t.Features[feature.ID])
+		}
+	}
+	return model
 }
 
 func projectTree(t *store.Tree, includeCancelled bool) TreeModel {

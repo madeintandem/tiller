@@ -328,3 +328,32 @@ func TestTreeKeylessTaskNamesNoFile(t *testing.T) {
 	require.NotContains(t, got.Path, "certification-form-loading/tasks/task.md",
 		"never the feature-level path an empty segment would collapse to")
 }
+
+// TestBrowseTreeColumnFollowsWorkInFlight pins the console tree's board
+// column (gen.BoardStatus): a ready feature whose task is in flight reads
+// active there, and so does its ready epic, while both stored statuses stay
+// ready. Only epics and features carry it, and the CLI tree (Tree) never does.
+func TestBrowseTreeColumnFollowsWorkInFlight(t *testing.T) {
+	tree := candidateTree()
+	tree.Features["F-export"].Status = "ready"
+	epic := nodeByKey(BrowseTree(tree).Nodes, "form-engine")
+	require.Equal(t, "ready", epic.Column)
+	feature := nodeByKey(epic.Children, "form-engine/loading")
+	require.Equal(t, "ready", feature.Column)
+
+	tree.Tasks["T-aaaa01"].Status = "in_review"
+	epic = nodeByKey(BrowseTree(tree).Nodes, "form-engine")
+	require.Equal(t, "ready", epic.Status, "the stored status is never replaced")
+	require.Equal(t, "active", epic.Column)
+	feature = nodeByKey(epic.Children, "form-engine/loading")
+	require.Equal(t, "ready", feature.Status, "the stored status is never replaced")
+	require.Equal(t, "active", feature.Column)
+	for _, task := range feature.Children {
+		require.Empty(t, task.Column, "a task carries no column")
+	}
+
+	cliEpic := nodeByKey(Tree(tree).Nodes, "form-engine")
+	require.Empty(t, cliEpic.Column, "the CLI tree carries the stored status alone")
+	cli := nodeByKey(cliEpic.Children, "form-engine/loading")
+	require.Empty(t, cli.Column, "the CLI tree carries the stored status alone")
+}

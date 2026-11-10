@@ -204,3 +204,35 @@ func TestFeatureBoardStatusShowsFinishedWorkAwaitingReviewAsInReview(t *testing.
 		})
 	}
 }
+
+// TestBoardStatusReadsAReadyEpicWithWorkInFlightAsActive pins the epic half
+// of the console's one displayed status: an approved epic stays stored ready,
+// and reads active only while a task under it is in flight.
+func TestBoardStatusReadsAReadyEpicWithWorkInFlightAsActive(t *testing.T) {
+	tree := candidateTree()
+	tree.Features["F-export"].Status = "ready"
+	epic := tree.Epics["E-formen"]
+	require.Equal(t, "ready", BoardStatus(tree, epic), "no task in flight")
+
+	tree.Tasks["T-aaaa01"].Status = "in_progress"
+	require.Equal(t, "active", BoardStatus(tree, epic))
+	require.Equal(t, "ready", epic.Status, "the stored status is never replaced")
+
+	epic.Status = "done"
+	require.Equal(t, "done", BoardStatus(tree, epic), "only a ready epic reads active")
+}
+
+func TestBoardStatusIsFeatureBoardStatusForAFeatureAndStoredElsewhere(t *testing.T) {
+	tree := candidateTree()
+	tree.Tasks["T-aaaa01"].Status = "in_progress"
+	require.Equal(t, "active", BoardStatus(tree, tree.Features["F-loadng"]))
+	require.Equal(t, "in_progress", BoardStatus(tree, tree.Tasks["T-aaaa01"]))
+}
+
+func TestBoardColumnIsTheBoardStatusForEpicsAndFeaturesOnly(t *testing.T) {
+	tree := candidateTree()
+	tree.Tasks["T-aaaa01"].Status = "in_progress"
+	require.Equal(t, "active", BoardColumn(tree, tree.Features["F-loadng"]))
+	require.Equal(t, "active", BoardColumn(tree, tree.Epics["E-formen"]))
+	require.Empty(t, BoardColumn(tree, tree.Tasks["T-aaaa01"]))
+}

@@ -133,6 +133,49 @@ func featureAwaitsReview(t *store.Tree, f *store.Feature) bool {
 	return tasks > 0 && (inReview || f.PR != nil || f.ReviewRef != nil)
 }
 
+// BoardStatus is the one status the console draws for a node: a feature's
+// FeatureBoardStatus, "active" for a stored-ready epic whose EpicActivity is
+// active, and the stored status otherwise. Display-only: the stored status is
+// never replaced, and the CLI reports the stored status alone.
+func BoardStatus(t *store.Tree, n store.Node) string {
+	switch node := n.(type) {
+	case *store.Feature:
+		return FeatureBoardStatus(t, node)
+	case *store.Epic:
+		if node.Status == "ready" && EpicActivity(t, node) == EpicActivityActive {
+			return "active"
+		}
+	}
+	return n.NodeStatus()
+}
+
+// BoardColumn is the column field the console's node projections carry:
+// BoardStatus for an epic or a feature, "" for every other noun.
+func BoardColumn(t *store.Tree, n store.Node) string {
+	switch n.(type) {
+	case *store.Epic, *store.Feature:
+		return BoardStatus(t, n)
+	}
+	return ""
+}
+
+// BoardColumnByID is BoardColumn for a node a projection names by noun and id
+// (a list row, a search hit, a relationship vertex): "" unless the tree holds
+// an epic or a feature by that id.
+func BoardColumnByID(t *store.Tree, noun, id string) string {
+	switch noun {
+	case store.NounEpic:
+		if e, ok := t.Epics[id]; ok {
+			return BoardStatus(t, e)
+		}
+	case store.NounFeature:
+		if f, ok := t.Features[id]; ok {
+			return BoardStatus(t, f)
+		}
+	}
+	return ""
+}
+
 // Feature activity values: the derived, display-only rollup phase of an active
 // feature (docs/spec/cli-surface.md). Like the
 // epic's derived status above, the phase is computed on every read and never

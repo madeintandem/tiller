@@ -14,6 +14,7 @@ type Vertex struct {
 	Key           string              `json:"key,omitempty"`
 	Title         string              `json:"title,omitempty"`
 	Status        string              `json:"status,omitempty"`
+	Column        string              `json:"column,omitempty"` // an epic's or a feature's board column, set by views.RelationshipGraphOf
 	Owner         string              `json:"owner,omitempty"`
 	Contributors  []store.Contributor `json:"contributors,omitzero"`
 	Path          string              `json:"path,omitempty"`

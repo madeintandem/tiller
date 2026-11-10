@@ -407,6 +407,9 @@ export interface NodeView {
   key?: string;
   title?: string;
   status: string;
+  // An epic's or a feature's board column on the node page
+  // (lib/displayStatus); absent for every other noun and from the CLI's show.
+  column?: string;
   // activity is the node's derived phase: a feature's rollup phase
   // (awaiting_check / awaiting_sync) or an epic's active/idle working status
   // (views.activity, matching the status oracle); absent for a task, a
@@ -554,6 +557,7 @@ export interface RelatedNode {
   key?: string;
   ref: string;
   status: string;
+  column?: string; // an epic's or a feature's board column (lib/displayStatus)
   title?: string;
   statement?: string;
 }
@@ -948,9 +952,9 @@ export interface ListRow {
   owner_name?: string;
   contributors?: ContributorInfo[];
   ref: string;
-  // A feature row's Build board column (serve/list.go's listNode): status,
-  // except a ready feature with a task in flight reads "active". Absent for
-  // every other noun.
+  // An epic or feature row's board column (serve/list.go's listNode,
+  // gen.BoardStatus): status, except a ready feature or epic with a task in
+  // flight reads "active". Absent for every other noun.
   column?: string;
   // The three fields a question row alone carries (internal/views/list.go's
   // ListItem, task-15): answer is nil until answered, so its absence IS the
@@ -1058,6 +1062,9 @@ export interface BuildEpic {
   title?: string;
   ref: string;
   status: string;
+  // The epic's board status (gen.BoardStatus, lib/displayStatus): a stored
+  // ready epic reads "active" while a task under it is in flight.
+  column?: string;
   contributors: ContributorInfo[];
   feature_counts?: Record<string, number>;
   features: BuildFeature[];
@@ -1111,6 +1118,7 @@ export interface TreeNode {
   key?: string;
   title?: string;
   status: string;
+  column?: string; // an epic's or a feature's board column (lib/displayStatus)
   owner?: string;
   owner_name?: string;
   contributors?: ContributorInfo[];
@@ -1137,6 +1145,7 @@ export interface RelationshipVertex {
   key?: string;
   title?: string;
   status?: string;
+  column?: string; // an epic's or a feature's board column (lib/displayStatus)
   owner?: string;
   contributors?: ContributorInfo[];
   path?: string;
@@ -1241,6 +1250,7 @@ export interface MapNodeView {
   key?: string;
   title?: string;
   status: string;
+  column?: string; // an epic's or a feature's board column (lib/displayStatus)
   owner?: string;
   owner_name?: string;
   contributors?: ContributorInfo[];
@@ -1449,6 +1459,7 @@ export interface SearchNodeResult {
   key?: string;
   title: string;
   status: string;
+  column?: string; // an epic's or a feature's board column (lib/displayStatus)
   ref: string;
   match: SearchMatch;
   count: number;

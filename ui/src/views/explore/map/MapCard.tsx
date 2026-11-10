@@ -38,6 +38,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { MapNodeView, MapView } from "../../../api";
 import Chip from "../../../components/Chip";
+import { displayStatus } from "../../../lib/displayStatus";
 import { kindLabel } from "../../../lib/kind";
 import Contributors from "../../../components/Contributors";
 import { PersonName } from "../../../people";
@@ -195,7 +196,7 @@ export default function MapCard({
       >
         <div className="kind-line">
           <span className="kind-pill">{kindLabel(node.noun)}</span>
-          <Chip status={node.status} size="hero" />
+          <Chip status={displayStatus(node)} size="hero" />
         </div>
         <button type="button" className="map-dock-close" aria-label="Close" onClick={onClose}>
           ×

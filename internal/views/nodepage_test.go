@@ -343,15 +343,15 @@ func TestNodePageQuestionResolvesLegacyKeyBlocks(t *testing.T) {
 		},
 		{
 			Noun: store.NounFeature, ID: "F-222222", Key: "form-engine/form-loading",
-			Ref: "form-engine/form-loading (F-222222)", Status: "draft", Title: "Form loading",
+			Ref: "form-engine/form-loading (F-222222)", Status: "draft", Column: "draft", Title: "Form loading",
 		},
 		{
 			Noun: store.NounEpic, ID: "E-aaa111", Key: "form-engine",
-			Ref: "form-engine (E-aaa111)", Status: "ready", Title: "Form Engine",
+			Ref: "form-engine (E-aaa111)", Status: "ready", Column: "ready", Title: "Form Engine",
 		},
 		{
 			Noun: store.NounFeature, ID: "F-111111", Key: "form-engine/schema-engine",
-			Ref: "form-engine/schema-engine (F-111111)", Status: "specced", Title: "Schema engine",
+			Ref: "form-engine/schema-engine (F-111111)", Status: "specced", Column: "specced", Title: "Schema engine",
 		},
 		{ID: "F-missing", Ref: "F-missing"},
 	}, page.Relationships.Blocks,
@@ -1342,4 +1342,49 @@ func TestNodePageAmendmentCorrectEvalCarriesRetire(t *testing.T) {
 	got, err := json.Marshal(op)
 	require.NoError(t, err)
 	require.Contains(t, string(got), `"retire":["C-2"]`)
+}
+
+// TestNodePageFeatureColumnFollowsWorkInFlight pins the feature column every
+// node page row carries for a feature: the header node, the epic's feature
+// links and decomposition, and a task's parent crumb all read active once a
+// task under the stored-ready feature is in flight.
+func TestNodePageFeatureColumnFollowsWorkInFlight(t *testing.T) {
+	tree := pageTree()
+	feature := tree.Features["F-111111"]
+	feature.Status = "ready"
+	tree.Tasks["T-333333"].Status = "in_review"
+
+	page := NodePageOf(tree, nil, feature, nil)
+	require.Equal(t, "ready", page.Node.Status, "the stored status is never replaced")
+	require.Equal(t, "active", page.Node.Column)
+
+	epic := NodePageOf(tree, nil, nodeOf(t, tree, "E-aaa111"), nil)
+	require.Equal(t, "active", epic.Relationships.Features[0].Column)
+	require.Equal(t, "draft", epic.Relationships.Features[1].Column)
+	require.Equal(t, "active", epic.Decomposition.Features[0].Column)
+
+	task := NodePageOf(tree, nil, nodeOf(t, tree, "T-444444"), nil)
+	require.Empty(t, task.Node.Column, "a task carries no column")
+	require.Equal(t, "active", task.Relationships.Feature.Column)
+}
+
+// TestNodePageEpicColumnFollowsWorkInFlight pins the epic half of the same
+// rule: a stored-ready epic with a task in progress beneath it reads active
+// in its own page header and in a task's epic crumb, and ready again once
+// nothing under it is in flight.
+func TestNodePageEpicColumnFollowsWorkInFlight(t *testing.T) {
+	tree := pageTree()
+	tree.Features["F-111111"].Status = "ready"
+	epic := nodeOf(t, tree, "E-aaa111")
+
+	page := NodePageOf(tree, nil, epic, nil)
+	require.Equal(t, "ready", page.Node.Column, "no task in flight")
+
+	tree.Tasks["T-333333"].Status = "in_progress"
+	page = NodePageOf(tree, nil, epic, nil)
+	require.Equal(t, "ready", page.Node.Status, "the stored status is never replaced")
+	require.Equal(t, "active", page.Node.Column)
+
+	task := NodePageOf(tree, nil, nodeOf(t, tree, "T-444444"), nil)
+	require.Equal(t, "active", task.Relationships.Epic.Column)
 }

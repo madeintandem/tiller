@@ -63,12 +63,15 @@ type BuildBoard struct {
 // and mix bar (FeatureCounts; see this file's package comment for why that
 // is one field, not two), and its own features in the shared feature order.
 type BuildEpic struct {
-	Noun         string              `json:"noun"`
-	ID           string              `json:"id"`
-	Key          string              `json:"key,omitempty"`
-	Title        string              `json:"title,omitempty"`
-	Ref          string              `json:"ref"`
-	Status       string              `json:"status"`
+	Noun   string `json:"noun"`
+	ID     string `json:"id"`
+	Key    string `json:"key,omitempty"`
+	Title  string `json:"title,omitempty"`
+	Ref    string `json:"ref"`
+	Status string `json:"status"`
+	// Column is the epic's board status (gen.BoardStatus): stored ready
+	// reads active while work is in flight beneath it.
+	Column       string              `json:"column,omitempty"`
 	Contributors []store.Contributor `json:"contributors"`
 	// FeatureCounts is this epic's own features grouped by their board
 	// column (BuildFeature.Column), so the mix bar agrees with the columns,
@@ -150,6 +153,7 @@ func buildEpicOf(t *store.Tree, order *gen.Order, e *store.Epic) BuildEpic {
 		Title:        e.Title,
 		Ref:          gen.Ref(t, e),
 		Status:       e.Status,
+		Column:       gen.BoardStatus(t, e),
 		Contributors: Contributors(t, e),
 	}
 	var featureIDs []string
@@ -201,7 +205,7 @@ func buildFeatureOf(t *store.Tree, order *gen.Order, f *store.Feature) BuildFeat
 	return BuildFeature{
 		ListItem:      item,
 		Ref:           item.Ref,
-		Column:        gen.FeatureBoardStatus(t, f),
+		Column:        gen.BoardStatus(t, f),
 		TaskDone:      done,
 		TaskTotal:     total,
 		OpenWorkItems: OpenAttachedWorkCount(t, f.ID),

@@ -17,8 +17,8 @@ import (
 
 // listNode is one list row with the reference the console renders. Embedding
 // ListItem keeps the field set identical to the CLI's payload; the outer Ref
-// shadows the embedded render-only one. Column is a feature row's Build board
-// column (gen.FeatureBoardStatus), which Home's funnel counts so it agrees
+// shadows the embedded render-only one. Column is an epic or feature row's
+// board column (gen.BoardStatus), which Home's funnel counts so it agrees
 // with Build; it is empty for every other noun.
 type listNode struct {
 	views.ListItem
@@ -49,9 +49,12 @@ var listNouns = map[string]string{
 }
 
 // ListHandler answers GET /api/ls?noun=features&status=&owner=&contributor=&feature=&epic=.
-// A bad noun is a 400. An unresolved parent answers 200 with no rows and the
-// raw value in unresolved, allowing the console to explain a stale link on
-// that field. The CLI retains strict parent resolution and its exit-2 refusal.
+// The status filter and its facet counts match an epic or a feature on its
+// board column, the status the console draws; `tiller ls --status` keeps
+// matching the stored status. A bad noun is a 400. An unresolved parent
+// answers 200 with no rows and the raw value in unresolved, allowing the
+// console to explain a stale link on that field. The CLI retains strict
+// parent resolution and its exit-2 refusal.
 func ListHandler(root string) http.HandlerFunc {
 	return api(root, func(t *store.Tree, r *http.Request) (any, error) {
 		q := r.URL.Query()
@@ -65,6 +68,8 @@ func ListHandler(root string) http.HandlerFunc {
 			Contributor: q.Get("contributor"),
 			Feature:     q.Get("feature"),
 			Epic:        q.Get("epic"),
+			// The console filters on the status it draws.
+			ByBoardStatus: true,
 		}
 		unresolved := views.ResolveParentFiltersLeniently(t, &f)
 		items := []views.ListItem{}
@@ -87,10 +92,7 @@ func ListHandler(root string) http.HandlerFunc {
 		// lifts it into the JSON.
 		nodes := make([]listNode, len(items))
 		for i, it := range items {
-			nodes[i] = listNode{ListItem: it, Ref: it.Ref}
-			if f, ok := t.Features[it.ID]; ok && noun == store.NounFeature {
-				nodes[i].Column = gen.FeatureBoardStatus(t, f)
-			}
+			nodes[i] = listNode{ListItem: it, Ref: it.Ref, Column: gen.BoardColumnByID(t, noun, it.ID)}
 		}
 		return listPayload{
 			Noun: noun, Count: len(nodes), Nodes: nodes,
