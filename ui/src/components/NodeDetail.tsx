@@ -30,7 +30,7 @@
 // evals tab's wire key and `tab` param stay "evals" (amended ui-surface.md,
 // 2026-08-10); only its DISPLAY label reads "Contract" now.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type {
   ActiveBasisView,
@@ -66,7 +66,10 @@ import QuestionBody from "../views/node/QuestionBody";
 import AmendmentBody from "../views/node/AmendmentBody";
 import AmendmentRelationsPanel, { ProposedAmendmentNotice, uniqueAmendments } from "../views/node/AmendmentRelationsPanel";
 import BacklinksPanel from "../views/node/BacklinksPanel";
+import NodeCompact from "./NodeCompact";
+import { useScrolledPast } from "../lib/useScrolledPast";
 import "./instrument.css";
+import "./node-pin.css";
 
 // Each body pulls its noun's own composition-CHILDREN edges forward (an
 // epic's features, a feature's tasks, a question's blocks), so the hub - the
@@ -680,6 +683,9 @@ function FlatBody({ page }: { page: NodePage }) {
 export default function NodeDetail({ page, queue = null }: { page: NodePage; queue?: Queue | null }) {
   const [params, setParams] = useSearchParams();
   const tabs = tabsFor(page);
+  // The full header's visibility drives the pinned one-line header (R10).
+  const headerRef = useRef<HTMLElement>(null);
+  const headerGone = useScrolledPast(headerRef);
   const recoveredReview = page.node.recovered_review ?? page.workflow?.recovered_review;
 
   // The drift panel's disclosure state: transient, component-local, never a
@@ -713,6 +719,7 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
     <article className="instr">
       <NodeDetailHeader
         page={page}
+        headerRef={headerRef}
         driftExpanded={driftExpanded}
         onDriftToggle={() => {
           setDriftOpen(!driftExpanded);
@@ -745,7 +752,12 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
         <ProposedAmendmentNotice relationships={page.relationships} />
       )}
       {tabs !== null ? (
-        <NodeTabs tabs={tabs} active={params.get("tab") ?? tabs[0].key} onSelect={selectTab} />
+        <NodeTabs
+          tabs={tabs}
+          active={params.get("tab") ?? tabs[0].key}
+          onSelect={selectTab}
+          pinned={headerGone ? <NodeCompact node={page.node} /> : null}
+        />
       ) : (
         <>
           <FlatBody page={page} />

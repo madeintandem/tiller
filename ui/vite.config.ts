@@ -37,8 +37,12 @@ export default defineConfig({
       // static heads row above each board's scroller, and that no head on
       // either board sticks inside it. styles.css: styles.css.test.ts pins
       // the topbar sticking to the viewport.
+      // node-pin.css: node-pin.css.test.ts pins the pinned rail's sticky
+      // offset and background. explore.css joins for its own pins.
       include: [
         /components\/board\.css/,
+        /components\/node-pin\.css/,
+        /views\/explore\.css/,
         /src\/styles\.css/,
         /styles\/tokens\.css/,
         /views\/build\.css/,

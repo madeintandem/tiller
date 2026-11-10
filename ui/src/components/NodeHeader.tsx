@@ -11,7 +11,7 @@
 // that file crossed the repo's thousand-line line; every piece here is
 // reachable from NodeDetailHeader alone.
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, type RefObject } from "react";
 import type { DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
 import { withActivityPhrase } from "../lib/activityPhrase";
 import { displayStatus } from "../lib/displayStatus";
@@ -506,15 +506,18 @@ function ChildrenMix({ page }: { page: NodePage }) {
 
 export default function NodeDetailHeader({
   page,
+  headerRef,
   driftExpanded,
   onDriftToggle,
 }: {
   page: NodePage;
+  // Lets the page watch whether this header is still in view (R10).
+  headerRef?: RefObject<HTMLElement | null>;
   driftExpanded: boolean;
   onDriftToggle: () => void;
 }) {
   return (
-    <header className="instr-header">
+    <header className="instr-header" ref={headerRef}>
       <Crumbs page={page} />
       <KindLine page={page} driftExpanded={driftExpanded} onDriftToggle={onDriftToggle} />
       <NodeTitle node={page.node} />

@@ -17,7 +17,7 @@
 // all (a stale link, a hand-edited URL) reads as the first tab rather than
 // rendering no panel at all, so the page never goes blank over a bad param.
 
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import "../views/explore.css";
 
 export interface NodeTab {
@@ -35,6 +35,7 @@ export default function NodeTabs({
   active,
   onSelect,
   label = "Node detail tab",
+  pinned,
 }: {
   tabs: NodeTab[];
   active: string;
@@ -42,10 +43,15 @@ export default function NodeTabs({
   // The rail's accessible name. The node page keeps the default; Home's
   // needs-you section uses the same rail for its decision kinds (2026-09-01).
   label?: string;
+  // When given (even as null), the rail and this content sit in a sticky
+  // .node-pin wrapper so they stay in view while the reading pane scrolls.
+  // The node page passes its one-line header here; Home omits it.
+  pinned?: ReactNode;
 }) {
   const activeTab = tabs.find((tab) => tab.key === active) ?? tabs[0];
-  return (
+  const rail = (
     <>
+      {pinned}
       <nav className="mode-nav" aria-label={label}>
         {tabs.map((tab) => {
           const isActive = tab.key === activeTab.key;
@@ -76,6 +82,11 @@ export default function NodeTabs({
           );
         })}
       </nav>
+    </>
+  );
+  return (
+    <>
+      {pinned === undefined ? rail : <div className="node-pin">{rail}</div>}
       {activeTab.render()}
     </>
   );

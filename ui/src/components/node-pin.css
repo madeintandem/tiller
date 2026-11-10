@@ -1,0 +1,33 @@
+/* The node page's pinned tab rail and one-line header. The reading pane
+   (.explore-detail) paints nothing itself, so it shows the body's --paper;
+   the pin repaints the same token so scrolled content never shows through.
+   top: -22px cancels .explore-detail's 22px top padding, so the pin sits
+   flush with the pane's top edge instead of floating 22px below it. */
+.node-pin {
+  position: sticky;
+  top: -22px;
+  z-index: 2;
+  background: var(--paper);
+}
+
+.node-compact {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 22px 0 6px;
+}
+
+.node-compact > .kind-pill,
+.node-compact > .chip {
+  flex: none;
+}
+
+.node-compact-title {
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

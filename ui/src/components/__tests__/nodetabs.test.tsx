@@ -820,3 +820,66 @@ it("keeps recovered provenance visible on detail while current acceptance remain
   expect(within(panel).getByText(/current acceptance: unresolved/i)).toBeInTheDocument();
   expect(screen.queryByText(/awaiting.*merge/i)).not.toBeInTheDocument();
 });
+
+// ---------------------------------------------------------------------------
+// Pinned tab rail and one-line header (R10).
+// ---------------------------------------------------------------------------
+
+describe("NodeDetail pinned rail", () => {
+  const originalObserver = globalThis.IntersectionObserver;
+  afterEach(() => {
+    globalThis.IntersectionObserver = originalObserver;
+  });
+
+  function stubObserver(intersecting: boolean) {
+    globalThis.IntersectionObserver = class {
+      constructor(private cb: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.cb([{ isIntersecting: intersecting, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    } as unknown as typeof IntersectionObserver;
+  }
+
+  it("shows a one-line header with pill, displayed status, and title once the full header scrolls away", () => {
+    stubObserver(false);
+    const { container } = renderNode(featurePage({ node: featureNode({ status: "ready", column: "active" }) }));
+    const compact = container.querySelector(".node-pin .node-compact");
+    expect(compact).not.toBeNull();
+    const c = within(compact as HTMLElement);
+    expect(c.getByText("Feature")).toBeInTheDocument();
+    expect(c.getByText("Active")).toBeInTheDocument();
+    expect(c.getByText("Refund pipeline")).toBeInTheDocument();
+    expect(container.querySelector(".node-pin .mode-nav")).not.toBeNull();
+  });
+
+  it("omits the compact header while the full header is in view", () => {
+    stubObserver(true);
+    const { container } = renderNode(featurePage());
+    expect(container.querySelector(".node-pin")).not.toBeNull();
+    expect(container.querySelector(".node-compact")).toBeNull();
+  });
+
+  it("omits the compact header where IntersectionObserver is undefined", () => {
+    (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver = undefined;
+    const { container } = renderNode(featurePage());
+    expect(container.querySelector(".node-compact")).toBeNull();
+  });
+
+  it("gives a flat noun no pin", () => {
+    stubObserver(false);
+    const { container } = renderNode(questionPage());
+    expect(container.querySelector(".node-pin")).toBeNull();
+  });
+
+  it("leaves a bare NodeTabs without a pin wrapper", () => {
+    const { container } = render(
+      <NodeTabs tabs={[{ key: "a", label: "a", render: () => <p>A</p> }]} active="a" onSelect={() => {}} />,
+    );
+    expect(container.querySelector(".node-pin")).toBeNull();
+  });
+});
