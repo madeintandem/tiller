@@ -5,24 +5,29 @@
 // number rather than a spinner, and the reads keep their data across a reread.
 
 import { Link } from "react-router-dom";
-import type { Queue, Streams } from "../../api";
-import { boardPath, queuePath } from "../../api";
+import type { BuildBoard, Queue } from "../../api";
+import { buildPath, queuePath } from "../../api";
 import { useFetch } from "../../hooks";
 import { readRecent } from "../../lib/recentNodes";
+import { columnCards, visibleCards } from "../build/columns";
+import { epicsParamValue } from "../build/selection";
 import "../explore-empty.css";
 
-// "In flight" counts what Home's In flight column calls moving work: each
-// task an owner has active or in review, once. The blocked register and the
-// unclaimed pool are waiting, not in flight, so they are not counted. Build's
-// cards are features, so its column counts are not task counts; this number
-// is Home's In flight rows, and the Build link is where the work is browsed.
-export function inFlightCount(streams: Streams): number {
-  const ids = new Set<string>();
-  for (const stream of streams.contributors) {
-    for (const item of stream.active) ids.add(item.id);
-    for (const item of stream.gates_in_review) ids.add(item.id);
-  }
-  return ids.size;
+// "In flight" is the number of feature cards in Build's Active and In review
+// columns, across every epic: the board's own column assignment
+// (BuildFeature.column, which puts a stored-ready feature with work in flight in
+// Active) through the same visibleCards and columnCards Build runs. Tasks are
+// not counted; Home's In flight column lists those.
+export function inFlightCount(board: BuildBoard): number {
+  const cards = visibleCards(board.epics);
+  return columnCards(cards, "active").length + columnCards(cards, "in_review").length;
+}
+
+// The link opens Build with every epic selected, so the board shows the cards
+// the number counts rather than Build's stored or default epic selection.
+function buildHref(board: BuildBoard | null): string {
+  const keys = board === null ? [] : board.epics.flatMap((epic) => (epic.key === undefined ? [] : [epic.key]));
+  return keys.length === 0 ? "/build" : `/build?epics=${epicsParamValue(keys)}`;
 }
 
 function nounLabel(noun: string): string {
@@ -31,7 +36,7 @@ function nounLabel(noun: string): string {
 
 export default function ExploreEmpty({ projectKey }: { projectKey: string | undefined }) {
   const queue = useFetch<Queue>(queuePath, { retainData: true });
-  const board = useFetch<Streams>(boardPath, { retainData: true });
+  const board = useFetch<BuildBoard>(buildPath, { retainData: true });
   const recent = projectKey === undefined ? [] : readRecent(projectKey);
 
   const decisions = queue.data?.entries.length;
@@ -46,14 +51,14 @@ export default function ExploreEmpty({ projectKey }: { projectKey: string | unde
   }
   let flight = "Work in flight";
   if (flying !== undefined) {
-    flight = flying === 0 ? "Nothing in flight" : `${flying} in flight`;
+    flight = flying === 0 ? "Nothing in flight" : `${flying} ${flying === 1 ? "feature" : "features"} in flight`;
   }
 
   return (
     <div className="explore-detail">
       <p className="explore-empty-links">
         <Link to="/">{needs}</Link>
-        <Link to="/build" title="Tasks active or in review, as Home's In flight column lists them">
+        <Link to={buildHref(board.data)} title="Features in Build's Active and In review columns, across all epics">
           {flight}
         </Link>
       </p>

@@ -5,7 +5,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { NodePage, ProjectSummary, Queue, QueueEntry, Streams } from "../../api";
+import type { BuildBoard, BuildFeature, NodePage, ProjectSummary, Queue, QueueEntry } from "../../api";
 import { bumpFetchGeneration } from "../../api";
 import App from "../../App";
 import { readRecent, recentKey } from "../../lib/recentNodes";
@@ -57,20 +57,33 @@ const entry = (n: number): QueueEntry => ({
 });
 const queue = (n: number): Queue => ({ entries: Array.from({ length: n }, (_, i) => entry(i)) });
 
-function streams(active: number, review: number, blocked: number, unclaimed = 0): Streams {
-  const item = (i: number) => ({ noun: "task", id: `T-${i}`, ref: `T-${i}`, status: "active", display: "active" });
+// A /api/build payload: one epic whose feature cards sit in the named columns.
+// A stored-ready feature with work in flight is served with column "active",
+// the board's own assignment, which the line must follow.
+function buildBoard(cols: { active?: number; readyActive?: number; review?: number; done?: number; tasks?: number }): BuildBoard {
+  const features: BuildFeature[] = [];
+  const add = (n: number | undefined, status: string, column: string, label: string) => {
+    for (let i = 0; i < (n ?? 0); i++) {
+      const id = `F-${label}${i}`;
+      const tasks = Array.from({ length: cols.tasks ?? 0 }, (_, t) => ({
+        noun: "task", id: `T-${label}${i}${t}`, ref: `T-${label}${i}${t}`, status: "in_progress", title: `Task ${t}`,
+      }));
+      features.push({
+        id, key: `intake/${label}${i}`, title: `Feature ${label}${i}`, status, column, contributors: [],
+        ref: id, task_done: 0, task_total: tasks.length, open_work_items: 0, tasks,
+      } as unknown as BuildFeature);
+    }
+  };
+  add(cols.active, "active", "active", "a");
+  add(cols.readyActive, "ready", "active", "r");
+  add(cols.review, "active", "in_review", "v");
+  add(cols.done, "done", "done", "d");
   return {
-    contributors: [{
-      contributor: { id: "jc", name: "JC Grubbs" },
-      active: Array.from({ length: active }, (_, i) => item(i)),
-      blocked: Array.from({ length: blocked }, (_, i) => ({ ...item(100 + i), blocked_by: [] })),
-      gates_in_review: Array.from({ length: review }, (_, i) => ({ ...item(200 + i), gates: [] })),
-      open_questions: [],
+    epics: [{
+      noun: "epic", id: "E-1", key: "intake", title: "Intake", ref: "intake (E-1)", status: "active",
+      contributors: [], features,
     }],
-    unclaimed: Array.from({ length: unclaimed }, (_, i) => ({
-      noun: "task", id: `T-u${i}`, ref: `T-u${i}`, status: "ready", feature_id: "F-1",
-    })),
-  } as unknown as Streams;
+  } as unknown as BuildBoard;
 }
 
 function renderAt(path = "/explore") {
@@ -89,7 +102,7 @@ describe("Explore empty reading pane", () => {
       { noun: "feature", id: "F-1", key: "pay/checkout", title: "Checkout flow" },
       { noun: "question", id: "Q-9", title: "Which rounding mode" },
     ]);
-    stubFetch(baseRoutes({ "/api/queue": queue(2), "/api/board": streams(2, 1, 1) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(2), "/api/build": buildBoard({ active: 2, review: 1 }) }));
     renderAt();
     const region = await screen.findByRole("region", { name: "Recently opened" });
     const links = within(region).getAllByRole("link");
@@ -106,34 +119,34 @@ describe("Explore empty reading pane", () => {
   });
 
   it("links to Home with the decision count and to Build with the in-flight count", async () => {
-    stubFetch(baseRoutes({ "/api/queue": queue(3), "/api/board": streams(2, 1, 4, 5) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(3), "/api/build": buildBoard({ active: 2, review: 1, done: 4 }) }));
     renderAt();
     const needs = await screen.findByRole("link", { name: "3 decisions need you" });
     expect(needs).toHaveAttribute("href", "/");
-    // In flight is the active and in-review work the Home column shows, not
-    // the blocked register and not the unclaimed pool.
-    const flight = await screen.findByRole("link", { name: "3 in flight" });
-    expect(flight).toHaveAttribute("href", "/build");
+    // In flight is the feature cards in Build's Active and In review columns,
+    // across every epic, so the link opens Build with all epics selected.
+    const flight = await screen.findByRole("link", { name: "3 features in flight" });
+    expect(flight).toHaveAttribute("href", "/build?epics=intake");
   });
 
   it("with no history shows the two links and the old sentence", async () => {
-    stubFetch(baseRoutes({ "/api/queue": queue(1), "/api/board": streams(1, 0, 0) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(1), "/api/build": buildBoard({ active: 1 }) }));
     renderAt();
     expect(await screen.findByText(SENTENCE)).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Recently opened" })).not.toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "1 decision needs you" })).toHaveAttribute("href", "/");
-    expect(await screen.findByRole("link", { name: "1 in flight" })).toHaveAttribute("href", "/build");
+    expect(await screen.findByRole("link", { name: "1 feature in flight" })).toHaveAttribute("href", "/build?epics=intake");
   });
 
   it("says nothing needs you and nothing is in flight at zero, still as links", async () => {
-    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/board": streams(0, 0, 2) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/build": buildBoard({ done: 2 }) }));
     renderAt();
     expect(await screen.findByRole("link", { name: "Nothing needs you right now" })).toHaveAttribute("href", "/");
-    expect(await screen.findByRole("link", { name: "Nothing in flight" })).toHaveAttribute("href", "/build");
+    expect(await screen.findByRole("link", { name: "Nothing in flight" })).toHaveAttribute("href", "/build?epics=intake");
   });
 
   it("renders the links without counts, and no spinner, while loading or after a failed read", async () => {
-    stubFetch(baseRoutes({ "/api/queue": new Promise(() => {}), "/api/board": new Promise(() => {}) }));
+    stubFetch(baseRoutes({ "/api/queue": new Promise(() => {}), "/api/build": new Promise(() => {}) }));
     renderAt();
     const needs = await screen.findByRole("link", { name: "Decisions that need you" });
     expect(needs).toHaveAttribute("href", "/");
@@ -148,12 +161,38 @@ describe("Explore empty reading pane", () => {
     expect(screen.getByRole("link", { name: "Work in flight" })).toBeInTheDocument();
   });
 
+  it("counts feature cards, not tasks, and puts a stored-ready feature with work in flight in Active", async () => {
+    stubFetch(baseRoutes({
+      "/api/queue": queue(0),
+      "/api/build": buildBoard({ active: 1, readyActive: 1, tasks: 3 }),
+    }));
+    renderAt();
+    expect(await screen.findByRole("link", { name: "2 features in flight" })).toBeInTheDocument();
+  });
+
+  it("follows the link to Build and finds that many cards in Active and In review", async () => {
+    const board = buildBoard({ active: 1, readyActive: 1, review: 1, done: 2, tasks: 3 });
+    stubFetch(baseRoutes({
+      "/api/queue": queue(0),
+      "/api/build": board,
+      "/api/drift": { findings: [], diagnostics: [] },
+    }));
+    renderAt();
+    const link = await screen.findByRole("link", { name: "3 features in flight" });
+    fireEvent.click(link);
+    await screen.findByText("Feature a0");
+    const columns = document.querySelectorAll(".board-column");
+    // BUILD_COLUMNS order: draft, specified, ready, active, in review, done.
+    const cards = (index: number) => columns[index].querySelectorAll('[role="link"]').length;
+    expect(cards(3) + cards(4)).toBe(3);
+  });
+
   it.each([
     ["corrupt JSON", "{nope"],
     ["a wrong shape", '{"a":1}'],
   ])("treats %s in storage as no history", async (_n, raw) => {
     window.localStorage.setItem(recentKey("acme"), raw);
-    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/board": streams(0, 0, 0) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/build": buildBoard({}) }));
     renderAt();
     expect(await screen.findByText(SENTENCE)).toBeInTheDocument();
   });
@@ -162,7 +201,7 @@ describe("Explore empty reading pane", () => {
     window.localStorage.setItem(
       recentKey("other"), JSON.stringify([{ noun: "epic", id: "E-1", title: "Elsewhere" }]),
     );
-    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/board": streams(0, 0, 0) }));
+    stubFetch(baseRoutes({ "/api/queue": queue(0), "/api/build": buildBoard({}) }));
     renderAt();
     expect(await screen.findByText(SENTENCE)).toBeInTheDocument();
     expect(screen.queryByText("Elsewhere")).not.toBeInTheDocument();
