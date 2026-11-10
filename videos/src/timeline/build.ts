@@ -1,6 +1,6 @@
 import type { Step } from "../check/diff.js";
 import type { Word } from "../narration/words.js";
-import type { Script, Show } from "../script/schema.js";
+import { cueWord, phraseIndex, type Point, type Script, type Show } from "../script/schema.js";
 import { video } from "../theme.js";
 
 // Asset paths (intro.path, audio, capturePath) are relative to the build directory,
@@ -13,6 +13,12 @@ export type Segment = {
   audio: string;
   words: Word[];
   show: Show;
+  // When each of a slide's points comes up, in seconds from the start of the narration.
+  pointTimes?: number[];
+  // For the "cli" graphic: the tiller commands and skills this video uses, to highlight.
+  seen?: string[];
+  // On a chapter card: every chapter of the video and which one this is.
+  track?: { names: string[]; index: number };
   // The beat's chapter name, shown as a lower third at the segment start.
   chapter?: string;
   capturePath?: string;
@@ -24,7 +30,8 @@ export type Segment = {
 export type Timeline = {
   id: string;
   fps: number;
-  intro: { path: string; duration: number; words: Word[] };
+  // The filmed intro clip, when the script has one; otherwise the program starts on its first beat.
+  intro?: { path: string; duration: number; words: Word[] };
   segments: Segment[];
   outro: { start: number; end: number };
   duration: number;
@@ -43,6 +50,9 @@ export const mss = (seconds: number, round: (n: number) => number = Math.floor):
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
+/** Where the opening music bed ends: the intro clip's end, or without one the end of the first beat. */
+export const openingEnd = (t: Timeline): number => t.intro?.duration ?? t.segments[0]?.end ?? 0;
+
 export class TooLongError extends Error {
   constructor(public readonly duration: number) {
     // Round to the millisecond first so float noise (481.0000001) never reads as a second more.
@@ -50,6 +60,44 @@ export class TooLongError extends Error {
     super(`video runs ${mss(duration, ceilMs)}, over the ${mss(MAX_SECONDS)} ceiling`);
     this.name = "TooLongError";
   }
+}
+
+/**
+ * When each point of a slide comes up, in seconds into the beat's narration: as its `on`
+ * phrase starts being spoken, or (with no cue, or a cue the aligned words lack) at its
+ * share of an even spread. Never earlier than the point before it.
+ */
+export function pointTimes(points: Point[], n: Narration): number[] {
+  // Aligned words that normalize to nothing (a stray dash) are dropped along with their times.
+  const spoken = n.words.map((w) => ({ w: cueWord(w.text), start: w.start })).filter((x) => x.w);
+  let floor = 0;
+  return points.map((p, i) => {
+    const at = p.on === undefined ? -1 : phraseIndex(spoken.map((x) => x.w), p.on);
+    const t = Math.max(floor, at >= 0 ? spoken[at].start : (n.duration * (i + 1)) / (points.length + 1));
+    floor = t;
+    return t;
+  });
+}
+
+/**
+ * The tiller commands and skills a script puts on screen, for the "cli" graphic to highlight:
+ * the subcommand of every `tiller <subcommand>` its term beats run, a skill named as that
+ * command's first argument (`tiller readout derive-baseline`), and `serve` when the script
+ * shows the console.
+ */
+export function seenCommands(script: Script, snapshots: Record<string, Step[]>): string[] {
+  const seen = new Set<string>();
+  for (const beat of script.beats) {
+    if (beat.show.kind !== "term") continue;
+    for (const step of termSteps(beat.id, beat.show, snapshots)) {
+      const m = step.kind === "cmd" ? /^tiller ([a-z][a-z-]*)(?: ([a-z][a-z-]*))?/.exec(step.cmd ?? "") : null;
+      if (!m) continue;
+      seen.add(m[1]);
+      if (m[2] && (m[1] === "guide" || m[1] === "readout")) seen.add(`skill:${m[2]}`);
+    }
+  }
+  if (script.captures.length > 0) seen.add("serve");
+  return [...seen].sort();
 }
 
 // The steps a term beat shows, from its `from` to its `to` step inclusive.
@@ -64,16 +112,17 @@ export function termSteps(beatId: string, show: Extract<Show, { kind: "term" }>,
   return stage.slice(from, to + 1);
 }
 
-// Intro, a short gap, each beat's narration back to back with a gap between, then the outro.
+// The intro clip and a short gap (when there is one), each beat's narration back to back with a gap between, then the outro.
 export function buildTimeline(
   script: Script,
-  intro: { path: string; duration: number; words: Word[] },
+  intro: { path: string; duration: number; words: Word[] } | undefined,
   narrations: Record<string, Narration>,
   captures: Record<string, string>,
   snapshots: Record<string, Step[]>,
 ): Timeline {
   const segments: Segment[] = [];
-  let at = intro.duration + INTRO_GAP;
+  const chapterNames = script.beats.flatMap((b) => (b.chapter ? [b.chapter] : []));
+  let at = intro ? intro.duration + INTRO_GAP : 0;
   script.beats.forEach((beat, i) => {
     const n = narrations[beat.id];
     if (!n) throw new Error(`beat ${beat.id}: no narration`);
@@ -82,7 +131,10 @@ export function buildTimeline(
     if (beat.chapter) {
       if (beat.show.kind !== "card") throw new Error(`beat ${beat.id}: chapter is only allowed on a card beat`);
       seg.chapter = beat.chapter;
+      seg.track = { names: chapterNames, index: chapterNames.indexOf(beat.chapter) };
     }
+    if (beat.show.kind === "card" && beat.show.art === "cli") seg.seen = seenCommands(script, snapshots);
+    if (beat.show.kind === "card" && beat.show.points) seg.pointTimes = pointTimes(beat.show.points, n);
     if (beat.show.kind === "console") {
       const id = beat.show.capture;
       const path = captures[id];
@@ -98,5 +150,5 @@ export function buildTimeline(
   const outro = { start: at, end: at + OUTRO_SECONDS };
   const duration = outro.end;
   if (duration > MAX_SECONDS) throw new TooLongError(duration);
-  return { id: script.id, fps: video.fps, intro, segments, outro, duration };
+  return { id: script.id, fps: video.fps, ...(intro ? { intro } : {}), segments, outro, duration };
 }

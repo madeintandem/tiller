@@ -93,14 +93,14 @@ describe("fake mode", () => {
       execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", p], { env: ffEnv() }).toString(),
     );
 
-  it("makes silent audio at 150 wpm with ordered words and no fetch", async () => {
+  it("makes silent audio at 175 wpm with ordered words and no fetch", async () => {
     process.env.NARRATION_FAKE = "1";
     const f = vi.fn();
     vi.stubGlobal("fetch", f);
-    const text = Array.from({ length: 75 }, (_, i) => `w${i}`).join(" ");
+    const text = Array.from({ length: 70 }, (_, i) => `w${i}`).join(" ");
     const r = await narrate(text, cfg, tmp());
-    expect(Math.abs(probe(r.audioPath) - 30)).toBeLessThan(0.1);
-    expect(r.duration).toBeCloseTo(30, 5);
+    expect(Math.abs(probe(r.audioPath) - 24)).toBeLessThan(0.1);
+    expect(r.duration).toBeCloseTo(24, 5);
     expect(r.words.map((w) => w.text)).toEqual(text.split(" "));
     for (let i = 1; i < r.words.length; i++) expect(r.words[i].start).toBeGreaterThan(r.words[i - 1].start);
     expect(f).not.toHaveBeenCalled();

@@ -59,8 +59,11 @@ export function preflight(id: string, layout: Layout = layoutFor()): PreflightRe
     problems.push(`cannot check the tiller version: ${message(e)}`);
   }
 
-  const intro = introPath(layout, id);
-  if (!existsSync(intro)) problems.push(`no intro clip at ${intro} (record JC's live intro first)`);
+  // Only a script with an intro block needs the filmed clip.
+  if (read?.script.intro) {
+    const intro = introPath(layout, id);
+    if (!existsSync(intro)) problems.push(`no intro clip at ${intro} (record JC's live intro first)`);
+  }
   if (!existsSync(layout.music)) problems.push(`no music at ${layout.music}`);
 
   try {

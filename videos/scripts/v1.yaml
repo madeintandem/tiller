@@ -1,18 +1,18 @@
 id: v1
-title: Set Tiller up on a repo you already have
+title: What Tiller is, and how to set it up on a repo you already have
 description: >-
-  Install Tiller, add it to an existing codebase, and have your agent write down
-  what the code does today. You read those docs and confirm them, and that
-  confirmed baseline is what every later change gets measured against. First of
-  three videos that take one small feature from an empty plan to merged.
+  Tiller helps a team of people and coding agents ship software they'd put
+  their name on. This video covers what it is and what you install, then sets
+  it up on an existing codebase: the agent writes down what the code does
+  today, and you read those docs and confirm them. That confirmed baseline is
+  what every later change gets measured against. First of three videos that
+  take one small feature from an empty plan to merged.
+
+
+  Install and docs: https://madeintandem.github.io/tiller/
+
+  Source: https://github.com/madeintandem/tiller
 tags: [tiller, ai coding agents, claude code, brownfield, spec-driven development]
-intro:
-  # DRAFT for JC to say on camera in his own words. After filming, replace this
-  # with what he actually said; it is aligned to the clip for the captions.
-  transcript: >-
-    Hi, I'm JC from Made In Tandem. In this video I'm going to show you how to
-    set Tiller up on a codebase you already have. One thing before we start:
-    from here on it's my words, in my voice, performed by AI.
 captures:
   - id: doc-review
     mark: s1-readout
@@ -32,13 +32,116 @@ captures:
     path: /file/.tiller/design/as-is/orders-api.md#L1
     seconds: 12
 beats:
+  - id: hello
+    say: >-
+      Hi, I'm JC Grubbs, Founder and CEO at Made In Tandem. In this video
+      we're going to set Tiller up on a codebase you already have. But first,
+      in case this is the first you've heard of it, here's what Tiller is and
+      why you might want it.
+    show:
+      kind: card
+      kicker: Tiller how-to, video 1 of 3
+      heading: Set Tiller up on a repo you already have
+      art: logo
+  - id: why
+    chapter: What Tiller is
+    say: >-
+      If your team builds with coding agents, you've probably noticed that
+      writing the code isn't the slow part anymore. The slow part is
+      everything around it. What should the agent build next? Who has which
+      piece, when several people and several agents share a repo? And when an
+      agent tells you it's done, is it?
+    show:
+      kind: card
+      kicker: Why it exists
+      heading: Writing the code isn't the slow part anymore
+      art: around
+      points:
+        - text: What gets built next?
+          on: What should the agent
+        - text: Who has which piece?
+          on: Who has which piece
+        - text: Is it really done?
+          on: And when an agent
+  - id: what
+    say: >-
+      Tiller is our answer to those questions. It's an open source tool that
+      helps a team of people and coding agents ship good software quickly,
+      and trust what they shipped. It keeps the plan in your repo, as plain
+      files that people and agents both read. Every piece of work gets a
+      definition of done before anyone starts, and your own tests have to
+      pass before Tiller will believe it. And the decisions that matter stop
+      and wait for a person.
+    show:
+      kind: card
+      kicker: What Tiller is
+      heading: Your agent does the work. A person makes the calls.
+      body: An open source tool for teams that build with coding agents.
+      art: repo
+      points:
+        - text: The plan lives in your repo, in plain files
+          on: It keeps the plan
+        - text: Done is defined before the work starts
+          on: Every piece of work
+        - text: The decisions wait for a person
+          on: And the decisions
+  - id: parts
+    say: >-
+      What you install is small. Tiller is one binary with three parts.
+      There's a command line tool, which you and your agent both use. There
+      are skills, which teach your agent how to do each kind of work. And
+      there's a console, a web page served from your own machine, that shows
+      where everything stands. No account, no hosted service, and it works
+      with whichever coding agent you already use.
+    show:
+      kind: card
+      kicker: What you install
+      heading: One binary, three parts
+      art: parts
+      points:
+        - text: A command line tool
+          on: a command line tool
+        - text: Skills that teach your agent the work
+          on: are skills
+        - text: A console on your own machine
+          on: And there's a console
+  - id: breadth
+    say: >-
+      Here's all of it on one screen, every command and every skill. Please
+      don't try to read it. Most of this is there for when a real project
+      needs it. The highlighted ones are all we'll touch in this video.
+    show:
+      kind: card
+      kicker: The whole tool
+      heading: All of Tiller on one screen
+      art: cli
+  - id: series
+    say: >-
+      Here's the path we'll walk over three videos, with one small feature.
+      In this first one, I set Tiller up, the agent writes down what the code
+      does today, and I confirm it. In the second, I write one page about the
+      feature, the agent turns it into a plan, and I approve it. In the third,
+      the agent builds it and reviews it, and I merge. Every row ends on a
+      decision that's mine.
+    show:
+      kind: card
+      kicker: This series
+      heading: One small feature, from an idea to merged
+      art: process
+      points:
+        - text: Set up
+          on: In this first one
+        - text: Plan a feature
+          on: In the second
+        - text: Build it
+          on: In the third
   - id: install
     chapter: Install
     say: >-
-      On a Mac, Tiller comes from Homebrew; it's the one line on the screen.
-      Linux gets a short install script, linked from the README. Either way
-      you get a single binary. No account, no hosted service, no settings
-      file hiding in your home directory.
+      So, let's install it. On a Mac, Tiller comes from Homebrew; it's the
+      one line on the screen. Linux gets a short install script, linked from
+      the README. Either way you end up with that single binary, and no
+      settings file hiding in your home directory.
     show:
       kind: card
       kicker: Install
@@ -47,7 +150,7 @@ beats:
   - id: version
     say: >-
       Ask for its version to make sure it's on your path. This series was
-      recorded on version 0.22, so if yours is newer, some wording may differ.
+      recorded on version 0.22.
     show:
       kind: term
       stage: s1
@@ -72,7 +175,7 @@ beats:
       design. This one starts from code that already works, so before anybody
       plans a change, Tiller wants an honest account of what's there. It's
       like buying an old house; you get the inspection before you start
-      knocking out walls. The output lays out the rest of the setup, in order.
+      knocking out walls.
     show:
       kind: term
       stage: s1
@@ -84,8 +187,7 @@ beats:
       project, because it records who makes the decisions. Then I join, which
       records who I am in this checkout and wires up my agent. I'm using
       Claude Code, so it gets Tiller's skills and a pointer in its
-      instructions. Any other agent reaches the same skills through Tiller's
-      guide.
+      instructions.
     show:
       kind: term
       stage: s1
@@ -93,8 +195,10 @@ beats:
       to: s1-join
   - id: first-commit
     say: >-
-      One small edit first: I point the tests gate at the script this repo
-      already uses, so Tiller runs the same tests I do. Then I commit.
+      One small edit first. Tiller won't call work done until your own
+      checks pass, and it calls those checks gates. In Tiller's config file,
+      I uncomment the tests line and point it at the script this repo already
+      uses. Then I commit.
       Everything Tiller knows lives in the repo, in plain files, reviewed like
       any other change.
     show:
@@ -115,7 +219,8 @@ beats:
       body: As-is docs describe what the code does today.
   - id: ask-guide
     say: >-
-      I give the agent one instruction, the same one for the whole series:
+      I open my coding agent in the repo and give it one instruction, the
+      same one for the whole series:
       read the guide and do what it says. The guide looks at
       the project and ranks the next moves. Right now there's exactly one.
       Existing code needs a baseline a human has confirmed, and nothing else
@@ -146,13 +251,21 @@ beats:
       stage: s1
       from: s1-say-choice
       to: s1-say-move
-  - id: link-docs
+  - id: write-docs
     say: >-
       The agent splits that doc in two, one for the API and one for the order
-      store. Each new doc is linked to the source file it describes and
-      to the old doc it came from, so you can always trace where a sentence
-      started. Then the old doc goes. Git still has it, and Tiller records
-      exactly which version to recover.
+      store, and rewrites each against what the code really does.
+    show:
+      kind: term
+      stage: s1
+      from: s1-write-api
+      to: s1-write-store
+  - id: link-docs
+    say: >-
+      Each new doc gets linked to the source file it describes and to the old
+      doc it came from, so you can always trace where a sentence started.
+      Then the old doc goes; git still has it. The README gets pointed at the
+      new docs, and the agent commits.
     show:
       kind: term
       stage: s1
@@ -181,14 +294,23 @@ beats:
       kicker: Your call
       heading: Read it, then confirm it
       body: The agent stops. You decide.
+  - id: open-console
+    say: >-
+      So I read them. Tiller ships a console for that. One command starts it
+      on my own machine and opens it in the browser, and all it does is read
+      the files in the repo.
+    show:
+      kind: term
+      stage: s1
+      from: s1-serve
+      to: s1-serve
   - id: doc-review
     say: >-
-      So I read them. In the console, the API doc is still marked
-      unconfirmed, with the file it describes and where it came from. Then
-      the part I care about, the behavior to preserve: every route, every
-      status code, even a detail the old doc missed about sending a method
-      the API doesn't take. If anything here is wrong, fix it now; every
-      later change gets measured against this.
+      The API doc is still marked unconfirmed, with the file it describes and
+      where it came from. Then the part I care about, the behavior to
+      preserve: every route, every status code, even a detail the old doc
+      missed about sending a method the API doesn't take. If anything here is
+      wrong, fix it now; every later change gets measured against this.
     show:
       kind: console
       capture: doc-review
@@ -196,9 +318,8 @@ beats:
     say: >-
       Both docs match the code, so I confirm them. Confirming doesn't change a
       word of the prose. It records that I read these docs at this commit,
-      along with a fingerprint of each source file they describe. That
-      fingerprint earns its keep later: when the code changes under a
-      confirmed doc, Tiller notices. At the bottom: caught up, no work planned
+      along with a fingerprint of each source file they describe, so when the
+      code changes under a confirmed doc, Tiller notices. At the bottom: caught up, no work planned
       yet, and three ways work can come in. That's the next video.
     show:
       kind: term
@@ -208,8 +329,9 @@ beats:
   - id: confirm-commit
     say: >-
       I commit the confirmation, since it's just files, and check the status.
-      Zero epics, zero features, zero tasks. A clean start, on top of code
-      Tiller now understands.
+      Zero epics, zero features, zero tasks, which is how Tiller sizes work
+      from big to small. A clean start, on top of code Tiller now
+      understands.
     show:
       kind: term
       stage: s1
@@ -218,8 +340,8 @@ beats:
   - id: see-card
     chapter: See it
     say: >-
-      Tiller also ships a console. It runs on your machine and reads the same
-      files you just committed, nothing more.
+      Back to the console for the bigger picture. It's reading the same
+      files I just committed, nothing more.
     show:
       kind: card
       kicker: The console
@@ -244,7 +366,9 @@ beats:
       capture: doc-confirmed
   - id: outro
     say: >-
-      Next time we give it something to build. I write one page about a
-      feature, and the agent turns it into a plan I can approve.
+      That's Tiller set up on a real repo. To try it on yours, the install
+      line and the docs are linked in the description. Next time we give it
+      something to build. I write one page about a feature, and the agent
+      turns it into a plan I can approve.
     show:
       kind: outro

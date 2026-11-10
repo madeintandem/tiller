@@ -10,7 +10,10 @@ function onScreen(b: Beat, script: Script, layout: Layout): string[] {
   const show = b.show;
   switch (show.kind) {
     case "card":
-      return [`*Card: ${show.kicker} / ${show.heading}${show.body ? ` / ${show.body}` : ""}*`];
+      return [
+        `*Card: ${show.kicker} / ${show.heading}${show.body ? ` / ${show.body}` : ""}${show.art ? ` [graphic: ${show.art}]` : ""}*`,
+        ...(show.points ? ["", ...show.points.map((p) => `- ${p.text}${p.on ? ` (on "${p.on}")` : ""}`)] : []),
+      ];
     case "term": {
       let steps: Step[];
       try {
@@ -18,7 +21,11 @@ function onScreen(b: Beat, script: Script, layout: Layout): string[] {
       } catch (e) {
         return [`*Terminal (${show.stage}): ${(e as Error).message}*`];
       }
-      const lines = steps.map((s) => (s.kind === "cmd" ? `${s.actor.padEnd(5)} $ ${s.cmd}` : `${s.actor.padEnd(5)}   ${s.text}`));
+      const lines = steps.map((s) =>
+        s.kind === "cmd" ? `${s.actor.padEnd(5)} $ ${s.cmd}`
+        : s.kind === "edit" ? `${s.actor.padEnd(5)} ${s.new ? "writes" : "edits"} ${s.file} (-${s.removed?.length ?? 0} +${s.added?.length ?? 0})`
+        : `${s.actor.padEnd(5)}   ${s.text}`,
+      );
       return [`*Terminal (${show.stage}):*`, "", "```", ...lines, "```"];
     }
     case "console": {
@@ -47,7 +54,7 @@ export function previewMarkdown(s: Script, layout: Layout): string {
   if (problems.length) out.push("## Problems (this script cannot build)", "", ...problems.map((p) => `- ${p}`), "");
   if (warnings.length) out.push(...warnings.map((w) => `> Warning: ${w}`), "");
   out.push(s.description, "", `Tags: ${s.tags.join(", ")}`, "", `Estimated length: ${mss(estimateSeconds(s), Math.ceil)}`, "");
-  out.push("## Live intro (JC)", "", s.intro.transcript, "");
+  if (s.intro) out.push("## Live intro (JC)", "", s.intro.transcript, "");
   for (const b of s.beats) {
     if (b.chapter) out.push(`## ${b.chapter}`, "");
     out.push(`**${b.id}:** ${b.say}`, "", ...onScreen(b, s, layout), "");

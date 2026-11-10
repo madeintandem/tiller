@@ -47,6 +47,46 @@ describe("loadScript", () => {
     expect(() => loadScript(p)).toThrow(/b2/);
   });
 
+  it("loads a script with no intro block", () => {
+    const p = variant((s) => s.replace(/intro:\n  transcript: .*\n/, ""));
+    expect(loadScript(p).intro).toBeUndefined();
+  });
+
+  it("rejects an intro block with no transcript", () => {
+    const p = variant((s) => s.replace(/intro:\n  transcript: .*\n/, "intro: {}\n"));
+    expect(() => loadScript(p)).toThrow(/transcript/);
+  });
+
+  const POINTS_AT = "      body: Write down what you want.\n";
+  it("loads a card's points, as plain strings or with a cue", () => {
+    const p = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      points:\n        - Plain point\n        - text: Cued point\n          on: register the person\n`));
+    const show = loadScript(p).beats[0].show;
+    expect(show.kind === "card" && show.points).toEqual([{ text: "Plain point" }, { text: "Cued point", on: "register the person" }]);
+  });
+
+  it("rejects a point cued on words the beat never says", () => {
+    const p = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      points:\n        - text: Cued point\n          on: something unsaid\n`));
+    expect(() => loadScript(p)).toThrow(/b1.*something unsaid/);
+  });
+
+  it("rejects more than four points", () => {
+    const p = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      points: [a, b, c, d, e]\n`));
+    expect(() => loadScript(p)).toThrow(/b1.*1 to 4/);
+  });
+
+  it("loads a card's art and refuses one it does not know", () => {
+    const ok = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      art: cli\n`));
+    const show = loadScript(ok).beats[0].show;
+    expect(show.kind === "card" && show.art).toBe("cli");
+    const bad = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      art: fireworks\n`));
+    expect(() => loadScript(bad)).toThrow(/b1.*fireworks/);
+  });
+
+  it("refuses a stepped graphic without its three points", () => {
+    const p = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      art: process\n      points: [a, b]\n`));
+    expect(() => loadScript(p)).toThrow(/b1.*process.*3 points/);
+  });
+
   it("rejects duplicate beat ids", () => {
     const p = variant((s) => s.replace("id: b3", "id: b1"));
     expect(() => loadScript(p)).toThrow(ScriptError);

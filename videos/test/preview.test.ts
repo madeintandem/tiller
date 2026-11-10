@@ -19,6 +19,18 @@ describe("previewMarkdown", () => {
     expect(md).toMatch(/Console: `\/` at mark s1-end, 5 s/);
   });
 
+  it("lists a slide's points with their cues, and drops the live intro heading without an intro", () => {
+    const s = loadScript("test/fixtures/v-test.yaml");
+    delete s.intro;
+    const b1 = s.beats[0].show;
+    if (b1.kind === "card") b1.points = [{ text: "Plan first", on: "planning work" }, { text: "Then build" }];
+    const slide = previewMarkdown(s, layout);
+    expect(slide).toContain('- Plan first (on "planning work")');
+    expect(slide).toContain("- Then build\n");
+    expect(slide).not.toContain("Live intro");
+    expect(md).toContain("## Live intro (JC)");
+  });
+
   it("states the estimated length", () => {
     expect(md).toMatch(/Estimated length: \d:\d\d/);
   });

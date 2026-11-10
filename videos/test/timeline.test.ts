@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Step } from "../src/check/diff";
 import { spreadWords } from "../src/narration/words";
 import type { Beat, Script } from "../src/script/schema";
-import { buildTimeline, TooLongError, type Narration } from "../src/timeline/build";
+import { buildTimeline, openingEnd, pointTimes, seenCommands, TooLongError, type Narration } from "../src/timeline/build";
 import { toSrt } from "../src/timeline/captions";
 import { chapters } from "../src/timeline/chapters";
 
@@ -73,7 +73,7 @@ function narrationFor(bs: Beat[], secondsEach?: number): Record<string, Narratio
 
 const introOf = (duration: number) => ({ path: "intro.mp4", duration, words: spreadWords(INTRO, duration) });
 const intro = introOf(6);
-const build = (s = script(), n = narrationFor(s.beats), i = intro) =>
+const build = (s = script(), n = narrationFor(s.beats), i: ReturnType<typeof introOf> | undefined = intro) =>
   buildTimeline(s, i, n, { board: "captures/board.webm" }, { s1: steps });
 const withChapter = (id: string, chapter: string) => beats.map((b) => (b.id === id ? { ...b, chapter } : b));
 
@@ -95,6 +95,80 @@ function parseSrt(srt: string): Cue[] {
       return { start: t(a), end: t(b), lines };
     });
 }
+
+describe("a script with no intro clip", () => {
+  const noIntro = (): Script => {
+    const s = script();
+    delete s.intro;
+    return s;
+  };
+  const buildNoIntro = (s = noIntro()) => buildTimeline(s, undefined, narrationFor(s.beats), { board: "captures/board.webm" }, { s1: steps });
+
+  it("starts the first beat at zero and carries no intro", () => {
+    const tl = buildNoIntro();
+    expect(tl.intro).toBeUndefined();
+    expect(tl.segments[0].start).toBe(0);
+    expect(openingEnd(tl)).toBe(tl.segments[0].end);
+  });
+
+  it("captions only the beats", () => {
+    const tl = buildNoIntro();
+    const said = parseSrt(toSrt(tl)).flatMap((c) => c.lines).join(" ");
+    expect(norm(said)).toBe(norm(beats.map((b) => b.say).join(" ")));
+  });
+
+  it("keeps the intro clip's end as the opening when there is one", () => {
+    expect(openingEnd(build())).toBe(intro.duration);
+  });
+});
+
+describe("pointTimes", () => {
+  const say = "First we plan. Then we build it. Last, we review.";
+  const n: Narration = { audio: "a.mp3", duration: 10, words: spreadWords(say, 10) };
+  const startOf = (word: string) => n.words.find((w) => w.text.startsWith(word))!.start;
+
+  it("brings a cued point up as its phrase starts, ignoring case and punctuation", () => {
+    expect(pointTimes([{ text: "Build", on: "then we BUILD" }, { text: "Review", on: "last we" }], n)).toEqual([startOf("Then"), startOf("Last")]);
+  });
+
+  it("spreads uncued points evenly over the narration", () => {
+    const times = pointTimes([{ text: "a" }, { text: "b" }, { text: "c" }], n);
+    times.forEach((t, i) => expect(t).toBeCloseTo((10 * (i + 1)) / 4, 5));
+  });
+
+  it("never brings a point up before the one above it", () => {
+    const times = pointTimes([{ text: "Review", on: "Last" }, { text: "Plan", on: "First" }], n);
+    expect(times[1]).toBe(times[0]);
+  });
+
+  it("puts the times on a slide's segment", () => {
+    const s = script(beats.map((b, i) => (i === 0 && b.show.kind === "card" ? { ...b, show: { ...b.show, points: [{ text: "a" }] } } : b)));
+    expect(build(s).segments[0].pointTimes).toHaveLength(1);
+  });
+});
+
+describe("what a script puts on screen", () => {
+  it("collects the tiller commands its term beats run, a skill named to guide or readout, and serve for the console", () => {
+    const snap: Step[] = [
+      { id: "a", actor: "you", kind: "cmd", cmd: "tiller init --name x", out: [] },
+      { id: "b", actor: "agent", kind: "cmd", cmd: "tiller readout derive-baseline", out: [] },
+      { id: "c", actor: "agent", kind: "cmd", cmd: "git commit -m tiller", out: [] },
+      { id: "d", actor: "agent", kind: "say", text: "tiller sync next" },
+      { id: "e", actor: "you", kind: "cmd", cmd: "tiller status", out: [] },
+    ];
+    const s = script([{ id: "t", say: "Go.", show: { kind: "term", stage: "s1", from: "a", to: "d" } }]);
+    expect(seenCommands(s, { s1: snap })).toEqual(["init", "readout", "serve", "skill:derive-baseline"]);
+  });
+
+  it("gives the cli graphic's segment the commands, and a chapter card its place among the chapters", () => {
+    const s = script(beats.map((b) => (b.id === "wrap" && b.show.kind === "card" ? { ...b, show: { ...b.show, art: "cli" as const } } : b)));
+    const tl = build(s);
+    const wrap = tl.segments.find((x) => x.beatId === "wrap")!;
+    expect(wrap.seen).toContain("init");
+    const names = s.beats.flatMap((b) => (b.chapter ? [b.chapter] : []));
+    expect(wrap.track).toEqual({ names, index: names.indexOf("Wrap up") });
+  });
+});
 
 describe("buildTimeline", () => {
   it("adds intro, gaps, segments, and outro up to the duration", () => {
@@ -170,7 +244,7 @@ describe("toSrt", () => {
   it("never spans a beat boundary", () => {
     const tl = build();
     const cues = parseSrt(toSrt(tl));
-    const bounds = [tl.intro.duration, ...tl.segments.map((s) => s.end)];
+    const bounds = [tl.intro!.duration, ...tl.segments.map((s) => s.end)];
     for (const c of cues) {
       for (const b of bounds) expect(c.start < b - 0.001 && c.end > b + 0.001).toBe(false);
     }

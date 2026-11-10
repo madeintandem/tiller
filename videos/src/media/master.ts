@@ -14,7 +14,7 @@ const PROGRAM = { I: -14, TP: -1, LRA: 20 };
 const MUSIC = { I: VOICE_LUFS - MUSIC_UNDER_VOICE, TP: -2, LRA: 20 };
 const FADE = 1;
 
-/** Music gain: 0 everywhere except 0..introEnd and outroStart..end, with FADE-second ramps at each edge. */
+/** Music gain: 0 everywhere except 0..introEnd (the opening: the intro clip or the first beat) and outroStart..end, with FADE-second ramps at each edge. */
 export function musicGain(introEnd: number, outroStart: number, end: number): string {
   const ramp = (a: number, b: number) => `clip(min((t-${a})/${FADE},(${b}-t)/${FADE}),0,1)`;
   return `${ramp(0, introEnd)}+${ramp(outroStart, end)}`;

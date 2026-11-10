@@ -24,8 +24,11 @@ run s1-join you tiller join --as jc
 
 # The tests gate is the human's to wire, from the stack the repo already has.
 say s1-say-gate you "Point the tests gate at bin/test."
-sed -i.bak 's|^    # tests: { kind: command, run: "<test command>",  on: \[feature, task\] }|    tests: { kind: command, run: "bin/test", on: [feature, task] }|' .tiller/tiller.yml
-rm .tiller/tiller.yml.bak
+wire_tests_gate() {
+  sed -i.bak 's|^    # tests: { kind: command, run: "<test command>",  on: \[feature, task\] }|    tests: { kind: command, run: "bin/test", on: [feature, task] }|' .tiller/tiller.yml
+  rm .tiller/tiller.yml.bak
+}
+edit s1-edit-gate you .tiller/tiller.yml wire_tests_gate
 grep -q '^    tests: { kind: command, run: "bin/test"' .tiller/tiller.yml
 
 run s1-git-add you git add -A
@@ -40,12 +43,12 @@ run s1-readiness-expect-fail agent tiller check readiness
 say s1-say-choice agent "docs/orders.md covers the API and the order shape. Move it into Tiller, or keep it and point to it?"
 say s1-say-move you "Move it."
 
-put stage1/orders-api.md .tiller/design/as-is/orders-api.md
-put stage1/order-store.md .tiller/design/as-is/order-store.md
+edit s1-write-api agent .tiller/design/as-is/orders-api.md put stage1/orders-api.md .tiller/design/as-is/orders-api.md
+edit s1-write-store agent .tiller/design/as-is/order-store.md put stage1/order-store.md .tiller/design/as-is/order-store.md
 run s1-link-api agent tiller link design as-is/orders-api.md --describes src/server.js --from docs/orders.md
 run s1-link-store agent tiller link design as-is/order-store.md --describes src/orders.js --from docs/orders.md
 run s1-retire agent git rm -q docs/orders.md
-put stage1/README.md README.md
+edit s1-edit-readme agent README.md put stage1/README.md README.md
 run s1-baseline-add agent git add -- README.md .tiller/design .tiller/events
 run s1-baseline-commit agent git commit -m "derive-baseline: as-is orders API and order store"
 say s1-say-notes agent "Split docs/orders.md into two module docs, moved the source, repointed the README. No disagreements with the code."
@@ -53,6 +56,7 @@ run s1-readout agent tiller readout derive-baseline
 mark s1-readout
 
 # ---------- the developer confirms it ----------
+serve_step s1-serve you
 say s1-say-review you "Both docs match the code."
 run s1-approve-design you tiller approve design as-is/orders-api.md as-is/order-store.md
 run s1-confirm-add you git add .tiller

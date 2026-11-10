@@ -1,3 +1,8 @@
+// The pace assumed wherever there is no real audio to measure: the length estimate and fake
+// narration. The narration voice measured 183 wpm over the first real v1 build (906 words in
+// 296.6 s); this sits a little under it so both err long.
+export const WPM = 175;
+
 export type Word = { text: string; start: number; end: number };
 
 // Group per-character timings into words: whitespace separates words and is dropped.

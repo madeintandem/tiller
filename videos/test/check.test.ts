@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { diffSnapshots, type Step } from "../src/check/diff.js";
 import { normalize } from "../src/check/normalize.js";
 
+describe("edit steps", () => {
+  const edit = (added: string[]) => [{ id: "e", actor: "you" as const, kind: "edit" as const, file: "a.yml", removed: ["x"], added }];
+  it("match when the same lines changed, and differ when they did not", async () => {
+    const { diffSnapshots } = await import("../src/check/diff.js");
+    expect(diffSnapshots(edit(["y"]), edit(["y"]))).toEqual([]);
+    expect(diffSnapshots(edit(["y"]), edit(["z"]))).toEqual([expect.stringMatching(/e: the added lines of a\.yml changed/)]);
+  });
+});
+
 describe("normalize", () => {
   it("masks node IDs", () => {
     expect(normalize("Created feature orders/status-filter (F-jn1wyk) in **draft**.")).toBe(

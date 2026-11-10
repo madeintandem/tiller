@@ -33,7 +33,6 @@ const TermSmoke: React.FC<{ steps: Step[] }> = ({ steps }) => (
 const EMPTY_TIMELINE: Timeline = {
   id: "empty",
   fps: video.fps,
-  intro: { path: "intro.mp4", duration: 0, words: [] },
   segments: [],
   outro: { start: 0, end: 1 },
   duration: 1,

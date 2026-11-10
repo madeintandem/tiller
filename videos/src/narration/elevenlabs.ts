@@ -6,10 +6,9 @@ import { join } from "node:path";
 import type { Config } from "../config.js";
 import { ffEnv, probeDuration } from "../media/ffmpeg.js";
 import { cacheKey, readCache, readJson, writeCache, writeJson } from "./cache.js";
-import { charsToWords, spreadWords, type Word } from "./words.js";
+import { charsToWords, spreadWords, WPM, type Word } from "./words.js";
 
 const API = "https://api.elevenlabs.io";
-const WPM = 150;
 
 const isFake = () => process.env.NARRATION_FAKE === "1";
 

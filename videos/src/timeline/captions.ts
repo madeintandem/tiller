@@ -42,10 +42,10 @@ const stamp = (t: number): string => {
   return `${pad(Math.floor(ms / 3_600_000))}:${pad(Math.floor(ms / 60_000) % 60)}:${pad(Math.floor(ms / 1000) % 60)},${pad(ms % 1000, 3)}`;
 };
 
-// SubRip captions from the spoken words only: the intro transcript, then each beat's say.
+// SubRip captions from the spoken words only: the intro transcript (if any), then each beat's say.
 export function toSrt(timeline: Timeline): string {
   const cues = [
-    ...clipCues(timeline.intro.words, 0),
+    ...clipCues(timeline.intro?.words ?? [], 0),
     ...timeline.segments.flatMap((s) => clipCues(s.words, s.start)),
   ];
   return cues.map((c, i) => `${i + 1}\n${stamp(c.start)} --> ${stamp(c.end)}\n${c.lines.join("\n")}\n`).join("\n");

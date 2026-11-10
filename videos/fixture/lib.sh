@@ -70,6 +70,57 @@ put() {
   fi
 }
 
+# edit <step-id> <actor> <repo-path> <command...>: run a command that writes
+# one file, and record what it changed there (the lines removed and added, or
+# the whole file when it is new), so the video can show the edit itself and
+# not only the commit that follows it.
+edit() {
+  local id=$1 actor=$2 path=$3
+  shift 3
+  local before new=false
+  before=$(mktemp)
+  if [[ -f "$path" ]]; then cp "$path" "$before"; else new=true; fi
+  "$@"
+  [[ -f "$path" ]] || { echo "step $id: $path was not written" >&2; return 1; }
+  local delta
+  delta=$(diff "$before" "$path" || true)
+  rm -f "$before"
+  [[ -n "$delta" ]] || { echo "step $id: $path did not change" >&2; return 1; }
+  jq -nc --arg id "$id" --arg actor "$actor" --arg file "$path" --argjson new "$new" --arg delta "$delta" \
+    '($delta | split("\n")) as $d
+     | {id: $id, actor: $actor, kind: "edit", file: $file, new: $new,
+        removed: [$d[] | select(startswith("< ")) | .[2:]],
+        added: [$d[] | select(startswith("> ")) | .[2:]]}' >>"$SNAP"
+}
+
+# serve_step <step-id> <actor>: start the console as `tiller serve` would, wait
+# for its one line of output, and stop it. It is recorded as the plain command
+# a viewer types. The run itself skips the browser and takes a free port so it
+# cannot collide with a console already open on this machine; the recorded
+# line names the default port and a home-relative path instead, which is what
+# the viewer will see.
+serve_step() {
+  local id=$1 actor=$2 log pid port line="" i
+  log=$(mktemp)
+  port=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
+  "$TILLER" serve --open=false --port "$port" >"$log" 2>&1 &
+  pid=$!
+  for i in $(seq 1 50); do
+    line=$(grep -m1 'Tiller console serving' "$log" || true)
+    [[ -n "$line" ]] && break
+    sleep 0.1
+  done
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  rm -f "$log"
+  [[ -n "$line" ]] || { echo "step $id: tiller serve printed nothing" >&2; return 1; }
+  line=${line//"$(pwd -P)"/"~/$(basename "$PWD")"}
+  line=${line//"$PWD"/"~/$(basename "$PWD")"}
+  line=${line//":$port"/":4400"}
+  jq -nc --arg id "$id" --arg actor "$actor" --arg out "$line" \
+    '{id: $id, actor: $actor, kind: "cmd", cmd: "tiller serve", out: [$out], exit: 0}' >>"$SNAP"
+}
+
 # var <NAME> <value>: make a value available to put's placeholders.
 var() { FIXTURE_VARS+=("$1=$2"); }
 

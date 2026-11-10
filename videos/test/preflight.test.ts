@@ -101,6 +101,15 @@ describe("preflight", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("needs no intro clip for a script with no intro block", () => {
+    prepare();
+    const path = join(root, "scripts", "v-test.yaml");
+    writeFileSync(path, readFileSync(path, "utf8").replace(/intro:\n  transcript: .*\n/, ""));
+    approve("v-test", scriptHash(path), join(root, "approvals.json"));
+    rmSync(join(root, ".local", "media", "intros", "v-test.mov"));
+    expect(preflight("v-test", layout).ok).toBe(true);
+  });
+
   it("reports a missing script, a tiller version off the pin, and missing music", () => {
     prepare();
     rmSync(join(root, "scripts", "v-test.yaml"));

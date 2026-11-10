@@ -1,22 +1,22 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { readSnapshot, type Step } from "../check/diff.js";
+import { WPM } from "../narration/words.js";
 import type { Script } from "../script/schema.js";
 import { BEAT_GAP, INTRO_GAP, MAX_SECONDS, OUTRO_SECONDS, mss, termSteps } from "../timeline/build.js";
 import type { Layout } from "./layout.js";
 import { youtubeFieldProblems } from "./meta.js";
 
-const WPM = 150;
-// Until the intro is filmed and trimmed, assume this long.
+// Until a script's intro clip is filmed and trimmed, assume this long.
 const INTRO_ESTIMATE = 20;
 export const WARN_SECONDS = 7 * 60 + 15;
 
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
 
-/** A rough program length: the narration at 150 wpm, the intro estimate, the gaps, and the outro. */
+/** A rough program length: the narration at 175 wpm, the intro estimate (for a script with an intro clip), the gaps, and the outro. */
 export function estimateSeconds(script: Script): number {
   const narration = (script.beats.reduce((n, b) => n + words(b.say), 0) / WPM) * 60;
-  return narration + INTRO_ESTIMATE + INTRO_GAP + BEAT_GAP * (script.beats.length - 1) + OUTRO_SECONDS;
+  return narration + (script.intro ? INTRO_ESTIMATE + INTRO_GAP : 0) + BEAT_GAP * (script.beats.length - 1) + OUTRO_SECONDS;
 }
 
 /**

@@ -6,11 +6,17 @@ import { normalize } from "./normalize.js";
 export type Step = {
   id: string;
   actor: Actor;
-  kind: "cmd" | "say";
+  // "edit" is one file written or changed: `removed` and `added` are its changed lines (for a
+  // `new` file, every line is added).
+  kind: "cmd" | "say" | "edit";
   cmd?: string;
   out?: string[];
   text?: string;
   exit?: number;
+  file?: string;
+  new?: boolean;
+  removed?: string[];
+  added?: string[];
 };
 
 export function readSnapshot(stage: string, dir = `${VIDEOS_DIR}snapshots`): Step[] {
@@ -39,6 +45,12 @@ export function diffSnapshots(committed: Step[], fresh: Step[]): string[] {
     if (c.kind !== f.kind) out.push(`${c.id}: kind changed from ${c.kind} to ${f.kind}`);
     if (norm(c.cmd) !== norm(f.cmd)) out.push(`${c.id}: command changed\n  was: ${c.cmd}\n  now: ${f.cmd}`);
     if (norm(c.text) !== norm(f.text)) out.push(`${c.id}: text changed\n  was: ${c.text}\n  now: ${f.text}`);
+    if (c.file !== f.file) out.push(`${c.id}: file changed from ${c.file} to ${f.file}`);
+    for (const side of ["removed", "added"] as const) {
+      const was = (c[side] ?? []).map(normalize);
+      const now = (f[side] ?? []).map(normalize);
+      if (was.length !== now.length || was.some((l, i) => l !== now[i])) out.push(`${c.id}: the ${side} lines of ${c.file} changed`);
+    }
     if (c.exit !== f.exit) out.push(`${c.id}: exit changed from ${c.exit} to ${f.exit}`);
     const a = (c.out ?? []).map(normalize);
     const b = (f.out ?? []).map(normalize);

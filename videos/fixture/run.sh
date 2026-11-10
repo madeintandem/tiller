@@ -53,7 +53,7 @@ done
 
 # shape <file>: the parts of each step a script depends on, node IDs masked.
 shape() {
-  jq -c '{id, actor, kind, cmd, text} | with_entries(select(.value != null))
+  jq -c '{id, actor, kind, cmd, text, file} | with_entries(select(.value != null))
     | walk(if type == "string" then gsub("\\b[A-Z]{1,2}-[a-z0-9]{6}\\b"; "<ID>") else . end)' "$1"
 }
 

@@ -1,10 +1,22 @@
 export type Actor = "agent" | "you";
 
 export type Show =
-  | { kind: "card"; kicker: string; heading: string; body?: string }
+  // `points` turn a card into a slide: short lines that come up one at a time as the beat is narrated.
+  // `art` adds a graphic: beside the text (logo, repo) or under the heading (around, parts, cli, process).
+  // The graphics that reveal in steps (around, parts, process) take their labels and timing from `points`.
+  | { kind: "card"; kicker: string; heading: string; body?: string; points?: Point[]; art?: Art }
   | { kind: "term"; stage: string; from: string; to: string }
   | { kind: "console"; capture: string }
   | { kind: "outro" };
+
+export const ARTS = ["logo", "repo", "around", "parts", "cli", "process"] as const;
+export type Art = (typeof ARTS)[number];
+// How many points each stepped graphic needs: one per thing it reveals.
+export const ART_POINTS: Partial<Record<Art, number>> = { around: 3, parts: 3, process: 3 };
+
+// One line of a slide. `on` is a phrase from the beat's `say`; the point comes up as the
+// narration reaches it. Without `on` the points are spread evenly over the narration.
+export type Point = { text: string; on?: string };
 
 export type Beat = { id: string; chapter?: string; say: string; show: Show };
 
@@ -25,7 +37,9 @@ export type Script = {
   title: string;
   description: string;
   tags: string[];
-  intro: { transcript: string };
+  // A filmed to-camera intro clip, aligned to this transcript. Without it the video opens on
+  // its first beat, narrated like the rest, with the host's name as a lower third.
+  intro?: { transcript: string };
   captures: Capture[];
   beats: Beat[];
 };
@@ -47,6 +61,23 @@ const FORBIDDEN_SAY: [RegExp, string][] = [
   [/\b[EFTB]-[a-z0-9]{6}\b/, "a node ID"],
   [/\.tiller\//, "a path"],
 ];
+
+// More than this and a slide stops fitting the frame under its heading.
+export const MAX_POINTS = 4;
+
+// A word as it is matched against a cue phrase: lower case, letters and digits only.
+export const cueWord = (w: string): string => w.toLowerCase().replace(/[^a-z0-9]/g, "");
+export const spokenWords = (text: string): string[] => text.split(/\s+/).map(cueWord).filter(Boolean);
+
+/** Index of the first word of `phrase`'s first occurrence in `words` (already cue-normalized), or -1. */
+export function phraseIndex(words: string[], phrase: string): number {
+  const want = spokenWords(phrase);
+  if (want.length === 0) return -1;
+  for (let i = 0; i + want.length <= words.length; i++) {
+    if (want.every((w, j) => words[i + j] === w)) return i;
+  }
+  return -1;
+}
 
 type Obj = Record<string, unknown>;
 
@@ -72,6 +103,27 @@ function validateShow(raw: unknown, beatId: string): Show {
         heading: str(raw, "heading", "card show", beatId),
       };
       if (raw.body !== undefined) show.body = str(raw, "body", "card show", beatId);
+      if (raw.points !== undefined) {
+        const pts = raw.points;
+        if (!Array.isArray(pts) || pts.length === 0 || pts.length > MAX_POINTS) {
+          throw new ScriptError(`card points must be a list of 1 to ${MAX_POINTS} points`, beatId);
+        }
+        show.points = pts.map((p): Point => {
+          if (typeof p === "string" && p.trim() !== "") return { text: p };
+          if (!isObj(p)) throw new ScriptError("a card point must be a string or a mapping with text", beatId);
+          const point: Point = { text: str(p, "text", "card point", beatId) };
+          if (p.on !== undefined) point.on = str(p, "on", "card point", beatId);
+          return point;
+        });
+      }
+      if (raw.art !== undefined) {
+        if (!ARTS.includes(raw.art as Art)) throw new ScriptError(`unknown card art "${String(raw.art)}" (known: ${ARTS.join(", ")})`, beatId);
+        show.art = raw.art as Art;
+        const need = ART_POINTS[show.art];
+        if (need !== undefined && show.points?.length !== need) {
+          throw new ScriptError(`card art "${show.art}" needs exactly ${need} points`, beatId);
+        }
+      }
       return show;
     }
     case "term":
@@ -98,6 +150,13 @@ function validateBeat(raw: unknown, index: number): Beat {
     if (re.test(say)) throw new ScriptError(`say must not contain ${what} (matched ${re})`, id);
   }
   const beat: Beat = { id, say, show: validateShow(raw.show, id) };
+  if (beat.show.kind === "card") {
+    for (const p of beat.show.points ?? []) {
+      if (p.on !== undefined && phraseIndex(spokenWords(say), p.on) < 0) {
+        throw new ScriptError(`point "${p.text}" comes up on "${p.on}", which the say never says`, id);
+      }
+    }
+  }
   if (raw.chapter !== undefined) {
     beat.chapter = str(raw, "chapter", "beat", id);
     // The chapter lower third would cover a terminal's newest line or a capture; cards only.
@@ -148,8 +207,11 @@ export function validateScript(raw: unknown): Script {
   if (!Array.isArray(raw.tags) || raw.tags.some((t) => typeof t !== "string")) {
     throw new ScriptError("script tags must be a list of strings");
   }
-  if (!isObj(raw.intro)) throw new ScriptError("script needs intro.transcript");
-  const intro = { transcript: str(raw.intro, "transcript", "intro") };
+  let intro: Script["intro"];
+  if (raw.intro !== undefined) {
+    if (!isObj(raw.intro)) throw new ScriptError("script intro needs a transcript");
+    intro = { transcript: str(raw.intro, "transcript", "intro") };
+  }
   if (raw.captures !== undefined && !Array.isArray(raw.captures)) {
     throw new ScriptError("script captures must be a list");
   }
@@ -169,5 +231,5 @@ export function validateScript(raw: unknown): Script {
       throw new ScriptError(`console show references unknown capture "${b.show.capture}"`, b.id);
     }
   }
-  return { id, title, description, tags: raw.tags as string[], intro, captures, beats };
+  return { id, title, description, tags: raw.tags as string[], ...(intro ? { intro } : {}), captures, beats };
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { termState } from "../src/term/state";
+import { EDIT_MAX_LINES, editView, termState } from "../src/term/state";
+import { surfaceFor, termItems } from "../src/components/Terminal";
 import { readSnapshot } from "../src/check/diff";
 import type { Step } from "../src/check/diff";
 
@@ -8,6 +9,45 @@ const steps: Step[] = [
   { id: "a", actor: "you", kind: "cmd", cmd: "tiller status now", out: ["**ok** ++pass++", "!!bad!!"] },
   { id: "b", actor: "agent", kind: "cmd", cmd: "tiller status new", out: ["**ok** ++pass++", "!!bad!!"] },
 ];
+
+describe("the two surfaces", () => {
+  it("is the agent session whenever the agent takes part, and the shell otherwise", () => {
+    expect(surfaceFor(steps)).toBe("agent");
+    expect(surfaceFor([steps[0]])).toBe("shell");
+  });
+
+  it("groups a command with its output and keeps a message on its own", () => {
+    const mixed: Step[] = [{ id: "s", actor: "you", kind: "say", text: "Go." }, ...steps];
+    const items = termItems(termState(mixed, 0, 300, 300, fps));
+    expect(items.map((i) => i.kind)).toEqual(["say", "run", "run"]);
+    expect(items[1].kind === "run" && items[1].out).toEqual(["**ok** ++pass++", "!!bad!!"]);
+    // Only the step in progress is current.
+    expect(items.map((i) => i.current)).toEqual([false, false, true]);
+  });
+});
+
+describe("an edit step", () => {
+  const gate: Step = { id: "e", actor: "you", kind: "edit", file: "tiller.yml", new: false, removed: ["# tests"], added: ["tests: bin/test"] };
+  const doc: Step = { id: "w", actor: "agent", kind: "edit", file: "doc.md", new: true, removed: [], added: ["# Title", "", ...Array.from({ length: 9 }, (_, i) => `line ${i}`)] };
+
+  it("appears whole, as its file and changed lines", () => {
+    const [item] = termItems(termState([gate], 0, 90, 1, fps));
+    expect(item).toMatchObject({ kind: "edit", actor: "you", file: "tiller.yml", edit: { isNew: false, removed: ["# tests"], added: ["tests: bin/test"], more: 0 } });
+  });
+
+  it("shows a new file's first lines, skipping blanks, and counts the rest", () => {
+    const v = editView(doc);
+    expect(v.isNew).toBe(true);
+    expect(v.added).toEqual(["# Title", "line 0", "line 1", "line 2", "line 3", "line 4"]);
+    expect(v.added).toHaveLength(EDIT_MAX_LINES);
+    expect(v.more).toBe(5);
+  });
+
+  it("is in the committed stage 1 recording wherever a file changes off the command line", () => {
+    const edits = readSnapshot("s1").filter((s) => s.kind === "edit").map((s) => s.id);
+    expect(edits).toEqual(["s1-edit-gate", "s1-write-api", "s1-write-store", "s1-edit-readme"]);
+  });
+});
 
 describe("termState", () => {
   it("is empty at startFrame", () => {

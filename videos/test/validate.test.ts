@@ -47,21 +47,28 @@ describe("checkScript", () => {
     expect(problems[2]).toMatch(/chapter.*>/);
   });
 
-  it("estimates the length from the words at 150 wpm plus intro, gaps, and outro", () => {
+  it("estimates the length from the words at 175 wpm plus intro, gaps, and outro", () => {
     const s = base();
     const words = s.beats.reduce((n, b) => n + b.say.split(/\s+/).filter(Boolean).length, 0);
-    const expected = (words / 150) * 60 + 20 + 0.4 + 0.35 * (s.beats.length - 1) + 6;
+    const expected = (words / 175) * 60 + 20 + 0.4 + 0.35 * (s.beats.length - 1) + 6;
     expect(estimateSeconds(s)).toBeCloseTo(expected, 5);
+  });
+
+  it("leaves the intro estimate and its gap out for a script with no intro clip", () => {
+    const s = base();
+    const withIntro = estimateSeconds(s);
+    delete s.intro;
+    expect(estimateSeconds(s)).toBeCloseTo(withIntro - 20 - 0.4, 5);
   });
 
   it("warns past 7:15 and fails past 8:00", () => {
     const s = base();
     const pad = (n: number) => Array.from({ length: n }, () => "word").join(" ");
-    s.beats[0].say = pad(1000); // about 7:37 with the other beats
+    s.beats[0].say = pad(1150); // about 7:30 with the other beats
     const warned = checkScript(s, layout);
     expect(warned.problems).toEqual([]);
     expect(warned.warnings).toEqual([expect.stringMatching(/7:\d\d.*7:15/)]);
-    s.beats[0].say = pad(1200); // about 8:57
+    s.beats[0].say = pad(1300); // about 8:20
     expect(checkScript(s, layout).problems).toEqual([expect.stringMatching(/8:\d\d.*8:00/)]);
   });
 });

@@ -15,7 +15,7 @@ import { probeDuration } from "../media/ffmpeg.js";
 import { prepareIntro } from "../media/intro.js";
 import { master } from "../media/master.js";
 import { align, narrate } from "../narration/elevenlabs.js";
-import { buildTimeline, type Narration } from "../timeline/build.js";
+import { buildTimeline, openingEnd, type Narration } from "../timeline/build.js";
 import { toSrt } from "../timeline/captions.js";
 import { chapters as chapterLines } from "../timeline/chapters.js";
 
@@ -62,9 +62,11 @@ async function build(id: string): Promise<void> {
     return out;
   }, (c) => `${Object.keys(c).length} recorded`);
 
-  const intro = await phase("intro", async () => {
+  // A script without an intro block opens on its first beat; there is no clip to prepare.
+  const introTranscript = script.intro?.transcript;
+  const intro = introTranscript === undefined ? undefined : await phase("intro", async () => {
     const prepared = await prepareIntro(introPath(layout, id), join(dir, "intro.mp4"));
-    const words = await align(prepared.path, script.intro.transcript, cfg.elevenlabs.apiKey, layout.cache);
+    const words = await align(prepared.path, introTranscript, cfg.elevenlabs.apiKey, layout.cache);
     return { path: "intro.mp4", duration: prepared.duration, words };
   }, (i) => `${i.duration.toFixed(2)} s, ${i.words.length} words aligned`);
 
@@ -95,7 +97,7 @@ async function build(id: string): Promise<void> {
 
   mkdirSync(layout.out, { recursive: true });
   const mp4 = join(layout.out, `${id}.mp4`);
-  await phase("master", () => master(render, layout.music, timeline.outro, timeline.intro.duration, mp4), (p) => relative(layout.root, p));
+  await phase("master", () => master(render, layout.music, timeline.outro, openingEnd(timeline), mp4), (p) => relative(layout.root, p));
 
   await phase("outputs", async () => {
     writeFileSync(join(layout.out, `${id}.srt`), srt);
