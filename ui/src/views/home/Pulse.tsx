@@ -19,7 +19,8 @@ import RefLink from "../../components/RefLink";
 import SectionHead from "../../components/SectionHead";
 import StateDot from "../../components/StateDot";
 import { addrOf } from "../../lib/addr";
-import { burstPhrase, burstWhen } from "../../lib/bursts";
+import { burstWhen } from "../../lib/bursts";
+import { eventPhrase } from "../../lib/eventPhrase";
 import type { Burst } from "../../lib/bursts";
 import { ROW_CAP } from "../../lib/disclosure";
 import { has } from "../../lib/has";
@@ -67,14 +68,14 @@ function JustHappenedBody({ recap }: { recap: Recap }) {
   );
 }
 
-// One collapsed-burst row, History.tsx's own grammar (burstPhrase/burstWhen,
+// One collapsed-burst row, History.tsx's own grammar (eventPhrase/burstWhen,
 // lib/bursts.ts) reshaped into the pulse's .prow markup: a clock time, what
 // happened, who. No status dot: unlike the board streams below, a
 // RecapEntry carries no status field to paint honestly, and inventing one
 // from the event's verb would be exactly the narration ui-surface.md's
 // "mechanical, never narrative" rule forbids.
 //
-// BurstPhrase's own subject carries no
+// EventPhrase's own subject carries no
 // numeral ("tasks done", not "4 tasks done") - History renders the count in
 // its own separate .recap-burst-count column, which this row has no
 // equivalent of, so a multi-entry burst here read as a bare noun phrase with
@@ -84,7 +85,7 @@ function JustHappenedBody({ recap }: { recap: Recap }) {
 // about one node when the node's own name is right there).
 function JustHappenedRow({ burst }: { burst: Burst }) {
   const n = burst.entries.length;
-  const phrase = burstPhrase(burst.type, n);
+  const phrase = eventPhrase(burst.type, n);
   const lone = n === 1 ? burst.entries[0] : undefined;
   const subject = lone?.targets[0];
   return (

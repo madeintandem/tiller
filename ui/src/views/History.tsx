@@ -167,7 +167,8 @@ import type { Recap as RecapModel, RecapEntry, RecapGroup, RecapWindow, TargetRe
 import { recapPath, visitMarker } from "../api";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import type { Burst } from "../lib/bursts";
-import { burstPhrase, burstWhen, burstsOf, leafKey } from "../lib/bursts";
+import { burstWhen, burstsOf, leafKey } from "../lib/bursts";
+import { eventPhrase } from "../lib/eventPhrase";
 import { ROW_CAP } from "../lib/disclosure";
 import { has } from "../lib/has";
 import EmptyNote from "../components/EmptyNote";
@@ -722,7 +723,7 @@ function BurstRow({
 }) {
   const [open, setOpen] = useState(false);
   const n = burst.entries.length;
-  const phrase = burstPhrase(burst.type, n);
+  const phrase = eventPhrase(burst.type, n);
   const lone = n === 1 ? burst.entries[0] : undefined;
   const subject = lone?.targets[0];
   const when = burstWhen(burst.entries, formatTime);

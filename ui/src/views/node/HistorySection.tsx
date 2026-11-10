@@ -21,6 +21,7 @@
 import { useState } from "react";
 import type { HistoryEntry } from "../../api";
 import InstrSection from "../../components/InstrSection";
+import { eventPhrase } from "../../lib/eventPhrase";
 import { PersonName } from "../../people";
 
 const ROW_CAP = 8;
@@ -52,7 +53,7 @@ export default function HistorySection({
                 are mono's whole list. It keeps its column by tabular figures
                 (node.css) instead. */}
             <span className="muted history-at">{e.at}</span>
-            <span className="history-type">{e.type}</span>
+            <span className="history-type">{eventPhrase(e.type, 1).verb}</span>
             {e.contributor !== "" && <span className="muted"><PersonName id={e.contributor} /></span>}
             {e.command !== "" && <code className="history-command mono muted">{e.command}</code>}
           </li>
