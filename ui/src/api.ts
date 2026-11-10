@@ -881,6 +881,14 @@ export interface NodeStart {
   then?: string;
 }
 
+// The ?history=branch answer: a node's history with an observed task's
+// branch events merged in, and nothing else of the page, which the
+// ?history=integration read already carries.
+export interface NodeBranchHistory {
+  history: HistoryEntry[];
+  execution_history_error?: string;
+}
+
 export interface NodePage {
   node: NodeView;
   ref: string;
@@ -896,7 +904,7 @@ export interface NodePage {
   execution?: ExecutionRecord;
   execution_history_error?: string;
   // Set on a ?history=integration answer for an observed task: history holds
-  // integration events only, and the plain node path merges the branch's.
+  // integration events only, and the ?history=branch read merges the branch's.
   history_pending?: boolean;
   active_basis?: ActiveBasisView;
   drift?: DriftBadgeView[];
@@ -1759,9 +1767,19 @@ export const nextPath = "/api/next";
 // for the page without an observed task's branch history, which answers with
 // history_pending set; the plain path carries the merged history.
 export function nodePagePath(noun: string, addr: string, history?: "integration"): string {
-  const encoded = addr.split("/").map(encodeURIComponent).join("/");
   const query = history === undefined ? "" : `?history=${history}`;
-  return `/api/node/${encodeURIComponent(noun)}/${encoded}${query}`;
+  return nodeAddress(noun, addr) + query;
+}
+
+// nodeBranchHistoryPath addresses the node page's second read, the merged
+// history alone (NodeBranchHistory), for a page that said history_pending.
+export function nodeBranchHistoryPath(noun: string, addr: string): string {
+  return `${nodeAddress(noun, addr)}?history=branch`;
+}
+
+function nodeAddress(noun: string, addr: string): string {
+  const encoded = addr.split("/").map(encodeURIComponent).join("/");
+  return `/api/node/${encodeURIComponent(noun)}/${encoded}`;
 }
 
 // prosePath addresses one exact line in a repo-relative Markdown file. The

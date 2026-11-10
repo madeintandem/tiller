@@ -52,7 +52,7 @@ func TestHistoryEntriesCarryOutcomeOnTheWire(t *testing.T) {
 	linked := outcomeEvent("link.task", nil, nil)
 	linked.Targets = []string{"T-333333"}
 	linked.At = started.At.Add(time.Minute)
-	got := historyOf([]events.Event{started, linked}, "T-333333")
+	got := HistoryOf([]events.Event{started, linked}, "T-333333")
 	require.Len(t, got, 2)
 	require.Equal(t, "", got[0].Outcome)
 	require.Equal(t, "in_progress", got[1].Outcome)

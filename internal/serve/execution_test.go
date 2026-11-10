@@ -1,14 +1,17 @@
 package serve_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -253,6 +256,75 @@ func TestNodeIntegrationHistorySkipsSourceRead(t *testing.T) {
 	var epic nodePage
 	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/epic/E-aaaaaa?history=integration", &epic))
 	require.False(t, epic.HistoryPending, "a node with no observation has nothing pending")
+}
+
+// TestNodeBranchHistoryAnswersHistoryOnly pins the node page's second read:
+// ?history=branch answers an observed task's merged history and nothing else,
+// so it never pays for the rest of the page (relationships, workflow, drift,
+// links). The git shim tells the two reads apart: only the whole page asks
+// for the origin URL to build its links.
+func TestNodeBranchHistoryAnswersHistoryOnly(t *testing.T) {
+	srv, root, worktree := observationFixture(t)
+	observationFile(t, root, ".tiller/events/2026/10/06/EV-eeeeee.yml", "id: EV-eeeeee\ntype: claim.task\nat: 2026-10-06T11:00:00Z\ncontributor: jc\ncommand: tiller claim task T-cccccc\ntargets: [T-cccccc]\n")
+	observationGit(t, root, "add", ".")
+	observationGit(t, root, "commit", "-qm", "integration claim")
+	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\ntitle: One\nstatus: in_review\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
+	observationFile(t, worktree, ".tiller/events/2026/10/06/EV-dddddd.yml", "id: EV-dddddd\ntype: start.task\nat: 2026-10-06T12:00:00Z\ncontributor: jc\ncommand: tiller start task T-cccccc\ntargets: [T-cccccc]\n")
+	observationGit(t, worktree, "add", ".")
+	observationGit(t, worktree, "commit", "-qm", "submitted execution")
+	observationGit(t, root, "worktree", "remove", worktree)
+
+	realGit, err := exec.LookPath("git")
+	require.NoError(t, err)
+	shim := t.TempDir()
+	calls := filepath.Join(t.TempDir(), "calls")
+	script := "#!/bin/sh\necho \"$*\" >> \"" + calls + "\"\nexec \"" + realGit + "\" \"$@\"\n"
+	require.NoError(t, os.WriteFile(filepath.Join(shim, "git"), []byte(script), 0o755))
+	t.Setenv("PATH", shim+string(os.PathListSeparator)+os.Getenv("PATH"))
+	gitCalls := func() string {
+		data, err := os.ReadFile(calls)
+		require.NoError(t, err)
+		require.NoError(t, os.Remove(calls))
+		return string(data)
+	}
+
+	var answer map[string]json.RawMessage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc?history=branch", &answer))
+	require.Equal(t, []string{"history"}, slices.Sorted(maps.Keys(answer)), "the answer is the history alone")
+	var history []views.HistoryEntry
+	require.NoError(t, json.Unmarshal(answer["history"], &history))
+	require.Equal(t, []views.HistoryEntry{
+		{At: "2026-10-06T12:00:00Z", Type: "start.task", Contributor: "jc", Command: "tiller start task T-cccccc"},
+		{At: "2026-10-06T11:00:00Z", Type: "claim.task", Contributor: "jc", Command: "tiller claim task T-cccccc"},
+	}, history, "branch and integration events merge, newest first")
+	branchCalls := gitCalls()
+	require.Contains(t, branchCalls, "cat-file --batch")
+	require.NotContains(t, branchCalls, "remote get-url origin", "the history read builds none of the page")
+
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc", nil))
+	require.Contains(t, gitCalls(), "remote get-url origin", "the whole page does build its links")
+
+	var epic map[string]json.RawMessage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/epic/E-aaaaaa?history=branch", &epic))
+	require.Equal(t, []string{"history"}, slices.Sorted(maps.Keys(epic)), "a node with no observation answers its integration history")
+	require.Equal(t, http.StatusNotFound, getJSON(t, srv, "/api/node/task/T-zzzzzz?history=branch", nil))
+}
+
+// TestNodeBranchHistoryNamesASourceFailure pins the failure arm of the
+// history-only read: an unreadable branch event keeps the integration rows
+// and names the failure, the same execution_history_error the page carries.
+func TestNodeBranchHistoryNamesASourceFailure(t *testing.T) {
+	srv, _, worktree := observationFixture(t)
+	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\nstatus: in_progress\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
+	observationFile(t, worktree, ".tiller/events/2026/10/06/EV-dddddd.yml", "broken: [")
+	var answer struct {
+		History      []views.HistoryEntry `json:"history"`
+		HistoryError string               `json:"execution_history_error"`
+	}
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc?history=branch", &answer))
+	require.Contains(t, answer.HistoryError, "EV-dddddd")
+	require.NotNil(t, answer.History, "history stays an array")
+	require.Empty(t, answer.History)
 }
 
 // TestNodeReadsIntegrationEventsOnce pins one read of the integration event

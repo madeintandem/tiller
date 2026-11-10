@@ -370,7 +370,7 @@ func NodePageOf(tree *store.Tree, evs []events.Event, n store.Node, index *relat
 		Prose:         prose,
 		Relationships: relationshipsOf(tree, order, n, index),
 		Backlinks:     BacklinksOf(index, n.NodeID()),
-		History:       historyOf(evs, n.NodeID()),
+		History:       HistoryOf(evs, n.NodeID()),
 	}
 	amendments := amendmentViewsOf(tree, index.Amendments)
 	page.Relationships.Amendments = amendments.relations[n.NodeID()]
@@ -391,10 +391,10 @@ func NodePageOf(tree *store.Tree, evs []events.Event, n store.Node, index *relat
 	return page
 }
 
-// historyOf filters the stream to the events targeting the node and orders
+// HistoryOf filters the stream to the events targeting the node and orders
 // them newest first, the timeline read a human scans top-down. The result is
 // always an array, empty rather than nil.
-func historyOf(evs []events.Event, nodeID string) []HistoryEntry {
+func HistoryOf(evs []events.Event, nodeID string) []HistoryEntry {
 	var mine []events.Event
 	for _, e := range evs {
 		if slices.Contains(e.Targets, nodeID) {

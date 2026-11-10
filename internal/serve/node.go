@@ -49,6 +49,9 @@ func NodeHandler(root string) http.HandlerFunc {
 			return nil, &httpError{http.StatusNotFound, err.Error()}
 		}
 		snapshot := executionSnapshot(r)
+		if r.URL.Query().Get("history") == "branch" {
+			return branchHistoryOf(r.Context(), snapshot, n.NodeID()), nil
+		}
 		baseNode, err := resolve.NewResolver(snapshot.Base).Resolve(resolve.Ref{Noun: noun, Raw: addr})
 		if err != nil {
 			return nil, err
@@ -63,7 +66,8 @@ func NodeHandler(root string) http.HandlerFunc {
 		}
 		// ?history=integration answers without the observed source's events,
 		// which on a committed branch can take far longer than the rest of
-		// the page; the console asks for the merged history separately.
+		// the page; the console asks for the merged history separately, with
+		// ?history=branch above.
 		_, observed := snapshot.Observations[n.NodeID()]
 		historyPending := observed && r.URL.Query().Get("history") == "integration"
 		executionHistoryError := ""
