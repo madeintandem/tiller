@@ -39,11 +39,14 @@ export default defineConfig({
       // the topbar sticking to the viewport.
       // node-pin.css: node-pin.css.test.ts pins the pinned rail's sticky
       // offset and background. explore.css joins for its own pins.
+      // explore-ledgers.css: explore-ledgers.css.test.ts pins the ledgers'
+      // fixed header and scrolling panel.
       include: [
         /components\/board\.css/,
         /components\/node-pin\.css/,
         /views\/explore\.css/,
         /views\/explore-nav\.css/,
+        /views\/explore-ledgers\.css/,
         /src\/styles\.css/,
         /styles\/tokens\.css/,
         /views\/build\.css/,

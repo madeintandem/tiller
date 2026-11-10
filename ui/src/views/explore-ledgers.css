@@ -119,3 +119,38 @@
   white-space: nowrap;
   color: var(--ink-2);
 }
+
+/* ---------- The ledgers' fixed header ----------
+   On the side-by-side split the title, count line, and status rail stay put
+   and only the tab panel scrolls, so no row ever passes under a pinned
+   element. (A sticky rail over the scrolling list left Safari showing a
+   one-pixel line of rows above it.) The pane's right and bottom padding move
+   onto the panel so its scrollbar sits at the pane's edge and the last row
+   keeps its breathing room. Below 48rem the split stacks and the pane flows
+   with the page (explore.css), so these rules stay out of that layout. */
+@media (width > 48rem) {
+  .explore-detail.explore-ledger {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
+  .explore-ledger > * {
+    flex: none;
+    margin-right: 40px;
+  }
+
+  .explore-ledger > .mode-nav {
+    margin-bottom: 0;
+  }
+
+  .explore-ledger > [role="tabpanel"] {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin-right: 0;
+    padding: 1rem 40px 40px 0;
+  }
+}

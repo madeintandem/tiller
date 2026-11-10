@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ListResult } from "../../api";
 import QuestionsPane from "./QuestionsPane";
-import { stubScrolledPast } from "../../test/stubScrolledPast";
 
 vi.mock("../../hooks", async (orig) => {
   const actual = await orig<typeof import("../../hooks")>();
@@ -68,30 +67,16 @@ afterEach(() => {
 });
 
 describe("QuestionsPane", () => {
-  it("pins its tab rail and shows a one-line header once the page header scrolls away", () => {
-    const restore = stubScrolledPast(true);
-    try {
-      serve([open, answered]);
-      const { container } = renderPane();
-      expect(container.querySelector(".node-pin [role=tablist]")).not.toBeNull();
-      const compact = container.querySelector(".node-pin .node-compact");
-      expect(compact?.textContent).toBe("Questions1 open");
-      expect(compact?.getAttribute("aria-hidden")).toBe("true");
-    } finally {
-      restore();
-    }
-  });
-
-  it("shows no one-line header while the page header is in view", () => {
-    const restore = stubScrolledPast(false);
-    try {
-      serve([open, answered]);
-      const { container } = renderPane();
-      expect(container.querySelector(".node-pin [role=tablist]")).not.toBeNull();
-      expect(container.querySelector(".node-compact")).toBeNull();
-    } finally {
-      restore();
-    }
+  it("keeps its header and status tabs above the list, which scrolls on its own", () => {
+    serve([open, answered]);
+    const { container } = renderPane();
+    const pane = container.querySelector(".explore-detail");
+    expect(pane?.classList.contains("explore-ledger")).toBe(true);
+    // The rail and the panel are the pane's own children, so the stylesheet
+    // can hold the rail still and scroll only the panel.
+    expect(screen.getByRole("tablist").parentElement).toBe(pane);
+    expect(screen.getByRole("tabpanel").parentElement).toBe(pane);
+    expect(container.querySelector(".node-pin")).toBeNull();
   });
 
   it("shows All, Open, Answered, Cancelled tabs even with no cancelled row", () => {
