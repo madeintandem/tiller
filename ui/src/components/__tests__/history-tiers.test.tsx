@@ -81,7 +81,8 @@ describe("History tiers", () => {
       name: "4 bookkeeping changes (linked, reordered, retitled)",
     });
     expect(run).toHaveAttribute("aria-expanded", "false");
-    expect(screen.getByText(/approved/)).toBeInTheDocument();
+    // The Kind select also lists "approved", so match the row's bold verb.
+    expect(screen.getByText(/approved/, { selector: "b" })).toBeInTheDocument();
     expect(screen.queryByText(/features? linked/)).not.toBeInTheDocument();
 
     fireEvent.click(run);

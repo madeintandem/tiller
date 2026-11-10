@@ -12,8 +12,14 @@ import { formatWhen } from "../../lib/time";
 // "reading this view marks you caught up" under a 24h view that just did no
 // such thing, so this states the truth for whichever window is actually
 // mounted rather than reciting the sentence written for the default one.
-export function histSubFor(active: RecapWindow, recap: RecapModel): string {
-  const count = `${recap.total} ${recap.total === 1 ? "event" : "events"}`;
+//
+// With a filter on, shown is the filtered count and the head reads "120 of
+// 1000 events"; total stays the unfiltered count.
+export function histSubFor(active: RecapWindow, recap: RecapModel, shown?: number): string {
+  const count =
+    shown !== undefined
+      ? `${shown} of ${recap.total} events`
+      : `${recap.total} ${recap.total === 1 ? "event" : "events"}`;
   if (active === "visit") {
     // since is empty on a first visit, which recaps nothing; a blank "since"
     // would read as a claim about an instant nobody has.

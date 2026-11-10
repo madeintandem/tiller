@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import type { RecapEntry, TargetRef } from "../../api";
 import type { Burst } from "../../lib/bursts";
 import { burstWhen, leafKey } from "../../lib/bursts";
@@ -8,6 +9,7 @@ import { has } from "../../lib/has";
 import { formatWhen } from "../../lib/time";
 import RefLink from "../../components/RefLink";
 import { PersonName } from "../../people";
+import { historyPath, viewOf } from "./controls";
 
 // One row per burst: the mock's `.hrow` anatomy (mono time, a dot, the bold
 // "what", a trailing mono ref where the burst has a single leaf key to show,
@@ -40,6 +42,7 @@ export default function BurstRow({
   origin?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [params] = useSearchParams();
   const n = burst.entries.length;
   const phrase = eventPhrase(burst.type, n);
   const lone = n === 1 ? burst.entries[0] : undefined;
@@ -53,9 +56,14 @@ export default function BurstRow({
   // entry in the run asked (the row's own bold "what" already printed the
   // count once, to its left), and kept whenever only SOME did, because then
   // it says something the "what" phrase did not.
+  // "asked you" is a link that filters the page to asks, keeping every other
+  // parameter (historyPath composes them).
+  const askTo = historyPath({ ...viewOf(params), kind: "asked" });
   const askClause = hasAsk && (
     <span className="recap-asks-count">
-      {burst.asks === n ? "asked you" : `${burst.asks} asked you`}
+      <Link to={askTo} replace>
+        {burst.asks === n ? "asked you" : `${burst.asks} asked you`}
+      </Link>
     </span>
   );
 

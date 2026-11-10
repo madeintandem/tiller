@@ -118,7 +118,7 @@
 // window param's own rule applied a second time - a grouping a human can
 // switch to is a grouping they can link to - and the two params compose:
 // switching one preserves the other, which is the one job historyPath below
-// exists to do so WindowLink and GroupLink can never drift apart on it.
+// exists to do so WindowLink and the group seg can never drift apart on it.
 //
 // Flat mode is a SECOND COMPOSITION over the same per-group burst output, not
 // a new fold rule: burstsOf (lib/bursts.ts) still runs once per served
@@ -162,7 +162,7 @@
 // either.
 
 import { Link, useSearchParams } from "react-router-dom";
-import type { Recap as RecapModel, RecapGroup, RecapWindow } from "../api";
+import type { Recap as RecapModel, RecapGroup } from "../api";
 import { recapPath, visitMarker } from "../api";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import type { Burst } from "../lib/bursts";
@@ -171,204 +171,72 @@ import EmptyNote from "../components/EmptyNote";
 import { PersonName } from "../people";
 import { TieredBursts } from "./history/BookkeepingRow";
 import BurstRow from "./history/BurstRow";
+import {
+  HistoryControls,
+  WINDOWS,
+  WindowLink,
+  clearedFilters,
+  historyPath,
+  viewOf,
+  type HistoryView,
+} from "./history/controls";
 import { emptyTextFor, histSubFor } from "./history/copy";
 import { burstAt, dayGroupsOf } from "./history/days";
+import { filterRecap, historyFacets, type HistoryFilter } from "./history/filter";
 import RecapGroupBlock from "./history/RecapGroupBlock";
 import "./history.css";
 
-const WINDOWS: RecapWindow[] = ["visit", "24h", "7d"];
-
-// The grouping mode, client-only (no server param exists, or needs to: the
-// payload stays grouped by (epic, stream) either way, and which render mode
-// reads it is entirely this file's own decision - the bound, "no server
-// changes"). Epic leads the array as the default, the same position "visit"
-// holds in WINDOWS above.
-type GroupMode = "epic" | "time";
-const GROUP_MODES: GroupMode[] = ["epic", "time"];
-
-// The detail level: milestones by default, everything on request.
-type ShowMode = "milestones" | "all";
-const SHOWS: ShowMode[] = ["milestones", "all"];
-
-// The one place window and group compose into an address, so the two seg
-// controls (WindowLink, GroupLink) and the empty state's own escape hatch
-// can never build a URL that drops the param neither of them owns. Each
-// param omits itself at its own default value, so the canonical /history
-// (both defaults) stays exactly as clean as it was before this task.
-function historyPath(window: RecapWindow, group: GroupMode, showAll: boolean): string {
-  const params = new URLSearchParams();
-  if (window !== "visit") {
-    params.set("window", window);
-  }
-  if (group !== "epic") {
-    params.set("group", group);
-  }
-  // Milestones is the default, so only Everything writes a parameter.
-  if (showAll) {
-    params.set("show", "all");
-  }
-  const search = params.toString();
-  return search === "" ? "/history" : `/history?${search}`;
-}
+// TASK 23 (this pass): three client-side filters, Actor, Kind, and Epic, over
+// the recap already fetched (history/filter.ts). They ride ?actor=, ?kind=,
+// ?epic= like the other params, and the order of operations is fixed: the
+// filter runs over the fetched recap, then the milestone tier folds the
+// bookkeeping left in what remains, so a filter works in both Milestones and
+// Everything. A value the fetched recap does not hold is ignored (the select
+// shows its no-filter option) rather than blanking the page; the controls
+// themselves live in history/controls.tsx.
 
 export default function History() {
   useDocumentTitle(titleOf("History"));
   const [params] = useSearchParams();
-  const raw = params.get("window");
-  // Anything that is not a window reads as visit, so a stale or hand-mangled
-  // link degrades to the default digest rather than a blank page (Explore.tsx
-  // degrades its mode the same way).
-  const active: RecapWindow = raw === "24h" || raw === "7d" ? raw : "visit";
-  // Same degrade-to-default rule, one param over: garbage or an old link
-  // reads as epic, never a blank page.
-  const rawGroup = params.get("group");
-  const groupMode: GroupMode = rawGroup === "time" ? "time" : "epic";
-  // Milestones by default (ruling R3); ?show=all is Everything, and any other
-  // value degrades to the default like the two params above.
-  const showAll = params.get("show") === "all";
+  const view = viewOf(params);
   // Only the visit window advances the horizon, and only when marked as the
   // console's own visit; a fixed window is a free read either way.
-  const { data, error, loading } = useFetch<RecapModel>(recapPath(active), {
-    headers: active === "visit" ? visitMarker : undefined,
+  const { data, error, loading } = useFetch<RecapModel>(recapPath(view.window), {
+    headers: view.window === "visit" ? visitMarker : undefined,
   });
+  const facets = data !== null ? historyFacets(data) : null;
+  // Only a value this recap holds filters it; anything else is ignored.
+  const valid: HistoryFilter = {
+    actor: facets?.actors.includes(view.actor ?? "") ? view.actor : undefined,
+    kind: facets?.kinds.includes(view.kind ?? "") ? view.kind : undefined,
+    epic: facets?.epics.some((e) => e.id === view.epic) ? view.epic : undefined,
+  };
 
   return (
     <section className="history-page">
       <div className="history-page-head">
         <h1>History</h1>
-        {/* Two segs, not one: grouping is the structural decision (which
-            reading order the page runs in), window is the range decision
-            (how far back it reads), and they compose independently - task-
-            21-brief.md's own settled shape. Grouping leads because it is the
-            bigger structural choice; window follows, unchanged from before
-            this task. */}
-        <div className="hist-controls">
-          <div className="seg" role="group" aria-label="History grouping">
-            {GROUP_MODES.map((g) => (
-              <GroupLink key={g} target={g} current={groupMode} window={active} showAll={showAll} />
-            ))}
-          </div>
-          {/* The segmented-control idiom the topbar's theme toggle already
-              uses (ThemeToggle.tsx, styles.css's .segmented-control): a bordered,
-              overflow-hidden strip with a recessed active cell. This one
-              stays real <Link>s rather than buttons, because the window
-              lives in the URL - a window a human can switch to is a window
-              they can link to - and each switch replaces rather than pushes
-              (NodeDetail.tsx's tab switch and Build.tsx's panel state follow
-              the same replace-not-push house rule): stepping visit -> 24h ->
-              7d should not stack three history entries a reader has to walk
-              back through to leave the page. */}
-          <div className="seg" role="group" aria-label="History window">
-            {WINDOWS.map((w) => (
-              <WindowLink key={w} target={w} current={active} groupMode={groupMode} showAll={showAll} />
-            ))}
-          </div>
-          {/* The detail seg: milestones by default, everything on request.
-              Real links like the other two, so the choice rides the URL and
-              survives a window or grouping change (historyPath). */}
-          <div className="seg" role="group" aria-label="History detail">
-            {SHOWS.map((s) => (
-              <ShowLink key={s} target={s} window={active} groupMode={groupMode} showAll={showAll} />
-            ))}
-          </div>
-        </div>
+        <HistoryControls view={view} facets={facets} />
       </div>
       {error !== null && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading history...</p>}
-      {data !== null && <RecapBody recap={data} window={active} groupMode={groupMode} showAll={showAll} />}
+      {data !== null && <RecapBody recap={data} filter={valid} view={view} />}
     </section>
   );
 }
 
-function WindowLink({
-  target,
-  current,
-  groupMode,
-  showAll,
-}: {
-  target: RecapWindow;
-  current: RecapWindow;
-  groupMode: GroupMode;
-  showAll: boolean;
-}) {
-  const active = target === current;
-  return (
-    <Link
-      to={historyPath(target, groupMode, showAll)}
-      className={active ? "active" : undefined}
-      aria-current={active ? "page" : undefined}
-      replace
-    >
-      {target}
-    </Link>
-  );
-}
-
-// The grouping toggle's own seg, beside the window one. Labeled in the same
-// lowercase-mono register the window seg's own values already read in
-// ("visit", "24h", "7d") rather than a title-cased "Epic / Time" - the .seg
-// CSS uppercases every label anyway (text-transform: uppercase), so the
-// casing here is about what a screen reader announces and what a future
-// diff reads, not what paints.
-function GroupLink({
-  target,
-  current,
-  window: activeWindow,
-  showAll,
-}: {
-  target: GroupMode;
-  current: GroupMode;
-  window: RecapWindow;
-  showAll: boolean;
-}) {
-  const active = target === current;
-  return (
-    <Link
-      to={historyPath(activeWindow, target, showAll)}
-      className={active ? "active" : undefined}
-      aria-current={active ? "page" : undefined}
-      replace
-    >
-      {target === "epic" ? "by epic" : "by time"}
-    </Link>
-  );
-}
-
-function ShowLink({
-  target,
-  window: activeWindow,
-  groupMode,
-  showAll,
-}: {
-  target: ShowMode;
-  window: RecapWindow;
-  groupMode: GroupMode;
-  showAll: boolean;
-}) {
-  const active = (target === "all") === showAll;
-  return (
-    <Link
-      to={historyPath(activeWindow, groupMode, target === "all")}
-      className={active ? "active" : undefined}
-      aria-current={active ? "page" : undefined}
-      replace
-    >
-      {target === "all" ? "Everything" : "Milestones"}
-    </Link>
-  );
-}
-
 function RecapBody({
-  recap,
-  window: active,
-  groupMode,
-  showAll,
+  recap: fetched,
+  filter,
+  view,
 }: {
   recap: RecapModel;
-  window: RecapWindow;
-  groupMode: GroupMode;
-  showAll: boolean;
+  filter: HistoryFilter;
+  view: HistoryView;
 }) {
+  const { window: active, group: groupMode, showAll } = view;
+  const filterOn = filter.actor !== undefined || filter.kind !== undefined || filter.epic !== undefined;
+  const recap = filterRecap(fetched, filter);
   const asks = recap.groups.reduce(
     (n, g) => n + g.entries.filter((e) => e.ask).length,
     0,
@@ -390,7 +258,7 @@ function RecapBody({
           default view (histSubFor's own comment carries the exact wording
           rule). Unconditional, the same way .recap-since always was, because
           the marking fact matters on an empty page as much as a full one. */}
-      <p className="hist-sub muted">{histSubFor(active, recap)}</p>
+      <p className="hist-sub muted">{histSubFor(active, recap, filterOn ? recap.shown : undefined)}</p>
       {(oneStream !== "" || asks > 0) && (
         <p className="recap-tally">
           {oneStream !== "" && <span className="muted">all by <PersonName id={oneStream} /></span>}
@@ -416,8 +284,10 @@ function RecapBody({
           reaches it: that mode keeps its existing per-group lines exactly
           where they already were, at each section's own foot. */}
       {groupMode === "time" && <FlatDroppedNote recap={recap} />}
-      {recap.groups.length === 0 ? (
-        <RecapEmpty window={active} groupMode={groupMode} showAll={showAll} />
+      {recap.groups.length === 0 && filterOn && fetched.groups.length > 0 ? (
+        <FilterEmpty view={view} />
+      ) : recap.groups.length === 0 ? (
+        <RecapEmpty view={view} />
       ) : groupMode === "time" ? (
         <div className="recap-flat">
           <FlatBody recap={recap} showAll={showAll} />
@@ -443,15 +313,23 @@ function RecapBody({
 // finds nothing new. Measured on the live tree, window=visit already returns
 // zero groups. So it hands over the escape hatch rather than dead-ending, with
 // live links to every window WIDER than the one that came up empty.
-function RecapEmpty({
-  window: active,
-  groupMode,
-  showAll,
-}: {
-  window: RecapWindow;
-  groupMode: GroupMode;
-  showAll: boolean;
-}) {
+// A filter that matches nothing is not an empty window: say so plainly and
+// hand over the way back.
+function FilterEmpty({ view }: { view: HistoryView }) {
+  return (
+    <div className="recap-empty">
+      <EmptyNote>No events match the filters.</EmptyNote>
+      <p className="recap-empty-more">
+        <Link to={historyPath(clearedFilters(view))} replace>
+          Clear filters
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function RecapEmpty({ view }: { view: HistoryView }) {
+  const active = view.window;
   const wider = WINDOWS.slice(WINDOWS.indexOf(active) + 1);
   return (
     <div className="recap-empty">
@@ -465,7 +343,7 @@ function RecapEmpty({
                 the reader had open rather than silently resetting it to
                 epic. */}
             {wider.map((w) => (
-              <WindowLink key={w} target={w} current={active} groupMode={groupMode} showAll={showAll} />
+              <WindowLink key={w} target={w} view={view} />
             ))}
           </span>
         </p>
