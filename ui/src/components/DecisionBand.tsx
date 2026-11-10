@@ -2,15 +2,15 @@
 // decisions 1-4): one kind's queue entries past ROW_CAP, every member
 // visible as a row, the repeated chrome stated once in the head, and the
 // batch command (where cli-surface.md has the verb) in the foot, phrased
-// after-review and never as the headline. A row carries no command: the
-// node page's attention stack owns the single-node act, and the honest
-// individual flow is click through, review, approve there.
+// after-review and never as the headline. A row shows no command text; its
+// Copy control copies that one entry's own command for a reviewer who has
+// already decided.
 import type { QueueEntry } from "../api";
 import { has } from "../lib/has";
 import { batchCommand, queueEntryKey, sharedWhy } from "../views/home/bands";
 import type { QueueCardGroup } from "../views/home/queueGroups";
-import CopyCmd from "./CopyCmd";
-import { KIND_LABEL, rowQualifier } from "./DecisionCard";
+import CopyCmd, { CopyButton } from "./CopyCmd";
+import { KIND_LABEL, rowQualifier, rowTitle } from "./DecisionCard";
 import RefLink from "./RefLink";
 
 // tabbed: the band sits under a tab that already names its kind and count
@@ -43,7 +43,7 @@ export default function DecisionBand({ group, tabbed = false }: { group: QueueCa
 
 function BandRow({ entry, shownWhy }: { entry: QueueEntry; shownWhy: string }) {
   const isQuestion = entry.noun === "question";
-  const title = entry.kind === "attest_criterion" ? undefined : entry.prose;
+  const title = rowTitle(entry);
   const qualifier = rowQualifier(entry);
   // Two lines: the title, then its address and annotations beneath. The row
   // lives in a column a third of the page wide, and a chore title beside its
@@ -52,6 +52,14 @@ function BandRow({ entry, shownWhy }: { entry: QueueEntry; shownWhy: string }) {
     <div className="dband-row">
       <div className="dband-row-title">
         <RefLink node={entry} label={has(title) ? title : entry.ref} className="" />
+        {has(entry.command) && (
+          <CopyButton
+            cmd={entry.command}
+            label="Copy"
+            ariaLabel={`Copy command for ${has(title) ? title : entry.ref}`}
+            className="copy-btn dband-row-copy"
+          />
+        )}
       </div>
       <div className="dband-row-addr">
         {isQuestion ? (

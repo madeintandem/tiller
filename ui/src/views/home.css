@@ -241,7 +241,7 @@
   border: 1px solid var(--hair);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-card);
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
 .dcard.warn {
@@ -315,6 +315,60 @@
   width: 100%;
 }
 
+/* The criterion a card asks to attest, quoted under the node it belongs to.
+   A link: it opens the criterion on the node's evals tab. */
+.dcard-statement {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 3px 0 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--hair);
+  text-underline-offset: 2px;
+}
+
+.dcard-plan {
+  margin: 3px 0 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+/* Labelled copy buttons that copy a command they do not display: a band row's
+   own, and a tab's Copy all. The word is the affordance, never the glyph. */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-card);
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  color: var(--heading);
+  border-color: var(--ink-3);
+}
+
+.dband-row-copy {
+  margin-left: var(--space-3);
+  vertical-align: baseline;
+}
+
+.needs-copy-all {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+
 /* Runs (bands.ts's own BandRun) are the body's columns, one per kind in
    gravity order, a band or a stack of cards alike: auto-fit packs as many
    360px columns as the width holds (three at a laptop width) and a lone kind
@@ -352,7 +406,7 @@
   border: 1px solid var(--hair);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-card);
-  padding: 14px 16px;
+  padding: 12px 14px;
 }
 
 /* The kind pill and the count sit on one line; the shared why-line, when

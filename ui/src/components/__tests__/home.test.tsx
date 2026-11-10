@@ -44,6 +44,7 @@ import type {
   Streams,
   UnclaimedItem,
 } from "../../api";
+import DecisionBand from "../DecisionBand";
 import DecisionCard from "../DecisionCard";
 import Home from "../../views/Home";
 import { PeopleProvider } from "../../people";
@@ -624,7 +625,8 @@ describe("Home needs-you: decision bands", () => {
       `Approve · epic decomposition · ${epicCount}`,
     ]);
     expect(container.querySelectorAll(".dcard")).toHaveLength(1);
-    expect(container.querySelector(".dcard .kind")?.textContent).toBe("Approve · amendment");
+    expect(container.querySelector(".dcard .kind")).toBeNull();
+    expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_amendment");
     expect(container.querySelectorAll(".dband")).toHaveLength(0);
 
     fireEvent.click(tabs[1]);
@@ -702,11 +704,13 @@ describe("Home needs-you: decision bands", () => {
     ]);
     expect(tabs[0]).toHaveAttribute("aria-current", "true");
     expect(container.querySelectorAll(".dcard")).toHaveLength(1);
-    expect(container.querySelector(".dcard .kind")?.textContent).toBe("Approve · amendment");
+    expect(container.querySelector(".dcard .kind")).toBeNull();
+    expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_amendment");
 
     fireEvent.click(tabs[1]);
     await waitFor(() => expect(container.querySelectorAll(".dcard")).toHaveLength(3));
-    expect(container.querySelector(".dcard .kind")?.textContent).toBe("Approve · epic decomposition");
+    expect(container.querySelector(".dcard .kind")).toBeNull();
+    expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_epic");
     expect(within(rail).getByRole("button", { name: /Approve · epic decomposition/ })).toHaveAttribute("aria-current", "true");
     expect(new URLSearchParams(search).get("needs")).toBe("approve_epic");
   });
@@ -722,13 +726,15 @@ describe("Home needs-you: decision bands", () => {
     const { container, unmount } = renderHome(summary(), "/?needs=answer_question");
     await screen.findByText("7 decisions");
     expect(container.querySelectorAll(".dcard")).toHaveLength(3);
-    expect(container.querySelector(".dcard .kind")?.textContent).toBe("Answer · question");
+    expect(container.querySelector(".dcard .kind")).toBeNull();
+    expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("answer_question");
     unmount();
 
     stubFetch(baseRoutes({ "/api/queue": { entries } }));
     const again = renderHome(summary(), "/?needs=approve_bug");
     await screen.findByText("7 decisions");
-    expect(again.container.querySelector(".dcard .kind")?.textContent).toBe("Approve · amendment");
+    expect(again.container.querySelector(".dcard .kind")).toBeNull();
+    expect(again.container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("approve_amendment");
   });
 
   it("shows no tab rail at ROW_CAP or under, or for a single kind past it", async () => {
@@ -1026,6 +1032,154 @@ describe("DecisionCard", () => {
 });
 
 // ---------- All clear (unchanged rule, exercised through the rebuilt view) ----------
+
+// ---------- Task 10: decision cards show the decision ----------
+
+describe("DecisionCard: leads with what is being decided", () => {
+  const attest: QueueEntry = {
+    kind: "attest_criterion",
+    noun: "feature",
+    id: "F-9",
+    key: "intake/applicant-portal-auth",
+    ref: "intake/applicant-portal-auth (F-9)",
+    prose: "C2",
+    title: "Applicant portal auth",
+    criterion: "C2",
+    statement: "A signed-out applicant is redirected to the sign-in page.",
+    command: "tiller attest feature intake/applicant-portal-auth --criterion C2 --status <pass|fail>",
+  };
+
+  it("leads an attest_criterion card with title, mono key, then the criterion, and links the statement to the criterion", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <DecisionCard entry={attest} />
+      </MemoryRouter>,
+    );
+    const who = container.querySelector(".who") as HTMLElement;
+    expect(who.textContent).toBe("Applicant portal auth intake/applicant-portal-auth · Criterion C2");
+    expect(who.querySelector(".mono")?.textContent).toContain("intake/applicant-portal-auth");
+    const statement = container.querySelector(".dcard-statement") as HTMLElement;
+    expect(statement.textContent).toBe("A signed-out applicant is redirected to the sign-in page.");
+    const link = (statement.tagName === "A" ? statement : statement.querySelector("a")) as HTMLElement;
+    expect(link).toHaveAttribute("href", "/node/feature/F-9?tab=evals&criterion=C2");
+    expect(container.textContent).not.toContain("needs_attestation");
+    expect(container.querySelector(".why")).toBeNull();
+  });
+
+  it("falls back to one plain line and no statement element when a task-level criterion has no statement", () => {
+    const { statement: _statement, ...bare } = attest;
+    const { container } = render(
+      <MemoryRouter>
+        <DecisionCard entry={bare} />
+      </MemoryRouter>,
+    );
+    expect(container.querySelector(".dcard-statement")).toBeNull();
+    expect(container.querySelector(".why")?.textContent).toBe("This criterion needs your attestation.");
+    expect(container.textContent).not.toContain("needs_attestation");
+  });
+
+  it("shows the plan size on an approve_feature card, singular at one and a zero part omitted", () => {
+    const feature = (plan: { tasks: number; criteria: number; dependencies: number }): QueueEntry => ({
+      kind: "approve_feature",
+      noun: "feature",
+      id: "F-1",
+      key: "a/b",
+      ref: "a/b (F-1)",
+      prose: "B",
+      title: "B",
+      plan,
+      command: "tiller approve feature a/b",
+    });
+    const view = (plan: { tasks: number; criteria: number; dependencies: number }) => {
+      const { container, unmount } = render(
+        <MemoryRouter>
+          <DecisionCard entry={feature(plan)} />
+        </MemoryRouter>,
+      );
+      const text = container.querySelector(".dcard-plan")?.textContent ?? null;
+      unmount();
+      return text;
+    };
+    expect(view({ tasks: 7, criteria: 15, dependencies: 10 })).toBe("7 tasks, 15 criteria, 10 dependencies");
+    expect(view({ tasks: 1, criteria: 1, dependencies: 1 })).toBe("1 task, 1 criterion, 1 dependency");
+    expect(view({ tasks: 3, criteria: 0, dependencies: 2 })).toBe("3 tasks, 2 dependencies");
+    expect(view({ tasks: 0, criteria: 0, dependencies: 0 })).toBeNull();
+  });
+
+  it("drops the kind eyebrow under a tab unless the actor is the agent", () => {
+    const human = render(
+      <MemoryRouter>
+        <DecisionCard entry={attest} tabbed />
+      </MemoryRouter>,
+    );
+    expect(human.container.querySelector(".kind")).toBeNull();
+    human.unmount();
+
+    const agent = render(
+      <MemoryRouter>
+        <DecisionCard entry={{ ...attest, actor: "agent" }} tabbed />
+      </MemoryRouter>,
+    );
+    expect(agent.container.querySelector(".kind")?.textContent).toBe("Agent");
+  });
+
+  it("keeps the kind eyebrow when the card is not under a tab", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <DecisionCard entry={attest} />
+      </MemoryRouter>,
+    );
+    expect(container.querySelector(".kind")?.textContent).toBe("Attest · eval criterion");
+  });
+
+  it("gives a band row a copy control for its own command", () => {
+    const entries = Array.from({ length: ROW_CAP + 1 }, (_, i) => epicEntry(i + 1));
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    const { container } = render(
+      <MemoryRouter>
+        <DecisionBand group={{ kind: "approve_epic", entries } as never} />
+      </MemoryRouter>,
+    );
+    const row = container.querySelector(".dband-row") as HTMLElement;
+    fireEvent.click(within(row).getByRole("button", { name: /Copy command/ }));
+    expect(writeText).toHaveBeenCalledWith(entries[0].command);
+  });
+});
+
+describe("Home needs-you: Copy all", () => {
+  async function copyAllFor(entries: QueueEntry[], path = "/") {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    stubFetch(baseRoutes({ "/api/queue": { entries } }));
+    const view = renderHome(summary(), path);
+    await screen.findByText(`${entries.length} decisions`);
+    return { ...view, writeText };
+  }
+
+  it("offers one Copy all for a kind in card form under its tab", async () => {
+    const epics = [epicEntry(1), epicEntry(2), epicEntry(3)];
+    const { writeText } = await copyAllFor([amendmentEntry(), ...epics, questionEntry(1), questionEntry(2), questionEntry(3)], "/?needs=approve_epic");
+    const buttons = screen.getAllByRole("button", { name: "Copy all" });
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(buttons[0]);
+    expect(writeText).toHaveBeenCalledWith("tiller approve epic epic-1 epic-2 epic-3");
+  });
+
+  it("offers one Copy all for a band under its tab", async () => {
+    const epics = Array.from({ length: ROW_CAP + 1 }, (_, i) => epicEntry(i + 1));
+    const { writeText } = await copyAllFor([amendmentEntry(), ...epics], "/?needs=approve_epic");
+    const buttons = screen.getAllByRole("button", { name: "Copy all" });
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(buttons[0]);
+    expect(writeText).toHaveBeenCalledWith(`tiller approve epic ${epics.map((e) => e.key).join(" ")}`);
+  });
+
+  it("offers none for a kind without a batch verb, or with a single entry", async () => {
+    await copyAllFor([amendmentEntry(), epicEntry(1), questionEntry(1), questionEntry(2), questionEntry(3), questionEntry(4), questionEntry(5)], "/?needs=approve_epic");
+    expect(screen.queryByRole("button", { name: "Copy all" })).toBeNull();
+  });
+});
 
 describe("Home needs-you: empty queue", () => {
   it("renders AllClear with the ownership line and enumerates in-review nodes", async () => {
@@ -2227,7 +2381,7 @@ describe("Home tabs: Overview and Branches", () => {
     fireEvent.click(within(viewRail()).getByRole("button", { name: "Overview" }));
     await screen.findByText("7 decisions");
     expect(new URLSearchParams(search).get("needs")).toBe("answer_question");
-    expect(container.querySelector(".dcard .kind")?.textContent).toBe("Answer · question");
+    expect(container.querySelector(".card-grid")?.getAttribute("data-kind")).toBe("answer_question");
 
     const kinds = screen.getByRole("navigation", { name: "Decision kind" });
     fireEvent.click(within(kinds).getByRole("button", { name: /Approve · epic/ }));

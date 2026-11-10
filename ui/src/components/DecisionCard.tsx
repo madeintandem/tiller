@@ -16,7 +16,9 @@
 // trailing qualifier, honest about what the wire actually gives it rather
 // than inventing the field the mock's mockup enjoyed.
 
-import type { QueueEntry } from "../api";
+import { Link } from "react-router-dom";
+
+import type { QueueEntry, QueuePlan } from "../api";
 import { isAttestGate } from "../api";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
@@ -59,13 +61,25 @@ export const KIND_LABEL: Record<string, string> = {
   merge_epic: "Merge · epic PR",
 };
 
-export default function DecisionCard({ entry }: { entry: QueueEntry }) {
+export default function DecisionCard({ entry, tabbed = false }: { entry: QueueEntry; tabbed?: boolean }) {
   const why = whyLine(entry);
   const human = entry.actor !== "agent";
+  // Under a Needs You tab the tab already names the kind, so the eyebrow
+  // survives only to say the one thing the tab does not: an agent holds this.
+  const eyebrow = tabbed
+    ? human ? "" : "Agent"
+    : `${KIND_LABEL[entry.kind] ?? entry.kind}${entry.actor ? ` · ${entry.actor}` : ""}`;
+  const plan = entry.plan !== undefined ? planLine(entry.plan) : "";
   return (
     <div className={`dcard${human ? "" : " warn"}`}>
-      <span className="kind">{KIND_LABEL[entry.kind] ?? entry.kind}{entry.actor && ` · ${entry.actor}`}</span>
+      {eyebrow !== "" && <span className="kind">{eyebrow}</span>}
       <WhoLine entry={entry} />
+      {entry.kind === "attest_criterion" && has(entry.statement) && (
+        <Link className="dcard-statement" to={criterionLink(entry)}>
+          {entry.statement}
+        </Link>
+      )}
+      {plan !== "" && <p className="dcard-plan">{plan}</p>}
       {/* whyLine's own default case answers "" for a kind neither it nor
           KIND_LABEL names: an empty
           .why paragraph still painted its own margin/line-height, a blank
@@ -75,6 +89,38 @@ export default function DecisionCard({ entry }: { entry: QueueEntry }) {
       {has(entry.command) && <CopyCmd cmd={entry.command} accent={human} />}
     </div>
   );
+}
+
+// criterionLink is the node page's evals tab with the one criterion marked
+// (CriterionRow reads the criterion param and scrolls itself into view).
+function criterionLink(entry: QueueEntry): string {
+  const id = entry.criterion ?? entry.prose ?? "";
+  return `/node/${entry.noun}/${entry.id}?tab=evals&criterion=${encodeURIComponent(id)}`;
+}
+
+function count(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+// planLine is the size of the plan an approve_feature card asks the human to
+// approve; a part that is zero is left out, and an all-zero plan says nothing.
+export function planLine(plan: QueuePlan): string {
+  const parts: string[] = [];
+  if (plan.tasks > 0) parts.push(count(plan.tasks, "task", "tasks"));
+  if (plan.criteria > 0) parts.push(count(plan.criteria, "criterion", "criteria"));
+  if (plan.dependencies > 0) parts.push(count(plan.dependencies, "dependency", "dependencies"));
+  return parts.join(", ");
+}
+
+// rowTitle is the title a card or band row leads with: the node's own title
+// where the entry carries one. Prose stands in only for a kind whose prose IS
+// a title; attest_criterion's prose is the criterion id and a closeout's is a
+// sentence, so those lead with the node's reference instead.
+export function rowTitle(entry: QueueEntry): string | undefined {
+  if (has(entry.title)) {
+    return entry.title;
+  }
+  return entry.kind === "attest_criterion" || entry.kind === "workflow_closeout" ? undefined : entry.prose;
 }
 
 // WhoLine names the node the entry is about, and it is the card's one path
@@ -110,10 +156,7 @@ function WhoLine({ entry }: { entry: QueueEntry }) {
       </div>
     );
   }
-  // attest_criterion's own Prose is the criterion id, not the node's title
-  // (queue.go's own doc comment on QueueEntry.Prose), so there is no title to
-  // lead with for this one kind alone; every other kind's Prose is the title.
-  const title = entry.kind === "attest_criterion" || entry.kind === "workflow_closeout" ? undefined : entry.prose;
+  const title = rowTitle(entry);
   const qualifier = rowQualifier(entry);
   return (
     <div className="who clamp">
@@ -129,7 +172,8 @@ export function rowQualifier(entry: QueueEntry): string {
     return entry.gate;
   }
   if (entry.kind === "attest_criterion") {
-    return has(entry.prose) ? `Criterion ${entry.prose}` : "";
+    const id = entry.criterion ?? entry.prose;
+    return has(id) ? `Criterion ${id}` : "";
   }
   if (entry.kind === "workflow_closeout") {
     return entry.phase?.replaceAll("_", " ") ?? "";
@@ -148,7 +192,7 @@ export function whyLine(entry: QueueEntry): string {
     case "workflow_closeout":
       return entry.prose ?? "";
     case "attest_criterion":
-      return "Eval criterion recorded needs_attestation, awaiting your sign-off.";
+      return has(entry.statement) ? "" : "This criterion needs your attestation.";
     case "attest_gate":
       return isAttestGate(entry)
         ? `Optional review gate, recorded ${entry.gate_status}, awaiting your attestation.`

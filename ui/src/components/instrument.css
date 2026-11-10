@@ -433,6 +433,18 @@
   border-bottom: none;
 }
 
+/* The criterion a deep link names: a left bar and a heavier id, so the mark
+   survives without color. */
+.crow.is-target {
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--panel);
+}
+
+.crow.is-target .cid {
+  color: var(--heading);
+  font-weight: 700;
+}
+
 .crow .cid {
   color: var(--ink-3);
 }

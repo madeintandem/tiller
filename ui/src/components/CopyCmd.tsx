@@ -113,6 +113,20 @@ export function CopyRef({ display, id }: { display: string; id: string }) {
   );
 }
 
+// CopyButton is a labelled button that copies a command it does not display:
+// a band row's own command, and a tab's Copy all. The label always says what
+// the button does, so it never relies on its glyph.
+export function CopyButton({ cmd, label, ariaLabel, className }: { cmd: string; label: string; ariaLabel?: string; className?: string }) {
+  return (
+    <button type="button" className={className ?? "copy-btn"} aria-label={ariaLabel} onClick={() => copy(cmd)}>
+      <span>{label}</span>
+      <span className="copy-cmd-icon" aria-hidden="true">
+        ⧉
+      </span>
+    </button>
+  );
+}
+
 export default function CopyCmd({ cmd, accent }: { cmd: string; accent?: boolean }) {
   return (
     <button

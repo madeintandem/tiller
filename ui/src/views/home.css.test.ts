@@ -75,3 +75,13 @@ describe("home.css: the mobile .card-grid override actually wins the cascade", (
     );
   });
 });
+
+describe("home.css: decision cards lead with the decision", () => {
+  it("pads .dcard 12px 14px", () => {
+    expect(homeCss).toMatch(/\.dcard\s*\{[^}]*padding:\s*12px 14px;/);
+  });
+
+  it("clamps .dcard-statement at three lines", () => {
+    expect(homeCss).toMatch(/\.dcard-statement\s*\{[^}]*-webkit-line-clamp:\s*3;/);
+  });
+});

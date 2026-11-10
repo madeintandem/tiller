@@ -112,6 +112,36 @@ describe("CriterionRow: the contract's own row (the mock's .crow grid)", () => {
   });
 });
 
+describe("CriterionRow: the deep link target", () => {
+  const scrollIntoView = vi.fn();
+  afterEach(() => {
+    scrollIntoView.mockReset();
+  });
+
+  function at(search: string) {
+    Element.prototype.scrollIntoView = scrollIntoView;
+    return render(
+      <MemoryRouter initialEntries={[`/node/feature/F-1${search}`]}>
+        <CriterionRow criterion={criterion({ id: "C2" })} />
+        <CriterionRow criterion={criterion({ id: "C3" })} />
+      </MemoryRouter>,
+    );
+  }
+
+  it("carries an id and marks only the named criterion, scrolling it into view once", () => {
+    const { container } = at("?tab=evals&criterion=C2");
+    expect(container.querySelector("#criterion-C2")).toHaveClass("is-target");
+    expect(container.querySelector("#criterion-C3")).not.toHaveClass("is-target");
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks nothing and does not scroll without the param", () => {
+    const { container } = at("?tab=evals");
+    expect(container.querySelector(".is-target")).toBeNull();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+});
+
 describe("CriterionRow: needs_attestation reads amber", () => {
   it("paints the chip amber (in_review) with its own plain word, the binding type unfolded beside it", () => {
     render(
@@ -870,9 +900,7 @@ describe("NodeDetail: the attention stack", () => {
     const box = container.querySelector(".abox") as HTMLElement;
     expect(box).not.toHaveClass("warn");
     expect(within(box).getByText("Attest · eval criterion C6")).toBeInTheDocument();
-    expect(
-      within(box).getByText("Eval criterion recorded needs_attestation, awaiting your sign-off."),
-    ).toBeInTheDocument();
+    expect(within(box).getByText("This criterion needs your attestation.")).toBeInTheDocument();
     expect(
       within(box).getByRole("button", {
         name: "tiller attest feature foundation/app-skeleton-ci-boot --criterion C6 --status pass",

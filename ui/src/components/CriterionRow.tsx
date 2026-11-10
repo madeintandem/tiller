@@ -25,6 +25,9 @@
 // a later mechanical recheck has since superseded, never earns the
 // "attested" word over the status the gate actually carries now.
 
+import { useEffect, useRef } from "react";
+import { useInRouterContext, useSearchParams } from "react-router-dom";
+
 import type { AttestationView, CriterionStatusView, EvalCriterionView } from "../api";
 import { dotStateFor, resultStatus } from "../lib/gateDisplay";
 import { has } from "../lib/has";
@@ -54,15 +57,39 @@ function attestedByFor(
   return undefined;
 }
 
-export default function CriterionRow({
-  criterion,
-  result,
-  attestations = [],
-}: {
+interface CriterionRowProps {
   criterion: EvalCriterionView;
   result?: CriterionStatusView;
   attestations?: AttestationView[];
-}) {
+}
+
+// A row outside any router (a bare render in a test) is never a deep link
+// target; inside one, the criterion search param names the target.
+export default function CriterionRow(props: CriterionRowProps) {
+  const inRouter = useInRouterContext();
+  return inRouter ? <RoutedRow {...props} /> : <Row {...props} isTarget={false} />;
+}
+
+function RoutedRow(props: CriterionRowProps) {
+  const [search] = useSearchParams();
+  return <Row {...props} isTarget={search.get("criterion") === props.criterion.id} />;
+}
+
+function Row({
+  criterion,
+  result,
+  attestations = [],
+  isTarget,
+}: CriterionRowProps & { isTarget: boolean }) {
+  // The deep link (a Needs You card's statement) lands on this row: bring it
+  // into view once on mount. The class is a bar and a weight, never color
+  // alone.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isTarget) {
+      ref.current?.scrollIntoView({ block: "center" });
+    }
+  }, [isTarget]);
   const personName = usePersonName();
   const status = resultStatus(result?.status);
   const by = attestedByFor(criterion.id, status, attestations);
@@ -70,7 +97,7 @@ export default function CriterionRow({
   const evidence = result?.evidence ?? [];
   const firstEvidence = evidence.find((e) => has(e.ref));
   return (
-    <div className="crow">
+    <div className={isTarget ? "crow is-target" : "crow"} id={`criterion-${criterion.id}`} ref={ref}>
       <span className="cid mono">{criterion.id}</span>
       <span className="crow-statement">
         {criterion.statement}

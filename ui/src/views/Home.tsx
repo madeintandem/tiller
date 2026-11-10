@@ -38,6 +38,7 @@ import { boardPath, driftPath, executionPath, listPath, nextPath, queuePath, rec
 import AllClear from "../components/AllClear";
 import type { AllClearReviewItem } from "../components/AllClear";
 import DecisionBand from "../components/DecisionBand";
+import { CopyButton } from "../components/CopyCmd";
 import DecisionCard, { KIND_LABEL } from "../components/DecisionCard";
 import DependencyDiagnostics from "../components/DependencyDiagnostics";
 import ExecutionSources from "../components/ExecutionSources";
@@ -50,7 +51,7 @@ import SectionHead from "../components/SectionHead";
 import { addrOf } from "../lib/addr";
 import { has } from "../lib/has";
 import type { BandRun } from "./home/bands";
-import { bandRuns, queueEntryKey } from "./home/bands";
+import { bandRuns, batchCommand, queueEntryKey } from "./home/bands";
 import HeaderBand from "./home/HeaderBand";
 import { needsTabs, runCount, runKind } from "./home/needsTabs";
 import { InFlightColumn, JustHappenedColumn, UpNextColumn } from "./home/Pulse";
@@ -143,7 +144,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
     ) : (
       <div className="card-grid" data-kind={run.kind} key={run.kind}>
         {run.entries.map((entry) => (
-          <DecisionCard key={queueEntryKey(entry)} entry={entry} />
+          <DecisionCard key={queueEntryKey(entry)} entry={entry} tabbed={tabs.active !== null} />
         ))}
       </div>
     );
@@ -210,7 +211,22 @@ export default function Home({ summary, summaryError }: HomeProps) {
                 key: runKind(run),
                 label: KIND_LABEL[runKind(run)] ?? runKind(run),
                 count: runCount(run),
-                render: () => <div className="needs-body">{renderRun(run)}</div>,
+                render: () => {
+                  // One Copy all per tab, for both the band and the card form:
+                  // the kinds that have a batch verb and two or more entries.
+                  const entries = run.type === "band" ? run.group.entries : run.entries;
+                  const batch = batchCommand(runKind(run), entries);
+                  return (
+                    <>
+                      {batch !== null && (
+                        <div className="needs-copy-all">
+                          <CopyButton cmd={batch} label="Copy all" className="copy-btn copy-all" />
+                        </div>
+                      )}
+                      <div className="needs-body">{renderRun(run)}</div>
+                    </>
+                  );
+                },
               }))}
             />
           ) : (
