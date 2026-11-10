@@ -12,6 +12,7 @@ import type { BaselineDocView, NodeDriftView, ProseFile } from "../api";
 import { prosePath } from "../api";
 import Chip from "../components/Chip";
 import CopyCmd from "../components/CopyCmd";
+import OutOfDate from "../components/OutOfDate";
 import { DriftCandidateDetails, UncoveredLine } from "../components/DriftFinding";
 import Prose from "../components/Prose";
 import Time from "../components/Time";
@@ -35,7 +36,7 @@ export default function FileDetail() {
   const line = sourceLine(location.hash);
   const request =
     path !== null && path !== "" && line !== null ? prosePath(path, line) : null;
-  const { data: file, error, loading } = useFetch<ProseFile>(request);
+  const { data: file, error } = useFetch<ProseFile>(request);
   const locatorRef = useRef<HTMLDivElement>(null);
   // The tab names the file the way the address line does, basename and line
   // ("app.md:12"): the directory is what the reader already knows, the file
@@ -51,19 +52,23 @@ export default function FileDetail() {
 
   // The locator does not exist until the asynchronous read has rendered. An
   // effect therefore performs the one scroll after that commit rather than
-  // racing the fetch or trying to instrument Markdown source positions.
+  // racing the fetch or trying to instrument Markdown source positions. Once
+  // per address: a reread brings a new answer for the same line and must not
+  // pull the reader back to it.
+  const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (file !== null) {
+    if (file !== null && request !== null && scrolledFor.current !== request) {
+      scrolledFor.current = request;
       locatorRef.current?.scrollIntoView?.();
     }
-  }, [file]);
+  }, [file, request]);
 
   let content: ReactNode;
   if (line === null || path === null || path === "") {
     content = <InvalidLocation path={visiblePath} hash={location.hash} />;
-  } else if (error !== null) {
+  } else if (error !== null && (file === null || error.includes(" failed (404"))) {
     content = <LoadError path={path} line={line} error={error} />;
-  } else if (loading || file === null) {
+  } else if (file === null) {
     content = (
       <>
         <FileAddress path={path} line={line} />
@@ -74,6 +79,7 @@ export default function FileDetail() {
     content = (
       <>
         <FileAddress path={file.path} line={file.line} />
+        <OutOfDate error={error} />
         <div
           ref={locatorRef}
           id={`L${file.line}`}

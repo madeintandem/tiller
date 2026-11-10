@@ -4,6 +4,7 @@
 
 import type { UsageReport } from "../../api";
 import { usageReportPath } from "../../api";
+import OutOfDate from "../../components/OutOfDate";
 import { useFetch } from "../../hooks";
 import ChartCard from "./ChartCard";
 import FeatureUsageChart from "./FeatureUsageChart";
@@ -15,7 +16,8 @@ import { CacheReadsChart, FreshTokensChart } from "./UsageWeekCharts";
 
 export default function AgentUseTab() {
   const { data, error } = useFetch<UsageReport>(usageReportPath);
-  if (error !== null) return <p className="error">{error}</p>;
+  // A failed reread keeps the last figures, marked out of date.
+  if (error !== null && data === null) return <p className="error">{error}</p>;
   if (data === null) return <p className="muted" role="status">Loading…</p>;
   if (data.harnesses.length === 0) return <p className="muted">No agent usage recorded yet</p>;
   const { kpis } = data;
@@ -26,6 +28,7 @@ export default function AgentUseTab() {
   const items = `${kpis.items} ${kpis.items === 1 ? "item" : "items"}`;
   return (
     <>
+      <OutOfDate error={error} />
       <p className="report-usage-note">
         Measured: {data.harnesses.map((h) => `${h.label} since ${formatWeek(h.since)}`).join(" · ")}
       </p>

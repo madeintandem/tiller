@@ -18,7 +18,11 @@ afterEach(() => {
 });
 
 describe("useFetch: manual refresh via bumpFetchGeneration", () => {
-  it("clears default readers immediately until the manual refresh completes", async () => {
+  // A reread is a background revalidation for every reader, not only the
+  // ones that opted into retention: the page keeps what it shows until the
+  // new answer lands (this test used to pin the opposite, a blank until the
+  // refresh completed, which is what made the topbar refresh flash pages).
+  it("keeps a default reader's last answer through the refresh until the new one lands", async () => {
     const first = Promise.withResolvers<Response>();
     const refreshed = Promise.withResolvers<Response>();
     const fetchMock = vi.fn()
@@ -37,12 +41,58 @@ describe("useFetch: manual refresh via bumpFetchGeneration", () => {
     renders.length = 0;
 
     act(() => bumpFetchGeneration());
-    expect(renders[0]).toMatchObject({ data: null, error: null, loading: true });
-    expect(result.current).toMatchObject({ data: null, error: null, loading: true });
+    expect(renders.length).toBeGreaterThan(0);
+    for (const render of renders) {
+      expect(render).toMatchObject({ data: { n: 1 }, error: null, loading: true });
+    }
 
     await act(async () => refreshed.resolve(Response.json({ n: 2 })));
     expect(result.current).toMatchObject({ data: { n: 2 }, error: null, loading: false });
     expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/status", expect.anything());
+  });
+
+  it("keeps a default reader's last answer beside the error when the refresh fails", async () => {
+    const first = Promise.withResolvers<Response>();
+    const failed = Promise.withResolvers<Response>();
+    vi.stubGlobal("fetch", vi.fn()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(failed.promise));
+    const { result } = renderHook(() => useFetch<{ n: number }>("/api/status"));
+    await act(async () => first.resolve(Response.json({ n: 1 })));
+
+    act(() => bumpFetchGeneration());
+    await act(async () => failed.reject(new Error("offline")));
+
+    expect(result.current).toMatchObject({ data: { n: 1 }, error: "offline", loading: false });
+  });
+
+  it("never shows the old path's data for a new path, even mid-refresh", async () => {
+    const first = Promise.withResolvers<Response>();
+    const refresh = Promise.withResolvers<Response>();
+    const other = Promise.withResolvers<Response>();
+    vi.stubGlobal("fetch", vi.fn()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(refresh.promise)
+      .mockReturnValueOnce(other.promise));
+    const renders: FetchState<string>[] = [];
+    const { result, rerender } = renderHook(({ path }: { path: string }) => {
+      const state = useFetch<string>(path);
+      renders.push(state);
+      return state;
+    }, { initialProps: { path: "/api/node/feature/F-aaaaaa" } });
+    await act(async () => first.resolve(Response.json("node A")));
+    act(() => bumpFetchGeneration());
+    expect(result.current.data).toBe("node A");
+
+    renders.length = 0;
+    rerender({ path: "/api/node/feature/F-bbbbbb" });
+    for (const render of renders) {
+      expect(render.data).toBeNull();
+    }
+    await act(async () => refresh.resolve(Response.json("node A, refreshed")));
+    expect(result.current).toMatchObject({ data: null, loading: true });
+    await act(async () => other.resolve(Response.json("node B")));
+    expect(result.current).toMatchObject({ data: "node B", error: null, loading: false });
   });
 
   it("refetches every hook mounted at the moment of the bump, not just one", async () => {

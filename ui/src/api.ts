@@ -258,7 +258,8 @@ function markFetchSucceeded(): void {
 // The topbar's manual refresh (the console has no
 // polling, so without this the asof line was a staleness signal with no
 // remedy - the mock draws the control, and JC's ruling is that it ships).
-// One counter, bumped by the topbar's click handler; hooks.ts's useFetch
+// One counter, bumped by the topbar's click handler and by the window
+// regaining focus (lib/useRefetchOnFocus.ts); hooks.ts's useFetch
 // subscribes and adds the current value to its own fetch effect's
 // dependency array alongside path, so a bump re-issues every CURRENTLY
 // MOUNTED request in place, through the exact same effect a path change
@@ -288,9 +289,27 @@ export function bumpFetchGeneration(): void {
   }
 }
 
+// How many reads are out right now, so the focus reread
+// (lib/useRefetchOnFocus.ts) never stacks a second reread on one the server
+// has not finished answering.
+let fetchesInFlight = 0;
+
+export function getFetchesInFlight(): number {
+  return fetchesInFlight;
+}
+
 // init carries a read's optional headers and the abort signal useFetch uses
 // to give a superseded request's connection back to the browser.
 export async function fetchJSON<T>(path: string, init?: Pick<RequestInit, "headers" | "signal">): Promise<T> {
+  fetchesInFlight += 1;
+  try {
+    return await readJSON<T>(path, init);
+  } finally {
+    fetchesInFlight -= 1;
+  }
+}
+
+async function readJSON<T>(path: string, init?: Pick<RequestInit, "headers" | "signal">): Promise<T> {
   const res = await (init === undefined ? fetch(path) : fetch(path, init));
   if (!res.ok) {
     let detail = "";

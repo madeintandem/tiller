@@ -15,6 +15,14 @@
 // That includes History's visit window: a bump re-requests window=visit, which
 // is a plain read. Only the Mark caught up press carries the visit marker, so a
 // bump never moves the horizon.
+//
+// A bump is a background revalidation for EVERY reader: the hook keeps the
+// last answer for the same path and refresh key while the reread runs, and a
+// failed reread keeps it beside the error, so no page blanks into a loading
+// state because the reader pressed refresh or came back to the window. A path
+// change still drops the old data at once (a different node must never show
+// the previous node's page), and so does a refresh key change unless the
+// caller asks for retainData, which is the one thing that option now means.
 
 import { useEffect, useState } from "react";
 import { fetchJSON, getFetchGeneration, subscribeFetchGeneration } from "./api";
@@ -31,8 +39,10 @@ interface KeyedFetchState<T> extends FetchState<T> {
   gen: number;
 }
 
-// Persistent layouts can refresh the same API resource without removing its
-// last successful data. Readers keep the default clearing behavior.
+// retainData carries the last answer across a refresh key change too, for a
+// persistent layout (Explore's navigator) whose key follows the route but
+// whose resource does not. Without it a key change clears, the way a path
+// change always does.
 export function useFetch<T>(
   path: string | null,
   {
@@ -65,34 +75,40 @@ export function useFetch<T>(
       setState({ path, refreshKey, gen, data: null, error: null, loading: false });
       return;
     }
-    // Retention belongs to this resource only, not to a route or generation.
-    // Carrying data through pending/error states preserves the last success
-    // even when several refreshes supersede one another before settling.
+    // Retention belongs to this resource only. A rerun for the same path and
+    // key is a reread (a generation bump) and keeps what is on screen; a key
+    // change keeps it only for a retainData caller. Carrying data through
+    // pending/error states preserves the last success even when several
+    // refreshes supersede one another before settling.
     // A superseded or unmounted read also aborts its request: the browser
     // keeps only six connections per console origin, and an obsolete read
     // left running holds one until the server answers, so a few quick node
     // picks would queue the newest page behind every abandoned one.
     let cancelled = false;
     const controller = new AbortController();
-    setState((previous) => ({
-      path,
-      refreshKey,
-      gen,
-      data: retainData && previous.path === path ? previous.data : null,
-      error: retainData && previous.path === path ? previous.error : null,
-      loading: true,
-    }));
+    setState((previous) => {
+      const keep = previous.path === path && (retainData || previous.refreshKey === refreshKey);
+      return {
+        path,
+        refreshKey,
+        gen,
+        data: keep ? previous.data : null,
+        error: keep ? previous.error : null,
+        loading: true,
+      };
+    });
     fetchJSON<T>(path, { headers, signal: controller.signal })
       .then((data) => {
         if (!cancelled) setState({ path, refreshKey, gen, data, error: null, loading: false });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          // The pending state above already decided what this read keeps.
           setState((previous) => ({
             path,
             refreshKey,
             gen,
-            data: retainData && previous.path === path ? previous.data : null,
+            data: previous.path === path ? previous.data : null,
             error: err instanceof Error ? err.message : String(err),
             loading: false,
           }));
@@ -107,12 +123,11 @@ export function useFetch<T>(
   if (path === null || state.path !== path) {
     return { data: null, error: null, loading: path !== null };
   }
+  if (state.refreshKey !== refreshKey && !retainData) {
+    return { data: null, error: null, loading: true };
+  }
   if (state.refreshKey !== refreshKey || state.gen !== gen) {
-    return {
-      data: retainData ? state.data : null,
-      error: retainData ? state.error : null,
-      loading: true,
-    };
+    return { data: state.data, error: state.error, loading: true };
   }
 
   return state;

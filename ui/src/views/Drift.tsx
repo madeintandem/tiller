@@ -17,6 +17,7 @@ import { useLocation } from "react-router-dom";
 import type { CandidateView, DriftReportView, UncoveredView } from "../api";
 import EmptyNote from "../components/EmptyNote";
 import { DriftCandidateDetails, DriftTargetLink } from "../components/DriftFinding";
+import OutOfDate from "../components/OutOfDate";
 import type { FetchState } from "../hooks";
 import { groupUncovered, markerCopy, reasonCopy, uncoveredDetail } from "../lib/drift";
 import vocabulary from "../lib/vocabulary.json";
@@ -63,8 +64,10 @@ export function DriftReport({ state }: { state: FetchState<DriftReportView> }) {
   }, [data, hash]);
   return (
     <section className="drift-page">
-      {error !== null && <p className="error">{error}</p>}
-      {error === null && loading && <p className="muted">Sweeping the working tree...</p>}
+      {/* A reread keeps the report on screen, so the sweeping line is for a
+          first read only, and a failed reread marks the report out of date. */}
+      {error !== null && (data === null ? <p className="error">{error}</p> : <OutOfDate error={error} />)}
+      {error === null && loading && data === null && <p className="muted">Sweeping the working tree...</p>}
       {data !== null && <DriftReportBody report={data} />}
     </section>
   );

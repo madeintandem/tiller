@@ -9,7 +9,10 @@
 // components/NodeDetail, a reusable render of one already-fetched NodePage.
 // Navigating a relationship link changes the route params, which changes the
 // fetch path, which makes useFetch clear the old node and load the new one —
-// the component never shows a stale node under a fresh address.
+// the component never shows a stale node under a fresh address. A reread of
+// the same address (the topbar refresh, the window regaining focus) is the
+// opposite case: both reads keep their last answer until the new one lands,
+// so the page, its tab, and its branch history rows stay where they are.
 //
 // Task 17 (console v2, node page rebuild) adds a second, independent fetch
 // here: the project queue, the source for the instrument's own attention
@@ -31,6 +34,7 @@ import type { NodePage, Queue } from "../api";
 import { nodePagePath, queuePath } from "../api";
 import NodeDetailInstrument from "../components/NodeDetail";
 import { handleOf } from "../components/NodeHeader";
+import OutOfDate from "../components/OutOfDate";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { recordRecent } from "../lib/recentNodes";
 import { useExploreProjectKey } from "./explore/exploreContext";
@@ -59,7 +63,7 @@ export default function NodeDetail() {
     first.data?.history_pending === true && noun !== undefined && addr !== undefined ? nodePagePath(noun, addr) : null;
   const merged = useFetch<NodePage>(mergedPath);
   const page = withBranchHistory(first.data, merged.data, merged.error);
-  const { error, loading } = first;
+  const { error } = first;
   // Keyed to the node request path: navigating to another node rereads the
   // queue, so a snapshot taken on the previous node (perhaps before a CLI
   // mutation answered its ask) never drives this node's attention stack, and
@@ -79,8 +83,8 @@ export default function NodeDetail() {
   const openedTitle = page === null ? "" : handleOf(page.node);
   const openedNoun = page?.node.noun ?? "";
   const openedKey = page?.node.key;
-  // A ref remembers the last (project, node) recorded, so a reread that blanks
-  // the page and brings it back (the id goes id, undefined, id) is one visit.
+  // A ref remembers the last (project, node) recorded, so the same node coming
+  // back (a reread, or a page that blanks and returns) is one visit.
   const recorded = useRef("");
   useEffect(() => {
     if (projectKey !== undefined && openedId !== undefined) {
@@ -97,31 +101,37 @@ export default function NodeDetail() {
   }, [projectKey, openedId]);
 
   return (
-    <div className="explore-detail">{paneContent(noun, addr, page, error, loading, queue.data)}</div>
+    <div className="explore-detail">{paneContent(noun, addr, page, error, queue.data)}</div>
   );
 }
 
-// The pane's four states, in the order they can be told apart. The empty-splat
+// The pane's states, in the order they can be told apart. The empty-splat
 // case must not spin: with a null path useFetch stays idle forever, and a
 // permanent spinner is the same defect as a blank page wearing a different hat.
+// A page already on screen stays through a failed reread, marked out of date,
+// unless the node is gone (a 404), which says so instead.
 function paneContent(
   noun: string | undefined,
   addr: string | undefined,
   page: NodePage | null,
   error: string | null,
-  loading: boolean,
   queue: Queue | null,
 ) {
   if (noun === undefined || addr === undefined || addr === "") {
     return <NoNodeAddressed noun={noun ?? ""} />;
   }
-  if (error !== null) {
+  if (error !== null && (page === null || isNotFound(error))) {
     return <LoadError noun={noun} addr={addr} error={error} />;
   }
-  if (loading || page === null) {
+  if (page === null) {
     return <p className="muted">Loading node...</p>;
   }
-  return <NodeDetailInstrument page={page} queue={queue} />;
+  return (
+    <>
+      <OutOfDate error={error} />
+      <NodeDetailInstrument page={page} queue={queue} />
+    </>
+  );
 }
 
 // The page to draw: the merged answer once it lands, else the first answer,

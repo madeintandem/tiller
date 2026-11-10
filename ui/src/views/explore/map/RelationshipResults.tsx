@@ -126,7 +126,7 @@ export default function RelationshipResults({ graph, issuesGraph = graph, select
           <p className="muted">Queries traverse one recorded hop. Code-path queries also match enclosing declared scopes; they do not verify implementation. Generic question edges are not effective holds.</p>
         </details>
         {scope === "query" && query && <p className="map-relation-meta">Query: {query.from} · {relationshipKindName(query.follow)} · depth 1{result.data && ` · ${result.data.matched.length} matched endpoints`}</p>}
-        {scope === "query" && result.loading && <p role="status">Reading relationships…</p>}
+        {scope === "query" && result.loading && result.data === null && <p role="status">Reading relationships…</p>}
         {scope === "query" && result.error && <p role="alert">Query unavailable: {result.error}</p>}
         {scope === "query" && queryGraph && (!queryGraph.complete || queryGraph.diagnostics.length > 0) && <ReferenceIssues graph={queryGraph} selected={selected} scope="query" onSelect={selectResult} />}
         <p role="status" className="map-result-count">{scope === "project" ? "Whole project" : scope === "selected" ? "Selected item" : "Read-only query"} · {scope === "project" ? "Both directions" : direction === "out" ? "Outgoing" : direction === "in" ? "Incoming" : "Both directions"} · {kind ? kind === WORK_LINK_PRESET ? "Work links" : relationshipLabel(kind) : "All kinds"} · {rows.length} relationships{rows.length > 0 && ` · showing ${currentPage * PAGE_SIZE + 1}–${Math.min(rows.length, (currentPage + 1) * PAGE_SIZE)}`}</p>

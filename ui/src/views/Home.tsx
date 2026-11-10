@@ -43,6 +43,7 @@ import DecisionCard, { KIND_LABEL } from "../components/DecisionCard";
 import DependencyDiagnostics from "../components/DependencyDiagnostics";
 import ExecutionSources from "../components/ExecutionSources";
 import NodeTabs from "../components/NodeTabs";
+import OutOfDate from "../components/OutOfDate";
 import PageLoading from "../components/PageLoading";
 import RecapSignal from "../components/RecapSignal";
 import RecoveredReview from "../components/RecoveredReview";
@@ -77,22 +78,22 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // Every fetch is unconditional so hook order never depends on whether
   // summary has arrived yet (App.tsx's own useFetch resolves independently).
   const queue = useFetch<Queue>(queuePath);
-  // Four reads decide which tabs exist and what their counts say (epics and
-  // features for Recovered reviews, execution for Branches, drift for Drift),
-  // so they keep their last answer while a refetch is pending (a refresh, or
-  // the window regaining focus). Dropping it would remove the tab under the
-  // reader and let NodeTabs' unknown-tab fallback flip the pane to Overview.
-  // A refetch that fails keeps the last good data and also sets the error,
-  // which each panel states above its content.
-  const retain = { retainData: true };
-  const epics = useFetch<ListResult>(listPath("epic"), retain);
-  const features = useFetch<ListResult>(listPath("feature"), retain);
+  // Every read here keeps its last answer while a reread is pending (the
+  // topbar refresh, or the window regaining focus): useFetch does that for
+  // every caller. Four of them decide which tabs exist and what their counts
+  // say (epics and features for Recovered reviews, execution for Branches,
+  // drift for Drift), so dropping one would remove the tab under the reader
+  // and let NodeTabs' unknown-tab fallback flip the pane to Overview. A
+  // reread that fails keeps the last good data and also sets the error,
+  // which each panel states beside its content.
+  const epics = useFetch<ListResult>(listPath("epic"));
+  const features = useFetch<ListResult>(listPath("feature"));
   const tasks = useFetch<ListResult>(listPath("task"));
   const questions = useFetch<ListResult>(listPath("question"));
   const bugs = useFetch<ListResult>(listPath("bug"));
   const chores = useFetch<ListResult>(listPath("chore"));
   const tweaks = useFetch<ListResult>(listPath("tweak"));
-  const drift = useFetch<DriftReportView>(driftPath, retain);
+  const drift = useFetch<DriftReportView>(driftPath);
 
   // The pulse's three reads. recapPath("24h") is a FIXED window - never
   // "visit" - so it never advances the last-visit mark (the invariant this
@@ -106,15 +107,14 @@ export default function Home({ summary, summaryError }: HomeProps) {
   const upNext = useFetch<NextAnswer>(nextPath);
   // Read with the desk rather than when the Branches tab opens, since the
   // tab's own label carries the diagnostics count. Like every read above it
-  // refetches on mount and on the topbar's manual refresh, never on a tab
-  // switch.
-  const execution = useFetch<ExecutionSnapshot>(executionPath, retain);
+  // refetches on mount and on every reread (the topbar refresh, the window
+  // regaining focus), never on a tab switch.
+  const execution = useFetch<ExecutionSnapshot>(executionPath);
 
-  if (summaryError !== null) {
-    return <p className="error">{summaryError}</p>;
-  }
+  // A failed status read replaces the desk only when there is no desk yet;
+  // after a failed reread the last one stays, marked out of date.
   if (summary === null) {
-    return <PageLoading title="Home" />;
+    return summaryError !== null ? <p className="error">{summaryError}</p> : <PageLoading title="Home" />;
   }
 
   const lists: NounList[] = [
@@ -265,6 +265,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
 
   return (
     <div className="home">
+      <OutOfDate error={summaryError} />
       <HomeTitle summary={summary} />
       <NodeTabs
         label="Home view"
@@ -313,9 +314,10 @@ interface NounList {
 // AllClearSlot is the needs-you column's empty-queue branch, and the gate the
 // all-clear claim must pass: the claim is only rendered once all six lists
 // have actually loaded. A failed list replaces it with an honest error
-// surface naming what could not be read (useFetch nulls data on error, so a
-// failed shelf list is precisely where an in_review item could be hiding); a
-// still-pending list holds the slot at loading rather than flashing a claim.
+// surface naming what could not be read (a failed shelf list, even one still
+// showing its last answer, is precisely where an in_review item could be
+// hiding); a still-pending list holds the slot at loading rather than
+// flashing a claim.
 function AllClearSlot({ whoseMove, lists }: { whoseMove: WhoseMoveCounts; lists: NounList[] }) {
   const failed = lists.filter((l) => l.state.error !== null);
   if (failed.length > 0) {

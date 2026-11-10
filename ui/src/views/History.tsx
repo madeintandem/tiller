@@ -159,7 +159,7 @@
 // never adopted, but that mismatch is why it was never a serious option
 // either.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Recap as RecapModel, RecapGroup } from "../api";
 import { recapPath } from "../api";
@@ -168,6 +168,7 @@ import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import type { Burst } from "../lib/bursts";
 import { burstsOf } from "../lib/bursts";
 import EmptyNote from "../components/EmptyNote";
+import OutOfDate from "../components/OutOfDate";
 import { PersonName } from "../people";
 import { TieredBursts } from "./history/BookkeepingRow";
 import BurstRow from "./history/BurstRow";
@@ -183,7 +184,7 @@ import {
 import CatchUp from "./history/CatchUp";
 import { countFor, emptyTextFor, fixedSubFor } from "./history/copy";
 import { burstAt, dayGroupsOf } from "./history/days";
-import { filterRecap, historyFacets, type HistoryFilter } from "./history/filter";
+import { filterRecap, historyFacets, type HistoryFacets, type HistoryFilter } from "./history/filter";
 import RecapGroupBlock from "./history/RecapGroupBlock";
 import "./history.css";
 
@@ -202,13 +203,25 @@ export default function History() {
   const view = viewOf(params);
   // Viewing never moves the horizon, on any window: this read carries no visit
   // marker. Only the CatchUp button's own one-shot press does.
+  // A reread keeps the list on screen until the new answer lands (useFetch);
+  // a window switch is a new read, so the list area loads while the controls
+  // above it stay put.
   const { data, error, loading } = useFetch<RecapModel>(recapPath(view.window));
   // Which horizon the reader pressed Mark caught up against. Held here, above
   // the fetch, so a refresh or a window round trip on this page visit cannot
   // put the button back over a horizon that already moved: the confirmation
-  // lasts while the served horizon is still the pressed one.
+  // lasts while the served horizon is still the pressed one, and past it
+  // while the window recomputed from the new horizon holds nothing. Newer
+  // events arriving bring the button back.
   const [caughtUpFrom, setCaughtUpFrom] = useState<string | null>(null);
-  const facets = data !== null ? historyFacets(data) : null;
+  const facets = useMemo(() => (data !== null ? historyFacets(data) : null), [data]);
+  // The selects keep the last options they had while a new window loads, so
+  // they never leave the page under the pointer; they are disabled until the
+  // new window's own options arrive.
+  const [shownFacets, setShownFacets] = useState<HistoryFacets | null>(null);
+  if (facets !== null && shownFacets !== facets) {
+    setShownFacets(facets);
+  }
   // Only a value this recap holds filters it; anything else is ignored.
   const valid: HistoryFilter = {
     actor: facets?.actors.includes(view.actor ?? "") ? view.actor : undefined,
@@ -220,16 +233,16 @@ export default function History() {
     <section className="history-page">
       <div className="history-page-head">
         <h1>History</h1>
-        <HistoryControls view={view} facets={facets} />
+        <HistoryControls view={view} facets={facets ?? shownFacets} pending={facets === null} />
       </div>
-      {error !== null && <p className="error">{error}</p>}
-      {loading && <p className="muted">Loading history...</p>}
+      {error !== null && (data === null ? <p className="error">{error}</p> : <OutOfDate error={error} />)}
+      {loading && data === null && <p className="muted">Loading history...</p>}
       {data !== null && (
         <RecapBody
           recap={data}
           filter={valid}
           view={view}
-          caughtUp={caughtUpFrom === data.since}
+          caughtUp={caughtUpFrom !== null && (caughtUpFrom === data.since || data.total === 0)}
           onCaughtUp={() => setCaughtUpFrom(data.since)}
         />
       )}

@@ -209,3 +209,27 @@ describe("AsOf + useFetch: the refresh affordance end to end", () => {
     expect(screen.getByText("synced just now")).toBeInTheDocument();
   });
 });
+
+// A reread can start without the button (the window regaining focus bumps
+// the same generation), and the topbar is where a reread in flight shows:
+// the refresh control holds disabled until the next read lands, whoever
+// started it, so the page itself never needs a spinner.
+describe("AsOf: any reread in flight", () => {
+  it("disables the refresh control for a reread it did not start, until a read lands", () => {
+    let landed: (at: Date) => void = () => {};
+    vi.spyOn(api, "getLastFetchAt").mockReturnValue(new Date("2026-08-10T12:00:00Z"));
+    vi.spyOn(api, "subscribeLastFetch").mockImplementation((listener) => {
+      landed = listener;
+      return () => {};
+    });
+    render(<AsOf />);
+    const button = screen.getByRole("button", { name: /refresh/i });
+    expect(button).toBeEnabled();
+
+    act(() => api.bumpFetchGeneration());
+    expect(button).toBeDisabled();
+
+    act(() => landed(new Date()));
+    expect(button).toBeEnabled();
+  });
+});

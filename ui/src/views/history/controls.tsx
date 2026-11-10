@@ -77,7 +77,17 @@ export function clearedFilters(view: HistoryView): HistoryView {
 // filter selects once a recap has loaded to draw their options from. The segs
 // are real <Link>s with replace, because each lives in the URL and stepping
 // through them should not stack history entries a reader has to walk back.
-export function HistoryControls({ view, facets }: { view: HistoryView; facets: HistoryFacets | null }) {
+// pending means the facets are the last window's while a new one loads: the
+// selects stay, with their choices, but are disabled until it lands.
+export function HistoryControls({
+  view,
+  facets,
+  pending = false,
+}: {
+  view: HistoryView;
+  facets: HistoryFacets | null;
+  pending?: boolean;
+}) {
   return (
     <div className="hist-controls">
       <div className="seg" role="group" aria-label="History grouping">
@@ -99,7 +109,7 @@ export function HistoryControls({ view, facets }: { view: HistoryView; facets: H
           </SegLink>
         ))}
       </div>
-      {facets !== null && <FilterSelects view={view} facets={facets} />}
+      {facets !== null && <FilterSelects view={view} facets={facets} disabled={pending} />}
     </div>
   );
 }
@@ -122,7 +132,7 @@ export function WindowLink({ target, view }: { target: RecapWindow; view: Histor
 
 // Three selects, each with a visible label and a first option meaning no
 // filter. A value the recap does not hold shows the no-filter option.
-function FilterSelects({ view, facets }: { view: HistoryView; facets: HistoryFacets }) {
+function FilterSelects({ view, facets, disabled }: { view: HistoryView; facets: HistoryFacets; disabled: boolean }) {
   const navigate = useNavigate();
   const nameOf = usePersonName();
   const actors = facets.actors
@@ -137,9 +147,9 @@ function FilterSelects({ view, facets }: { view: HistoryView; facets: HistoryFac
 
   return (
     <div className="hist-filters">
-      <FilterSelect label="Actor" none="All actors" value={view.actor} options={actors} onPick={(v) => pick("actor", v)} />
-      <FilterSelect label="Kind" none="All kinds" value={view.kind} options={kinds} onPick={(v) => pick("kind", v)} />
-      <FilterSelect label="Epic" none="All epics" value={view.epic} options={epics} onPick={(v) => pick("epic", v)} />
+      <FilterSelect label="Actor" none="All actors" value={view.actor} options={actors} disabled={disabled} onPick={(v) => pick("actor", v)} />
+      <FilterSelect label="Kind" none="All kinds" value={view.kind} options={kinds} disabled={disabled} onPick={(v) => pick("kind", v)} />
+      <FilterSelect label="Epic" none="All epics" value={view.epic} options={epics} disabled={disabled} onPick={(v) => pick("epic", v)} />
     </div>
   );
 }
@@ -149,19 +159,21 @@ function FilterSelect({
   none,
   value,
   options,
+  disabled,
   onPick,
 }: {
   label: string;
   none: string;
   value: string | undefined;
   options: { value: string; label: string }[];
+  disabled: boolean;
   onPick: (value: string) => void;
 }) {
   const known = value !== undefined && options.some((o) => o.value === value);
   return (
     <label className="hist-filter">
       <span className="eyebrow">{label}</span>
-      <select className="control" value={known ? value : ""} onChange={(e) => onPick(e.currentTarget.value)}>
+      <select className="control" value={known ? value : ""} disabled={disabled} onChange={(e) => onPick(e.currentTarget.value)}>
         <option value="">{none}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>

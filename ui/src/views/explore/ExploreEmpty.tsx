@@ -35,8 +35,8 @@ function nounLabel(noun: string): string {
 }
 
 export default function ExploreEmpty({ projectKey }: { projectKey: string | undefined }) {
-  const queue = useFetch<Queue>(queuePath, { retainData: true });
-  const board = useFetch<BuildBoard>(buildPath, { retainData: true });
+  const queue = useFetch<Queue>(queuePath);
+  const board = useFetch<BuildBoard>(buildPath);
   const recent = projectKey === undefined ? [] : readRecent(projectKey);
 
   const decisions = queue.data?.entries.length;

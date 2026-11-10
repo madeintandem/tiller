@@ -100,7 +100,9 @@ export default function WorkItems() {
     writeFilterQuery(projectKey, params);
   }, [location.key, projectKey]);
 
-  if (board.error !== null) return <p className="error">{board.error}</p>;
+  // An error replaces the board only before there is one; a failed reread
+  // keeps the last board and says so in the board bar.
+  if (board.error !== null && board.data === null) return <p className="error">{board.error}</p>;
   if (board.data === null) return <PageLoading title="Fix" />;
   // Restoring needs the project key; a URL that already names its filters
   // never waits on it, and a failed status read falls back to All.
@@ -141,7 +143,13 @@ export default function WorkItems() {
             scrollMode={scrollMode}
             onScrollMode={changeScrollMode}
             summary={`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
-          />
+          >
+            {board.error !== null && (
+              <span className="board-bar-notice error" title={board.error}>
+                board out of date
+              </span>
+            )}
+          </BoardToolbar>
           <BoardGrid
             className="work-items-board"
             scrollMode={scrollMode}

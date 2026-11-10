@@ -32,6 +32,7 @@ import Chip from "../../components/Chip";
 import CopyCmd from "../../components/CopyCmd";
 import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
+import OutOfDate from "../../components/OutOfDate";
 import RefLink from "../../components/RefLink";
 import { titleOf, useDocumentTitle, useFetch } from "../../hooks";
 import Prose from "../../components/Prose";
@@ -47,7 +48,9 @@ export default function QuestionsPane() {
   const { data, error } = useFetch<ListResult>(listPath("question"));
   const [params, setParams] = useSearchParams();
 
-  if (error !== null) {
+  // An error replaces the ledger only before there is one; a failed reread
+  // keeps the last ledger, marked out of date.
+  if (error !== null && data === null) {
     return (
       <div className="explore-detail">
         <p className="error">{error}</p>
@@ -74,6 +77,7 @@ export default function QuestionsPane() {
 
   return (
     <div className="explore-detail">
+      <OutOfDate error={error} />
       <div className="qhead">
         <h1>Questions</h1>
         <p className="sub">

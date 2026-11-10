@@ -157,7 +157,9 @@ export default function Build() {
     // rawEpics is non-null here: shouldStoreSelection is false for null.
   }, [rawEpics, projectKey]);
 
-  if (board.error !== null) {
+  // An error replaces the board only before there is one; a failed reread
+  // keeps the last board and says so in the board bar.
+  if (board.error !== null && board.data === null) {
     return (
       <section className="build-page">
         <h1>Build</h1>
@@ -171,7 +173,7 @@ export default function Build() {
   // The default selection needs the project summary; an explicit `?epics=`
   // (even the empty form) never does, so a slow or failed status fetch does
   // not block a pasted, fully-specified board URL from rendering.
-  if (needsDefault && summary.error !== null) {
+  if (needsDefault && summary.error !== null && summary.data === null) {
     return (
       <section className="build-page">
         <h1>Build</h1>
@@ -245,14 +247,19 @@ export default function Build() {
               card just carries no ask/drift flag); this is the one place
               that failure still gets said out loud, rather than reading as
               a clean board that simply has nothing to flag. */}
+          {board.error !== null && (
+            <span className="board-bar-notice error" title={board.error}>
+              board out of date
+            </span>
+          )}
           {queue.error !== null && (
             <span className="board-bar-notice muted" title={queue.error}>
-              asks unavailable
+              {queue.data === null ? "asks unavailable" : "asks out of date"}
             </span>
           )}
           {drift.error !== null && (
             <span className="board-bar-notice muted" title={drift.error}>
-              drift unavailable
+              {drift.data === null ? "drift unavailable" : "drift out of date"}
             </span>
           )}
         </BoardToolbar>

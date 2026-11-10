@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import type { Report as ReportPayload } from "../api";
 import { reportPath } from "../api";
 import NodeTabs from "../components/NodeTabs";
+import OutOfDate from "../components/OutOfDate";
 import PageLoading from "../components/PageLoading";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import AgentUseTab from "./report/AgentUseTab";
@@ -48,7 +49,9 @@ export default function Report() {
     }
     setSearch(next, { replace: true });
   };
-  if (error !== null) {
+  // An error replaces the report only before there is one; a failed reread
+  // keeps the last figures, marked out of date.
+  if (error !== null && data === null) {
     return (
       <section className="report-page">
         <h1>Report</h1>
@@ -72,6 +75,7 @@ export default function Report() {
           </button>
         </div>
       </header>
+      <OutOfDate error={error} />
       {data.off_branch && (
         <p className="report-notice" role="note">
           Showing branch {data.off_branch.branch}, not {data.off_branch.integration}. Numbers include unmerged work.

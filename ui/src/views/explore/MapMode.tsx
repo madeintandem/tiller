@@ -275,7 +275,7 @@ export default function MapMode({
   // failed there is no name to say, and a blank card at the center of the
   // map would read as a bug, so it says the generic noun instead.
   const rootTitle = projectName ?? "Project";
-  const { data: view, error, loading } = useFetch<MapView>(mapPath, { retainData: true });
+  const { data: view, error } = useFetch<MapView>(mapPath);
   const { inspectionView, mappedResults: activeResults, clearedOnRefresh, selectContext, mapResults, clearMappedResults } = useRelationshipContext(view);
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState<Set<string> | null>(null);
@@ -821,8 +821,10 @@ export default function MapMode({
           travel(layout, next);
         }}
       />
-      {(error !== null || loading || clearedOnRefresh) && <p className="map-refresh-status" role="status">
-        {error !== null ? `Refresh failed; showing the last successful map. ${error}` : loading ? "Refreshing the map…" : "Map refreshed; previous investigation results cleared. Browse or run a query to map fresh results."}
+      {/* A reread in flight shows in the topbar alone; the map says only what
+          the reader needs to act on: a failed refresh, or cleared results. */}
+      {(error !== null || clearedOnRefresh) && <p className="map-refresh-status" role="status">
+        {error !== null ? `Refresh failed; showing the last successful map. ${error}` : "Map refreshed; previous investigation results cleared. Browse or run a query to map fresh results."}
       </p>}
       <RelationshipLegend graph={inspectionView.relationships} edges={overlay.edges} kind={relationshipKind} scope={activeResults ? "Result page" : showAll ? "Whole project" : "Selected item"} onKind={(kind) => setOverlay(showAll, kind)} />
       {!inspectionView.relationships.complete && <div className="map-extraction-warning" role="status">

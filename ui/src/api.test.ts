@@ -4,6 +4,7 @@ import type { EvalPayload, QueueEntry } from "./api";
 import {
   fetchJSON,
   fetchWorkItems,
+  getFetchesInFlight,
   getLastFetchAt,
   isAttestGate,
   isEvalError,
@@ -146,5 +147,28 @@ describe("fetchJSON's last-fetch subscribable", () => {
     await fetchJSON("/api/status");
 
     expect(seen).toHaveLength(0);
+  });
+});
+
+// The focus reread waits while any read is out, so the count must come back
+// down however a read ends: answered, refused, or the network failing.
+describe("fetchJSON's in-flight count", () => {
+  it("counts a read while it is out and releases it on success, refusal, and failure", async () => {
+    const held = Promise.withResolvers<Response>();
+    vi.stubGlobal("fetch", vi.fn()
+      .mockReturnValueOnce(held.promise)
+      .mockResolvedValueOnce({ ok: false, status: 500, statusText: "Internal Server Error", text: () => Promise.resolve("") })
+      .mockRejectedValueOnce(new Error("offline")));
+    const before = getFetchesInFlight();
+
+    const reading = fetchJSON("/api/status");
+    expect(getFetchesInFlight()).toBe(before + 1);
+    held.resolve(Response.json({ ok: true }));
+    await reading;
+    expect(getFetchesInFlight()).toBe(before);
+
+    await expect(fetchJSON("/api/status")).rejects.toThrow();
+    await expect(fetchJSON("/api/status")).rejects.toThrow("offline");
+    expect(getFetchesInFlight()).toBe(before);
   });
 });

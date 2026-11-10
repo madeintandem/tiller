@@ -41,7 +41,7 @@ export default function FilterMode() {
     const value = params.get(axis);
     if (value !== null && value !== "") filters[axis] = value;
   }
-  const { data, error, loading } = useFetch<ListResult>(listPath(noun, filters), { retainData: true });
+  const { data, error, loading } = useFetch<ListResult>(listPath(noun, filters));
   // useFetch retains refreshes of an identical path. Filter picks change the
   // path, so retain the bar's last success locally, scoped strictly to noun.
   const [retained, setRetained] = useState<{ noun: string; data: ListResult | null }>({ noun, data: null });

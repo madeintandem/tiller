@@ -8,6 +8,7 @@ import AsOf from "./components/AsOf";
 import ThemeToggle from "./components/ThemeToggle";
 import TopbarSearch from "./components/TopbarSearch";
 import { titleOf, useDocumentTitle, useFetch } from "./hooks";
+import { useRefetchOnFocus } from "./lib/useRefetchOnFocus";
 import { PeopleProvider } from "./people";
 import Build from "./views/Build";
 import Explore, { NoSelectionPane } from "./views/Explore";
@@ -59,8 +60,16 @@ function useTopbarHeight(headerRef: RefObject<HTMLElement | null>) {
 
 export default function App() {
   const pathname = useLocation().pathname;
-  const { data: summary, error: summaryError } = useFetch<ProjectSummary>(statusPath, { refreshKey: pathname });
+  // Each navigation rereads the status, and the shell keeps the last answer
+  // while it does: the topbar's project and Home's desk never blank for a
+  // read of the same resource. Coming back to the window rereads every
+  // mounted page the same way, in the background.
+  const { data: summary, error: summaryError } = useFetch<ProjectSummary>(statusPath, {
+    refreshKey: pathname,
+    retainData: true,
+  });
   const { data: build } = useFetch<{ version: string }>(versionPath);
+  useRefetchOnFocus();
   // Node and source-file readers and the Questions and Amendments ledgers
   // all render inside Explore's shell (the layout route below), so the nav
   // marks Explore as where you are even though none of those paths starts

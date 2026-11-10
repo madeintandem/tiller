@@ -39,8 +39,14 @@
 // in-flight request happens to fail leaves the button disabled until the
 // next unrelated read succeeds - the same trade the rest of this file makes
 // rather than inventing a dedicated in-flight counter for one button.
+//
+// Any reread holds the control the same way, not only this button's: the
+// window regaining focus bumps the same generation (lib/useRefetchOnFocus),
+// so `refreshing` follows the generation subscription, and the disabled
+// control is the one quiet sign a reread is out. Pages never draw a spinner
+// for it; they keep what they show until the answer lands.
 import { useEffect, useState } from "react";
-import { bumpFetchGeneration, getLastFetchAt, subscribeLastFetch } from "../api";
+import { bumpFetchGeneration, getLastFetchAt, subscribeFetchGeneration, subscribeLastFetch } from "../api";
 
 export default function AsOf() {
   const [at, setAt] = useState<Date | null>(() => getLastFetchAt());
@@ -58,6 +64,8 @@ export default function AsOf() {
       }),
     [],
   );
+
+  useEffect(() => subscribeFetchGeneration(() => setRefreshing(true)), []);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);

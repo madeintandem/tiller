@@ -156,7 +156,7 @@ export default function Explore() {
   // map's storage key is namespaced per project, the same every-view-
   // fetches-its-own posture Build.tsx already keeps for its own default
   // selection (App.tsx:66-72).
-  const summary = useFetch<ProjectSummary>(statusPath, { retainData: true });
+  const summary = useFetch<ProjectSummary>(statusPath);
   const projectKey = summary.data?.project.key;
   // Whether /api/status resolved to real project
   // data or to an error, "settled" is the one signal the auto-open effect
