@@ -389,11 +389,13 @@ function EpicRow({ epic, on, onToggle }: { epic: BuildEpic; on: boolean; onToggl
           Contributors: <Contributors people={epic.contributors} />
         </div>
       )}
-      <span className="mixbar">
+      <span className="mixbar" title={epic.features.length > 0 ? caption : undefined}>
         {/* Navigator.tsx's own rule, mirrored: caption only when the epic
             actually has children, so a childless row's bar stays decorative
             (aria-hidden, StateBar's own contract) instead of announcing "no
-            features yet" for a row nobody needs read out. */}
+            features yet" for a row nobody needs read out. The same words
+            ride the bar as its hover title, so a sighted reader is never
+            left with color alone. */}
         <StateBar mix={mix} caption={epic.features.length > 0 ? caption : undefined} />
       </span>
     </div>
@@ -434,6 +436,10 @@ function ColumnBody({
 } & LaneMark) {
   return (
     <div className="col board-column" {...mark}>
+      {/* An empty column says it was consulted, the same "(none)" Fix's
+          columns show. A collapsed rail hides it (board.css), so it is seen
+          only when every column is empty and the lanes stay full width. */}
+      {cards.length === 0 && <EmptyNote />}
       {cards.map(({ epic, feature }, index) => (
         <FeatureCard
           key={feature.id}

@@ -8,7 +8,7 @@ describe("drift copy", () => {
   it.each([...vocabulary.drift_markers, ...vocabulary.drift_extra_markers])("marker %s has a plain name, a meaning, and a next step", (marker) => {
     const copy = MARKER_COPY[marker];
     expect(copy).toBeDefined();
-    for (const text of [copy.name, copy.meaning, copy.next]) {
+    for (const text of [copy.name, copy.meaning, copy.next, copy.unchecked]) {
       expect(text.trim()).not.toBe("");
       expect(text).not.toContain("_");
       expect(text).not.toContain("\u2014");
@@ -39,7 +39,9 @@ describe("drift copy", () => {
     expect(MARKER_COPY.active_basis.name).toBe("Work started from an older basis");
     expect(MARKER_COPY.answered_question.name).toBe("An answered question was not reviewed");
     expect(MARKER_COPY.missing_surface.name).toBe("Recorded file is gone");
-    expect(MARKER_COPY.orphan_eval.name).toBe("Eval no longer matches its spec");
+    expect(MARKER_COPY.orphan_eval.name).toBe("Eval points at something missing");
+    expect(MARKER_COPY.orphan_eval.unchecked).toBe("Eval references not checked");
+    expect(MARKER_COPY.stale_design.unchecked).toBe("Design doc not checked against the code");
     expect(MARKER_COPY.stale_design.name).toBe("Design doc is behind the code");
     expect(MARKER_COPY.shifted_design.name).toBe("Design doc may have shifted");
     expect(REASON_COPY.ref_unreadable.cause).toBe(
@@ -51,6 +53,7 @@ describe("drift copy", () => {
   it("humanizes a marker or reason from a newer server instead of printing it raw", () => {
     const marker = markerCopy("stale_widget");
     expect(marker.name).toBe("Stale widget");
+    expect(marker.unchecked).toBe("Stale widget not checked");
     expect(marker.meaning).not.toContain("_");
     expect(marker.next).not.toContain("_");
     const reason = reasonCopy("stale_widget", "widget_jammed");
@@ -133,6 +136,27 @@ describe("reason copy is keyed by marker and reason", () => {
     expect(stale.cause).toContain("finished");
     expect(shifted.cause).toContain("current commit");
     expect(shifted.cause).not.toContain("finished");
+  });
+
+  // stale_design emits history_diverged in two places (design.go): one
+  // feature's completion split from the confirmation, and the finished
+  // features' completions split from each other. One sentence covers both.
+  it("states stale_design's history_diverged so it is true when completions split from each other", () => {
+    const stale = reasonCopy("stale_design", "history_diverged");
+    expect(stale.cause).toBe(
+      "The confirmation and the finished work that touched this code do not sit on one line of history, so no single range can be compared.",
+    );
+  });
+
+  it("marks the reasons whose row detail only restates the cause", () => {
+    expect(reasonCopy("stale_design", "unconfirmed").detailRestatesCause).toBe(true);
+    expect(reasonCopy("stale_spec", "no_completion_record").detailRestatesCause).toBe(true);
+    expect(reasonCopy("stale_spec", "spec_unreadable").detailRestatesCause).toBeUndefined();
+  });
+
+  it("says approved work, not work in flight, for active_basis", () => {
+    expect(MARKER_COPY.active_basis.meaning).not.toContain("in flight");
+    expect(MARKER_COPY.active_basis.meaning).toContain("approved");
   });
 
   it("says a different, true thing for surface_unreadable under each marker", () => {

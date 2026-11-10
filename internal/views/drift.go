@@ -8,6 +8,7 @@ package views
 // "no reasoning, no mutation, no rendering").
 
 import (
+	"path"
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/drift"
@@ -138,7 +139,7 @@ func candidateViewOf(t *store.Tree, c drift.Candidate) CandidateView {
 		Key:     c.Key,
 		Title:   nodeTitle(gen.NodeByID(t, c.ID)),
 		Detail:  c.Detail,
-		Files:   c.Files,
+		Files:   candidateFiles(t, c),
 		Since:   sinceViewOf(c.Since),
 		Until:   sinceViewOf(c.Until),
 		Context: c.Context,
@@ -147,6 +148,7 @@ func candidateViewOf(t *store.Tree, c drift.Candidate) CandidateView {
 	}
 	if c.Noun == "design" {
 		v.Ref = c.Key
+		v.Title = c.Title
 	}
 	for _, feature := range c.Features {
 		row := DesignFeatureView{ID: feature.ID, Key: feature.Key, Spec: feature.Spec}
@@ -156,6 +158,33 @@ func candidateViewOf(t *store.Tree, c drift.Candidate) CandidateView {
 		v.Features = append(v.Features, row)
 	}
 	return v
+}
+
+// candidateFiles names a candidate's files by their path from the repository
+// root, the one form every marker's row shows. active_basis is the marker
+// whose sweep records its pinned files by bare name (feature.md, task.md),
+// because the pin is per node; those names are joined onto the reported
+// node's own folder here, from the tree alone. Every other marker already
+// records repository paths and passes through unchanged, as does a bare name
+// whose node the tree no longer resolves.
+func candidateFiles(t *store.Tree, c drift.Candidate) []string {
+	if c.Marker != drift.MarkerActiveBasis || len(c.Files) == 0 {
+		return c.Files
+	}
+	prose, ok := gen.ProsePath(t, gen.NodeByID(t, c.ID))
+	if !ok {
+		return c.Files
+	}
+	dir := path.Dir(prose)
+	files := make([]string, len(c.Files))
+	for i, name := range c.Files {
+		if strings.Contains(name, "/") {
+			files[i] = name
+		} else {
+			files[i] = path.Join(dir, name)
+		}
+	}
+	return files
 }
 
 // candidateRemedy composes the candidate's clearing move where the recorded
@@ -231,6 +260,7 @@ func uncoveredViewOf(t *store.Tree, u drift.Uncovered) UncoveredView {
 	}
 	if u.Noun == "design" {
 		v.Ref = u.Key
+		v.Title = u.Title
 	}
 	return v
 }

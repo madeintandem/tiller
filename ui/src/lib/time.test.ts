@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAbsolute, formatClock, formatDayHeading, formatWhen } from "./time";
+import { formatAbsolute, formatClock, formatDayHeading, formatPoint, formatWhen } from "./time";
 
 // Instants are built from local-time constructors so the wall-clock strings
 // are the same in every timezone the suite runs in.
@@ -47,6 +47,24 @@ describe("formatDayHeading", () => {
   });
   it("returns an unparseable value unchanged", () => {
     expect(formatDayHeading("nope", now)).toBe("nope");
+  });
+});
+
+describe("formatPoint", () => {
+  it("gives the clock reading for an instant earlier today", () => {
+    expect(formatPoint(at(2026, 11, 9, 11, 26), now)).toBe("11:26 AM");
+  });
+  it("never reads as relative, even a few seconds back", () => {
+    expect(formatPoint(at(2026, 11, 9, 14, 5, 50), now)).toBe("2:05 PM");
+  });
+  it("dates an instant on another day this year", () => {
+    expect(formatPoint(at(2026, 11, 8, 23, 26), now)).toBe("Nov 8, 11:26 PM");
+  });
+  it("adds the year outside the current year", () => {
+    expect(formatPoint(at(2025, 11, 9, 14, 6), now)).toBe("Nov 9, 2025, 2:06 PM");
+  });
+  it("returns an unparseable value unchanged", () => {
+    expect(formatPoint("nope", now)).toBe("nope");
   });
 });
 

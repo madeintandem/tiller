@@ -21,6 +21,7 @@ import type {
 } from "../../api";
 import InstrSection from "../../components/InstrSection";
 import RefLink from "../../components/RefLink";
+import { amendmentOpLabel, changeTypeLabel, preconditionLabel } from "../../lib/fieldWords";
 import { has } from "../../lib/has";
 import ProseSection from "./ProseSection";
 
@@ -80,7 +81,7 @@ function OperationSubject({ op }: { op: AmendmentOperationPageView }) {
 function PreconditionRow({ pc }: { pc: AmendmentPreconditionPageView }) {
   return (
     <li className="instr-drift instr-amendpre">
-      <span className="mono instr-drift-say">{pc.name}</span>
+      <span className="instr-drift-say">{preconditionLabel(pc.name)}</span>
       <span className="muted">expected</span>
       <span className="mono">{pc.expected}</span>
       {pc.live !== undefined && (
@@ -127,9 +128,9 @@ function OperationRow({ op }: { op: AmendmentOperationPageView }) {
     <div className="instr-amendop">
       <div className="instr-drift instr-amendop-head">
         <span className="mono">{op.index + 1}</span>
-        <span className="instr-drift-say">{op.op}</span>
+        <span className="instr-drift-say">{amendmentOpLabel(op.op, op.target?.noun)}</span>
         <OperationSubject op={op} />
-        {op.op === "add-feature" && has(op.change_type) && <span className="muted">{op.change_type}</span>}
+        {op.op === "add-feature" && has(op.change_type) && <span className="muted">{changeTypeLabel(op.change_type)}</span>}
       </div>
       {op.op === "add-question" && has(op.statement) && (
         <div className="instr-amendop-detail">

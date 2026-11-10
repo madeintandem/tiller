@@ -41,15 +41,16 @@ func sweepDesign(t *store.Tree, rev vcs.Revisions, rep *Report, marker string) {
 
 func reportDesign(t *store.Tree, rev vcs.Revisions, rep *Report, doc store.BaselineDoc, marker string) {
 	before := len(rep.Uncovered)
+	title := store.BaselineDocTitle(t.Root, doc.Path)
 	uncovered := func(reason, detail string) {
-		rep.Uncovered = append(rep.Uncovered, Uncovered{Marker: marker, Noun: "design", Key: doc.Path, Reason: reason, Detail: detail})
+		rep.Uncovered = append(rep.Uncovered, Uncovered{Marker: marker, Noun: "design", Key: doc.Path, Title: title, Reason: reason, Detail: detail})
 	}
 	if doc.Confirmed == nil {
 		uncovered("unconfirmed", "no human confirmation of the described code is recorded")
 		bumpCoverage(rep, marker, "unresolvable")
 		return
 	}
-	candidate := Candidate{Marker: marker, Noun: "design", Key: doc.Path, Since: &doc.Confirmed.Commit}
+	candidate := Candidate{Marker: marker, Noun: "design", Key: doc.Path, Title: title, Since: &doc.Confirmed.Commit}
 	affected := map[string]bool{}
 	var missing []string
 	stamps := make(map[string]store.SurfaceFingerprint, len(doc.Confirmed.Surfaces))

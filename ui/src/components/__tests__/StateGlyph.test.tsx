@@ -42,8 +42,13 @@ describe("StateGlyph", () => {
   });
 
   it("rests an unknown status at the draft shape rather than drawing nothing", () => {
-    expect(shapeOf("cancelled")).toBe(shapeOf("draft"));
     expect(shapeOf("someday")).toBe(shapeOf("draft"));
+  });
+
+  // Cancelled draws its own struck ring, so it is never told from draft by
+  // color and opacity alone (browser walk D-F, D2).
+  it("draws cancelled as its own shape, not the draft ring", () => {
+    expect(shapeOf("cancelled")).not.toBe(shapeOf("draft"));
   });
 
   it("names the status label for assistive tech", () => {

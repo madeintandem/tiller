@@ -45,6 +45,12 @@ export default function FeatureCard({
   }
 
   const classes = ["fcard"];
+  // An expandable card draws the absolutely positioned caret at its top
+  // right; the class lets build.css reserve that width on the title and the
+  // epic eyebrow so neither runs under it.
+  if (hasTasks) {
+    classes.push("expandable");
+  }
   if (askLabel !== undefined) {
     classes.push("needs-you");
   }
@@ -166,7 +172,10 @@ function CardTaskRow({ task }: { task: RelatedNode }) {
   const label = task.title !== undefined && task.title !== "" ? task.title : task.ref;
   // The status leads as a shape glyph whose accessible name and hover tooltip
   // are the status in plain words, so the title keeps the row's full width
-  // and no trailing chip crowds it.
+  // and no trailing chip crowds it. A cancelled task has its own glyph shape
+  // (StateGlyph) and its row steps back, as the Explore navigator's settled
+  // rows do.
+  const className = task.status === "cancelled" ? "trow is-cancelled" : "trow";
   const body = (
     <>
       {task.status !== "" && <StateGlyph status={task.status} size={12} />}
@@ -177,12 +186,12 @@ function CardTaskRow({ task }: { task: RelatedNode }) {
   // longer knows degrades to an empty noun/id) renders as plain text, the
   // same guard RefLink applies everywhere else on the console.
   if (task.noun === "" || task.id === "") {
-    return <div className="trow">{body}</div>;
+    return <div className={className}>{body}</div>;
   }
   return (
     <Link
       to={`/node/${task.noun}/${task.id}`}
-      className="trow"
+      className={className}
       onClick={(e) => {
         e.stopPropagation();
       }}

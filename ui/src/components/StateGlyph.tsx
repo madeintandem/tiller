@@ -71,6 +71,17 @@ const SHAPES: Record<NodeStatus, ReactElement> = {
   ),
 };
 
+// Cancelled is not a chart state (it folds to the draft bucket for color),
+// but its glyph must not be the draft dashed ring, or cancelled and draft
+// differ only by color and opacity. It draws a ring struck through, the
+// shape for "this will not happen", in the draft slate.
+const CANCELLED = (
+  <>
+    {RING}
+    <path d="M4.2 11.8 L11.8 4.2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </>
+);
+
 // Quick enough to feel like an answer, slow enough that sweeping the
 // pointer down the tree does not flash a tooltip on every row it crosses.
 const SHOW_DELAY_MS = 150;
@@ -80,7 +91,8 @@ const GAP = 8;
 const EDGE = 8;
 
 export default function StateGlyph({ status, size = 14 }: { status: string; size?: number }) {
-  const shape = foldStatus(status);
+  const cancelled = status === "cancelled";
+  const shape = cancelled ? "cancelled" : foldStatus(status);
   const label = statusLabel(status);
   const glyphRef = useRef<SVGSVGElement>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -124,7 +136,7 @@ export default function StateGlyph({ status, size = 14 }: { status: string; size
         onPointerEnter={show}
         onPointerLeave={hide}
       >
-        {SHAPES[shape]}
+        {cancelled ? CANCELLED : SHAPES[foldStatus(status)]}
       </svg>
       {anchor !== null && <GlyphTooltip anchor={anchor} label={label} />}
     </>

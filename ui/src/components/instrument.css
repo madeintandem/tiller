@@ -908,16 +908,18 @@
   color: var(--ink);
 }
 
+/* The report link reads as a link: ink with the console's quiet dotted
+   underline (.node-facts' internal links), solid on hover. */
 .instr-drift-more {
   display: inline-block;
   margin-top: 10px;
   font-size: 11.5px;
-  color: var(--ink-2);
-  text-decoration: none;
+  color: var(--ink);
+  text-decoration: underline dotted var(--ink-3);
+  text-underline-offset: 3px;
 }
 
 .instr-drift-more:hover {
-  color: var(--ink);
   text-decoration: underline;
 }
 

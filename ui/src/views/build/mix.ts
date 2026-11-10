@@ -34,8 +34,11 @@ export function composeMix(counts: Record<string, number> | undefined): StateMix
 // card count (review finding 1: the mix already only ever read the six
 // known keys, so it never rendered a phantom column - it just had nothing
 // to say about what those six keys leave out).
+// Every status word goes through statusLabel, lower-cased the way
+// taskMixCaption words them: the caption is also the rail bar's hover title,
+// so "1 in review · 6 done", never "1 in_review".
 export function composeMixCaption(mix: StateMixEntry[], counts?: Record<string, number>): string {
-  const visible = mix.filter((s) => s.n > 0).map((s) => `${String(s.n)} ${s.state}`);
+  const visible = mix.filter((s) => s.n > 0).map((s) => `${String(s.n)} ${statusLabel(s.state).toLowerCase()}`);
   const parts = [...visible, ...excludedParts(counts)];
   return parts.length === 0 ? "no features yet" : parts.join(" · ");
 }
@@ -56,7 +59,7 @@ function excludedParts(counts: Record<string, number> | undefined): string[] {
   const parts: string[] = [];
   for (const [status, n] of Object.entries(counts)) {
     if (n > 0 && !isColumnStatus(status)) {
-      parts.push(`+${String(n)} ${status}`);
+      parts.push(`+${String(n)} ${statusLabel(status).toLowerCase()}`);
     }
   }
   return parts;

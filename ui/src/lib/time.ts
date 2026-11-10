@@ -1,5 +1,5 @@
 // One timestamp voice for the console. Every RFC3339 value the API sends is
-// shown through these three functions, in the reader's local time. A value that
+// shown through these functions, in the reader's local time. A value that
 // does not parse is returned unchanged: showing the raw field beats hiding it.
 
 const MINUTE = 60_000;
@@ -32,6 +32,32 @@ export function formatWhen(iso: string, now: Date): string {
   }
   if (age < DAY) {
     return `${Math.floor(age / HOUR)}h ago`;
+  }
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return plain(
+    d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      ...(sameYear ? {} : { year: "numeric" }),
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+  );
+}
+
+// formatPoint names an instant as a point in time, never as an age, for
+// sentences that read "since <point>": the clock when it is today ("11:26
+// PM"), otherwise the date and clock ("Nov 8, 11:26 PM"), with the year when
+// it is not now's year. "Today" is the reader's local calendar day.
+export function formatPoint(iso: string, now: Date): string {
+  const d = parse(iso);
+  if (d === null) {
+    return iso;
+  }
+  const sameDay =
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  if (sameDay) {
+    return formatClock(iso);
   }
   const sameYear = d.getFullYear() === now.getFullYear();
   return plain(

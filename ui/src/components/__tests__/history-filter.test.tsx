@@ -143,10 +143,11 @@ describe("History filters", () => {
     expect(loc()).toBe("/history?window=7d");
   });
 
-  it("turns asked you into a link that sets kind=asked", async () => {
+  it("turns the ask clause into a link that sets kind=asked", async () => {
     await load("/history?window=7d&actor=jc&epic=E-1&show=all");
     const row = document.querySelector(".recap-burst .recap-asks-count") as HTMLElement;
-    const link = within(row).getByRole("link", { name: "asked you" });
+    // The row is a lone asked question, whose verb is already "asked".
+    const link = within(row).getByRole("link", { name: "of you" });
     fireEvent.click(link);
     expect(loc()).toBe("/history?window=7d&show=all&actor=jc&kind=asked&epic=E-1");
   });

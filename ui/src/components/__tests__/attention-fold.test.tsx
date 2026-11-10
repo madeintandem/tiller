@@ -78,7 +78,7 @@ describe("NodeDetail: the attention fold", () => {
     expect(screen.getByText("Workflow · Human")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "tiller attest second" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "tiller attest third" })).not.toBeInTheDocument();
-    const more = screen.getByRole("button", { name: "2 more" });
+    const more = screen.getByRole("button", { name: "Show 2 more" });
     expect(more).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(more);
     expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();
@@ -90,9 +90,30 @@ describe("NodeDetail: the attention fold", () => {
   // style of its own; its focus ring is the console-wide :focus-visible rule.
   it("dresses the fold button as the node page's existing disclosure", () => {
     renderPage(taskPage({ workflow }), { entries: [ask("tiller attest second")] });
-    const more = screen.getByRole("button", { name: "1 more" });
+    const more = screen.getByRole("button", { name: "Show 1 more" });
     expect(more).toHaveClass("instr-more");
     expect(more).not.toHaveClass("attn-more");
+  });
+
+  // Unfocused, the fold read as plain gray text (browser walk D-F, R5): it
+  // is a disclosure control, with a chevron and a verb, and folds back up.
+  it("reads as a disclosure control: a verb, a chevron, and a way back to fewer", () => {
+    renderPage(taskPage({ workflow }), { entries: [ask("tiller attest second"), ask("tiller attest third")] });
+    const more = screen.getByRole("button", { name: "Show 2 more" });
+    expect(more).toHaveClass("instr-more-toggle");
+    const chevron = more.querySelector(".instr-more-chevron") as HTMLElement;
+    expect(chevron).toHaveAttribute("aria-hidden", "true");
+    expect(chevron.textContent).toBe("▸");
+
+    fireEvent.click(more);
+    const fewer = screen.getByRole("button", { name: "Show fewer" });
+    expect(fewer).toHaveAttribute("aria-expanded", "true");
+    expect(fewer.querySelector(".instr-more-chevron")?.textContent).toBe("▾");
+    expect(screen.getByRole("button", { name: "tiller attest third" })).toBeInTheDocument();
+
+    fireEvent.click(fewer);
+    expect(screen.queryByRole("button", { name: "tiller attest third" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show 2 more" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("offers no button for exactly one box", () => {
@@ -105,6 +126,6 @@ describe("NodeDetail: the attention fold", () => {
     renderPage(taskPage(), { entries: [ask("tiller attest second"), ask("tiller attest third")] });
     expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "tiller attest third" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "1 more" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show 1 more" })).toBeInTheDocument();
   });
 });

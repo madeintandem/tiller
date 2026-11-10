@@ -257,7 +257,7 @@ describe("Node header: the facts block", () => {
     expect(factValue(container, "Contributors").textContent).toBe("JC Grubbs");
     expect(facts(container).queryByText("Owner")).not.toBeInTheDocument();
     expect(factValue(container, "Branch").textContent).toBe("tiller/habit-engine/swiftdata-model");
-    expect(factValue(container, "Change").textContent).toBe("create");
+    expect(factValue(container, "Change").textContent).toBe("New code");
     expect(factValue(container, "Touches").textContent).toBe("app/a.rb, app/b.rb");
     // The old scattered lines are gone: no second caption row under the block.
     expect(container.querySelector(".instr-dmeta")).toBeNull();

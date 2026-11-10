@@ -310,7 +310,7 @@ describe("Fix board", () => {
     const original = (await screen.findByRole("link", { name: "Original" })).closest("article") as HTMLElement;
     const replacement = screen.getByRole("link", { name: "Replacement" }).closest("article") as HTMLElement;
     expect(original).toHaveTextContent("Owner: pat");
-    expect(original).toHaveTextContent("transferred");
+    expect(original).toHaveTextContent("Resolution: Transferred");
     expect(within(original).getByRole("link", { name: "B-new" })).toHaveAttribute("href", "/node/bug/B-new");
     expect(replacement).toHaveTextContent("Owner: sam");
     expect(within(replacement).getByRole("link", { name: "B-old" })).toHaveAttribute("href", "/node/bug/B-old");

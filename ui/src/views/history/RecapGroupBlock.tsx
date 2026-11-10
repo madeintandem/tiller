@@ -10,7 +10,7 @@ import { burstAt, dayGroupsOf } from "./days";
 
 // A group is one (epic, stream) cell of the digest. Epic is null for the
 // project-level groups (a question, a dangling id), which the API sorts
-// last; those render under a plain "project" label rather than a link.
+// last; those render under a plain "Project" label rather than a link.
 // The head leads with the epic's TITLE and lets the key follow as muted mono
 // (ui-surface.md's console-scoped carve-out), carries the cell's TRUE count
 // (what was served plus what the API's cap omitted), and starts open.
@@ -52,7 +52,7 @@ export default function RecapGroupBlock({
             <span className="mono muted recap-group-key">{group.epic.key}</span>
           </>
         ) : (
-          <span className="recap-group-title muted">project</span>
+          <span className="recap-group-title muted">Project</span>
         )}
         {showStream && group.stream !== "" && (
           <span className="muted recap-group-stream">· <PersonName id={group.stream} /></span>

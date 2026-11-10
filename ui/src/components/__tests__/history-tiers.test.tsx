@@ -211,8 +211,9 @@ describe("History tiers", () => {
     stubFetch({ "/api/recap?window=7d": mixed });
     renderHistory("/history?window=7d&group=time");
 
+    // By time, the fold names its origin epic the way ordinary rows do there.
     expect(
-      await screen.findByRole("button", { name: "4 bookkeeping changes (linked, reordered, retitled)" }),
+      await screen.findByRole("button", { name: "4 bookkeeping changes (linked, reordered, retitled) audit" }),
     ).toBeInTheDocument();
   });
 });

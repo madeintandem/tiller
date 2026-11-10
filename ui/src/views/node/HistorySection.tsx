@@ -25,9 +25,22 @@ import Chip from "../../components/Chip";
 import InstrSection from "../../components/InstrSection";
 import Time from "../../components/Time";
 import { eventPhrase } from "../../lib/eventPhrase";
+import { statusLabel } from "../../lib/statusLabel";
 import { PersonName } from "../../people";
 
 const ROW_CAP = 8;
+
+// showsOutcome: a row carries its outcome chip unless its verb already says
+// it, which is when the outcome's label, lower-cased, is the verb's stem
+// ("check" in "checked", "cancelled" in "cancelled"). "submitted" beside In
+// review says something the verb does not, so that chip stays.
+function showsOutcome(e: HistoryEntry): boolean {
+  if (e.outcome === undefined || e.outcome === "") {
+    return false;
+  }
+  const verb = eventPhrase(e.type, 1).verb.toLowerCase();
+  return !verb.startsWith(statusLabel(e.outcome).toLowerCase());
+}
 
 export default function HistorySection({
   history,
@@ -60,7 +73,7 @@ export default function HistorySection({
             <span className="muted history-at"><Time iso={e.at} /></span>
             <span className="history-type">{eventPhrase(e.type, 1).verb}</span>
             {e.contributor !== "" && <span className="muted"><PersonName id={e.contributor} /></span>}
-            {e.outcome !== undefined && e.outcome !== "" && <Chip status={e.outcome} />}
+            {showsOutcome(e) && <Chip status={e.outcome ?? ""} />}
           </li>
         ))}
         {pending && (

@@ -86,6 +86,7 @@ type Candidate struct {
 	Until    *store.RevisionRef // optional verified upper history anchor
 	Features []DesignFeature    // complete matching done-feature facts for stale_design
 	Context  []string           // beside-the-candidate facts, e.g. "14 files changed under app/models"
+	Title    string             // a design row's document title (its first heading); empty for work nodes, whose title the tree holds
 
 	// Question is the answered question's id, set by answered_question alone:
 	// the structured handle the remedy command composes from
@@ -113,6 +114,7 @@ type Uncovered struct {
 	Noun   string
 	ID     string
 	Key    string
+	Title  string // a design row's document title, as Candidate.Title
 
 	// Reason is scoped PER MARKER, not a single flat, globally-unique
 	// vocabulary: two different markers
@@ -417,6 +419,23 @@ func nodeKey(n store.Node) string {
 var activeBasisFeatureStatuses = map[string]bool{"ready": true, "active": true}
 var activeBasisTaskStatuses = map[string]bool{"ready": true, "in_progress": true, "check": true, "in_review": true}
 
+// ActiveBasisApplies reports whether n is a node the active_basis sweep
+// compares at all: a ready or active feature, or an approved non-terminal
+// task. It is the one rule every reporter of basis drift shares, so the node
+// page never shows a finding (and a refresh-basis remedy the CLI refuses) on
+// a node `tiller drift` would not list, such as a done feature whose eval an
+// approved amendment corrected.
+func ActiveBasisApplies(n store.Node) bool {
+	switch v := n.(type) {
+	case *store.Feature:
+		return activeBasisFeatureStatuses[v.Status]
+	case *store.Task:
+		return activeBasisTaskStatuses[v.Status]
+	default:
+		return false
+	}
+}
+
 // sweepActiveBasis walks the ready/active features and the ready/
 // in_progress/check/in_review tasks, calling mutate.BasisDrift per node (the
 // same predicate start/check/submit refuse on) and folding each result into
@@ -446,7 +465,7 @@ func sweepActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report) {
 
 	for _, id := range sortedFeatureIDs(t) {
 		f := t.Features[id]
-		if !activeBasisFeatureStatuses[f.Status] {
+		if !ActiveBasisApplies(f) {
 			continue
 		}
 		ok, detail := reportActiveBasis(t, rev, rep, f, seen)
@@ -455,7 +474,7 @@ func sweepActiveBasis(t *store.Tree, rev vcs.Revisions, rep *Report) {
 
 	for _, id := range sortedTaskIDs(t) {
 		tk := t.Tasks[id]
-		if !activeBasisTaskStatuses[tk.Status] {
+		if !ActiveBasisApplies(tk) {
 			continue
 		}
 		parentOK, parentDetail := reportActiveBasis(t, rev, rep, tk, seen)
@@ -672,18 +691,15 @@ func sortedTaskIDs(t *store.Tree) []string {
 // the sweep's tree-wide seen map, which dedupes a task's parent-walk hit
 // against its feature's own report across the WHOLE loop.
 func activeBasisForNode(t *store.Tree, rev vcs.Revisions, rep *Report, n store.Node) {
+	if !ActiveBasisApplies(n) {
+		return
+	}
 	seen := map[string]bool{}
 	switch v := n.(type) {
 	case *store.Feature:
-		if !activeBasisFeatureStatuses[v.Status] {
-			return
-		}
 		ok, detail := reportActiveBasis(t, rev, rep, v, seen)
 		finishActiveBasisNode(rep, v, ok, detail)
 	case *store.Task:
-		if !activeBasisTaskStatuses[v.Status] {
-			return
-		}
 		parentOK, parentDetail := reportActiveBasis(t, rev, rep, v, seen)
 		ownOK, ownDetail := reportTaskOwnBasis(t, rev, rep, v, seen)
 		finishActiveBasisNode(rep, v, parentOK && ownOK, joinBasisDetails(parentDetail, ownDetail))
@@ -1245,12 +1261,12 @@ func staleSpecDetail(find staleSpecFinding) (string, []string) {
 	var detail string
 	var context []string
 	if len(find.vanished) > 0 {
-		detail = fmt.Sprintf("%s deleted since it was verified at done", strings.Join(itemLabels(find.vanished), ", "))
+		detail = fmt.Sprintf("%s deleted after the work was finished", strings.Join(itemLabels(find.vanished), ", "))
 		if len(find.changed) > 0 {
-			context = append(context, fmt.Sprintf("%s also changed since it was verified at done", strings.Join(itemLabels(find.changed), ", ")))
+			context = append(context, fmt.Sprintf("%s also changed after the work was finished", strings.Join(itemLabels(find.changed), ", ")))
 		}
 	} else {
-		detail = fmt.Sprintf("%s changed since it was verified at done", strings.Join(itemLabels(find.changed), ", "))
+		detail = fmt.Sprintf("%s changed after the work was finished", strings.Join(itemLabels(find.changed), ", "))
 	}
 	context = append(context, find.context...)
 	return detail, context

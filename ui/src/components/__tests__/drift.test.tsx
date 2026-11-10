@@ -5,8 +5,9 @@
 //
 // The scenarios below are the brief's own required list: a section per
 // marker with candidates, in the schema's fixed order rather than incidental
-// object-key order; the KNOWN NUANCE that active_basis's files are basenames
-// while every other marker's are repo-relative, neither ever a link; an
+// object-key order; every marker's files as paths from the repository root
+// (the server joins active_basis's pinned names onto the node's folder),
+// never a link; an
 // Uncovered section; the footer (compared, disabled, exempted, coverage with
 // units); and an empty state that states what was compared, mirroring the
 // CLI's own coverage assertion rather than a bare "no drift".
@@ -88,7 +89,7 @@ function fullReport(): DriftReportView {
           id: "F-active",
           key: "form-engine/audit-export",
           detail: "feature.md changed since the accepted basis",
-          files: ["feature.md"],
+          files: [".tiller/epics/form-engine/features/audit-export/feature.md"],
           since: { kind: "git_commit", value: "git:e5f9d28a1b2c3d4e5f6" },
         },
       ],
@@ -129,7 +130,7 @@ describe("Drift page: marker sections", () => {
 
     const activeBasisHead = await screen.findByText(/Work started from an older basis \(1\)/);
     const missingSurfaceHead = await screen.findByText(/Recorded file is gone \(1\)/);
-    const orphanEvalHead = await screen.findByText(/Eval no longer matches its spec \(1\)/);
+    const orphanEvalHead = await screen.findByText(/Eval points at something missing \(1\)/);
 
     // Schema order is active_basis, then missing_surface, then orphan_eval;
     // the fixture inserted missing_surface first, so a pass here proves the
@@ -165,18 +166,17 @@ describe("Drift page: marker sections", () => {
   });
 });
 
-describe("Drift page: the KNOWN NUANCE, files render as text, never a link", () => {
-  it("renders active_basis's basename and another marker's repo-relative path both as plain text", async () => {
+describe("Drift page: files render as text, never a link", () => {
+  it("renders active_basis's path and another marker's path both as plain text", async () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    const basename = await screen.findByText("feature.md");
+    const basis = await screen.findByText(".tiller/epics/form-engine/features/audit-export/feature.md");
     const repoRelative = await screen.findByText("app/models/legacy_calc.rb");
 
-    // Neither shape is a link: a basename does not say which directory it
-    // lives in, and guessing a root for the repo-relative form would be
-    // worse than not linking at all.
-    expect(basename.closest("a")).toBeNull();
+    // Neither is a link: the report names what moved, and the row's own
+    // title already links the node.
+    expect(basis.closest("a")).toBeNull();
     expect(repoRelative.closest("a")).toBeNull();
   });
 });
@@ -194,7 +194,7 @@ describe("Drift page: Uncovered section", () => {
     // The marker's plain name rides with the row's group: Uncovered is one
     // flat list across every marker, so a group cannot rely on section
     // context to say which marker it came from.
-    expect(screen.getByText(/An answered question was not reviewed/)).toBeInTheDocument();
+    expect(screen.getByText(/Answered questions not checked/)).toBeInTheDocument();
   });
 });
 
@@ -203,15 +203,15 @@ describe("Drift page: footer", () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    expect(await screen.findByText("Compared 9 node(s) across 4 check(s).")).toBeInTheDocument();
+    expect(await screen.findByText("Compared 9 nodes across 4 checks.")).toBeInTheDocument();
     expect(screen.getByText("Disabled: Spec changed after the work")).toBeInTheDocument();
     expect(screen.getByText("Exempted: Work started from an older basis: 2")).toBeInTheDocument();
     // orphan_eval counts CRITERIA, the finer grain its own existence checks
-    // operate at; the other four count node(s), the same unit Compared
+    // operate at; the other four count nodes, the same unit Compared
     // counts in (drift.Report's own Coverage doc comment).
-    expect(screen.getByText(/Work started from an older basis: 4 node\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
+    expect(screen.getByText(/Work started from an older basis: 4 nodes checked, 1 could not be compared/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Eval no longer matches its spec: 3 criteria checked, 1 unresolvable, 2 out of scope/),
+      screen.getByText(/Eval points at something missing: 3 criteria checked, 1 could not be compared, 2 have no file to check/),
     ).toBeInTheDocument();
   });
 });
@@ -223,11 +223,11 @@ describe("Drift page: empty state", () => {
     renderDrift();
 
     expect(
-      await screen.findByText("Compared 7 node(s) across 4 check(s); nothing moved."),
+      await screen.findByText("Compared 7 nodes across 4 checks; nothing moved."),
     ).toBeInTheDocument();
     // Disabled still rides the footer on a clean run: it is independent of
     // whether the sweep found anything.
-    expect(screen.getByText("Disabled: Eval no longer matches its spec")).toBeInTheDocument();
+    expect(screen.getByText("Disabled: Eval points at something missing")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
   });
 });
@@ -281,8 +281,8 @@ describe("Drift page: baseline documents", () => {
     expect(screen.getByText("git:1234567")).toBeInTheDocument();
     expect(screen.getAllByText("git:abcdef0")).toHaveLength(2);
     expect(screen.getByRole("button", { name: report.candidates?.stale_design[0].remedy })).toBeInTheDocument();
-    expect(screen.getByText(/Compared 2 node\(s\) and 1 design doc\(s\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Design doc is behind the code: 1 doc\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
+    expect(screen.getByText(/Compared 2 nodes and 1 design doc across/)).toBeInTheDocument();
+    expect(screen.getByText(/Design doc is behind the code: 1 design doc checked, 1 could not be compared/)).toBeInTheDocument();
     expect(screen.queryByText(/nothing moved/)).not.toBeInTheDocument();
   });
 });
@@ -344,7 +344,7 @@ describe("Drift page: plain names", () => {
     stubFetch({ "/api/drift": report });
     const { container } = renderDrift();
 
-    expect(await screen.findByText("Disabled: Design doc may have shifted, Eval no longer matches its spec")).toBeInTheDocument();
+    expect(await screen.findByText("Disabled: Design doc may have shifted, Eval points at something missing")).toBeInTheDocument();
     expect(screen.getByText("Exempted: Spec changed after the work: 2")).toBeInTheDocument();
     expectNoTokens(container);
   });
@@ -466,7 +466,7 @@ describe("Drift page: a shared cause is stated once", () => {
     await screen.findByText("Feature number 0");
     expect(screen.getAllByText(/could not be read as a file/)).toHaveLength(1);
     expect(screen.getAllByText("Rewrite ref as a list, then run the check again.")).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { name: /Eval no longer matches its spec/ })).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: /Eval references not checked/ })).toHaveLength(1);
     for (let i = 0; i < 9; i++) {
       expect(screen.getByRole("link", { name: `Feature number ${i}` })).toHaveAttribute("href", `/node/feature/F-${i}`);
     }
@@ -501,7 +501,7 @@ describe("Drift page: a shared cause is stated once", () => {
     stubFetch({ "/api/drift": report });
     renderDrift();
     await screen.findByRole("link", { name: "design/a.md" });
-    expect(screen.getByText(/work finished since it sit on branches that have split/)).toBeInTheDocument();
+    expect(screen.getByText(/finished work that touched this code do not sit on one line of history/)).toBeInTheDocument();
     expect(screen.getByText(/not an ancestor of the project's current commit/)).toBeInTheDocument();
   });
 
@@ -514,6 +514,6 @@ describe("Drift page: a shared cause is stated once", () => {
     const { container } = renderDrift();
     await screen.findByRole("link", { name: "design/a.md" });
     expect(container.textContent).not.toContain("newer version");
-    expect(screen.getByRole("heading", { name: /Design comparison failed/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Design doc not compared/ })).toBeInTheDocument();
   });
 });

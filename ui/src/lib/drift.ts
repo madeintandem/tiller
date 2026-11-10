@@ -40,48 +40,67 @@ export function shortSha(since: RevisionRefView | undefined): string {
 // MARKER_COPY and REASON_COPY are the one place a drift marker or an
 // uncovered reason becomes words. No token such as stale_spec or
 // ref_unreadable reaches the screen: a marker shows its plain name, one
-// sentence of what it means, and one of what a person does next; a reason
-// shows its cause and its fix. vocabulary.json lists the known tokens and a Go
-// test pins both lists against the sweeps, so a marker or reason added in Go
-// fails the build until it has copy here. Each sentence is written from the
-// doc comment where the token is produced (internal/core/drift/drift.go and
-// design.go). No copy here names a command: a command exists only where the
-// server serves a remedy (views.candidateRemedy).
-export const MARKER_COPY: Record<string, { name: string; meaning: string; next: string }> = {
+// sentence of what it means, one of what a person does next, and the label
+// the Uncovered section heads its rows with (unchecked), which names what
+// could not be checked rather than asserting the finding; a reason shows its
+// cause and its fix. vocabulary.json lists the known tokens and a Go test pins
+// both lists against the sweeps, so a marker or reason added in Go fails the
+// build until it has copy here. Each sentence is written from the doc comment
+// where the token is produced (internal/core/drift/drift.go and design.go). No
+// copy here names a command: a command exists only where the server serves a
+// remedy (views.candidateRemedy).
+export interface MarkerCopy {
+  name: string;
+  meaning: string;
+  next: string;
+  unchecked: string;
+}
+
+export const MARKER_COPY: Record<string, MarkerCopy> = {
   stale_spec: {
     name: "Spec changed after the work",
     meaning: "Finished work was verified against a spec, eval, or surface that has since changed or gone missing.",
     next: "Review what changed against the work, and for finished work make any correction through a reviewed amendment.",
+    unchecked: "Finished work not checked against its spec",
   },
+  // The sweep covers ready and active features and approved tasks that are
+  // not finished (drift.ActiveBasisApplies), so the meaning holds for
+  // approved work that has not started as well as work under way.
   active_basis: {
     name: "Work started from an older basis",
-    meaning: "Work in flight started from a spec, eval, or task file that has changed since.",
+    meaning: "Approved work rests on a spec, eval, or task file that has changed since it was approved.",
     next: "Read what changed, then refresh the basis once the work agrees with the current files.",
+    unchecked: "Approved work not checked against its basis",
   },
   answered_question: {
     name: "An answered question was not reviewed",
     meaning: "A question was answered after the work began, and nobody has confirmed the work still holds.",
     next: "Read the answer, then mark the assumption reviewed if the work still stands.",
+    unchecked: "Answered questions not checked",
   },
   missing_surface: {
     name: "Recorded file is gone",
     meaning: "A path this work recorded as its surface is no longer in the working tree.",
     next: "Link the work to the path it touches now, or drop the path that is gone.",
+    unchecked: "Recorded files not checked",
   },
   orphan_eval: {
-    name: "Eval no longer matches its spec",
+    name: "Eval points at something missing",
     meaning: "An eval criterion points at a test or file that can no longer be found.",
     next: "Restore the file or correct the eval; a changed eval goes through an approved amendment.",
+    unchecked: "Eval references not checked",
   },
   stale_design: {
     name: "Design doc is behind the code",
     meaning: "A design document describes code that finished work has since changed or removed.",
     next: "Read the document against the current code, reconcile it, then confirm it.",
+    unchecked: "Design doc not checked against the code",
   },
   shifted_design: {
     name: "Design doc may have shifted",
     meaning: "The code a design document describes has changed in the working tree since the document was confirmed.",
     next: "Read the document against the current code, reconcile it, then confirm it.",
+    unchecked: "Design doc not checked against the working tree",
   },
   // Not a sweep marker: serve/prose.go reports a failed comparison of a design
   // file's baseline panel under "design" (vocabulary.json drift_extra_markers).
@@ -89,6 +108,7 @@ export const MARKER_COPY: Record<string, { name: string; meaning: string; next: 
     name: "Design comparison failed",
     meaning: "Comparing this design document with its code failed before it could finish.",
     next: "Read the detail line, fix what it names, then check the document again.",
+    unchecked: "Design doc not compared",
   },
 };
 
@@ -111,11 +131,29 @@ export const MARKER_COPY: Record<string, { name: string; meaning: string; next: 
 //   history_diverged: stale_design (against finished work), shifted_design (against HEAD)
 //   comparison_error: design
 // Defaults below read for the first marker that emits each reason, except
-// eval_unreadable (orphan_eval) and history_diverged (stale_design).
-export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
+// eval_unreadable (orphan_eval) and history_diverged (stale_design). design.go
+// emits stale_design's history_diverged in two places, when one feature's
+// completion has split from the confirmation and when the finished features'
+// completions have split from each other; the default is true for both.
+//
+// detailRestatesCause marks a reason whose row detail from the server is a
+// fixed sentence that says the cause again in other words (design.go's "no
+// human confirmation of the described code is recorded", drift.go's "done but
+// carries no ... completion record"). The Uncovered group already states the
+// cause, so such a row shows no detail of its own; every other reason's detail
+// names something specific to its row (a path, a question id, an error) and
+// stays.
+export interface ReasonCopy {
+  cause: string;
+  fix: string;
+  detailRestatesCause?: true;
+}
+
+export const REASON_COPY: Record<string, ReasonCopy> = {
   no_completion_record: {
     cause: "This finished work has no record of what it was verified against, so there is nothing to compare.",
     fix: "Review its spec and surface by hand if they matter.",
+    detailRestatesCause: true,
   },
   basis_unreadable: {
     cause: "A file the work started from could not be read.",
@@ -145,6 +183,7 @@ export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
   unconfirmed: {
     cause: "No human has confirmed this design document against the code.",
     fix: "Read it against the code, then confirm it.",
+    detailRestatesCause: true,
   },
   surface_unrecorded: {
     cause: "The confirmation did not record a fingerprint for a path the document describes.",
@@ -155,7 +194,8 @@ export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
     fix: "Make sure the project's history is present, then run the check again.",
   },
   history_diverged: {
-    cause: "The confirmation and the work finished since it sit on branches that have split, so no single range can be compared.",
+    cause:
+      "The confirmation and the finished work that touched this code do not sit on one line of history, so no single range can be compared.",
     fix: "Bring the branches together, then run the check again.",
   },
   comparison_error: {
@@ -166,7 +206,7 @@ export const REASON_COPY: Record<string, { cause: string; fix: string }> = {
 
 // Overrides keyed marker, then reason, for the pairs the default would
 // misstate.
-export const REASON_COPY_BY_MARKER: Record<string, Record<string, { cause: string; fix: string }>> = {
+export const REASON_COPY_BY_MARKER: Record<string, Record<string, ReasonCopy>> = {
   stale_spec: {
     eval_unreadable: {
       cause: "The eval file could not be read or hashed, so it could not be compared with the one recorded when the work finished.",
@@ -204,19 +244,20 @@ function humanize(token: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-export function markerCopy(marker: string): { name: string; meaning: string; next: string } {
+export function markerCopy(marker: string): MarkerCopy {
   return (
     MARKER_COPY[marker] ?? {
       name: humanize(marker),
       meaning: "This check comes from a newer version of Tiller than this console.",
       next: "Update Tiller to read what it means and what to do.",
+      unchecked: `${humanize(marker)} not checked`,
     }
   );
 }
 
 // reasonCopy is the one lookup for a reason's words: the (marker, reason)
 // override if there is one, then the reason's default, then a generic line.
-export function reasonCopy(marker: string, reason: string): { cause: string; fix: string } {
+export function reasonCopy(marker: string, reason: string): ReasonCopy {
   return (
     REASON_COPY_BY_MARKER[marker]?.[reason] ??
     REASON_COPY[reason] ?? {
@@ -224,6 +265,15 @@ export function reasonCopy(marker: string, reason: string): { cause: string; fix
       fix: "Update Tiller to read what to do.",
     }
   );
+}
+
+// uncoveredDetail is the row's own detail line, or "" when the server's
+// detail only restates the cause its group already states (detailRestatesCause).
+export function uncoveredDetail(row: UncoveredView): string {
+  if (!has(row.detail) || reasonCopy(row.marker, row.reason).detailRestatesCause === true) {
+    return "";
+  }
+  return row.detail;
 }
 
 // groupUncovered folds uncovered rows that share a (marker, reason) pair into

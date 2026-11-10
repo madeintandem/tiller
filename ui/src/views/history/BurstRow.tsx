@@ -59,12 +59,15 @@ export default function BurstRow({
   // count once, to its left), and kept whenever only SOME did, because then
   // it says something the "what" phrase did not.
   // "asked you" is a link that filters the page to asks, keeping every other
-  // parameter (historyPath composes them).
+  // parameter (historyPath composes them). A row whose own verb is already
+  // "asked" (a run of asked questions) reads "2 questions asked of you", so no
+  // row doubles the word.
   const askTo = historyPath({ ...viewOf(params), kind: "asked" });
+  const askWords = phrase.verb === "asked" ? "of you" : "asked you";
   const askClause = hasAsk && (
     <span className="recap-asks-count">
       <Link to={askTo} replace>
-        {burst.asks === n ? "asked you" : `${burst.asks} asked you`}
+        {burst.asks === n ? askWords : `${burst.asks} ${askWords}`}
       </Link>
     </span>
   );
@@ -104,6 +107,9 @@ export default function BurstRow({
             </span>
           )}
           <span className="who"><PersonName id={burst.contributor} /></span>
+          {/* The toggle column, held empty: a run's "+ open" takes this
+              slot, so reserving it here keeps "who" at one x on every row. */}
+          <span className="burst-toggle" aria-hidden="true" />
         </div>
       </li>
     );

@@ -1,0 +1,24 @@
+/* The attention stack's fold (AttentionFold) keeps the node page's .instr-more
+   disclosure (its hairline, padding, and focus ring) and reads as a control
+   rather than a gray caption: full ink, a semibold verb, and a disclosure
+   chevron leading it. Hover underlines the words, the console's link
+   affordance. */
+.instr-more.instr-more-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.instr-more.instr-more-toggle:hover {
+  color: var(--heading);
+  text-decoration: underline;
+}
+
+.instr-more-chevron {
+  flex: none;
+  width: 0.75rem;
+  color: var(--ink-2);
+  font-weight: 400;
+}

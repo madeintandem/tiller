@@ -478,8 +478,14 @@ summary.hrow {
   background: var(--recess);
 }
 
+/* The toggle column is one fixed width on EVERY row: a run's "+ open" or
+   "– close" fills it and a lone row holds it empty (BurstRow), so "who"
+   sits at one x down the page rather than 47px left on the rows that can
+   open. 7ch fits "– close" in the toggle's own mono face. */
 .burst-toggle {
   flex: none;
+  width: 7ch;
+  text-align: right;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
@@ -664,5 +670,20 @@ summary.hrow {
 @media (max-width: 48rem) {
   .hrow {
     flex-wrap: wrap;
+  }
+
+  /* One wrap shape for every row (browser walk D-F, E2): the title cell
+     never leaves its column for a line of its own; it takes the rest of the
+     first line from a zero basis, and "who" plus the toggle column always
+     drop to a second line beneath it, right-aligned. Before this, a row
+     whose title did not fit dropped the TITLE under the time column while a
+     row that fit pushed only "who" down, and the two shapes alternated. */
+  .hrow > .what {
+    flex: 1 1 0;
+  }
+
+  .hrow > .who {
+    flex: 1 0 calc(100% - 7ch - var(--space-5) - 1px);
+    text-align: right;
   }
 }

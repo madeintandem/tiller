@@ -53,6 +53,13 @@ describe("composeMixCaption", () => {
     expect(composeMixCaption(composeMix(counts), counts)).toBe("2 draft");
   });
 
+  // The rail's caption is words a reader sees (the bar's title) and hears
+  // (its accessible name), so every status goes through statusLabel.
+  it("words each status through statusLabel, never a raw token", () => {
+    const counts = { specced: 1, in_review: 1, done: 6, cancelled: 2 };
+    expect(composeMixCaption(composeMix(counts), counts)).toBe("1 specified · 1 in review · 6 done · +2 cancelled");
+  });
+
   it("is unaffected by omitting the counts argument (backward compatible with a caller that has none)", () => {
     const mix = composeMix({ draft: 2 });
     expect(composeMixCaption(mix)).toBe("2 draft");

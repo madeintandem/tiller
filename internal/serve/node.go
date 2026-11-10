@@ -311,7 +311,15 @@ func evalPayload(t *store.Tree, n store.Node, in workflow.Input) any {
 // through a missing prose file and a broken event stream, and a repository with
 // no working git must not be the one the console cannot render. What it never
 // does is assert clean; absence here reads exactly like a node with no pin.
+//
+// It answers only for a node the drift sweep compares (drift.ActiveBasisApplies),
+// so the page and the Drift report agree: a done feature keeps its old pin, but
+// neither reports it, and the refresh-basis move the CLI refuses from done is
+// never offered.
 func basisPayload(t *store.Tree, n store.Node) *views.ActiveBasisView {
+	if !drift.ActiveBasisApplies(n) {
+		return nil
+	}
 	var ab *mutate.ActiveBasisError
 	if err := mutate.BasisDrift(t, n, vcs.New(t.Root)); errors.As(err, &ab) {
 		v := views.ActiveBasisOf(t, ab)

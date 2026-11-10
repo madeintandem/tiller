@@ -45,7 +45,7 @@ import type {
 import { isEvalError } from "../api";
 import { KIND_LABEL, whyLine } from "./DecisionCard";
 import { needsAttentionFallback, type AttentionFallback } from "../lib/attentionFallback";
-import { markerCopy, reasonCopy, shortSha } from "../lib/drift";
+import { markerCopy, reasonCopy, shortSha, uncoveredDetail } from "../lib/drift";
 import { DriftTargetLink } from "./DriftFinding";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
@@ -151,25 +151,48 @@ function DriftPanel({ page }: { page: NodePage }) {
       {candidates.map((c, i) => (
         <DriftCandidateRow key={`${c.marker}-${i}`} row={c} pageNodeId={page.node.id} />
       ))}
-      {uncovered.map((u, i) => (
-        <p key={`${u.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{markerCopy(u.marker).name}</span> not checked. {reasonCopy(u.marker, u.reason).cause}{" "}
-          {reasonCopy(u.marker, u.reason).fix}
-          {has(u.detail) && <> ({u.detail})</>}
-        </p>
-      ))}
-      <Link to="/?tab=drift" className="muted instr-drift-more">
+      {uncovered.map((u, i) => {
+        const detail = uncoveredDetail(u);
+        return (
+          <p key={`${u.marker}-${i}`} className="muted instr-drift-uncovered">
+            <span className="instr-drift-say">{markerCopy(u.marker).unchecked}.</span> {reasonCopy(u.marker, u.reason).cause}{" "}
+            {reasonCopy(u.marker, u.reason).fix}
+            {detail !== "" && <> ({detail})</>}
+          </p>
+        );
+      })}
+      <Link to={`/?tab=drift#${reportSection(page)}`} className="instr-drift-more">
         project-wide drift report
       </Link>
     </div>
   );
 }
 
+// reportSection is the Drift report section the panel's link lands on: the
+// marker of the first finding the panel shows (the report anchors each
+// marker section by its token), or the Uncovered section when the panel holds
+// only rows that could not be checked.
+function reportSection(page: NodePage): string {
+  if (page.active_basis !== undefined) {
+    return "active_basis";
+  }
+  const first = (page.drift_detail?.candidates ?? []).find((c) => c.marker !== "active_basis");
+  return first?.marker ?? "uncovered";
+}
+
+// filesBesideDetail is the files a candidate row still has to print: a file
+// its detail sentence already names (missing_surface's "lib/a.txt no longer
+// exists in the working tree") is not printed a second time.
+function filesBesideDetail(row: CandidateView): string[] {
+  const detail = row.detail ?? "";
+  return (row.files ?? []).filter((file) => !detail.includes(file));
+}
+
 // DriftCandidateRow renders one non-active_basis finding in the same
 // .instr-drift row grammar BasisRow set: the marker said as a word, the
-// facts the sweep recorded (detail sentence, files as plain text - the
-// basenames nuance the Drift tab documents holds here too - the since
-// anchor, context lines), and the clearing move as a copyable command where
+// facts the sweep recorded (detail sentence, files as plain text, only those
+// the detail does not already name, the since anchor, context lines), and
+// the clearing move as a copyable command where
 // one exists; where none does (stale_spec, orphan_eval) no command renders,
 // because inventing one is the thing the console must never do. A candidate
 // whose own node is an ancestor (a task page carrying its parent feature's
@@ -177,7 +200,7 @@ function DriftPanel({ page }: { page: NodePage }) {
 // finding is never misattributed to the page's node.
 function DriftCandidateRow({ row, pageNodeId }: { row: CandidateView; pageNodeId: string }) {
   const elsewhere = row.id !== pageNodeId;
-  const files = row.files ?? [];
+  const files = filesBesideDetail(row);
   return (
     <div className="instr-drift">
       <span className="instr-drift-say">{markerCopy(row.marker).name}</span>
@@ -734,7 +757,14 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
       {page.execution !== undefined && (
         <>
           <ExecutionProvenance observation={page.execution} />
-          <p className="muted execution-boundary">Observed execution; served-checkout status: {statusLabel(page.execution.integration_status).toLowerCase()}. This observation does not establish integration eligibility or authorize lifecycle commands on the served integration checkout.</p>
+          {/* Two facts, kept exactly: the status on the checkout this
+              console serves, and that what is shown from the branch does not
+              make lifecycle commands safe to run on that checkout. */}
+          <p className="muted execution-boundary">
+            On the checkout this console serves, this {page.node.noun} is{" "}
+            {statusLabel(page.execution.integration_status).toLowerCase()}. What is shown here comes from the branch,
+            and it does not make lifecycle commands safe to run on the served checkout.
+          </p>
         </>
       )}
       <AttentionStack page={page} queue={queue} />

@@ -99,7 +99,7 @@ describe("Execution sources", () => {
     };
     render(<MemoryRouter><NodeDetail page={page} queue={{ entries: [] }} /></MemoryRouter>);
     if (source !== "working_tree") {
-      expect(screen.getByText(/does not establish integration eligibility/)).toBeVisible();
+      expect(screen.getByText(/does not make lifecycle commands safe to run on the served checkout/)).toBeVisible();
     }
     expect(screen.queryByText("tiller attest feature F-one --criterion C1 --status pass")).not.toBeInTheDocument();
   });

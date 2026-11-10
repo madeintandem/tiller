@@ -422,6 +422,15 @@
   color: var(--heading);
 }
 
+/* The caret is positioned against the card's corner (right 9px, about 15px
+   wide) while the text box ends at the card's 12px padding, so text would
+   run 12px under it. A card that draws the caret reserves that width plus a
+   4px gap on the lines it shares with the caret's corner. */
+.fcard.expandable .f-title,
+.fcard.expandable .f-epic {
+  padding-right: 16px;
+}
+
 .fcard.open .f-expand {
   transform: rotate(180deg);
 }
@@ -457,6 +466,17 @@
 
 .trow:hover {
   color: var(--heading);
+}
+
+/* A cancelled task steps back the way the Explore navigator's settled rows
+   do (explore.css .is-settled): muted title, dimmed glyph. Its glyph shape
+   (StateGlyph's struck ring) says cancelled without the color. */
+.trow.is-cancelled {
+  color: var(--ink-3);
+}
+
+.trow.is-cancelled .state-glyph {
+  opacity: 0.55;
 }
 
 /* Stack the sidebar on narrow screens while retaining both scroll modes. */

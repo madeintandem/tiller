@@ -89,13 +89,13 @@ describe("History rows: day headings and time-only rows", () => {
     expect(days()).toEqual(["Sunday · Nov 9, 2025"]);
   });
 
-  it("orders a lone row's children .t, .verb, .what, .who, with the clock alone in .t", async () => {
+  it("orders a lone row's children .t, .verb, .what, .who, then the empty toggle column, with the clock alone in .t", async () => {
     stubRecap(recapOf([group([entry("spec.feature", at(2026, 10, 9, 14, 6), [featureTarget(1)])])]));
     const { container } = renderHistory("/history?window=7d&show=all");
     await screen.findByText("Feature 1");
 
     const row = container.querySelector(".recap-burst-lone") as HTMLElement;
-    expect(firstClasses(row)).toEqual(["t", "verb", "what", "who"]);
+    expect(firstClasses(row)).toEqual(["t", "verb", "what", "who", "burst-toggle"]);
     expect(row.querySelector(".t")?.textContent).toBe("2:06 PM");
     expect(row.querySelector(".verb")?.textContent).toBe("specced");
     const what = row.querySelector(".what") as HTMLElement;

@@ -58,7 +58,7 @@ describe("status words on the node page", () => {
     };
     const { container } = render(<MemoryRouter><NodeDetail page={page} /></MemoryRouter>);
     const note = container.querySelector(".execution-boundary");
-    expect(note?.textContent).toContain("served-checkout status: in review.");
+    expect(note?.textContent).toContain("On the checkout this console serves, this task is in review.");
     expect(note?.textContent).not.toMatch(WIRE);
   });
 

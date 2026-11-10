@@ -112,7 +112,7 @@ describe("AmendmentBody: operations list", () => {
 
   it("says the op as a plain word and links a resolvable target", () => {
     withRouter(<AmendmentBody page={amendmentPage()} />);
-    expect(screen.getByText("revise")).toBeInTheDocument();
+    expect(screen.getByText("Feature revised")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "form-engine/schema-engine (F-1)" });
     expect(link).toHaveAttribute("href", "/node/feature/F-1");
   });
@@ -124,7 +124,7 @@ describe("AmendmentBody: operations list", () => {
       retire: ["C-3", "C-7"],
     });
     withRouter(<AmendmentBody page={amendmentPage({ amendment: { operations: [op] } })} />);
-    expect(screen.getByText("correct-eval")).toBeInTheDocument();
+    expect(screen.getByText("Feature eval corrected")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "form-engine/schema-engine (F-1)" })).toHaveAttribute("href", "/node/feature/F-1");
     expect(screen.getByText("The loader test moved into two files.")).toBeInTheDocument();
     expect(screen.getByText("retires")).toBeInTheDocument();
@@ -248,10 +248,10 @@ describe("AmendmentBody: operations list", () => {
     expect(within(row).queryByRole("link")).not.toBeInTheDocument();
   });
 
-  it("renders an unknown future op kind as the bare op word via the default safety-net arm, no crash", () => {
+  it("renders an unknown future op kind as humanized words via the default safety-net arm, no crash", () => {
     const op: AmendmentOperationPageView = { index: 2, op: "future-kind" };
     withRouter(<AmendmentBody page={amendmentPage({ amendment: { operations: [op] } })} />);
-    expect(screen.getByText("future-kind")).toBeInTheDocument();
+    expect(screen.getByText("Future kind")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
@@ -317,7 +317,7 @@ describe("AmendmentBody: precondition validity, words beside values", () => {
       preconditions: [{ name: "target_status", expected: "draft" }],
     });
     withRouter(<AmendmentBody page={amendmentPage({ amendment: { operations: [op] } })} />);
-    expect(screen.getByText("target_status")).toBeInTheDocument();
+    expect(screen.getByText("Target status")).toBeInTheDocument();
     expect(screen.queryByText("valid")).not.toBeInTheDocument();
     expect(screen.queryByText("stale")).not.toBeInTheDocument();
     expect(screen.queryByText("unknown")).not.toBeInTheDocument();

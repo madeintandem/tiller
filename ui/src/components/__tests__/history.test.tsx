@@ -314,10 +314,10 @@ describe("History view: the empty state, which is the steady state", () => {
 
     // An empty visit window is an ordinary state. It must be a working surface.
     expect(await screen.findByText("Nothing new since your last visit.")).toBeInTheDocument();
-    // The instant is stated once, on the hist-sub line, not again in the
-    // sentence four lines below it.
-    expect(container.querySelector(".hist-sub")?.textContent).toMatch(/^0 events since .+$/);
-    expect(container.textContent?.match(/Jul 25/g)).toHaveLength(1);
+    // Nothing new: the head is only the sentence, with no "0 events since"
+    // line above it (browser walk D-F, E4).
+    expect(container.querySelector(".hist-sub")).toBeNull();
+    expect(container.textContent).not.toContain("0 events");
     expect(container.querySelector(".recap-empty-more")?.textContent).toContain(
       "Look back further",
     );
@@ -344,7 +344,7 @@ describe("History view: the empty state, which is the steady state", () => {
     const { container } = renderHistory();
 
     expect(await screen.findByText("Nothing new since your last visit.")).toBeInTheDocument();
-    expect(container.querySelector(".hist-sub")?.textContent).toBe("0 events");
+    expect(container.querySelector(".hist-sub")).toBeNull();
   });
 
   it("names the window it is actually rendering, never a visit claim on an override", async () => {
@@ -424,10 +424,9 @@ describe("History view: burst collapsing", () => {
     // The epic's own key equals the group's, so it does not repeat one line
     // below the head: no ref slot renders.
     expect(lone.querySelector(".recap-burst-key")).toBeNull();
-    // A run of one has nothing to expand, so it draws no toggle at all -
-    // unlike the old chevron, the new toggle does not need to hold a slot on
-    // a row with nothing behind it.
-    expect(lone.querySelector(".burst-toggle")).toBeNull();
+    // A run of one has nothing to expand, so its toggle column is held
+    // empty, keeping "who" at the same x as on a run's row.
+    expect(lone.querySelector(".burst-toggle")?.textContent).toBe("");
   });
 
   it("states the latest event's clock alone for a run that spans days", async () => {
@@ -708,7 +707,7 @@ describe("History view: hoisting is gone", () => {
     // Both groups render: the project-level cell is no longer emptied by
     // having its entries lifted out of it.
     expect(container.querySelectorAll(".recap-group")).toHaveLength(2);
-    expect(screen.getByText("project")).toBeInTheDocument();
+    expect(screen.getByText("Project")).toBeInTheDocument();
 
     const project = container.querySelectorAll(".recap-group")[1];
     expect(project.querySelectorAll(".recap-burst")).toHaveLength(1);
@@ -741,11 +740,12 @@ describe("History view: hoisting is gone", () => {
     const inked = Array.from(container.querySelectorAll(".recap-burst .recap-asks-count"));
     expect(inked).toHaveLength(1);
     // Every one of the 3 asked, and the row's own bold "what" one line to the
-    // left already says 3: "3 questions asked ... asked you" is the settled
-    // wording (History.tsx's askClause comment) - the numeral does not repeat
-    // a second time in the ask clause.
+    // left already says 3, so the numeral does not repeat a second time in
+    // the ask clause.
     expect(row.querySelector(".hrow .what b")?.textContent).toBe("3 questions asked");
-    expect(inked[0].textContent).toBe("asked you");
+    // The row's verb is already "asked", so the clause reads "of you"
+    // (BurstRow's askClause comment): "3 questions asked of you".
+    expect(inked[0].textContent).toBe("of you");
   });
 
   it("keeps the numeral when only SOME of the run asked, because then it says something new", async () => {
@@ -1001,7 +1001,7 @@ describe("History view: the row's own voices", () => {
     stubFetch({ "/api/recap?window=visit": dangling });
 
     const { container } = renderHistory();
-    await screen.findByText("project");
+    await screen.findByText("Project");
 
     expect(container.querySelector(".recap-burst-lone")?.textContent).toContain("F-gone");
     expect(screen.queryByRole("link", { name: "F-gone" })).not.toBeInTheDocument();
@@ -1019,7 +1019,7 @@ describe("History view: the topbar ↻ re-issues the mounted visit-window recap"
     const spy = stubFetch({ "/api/recap?window=visit": loadedRecap() });
 
     renderHistory();
-    await screen.findByText("project");
+    await screen.findByText("Project");
     expect(spy).toHaveBeenCalledTimes(1);
 
     act(() => {
@@ -1254,7 +1254,7 @@ describe("History view: the anti-merge pin holds in flat mode", () => {
     await screen.findByText(/2 events in the last 7 days/);
 
     expect(container.querySelectorAll(".recap-bookkeeping")).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "1 bookkeeping change (added)" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /^1 bookkeeping change \(added\)/ })).toHaveLength(2);
     expect(container.textContent).not.toContain("2 bookkeeping changes");
     expect(container.textContent).not.toContain("2 features added");
 
@@ -1305,8 +1305,8 @@ describe("History view: caps hold in flat mode without a new cap of its own", ()
       el.textContent?.includes("questions asked"),
     );
     expect(askRow).toBeDefined();
-    expect(askRow?.querySelector(".recap-asks-count")?.textContent).toBe("asked you");
-    expect(askRow?.querySelector(".recap-burst-origin")?.textContent).toBe("project");
+    expect(askRow?.querySelector(".recap-asks-count")?.textContent).toBe("of you");
+    expect(askRow?.querySelector(".recap-burst-origin")?.textContent).toBe("Project");
   });
 
   it("pluralizes the aggregate line across more than one capped group", async () => {

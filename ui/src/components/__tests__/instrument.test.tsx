@@ -870,7 +870,7 @@ describe("NodeDetail: the attention stack", () => {
     expect(screen.getAllByText("Build failed; C6 still needs human acceptance.")).toHaveLength(1);
     // The human acceptance sits behind the fold until asked for.
     expect(screen.queryByRole("button", { name: acceptance.command })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show 1 more" }));
     expect(screen.getByRole("button", { name: acceptance.command })).toBeInTheDocument();
 
     view.rerender(
@@ -976,7 +976,7 @@ describe("NodeDetail: the attention stack", () => {
     const { container } = withRouter(<NodeDetail page={page} queue={queue} />);
     // The stack folds to one box; the second sits behind "1 more".
     expect(container.querySelectorAll(".abox:not(.warn)")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show 1 more" }));
     expect(container.querySelectorAll(".abox:not(.warn)")).toHaveLength(2);
   });
 
@@ -1054,7 +1054,7 @@ describe("NodeDetail: the attention stack", () => {
     );
 
     expect(container.querySelectorAll(".abox")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "1 more" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show 1 more" }));
     const boxes = container.querySelectorAll(".abox");
     expect(boxes).toHaveLength(2);
     expect(boxes[0]).not.toHaveClass("warn");
@@ -1633,7 +1633,7 @@ describe("NodeDetail header facts", () => {
     expect(header.getByText("app/refunds.rb, app/models/refund.rb")).toBeInTheDocument();
     // The change type, labeled beside it in the facts block; the source is
     // the Spec head's now (node header pass, 2026-08-30), not the header's.
-    expect(header.getByText("modify")).toBeInTheDocument();
+    expect(header.getByText("Changes existing code")).toBeInTheDocument();
     expect(header.getByText("Change")).toBeInTheDocument();
     expect(header.getByText("Touches")).toBeInTheDocument();
   });
@@ -2024,7 +2024,7 @@ describe("NodeDetail: the drift panel", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /project-wide drift report/ })).toHaveAttribute(
       "href",
-      "/?tab=drift",
+      "/?tab=drift#answered_question",
     );
 
     fireEvent.click(screen.getByText("Drifted").closest("button") as HTMLElement);
@@ -2091,7 +2091,8 @@ describe("NodeDetail: the drift panel", () => {
     // The finding belongs to an ancestor, so its row leads with that ref.
     expect(screen.getByRole("link", { name: "foundation/parent (F-parent)" })).toBeInTheDocument();
     // The v0.2.10 not-a-single-path rows land here, as facts, never as drift.
-    expect(screen.getByText(/not checked\. The eval.s ref could not be read as a file/)).toBeInTheDocument();
+    expect(screen.getByText("Eval references not checked.")).toBeInTheDocument();
+    expect(screen.getByText(/The eval.s ref could not be read as a file/)).toBeInTheDocument();
   });
 });
 

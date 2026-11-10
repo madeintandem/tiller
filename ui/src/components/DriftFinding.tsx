@@ -13,11 +13,27 @@ export function driftFileHref(path: string): string {
 
 export function DriftTargetLink({ row }: { row: CandidateView | UncoveredView }) {
   if (row.noun === "design") {
-    return has(row.key) ? (
-      <Link to={driftFileHref(`.tiller/design/${row.key}`)} className="explore-result-title mono">
+    if (!has(row.key)) {
+      return <span className="mono">design</span>;
+    }
+    const href = driftFileHref(`.tiller/design/${row.key}`);
+    // A document with a title leads with it and shows its path after it in
+    // mono, the way a work row leads with its title and follows with its key.
+    if (has(row.title)) {
+      return (
+        <>
+          <Link to={href} className="explore-result-title">
+            {row.title}
+          </Link>{" "}
+          <span className="mono muted drift-row-key">design/{row.key}</span>
+        </>
+      );
+    }
+    return (
+      <Link to={href} className="explore-result-title mono">
         design/{row.key}
       </Link>
-    ) : <span className="mono">design</span>;
+    );
   }
   const node = { noun: row.noun, id: row.id, ref: refOf(row.key, row.id) };
   if (!has(row.title)) {

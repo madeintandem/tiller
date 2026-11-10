@@ -17,6 +17,7 @@ import { withActivityPhrase } from "../lib/activityPhrase";
 import { displayStatus } from "../lib/displayStatus";
 import { markerCopy } from "../lib/drift";
 import { gateChipsFor } from "../lib/gateChips";
+import { changeTypeLabel, resolutionLabel } from "../lib/fieldWords";
 import { has } from "../lib/has";
 import { kindLabel } from "../lib/kind";
 import { shortRev } from "../lib/revision";
@@ -304,7 +305,7 @@ function Facts({ page }: { page: NodePage }) {
     items.push({ label: "PR", value: <PRValue node={node} /> });
   }
   if (has(node.change_type)) {
-    items.push({ label: "Change", value: node.change_type });
+    items.push({ label: "Change", value: changeTypeLabel(node.change_type) });
   }
   const paths = node.surface?.paths ?? [];
   if (paths.length > 0) {
@@ -318,7 +319,7 @@ function Facts({ page }: { page: NodePage }) {
     items.push({ label: "Done basis", value: node.done_basis });
   }
   if (has(node.resolution)) {
-    items.push({ label: "Resolution", value: node.resolution });
+    items.push({ label: "Resolution", value: resolutionLabel(node.resolution) });
   }
   // A question's page is flat, with no Spec section to carry its source the
   // way every prose-bearing noun's Spec head does now (ProseSection), so its

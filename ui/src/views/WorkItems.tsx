@@ -18,6 +18,7 @@ import { useBoardScrollMode } from "../lib/boardScroll";
 import { ROW_CAP } from "../lib/disclosure";
 import { formatAdded } from "../lib/added";
 import { formatAbsolute } from "../lib/time";
+import { resolutionLabel } from "../lib/fieldWords";
 import { has } from "../lib/has";
 import { statusLabel } from "../lib/statusLabel";
 import { PersonName } from "../people";
@@ -354,7 +355,7 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
           Attached to <TitleRef node={item.attached} title={item.attached.title} addr={addrOf(item.attached)} />
         </p>
       )}
-      {has(item.resolution) && <p className="work-item-attachment">Resolution: {item.resolution}</p>}
+      {has(item.resolution) && <p className="work-item-attachment">Resolution: {resolutionLabel(item.resolution)}</p>}
       {item.supersedes?.map((id) => (
         <p className="work-item-attachment" key={id}>
           Supersedes <Link to={`/node/${item.noun}/${id}`}>{id}</Link>

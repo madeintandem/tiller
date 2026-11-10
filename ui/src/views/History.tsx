@@ -274,23 +274,30 @@ function RecapBody({
           window states the count and its horizon. Unconditional, the same way
           .recap-since always was, because the horizon matters on an empty
           page as much as a full one. */}
-      <p className="hist-sub muted">
-        {active === "visit" ? (
-          <>
-            {countFor(recap, filterOn ? recap.shown : undefined)}
-            {/* Empty on a first visit, which recaps nothing: a blank "since"
-                would read as a claim about an instant nobody has. */}
-            {recap.since !== "" && (
-              <>
-                {" since "}
-                <Time iso={recap.since} />
-              </>
-            )}
-          </>
-        ) : (
-          fixedSubFor(active, recap, filterOn ? recap.shown : undefined)
-        )}
-      </p>
+      {/* When nothing is new since the last visit the head is only the
+          empty note below ("Nothing new since your last visit."), never a
+          "0 events since ..." line above it. */}
+      {!(active === "visit" && fetched.total === 0) && (
+        <p className="hist-sub muted">
+          {active === "visit" ? (
+            <>
+              {countFor(recap, filterOn ? recap.shown : undefined)}
+              {/* Empty on a first visit, which recaps nothing: a blank "since"
+                  would read as a claim about an instant nobody has. "Since"
+                  takes a point in time, so the horizon reads as a clock or a
+                  dated clock, never as an age ("since 3h ago"). */}
+              {recap.since !== "" && (
+                <>
+                  {" since "}
+                  <Time iso={recap.since} mode="point" />
+                </>
+              )}
+            </>
+          ) : (
+            fixedSubFor(active, recap, filterOn ? recap.shown : undefined)
+          )}
+        </p>
+      )}
       {/* Nothing to catch up on when the horizon exists and no event sits
           behind it; a first visit (no horizon yet) keeps the button, since
           the press is the only thing that gives it one. */}
@@ -405,7 +412,7 @@ interface FlatBurst {
   // adds origin because the merged row has no section head to supply it.
   groupKey: string;
   // The quiet mono label a merged row shows in place of the section head it
-  // lost: an epic's own key, or "project" for the epic-less cell - the exact
+  // lost: an epic's own key, or "Project" for the epic-less cell - the exact
   // fallback text RecapGroupBlock's own head already uses, so a reader who
   // has seen epic mode recognizes the word.
   origin: string;
@@ -423,7 +430,7 @@ function flatBurstsOf(groups: RecapGroup[]): FlatBurst[] {
   const out: FlatBurst[] = [];
   for (const [group, g] of groups.entries()) {
     const groupKey = g.epic === null ? "" : g.epic.key;
-    const origin = g.epic === null ? "project" : g.epic.key;
+    const origin = g.epic === null ? "Project" : g.epic.key;
     for (const burst of burstsOf(g.entries)) {
       out.push({ burst, group, groupKey, origin });
     }
@@ -469,6 +476,7 @@ function FlatBody({ recap, showAll }: { recap: RecapModel; showAll: boolean }) {
               showAll={showAll}
               burstOf={(ob) => ob.burst}
               runKey={(ob) => ob.group}
+              originOf={(ob) => ob.origin}
               renderBurst={(ob, i) => (
                 <BurstRow key={i} burst={ob.burst} groupKey={ob.groupKey} origin={ob.origin} />
               )}
