@@ -2333,7 +2333,7 @@ describe("Home tabs: Overview and Branches", () => {
     renderHome(summary());
     await screen.findByText(/all clear/i);
 
-    await waitFor(() => expect(tabNames()).toEqual(["Overview", "Branches · 2"]));
+    await waitFor(() => expect(tabNames()).toEqual(["Overview", "Branches · 2, needs attention"]));
     // Diagnostics are warnings, so their count reads in the warning tone.
     expect(within(viewRail()).getByText("· 2")).toHaveClass("tab-count-warning");
     expect(within(viewRail()).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");

@@ -166,6 +166,16 @@
   color: var(--st-blocked-t);
 }
 
+/* The shape half of a warning count: it sits on the text line (an inline
+   box no taller than the text, so the rail's height does not move) in the
+   same tone as the count. */
+.mode-nav .tab-count-mark {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-left: 4px;
+  color: var(--st-blocked-t);
+}
+
 .explore-nav-separator {
   align-self: center;
   height: 20px;

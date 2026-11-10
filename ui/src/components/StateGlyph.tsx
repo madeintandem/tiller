@@ -85,6 +85,18 @@ const CANCELLED = (
   </>
 );
 
+// AttentionMark is the blocked shape (the solid no-entry bar) as a small
+// decorative mark: the shape a warning-toned count wears beside its number
+// so the warning never rests on color alone. It is aria-hidden; the words
+// travel as visually hidden text next to it.
+export function AttentionMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} aria-hidden="true" focusable="false" viewBox="0 0 16 16" width={11} height={11}>
+      {SHAPES.blocked}
+    </svg>
+  );
+}
+
 // Quick enough to feel like an answer, slow enough that sweeping the
 // pointer down the tree does not flash a tooltip on every row it crosses.
 const SHOW_DELAY_MS = 150;

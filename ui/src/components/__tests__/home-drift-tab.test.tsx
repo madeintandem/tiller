@@ -128,7 +128,7 @@ describe("Home Drift tab", () => {
     stubFetch(routes(withCandidates));
     renderHome("/");
 
-    const tab = await screen.findByRole("tab", { name: "Drift · 3" });
+    const tab = await screen.findByRole("tab", { name: "Drift · 3, needs attention" });
     expect(tab.querySelector(".tab-count-warning")).not.toBeNull();
   });
 
@@ -138,6 +138,7 @@ describe("Home Drift tab", () => {
 
     const tab = await screen.findByRole("tab", { name: "Drift · 1" });
     expect(tab.querySelector(".tab-count-warning")).toBeNull();
+    expect(tab.querySelector(".tab-count-mark")).toBeNull();
     expect(tab.querySelector(".tab-count")).not.toBeNull();
   });
 
@@ -166,7 +167,7 @@ describe("Home Drift tab", () => {
     stubFetch(routes(withCandidates));
     renderHome("/");
 
-    const tab = await screen.findByRole("tab", { name: "Drift · 3" });
+    const tab = await screen.findByRole("tab", { name: "Drift · 3, needs attention" });
     tab.click();
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift"));
   });
@@ -197,7 +198,7 @@ describe("Home Drift tab while the page rereads", () => {
 
     held.refetch();
 
-    expect(screen.getByRole("tab", { name: "Drift · 3" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Drift · 3, needs attention" })).toBeInTheDocument();
     expect(screen.getByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
     expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift");
 
@@ -232,7 +233,7 @@ describe("App: the old /drift address", () => {
         <App />
       </MemoryRouter>,
     );
-    await screen.findByRole("tab", { name: "Drift · 3" });
+    await screen.findByRole("tab", { name: "Drift · 3, needs attention" });
     expect(screen.queryByRole("link", { name: /^Drift$/ })).not.toBeInTheDocument();
   });
 });

@@ -121,11 +121,11 @@ describe("Home tabs while the page rereads", () => {
     const held = stubHeld(routes({ "/api/execution": { observations: [], diagnostics: [diagnostic] } }), "/api/execution");
     renderHome("/?tab=branches");
     const rail = screen.getByRole("tablist", { name: "Home view" });
-    expect(await within(rail).findByRole("tab", { name: "Branches · 1" })).toBeInTheDocument();
+    expect(await within(rail).findByRole("tab", { name: "Branches · 1, needs attention" })).toBeInTheDocument();
 
     held.refetch();
 
-    expect(within(rail).getByRole("tab", { name: "Branches · 1" })).toHaveAttribute("aria-selected", "true");
+    expect(within(rail).getByRole("tab", { name: "Branches · 1, needs attention" })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText(/Loading execution sources/)).not.toBeInTheDocument();
 
     await held.settle({ observations: [], diagnostics: [] });

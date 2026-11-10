@@ -85,6 +85,32 @@ describe("NodeTabs roles", () => {
   });
 });
 
+describe("NodeTabs warning tone is never color alone", () => {
+  const WARN = [
+    { key: "overview", label: "Overview", render: () => <p>Overview</p> },
+    { key: "drift", label: "Drift", count: 3, countTone: "warning" as const, render: () => <p>Drift panel</p> },
+    { key: "recovered", label: "Recovered reviews", count: 2, render: () => <p>Recovered</p> },
+  ];
+
+  it("a warning-toned tab carries a shape mark and the words in its accessible name", () => {
+    render(<NodeTabs tabs={WARN} active="overview" onSelect={() => {}} />);
+    const tab = screen.getByRole("tab", { name: "Drift · 3, needs attention" });
+    const mark = tab.querySelector(".tab-count-mark");
+    expect(mark).not.toBeNull();
+    expect(mark?.tagName.toLowerCase()).toBe("svg");
+    expect(mark).toHaveAttribute("aria-hidden", "true");
+    expect(tab.querySelector(".visually-hidden")).toHaveTextContent(", needs attention");
+  });
+
+  it("a tab without the tone has neither the mark nor the words", () => {
+    render(<NodeTabs tabs={WARN} active="overview" onSelect={() => {}} />);
+    const tab = screen.getByRole("tab", { name: "Recovered reviews · 2" });
+    expect(tab.querySelector(".tab-count-mark")).toBeNull();
+    expect(tab.querySelector(".visually-hidden")).toBeNull();
+    expect(screen.getByRole("tab", { name: "Overview" }).querySelector(".tab-count-mark")).toBeNull();
+  });
+});
+
 describe("NodeTabs keys", () => {
   function key(name: string, k: string) {
     fireEvent.keyDown(screen.getByRole("tab", { name }), { key: k });

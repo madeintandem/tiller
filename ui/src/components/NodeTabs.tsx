@@ -18,6 +18,7 @@
 // rendering no panel at all, so the page never goes blank over a bad param.
 
 import { useId, useRef, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import { AttentionMark } from "./StateGlyph";
 import { useScrolledPast } from "../lib/useScrolledPast";
 import "../views/explore.css";
 
@@ -132,6 +133,15 @@ export default function NodeTabs({
                   <span className={tab.countTone === "warning" ? "tab-count tab-count-warning" : "tab-count"}>
                     · {tab.count}
                   </span>
+                  {/* A warning tone is never color alone: a shape mark for
+                      the eye, and the words for assistive tech, both beside
+                      the count. */}
+                  {tab.countTone === "warning" && (
+                    <>
+                      <span className="visually-hidden">, needs attention</span>
+                      <AttentionMark className="tab-count-mark" />
+                    </>
+                  )}
                 </>
               )}
             </button>
