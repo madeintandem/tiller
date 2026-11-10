@@ -14,6 +14,30 @@ describe("eventPhrase", () => {
     }
   });
 
+  it("never leaves a dotted type's verb as the raw or humanized token", () => {
+    // A verb with no participle falls to humanize(), which still passes the
+    // character check above ("tasks claim"). Dotless types (amendment_opened,
+    // superseded) are whole fixed phrases, so they are exempt.
+    for (const type of vocabulary.event_types.filter((t) => t.includes("."))) {
+      const first = type.split(".")[0];
+      const { verb } = eventPhrase(type, 1);
+      expect(verb, `${type} verb`).not.toBe(first);
+      expect(verb, `${type} verb`).not.toBe(first.replace(/[_-]+/g, " "));
+    }
+  });
+
+  it.each([
+    ["withdraw.feature", 1, "feature withdrawn", "withdrawn"],
+    ["attest.feature", 4, "features attested", "attested"],
+    ["accept.epic", 1, "epic accepted", "accepted"],
+    ["revise.feature", 2, "features revised", "revised"],
+    ["link.feature", 6, "features linked", "linked"],
+    ["cancel.task", 3, "tasks cancelled", "cancelled"],
+    ["unlink.feature", 1, "feature unlinked", "unlinked"],
+  ])("pins lifecycle verb %s at %i as %s", (type, count, subject, verb) => {
+    expect(eventPhrase(type, count)).toEqual({ subject, verb });
+  });
+
   it.each([
     ["rename.title.task", 1, "task retitled", "retitled"],
     ["rename.title.task", 3, "tasks retitled", "retitled"],
