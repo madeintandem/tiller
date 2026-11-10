@@ -1,0 +1,85 @@
+import type { Burst } from "../../lib/bursts";
+
+// A burst's OWN timestamp for bucketing/sorting purposes: entries[0] - the
+// newest end, since a burst keeps its entries in the group's own
+// newest-first order (lib/bursts.ts). Shared by both modes' own composition
+// over dayGroupsOf below, so "which instant does a burst row itself live at"
+// is answered in exactly one place.
+export function burstAt(burst: Burst): string {
+  return burst.entries.length > 0 ? burst.entries[0].at : "";
+}
+
+// One (calendar day, its own items) bucket, in the order items arrived
+// (newest day first, since the payload is one newest-first timeline). Generic
+// over T rather than fixed to Burst: epic mode buckets plain Bursts, flat
+// mode buckets FlatBursts (a burst plus the origin it merged in from), and
+// the bucketing walk itself does not care which - only atOf, supplied by the
+// caller, does.
+export interface DayGroup<T> {
+  key: string;
+  label: string;
+  bursts: T[];
+}
+
+// Buckets an already-collapsed, already-ordered item list by the LOCAL
+// calendar day atOf reports for each item - not a per-entry split: an item
+// that spans several days (a burst whose "span vs instant" case burstWhen
+// already renders as "earliest to latest") still reads as ONE row and lives
+// under the day its own atOf instant fell on, exactly where a reader
+// scanning newest-first would look for it first. Because the source list
+// is already newest-first and a day boundary can only be crossed walking
+// down it, never re-crossed, one linear walk buckets the whole list; no
+// re-sorting - which holds for flat mode's own call site too, since
+// flatBurstsOf below does its own sorting BEFORE this function ever runs,
+// not the other way around.
+//
+// The caller decides what an empty-vs-populated result MEANS: RecapGroupBlock
+// renders no day subheads at all when this returns a single bucket ("day
+// subheads appear within a multi-day group and NOT for a single-day group",
+// the stated rendering rule), while FlatBody always
+// renders its bucket(s) - time mode has no OTHER section head to fall back
+// on, so the day boundary is the page's one structural element and earns its
+// place even at n=1. This function only ever answers "how
+// many distinct calendar days did these items touch, and which fell on
+// which"; it does not know or care which of those two readings applies.
+export function dayGroupsOf<T>(items: T[], atOf: (item: T) => string): DayGroup<T>[] {
+  const out: DayGroup<T>[] = [];
+  for (const item of items) {
+    const at = atOf(item);
+    const key = dayKey(at);
+    const open = out.length > 0 ? out[out.length - 1] : undefined;
+    if (open !== undefined && open.key === key) {
+      open.bursts.push(item);
+      continue;
+    }
+    out.push({ key, label: dayLabel(at), bursts: [item] });
+  }
+  return out;
+}
+
+// A bucketing key, local calendar date only (year-month-day), so two
+// timestamps on the same local day always fold together regardless of their
+// time-of-day. An unparseable value gets its own key rather than colliding
+// with a real day's bucket (mirrors formatTime's own as-is fallback).
+function dayKey(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return iso;
+  }
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+// The eyebrow text a day subhead reads (mock:1147's own "Today · Sat Aug 9"
+// idiom, minus the "Today" special case: that reading depends on the wall
+// clock at render time rather than the entries themselves, which is a claim
+// this mechanical, never-narrative page does not need to make to be useful -
+// "Saturday · Aug 9" already answers "which day was this").
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return iso;
+  }
+  const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
+  const monthDay = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${weekday} · ${monthDay}`;
+}
