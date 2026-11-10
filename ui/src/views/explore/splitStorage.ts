@@ -7,7 +7,7 @@
 // panelStorage.ts's own flat BUILD_PANEL_STORAGE_KEY already applies to the
 // epic panel's open/closed state.
 
-import { clampNavWidth, NAV_WIDTH_DEFAULT } from "./splitSize";
+import { clampNavWidth, defaultNavWidth } from "./splitSize";
 
 export const SPLIT_STORAGE_KEY = "tiller-explore-split";
 
@@ -15,16 +15,17 @@ export const SPLIT_STORAGE_KEY = "tiller-explore-split";
 // non-numeric content all reach clampNavWidth's own NaN band and fold to
 // NAV_WIDTH_DEFAULT there, so this function owns no normalization logic of
 // its own beyond turning the raw string into a number.
-export function readNavWidth(): number {
+export function readNavWidth(viewportWidth: number = window.innerWidth): number {
   let raw: string | null;
   try {
     raw = window.localStorage.getItem(SPLIT_STORAGE_KEY);
   } catch {
-    return NAV_WIDTH_DEFAULT;
+    return defaultNavWidth(viewportWidth);
   }
   if (raw === null) {
-    return NAV_WIDTH_DEFAULT;
+    return defaultNavWidth(viewportWidth);
   }
+  // A stored number wins at any viewport width; only its clamp applies.
   return clampNavWidth(Number(raw));
 }
 

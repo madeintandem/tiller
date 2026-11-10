@@ -123,7 +123,84 @@ describe("Navigator: status glyph tooltips", () => {
     const row = rowOf("Blank on reload");
     const glyph = within(row).getByRole("img", { name: "Ready" });
     expect(glyph.closest("[title]")).toBeNull();
-    expect(within(row).getByText("Blank on reload")).toHaveAttribute("title", "bugs/blank-on-reload");
+    expect(within(row).getByText("Blank on reload")).toHaveAttribute("title", "Blank on reload \u00b7 bugs/blank-on-reload");
+  });
+});
+
+describe("Navigator: full titles on hover", () => {
+  function keyed(n: TreeNode, key: string | undefined, children: TreeNode[] = n.children): TreeNode {
+    return { ...n, key, children };
+  }
+  const keyedTree: TreeModel = {
+    project: "acme",
+    nodes: [
+      keyed(node("epic", "E-a", "Checkout", "active"), "checkout", [
+        keyed(node("feature", "F-a", "Payment intents", "active"), "checkout/payments", [
+          keyed(node("task", "T-a", "Stripe client wrapper", "ready"), "checkout/payments/stripe"),
+          keyed(node("task", "T-b", "Retry policy", "ready"), undefined),
+        ]),
+      ]),
+    ],
+  };
+
+  it("titles every row <title> \u00b7 <key>, or the key alone when a row has no title", () => {
+    const expansion = new Map([
+      ["E-a", true],
+      ["F-a", true],
+      ["shelf:bug", true],
+    ]);
+    const untitled: TreeModel = {
+      project: "acme",
+      nodes: [{ ...keyedTree.nodes[0], title: undefined }],
+    };
+    const view = render(
+      <MemoryRouter>
+        <Navigator
+          tree={loaded(keyedTree)}
+          questions={loaded(shelf("question", []))}
+          bugs={loaded(bugs)}
+          chores={loaded(shelf("chore", []))}
+          tweaks={loaded(shelf("tweak", []))}
+          summary={loaded({} as ProjectSummary)}
+          selected={null}
+          expansion={expansion}
+          onToggleBranch={() => {}}
+          onOpenAll={() => {}}
+          onCloseAll={() => {}}
+        />
+      </MemoryRouter>,
+    );
+    const titled = (name: RegExp) => screen.getByRole("link", { name });
+    expect(titled(/Checkout/)).toHaveAttribute("title", "Checkout \u00b7 checkout");
+    expect(titled(/Payment intents/)).toHaveAttribute("title", "Payment intents \u00b7 checkout/payments");
+    expect(titled(/Stripe client wrapper/)).toHaveAttribute(
+      "title",
+      "Stripe client wrapper \u00b7 checkout/payments/stripe",
+    );
+    expect(titled(/Retry policy/)).toHaveAttribute("title", "Retry policy");
+    expect(within(rowOf("Blank on reload")).getByText("Blank on reload")).toHaveAttribute(
+      "title",
+      "Blank on reload \u00b7 bugs/blank-on-reload",
+    );
+    view.unmount();
+    render(
+      <MemoryRouter>
+        <Navigator
+          tree={loaded(untitled)}
+          questions={loaded(shelf("question", []))}
+          bugs={loaded(shelf("bug", []))}
+          chores={loaded(shelf("chore", []))}
+          tweaks={loaded(shelf("tweak", []))}
+          summary={loaded({} as ProjectSummary)}
+          selected={null}
+          expansion={new Map()}
+          onToggleBranch={() => {}}
+          onOpenAll={() => {}}
+          onCloseAll={() => {}}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "checkout" })).toHaveAttribute("title", "checkout");
   });
 });
 

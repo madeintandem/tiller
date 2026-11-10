@@ -33,3 +33,13 @@ export function clampNavWidth(px: number): number {
   }
   return px;
 }
+
+// The width a reader with no saved one gets: a wider navigator on a wide
+// window, where long task titles otherwise cut off. A saved width never
+// reaches this function; splitStorage.ts returns it unchanged.
+export const NAV_WIDTH_WIDE = 360;
+export const NAV_WIDE_VIEWPORT = 1600;
+
+export function defaultNavWidth(viewportWidth: number): number {
+  return viewportWidth >= NAV_WIDE_VIEWPORT ? NAV_WIDTH_WIDE : NAV_WIDTH_DEFAULT;
+}

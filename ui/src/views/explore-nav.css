@@ -1,0 +1,22 @@
+/* The navigator's two-line task title. Epic and feature rows keep one line
+   (.explore-feat-title in explore.css); only a task's title wraps, clamped
+   at two lines. The row aligns to the first line so the status glyph stays
+   beside the title's first line. */
+.explore-task {
+  align-items: flex-start;
+}
+
+.explore-task .state-glyph {
+  margin-top: 2px;
+}
+
+.explore-task-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}

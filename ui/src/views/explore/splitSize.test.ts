@@ -17,7 +17,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { clampNavWidth, NAV_WIDTH_DEFAULT, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./splitSize";
+import { clampNavWidth, defaultNavWidth, NAV_WIDTH_DEFAULT, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./splitSize";
+import { readNavWidth, SPLIT_STORAGE_KEY } from "./splitStorage";
 
 describe("clampNavWidth: the bounds", () => {
   it("passes a width already inside the bounds through unchanged", () => {
@@ -63,5 +64,23 @@ describe("the exported bounds", () => {
     expect(NAV_WIDTH_MIN).toBe(200);
     expect(NAV_WIDTH_MAX).toBe(560);
     expect(NAV_WIDTH_DEFAULT).toBe(300);
+  });
+});
+
+describe("defaultNavWidth", () => {
+  it("is 300 under 1600 and 360 at 1600 and above", () => {
+    expect(defaultNavWidth(1512)).toBe(300);
+    expect(defaultNavWidth(1599)).toBe(300);
+    expect(defaultNavWidth(1600)).toBe(360);
+    expect(defaultNavWidth(1920)).toBe(360);
+  });
+
+  it("lets a stored width win at any viewport width, and uses the wide default when none is stored", () => {
+    window.localStorage.clear();
+    expect(readNavWidth(1920)).toBe(360);
+    expect(readNavWidth(1512)).toBe(300);
+    window.localStorage.setItem(SPLIT_STORAGE_KEY, "280");
+    expect(readNavWidth(1920)).toBe(280);
+    window.localStorage.clear();
   });
 });

@@ -43,6 +43,7 @@ export default defineConfig({
         /components\/board\.css/,
         /components\/node-pin\.css/,
         /views\/explore\.css/,
+        /views\/explore-nav\.css/,
         /src\/styles\.css/,
         /styles\/tokens\.css/,
         /views\/build\.css/,

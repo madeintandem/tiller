@@ -382,7 +382,7 @@ function ShelfBranch({
             className={rowClass("explore-shelf-node", row.status, isSelected(selected, noun, row) && "current")}
           >
             <StateGlyph status={row.status} />
-            <span title={row.key}>{row.title ?? row.key ?? row.id}</span>
+            <span title={rowTitle(row.title, row.key)}>{row.title ?? row.key ?? row.id}</span>
           </Link>
         ))}
     </section>
@@ -462,7 +462,7 @@ function EpicRow({
         <Link
           to={`/node/epic/${epic.id}`}
           className="explore-epic-title"
-          title={epic.key}
+          title={rowTitle(epic.title, epic.key)}
           aria-current={selectedHere ? "page" : undefined}
         >
           {label}
@@ -494,6 +494,16 @@ function EpicRow({
       )}
     </div>
   );
+}
+
+// rowTitle is every row's hover text: the full title, then the key, so a
+// title the row cuts off is still readable. A row with no title shows its
+// key alone.
+function rowTitle(title: string | undefined, key: string | undefined): string | undefined {
+  if (key === undefined || key === "") {
+    return title === "" ? undefined : title;
+  }
+  return title === undefined || title === "" ? key : `${title} \u00b7 ${key}`;
 }
 
 // localKey is the last segment of a canonical key, the node's own folder name
@@ -553,7 +563,7 @@ function FeatureRow({
         <Link
           to={`/node/feature/${feature.id}`}
           className="explore-feat-title"
-          title={feature.key}
+          title={rowTitle(feature.title, feature.key)}
           aria-current={selectedHere ? "page" : undefined}
         >
           {label}
@@ -586,8 +596,8 @@ function TaskRow({ task, selected }: { task: TreeNode; selected: NavigatorSelect
       <StateGlyph status={task.status} />
       <Link
         to={`/node/task/${task.id}`}
-        className="explore-feat-title"
-        title={localKey(task.key)}
+        className="explore-feat-title explore-task-title"
+        title={rowTitle(task.title, task.key)}
         aria-current={selectedHere ? "page" : undefined}
       >
         {label}

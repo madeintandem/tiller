@@ -86,12 +86,13 @@ import {
 } from "./explore/expansion";
 import { readExpansion, writeExpansion } from "./explore/expansionStorage";
 import { expandableShelfIDs, selectedShelfBranch } from "./explore/shelves";
-import { clampNavWidth, NAV_WIDTH_DEFAULT, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./explore/splitSize";
+import { clampNavWidth, defaultNavWidth, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./explore/splitSize";
 import { readNavWidth, writeNavWidth } from "./explore/splitStorage";
 import FilterMode from "./explore/FilterMode";
 import MapMode from "./explore/MapMode";
 import SearchMode from "./explore/SearchMode";
 import "./explore.css";
+import "./explore-nav.css";
 
 // The nudge a single ArrowLeft/ArrowRight press moves the divider (task 3's
 // locked ruling): large enough to feel like a deliberate step, small enough
@@ -479,7 +480,7 @@ export default function Explore() {
             aria-valuemax={NAV_WIDTH_MAX}
             tabIndex={0}
             onMouseDown={() => setDragging(true)}
-            onDoubleClick={() => setNavWidth(NAV_WIDTH_DEFAULT)}
+            onDoubleClick={() => setNavWidth(defaultNavWidth(window.innerWidth))}
             onKeyDown={handleDividerKeyDown}
           />
           <Outlet />
