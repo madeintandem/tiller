@@ -56,6 +56,10 @@ type NodePage struct {
 	// for: every operation, its targets resolved to a RelatedNode where the
 	// live tree can, and the two design-doc lists.
 	Amendment *AmendmentPageView `json:"amendment,omitempty"`
+	// Start is how to begin a ready task: the claim and start commands for an
+	// unclaimed one, only the start command for a claimed one. Nil for every
+	// other node and for a task that is held or already in flight.
+	Start *NodeStart `json:"start,omitempty"`
 	// Workflow is node-specific advice, separate from lifecycle moves.
 	Workflow *workflow.Advice `json:"workflow,omitempty"`
 	// ActiveBasis is the node's drift report, absent when nothing drifted.
@@ -99,6 +103,41 @@ type NodePage struct {
 	// no recorded feature branch, or whose branch already sits pushed even
 	// with its upstream.
 	UnpushedReview *UnpushedReviewView `json:"unpushed_review,omitempty"`
+}
+
+// NodeStart is the node page's start box: who acts, what they do, the command
+// to run, and the command that follows it (empty when there is none).
+type NodeStart struct {
+	Actor   string `json:"actor"`
+	Action  string `json:"action"`
+	Command string `json:"command"`
+	Then    string `json:"then,omitempty"`
+}
+
+// StartOf says how to begin a ready task, or nil when it cannot begin: not
+// ready, held by a question, blocked, or already in flight on a branch. It
+// reuses the conditions Up Next's claim candidates check (gen.TaskClaimable
+// and claimMove), so the two surfaces cannot disagree. in carries the
+// observed eligibility and branches; an empty Input checks the tree alone.
+func StartOf(t *store.Tree, task *store.Task, in workflow.Input) *NodeStart {
+	if task == nil || task.Status != "ready" {
+		return nil
+	}
+	if _, observed := observedTask(task, in); observed {
+		return nil
+	}
+	start := "tiller start task " + queueAddr(task)
+	if task.Owner != "" {
+		if !gen.AssignedTaskEligible(t, task) || in.Eligibility[task.ID] != "" || in.Eligibility[task.FeatureID] != "" {
+			return nil
+		}
+		return &NodeStart{Actor: actorAgent, Action: "start", Command: start}
+	}
+	if !gen.TaskClaimable(t, task, in.Eligibility) {
+		return nil
+	}
+	claim, _ := claimMove(task)
+	return &NodeStart{Actor: actorAgent, Action: "claim and start", Command: claim, Then: start}
 }
 
 // DriftBadgeView is one marker's presence on this node's Drifted chip: the
@@ -314,6 +353,9 @@ func NodePageOf(tree *store.Tree, evs []events.Event, n store.Node, index *relat
 	page.Relationships.Amendments = amendments.relations[n.NodeID()]
 	if n.Noun() == store.NounEpic || n.Noun() == store.NounFeature || n.Noun() == store.NounTask || n.Noun() == store.NounAmendment {
 		page.Relationships.AmendmentHistoryWarning = amendments.warning
+	}
+	if task, ok := n.(*store.Task); ok {
+		page.Start = StartOf(tree, task, workflow.Input{})
 	}
 	if e, ok := n.(*store.Epic); ok {
 		page.Decomposition = decompositionOf(tree, order, e)

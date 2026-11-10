@@ -824,6 +824,15 @@ export interface WorkflowAdvice {
   current_acceptance?: CurrentAcceptanceView[];
 }
 
+// NodeStart is how to begin a ready task: the claim command and the start
+// command that follows it, or only the start for a task already claimed.
+export interface NodeStart {
+  actor: string;
+  action: string;
+  command: string;
+  then?: string;
+}
+
 export interface NodePage {
   node: NodeView;
   ref: string;
@@ -834,6 +843,7 @@ export interface NodePage {
   eval: EvalPayload;
   decomposition?: { features: NodeView[] };
   amendment?: AmendmentPageView;
+  start?: NodeStart;
   workflow?: WorkflowAdvice;
   execution?: ExecutionRecord;
   execution_history_error?: string;

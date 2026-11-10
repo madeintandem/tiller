@@ -152,13 +152,22 @@ func SortExecutionTasks(t *store.Tree, order *Order, tasks []*store.Task) {
 	})
 }
 
+// TaskClaimable reports whether task sits in the executable pool: unowned,
+// structurally eligible, held by no open question, and free of the observed
+// basis failures in eligibility. UnclaimedTasks filters the tree with it, and
+// the node page asks it for one task, so both agree on what is claimable.
+func TaskClaimable(t *store.Tree, task *store.Task, eligibility map[string]string) bool {
+	return task != nil && task.Owner == "" && eligibleTask(t, task, false) &&
+		eligibility[task.ID] == "" && eligibility[task.FeatureID] == "" &&
+		len(TaskQuestionBlockers(t, t.Features[task.FeatureID], task)) == 0
+}
+
 // UnclaimedTasks is the shared executable pool for routing and streams.
 // Eligibility contains caller-observed basis checks unavailable to pure reads.
 func UnclaimedTasks(t *store.Tree, order *Order, eligibility map[string]string) []*store.Task {
 	var tasks []*store.Task
 	for _, task := range t.Tasks {
-		if task.Owner == "" && eligibleTask(t, task, false) && eligibility[task.ID] == "" && eligibility[task.FeatureID] == "" &&
-			len(TaskQuestionBlockers(t, t.Features[task.FeatureID], task)) == 0 {
+		if TaskClaimable(t, task, eligibility) {
 			tasks = append(tasks, task)
 		}
 	}

@@ -7,6 +7,7 @@ var (
 	CandidatesOf     = candidatesOf
 	FrontierFeatures = frontierFeatures
 	QueueKindArms    = queueKindArms
+	ClaimMove        = claimMove
 )
 
 // Arm exposes a candidate's tie-break arm to tests.

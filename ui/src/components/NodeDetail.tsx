@@ -48,6 +48,7 @@ import { needsAttentionFallback, type AttentionFallback } from "../lib/attention
 import { refOf, shortSha } from "../lib/drift";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
+import StartBox from "./StartBox";
 import NodeDetailHeader from "./NodeHeader";
 import { ExecutionProvenance } from "./ExecutionSources";
 import { ProseInline } from "./Prose";
@@ -351,7 +352,11 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
       : null;
   // The unpushed-review check reads the served checkout's branch, not the observed one.
   const review = observed ? undefined : page.unpushed_review;
-  if (asks.length === 0 && fallback === null && review === undefined && workflow === undefined) {
+  // The start box speaks only for a node nothing else in the stack already
+  // names: no workflow box, no ask, no fallback, and not an observed task.
+  const start =
+    !observed && workflow === undefined && asks.length === 0 && fallback === null ? page.start : undefined;
+  if (asks.length === 0 && fallback === null && review === undefined && workflow === undefined && start === undefined) {
     return null;
   }
   return (
@@ -371,6 +376,7 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
         <AskBox key={`${e.kind}:${e.gate ?? ""}:${e.prose ?? ""}`} entry={e} showCommand={!observed} />
       ))}
       {fallback !== null && <FallbackBox action={fallback} />}
+      {start !== undefined && <StartBox start={start} />}
       {review !== undefined && <WarnBox review={review} pr={page.node.pr} />}
     </div>
   );

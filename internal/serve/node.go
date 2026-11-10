@@ -103,6 +103,9 @@ func NodeHandler(root string) http.HandlerFunc {
 		}
 		page.Eval = evalPayload(t, n, workflowInput)
 		page.Workflow = workflow.AdviceOf(snapshot.Base, baseNode, workflowInput)
+		if task, ok := baseNode.(*store.Task); ok {
+			page.Start = views.StartOf(snapshot.Base, task, workflowInput)
+		}
 		page.ActiveBasis = basisPayload(snapshot.Base, baseNode)
 		if a, ok := n.(*store.Amendment); ok && page.Amendment != nil {
 			fillAmendmentValidity(t, page.Amendment, a)
@@ -143,6 +146,7 @@ func NodeHandler(root string) http.HandlerFunc {
 		if record, ok := snapshot.Observations[n.NodeID()]; ok {
 			result.Execution = &record
 			result.Workflow = nil
+			result.Start = nil
 			executionEvidence(snapshot, record, &result.Node)
 		}
 		return result, nil

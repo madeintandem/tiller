@@ -293,6 +293,14 @@ func withoutLeadingRef(reason, ref string) string {
 	return strings.TrimLeft(strings.TrimPrefix(reason, ref), " ;:,")
 }
 
+// claimMove is the claim command for a ready, unclaimed task and the reason
+// that names the start command to run once it is claimed. Up Next and the node
+// page both print it, so they never disagree.
+func claimMove(task *store.Task) (command, reason string) {
+	addr := queueAddr(task)
+	return "tiller claim task " + addr, "ready and unclaimed; once claimed, start it with `tiller start task " + addr + "`"
+}
+
 // claimCandidates offers every eligible unclaimed task not already in
 // flight on a branch, in execution preference order.
 func claimCandidates(t *store.Tree, order *gen.Order, in NextInput) []NextCandidate {
@@ -301,10 +309,11 @@ func claimCandidates(t *store.Tree, order *gen.Order, in NextInput) []NextCandid
 		if _, observed := observedTask(task, in.Workflow); observed {
 			continue
 		}
+		command, reason := claimMove(task)
 		out = append(out, NextCandidate{
 			Actor: actorAgent, Kind: "claim_task", Action: "claim and start",
-			Node: nextNodeOf(t, task), Command: "tiller claim task " + queueAddr(task),
-			Skill: "execute", Reason: "ready and unclaimed; once claimed, start it with `tiller start task " + queueAddr(task) + "`",
+			Node: nextNodeOf(t, task), Command: command,
+			Skill: "execute", Reason: reason,
 		})
 	}
 	return inArm(armClaim, out)
