@@ -361,6 +361,9 @@ function RecapEmpty({ view }: { view: HistoryView }) {
 // was.
 interface FlatBurst {
   burst: Burst;
+  // Index of the served group the burst came from. A bookkeeping fold never
+  // crosses it, even for two groups of one epic (different streams).
+  group: number;
   // The stripping prefix EntryAddresses uses for this burst's leaf-key
   // addresses. Flat mode keeps the same expanded-row address behavior and
   // adds origin because the merged row has no section head to supply it.
@@ -382,11 +385,11 @@ interface FlatBurst {
 // key, project last) rather than an arbitrary one.
 function flatBurstsOf(groups: RecapGroup[]): FlatBurst[] {
   const out: FlatBurst[] = [];
-  for (const g of groups) {
+  for (const [group, g] of groups.entries()) {
     const groupKey = g.epic === null ? "" : g.epic.key;
     const origin = g.epic === null ? "project" : g.epic.key;
     for (const burst of burstsOf(g.entries)) {
-      out.push({ burst, groupKey, origin });
+      out.push({ burst, group, groupKey, origin });
     }
   }
   out.sort((a, b) => burstTimeMs(b.burst) - burstTimeMs(a.burst));
@@ -422,16 +425,17 @@ function FlatBody({ recap, showAll }: { recap: RecapModel; showAll: boolean }) {
           <ul className="recap-bursts">
             {/* Index keys are safe here for the same reason RecapGroupBlock's
                 own burst list uses them: the whole list is rebuilt wholesale
-                from a refetched payload, never mutated in place. A folded run
-                spans bursts from different epics, so each burst is mapped
-                back to its own group key and origin. */}
+                from a refetched payload, never mutated in place. The merged
+                items are tiered directly; runKey ends a bookkeeping fold
+                where the served group changes. */}
             <TieredBursts
-              bursts={d.bursts.map((ob) => ob.burst)}
+              bursts={d.bursts}
               showAll={showAll}
-              renderBurst={(b, i) => {
-                const ob = d.bursts.find((x) => x.burst === b);
-                return <BurstRow key={i} burst={b} groupKey={ob?.groupKey ?? ""} origin={ob?.origin} />;
-              }}
+              burstOf={(ob) => ob.burst}
+              runKey={(ob) => ob.group}
+              renderBurst={(ob, i) => (
+                <BurstRow key={i} burst={ob.burst} groupKey={ob.groupKey} origin={ob.origin} />
+              )}
             />
           </ul>
         </div>

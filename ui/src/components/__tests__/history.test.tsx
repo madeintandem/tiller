@@ -1251,16 +1251,28 @@ describe("History view: the anti-merge pin holds in flat mode", () => {
     };
     stubFetch({ "/api/recap?window=7d": adjacent });
 
-    const { container } = renderHistory("/history?window=7d&group=time&show=all");
+    // Default view: add.feature is bookkeeping, so each epic's burst folds
+    // into its OWN run row. A run never spans a group boundary, so the two
+    // stay two rows of one change each, never one row of two.
+    const { container } = renderHistory("/history?window=7d&group=time");
     await screen.findByText(/2 events in the last 7 days/);
 
-    expect(container.querySelectorAll(".recap-burst")).toHaveLength(2);
-    // The tell-tale merged phrasing never appears.
+    expect(container.querySelectorAll(".recap-bookkeeping")).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "1 bookkeeping change (added)" })).toHaveLength(2);
+    expect(container.textContent).not.toContain("2 bookkeeping changes");
     expect(container.textContent).not.toContain("2 features added");
+
+    // Everything: the original pin, two plain rows in time order.
+    cleanup();
+    renderHistory("/history?window=7d&group=time&show=all");
+    await screen.findByText(/2 events in the last 7 days/);
+    const everything = document.body;
+    expect(everything.querySelectorAll(".recap-burst")).toHaveLength(2);
+    expect(everything.textContent).not.toContain("2 features added");
     expect(screen.getByRole("link", { name: "Feature One" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Feature Two" })).toBeInTheDocument();
     // Newest (10:05, audit-engine) leads.
-    const origins = Array.from(container.querySelectorAll(".recap-burst-origin"), (e) => e.textContent);
+    const origins = Array.from(everything.querySelectorAll(".recap-burst-origin"), (e) => e.textContent);
     expect(origins).toEqual(["audit-engine", "form-engine"]);
   });
 });

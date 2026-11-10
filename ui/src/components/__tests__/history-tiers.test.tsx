@@ -167,6 +167,46 @@ describe("History tiers", () => {
     expect(screen.getByRole("button", { name: "1 bookkeeping change (reordered)" })).toBeInTheDocument();
   });
 
+  it("time order breaks a run where the epic changes, and a milestone breaks it too", async () => {
+    const group = (key: string, entries: RecapEntry[]): RecapGroup => ({
+      epic: { key, id: `E-${key}`, ref: `${key} (E-${key})`, title: key },
+      stream: "jc",
+      entries,
+      omitted: 0,
+    });
+    const recap: Recap = {
+      since: "",
+      window: "7d",
+      reader: "jc",
+      total: 5,
+      groups: [
+        group("alpha", [
+          entry("link.feature", "2026-07-24T10:05:00Z"),
+          entry("approve.feature", "2026-07-24T10:03:00Z"),
+          entry("link.task", "2026-07-24T10:01:00Z"),
+        ]),
+        group("beta", [entry("order.tasks", "2026-07-24T10:04:00Z"), entry("link.task", "2026-07-24T10:02:00Z")]),
+      ],
+    };
+    stubFetch({ "/api/recap?window=7d": recap });
+    const { container } = renderHistory("/history?window=7d&group=time");
+
+    await screen.findByText(/^5 events in the last 7 days/);
+    const rows = Array.from(container.querySelectorAll(".recap-burst"), (li) => {
+      const run = li.querySelector(".recap-bookkeeping-toggle");
+      return run !== null ? (run.textContent ?? "") : "milestone";
+    });
+    // alpha link | beta order | alpha approve | beta link | alpha link: five
+    // rows, no run ever holds two groups' bursts.
+    expect(rows).toEqual([
+      expect.stringContaining("1 bookkeeping change (linked)"),
+      expect.stringContaining("1 bookkeeping change (reordered)"),
+      "milestone",
+      expect.stringContaining("1 bookkeeping change (linked)"),
+      expect.stringContaining("1 bookkeeping change (linked)"),
+    ]);
+  });
+
   it("folds in time mode too", async () => {
     stubFetch({ "/api/recap?window=7d": mixed });
     renderHistory("/history?window=7d&group=time");

@@ -67,9 +67,11 @@ export function burstsOf(entries: RecapEntry[]): Burst[] {
 // A maximal run of adjacent bookkeeping bursts, folded into one row by the
 // milestones-by-default view. count is EVENTS (the sum of the bursts' sizes),
 // verbs the participles seen, deduplicated in first-seen order.
-export interface BookkeepingRun {
+export interface BookkeepingRun<T = Burst> {
   kind: "bookkeeping";
-  bursts: Burst[];
+  // The folded items: plain Bursts, or whatever wrapper the caller tiered
+  // (flat mode tiers a burst plus its origin).
+  bursts: T[];
   count: number;
   verbs: string[];
 }
@@ -78,24 +80,53 @@ export interface BookkeepingRun {
 // eventTier.ts) into one BookkeepingRun. A burst holding any ask is a
 // milestone burst and ends a run. showAll returns the input unchanged. The
 // caller passes one day group's bursts at a time, so a run never spans a day
-// heading or a group boundary.
-export function tierBursts(bursts: Burst[], showAll: boolean): (Burst | BookkeepingRun)[] {
+// heading.
+//
+// A caller whose items carry more than a burst (flat mode's burst plus its
+// origin) passes burstOf to read the burst out of an item, and runKey to name
+// the recap group an item came from: a run also ends where the key changes, so
+// a fold never spans an epic. Without them items are plain bursts sharing one
+// key.
+export interface TierOptions<T> {
+  burstOf: (item: T) => Burst;
+  runKey?: (item: T) => string | number;
+}
+
+export function tierBursts(bursts: Burst[], showAll: boolean): (Burst | BookkeepingRun)[];
+export function tierBursts<T>(
+  items: T[],
+  showAll: boolean,
+  options: TierOptions<T>,
+): (T | BookkeepingRun<T>)[];
+export function tierBursts<T>(
+  items: T[],
+  showAll: boolean,
+  options?: TierOptions<T>,
+): (T | BookkeepingRun<T>)[] {
   if (showAll) {
-    return bursts;
+    return items;
   }
-  const out: (Burst | BookkeepingRun)[] = [];
-  let open: BookkeepingRun | undefined;
-  for (const burst of bursts) {
+  const burstOf = options?.burstOf ?? ((item: T) => item as unknown as Burst);
+  const out: (T | BookkeepingRun<T>)[] = [];
+  let open: BookkeepingRun<T> | undefined;
+  let openKey: string | number | undefined;
+  for (const item of items) {
+    const burst = burstOf(item);
     if (eventTier(burst.type, burst.asks > 0) === "milestone") {
       open = undefined;
-      out.push(burst);
+      out.push(item);
       continue;
+    }
+    const key = options?.runKey?.(item);
+    if (open !== undefined && key !== openKey) {
+      open = undefined;
     }
     if (open === undefined) {
       open = { kind: "bookkeeping", bursts: [], count: 0, verbs: [] };
+      openKey = key;
       out.push(open);
     }
-    open.bursts.push(burst);
+    open.bursts.push(item);
     open.count += burst.entries.length;
     const verb = eventPhrase(burst.type, 1).verb;
     if (!open.verbs.includes(verb)) {

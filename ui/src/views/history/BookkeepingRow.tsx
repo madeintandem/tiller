@@ -8,12 +8,12 @@ import { tierBursts } from "../../lib/bursts";
 // reordered, retitled)"). It is a real button with aria-expanded, and opens to
 // the ordinary burst rows, so nothing it folds is unreachable. The count is
 // events, the same unit every burst row counts in.
-export default function BookkeepingRow({
+export default function BookkeepingRow<T>({
   run,
   renderBurst,
 }: {
-  run: BookkeepingRun;
-  renderBurst: (burst: Burst, index: number) => ReactNode;
+  run: BookkeepingRun<T>;
+  renderBurst: (item: T, index: number) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -41,23 +41,33 @@ export default function BookkeepingRow({
 
 // One day group's (or one flat day's) burst list, tiered. renderBurst draws an
 // ordinary burst row; the caller keeps ownership of its per-row props (group
-// key, origin), so epic mode and time mode share this one fold.
-export function TieredBursts({
+// key, origin), so epic mode and time mode share this one fold. Items default
+// to plain Bursts; flat mode passes its burst-plus-origin items with burstOf
+// and runKey (see tierBursts) so a run never crosses an epic.
+export function TieredBursts<T = Burst>({
   bursts,
   showAll,
+  burstOf,
+  runKey,
   renderBurst,
 }: {
-  bursts: Burst[];
+  bursts: T[];
   showAll: boolean;
-  renderBurst: (burst: Burst, index: number) => ReactNode;
+  burstOf?: (item: T) => Burst;
+  runKey?: (item: T) => string | number;
+  renderBurst: (item: T, index: number) => ReactNode;
 }) {
+  const tiered =
+    burstOf === undefined
+      ? tierBursts(bursts as unknown as Burst[], showAll)
+      : tierBursts(bursts, showAll, { burstOf, runKey });
   return (
     <>
-      {tierBursts(bursts, showAll).map((item, i) =>
-        "kind" in item ? (
-          <BookkeepingRow key={i} run={item} renderBurst={renderBurst} />
+      {(tiered as (T | BookkeepingRun<T>)[]).map((item, i) =>
+        typeof item === "object" && item !== null && "kind" in item && item.kind === "bookkeeping" ? (
+          <BookkeepingRow key={i} run={item as BookkeepingRun<T>} renderBurst={renderBurst} />
         ) : (
-          renderBurst(item, i)
+          renderBurst(item as T, i)
         ),
       )}
     </>

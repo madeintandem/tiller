@@ -198,3 +198,24 @@ describe("tierBursts", () => {
     expect(tierBursts(bursts, true)).toBe(bursts);
   });
 });
+
+describe("tierBursts runKey", () => {
+  const item = (type: string, group: string) => ({ burst: burstsOf([entry({ type })])[0], group });
+  type Item = ReturnType<typeof item>;
+  const opts = { burstOf: (i: Item) => i.burst, runKey: (i: Item) => i.group };
+
+  it("breaks a bookkeeping run where the key changes and keeps the items", () => {
+    const items = [item("link.feature", "a"), item("order.tasks", "a"), item("link.task", "b")];
+    const out = tierBursts(items, false, opts) as BookkeepingRun<Item>[];
+    expect(out).toHaveLength(2);
+    expect(out[0].bursts).toEqual([items[0], items[1]]);
+    expect(out[0].count).toBe(2);
+    expect(out[1].bursts).toEqual([items[2]]);
+  });
+
+  it("a shared key keeps one run, and showAll returns the input", () => {
+    const items = [item("link.feature", "a"), item("order.tasks", "a")];
+    expect(tierBursts(items, false, opts)).toHaveLength(1);
+    expect(tierBursts(items, true, opts)).toBe(items);
+  });
+});
