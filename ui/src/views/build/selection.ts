@@ -1,3 +1,5 @@
+import type { BuildEpic } from "../../api";
+
 // The Build board's own selection state: which
 // epics' features the board's columns show, riding the `?epics=` URL param
 // rather than component state, so a board configuration is a link (the
@@ -50,4 +52,17 @@ export function toggleEpicKey(selected: string[], key: string): string[] {
 // clicked away from.
 export function epicsParamValue(selected: string[]): string {
   return selected.join(",");
+}
+
+// splitEpics separates the epics the rail lists from the finished ones it
+// folds away. Finished means the stored status is done or archived; a
+// cancelled epic is not finished (the payload omits those anyway). Served
+// order holds inside both lists.
+export function splitEpics(epics: readonly BuildEpic[]): { live: BuildEpic[]; finished: BuildEpic[] } {
+  const live: BuildEpic[] = [];
+  const finished: BuildEpic[] = [];
+  for (const epic of epics) {
+    (epic.status === "done" || epic.status === "archived" ? finished : live).push(epic);
+  }
+  return { live, finished };
 }

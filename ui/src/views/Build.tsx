@@ -61,7 +61,7 @@ import FeatureCard from "./build/FeatureCard";
 import { composeMix, composeMixCaption } from "./build/mix";
 import { askLabelsFrom, driftIdsFrom } from "./build/overlays";
 import { readPanelState, writePanelState } from "./build/panelStorage";
-import { epicsParamValue, selectedEpicKeys, toggleEpicKey } from "./build/selection";
+import { epicsParamValue, selectedEpicKeys, splitEpics, toggleEpicKey } from "./build/selection";
 import { readSelectionKeys, writeSelectionKeys } from "./build/selectionStorage";
 import "./build.css";
 
@@ -295,6 +295,14 @@ function EpicPanel({
   open: boolean;
 }) {
   const selectedCount = epics.filter((e) => e.key !== undefined && selected.has(e.key)).length;
+  const { live, finished } = splitEpics(epics);
+  // Open on arrival when the selection reaches into the fold, so a selected
+  // epic is never hidden. Not stored: a fold the human closes stays their call
+  // until the selection changes it.
+  const finishedSelected = finished.some((e) => e.key !== undefined && selected.has(e.key));
+  const row = (epic: BuildEpic) => (
+    <EpicRow key={epic.id} epic={epic} on={epic.key !== undefined && selected.has(epic.key)} onToggle={onToggle} />
+  );
   return (
     <aside id="build-epics" className="epic-panel" inert={!open} aria-hidden={!open}>
       <div className="sect-head">
@@ -304,14 +312,13 @@ function EpicPanel({
           {selectedCount} of {epics.length}
         </span>
       </div>
-      {epics.map((epic) => (
-        <EpicRow
-          key={epic.id}
-          epic={epic}
-          on={epic.key !== undefined && selected.has(epic.key)}
-          onToggle={onToggle}
-        />
-      ))}
+      {live.map(row)}
+      {finished.length > 0 && (
+        <details className="epic-finished" open={finishedSelected}>
+          <summary>{finished.length} finished</summary>
+          {finished.map(row)}
+        </details>
+      )}
       <div className="panel-note">Selection rides the URL, so a board view is linkable.</div>
     </aside>
   );

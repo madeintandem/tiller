@@ -68,6 +68,20 @@
   font-size: 10px;
 }
 
+/* Finished epics fold behind one native disclosure under the live rows. */
+.epic-finished > summary {
+  cursor: pointer;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.epic-finished > summary:hover {
+  color: var(--heading);
+}
+
 /* .epic-row is the row's own wrapping div (not the button - review finding
    3), so the toggle and the mix bar below can be true siblings rather than
    the bar living inside the button's content model. Hovering anywhere in

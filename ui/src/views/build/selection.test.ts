@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { epicsParamValue, selectedEpicKeys, toggleEpicKey } from "./selection";
+import { epicsParamValue, selectedEpicKeys, splitEpics, toggleEpicKey } from "./selection";
 
 describe("selectedEpicKeys", () => {
   it("absent (null) reads as the default selection", () => {
@@ -69,5 +69,22 @@ describe("epicsParamValue", () => {
     // the NEXT selectedEpicKeys(params.get("epics"), ...) read null-vs-""
     // correctly rather than silently reviving the default.
     expect(epicsParamValue([])).toBe("");
+  });
+});
+
+describe("splitEpics", () => {
+  const e = (key: string, status: string) => ({ key, status }) as never;
+
+  it("puts done and archived epics in finished and keeps served order in both lists", () => {
+    const epics = [e("a", "active"), e("b", "done"), e("c", "ready"), e("d", "archived"), e("f", "draft")];
+    const { live, finished } = splitEpics(epics);
+    expect(live.map((x) => x.key)).toEqual(["a", "c", "f"]);
+    expect(finished.map((x) => x.key)).toEqual(["b", "d"]);
+  });
+
+  it("does not treat a cancelled epic as finished", () => {
+    const { live, finished } = splitEpics([e("x", "cancelled")]);
+    expect(live).toHaveLength(1);
+    expect(finished).toHaveLength(0);
   });
 });

@@ -2,6 +2,13 @@ import type { ReactNode } from "react";
 import type { BoardScrollMode } from "../lib/boardScroll";
 import "./board.css";
 
+// The stored values stay "board" and "columns" (lib/boardScroll.ts); only the
+// words on screen are plain.
+const SCROLL_CHOICES: { mode: BoardScrollMode; label: string; title: string }[] = [
+  { mode: "board", label: "Whole board", title: "The board scrolls as one page" },
+  { mode: "columns", label: "Each column", title: "Each column scrolls on its own" },
+];
+
 export default function BoardToolbar({
   panelLabel,
   panelId,
@@ -28,12 +35,12 @@ export default function BoardToolbar({
       </button>
       <span className="showing">{summary}</span>
       {children}
-      <div className="board-scroll-control" role="group" aria-label="Scroll">
-        <span>Scroll</span>
+      <div className="board-scroll-control" role="group" aria-label="Scrolling">
+        <span>Scrolling</span>
         <div className="segmented-control">
-          {(["board", "columns"] as const).map((mode) => (
-            <button key={mode} type="button" className={scrollMode === mode ? "active" : undefined} aria-pressed={scrollMode === mode} onClick={() => onScrollMode(mode)}>
-              {mode === "board" ? "Board" : "Columns"}
+          {SCROLL_CHOICES.map(({ mode, label, title }) => (
+            <button key={mode} type="button" className={scrollMode === mode ? "active" : undefined} aria-pressed={scrollMode === mode} title={title} onClick={() => onScrollMode(mode)}>
+              {label}
             </button>
           ))}
         </div>
