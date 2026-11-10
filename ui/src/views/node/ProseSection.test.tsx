@@ -317,6 +317,42 @@ describe("ProseSection: the outline", () => {
     expect(ids).toEqual(["notes", "notes-2", "notes-3"]);
   });
 
+  it("resolves every outline link, whatever markup the headings carry", () => {
+    const spec = [
+      "## in_review and in_flight",
+      "",
+      "## snake\\_case &amp; more",
+      "",
+      "> ## Notes",
+      "",
+      "## Notes",
+      "",
+      "- item",
+      "",
+      "  ```",
+      "  ## not a heading",
+      "  ```",
+      "",
+      "Setext Heading",
+      "--------------",
+      "",
+      "## ~~Gone~~ <https://x.test/a>",
+      "",
+      "### Setext Heading",
+      "",
+    ].join("\n");
+    const { container } = renderSection(prose({ content: spec }), featureNode);
+    const nav = screen.getByRole("navigation", { name: "On this page" });
+    const hrefs = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href")!.slice(1));
+    expect(hrefs.length).toBeGreaterThanOrEqual(6);
+    for (const id of hrefs) {
+      expect(container.querySelector(`.prose [id="${id}"]`), id).not.toBeNull();
+    }
+    expect(hrefs).toContain("in-review-and-in-flight");
+    expect(hrefs).toContain("notes-2");
+    expect(hrefs).toContain("setext-heading-2");
+  });
+
   it("renders no nav for fewer than three items", () => {
     renderSection(prose({ content: "## One\n\ntext\n\n## Two\n\ntext\n" }), featureNode);
     expect(screen.queryByRole("navigation", { name: "On this page" })).not.toBeInTheDocument();

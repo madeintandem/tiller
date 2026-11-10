@@ -11,11 +11,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "mdast-util-to-string": "4.0.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-markdown": "10.1.0",
     "react-router-dom": "^7.18.4",
-    "remark-gfm": "4.0.1"
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "unified": "11.0.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

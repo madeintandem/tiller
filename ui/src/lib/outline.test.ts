@@ -30,6 +30,35 @@ describe("outlineOf", () => {
     expect(outlineOf("## ???\n\n## !!!\n").map((i) => i.id)).toEqual(["section", "section-2"]);
   });
 
+  it("keeps snake_case tokens whole, in text and id", () => {
+    expect(outlineOf("## in_review and in_flight")).toEqual([
+      { id: "in-review-and-in-flight", text: "in_review and in_flight", depth: 2 },
+    ]);
+  });
+
+  it("decodes escapes and entities, and strips strike and autolink marks", () => {
+    const md = "## snake\\_case &amp; more\n\n## ~~gone~~ <https://x.test/a>\n";
+    expect(outlineOf(md).map((i) => i.text)).toEqual(["snake_case & more", "gone https://x.test/a"]);
+  });
+
+  it("counts a heading in a blockquote toward later repeat suffixes", () => {
+    const md = "> ## Notes\n\n## Notes\n";
+    expect(outlineOf(md).map((i) => i.id)).toEqual(["notes", "notes-2"]);
+  });
+
+  it("ignores a fenced block inside a list item", () => {
+    const md = "- item\n\n  ```\n  ## not a heading\n  ```\n\n## Real\n";
+    expect(outlineOf(md).map((i) => i.text)).toEqual(["Real"]);
+  });
+
+  it("lists a setext heading like ##", () => {
+    const md = "Setext Heading\n--------------\n\n## Setext Heading\n";
+    expect(outlineOf(md)).toEqual([
+      { id: "setext-heading", text: "Setext Heading", depth: 2 },
+      { id: "setext-heading-2", text: "Setext Heading", depth: 2 },
+    ]);
+  });
+
   it("slugger counts repeats the same way", () => {
     const next = slugger();
     expect([next("A b"), next("A b"), next("A B")]).toEqual(["a-b", "a-b-2", "a-b-3"]);

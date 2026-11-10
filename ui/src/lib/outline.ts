@@ -6,6 +6,12 @@
 // header, and any later `#` is a title-level break, not a section. Levels four
 // and below are detail, not navigation.
 
+import type { Root, RootContent } from "mdast";
+import { toString } from "mdast-util-to-string";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
+
 export interface OutlineItem {
   id: string;
   text: string;
@@ -29,44 +35,29 @@ export function slugger(): (text: string) => string {
   };
 }
 
-// plainText reduces a heading's inline Markdown to the text a reader sees:
-// the same text Prose's heading ids are built from (images show their alt,
-// links their label, code and emphasis lose their marks).
-function plainText(raw: string): string {
-  return raw
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/`+([^`]*)`+/g, "$1")
-    .replace(/(\*\*|__|\*|_)(.+?)\1/g, "$2")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-const FENCE = /^ {0,3}(`{3,}|~{3,})/;
-const HEADING = /^ {0,3}(#{2,3})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
+// outlineOf reads the same parse Prose renders from (remark-parse with
+// remark-gfm, the pipeline react-markdown runs), so a heading's text and its
+// place in the id sequence cannot differ from what Prose gives it. Every
+// heading Prose gives an id (source ## and ###, wherever it sits: top level,
+// a blockquote, a list item, or a setext underline) draws from the one
+// slugger in document order, and all of them are listed, so repeat suffixes
+// always line up. Fenced and indented code is code in the tree, never a
+// heading.
+const PARSER = unified().use(remarkParse).use(remarkGfm);
 
 export function outlineOf(markdown: string): OutlineItem[] {
   const items: OutlineItem[] = [];
   const next = slugger();
-  let fence: string | null = null;
-  for (const line of markdown.split(/\r?\n/)) {
-    const open = FENCE.exec(line);
-    if (fence !== null) {
-      // A closing fence uses the same character, at least as long, and
-      // carries nothing after it.
-      if (open !== null && open[1][0] === fence[0] && open[1].length >= fence.length && line.trim() === open[1]) {
-        fence = null;
+  const walk = (node: Root | RootContent): void => {
+    if (node.type === "heading") {
+      if (node.depth === 2 || node.depth === 3) {
+        const text = toString(node).replace(/\s+/g, " ").trim();
+        items.push({ id: next(text), text, depth: node.depth });
       }
-      continue;
+      return;
     }
-    if (open !== null) {
-      fence = open[1];
-      continue;
-    }
-    const match = HEADING.exec(line);
-    if (match === null) continue;
-    const text = plainText(match[2]);
-    items.push({ id: next(text), text, depth: match[1].length === 2 ? 2 : 3 });
-  }
+    if ("children" in node) node.children.forEach(walk);
+  };
+  walk(PARSER.parse(markdown));
   return items;
 }

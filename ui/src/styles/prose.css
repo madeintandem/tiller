@@ -202,9 +202,19 @@
    padding, a ~21px line, 6px bottom) plus the tab rail (12px top margin, ~36px
    tab, 24px bottom margin), less the 22px it hides above the pane. 108px
    clears that with a small gap. Estimated from those rules, not measured. */
+:root {
+  --outline-top: 108px;
+}
+
+/* An outline link lands its heading below the pinned header and rail, by the
+   same figure the outline itself sticks at. */
+.prose :is(h3, h4)[id] {
+  scroll-margin-top: var(--outline-top);
+}
+
 .prose-outline {
   position: sticky;
-  top: 108px;
+  top: var(--outline-top);
   font-size: 12.5px;
   line-height: 1.4;
 }
