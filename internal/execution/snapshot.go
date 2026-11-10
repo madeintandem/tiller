@@ -54,8 +54,10 @@ type Snapshot struct {
 	Diagnostics  []Diagnostic
 	repo         *repository
 	sources      map[string]*source
-	// integrationEvents is read at most once, only when an ownership
-	// disagreement needs the newest-event tie-break.
+	// integrationEvents is read at most once per snapshot, on first use: by an
+	// ownership disagreement's newest-event tie-break during Load, or by
+	// IntegrationEvents. Fork copies it, so a read made during Load reaches
+	// every fork.
 	integrationEvents    []events.Event
 	integrationEventsErr error
 	integrationEventsSet bool
@@ -229,14 +231,11 @@ func newestOwnership(evs []events.Event, taskID string) *events.Event {
 // integration has no ownership event for the task, the branch already carries
 // integration's newest one, or the branch has a newer one of its own.
 func (s *Snapshot) newerIntegrationOwnership(src *source, taskID string) (*events.Event, error) {
-	if !s.integrationEventsSet {
-		s.integrationEvents, s.integrationEventsErr = events.List(s.Base)
-		s.integrationEventsSet = true
+	integration, err := s.integrationEventList(context.Background())
+	if err != nil {
+		return nil, err
 	}
-	if s.integrationEventsErr != nil {
-		return nil, s.integrationEventsErr
-	}
-	latest := newestOwnership(s.integrationEvents, taskID)
+	latest := newestOwnership(integration, taskID)
 	if latest == nil {
 		return nil, nil
 	}
@@ -252,6 +251,34 @@ func (s *Snapshot) newerIntegrationOwnership(src *source, taskID string) (*event
 		return nil, nil
 	}
 	return latest, nil
+}
+
+// IntegrationEvents returns the integration event stream, events.List over
+// Base, read once per snapshot and reused afterwards, so a request whose
+// ownership check already read it does not read it again. The slice is the
+// caller's own; the events in it are shared read-only values, as events.List
+// documents. A cancelled context returns its error and keeps nothing, so a
+// later call reads. A Snapshot is not for concurrent use: the console
+// projects each read over its own Fork.
+func (s *Snapshot) IntegrationEvents(ctx context.Context) ([]events.Event, error) {
+	evs, err := s.integrationEventList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return slices.Clone(evs), nil
+}
+
+// integrationEventList is IntegrationEvents without the copy, for reads
+// inside the package that never change the slice.
+func (s *Snapshot) integrationEventList(ctx context.Context) ([]events.Event, error) {
+	if !s.integrationEventsSet {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		s.integrationEvents, s.integrationEventsErr = events.List(s.Base)
+		s.integrationEventsSet = true
+	}
+	return s.integrationEvents, s.integrationEventsErr
 }
 
 func (s *Snapshot) diagnostic(id, branch, code, message string) {

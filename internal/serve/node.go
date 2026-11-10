@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/drift"
-	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
 	"github.com/madeintandem/tiller/internal/core/review"
@@ -54,7 +53,9 @@ func NodeHandler(root string) http.HandlerFunc {
 		if err != nil {
 			return nil, err
 		}
-		evs, historyErr := events.List(snapshot.Base)
+		// The snapshot's read, which an observation's ownership check may
+		// already have made during the load, so the stream is read once.
+		evs, historyErr := snapshot.IntegrationEvents(r.Context())
 		historyError := ""
 		if historyErr != nil {
 			historyError = historyErr.Error()

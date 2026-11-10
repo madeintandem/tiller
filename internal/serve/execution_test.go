@@ -255,6 +255,58 @@ func TestNodeIntegrationHistorySkipsSourceRead(t *testing.T) {
 	require.False(t, epic.HistoryPending, "a node with no observation has nothing pending")
 }
 
+// TestNodeReadsIntegrationEventsOnce pins one read of the integration event
+// stream per node request. The branch owns a task integration released, so
+// the observation's ownership check reads the stream and then the branch's
+// event blobs. A git shim writes a new integration event during that blob
+// read, after the check's read. The page's history must not show it: the
+// handler reuses the check's read instead of listing the stream again. The
+// next request, which reads afresh, does show it.
+func TestNodeReadsIntegrationEventsOnce(t *testing.T) {
+	srv, root, worktree := observationFixture(t)
+	observationFile(t, root, ".tiller/events/2026/10/06/EV-eeeeee.yml", "id: EV-eeeeee\ntype: release.task\nat: 2026-10-06T11:00:00Z\ncontributor: jc\ncommand: tiller release task T-cccccc\ntargets: [T-cccccc]\n")
+	observationGit(t, root, "add", ".")
+	observationGit(t, root, "commit", "-qm", "integration release")
+	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\ntitle: One\nstatus: in_review\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
+	observationFile(t, worktree, ".tiller/events/2026/10/06/EV-dddddd.yml", "id: EV-dddddd\ntype: start.task\nat: 2026-10-06T12:00:00Z\ncontributor: jc\ncommand: tiller start task T-cccccc\ntargets: [T-cccccc]\n")
+	observationGit(t, worktree, "add", ".")
+	observationGit(t, worktree, "commit", "-qm", "submitted execution")
+	observationGit(t, root, "worktree", "remove", worktree)
+
+	planted := filepath.Join(t.TempDir(), "EV-ffffff.yml")
+	require.NoError(t, os.WriteFile(planted, []byte("id: EV-ffffff\ntype: claim.task\nat: 2026-10-06T13:00:00Z\ncontributor: pat\ncommand: tiller claim task T-cccccc\ntargets: [T-cccccc]\n"), 0o644))
+	destination := filepath.Join(root, ".tiller/events/2026/10/06/EV-ffffff.yml")
+	realGit, err := exec.LookPath("git")
+	require.NoError(t, err)
+	shim := t.TempDir()
+	script := "#!/bin/sh\ncase \"$*\" in *\"cat-file --batch\"*) [ -e \"" + destination + "\" ] || cp \"" + planted + "\" \"" + destination + "\" ;; esac\nexec \"" + realGit + "\" \"$@\"\n"
+	require.NoError(t, os.WriteFile(filepath.Join(shim, "git"), []byte(script), 0o755))
+	t.Setenv("PATH", shim+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	type nodePage struct {
+		History   []views.HistoryEntry `json:"history"`
+		Execution struct {
+			Source string `json:"source"`
+		} `json:"execution"`
+	}
+	types := func(history []views.HistoryEntry) []string {
+		out := make([]string, len(history))
+		for i, entry := range history {
+			out[i] = entry.Type
+		}
+		return out
+	}
+	var fast nodePage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc?history=integration", &fast))
+	require.Equal(t, "local_branch", fast.Execution.Source, "the branch's newer start stands")
+	require.FileExists(t, destination, "the ownership check read the branch's event blobs")
+	require.Equal(t, []string{"release.task"}, types(fast.History), "the page reuses the ownership check's read")
+
+	var next nodePage
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/node/task/T-cccccc?history=integration", &next))
+	require.Equal(t, []string{"claim.task", "release.task"}, types(next.History), "a later request reads the stream afresh")
+}
+
 func TestObservedParentActivityAgreesWithoutAdvancingParentLifecycle(t *testing.T) {
 	srv, _, worktree := observationFixture(t)
 	observationFile(t, worktree, observationTaskPath, "id: T-cccccc\nkey: work/build/one\nstatus: in_progress\nstarted: true\nowner: jc\nbranch: tiller/work/build/one\n")
