@@ -987,7 +987,7 @@ Results are grouped, one per node and one per Markdown file no node owns. A file
 whose folder holds it, and an amendment's `<A-id>-<key>.md` belongs to that amendment. Nodes rank by
 how they matched, strongest first: `id`, `key`, `title` (an equal title, then a title starting with
 the query, then one containing it), `key_fragment`, then `text` for a node matched only in its prose
-or ledger fields. Within a rank, the node with more matching lines leads, then kind order (epic,
+or ledger fields. Within a rank, a node whose stored status is live leads one that is `cancelled` or `archived`, so abandoned work never crowds out current work (a lookup that names a retired node still leads, because rank is compared first). Then the node with more matching lines leads, then kind order (epic,
 feature, task, bug, chore, tweak, question, amendment) and reference. Documents follow the nodes:
 a file whose path contains the query first, then by matching lines, then path. Each result carries
 its total matching lines and ledger fields as `count` and the first three as `hits`; a node's title

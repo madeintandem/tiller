@@ -70,8 +70,16 @@ func (r *NodeResult) addHit(h Hit) {
 	}
 }
 
-// ranked is the set in result order: rank, then the node that matches most
-// often, then kind order, then reference.
+// retired reports whether a stored status means the work was abandoned or
+// shelved, which a reader searching for something to act on wants last.
+func retired(status string) bool {
+	return status == "cancelled" || status == "archived"
+}
+
+// ranked is the set in result order: rank, then live work before retired
+// work, then the node that matches most often, then kind order, then
+// reference. Retirement sits behind rank, so a lookup that names a retired
+// node still puts it first.
 func (s nodeSet) ranked() []NodeResult {
 	out := make([]NodeResult, 0, len(s))
 	for _, n := range s {
@@ -81,6 +89,7 @@ func (s nodeSet) ranked() []NodeResult {
 	slices.SortFunc(out, func(a, b NodeResult) int {
 		return cmp.Or(
 			cmp.Compare(a.rank, b.rank),
+			cmp.Compare(boolRank(retired(a.Status)), boolRank(retired(b.Status))),
 			cmp.Compare(b.Count, a.Count),
 			cmp.Compare(slices.Index(Kinds, a.Noun), slices.Index(Kinds, b.Noun)),
 			strings.Compare(a.Ref, b.Ref),
@@ -88,6 +97,14 @@ func (s nodeSet) ranked() []NodeResult {
 		)
 	})
 	return out
+}
+
+// boolRank orders false before true.
+func boolRank(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 // matchNodes checks every node's identity and human-meaningful fields

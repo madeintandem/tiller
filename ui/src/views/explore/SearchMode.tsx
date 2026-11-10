@@ -11,14 +11,14 @@
 // tab asks the server for that kind alone, so a kind is never cut short by
 // the others' share of the page.
 
-import type { FormEvent } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { SearchKindCount, SearchResult } from "../../api";
 import { searchPath } from "../../api";
 import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
 import { useFetch } from "../../hooks";
+import { readHideCancelled } from "./hideCancelled";
 import { AllResults, KindResults, kindPlural, SEARCH_KINDS } from "./SearchResults";
 
 const ALL = "all";
@@ -30,8 +30,17 @@ export default function SearchMode() {
   // A kind the console does not know reads as All, so a stale or hand-edited
   // link still answers rather than tripping the API's misuse refusal.
   const kind = SEARCH_KINDS.includes(raw) ? raw : ALL;
-  const { data, error, loading } = useFetch<SearchResult>(
+  const { data: answer, error, loading } = useFetch<SearchResult>(
     query === "" ? null : searchPath(query, kind === ALL ? undefined : kind),
+  );
+  // The navigator's Hide cancelled preference applies here too, and the
+  // summary counts what it took out so a filtered list never reads as whole.
+  const [hideCancelled] = useState(readHideCancelled);
+  // Memoized: the kinds array's identity is how the rail's stand-in below
+  // notices a new answer, so a fresh copy every render would loop.
+  const { result: data, hidden } = useMemo(
+    () => (hideCancelled ? withoutCancelled(answer) : { result: answer, hidden: 0 }),
+    [answer, hideCancelled],
   );
 
   // Switching tabs refetches, and the tab rail should not blink out while it
@@ -44,20 +53,6 @@ export default function SearchMode() {
   const shownKinds = kinds?.query === query ? kinds.kinds : null;
   const fresh = data !== null && data.query === query && (data.kind ?? ALL) === kind ? data : null;
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = new FormData(event.currentTarget).get("q");
-    const next = new URLSearchParams(params);
-    next.set("mode", "search");
-    next.delete("kind");
-    if (typeof value === "string" && value.trim() !== "") {
-      next.set("q", value.trim());
-    } else {
-      next.delete("q");
-    }
-    setParams(next);
-  }
-
   function selectKind(next: string) {
     const updated = new URLSearchParams(params);
     if (next === ALL) updated.delete("kind");
@@ -67,21 +62,14 @@ export default function SearchMode() {
 
   return (
     <>
-      {/* One input, submit on Enter; the key remounts it when the URL query
-          changes so the back button restores what was searched. */}
-      <form className="filter-bar" key={query} onSubmit={submit}>
-        <input
-          className="control search-input"
-          type="text"
-          name="q"
-          defaultValue={query}
-          placeholder="keyword, id, or key"
-          aria-label="Search keyword"
-        />
-      </form>
       {query === "" && <p className="muted">Type a keyword, id, or key and press Enter.</p>}
       {error !== null && <p className="error">{error}</p>}
-      {shownKinds !== null && shownKinds.length === 0 && fresh !== null && <EmptyNote>No matches.</EmptyNote>}
+      {shownKinds !== null && shownKinds.length === 0 && fresh !== null && (
+        <>
+          <EmptyNote>No matches.</EmptyNote>
+          {hidden > 0 && <p className="muted search-summary">{hiddenNote(hidden)}</p>}
+        </>
+      )}
       {shownKinds !== null && shownKinds.length > 0 && (
         <NodeTabs
           label="Result kind"
@@ -95,7 +83,7 @@ export default function SearchMode() {
                 <p className="muted">Searching...</p>
               ) : (
                 <>
-                  <Summary result={fresh} />
+                  <Summary result={fresh} hidden={hidden} />
                   {kind === ALL ? (
                     <AllResults result={fresh} onShowKind={selectKind} />
                   ) : (
@@ -116,12 +104,43 @@ export default function SearchMode() {
 // Count is the number of results the query matched within the tab, which the
 // page may hold fewer of when the API's ceiling stands in front of it. A
 // truncated answer that poses as complete is worse than a long one.
-function Summary({ result }: { result: SearchResult }) {
+function Summary({ result, hidden }: { result: SearchResult; hidden: number }) {
   const shown = result.nodes.length + result.documents.length;
   return (
     <p className="muted search-summary">
       {result.count} {result.count === 1 ? "result" : "results"}
       {result.truncated && ` · showing ${String(shown)}; narrow the query or pick a kind to see the rest`}
+      {hidden > 0 && ` · ${hiddenNote(hidden)}`}
     </p>
   );
+}
+
+function hiddenNote(hidden: number): string {
+  return `${String(hidden)} cancelled ${hidden === 1 ? "result" : "results"} hidden`;
+}
+
+// withoutCancelled drops the cancelled node rows the page holds and takes
+// them out of the totals, returning how many it dropped. A kind left with
+// nothing leaves the tab rail.
+function withoutCancelled(result: SearchResult | null): { result: SearchResult | null; hidden: number } {
+  if (result === null) {
+    return { result, hidden: 0 };
+  }
+  const dropped = result.nodes.filter((n) => n.status === "cancelled");
+  if (dropped.length === 0) {
+    return { result, hidden: 0 };
+  }
+  const perKind = new Map<string, number>();
+  for (const n of dropped) perKind.set(n.noun, (perKind.get(n.noun) ?? 0) + 1);
+  return {
+    hidden: dropped.length,
+    result: {
+      ...result,
+      count: result.count - dropped.length,
+      nodes: result.nodes.filter((n) => n.status !== "cancelled"),
+      kinds: result.kinds
+        .map((k) => ({ ...k, count: k.count - (perKind.get(k.kind) ?? 0) }))
+        .filter((k) => k.count > 0),
+    },
+  };
 }

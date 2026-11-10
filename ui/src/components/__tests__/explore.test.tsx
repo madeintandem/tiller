@@ -851,7 +851,7 @@ describe("Navigator: status freshness across selection", () => {
     await navigator.findByText("Foundation");
     fireEvent.click(navigator.getByRole("button", { name: "Open all" }));
     const taskLink = navigator.getByRole("link", { name: "Boot the app" });
-    const search = navigator.getByRole("textbox", { name: "Search" });
+    const search = screen.getByRole("textbox", { name: "Search" });
     fireEvent.change(search, { target: { value: "unfinished search" } });
     const divider = screen.getByRole("separator", { name: "Resize navigator" });
     fireEvent.keyDown(divider, { key: "ArrowRight" });
@@ -870,7 +870,7 @@ describe("Navigator: status freshness across selection", () => {
     expect(screen.getByRole("navigation", { name: "Definition navigator" })).toBe(nav);
     expect(navigator.getByRole("link", { name: "Boot the app" })).toBe(taskLink);
     expect(taskLink).toHaveFocus();
-    expect(navigator.getByRole("textbox", { name: "Search" })).toHaveValue("unfinished search");
+    expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("unfinished search");
     expect(screen.getByRole("separator", { name: "Resize navigator" })).toBe(divider);
     expect(divider).toHaveAttribute("aria-valuenow", width);
     expect(container.querySelector(".explore-detail")).toBe(detail);
@@ -1401,14 +1401,10 @@ describe("Navigator: a failed tree fetch surfaces its error honestly", () => {
   });
 });
 
-// NavSearch (Navigator.tsx, plan.md Phase 4 item 3): the unified bar's one
-// persistent input, re-dressing rather than replacing the existing
-// mode=search transition SearchMode's own pill already drives. It carried
-// zero coverage of its own before a later fix - the one Phase 4 surface with
-// none - despite being a router navigation, not a pure render, and so the one
-// thing in this file most in need of a real MemoryRouter round-trip rather than
-// a snapshot.
-describe("Navigator: unified search bar (NavSearch)", () => {
+// The topbar search field (TopbarSearch.tsx) drives the mode=search
+// transition from every page; its own coverage is topbar-search.test.tsx.
+// These stay here because they render the Explore shell around it.
+describe("Explore: the topbar search field", () => {
   it("links Tweak search hits by their TW identity", async () => {
     const result: SearchResult = {
       query: "spacing", count: 1, truncated: false, kinds: [{ kind: "tweak", count: 1 }], documents: [],
@@ -1427,7 +1423,7 @@ describe("Navigator: unified search bar (NavSearch)", () => {
     await screen.findByText("Foundation");
     const input = screen.getByRole("textbox", { name: "Search" });
     // Leading/trailing whitespace around the real keyword: the trim happens
-    // in NavSearch's own submit handler, not in the browser's input value,
+    // in TopbarSearch's own submit handler, not in the browser's input value,
     // so a pass here proves the component trims rather than the fixture
     // arriving pre-trimmed.
     fireEvent.change(input, { target: { value: "  boot  " } });
@@ -1443,7 +1439,7 @@ describe("Navigator: unified search bar (NavSearch)", () => {
     expect(urls).toContain("/api/search?q=boot");
   });
 
-  it("is a no-op on an empty or whitespace-only submit", async () => {
+  it("answers an empty or whitespace-only submit with the search page's prompt and no request", async () => {
     const fetchMock = stubFetch(baseRoutes());
 
     renderExplore();
@@ -1453,10 +1449,7 @@ describe("Navigator: unified search bar (NavSearch)", () => {
     fireEvent.change(input, { target: { value: "   " } });
     fireEvent.submit(input.closest("form") as HTMLFormElement);
 
-    // Still on browse mode: the tree is what's showing, never a search
-    // result, its own loading line, or a request for one.
-    expect(screen.getByText("Foundation")).toBeInTheDocument();
-    expect(screen.queryByText(/match/)).not.toBeInTheDocument();
+    expect(await screen.findByText("Type a keyword, id, or key and press Enter.")).toBeInTheDocument();
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(urls.some((u) => u.startsWith("/api/search"))).toBe(false);
   });

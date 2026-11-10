@@ -376,3 +376,53 @@ func TestSearchNodeResultCarriesSeverity(t *testing.T) {
 	require.Len(t, res.Nodes, 1)
 	require.Empty(t, res.Nodes[0].Severity)
 }
+
+// retiredFixture cancels the tree's epic and task and titles every node to
+// match "renewal" at the same rank, so only status can order them.
+func retiredFixture(t *testing.T) (string, *store.Tree) {
+	t.Helper()
+	root, tree := fixture(t)
+	for _, e := range tree.Epics {
+		e.Title, e.Status = "Renewal epic", "cancelled"
+	}
+	for _, f := range tree.Features {
+		f.Title = "Renewal feature"
+	}
+	for _, task := range tree.Tasks {
+		task.Title, task.Status = "Renewal task", "cancelled"
+	}
+	return root, tree
+}
+
+// TestLiveWorkRanksBeforeRetiredWork: within one rank, a node that is still
+// live leads a cancelled one even when kind order and reference would put
+// the cancelled node first.
+func TestLiveWorkRanksBeforeRetiredWork(t *testing.T) {
+	root, tree := retiredFixture(t)
+	res := run(t, root, tree, "renewal")
+	require.Equal(t, []string{"F-aaaaaa title", "E-aaaaaa title", "T-aaaaaa title"}, nodeLabels(res))
+}
+
+// TestAnArchivedNodeIsRetiredToo: archived sorts with cancelled, behind live.
+func TestAnArchivedNodeIsRetiredToo(t *testing.T) {
+	root, tree := retiredFixture(t)
+	for _, e := range tree.Epics {
+		e.Status = "archived"
+	}
+	res := run(t, root, tree, "renewal")
+	require.Equal(t, "F-aaaaaa", res.Nodes[0].ID)
+}
+
+// TestAnExactIDOnARetiredNodeStillLeads: rank class is compared before
+// retirement, so a lookup that names a cancelled node still puts it first.
+func TestAnExactIDOnARetiredNodeStillLeads(t *testing.T) {
+	root, tree := fixture(t)
+	for _, f := range tree.Features {
+		f.Status = "cancelled"
+	}
+	for _, e := range tree.Epics {
+		e.Title = "Notes on F-aaaaaa"
+	}
+	res := run(t, root, tree, "F-aaaaaa")
+	require.Equal(t, []string{"F-aaaaaa id", "E-aaaaaa title"}, nodeLabels(res))
+}

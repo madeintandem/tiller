@@ -48,8 +48,8 @@
 // behavior documented above - same two click targets, same held-open state,
 // same served order - only how a row paints.
 
-import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useLayoutEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { ListResult, ProjectSummary, TreeModel, TreeNode } from "../api";
 import type { FetchState } from "../hooks";
 import { displayStatus } from "../lib/displayStatus";
@@ -136,9 +136,8 @@ export default function Navigator({
   });
   return (
     <nav className="explore-nav" aria-label="Definition navigator">
-      {/* Search and tree controls stay outside the tree's scroll area. */}
+      {/* Tree controls stay outside the tree's scroll area. */}
       <div className="explore-nav-head">
-        <NavSearch />
         <TreeActions
           onOpenAll={onOpenAll}
           onCloseAll={onCloseAll}
@@ -245,47 +244,6 @@ function TreeActions({
     </div>
   );
 }
-
-// NavSearch is the unified bar's one persistent control (plan.md Phase 4
-// item 3, "search and filter presentation merges into one persistent bar
-// over the navigator"): a single input pinned above the tree, matching the
-// mock's .nav-search pixel-for-pixel. It re-dresses rather than replaces the
-// existing three-mode split (Explore.tsx's mode=browse|filter|search,
-// unchanged): submitting a keyword here drives the SAME transition the
-// mode-nav's own Search entry already does (?mode=search&q=...), just from a
-// second, always-visible entry point rather than only the mode switcher -
-// zero new endpoint, zero new parsing. Filter's own axis form (noun, status,
-// owner, feature, epic - four independent fields, not one string) has no
-// honest single-input equivalent short of inventing a free-text filter
-// grammar, which is rewriting mode logic rather than re-dressing it; it
-// stays reachable through the unchanged mode-nav entry. See task-16-report.md
-// for the fuller account of that tension.
-function NavSearch() {
-  const navigate = useNavigate();
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = new FormData(event.currentTarget).get("q");
-    if (typeof value !== "string" || value.trim() === "") {
-      return;
-    }
-    const next = new URLSearchParams();
-    next.set("mode", "search");
-    next.set("q", value.trim());
-    navigate(`/explore?${next.toString()}`);
-  }
-  return (
-    <form onSubmit={submit}>
-      <input
-        className="nav-search"
-        type="text"
-        name="q"
-        placeholder="Search or filter…"
-        aria-label="Search"
-      />
-    </form>
-  );
-}
-
 
 // DefinitionBody surfaces a failed tree fetch as an honest error - never as
 // an empty navigator, which would misread as "this project has no epics."

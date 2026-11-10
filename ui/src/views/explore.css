@@ -301,25 +301,6 @@
   padding: 0 14px 30px 0;
 }
 
-/* Persistent search uses the same control chrome as filter/search inputs. */
-.nav-search {
-  display: block;
-  width: 100%;
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--hair);
-  border-radius: var(--radius-btn);
-  padding: 7px 10px;
-  margin: 0 0 10px;
-}
-
-.nav-search::placeholder {
-  color: var(--ink-3);
-}
-
-
 /* Whole-tree controls sit above the tree's scroll area. */
 .explore-nav-actions {
   display: flex;

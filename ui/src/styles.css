@@ -227,6 +227,72 @@ a:hover {
   border-bottom-color: var(--accent);
 }
 
+/* The search field: 260px wide where the row has room, and in the row's flow
+   at every width, never wrapping to another line or resizing on focus. Flex
+   wrapping breaks lines on each item's basis, so the basis is the 132px floor
+   and the field grows into spare room up to 260px; at the supported 1024px
+   minimum the row (wordmark, key, nav, sync line, theme toggle) leaves about
+   140px (132px with margin to spare), which the compact rule below makes by tightening the nav and gutters.
+   The "/" key hint sits inside the field's right edge, over padding the input
+   reserves for it. */
+.topbar-search {
+  position: relative;
+  flex: 1 1 132px;
+  max-width: 260px;
+  align-self: center;
+}
+
+@media (max-width: 1239px) {
+  .header-row {
+    gap: 10px;
+    padding-inline: 20px;
+  }
+
+  .site-nav {
+    gap: 2px;
+  }
+
+  .site-nav a {
+    padding-inline: 8px;
+  }
+}
+
+.topbar-search-input {
+  display: block;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 6px 28px 6px 10px;
+}
+
+.topbar-search-input::placeholder {
+  color: var(--ink-3);
+}
+
+.topbar-search-hint {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  color: var(--ink-3);
+  background: var(--recess);
+  border: 1px solid var(--hair);
+  border-radius: 3px;
+  padding: 2px 5px;
+  pointer-events: none;
+}
+
+.topbar-search-input:focus + .topbar-search-hint {
+  visibility: hidden;
+}
+
 /* v2 mock:235-236 - the topbar's right cluster: the asof freshness line
    (AsOf.tsx) beside the theme toggle, the console v2 phase 2 home for both
    (JC's ruling, 2026-08-10; ui-surface.md's amended header-band sentence).

@@ -6,6 +6,7 @@ import type { ProjectSummary } from "./api";
 import { statusPath, versionPath } from "./api";
 import AsOf from "./components/AsOf";
 import ThemeToggle from "./components/ThemeToggle";
+import TopbarSearch from "./components/TopbarSearch";
 import { titleOf, useDocumentTitle, useFetch } from "./hooks";
 import { PeopleProvider } from "./people";
 import Build from "./views/Build";
@@ -103,6 +104,7 @@ export default function App() {
             <NavLink to="/report">Report</NavLink>
             <NavLink to="/history">History</NavLink>
           </nav>
+          <TopbarSearch />
           {/* mock:235 - the topbar's right cluster: the freshness line beside
               the theme toggle, the console v2 phase 2 home for both (JC's
               ruling, 2026-08-10). */}
