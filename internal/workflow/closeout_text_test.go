@@ -25,8 +25,8 @@ func TestOpenAcceptanceSentence(t *testing.T) {
 		{"two human", []Work{humanItem("C2"), humanItem("C5")}, "Acceptance is still open: C2 and C5 need your attestation."},
 		{"three human", []Work{humanItem("C2"), humanItem("C5"), humanItem("C7")}, "Acceptance is still open: C2, C5, and C7 need your attestation."},
 		{"one agent", []Work{agentItem("rubric", "C3")}, "Acceptance is still open: C3 needs the agent's rubric."},
-		{"two agent", []Work{agentItem("rubric", "C3"), agentItem("gate", "lint_gate")}, "Acceptance is still open: C3 needs the agent's rubric and lint gate needs the agent's gate."},
-		{"three agent", []Work{agentItem("rubric", "C3"), agentItem("criterion", "C4"), agentItem("configuration", "unit_tests")}, "Acceptance is still open: C3 needs the agent's rubric, C4 needs the agent's criterion, and unit tests needs the agent's configuration."},
+		{"two agent", []Work{agentItem("rubric", "C3"), agentItem("gate", "lint_gate")}, "Acceptance is still open: C3 needs the agent's rubric and lint_gate needs the agent's gate."},
+		{"three agent", []Work{agentItem("rubric", "C3"), agentItem("criterion", "C4"), agentItem("configuration", "unit_tests")}, "Acceptance is still open: C3 needs the agent's rubric, C4 needs the agent's criterion, and unit_tests needs the agent's configuration."},
 		{"mix lists human first", []Work{agentItem("rubric", "C3"), humanItem("C2"), humanItem("C5")}, "Acceptance is still open: C2 and C5 need your attestation, and C3 needs the agent's rubric."},
 		{"node prefix", []Work{{Kind: "criterion", ID: "C2", Status: "needs_attestation", Actor: "human", NodeID: "F-aaaaaa"}}, "Acceptance is still open: F-aaaaaa C2 needs your attestation."},
 	}
@@ -34,7 +34,7 @@ func TestOpenAcceptanceSentence(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			got := openAcceptanceSentence(r.items)
 			require.Equal(t, r.want, got)
-			require.NotContains(t, got, "_")
+			require.NotContains(t, got, "needs_attestation")
 		})
 	}
 }

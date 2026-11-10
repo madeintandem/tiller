@@ -191,11 +191,11 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 	}
 	defer func() {
 		if ready && a.ReviewMissing {
-			a.Reason += "; " + a.ReviewGuidance
+			a.Reason = addSentence(a.Reason, a.ReviewGuidance)
 		}
 	}()
 	a.Phase, a.Actor, a.Action = "execution", "agent", "execute"
-	a.Reason = "implementation work remains"
+	a.Reason = "Implementation work remains."
 	if !ready && a.RecoveredReview == nil {
 		return a
 	}
@@ -217,15 +217,15 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 		a.Reason = RecoverySummary(a.RecoveredReview)
 		if problem := in.RecoveryErrors[a.ReviewID]; problem != "" {
 			a.Phase, a.Action, a.Command = "blocked", "inspect_recovery", ""
-			a.Reason += "; cannot inspect recovered evidence: " + problem
+			a.Reason = addSentence(a.Reason, sentence("Cannot inspect recovered evidence: "+problem))
 			return a
 		}
 		a.Phase, a.Action, a.Command = "sync", "sync", "tiller sync"
-		a.Reason += "; run ordinary sync on integration " + a.RecoveredReview.IntegrationBranch + ", then publish and read back state"
+		a.Reason = addSentence(a.Reason, "Run ordinary sync on integration "+a.RecoveredReview.IntegrationBranch+", then publish and read back state.")
 		if a.RecoveredReview.Basis == "contained" {
 			a.Phase, a.Actor, a.Action = "fast_forward", "human", "accept_fast_forward"
 			a.Command = "tiller sync --accept-fast-forward " + a.ReviewID
-			a.Reason += "; containment is not an observed merge; the existing human fast-forward decision is required before crossing"
+			a.Reason = addSentence(a.Reason, "Containment is not an observed merge; the existing human fast-forward decision is required before crossing.")
 		}
 		if !a.AcceptanceReady {
 			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
@@ -234,19 +234,19 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 	}
 	if grain != store.ReviewGrainTask {
 		if problem := in.AssemblyErrors[f.ID]; problem != "" {
-			a.Phase, a.Action, a.Reason = "blocked", "inspect_assembly", problem
+			a.Phase, a.Action, a.Reason = "blocked", "inspect_assembly", sentence(problem)
 			return a
 		}
 		if tasks := in.Assembly[f.ID]; len(tasks) > 0 {
 			a.Phase, a.Action = "assembly", "assemble"
 			a.Command = "tiller guide execute"
-			a.Reason = "assemble submitted task branches into the " + review.Noun() + " aggregate with ordinary Git, including each submitted head and current branch tip: " + strings.Join(tasks, ", ") + "; then rerun affected checks and acceptance"
+			a.Reason = "Assemble submitted task branches into the " + review.Noun() + " aggregate with ordinary Git, including each submitted head and current branch tip: " + strings.Join(tasks, ", ") + ". Then rerun affected checks and acceptance."
 			return a
 		}
 	}
 	if a.ContractStatus != "valid" {
 		a.Phase, a.Action = "contract", "repair_contract"
-		a.Reason = "acceptance contract " + a.ContractStatus + "; read or repair the feature contract before classifying acceptance"
+		a.Reason = "The acceptance contract is " + humanizeToken(a.ContractStatus) + ". Read or repair the feature contract before classifying acceptance."
 		return a
 	}
 	agentWork := -1
@@ -268,41 +268,41 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 		if work.Kind == "rubric" {
 			a.Phase, a.Action, a.Command = "rubric", "grade_rubric", "tiller eval feature "+f.ID+" --emit-rubrics"
 		}
-		a.Reason = "required work remains on feature " + f.ID + ": " + workflowItems(a.Outstanding)
+		a.Reason = "Required work remains on feature " + f.ID + ": " + itemsClause(a.Outstanding) + "."
 		if work.Kind == "configuration" {
 			a.Action, a.Command = "configure_gate", ""
-			a.Reason += "; configure the required gate command in the manifest before running check"
+			a.Reason += " Configure the required gate command in the manifest before running check."
 		}
 		return a
 	}
 	if len(a.Outstanding) > 0 {
 		a.Phase, a.Actor, a.Action = "acceptance", "human", "attest"
-		a.Reason = "human acceptance remains on feature " + f.ID + ": " + workflowItems(a.Outstanding) + "; execute must prepare and verify the draft or offline review surface before handoff; host publication is not observed here"
+		a.Reason = "Human acceptance remains on feature " + f.ID + ": " + itemsClause(a.Outstanding) + ". Execute must prepare and verify the draft or offline review surface before handoff. Host publication is not observed here."
 		if grain == store.ReviewGrainTask {
-			a.Reason = "human acceptance remains on feature " + f.ID + ": " + workflowItems(a.Outstanding) + "; complete applicable checks and publish integration-branch state (or verify the local tip offline) before handoff; do not open a new PR for state-only closeout"
+			a.Reason = "Human acceptance remains on feature " + f.ID + ": " + itemsClause(a.Outstanding) + ". Complete applicable checks and publish integration-branch state (or verify the local tip offline) before handoff. Do not open a new PR for state-only closeout."
 		}
 		for _, work := range a.Outstanding {
 			flag := "--criterion"
 			if work.Kind == "gate" {
 				flag = "--gate"
 			}
-			a.Reason += "; human decision: `tiller attest feature " + f.ID + " " + flag + " " + work.ID + " --status <pass|fail>`"
+			a.Reason += " Human decision: `tiller attest feature " + f.ID + " " + flag + " " + work.ID + " --status <pass|fail>`."
 		}
 		// A coarse review's attest is refused off its recorded aggregate
 		// branch; the handoff names where the human records it.
 		if branch := aggregateBranchOf(review); grain != store.ReviewGrainTask && branch != "" {
-			a.Reason += "; record each decision on aggregate branch " + branch + " (in its worktree if checked out there), commit there, then submit"
+			a.Reason += " Record each decision on aggregate branch " + branch + " (in its worktree if checked out there), commit there, then submit."
 		}
 		return a
 	}
 	if grain == store.ReviewGrainTask {
 		a.Phase, a.Action, a.Command = "sync", "sync", "tiller sync"
-		a.Reason = "all live tasks are done and feature acceptance passed; run ordinary sync on the integration branch, then publish and read back state"
+		a.Reason = "All live tasks are done and feature acceptance passed. Run ordinary sync on the integration branch, then publish and read back state."
 		return a
 	}
 	if grain != store.ReviewGrainTask && a.SubmissionRecorded {
 		a.Phase, a.Actor, a.Action = "review", "human", "review_merge"
-		a.Reason = "formal submission recorded; awaiting human review and merge"
+		a.Reason = "Formal submission is recorded. Human review and merge are awaited."
 		if !a.AcceptanceReady {
 			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
@@ -310,7 +310,7 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 	}
 	a.Phase, a.Action = "submission", "submit"
 	a.Command = "tiller guide execute"
-	a.Reason = "required acceptance passed; formal submission not recorded"
+	a.Reason = "Required acceptance passed. Formal submission is not recorded."
 	return a
 }
 
@@ -321,18 +321,6 @@ func hasRubricEvidence(evidence []store.Evidence) bool {
 		}
 	}
 	return false
-}
-
-func workflowItems(items []Work) string {
-	parts := make([]string, 0, len(items))
-	for _, item := range items {
-		prefix := ""
-		if item.NodeID != "" {
-			prefix = item.NodeID + " "
-		}
-		parts = append(parts, prefix+item.ID+" ("+item.Status+", "+item.Actor+")")
-	}
-	return strings.Join(parts, "; ")
 }
 
 func featureTasksDone(t *store.Tree, f *store.Feature) bool {
@@ -401,19 +389,19 @@ func applyWorkflowEligibility(t *store.Tree, n store.Node, in Input, a *Advice) 
 		// Current eligibility remains visible, but cannot send already integrated
 		// work back through premerge assembly, submission, or acceptance guards.
 		if problem := in.Eligibility[n.NodeID()]; problem != "" {
-			a.Reason += "; current eligibility: " + problem
+			a.Reason = addSentence(a.Reason, sentence("Current eligibility: "+problem))
 		}
 		if n.NodeID() != a.FeatureID {
 			if problem := in.Eligibility[a.FeatureID]; problem != "" {
-				a.Reason += "; current feature eligibility: " + problem
+				a.Reason = addSentence(a.Reason, sentence("Current feature eligibility: "+problem))
 			}
 		}
 		if blocked(n) {
-			a.Reason += "; current node is blocked"
+			a.Reason = addSentence(a.Reason, "Current node is blocked.")
 		}
 		if f := t.Features[a.FeatureID]; f != nil {
 			if blockers := gen.FeatureQuestionBlockers(t, f); len(blockers) > 0 {
-				a.Reason += "; current open question " + blockers[0].Question
+				a.Reason = addSentence(a.Reason, sentence("Current open question "+blockers[0].Question))
 			}
 		}
 		return
@@ -447,9 +435,9 @@ func applyWorkflowEligibility(t *store.Tree, n store.Node, in Input, a *Advice) 
 		return
 	}
 	a.Phase, a.Actor, a.Action, a.Command = "blocked", "human", "resolve_blocker", ""
-	a.Reason = problem + "; resolve the local eligibility problem before execution"
+	a.Reason = sentence(problem) + " Resolve the local eligibility problem before execution."
 	if a.ReviewGuidance != "" {
-		a.Reason += "; " + a.ReviewGuidance
+		a.Reason = addSentence(a.Reason, a.ReviewGuidance)
 	}
 }
 

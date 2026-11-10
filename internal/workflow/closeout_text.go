@@ -3,13 +3,16 @@ package workflow
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 // The closeout reason reads as plain sentences a reviewer would say. The CLI
 // readout shares the string, so both surfaces change together. Advice.Outstanding
 // keeps the raw tokens for JSON consumers; only this prose is humanized.
 
-// humanizeToken turns an identifier-shaped token into words.
+// humanizeToken turns an enum value (a status, a work kind) into words.
+// Identifiers a reader looks up (criterion ids, gate keys, node ids) are names
+// and are never passed through it.
 func humanizeToken(s string) string {
 	return strings.ReplaceAll(s, "_", " ")
 }
@@ -28,16 +31,16 @@ func joinList(parts []string) string {
 }
 
 func workLabel(w Work) string {
-	label := humanizeToken(w.ID)
+	label := w.ID
 	if w.NodeID != "" {
 		label = w.NodeID + " " + label
 	}
 	return label
 }
 
-// openAcceptanceSentence names what keeps acceptance open: items a human owes
-// first, then items an agent owes.
-func openAcceptanceSentence(items []Work) string {
+// itemsClause names outstanding items: those a human owes first, then those an
+// agent owes. Agreement follows the count of items, not the look of a key.
+func itemsClause(items []Work) string {
 	var human, agent []string
 	for _, w := range items {
 		if w.Actor == "human" {
@@ -57,7 +60,12 @@ func openAcceptanceSentence(items []Work) string {
 	if len(agent) > 0 {
 		clauses = append(clauses, joinList(agent))
 	}
-	return "Acceptance is still open: " + strings.Join(clauses, ", and ") + "."
+	return strings.Join(clauses, ", and ")
+}
+
+// openAcceptanceSentence names what keeps acceptance open.
+func openAcceptanceSentence(items []Work) string {
+	return "Acceptance is still open: " + itemsClause(items) + "."
 }
 
 // policyCountSentence reports recorded policy violations or warnings; noun is
@@ -84,4 +92,19 @@ func addSentence(reason, sentence string) string {
 		return sentence
 	}
 	return reason + " " + sentence
+}
+
+// sentence closes a fragment into one capitalized sentence ending in a period.
+func sentence(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	s = string(runes)
+	if !strings.HasSuffix(s, ".") && !strings.HasSuffix(s, "!") && !strings.HasSuffix(s, "?") {
+		s += "."
+	}
+	return s
 }

@@ -33,7 +33,7 @@ func applyRecoveredCloseout(t *store.Tree, a *Advice) {
 		if task == nil || (task.Status != "in_review" && task.Status != "done") {
 			if a.Phase != "done" {
 				a.Phase, a.Actor, a.Action, a.Command = "blocked", "agent", "inspect_recovery", ""
-				a.Reason = RecoverySummary(a.RecoveredReview) + "; frozen rider " + rider.ID + " no longer has its recorded submitted lifecycle; restore the historical binding before sync"
+				a.Reason = addSentence(RecoverySummary(a.RecoveredReview), "Frozen rider "+rider.ID+" no longer has its recorded submitted lifecycle. Restore the historical binding before sync.")
 			}
 			return
 		}
@@ -47,9 +47,9 @@ func applyRecoveredCloseout(t *store.Tree, a *Advice) {
 	if a.RecoveredCrossingsPending {
 		// Epic aggregation may have found unresolved acceptance after the first
 		// feature's initially green advice. Keep all of it independently visible.
-		a.Reason = RecoverySummary(a.RecoveredReview) + "; run ordinary sync on integration " + a.RecoveredReview.IntegrationBranch + ", then publish and read back state"
+		a.Reason = addSentence(RecoverySummary(a.RecoveredReview), "Run ordinary sync on integration "+a.RecoveredReview.IntegrationBranch+", then publish and read back state.")
 		if a.RecoveredReview.Basis == "contained" {
-			a.Reason += "; containment is not an observed merge; the human fast-forward decision is required before crossing"
+			a.Reason = addSentence(a.Reason, "Containment is not an observed merge; the human fast-forward decision is required before crossing.")
 		}
 		if !a.AcceptanceReady {
 			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
@@ -57,11 +57,11 @@ func applyRecoveredCloseout(t *store.Tree, a *Advice) {
 		return
 	}
 	a.Phase, a.Actor, a.Action, a.Command = "sync", "agent", "sync", "tiller sync"
-	a.Reason = RecoverySummary(a.RecoveredReview) + "; historical riders have crossed; run ordinary integration sync for remaining rollup, then publish and read back state"
+	a.Reason = addSentence(RecoverySummary(a.RecoveredReview), "Historical riders have crossed. Run ordinary integration sync for remaining rollup, then publish and read back state.")
 	if a.AcceptanceReady {
 		return
 	}
-	a.Reason = RecoverySummary(a.RecoveredReview) + "; historical riders have crossed; resolve independent current acceptance on integration before final rollup: " + workflowItems(a.Outstanding)
+	a.Reason = addSentence(RecoverySummary(a.RecoveredReview), "Historical riders have crossed. Resolve independent current acceptance on integration before final rollup: "+itemsClause(a.Outstanding)+".")
 	// Prefer agent preparation to a human decision when both remain outstanding.
 	selected := -1
 	for i, work := range a.Outstanding {

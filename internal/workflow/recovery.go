@@ -75,19 +75,20 @@ func RecoverySummary(r *RecoveredReview) string {
 	if r.PR != nil {
 		identity = fmt.Sprintf("caller-supplied PR #%d on %s", *r.PR, r.Branch)
 	}
-	text := fmt.Sprintf("Recovered historical review: %s; head %s; integration result %s; basis %s; recorded by %s: %s", identity, r.Head, r.MergeCommit, r.Basis, r.RecoveredBy, r.Reason)
-	var policy []string
+	text := fmt.Sprintf("Recovered historical review of %s: head %s, integration result %s, basis %s.", identity, r.Head, r.MergeCommit, humanizeToken(r.Basis))
+	text = addSentence(text, sentence(fmt.Sprintf("Recorded by %s: %s", r.RecoveredBy, r.Reason)))
 	for _, snapshot := range r.PolicySnapshots {
 		for _, observation := range snapshot.Observations {
-			item := snapshot.NodeID + " " + observation.Gate + ": " + observation.Status + " (source " + snapshot.Source + ")"
-			if len(observation.UnresolvedCriteria) > 0 {
-				item += "; unresolved criteria " + strings.Join(observation.UnresolvedCriteria, ", ")
+			subject := observation.Gate
+			if snapshot.NodeID != "" {
+				subject = snapshot.NodeID + " " + observation.Gate
 			}
-			policy = append(policy, item)
+			detail := "source " + snapshot.Source
+			if len(observation.UnresolvedCriteria) > 0 {
+				detail += "; unresolved criteria " + strings.Join(observation.UnresolvedCriteria, ", ")
+			}
+			text = addSentence(text, "Historical policy for "+subject+": "+humanizeToken(observation.Status)+" ("+detail+").")
 		}
-	}
-	if len(policy) > 0 {
-		text += "; historical policy: " + strings.Join(policy, "; ")
 	}
 	return text
 }
