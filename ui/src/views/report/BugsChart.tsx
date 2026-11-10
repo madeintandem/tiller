@@ -7,6 +7,7 @@
 import type { Report } from "../../api";
 import ChartFrame, { WeekAxis, WeekHits, columnPath, weekPlot, weekRows } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
+import { weeksNote } from "./range";
 
 const REPORTED = "var(--noun-bug)";
 const FIXED = "var(--st-done)";
@@ -34,6 +35,7 @@ export default function BugsChart({ report }: { report: Report }) {
         { label: "Fixed", swatch: "bar", color: FIXED },
         { label: "Open", swatch: "solid", color: OPEN },
       ]}
+      note={weeksNote(weeks.length)}
       tip={tip}
     >
       {(width, height) => {

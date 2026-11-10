@@ -282,9 +282,9 @@ describe("report charts", () => {
       "report-hit",
       "report-ghost-track",
     ]);
-    // The approved rows still draw as before, in order around the ghost.
+    // The approved rows still draw as before; the ghost sorts after them (R8).
     const titles = Array.from(container.querySelectorAll(".report-row-title")).map((t) => t.textContent);
-    expect(titles).toEqual(["Payments", "Billing", "Reporting"]);
+    expect(titles).toEqual(["Payments", "Reporting", "Billing"]);
     expect(screen.getByText("3 of 8 features")).toBeInTheDocument();
     expect(screen.getByText("No features yet")).toBeInTheDocument();
   });
@@ -726,5 +726,101 @@ describe("report charts", () => {
         unmount();
       }
     });
+  });
+});
+
+describe("Report labels, order, and units (R8)", () => {
+  const epicOf = (title: string, done: number, inProgress: number, notStarted: number) => ({
+    title,
+    done,
+    in_progress: inProgress,
+    not_started: notStarted,
+    planned: false,
+    planned_features: 0,
+  });
+
+  function epicsReport(epics: Report["epics"]): Report {
+    return { ...fixtureReport(), epics };
+  }
+
+  const rowTitles = (el: HTMLElement) =>
+    Array.from(el.querySelectorAll(".report-row-title")).map((t) => t.textContent);
+
+  it("titles throughput's y axis as real text, and says so in the chart's name", () => {
+    const { container } = render(<ThroughputChart report={fixtureReport()} />);
+    const title = Array.from(container.querySelectorAll("svg text")).find((t) => t.textContent === "items per week");
+    expect(title).toBeDefined();
+    expect(screen.getByRole("img", { name: /items per week/ })).toBeInTheDocument();
+  });
+
+  it("gives throughput a hatched Week so far legend swatch that matches the hatched week", () => {
+    const { container } = render(<ThroughputChart report={fixtureReport()} />);
+    const entry = within(screen.getByRole("list")).getByText("Week so far").closest("li")!;
+    const swatch = entry.querySelector("[data-swatch]")!;
+    expect(swatch).toHaveAttribute("data-swatch", "partial");
+    const fill = swatch.querySelector(":scope > rect")!.getAttribute("fill")!;
+    const id = /^url\(#(.+)\)$/.exec(fill)![1];
+    expect(swatch.querySelector(`pattern[id="${id}"] line`)).toHaveClass("report-hatch");
+    expect(container.querySelector("rect[data-partial]")!.getAttribute("fill")).toMatch(/^url\(#report-partial-/);
+  });
+
+  it("says what range each weekly chart shows", () => {
+    for (const Chart of WEEKLY) {
+      const { unmount } = render(<Chart report={fixtureReport()} />);
+      expect(screen.getByText("Showing the last 4 weeks")).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("lists unfinished epics first, in progress then not started then planned", () => {
+    const report = epicsReport([
+      planned("Billing", 2),
+      epicOf("Fresh", 0, 0, 3),
+      epicOf("Shipped", 4, 0, 0),
+      epicOf("Active", 1, 1, 1),
+    ]);
+    const { container } = render(<EpicProgressChart report={report} />);
+    const chart = container.querySelector<HTMLElement>(".report-plot")!;
+    expect(rowTitles(chart)).toEqual(["Active", "Fresh", "Billing"]);
+  });
+
+  it("keeps the served order within a class", () => {
+    const report = epicsReport([epicOf("B", 0, 1, 0), epicOf("A", 0, 2, 0), epicOf("C", 0, 1, 1)]);
+    const { container } = render(<EpicProgressChart report={report} />);
+    expect(rowTitles(container)).toEqual(["B", "A", "C"]);
+  });
+
+  it("collects finished epics behind a closed disclosure that opens to their bars", () => {
+    const report = epicsReport([epicOf("Active", 1, 1, 0), epicOf("Shipped 1", 2, 0, 0), epicOf("Shipped 2", 3, 0, 0)]);
+    const { container } = render(<EpicProgressChart report={report} />);
+    const details = container.querySelector("details")!;
+    expect(details).not.toBeNull();
+    expect(details.open).toBe(false);
+    const summary = within(details).getByText("2 epics complete");
+    expect(summary.tagName).toBe("SUMMARY");
+    // The unfinished chart holds only the unfinished epic.
+    expect(rowTitles(container).filter((t) => t === "Active")).toHaveLength(1);
+    fireEvent.click(summary);
+    expect(details.open).toBe(true);
+    expect(rowTitles(details)).toEqual(["Shipped 1", "Shipped 2"]);
+    expect(within(details).getByText("2 of 2 features")).toBeInTheDocument();
+    expect(within(details).getByText("3 of 3 features")).toBeInTheDocument();
+  });
+
+  it("reads 1 epic complete in the singular, and has no row without finished epics", () => {
+    const { unmount } = render(
+      <EpicProgressChart report={epicsReport([epicOf("Active", 1, 1, 0), epicOf("Shipped", 2, 0, 0)])} />,
+    );
+    expect(screen.getByText("1 epic complete")).toBeInTheDocument();
+    unmount();
+    const none = render(<EpicProgressChart report={epicsReport([epicOf("Active", 1, 1, 0)])} />);
+    expect(none.container.querySelector("details")).toBeNull();
+    expect(screen.queryByText(/complete$/)).toBeNull();
+  });
+
+  it("still draws something useful when every epic is finished", () => {
+    const { container } = render(<EpicProgressChart report={epicsReport([epicOf("Shipped", 2, 0, 0)])} />);
+    expect(screen.getByText("Every epic is complete")).toBeInTheDocument();
+    expect(container.querySelector("details")).not.toBeNull();
   });
 });

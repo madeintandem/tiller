@@ -51,6 +51,58 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The as-of line and the Print button, side by side at the header's right. */
+.report-head-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-print,
+.report-range select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-btn);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.report-print:hover,
+.report-print:focus-visible,
+.report-range select:hover,
+.report-range select:focus-visible {
+  background: var(--recess);
+}
+
+/* ---------- Range (R8) ---------- */
+
+/* Between the KPI strip and the charts: it governs the charts, so it sits
+   with them, below the figures it does not touch. */
+.report-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.report-range-hint {
+  color: var(--ink-3);
+}
+
+/* Said on paper, where the Range control does not print. */
+.report-print-scope {
+  display: none;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
 /* ---------- Off-branch notice (D15) ---------- */
 
 /* The console's amber (in_review) on its own tint: a caution about the
@@ -185,5 +237,80 @@
   .report-kpi + .report-kpi {
     border-left: none;
     border-top: 1px solid var(--hair);
+  }
+}
+
+/* ---------- Print (R8) ----------
+   The browser prints; nothing is exported. The page prints light whatever the
+   reader's theme (the tokens' light-dark() pairs follow color-scheme, and
+   --tint is the one bare number the dark theme bumps), without the controls
+   that only make sense on screen, charts one to a row, and each card whole.
+   Fills and hatches are asked to print as drawn; the hatches are drawn in a
+   gray that survives a black-and-white printer, so a series told apart by
+   pattern or label stays told apart. A closed "N epics complete" disclosure
+   prints closed, so nothing here opens it. */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    color-scheme: light !important;
+    --tint: 13% !important;
+  }
+
+  .site-header,
+  .report-range,
+  .report-print,
+  .report-page .mode-nav,
+  .report-icon-button,
+  .report-tooltip {
+    display: none;
+  }
+
+  .report-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .report-page,
+  .report-page * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-head,
+  .report-kpis {
+    break-inside: avoid;
+  }
+
+  /* A printed page is narrower than the console's phone breakpoint, but it is
+     a page, not a phone: the figures stay one band across it. */
+  .report-kpis {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .report-kpi {
+    padding: 12px 12px;
+  }
+
+  .report-kpi + .report-kpi {
+    border-left: 1px solid var(--hair);
+    border-top: none;
+  }
+
+  .report-print-scope {
+    display: block;
+  }
+
+  .report-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-chart {
+    break-inside: avoid;
+  }
+
+  .report-hatch {
+    stroke: var(--ink-3);
+    stroke-width: 1;
   }
 }

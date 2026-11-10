@@ -11,6 +11,10 @@ import Sparkline from "./Sparkline";
 export default function KpiStrip({ kpis }: { kpis: ReportKPIs }) {
   const cycle = kpis.median_cycle_days;
   const lead = kpis.median_lead_days;
+  // The sparkline is the one weekly series among the tiles, so it follows the
+  // chart range; its name says how many weeks it spans.
+  const weeks = kpis.open_questions_by_week.length;
+  const span = weeks === 1 ? "last week" : `last ${weeks} weeks`;
   const completed = `${kpis.completed_features} ${kpis.completed_features === 1 ? "feature" : "features"}`;
   return (
     <dl className="report-kpis">
@@ -23,7 +27,7 @@ export default function KpiStrip({ kpis }: { kpis: ReportKPIs }) {
         }
         sub="of approved scope"
       />
-      <Tile label="Shipped, last 7 days" value={kpis.shipped_last_7_days} />
+      <Tile label="Items shipped, last 7 days" value={kpis.shipped_last_7_days} sub="tasks, bugs, chores, tweaks" />
       <Tile
         label="Median cycle time"
         value={cycle === null ? "Not yet" : formatDays(cycle)}
@@ -35,7 +39,7 @@ export default function KpiStrip({ kpis }: { kpis: ReportKPIs }) {
         label="Open questions"
         value={kpis.open_questions}
         sub={`${kpis.answered_questions} answered`}
-        trend={<Sparkline values={kpis.open_questions_by_week} label="Open questions by week" />}
+        trend={<Sparkline values={kpis.open_questions_by_week} label={`Open questions by week, ${span}`} />}
       />
     </dl>
   );

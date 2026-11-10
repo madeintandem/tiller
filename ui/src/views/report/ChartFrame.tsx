@@ -83,6 +83,9 @@ interface FrameProps {
   empty?: string;
   // note is a line of small print beneath the plot.
   note?: string;
+  // footer is more content inside the card, below the note (Epic progress's
+  // finished-epics disclosure).
+  footer?: ReactNode;
   legend?: LegendEntry[];
   height?: number;
   tip?: Tip | null;
@@ -92,16 +95,17 @@ interface FrameProps {
   children: (width: number, height: number) => ReactNode;
 }
 
-export default function ChartFrame({ title, summary, empty, note, legend, height, tip, children }: FrameProps) {
-  const { expanded, onExpand, titleId } = useContext(ChartExpand);
-  const drawHeight = height ?? (expanded ? CHART_HEIGHT * EXPANDED_SCALE : CHART_HEIGHT);
-  const plot = useRef<HTMLDivElement>(null);
+// usePlotWidth measures the element it is attached to. The plot is measured
+// before the first paint, so a chart (the enlarged copy in particular) never
+// shows a frame at the default width, and then followed as the card resizes.
+// A zero width (a closed <details>) is ignored, so the chart keeps its last
+// width and redraws once it is shown. `remeasure` restarts the measuring when
+// the element is swapped for another.
+export function usePlotWidth(remeasure?: unknown) {
+  const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
-  // The plot is measured before the first paint, so a chart (the enlarged
-  // copy in particular) never shows a frame at the default width, and then
-  // followed as the card resizes.
   useLayoutEffect(() => {
-    const el = plot.current;
+    const el = ref.current;
     if (!el) return;
     const initial = Math.round(el.getBoundingClientRect().width);
     if (initial > 0) setWidth(initial);
@@ -112,7 +116,14 @@ export default function ChartFrame({ title, summary, empty, note, legend, height
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [empty]);
+  }, [remeasure]);
+  return { ref, width };
+}
+
+export default function ChartFrame({ title, summary, empty, note, footer, legend, height, tip, children }: FrameProps) {
+  const { expanded, onExpand, titleId } = useContext(ChartExpand);
+  const drawHeight = height ?? (expanded ? CHART_HEIGHT * EXPANDED_SCALE : CHART_HEIGHT);
+  const { ref: plot, width } = usePlotWidth(empty);
 
   return (
     <section className="report-chart">
@@ -154,6 +165,7 @@ export default function ChartFrame({ title, summary, empty, note, legend, height
         </div>
       )}
       {note && <p className="report-chart-note">{note}</p>}
+      {footer}
     </section>
   );
 }

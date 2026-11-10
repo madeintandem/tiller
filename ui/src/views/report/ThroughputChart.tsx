@@ -16,6 +16,7 @@ import ChartFrame, {
   type LegendEntry,
 } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
+import { weeksNote } from "./range";
 
 // Bottom of the stack first.
 const KINDS: { key: keyof ReportThroughputWeek; label: string; color: string; hatched?: boolean }[] = [
@@ -23,11 +24,12 @@ const KINDS: { key: keyof ReportThroughputWeek; label: string; color: string; ha
   { key: "fixes", label: "Fixes", color: "var(--noun-bug)", hatched: true },
   { key: "upkeep", label: "Upkeep", color: "var(--noun-chore)" },
 ];
-const LEGEND: LegendEntry[] = KINDS.map((k) => ({
-  label: k.label,
-  swatch: k.hatched ? "hatched" : "bar",
-  color: k.color,
-}));
+// "Week so far" explains the striped band behind the current week, so its
+// swatch is the same stripes (the "partial" swatch).
+const LEGEND: LegendEntry[] = [
+  ...KINDS.map((k): LegendEntry => ({ label: k.label, swatch: k.hatched ? "hatched" : "bar", color: k.color })),
+  { label: "Week so far", swatch: "partial", color: "var(--hair)" },
+];
 function total(w: ReportThroughputWeek): number {
   return w.feature_work + w.fixes + w.upkeep;
 }
@@ -42,8 +44,9 @@ export default function ThroughputChart({ report }: { report: Report }) {
   return (
     <ChartFrame
       title="Throughput"
-      summary={`${shipped} items shipped over ${weeks.length} weeks`}
+      summary={`${shipped} items shipped over ${weeks.length} weeks; the vertical axis is items per week`}
       empty={empty}
+      note={weeksNote(weeks.length)}
       legend={LEGEND}
       tip={tip}
     >
@@ -52,7 +55,7 @@ export default function ThroughputChart({ report }: { report: Report }) {
         const barWidth = Math.min(24, plot.band * 0.6);
         return (
           <>
-            <WeekAxis plot={plot} />
+            <WeekAxis plot={plot} unit="items per week" />
             <defs>
               {KINDS.filter((k) => k.hatched).map((k) => (
                 <HatchPattern key={k.key} id={hatch} color={k.color} />

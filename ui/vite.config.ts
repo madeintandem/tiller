@@ -49,6 +49,7 @@ export default defineConfig({
         /views\/build\.css/,
         /views\/history\.css/,
         /views\/home\.css/,
+        /views\/report\.css/,
         /views\/workitems\.css/,
       ],
     },

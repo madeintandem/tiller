@@ -1,17 +1,31 @@
-// Epic progress (D10): the one snapshot chart. One row per approved epic in
-// the root soft order, a three-segment bar (Done, In progress, Not started),
-// and "N of M features" at the end. The segments sit in that fixed order and
+// Epic progress (D10): the one snapshot chart. One row per unfinished epic, a
+// three-segment bar (Done, In progress, Not started), and "N of M features" at
+// the end. Rows run in progress, then not started, then planned, each class in
+// the root soft order (sortEpics); finished epics leave the chart and wait
+// behind one "N epics complete" disclosure, closed until opened (and printed
+// closed). The segments sit in that fixed order and
 // are named in the legend text and the tooltip, and Not started is a lighter
 // tint. Done and In progress are told apart by order and the legend beside
-// their hue. A draft epic, not yet approved, interleaves in the same order as
+// their hue. A draft epic, not yet approved, comes last as
 // a ghost row: a muted title over an empty track outlined in round dots,
 // labeled with its planned feature count ("2 features planned") or "Not yet
 // approved" when it has none, so the client sees the future work without it
 // reading as zero progress. The dotted outline and the label carry it, not hue.
 
+import type { PointerEvent } from "react";
+
 import type { Report, ReportEpic } from "../../api";
-import ChartFrame, { BAR_HEIGHT, DOTTED, ROW_HEIGHT, SegmentedBar, tint, type LegendEntry } from "./ChartFrame";
-import { useTooltip } from "./ChartTooltip";
+import ChartFrame, {
+  BAR_HEIGHT,
+  DOTTED,
+  ROW_HEIGHT,
+  SegmentedBar,
+  tint,
+  usePlotWidth,
+  type LegendEntry,
+} from "./ChartFrame";
+import ChartTooltip, { useTooltip, type TipRow } from "./ChartTooltip";
+import { sortEpics } from "./range";
 
 const DONE = "var(--st-done)";
 const IN_PROGRESS = "var(--st-active)";
@@ -58,10 +72,114 @@ function shorten(title: string, room: number): string {
   return title.length > fit ? `${title.slice(0, fit - 1)}…` : title;
 }
 
+type Show = (e: PointerEvent<Element>, rows: TipRow[]) => void;
+
+// EpicRows draws one row per epic: a ghost row for a draft epic, a segmented
+// bar for an approved one.
+function EpicRows({ epics, width, show, hide }: { epics: ReportEpic[]; width: number; show: Show; hide: () => void }) {
+  const barWidth = Math.max(width - COUNT_WIDTH, 0);
+  return (
+    <>
+      {epics.map((epic, i) => {
+        const y = i * ROW_HEIGHT;
+        if (epic.planned) {
+          return (
+            <g
+              key={i}
+              data-planned="true"
+              onPointerMove={(e) => show(e, [{ label: epic.title, value: plannedLabel(epic) }])}
+              onPointerLeave={hide}
+            >
+              <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
+              <text className="report-row-title report-row-planned" x={0} y={y + 14}>
+                {shorten(epic.title, width)}
+              </text>
+              <rect
+                className="report-ghost-track"
+                x={DOTTED.strokeWidth / 2}
+                y={y + 22 + DOTTED.strokeWidth / 2}
+                width={Math.max(barWidth - DOTTED.strokeWidth, 0)}
+                height={BAR_HEIGHT - DOTTED.strokeWidth}
+                {...DOTTED}
+              />
+              <text
+                className="report-row-count report-row-planned"
+                x={width}
+                y={y + 22 + BAR_HEIGHT / 2}
+                textAnchor="end"
+                dominantBaseline="middle"
+              >
+                {plannedLabel(epic)}
+              </text>
+            </g>
+          );
+        }
+        const m = features(epic);
+        const segments = [
+          { key: "done", value: epic.done, color: DONE },
+          { key: "in_progress", value: epic.in_progress, color: IN_PROGRESS },
+          { key: "not_started", value: epic.not_started, color: NOT_STARTED },
+        ];
+        return (
+          <g
+            key={i}
+            onPointerMove={(e) =>
+              show(e, [
+                { label: epic.title, value: "" },
+                { label: "Done", value: String(epic.done) },
+                { label: "In progress", value: String(epic.in_progress) },
+                { label: "Not started", value: String(epic.not_started) },
+              ])
+            }
+            onPointerLeave={hide}
+          >
+            <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
+            <text className="report-row-title" x={0} y={y + 14}>
+              {shorten(epic.title, width)}
+            </text>
+            <SegmentedBar y={y + 22} width={barWidth} segments={segments} />
+            <text className="report-row-count" x={width} y={y + 22 + BAR_HEIGHT / 2} textAnchor="end" dominantBaseline="middle">
+              {m === 0 ? "No features yet" : `${epic.done} of ${m} features`}
+            </text>
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+// CompleteEpics is the disclosure for finished epics: a native <details>,
+// closed by default, so it prints closed too. Its summary is the row, and it
+// opens to the same bars the chart above draws.
+function CompleteEpics({ epics }: { epics: ReportEpic[] }) {
+  const { tip, show, hide } = useTooltip();
+  const { ref, width } = usePlotWidth();
+  const label = `${epicCount(epics.length)} complete`;
+  return (
+    <details className="report-complete">
+      <summary>{label}</summary>
+      <div className="report-plot" ref={ref}>
+        <svg
+          role="img"
+          aria-label={`${label}: ${epics.map((e) => e.title).join(", ")}`}
+          width={width}
+          height={epics.length * ROW_HEIGHT + 4}
+          viewBox={`0 0 ${width} ${epics.length * ROW_HEIGHT + 4}`}
+        >
+          <EpicRows epics={epics} width={width} show={show} hide={hide} />
+        </svg>
+        <ChartTooltip tip={tip} />
+      </div>
+    </details>
+  );
+}
+
 export default function EpicProgressChart({ report }: { report: Report }) {
   const { tip, show, hide } = useTooltip();
   const { epics } = report;
-  const empty = epics.length === 0 ? "No approved scope yet" : undefined;
+  const { open, finished } = sortEpics(epics);
+  const empty =
+    epics.length === 0 ? "No approved scope yet" : open.length === 0 ? "Every epic is complete" : undefined;
   const legend: LegendEntry[] = [
     { label: "Done", swatch: "bar", color: DONE },
     { label: "In progress", swatch: "bar", color: IN_PROGRESS },
@@ -75,76 +193,11 @@ export default function EpicProgressChart({ report }: { report: Report }) {
       summary={summary(epics)}
       empty={empty}
       legend={legend}
-      height={epics.length * ROW_HEIGHT + 4}
+      height={open.length * ROW_HEIGHT + 4}
       tip={tip}
+      footer={finished.length > 0 ? <CompleteEpics epics={finished} /> : undefined}
     >
-      {(width) => {
-        const barWidth = Math.max(width - COUNT_WIDTH, 0);
-        return epics.map((epic, i) => {
-          const y = i * ROW_HEIGHT;
-          if (epic.planned) {
-            return (
-              <g
-                key={i}
-                data-planned="true"
-                onPointerMove={(e) => show(e, [{ label: epic.title, value: plannedLabel(epic) }])}
-                onPointerLeave={hide}
-              >
-                <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
-                <text className="report-row-title report-row-planned" x={0} y={y + 14}>
-                  {shorten(epic.title, width)}
-                </text>
-                <rect
-                  className="report-ghost-track"
-                  x={DOTTED.strokeWidth / 2}
-                  y={y + 22 + DOTTED.strokeWidth / 2}
-                  width={Math.max(barWidth - DOTTED.strokeWidth, 0)}
-                  height={BAR_HEIGHT - DOTTED.strokeWidth}
-                  {...DOTTED}
-                />
-                <text
-                  className="report-row-count report-row-planned"
-                  x={width}
-                  y={y + 22 + BAR_HEIGHT / 2}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                >
-                  {plannedLabel(epic)}
-                </text>
-              </g>
-            );
-          }
-          const m = features(epic);
-          const segments = [
-            { key: "done", value: epic.done, color: DONE },
-            { key: "in_progress", value: epic.in_progress, color: IN_PROGRESS },
-            { key: "not_started", value: epic.not_started, color: NOT_STARTED },
-          ];
-          return (
-            <g
-              key={i}
-              onPointerMove={(e) =>
-                show(e, [
-                  { label: epic.title, value: "" },
-                  { label: "Done", value: String(epic.done) },
-                  { label: "In progress", value: String(epic.in_progress) },
-                  { label: "Not started", value: String(epic.not_started) },
-                ])
-              }
-              onPointerLeave={hide}
-            >
-              <rect className="report-hit" x={0} y={y} width={width} height={ROW_HEIGHT} />
-              <text className="report-row-title" x={0} y={y + 14}>
-                {shorten(epic.title, width)}
-              </text>
-              <SegmentedBar y={y + 22} width={barWidth} segments={segments} />
-              <text className="report-row-count" x={width} y={y + 22 + BAR_HEIGHT / 2} textAnchor="end" dominantBaseline="middle">
-                {m === 0 ? "No features yet" : `${epic.done} of ${m} features`}
-              </text>
-            </g>
-          );
-        });
-      }}
+      {(width) => <EpicRows epics={open} width={width} show={show} hide={hide} />}
     </ChartFrame>
   );
 }

@@ -3,12 +3,13 @@
 // composed from one /api/report read. Fetch stubbing follows drift.test.tsx's
 // stubFetch-keyed-by-URL convention (no MSW in this harness).
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Report } from "../../api";
 import ReportPage from "../../views/Report";
+import reportCss from "../../views/report.css?raw";
 
 afterEach(() => {
   cleanup();
@@ -205,20 +206,21 @@ describe("Report page", () => {
     await screen.findByRole("heading", { level: 1, name: "Acme Platform" });
     expect(screen.getAllByRole("term").map((t) => t.textContent)).toEqual([
       "Features done",
-      "Shipped, last 7 days",
+      "Items shipped, last 7 days",
       "Median cycle time",
       "Open bugs",
       "Open questions",
     ]);
     expect(tile("Features done")).toHaveTextContent("3 of 8");
     expect(tile("Features done")).toHaveTextContent("of approved scope");
-    expect(tile("Shipped, last 7 days")).toHaveTextContent("4");
+    expect(tile("Items shipped, last 7 days")).toHaveTextContent("4");
+    expect(tile("Items shipped, last 7 days")).toHaveTextContent("tasks, bugs, chores, tweaks");
     expect(tile("Median cycle time")).toHaveTextContent("4.8 d");
     expect(tile("Median cycle time")).toHaveTextContent("lead 11 d · 2 features");
     expect(tile("Open bugs")).toHaveTextContent("1");
     expect(tile("Open questions")).toHaveTextContent("2");
     expect(tile("Open questions")).toHaveTextContent("5 answered");
-    expect(screen.getByRole("img", { name: "Open questions by week" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Open questions by week, last 4 weeks" })).toBeInTheDocument();
   });
 
   it("shows Not yet for an empty median", async () => {
@@ -328,5 +330,168 @@ describe("Report page", () => {
       expect(await screen.findByRole("img", { name: "3 of 8 approved features done" })).toBeInTheDocument();
       expect(spy.mock.calls.map((c) => String(c[0]))).not.toContain("/api/report/usage");
     });
+  });
+});
+
+// n weeks ending the week of 2026-10-19, every weekly series distinguishable.
+function longReport(n: number): Report {
+  const day = 7 * 24 * 3600 * 1000;
+  const end = Date.parse("2026-10-26T00:00:00Z");
+  const boundaries = Array.from({ length: n + 1 }, (_, i) => new Date(end - (n - i) * day).toISOString());
+  const base = fixtureReport();
+  return {
+    ...base,
+    weeks: boundaries.slice(0, n).map((b) => b.slice(0, 10)),
+    week_boundaries: boundaries,
+    kpis: { ...base.kpis, open_questions_by_week: Array.from({ length: n }, (_, i) => i) },
+    burn_up: Array.from({ length: n }, (_, i) => ({ scope: i + 1, done: i })),
+    throughput: Array.from({ length: n }, (_, i) => ({ feature_work: i + 1, fixes: 0, upkeep: 0 })),
+    bugs: Array.from({ length: n }, (_, i) => ({ reported: i, fixed: 0, open: i })),
+    feature_times: [],
+  };
+}
+
+// The weeks the throughput chart draws, by its hover columns.
+function throughputWeeks(): number {
+  return screen.getByRole("img", { name: /items shipped over/ }).querySelectorAll("[data-week]").length;
+}
+
+describe("range", () => {
+  it("defaults to the last 8 weeks", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport();
+    await screen.findByRole("heading", { level: 1, name: "Acme Platform" });
+    expect(screen.getByRole("combobox", { name: "Range" })).toHaveValue("8");
+    expect(throughputWeeks()).toBe(8);
+    expect(screen.getAllByText("Showing the last 8 weeks").length).toBeGreaterThan(0);
+  });
+
+  it("offers Last 8 weeks, Last 26 weeks, and All", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport();
+    const select = await screen.findByRole("combobox", { name: "Range" });
+    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Last 8 weeks",
+      "Last 26 weeks",
+      "All",
+    ]);
+  });
+
+  it("reads ?weeks= and follows the select", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport("/report?weeks=26");
+    const select = await screen.findByRole("combobox", { name: "Range" });
+    expect(select).toHaveValue("26");
+    expect(throughputWeeks()).toBe(26);
+    fireEvent.change(select, { target: { value: "all" } });
+    expect(throughputWeeks()).toBe(30);
+    expect(screen.getByRole("combobox", { name: "Range" })).toHaveValue("all");
+    fireEvent.change(screen.getByRole("combobox", { name: "Range" }), { target: { value: "8" } });
+    expect(throughputWeeks()).toBe(8);
+  });
+
+  it("reads an unknown or malformed ?weeks= as the default", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport("/report?weeks=banana");
+    await screen.findByRole("combobox", { name: "Range" });
+    expect(screen.getByRole("combobox", { name: "Range" })).toHaveValue("8");
+    expect(throughputWeeks()).toBe(8);
+  });
+
+  it("shows a short project whole, without error", async () => {
+    stubFetch({ "/api/report": fixtureReport() });
+    renderReport("/report?weeks=26");
+    await screen.findByRole("combobox", { name: "Range" });
+    expect(throughputWeeks()).toBe(4);
+    expect(screen.getAllByText("Showing the last 4 weeks").length).toBeGreaterThan(0);
+  });
+
+  it("trims only the weekly series: the figures above the control cover the whole project", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport();
+    await screen.findByRole("combobox", { name: "Range" });
+    expect(screen.getByText("3 of 8", { exact: false })).toBeInTheDocument();
+    // The sparkline is a weekly series, so it follows the range and says so.
+    expect(screen.getByRole("img", { name: "Open questions by week, last 8 weeks" })).toBeInTheDocument();
+    // The control says it governs the charts below, not the figures.
+    expect(screen.getByText("Applies to the charts below")).toBeInTheDocument();
+  });
+
+  it("is not offered on the Agent use tab", async () => {
+    stubFetch({ "/api/report": longReport(30), "/api/report/usage": emptyUsage });
+    renderReport("/report?tab=agent-use");
+    await screen.findByText("No agent usage recorded yet");
+    expect(screen.queryByRole("combobox", { name: "Range" })).toBeNull();
+  });
+});
+
+describe("print", () => {
+  it("has a Print button that calls window.print, on either tab", async () => {
+    const print = vi.fn();
+    vi.stubGlobal("print", print);
+    stubFetch({ "/api/report": fixtureReport(), "/api/report/usage": emptyUsage });
+    renderReport();
+    fireEvent.click(await screen.findByRole("button", { name: "Print" }));
+    expect(print).toHaveBeenCalledTimes(1);
+    cleanup();
+    renderReport("/report?tab=agent-use");
+    await screen.findByText("No agent usage recorded yet");
+    fireEvent.click(screen.getByRole("button", { name: "Print" }));
+    expect(print).toHaveBeenCalledTimes(2);
+  });
+
+  it("states the range on the printed page, beside the as-of line", async () => {
+    stubFetch({ "/api/report": longReport(30) });
+    renderReport("/report?weeks=26");
+    await screen.findByRole("combobox", { name: "Range" });
+    expect(screen.getByText("Charts show the last 26 weeks")).toHaveClass("report-print-scope");
+    expect(screen.getByText(/^As of /)).toBeInTheDocument();
+  });
+
+  // The rules inside the file's one @media print block.
+  function printBlock(): string {
+    const start = reportCss.indexOf("@media print");
+    expect(start).toBeGreaterThan(-1);
+    const open = reportCss.indexOf("{", start);
+    let depth = 0;
+    for (let i = open; i < reportCss.length; i++) {
+      if (reportCss[i] === "{") depth++;
+      if (reportCss[i] === "}" && --depth === 0) return reportCss.slice(open + 1, i);
+    }
+    throw new Error("unterminated @media print block");
+  }
+  // The first rule whose selector list names `selector`, as written.
+  const rule = (css: string, selector: string): string => {
+    const escaped = selector.replace(/[.[\]]/g, "\\$&");
+    return new RegExp(`(?:^|[},\\s])${escaped}(?![\\w-])[^{}]*\\{[^}]*\\}`).exec(css)?.[0] ?? "";
+  };
+
+  it("hides the site header, the range select, the print button, and the tab rail", () => {
+    const css = printBlock();
+    for (const selector of [".site-header", ".report-range", ".report-print", ".report-page .mode-nav"]) {
+      expect(rule(css, selector), selector).toMatch(/display:\s*none/);
+    }
+  });
+
+  it("sets the charts to one column and keeps each card whole", () => {
+    const css = printBlock();
+    expect(rule(css, ".report-charts")).toMatch(/grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    expect(rule(css, ".report-chart")).toMatch(/break-inside:\s*avoid/);
+    // The figures stay one band, even below the console's phone breakpoint.
+    expect(css).toMatch(/\.report-kpis\s*\{[^}]*grid-template-columns:\s*repeat\(5/);
+  });
+
+  it("prints light whatever the theme, and keeps fills and hatches in grayscale", () => {
+    const css = printBlock();
+    expect(css).toMatch(/color-scheme:\s*light/);
+    expect(css).toMatch(/print-color-adjust:\s*exact/);
+    expect(rule(css, ".report-hatch")).toMatch(/stroke:\s*var\(--ink-3\)/);
+    // A closed disclosure prints closed: nothing forces it open.
+    expect(css).not.toMatch(/report-complete/);
+  });
+
+  it("shows the print-only scope line only in print", () => {
+    expect(rule(reportCss, ".report-print-scope")).toMatch(/display:\s*none/);
+    expect(rule(printBlock(), ".report-print-scope")).toMatch(/display:\s*block/);
   });
 });

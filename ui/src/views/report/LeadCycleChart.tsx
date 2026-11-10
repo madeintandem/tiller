@@ -9,6 +9,7 @@ import type { Report, ReportFeatureTime } from "../../api";
 import ChartFrame, { MedianLine, WeekAxis, weekPlot } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
 import { formatDays } from "./format";
+import { weeksNote } from "./range";
 
 const CYCLE = "var(--st-active)";
 const LEAD = "var(--st-ready)";
@@ -35,6 +36,7 @@ export default function LeadCycleChart({ report }: { report: Report }) {
         { label: "Median cycle, last 5", swatch: "solid", color: CYCLE },
         { label: "Median lead, last 5", swatch: "dashed", color: LEAD },
       ]}
+      note={weeksNote(report.weeks.length)}
       tip={tip}
     >
       {(width, height) => {

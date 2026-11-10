@@ -68,6 +68,23 @@
   width: 100%;
 }
 
+/* Epic progress's finished epics: one quiet row that opens to their bars. */
+.report-complete {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair);
+}
+
+.report-complete > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.report-complete[open] > summary {
+  margin-bottom: 8px;
+}
+
 .report-plot > svg {
   display: block;
   overflow: visible;

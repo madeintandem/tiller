@@ -6,6 +6,7 @@
 import type { Report } from "../../api";
 import ChartFrame, { WeekAxis, WeekHits, tint, weekPlot, weekRows } from "./ChartFrame";
 import { useTooltip } from "./ChartTooltip";
+import { weeksNote } from "./range";
 
 const SCOPE = "var(--ink-3)";
 const DONE = "var(--st-done)";
@@ -27,6 +28,7 @@ export default function BurnUpChart({ report }: { report: Report }) {
         { label: "Scope", swatch: "dashed", color: SCOPE },
         { label: "Done", swatch: "solid", color: DONE },
       ]}
+      note={weeksNote(weeks.length)}
       tip={tip}
     >
       {(width, height) => {

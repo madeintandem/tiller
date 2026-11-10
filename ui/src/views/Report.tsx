@@ -4,7 +4,9 @@
 // /api/report read, each enlargeable in a dialog) and Agent use. With
 // usage.capture off there are no tabs, only the Project view. The
 // page names no node, person, or branch; the one exception is the off-branch
-// notice (D15), which never blocks the charts beneath it.
+// notice (D15), which never blocks the charts beneath it. The header also
+// carries a Print button (the browser prints; report.css has the print
+// rules), and ?weeks= picks the Project charts' range (report/range.ts).
 
 import { useSearchParams } from "react-router-dom";
 import type { Report as ReportPayload } from "../api";
@@ -15,6 +17,7 @@ import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import AgentUseTab from "./report/AgentUseTab";
 import { formatAsOf } from "./report/format";
 import ProjectTab from "./report/ProjectTab";
+import { DEFAULT_RANGE, parseRange, rangeValue } from "./report/range";
 import "./report.css";
 
 export default function Report() {
@@ -29,6 +32,19 @@ export default function Report() {
       next.delete("tab");
     } else {
       next.set("tab", key);
+    }
+    setSearch(next, { replace: true });
+  };
+  // ?weeks= picks the Project charts' range the same way: the default leaves
+  // the URL bare, and an unknown value reads as the default.
+  const range = parseRange(search.get("weeks"));
+  const selectRange = (value: string) => {
+    const next = new URLSearchParams(search);
+    const picked = parseRange(value);
+    if (picked === DEFAULT_RANGE) {
+      next.delete("weeks");
+    } else {
+      next.set("weeks", rangeValue(picked));
     }
     setSearch(next, { replace: true });
   };
@@ -48,7 +64,13 @@ export default function Report() {
           <h1>{data.project}</h1>
           <p className="report-subtitle">Project report</p>
         </div>
-        <p className="report-asof">As of {formatAsOf(data.as_of)}</p>
+        <div className="report-head-side">
+          <p className="report-asof">As of {formatAsOf(data.as_of)}</p>
+          {/* The browser prints; the server exports nothing. */}
+          <button type="button" className="report-print" onClick={() => window.print()}>
+            Print
+          </button>
+        </div>
       </header>
       {data.off_branch && (
         <p className="report-notice" role="note">
@@ -61,12 +83,12 @@ export default function Report() {
           active={search.get("tab") ?? "project"}
           onSelect={selectTab}
           tabs={[
-            { key: "project", label: "Project", render: () => <ProjectTab report={data} /> },
+            { key: "project", label: "Project", render: () => <ProjectTab report={data} range={range} onRange={selectRange} /> },
             { key: "agent-use", label: "Agent use", render: () => <AgentUseTab /> },
           ]}
         />
       ) : (
-        <ProjectTab report={data} />
+        <ProjectTab report={data} range={range} onRange={selectRange} />
       )}
     </section>
   );
