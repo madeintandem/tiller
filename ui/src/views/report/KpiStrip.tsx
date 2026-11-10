@@ -11,8 +11,9 @@ import Sparkline from "./Sparkline";
 export default function KpiStrip({ kpis }: { kpis: ReportKPIs }) {
   const cycle = kpis.median_cycle_days;
   const lead = kpis.median_lead_days;
-  // The sparkline is the one weekly series among the tiles, so it follows the
-  // chart range; its name says how many weeks it spans.
+  // The sparkline is the one weekly series among the tiles. Like every KPI it
+  // covers the whole project, never the chart range; its name says how many
+  // weeks it spans.
   const weeks = kpis.open_questions_by_week.length;
   const span = weeks === 1 ? "last week" : `last ${weeks} weeks`;
   const completed = `${kpis.completed_features} ${kpis.completed_features === 1 ? "feature" : "features"}`;

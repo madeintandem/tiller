@@ -52,8 +52,9 @@ func newServeCmd() *cobra.Command {
 			"Markdown documents the ledger cites, and gate evidence files the ledger\n" +
 			"records over plain HTTP without authentication or TLS; use it only on\n" +
 			"a trusted network or private VPN, never directly on the public internet.\n" +
-			"Only the console's History view advances the recap's last-visit mark;\n" +
-			"other requests, such as curl or a foreign page, read it without moving it.\n" +
+			"Only the console's Mark caught up button on History\n" +
+			"advances the recap's last-visit mark; other requests to the recap, such\n" +
+			"as curl or a foreign page, read it without moving the mark.\n" +
 			"\n" +
 			"Once the port is bound, serve opens the console in your browser. Pass\n" +
 			"--open=false to skip that, or set it once for this checkout with\n" +

@@ -8,19 +8,18 @@
 //
 // kind, who, and why are all derived from QueueEntry alone, and every clause
 // is a fact the entry actually carries rather than the mock's own
-// illustrative prose: the mock's attest_criterion example, for one, leads
-// with a feature's TITLE ("Applicant portal auth"), but QueueEntry.Prose on
-// that one kind IS the criterion id, never the node's title (queue.go's own
-// doc comment) - there is no title field left over to lead with, so this
-// renders the node's own reference instead and says which criterion in a
-// trailing qualifier, honest about what the wire actually gives it rather
-// than inventing the field the mock's mockup enjoyed.
+// illustrative prose. The card leads with the node's title, which the entry
+// carries on every kind whose node has one (QueueEntry.title; rowTitle
+// below), and falls back to the node's reference when there is none. On
+// attest_criterion, QueueEntry.Prose is the criterion id, never a title, so
+// that kind says which criterion in a trailing qualifier instead.
 
 import { Link } from "react-router-dom";
 
 import type { QueueEntry, QueuePlan } from "../api";
 import { isAttestGate } from "../api";
 import { has } from "../lib/has";
+import { statusLabel } from "../lib/statusLabel";
 import CopyCmd from "./CopyCmd";
 import RefLink from "./RefLink";
 import { ProseInline } from "./Prose";
@@ -61,6 +60,13 @@ export const KIND_LABEL: Record<string, string> = {
   merge_epic: "Merge · epic PR",
 };
 
+// kindLabel is a queue kind's eyebrow words: KIND_LABEL's, or for a kind
+// this build does not name, the token worded in sentence case (statusLabel's
+// fallback), never printed as minted.
+export function kindLabel(kind: string): string {
+  return KIND_LABEL[kind] ?? statusLabel(kind);
+}
+
 export default function DecisionCard({ entry, tabbed = false }: { entry: QueueEntry; tabbed?: boolean }) {
   const why = whyLine(entry);
   const human = entry.actor !== "agent";
@@ -68,7 +74,7 @@ export default function DecisionCard({ entry, tabbed = false }: { entry: QueueEn
   // survives only to say the one thing the tab does not: an agent holds this.
   const eyebrow = tabbed
     ? human ? "" : "Agent"
-    : `${KIND_LABEL[entry.kind] ?? entry.kind}${entry.actor ? ` · ${entry.actor}` : ""}`;
+    : `${kindLabel(entry.kind)}${entry.actor ? ` · ${entry.actor}` : ""}`;
   const plan = entry.plan !== undefined ? planLine(entry.plan) : "";
   return (
     <div className={`dcard${human ? "" : " warn"}`}>
@@ -195,7 +201,7 @@ export function whyLine(entry: QueueEntry): string {
       return has(entry.statement) ? "" : "This criterion needs your attestation.";
     case "attest_gate":
       return isAttestGate(entry)
-        ? `Optional review gate, recorded ${entry.gate_status}, awaiting your attestation.`
+        ? `Optional review gate, recorded ${statusLabel(entry.gate_status).toLowerCase()}, awaiting your attestation.`
         : "Optional review gate awaiting your attestation.";
     case "approve_epic":
       return "Decomposition proposed and ready for your review.";

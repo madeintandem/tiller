@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Recap, RecapEntry, RecapGroup } from "../../api";
-import { filterRecap, historyFacets } from "./filter";
+import { ASKED_YOU, filterRecap, historyFacets, kindLabel } from "./filter";
 
 function entry(type: string, contributor: string, ask = false): RecapEntry {
   return { at: "2026-07-24T10:00:00Z", type, contributor, command: "x", ask, targets: [] };
@@ -32,14 +32,18 @@ const sample = () =>
   ]);
 
 describe("historyFacets", () => {
-  it("lists contributors, phrase verbs with asked first, and epics by title", () => {
+  it("lists contributors, phrase verbs with asked you first, and epics by title", () => {
     const f = historyFacets(sample());
     expect(f.actors.slice().sort()).toEqual(["allen", "jc"]);
-    expect(f.kinds[0]).toBe("asked");
+    expect(f.kinds[0]).toBe(ASKED_YOU);
+    expect(kindLabel(f.kinds[0])).toBe("asked you");
     expect(f.kinds.slice(1)).toEqual(f.kinds.slice(1).slice().sort());
     expect(f.kinds).toContain("specced");
     expect(f.kinds).toContain("approved");
-    expect(f.kinds.filter((k) => k === "asked")).toHaveLength(1);
+    // add.question's own verb is a kind of its own, apart from asked you.
+    expect(f.kinds).toContain("asked");
+    expect(kindLabel("asked")).toBe("asked");
+    expect(f.kinds.filter((k) => k === ASKED_YOU)).toHaveLength(1);
     expect(f.kinds.some((k) => k.includes("_") || k.includes("."))).toBe(false);
     expect(f.epics).toEqual([
       { id: "E-1", title: "Audit Engine" },
@@ -47,9 +51,11 @@ describe("historyFacets", () => {
     ]);
   });
 
-  it("has no asked option when nothing asked", () => {
+  it("has no asked you option when nothing asked the reader", () => {
     const f = historyFacets(recap([group(null, [entry("spec.feature", "jc")])]));
     expect(f.kinds).toEqual(["specced"]);
+    const question = historyFacets(recap([group(null, [entry("add.question", "jc")])]));
+    expect(question.kinds).toEqual(["asked"]);
   });
 });
 
@@ -68,11 +74,17 @@ describe("filterRecap", () => {
     expect(out.total).toBe(1000);
   });
 
-  it("filters by kind, asked matching the ask flag", () => {
+  it("filters by kind, asked you matching exactly the ask flag the tally counts", () => {
     expect(filterRecap(sample(), { kind: "specced" }).shown).toBe(2);
-    const asked = filterRecap(sample(), { kind: "asked" });
+    const withQuestion = recap([group(null, [entry("add.question", "allen"), entry("check.feature", "jc", true), entry("add.question", "jc", true)])]);
+    const askedYou = filterRecap(withQuestion, { kind: ASKED_YOU });
+    const tally = withQuestion.groups.flatMap((g) => g.entries).filter((e) => e.ask).length;
+    expect(askedYou.shown).toBe(tally);
+    expect(askedYou.groups.every((g) => g.entries.every((e) => e.ask))).toBe(true);
+    // A question that did not ask the reader is found under its own verb.
+    const asked = filterRecap(withQuestion, { kind: "asked" });
     expect(asked.shown).toBe(2);
-    expect(asked.groups.every((g) => g.entries.every((e) => e.ask))).toBe(true);
+    expect(asked.groups.every((g) => g.entries.every((e) => e.type === "add.question"))).toBe(true);
   });
 
   it("filters by epic", () => {
@@ -83,6 +95,6 @@ describe("filterRecap", () => {
 
   it("composes filters", () => {
     expect(filterRecap(sample(), { actor: "jc", kind: "specced", epic: "E-1" }).shown).toBe(1);
-    expect(filterRecap(sample(), { actor: "allen", epic: "E-1", kind: "asked" }).groups).toEqual([]);
+    expect(filterRecap(sample(), { actor: "allen", epic: "E-1", kind: ASKED_YOU }).groups).toEqual([]);
   });
 });

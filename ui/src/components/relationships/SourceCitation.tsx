@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { RelationshipSource } from "../../api";
+import { evidenceLabel } from "../../lib/evidenceLabel";
 import { relationshipFileHref } from "../../lib/relationshipHref";
 import {
   sourceBasisLabel,
@@ -63,7 +64,21 @@ export default function SourceCitation({ source, allowSourceNavigation = true, a
           {(href !== null || citationHref !== null) && " · File link opens current contents, not the pinned revision."}
         </div>
       )}
-      {source.evidence?.map((ref) => <div className="mono muted" key={ref}>Evidence: {ref}</div>)}
+      {/* An evidence ref reads as a label like every other on the node
+          page; the full ref rides only on the href and the title. */}
+      {source.evidence?.map((ref) => (
+        <div className="muted" key={ref}>
+          <a
+            className="instr-evid"
+            href={`/api/evidence?ref=${encodeURIComponent(ref)}`}
+            title={ref}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {evidenceLabel({ ref, criterion: source.criterion })}
+          </a>
+        </div>
+      ))}
     </li>
   );
 }

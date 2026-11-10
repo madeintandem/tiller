@@ -1393,17 +1393,24 @@ func blockedFeatureAdvice(t *store.Tree, feature *store.Feature, problem string,
 			if _, missing := workflow.ReviewStateOf(t, feature); missing {
 				advice.ReviewMissing = true
 				advice.ReviewGuidance = workflow.MissingReviewGuidance(owner)
-				advice.Reason += "; " + advice.ReviewGuidance
+				advice.Reason = withGuidance(problem, advice.ReviewGuidance)
 			}
 		}
 		return advice
 	}
 	advice.Phase, advice.Actor, advice.Action, advice.Command = "blocked", "human", "resolve_blocker", ""
-	advice.Reason = problem
-	if advice.ReviewGuidance != "" {
-		advice.Reason += "; " + advice.ReviewGuidance
-	}
+	advice.Reason = withGuidance(problem, advice.ReviewGuidance)
 	return advice
+}
+
+// withGuidance follows a blocking problem with the review guidance, which is
+// already written as sentences, so the problem closes into a sentence of its
+// own first. With no guidance the problem stands as the bare clause.
+func withGuidance(problem, guidance string) string {
+	if guidance == "" {
+		return problem
+	}
+	return Sentence(problem) + " " + guidance
 }
 
 // routeTaskParent applies the status and owner checks that precede the

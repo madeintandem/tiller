@@ -6,6 +6,7 @@ import type { BuildEpic, BuildFeature, RelatedNode } from "../../api";
 import Contributors from "../../components/Contributors";
 import StateBar from "../../components/StateBar";
 import StateGlyph from "../../components/StateGlyph";
+import { statusLabel } from "../../lib/statusLabel";
 import { taskMix, taskMixCaption } from "./mix";
 
 // Card body navigates to the feature's own node page; a task row inside the
@@ -129,7 +130,7 @@ export default function FeatureCard({
             than one flag trying to say two things. */}
         {feature.blocked === true && <span className="flag blocked">blocked</span>}
         {feature.held !== undefined && (
-          <span className="flag blocked" title={`held under ${feature.held.ref} (${feature.held.state})`}>
+          <span className="flag blocked" title={`held under ${feature.held.ref} (${statusLabel(feature.held.state)})`}>
             held
           </span>
         )}

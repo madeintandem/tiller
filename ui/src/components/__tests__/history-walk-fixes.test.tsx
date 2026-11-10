@@ -115,7 +115,7 @@ describe("History rows", () => {
     });
     const { container } = renderHistory("/history?window=7d");
     const link = await screen.findByRole("link", { name: "of you" });
-    expect(link.getAttribute("href")).toContain("kind=asked");
+    expect(link.getAttribute("href")).toContain("kind=asked-you");
     const row = link.closest(".hrow") as HTMLElement;
     expect(row.textContent).toContain("2 questions asked");
     expect(container.textContent).not.toMatch(/asked\s*asked/);

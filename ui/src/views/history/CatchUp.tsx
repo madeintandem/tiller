@@ -32,9 +32,15 @@ export default function CatchUp({
     if (inFlight.current || done) return;
     inFlight.current = true;
     setPhase("saving");
+    // Success returns the phase to idle as well: this component stays mounted
+    // for the whole visit, so when newer events bring the button back it must
+    // come back enabled.
     markCaughtUp(through)
       .then(
-        () => onDone(),
+        () => {
+          setPhase("idle");
+          onDone();
+        },
         () => setPhase("failed"),
       )
       .finally(() => {

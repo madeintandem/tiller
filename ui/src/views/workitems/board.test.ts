@@ -10,6 +10,9 @@ import {
   boardScope,
   SHELF_COLUMN_STATUSES,
   workItemColumns,
+  isUnfilteredVisit,
+  narrowsOpenWork,
+  UNFILTERED_FIX_PATH,
 } from "./board";
 
 const fl = (over: Partial<WorkItemFilters>): WorkItemFilters => ({
@@ -283,5 +286,29 @@ describe("boardScope", () => {
   it("reports zero closed shown when the closed column is empty", () => {
     const columns = workItemColumns({ ...board, closed: [] }, fl({}));
     expect(boardScope(columns).closedShown).toBe(0);
+  });
+});
+
+describe("the visit-only unfiltered view", () => {
+  it("is ?filters=none naming no filter axis", () => {
+    expect(UNFILTERED_FIX_PATH).toBe("/fix?filters=none");
+    expect(isUnfilteredVisit(new URLSearchParams("filters=none"))).toBe(true);
+    expect(isUnfilteredVisit(new URLSearchParams(""))).toBe(false);
+    expect(isUnfilteredVisit(new URLSearchParams("filters=some"))).toBe(false);
+    expect(isUnfilteredVisit(new URLSearchParams("filters=none&noun=bug"))).toBe(false);
+    expect(readWorkItemFilters(new URLSearchParams("filters=none"))).toEqual(fl({}));
+  });
+
+  it("leaves the URL at the reader's own next filter change", () => {
+    expect(setWorkItemFilter(new URLSearchParams("filters=none"), "noun", "bug").toString()).toBe("noun=bug");
+    expect(setWorkItemFilter(new URLSearchParams("filters=none"), "noun", "all").toString()).toBe("");
+  });
+
+  it("names a board as filtered only when an axis narrows the open work", () => {
+    expect(narrowsOpenWork(fl({}))).toBe(false);
+    expect(narrowsOpenWork(fl({ sort: "severity", showAllTerminal: true }))).toBe(false);
+    expect(narrowsOpenWork(fl({ noun: "bug" }))).toBe(true);
+    expect(narrowsOpenWork(fl({ attached: ["F-1"] }))).toBe(true);
+    expect(narrowsOpenWork(fl({ severity: ["blocker"] }))).toBe(true);
   });
 });

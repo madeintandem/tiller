@@ -134,6 +134,28 @@ describe("History while the page rereads", () => {
     expect(stub.calls.filter((c) => c.marked)).toHaveLength(1);
   });
 
+  it("brings the button back enabled after a press, and a second press marks the new list's through", async () => {
+    const stub = stubReread({ ...routes(), [MARKED]: routes()[VISIT] });
+    renderApp("/history");
+    expect(await screen.findByText("Audit")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Mark caught up" }));
+    expect(await screen.findByText("Caught up. Your next visit starts here.")).toBeInTheDocument();
+
+    const later = "2026-07-24T13:00:00Z";
+    const newer = { ...recap("visit", [entry("Billing", "jc")], THROUGH), through: later };
+    const markedLater = `${VISIT}&through=${encodeURIComponent(later)}`;
+    stub.reread();
+    await stub.release({ [VISIT]: newer, [markedLater]: newer });
+    expect(await screen.findByText("Billing")).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: "Mark caught up" });
+    expect(button).toBeEnabled();
+
+    fireEvent.click(button);
+    expect(await screen.findByText("Caught up. Your next visit starts here.")).toBeInTheDocument();
+    const marked = stub.calls.filter((c) => c.marked);
+    expect(marked.map((c) => c.url)).toEqual([MARKED, markedLater]);
+  });
+
   it("keeps the list and says it is out of date when the reread fails", async () => {
     const stub = stubReread(routes());
     renderApp("/history");

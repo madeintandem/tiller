@@ -6,13 +6,14 @@ import (
 	"net/url"
 
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/readinput"
 	"github.com/madeintandem/tiller/internal/relationships"
 	"github.com/madeintandem/tiller/internal/store"
 )
 
-// QueryHandler answers GET /api/query with exactly the data carried by the CLI
-// query envelope. api supplies GET/HEAD-only policy, a fresh tree, and the final
+// QueryHandler answers GET /api/query with the data carried by the CLI query
+// envelope, plus each epic and feature vertex's board column. api supplies GET/HEAD-only policy, a fresh tree, and the final
 // stability check; all parsing and graph semantics are shared with the CLI.
 func QueryHandler(root string) http.HandlerFunc {
 	return api(root, func(tree *store.Tree, request *http.Request) (any, error) {
@@ -49,6 +50,12 @@ func QueryHandler(root string) http.HandlerFunc {
 			default:
 				return nil, err
 			}
+		}
+		// The Map merges these vertices over its own, so an epic or feature
+		// carries its board column here as it does on the map and in search.
+		// Console only: the CLI's query JSON keeps its stored-status shape.
+		for i, vertex := range result.Vertices {
+			result.Vertices[i].Column = gen.BoardColumnByID(tree, vertex.Kind, vertex.ID)
 		}
 		return result, nil
 	})

@@ -12,10 +12,9 @@
 // return to All is stored as the empty string, read back distinctly from no
 // entry at all (`null`).
 
-import { readWorkItemFilters } from "./board";
+import { FILTER_AXES, readWorkItemFilters } from "./board";
 
 const FILTER_STORAGE_PREFIX = "tiller-fix-filters";
-const FILTER_AXES = ["noun", "attached", "terminal", "sort", "severity"] as const;
 
 export function filterStorageKey(projectKey: string): string {
   return `${FILTER_STORAGE_PREFIX}:${projectKey}`;

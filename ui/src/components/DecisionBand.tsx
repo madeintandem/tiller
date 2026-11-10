@@ -10,7 +10,7 @@ import { has } from "../lib/has";
 import { batchCommand, queueEntryKey, sharedWhy } from "../views/home/bands";
 import type { QueueCardGroup } from "../views/home/queueGroups";
 import CopyCmd, { CopyButton } from "./CopyCmd";
-import { KIND_LABEL, rowQualifier, rowTitle } from "./DecisionCard";
+import { kindLabel, rowQualifier, rowTitle } from "./DecisionCard";
 import RefLink from "./RefLink";
 
 // tabbed: the band sits under a tab that already names its kind and count
@@ -24,7 +24,7 @@ export default function DecisionBand({ group, tabbed = false }: { group: QueueCa
     <div className="dband" data-kind={group.kind}>
       {(!tabbed || why !== "") && (
         <div className="dband-head">
-          {!tabbed && <span className="kind">{KIND_LABEL[group.kind] ?? group.kind}</span>}
+          {!tabbed && <span className="kind">{kindLabel(group.kind)}</span>}
           {!tabbed && <span className="dband-count">{group.entries.length}</span>}
           {why !== "" && <p className="why">{why}</p>}
         </div>

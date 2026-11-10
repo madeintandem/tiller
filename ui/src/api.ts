@@ -316,10 +316,18 @@ export async function fetchJSON<T>(path: string, init?: Pick<RequestInit, "heade
     return await readJSON<T>(path, init);
   } finally {
     fetchesInFlight -= 1;
-    if (fetchesInFlight === 0) {
-      for (const listener of settledListeners) {
-        listener();
-      }
+    if (fetchesInFlight === 0) notifySettled();
+  }
+}
+
+// Each listener runs on its own: one that throws is logged and can neither
+// turn this read's answer into a rejection nor keep the others from running.
+function notifySettled(): void {
+  for (const listener of settledListeners) {
+    try {
+      listener();
+    } catch (err) {
+      console.error("A fetches-settled listener failed:", err);
     }
   }
 }
@@ -1035,7 +1043,8 @@ export interface ListRow {
   // for every other noun and when the event is not retained.
   proposed_at?: string;
   // An open question's commands, composed by the server (serve/list.go): the
-  // console shows them and never writes a command string itself.
+  // console shows these as served. Most commands on screen are served this
+  // way; a few older ones are still composed in the client.
   commands?: QuestionCommands;
 }
 

@@ -441,7 +441,13 @@ export default function Explore() {
     <section className="explore">
       <nav className="mode-nav" aria-label="Explore mode">
         {modes.map((m) => (
-          <ModeLink key={m} target={m} current={questionsActive || amendmentsActive ? null : mode} params={params} />
+          <ModeLink
+            key={m}
+            target={m}
+            current={questionsActive || amendmentsActive ? null : mode}
+            params={params}
+            fromLedger={questionsCurrent || amendmentsCurrent}
+          />
         ))}
         <span className="explore-nav-separator" aria-hidden="true" />
         <Link
@@ -614,10 +620,12 @@ function ModeLink({
   target,
   current,
   params,
+  fromLedger,
 }: {
   target: RailMode;
   current: Mode | null;
   params: URLSearchParams;
+  fromLedger: boolean;
 }) {
   const next = new URLSearchParams(params);
   if (target === "browse") {
@@ -630,6 +638,9 @@ function ModeLink({
   // identical NodeDetail instrument) would ride along into filter or
   // search's URL for no reason at all.
   next.delete("tab");
+  // A ledger always writes its own ?status= (All included), which would land
+  // in Filter as a status filter the reader never set.
+  if (fromLedger) next.delete("status");
   const search = next.toString();
   const active = target === current;
   return (

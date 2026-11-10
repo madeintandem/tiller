@@ -32,6 +32,7 @@ import type { AttestationView, CriterionStatusView, EvalCriterionView } from "..
 import { evidenceLabel } from "../lib/evidenceLabel";
 import { dotStateFor, resultStatus } from "../lib/gateDisplay";
 import { has } from "../lib/has";
+import { bindingTypeLabel } from "../lib/sourceWords";
 import { statusLabel } from "../lib/statusLabel";
 import { usePersonName } from "../people";
 import Chip from "./Chip";
@@ -122,7 +123,7 @@ function Row({
           )
         )}
       </span>
-      <span className="cty mono">{criterion.binding.type}</span>
+      <span className="cty mono">{bindingTypeLabel(criterion.binding.type)}</span>
       <span className="cst">
         <Chip status={dotStateFor(status)}>{label}</Chip>
       </span>

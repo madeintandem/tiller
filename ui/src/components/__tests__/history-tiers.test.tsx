@@ -163,7 +163,8 @@ describe("History tiers", () => {
     stubFetch({ "/api/recap?window=7d": recap });
     renderHistory("/history?window=7d");
 
-    expect(await screen.findByText("asked you")).toBeInTheDocument();
+    // The row's clause is a link; the Kind select also offers "asked you".
+    expect(await screen.findByRole("link", { name: "asked you" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1 bookkeeping change (reordered)" })).toBeInTheDocument();
   });
 

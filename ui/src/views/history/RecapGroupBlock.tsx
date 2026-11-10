@@ -71,9 +71,9 @@ export default function RecapGroupBlock({
         </span>
       </summary>
       {/* Every day gets its heading, a one-day group included: rows carry the
-          clock only, so the date has to live somewhere. Index keys are safe
-          here: a burst has no id of its own, the list is rebuilt wholesale
-          from a refetched payload, and its order never changes in place. */}
+          clock only, so the date has to live somewhere. TieredBursts keys
+          each row by what it shows (burstKey), so a reread that adds a row
+          above an open one leaves the open one open. */}
       {days.map((d) => (
         <div className="day" key={d.key}>
           <div className="day-h">
@@ -83,7 +83,7 @@ export default function RecapGroupBlock({
             <TieredBursts
               bursts={d.bursts}
               showAll={showAll}
-              renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
+              renderBurst={(b, key) => <BurstRow key={key} burst={b} groupKey={groupKey} />}
             />
           </ul>
         </div>

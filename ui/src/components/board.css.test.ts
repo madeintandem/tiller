@@ -13,6 +13,9 @@ import buildCss from "../views/build.css?raw";
 import workItemsCss from "../views/workitems.css?raw";
 import boardCss from "./board.css?raw";
 
+const COLLAPSED_HEAD = '.board-scroll > .board-heads > [data-collapsed="true"]';
+const COLLAPSED_BODY = '.board-scroll > .board-body > [data-collapsed="true"]';
+
 describe("board.css", () => {
   it("scrolls only the body row, never the heads", () => {
     expect(boardCss).toMatch(/\.board-scroll\[data-scroll-mode="board"\] > \.board-body\s*\{[^}]*overflow-y:\s*auto/);
@@ -38,12 +41,26 @@ describe("board.css", () => {
   it("keeps a collapsed head horizontal at the normal head height, label hidden", () => {
     // A vertical writing mode on the head would turn its flex column
     // sideways and let the label's length stretch the whole heads row.
-    expect(rule('.board-heads > [data-collapsed="true"]')).not.toMatch(/writing-mode|flex-direction:\s*column/);
-    expect(rule('.board-heads > [data-collapsed="true"] .cn,\n.board-heads > [data-collapsed="true"] .work-item-column-label')).toMatch(/display:\s*none/);
+    expect(rule(COLLAPSED_HEAD)).not.toMatch(/writing-mode|flex-direction:\s*column/);
+    expect(rule(`${COLLAPSED_HEAD} .cn,\n${COLLAPSED_HEAD} .work-item-column-label`)).toMatch(/display:\s*none/);
+  });
+
+  // Fix's own sheet styles its heads and columns at two classes; the
+  // collapsed rules must outrank them whatever order the sheets load in, or a
+  // collapsed Fix head keeps its full padding and gap.
+  it("outranks the Fix board's own head and column rules", () => {
+    const specificity = (selector: string) => (selector.match(/\.[\w-]+|\[[^\]]+\]/g) ?? []).length;
+    expect(rule(COLLAPSED_HEAD)).toMatch(/padding-left:\s*0/);
+    expect(rule(COLLAPSED_HEAD)).toMatch(/gap:/);
+    expect(rule(COLLAPSED_BODY)).toMatch(/padding-left:\s*0/);
+    expect(workItemsCss).toContain(".work-items-page .work-item-column-heading {");
+    expect(workItemsCss).toContain(".work-items-page .work-item-column {");
+    expect(specificity(COLLAPSED_HEAD)).toBeGreaterThan(specificity(".work-items-page .work-item-column-heading"));
+    expect(specificity(COLLAPSED_BODY)).toBeGreaterThan(specificity(".work-items-page .work-item-column"));
   });
 
   it("writes a collapsed lane's label vertically at the top of its body", () => {
-    const label = rule('.board-body > [data-collapsed="true"]::before');
+    const label = rule(`${COLLAPSED_BODY}::before`);
     expect(label).toMatch(/content:\s*attr\(data-label\)/);
     expect(label).toMatch(/writing-mode:\s*vertical-rl/);
     expect(label).toMatch(/white-space:\s*nowrap/);

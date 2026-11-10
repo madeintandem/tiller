@@ -367,6 +367,8 @@ func TestCheckEvalsKeepsTeethUnsatisfied(t *testing.T) {
 		require.Equal(t, 1, code)
 		require.Contains(t, errOut, "C1 (needs_attestation)")
 		require.Contains(t, errOut, fmt.Sprintf("tiller attest feature %s --criterion C1 --status <pass|fail>", soleFeatureID(t)))
+		require.Contains(t, errOut, "Human review required for C1; after reviewing it, run: tiller attest",
+			"the verdict is pass or fail, so the hint says reviewing, not accepting")
 		require.NotContains(t, errOut, "C2", "optional criteria must not be presented as required acceptance")
 
 		tid := soleTaskID(t)

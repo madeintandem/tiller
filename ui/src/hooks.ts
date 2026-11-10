@@ -13,8 +13,9 @@
 // mechanism, not two.
 //
 // That includes History's visit window: a bump re-requests window=visit, which
-// is a plain read. Only the Mark caught up press carries the visit marker, so a
-// bump never moves the horizon.
+// is a plain read. Only the Mark caught up press carries the visit marker, and
+// the hook takes no headers at all, so neither a bump nor any later caller of
+// it can move the horizon.
 //
 // A bump is a background revalidation for EVERY reader: the hook keeps the
 // last answer for the same path and refresh key while the reread runs, and a
@@ -48,8 +49,7 @@ export function useFetch<T>(
   {
     refreshKey,
     retainData = false,
-    headers,
-  }: { refreshKey?: string; retainData?: boolean; headers?: HeadersInit } = {},
+  }: { refreshKey?: string; retainData?: boolean } = {},
 ): FetchState<T> {
   // Local state mirroring the module-level generation counter: bumping it
   // does nothing on its own (a plain variable does not trigger a re-render),
@@ -97,7 +97,7 @@ export function useFetch<T>(
         loading: true,
       };
     });
-    fetchJSON<T>(path, { headers, signal: controller.signal })
+    fetchJSON<T>(path, { signal: controller.signal })
       .then((data) => {
         if (!cancelled) setState({ path, refreshKey, gen, data, error: null, loading: false });
       })
@@ -118,7 +118,7 @@ export function useFetch<T>(
       cancelled = true;
       controller.abort();
     };
-  }, [path, gen, refreshKey, retainData, headers]);
+  }, [path, gen, refreshKey, retainData]);
 
   if (path === null || state.path !== path) {
     return { data: null, error: null, loading: path !== null };

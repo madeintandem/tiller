@@ -663,7 +663,8 @@ describe("NodeDetail amendment navigation", () => {
     expect(within(panel).getByRole("link", { name: "Earlier reshape" })).toHaveAttribute("href", "/node/amendment/A-old");
     expect(within(panel).getByTitle(formatAbsolute("2026-09-07T10:00:00Z"))).toHaveAttribute("datetime", proposal.proposed_at);
     expect(within(panel).getByTitle(formatAbsolute("2026-09-06T11:00:00Z"))).toHaveAttribute("datetime", approved.approved_at);
-    expect(within(panel).getByText(/Operation 1 · revise · target · direct/)).toBeInTheDocument();
+    // The operation reads as the amendment page words it (amendmentOpLabel).
+    expect(within(panel).getByText(/Operation 1 · Revised · target · direct/)).toBeInTheDocument();
     expect(within(panel).getByText(/addition parent · descendant/)).toBeInTheDocument();
     expect(within(panel).queryByText(/Withdrawn/)).not.toBeInTheDocument();
   });

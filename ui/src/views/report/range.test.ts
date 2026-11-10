@@ -70,14 +70,13 @@ describe("sliceWeeks", () => {
     expect(sliced.burn_up.map((w) => w.scope)).toEqual(last8);
     expect(sliced.throughput.map((w) => w.upkeep)).toEqual(last8);
     expect(sliced.bugs.map((w) => w.open)).toEqual(last8);
-    expect(sliced.kpis.open_questions_by_week).toEqual(last8);
   });
 
-  it("leaves every headline KPI alone, and the epics", () => {
+  it("leaves every KPI alone, the Open questions sparkline included, and the epics", () => {
     const full = reportOf(30);
     full.epics = [{ title: "A", done: 1, in_progress: 0, not_started: 0, planned: false, planned_features: 0 }];
     const sliced = sliceWeeks(full, 8);
-    expect({ ...sliced.kpis, open_questions_by_week: [] }).toEqual({ ...full.kpis, open_questions_by_week: [] });
+    expect(sliced.kpis).toBe(full.kpis);
     expect(sliced.epics).toBe(full.epics);
     expect(sliced.project).toBe(full.project);
     expect(sliced.as_of).toBe(full.as_of);

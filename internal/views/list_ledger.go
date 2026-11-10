@@ -1,6 +1,7 @@
 package views
 
 import (
+	"strings"
 	"time"
 
 	"github.com/madeintandem/tiller/internal/core/events"
@@ -59,7 +60,22 @@ func QuestionCancelCommand(id string) string {
 }
 
 // QuestionUnlinkCommand is the command that drops one blocked target from an
-// open question.
+// open question. A resolved target is a node id; an unresolved one passes
+// through raw from the ledger, so anything that is not a plain token is
+// single-quoted, the quoting candidateRemedy gives a design path.
 func QuestionUnlinkCommand(id, target string) string {
-	return "tiller unlink question " + id + " --blocks " + target
+	return "tiller unlink question " + id + " --blocks " + shellToken(target)
+}
+
+// shellToken leaves a plain token (letters, digits, and / . _ -) as it is and
+// single-quotes anything else, closing and reopening the quote around an
+// embedded apostrophe.
+func shellToken(arg string) string {
+	plain := arg != "" && !strings.ContainsFunc(arg, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("/._-", r))
+	})
+	if plain {
+		return arg
+	}
+	return "'" + strings.ReplaceAll(arg, "'", "'\"'\"'") + "'"
 }

@@ -29,3 +29,12 @@ func TestQuestionCommandsMirrorTheQueue(t *testing.T) {
 	require.Equal(t, `tiller cancel question Q-1 --reason "..."`, views.QuestionCancelCommand("Q-1"))
 	require.Equal(t, "tiller unlink question Q-1 --blocks F-1", views.QuestionUnlinkCommand("Q-1", "F-1"))
 }
+
+// An unresolved block target passes through raw from a hand-edited ledger,
+// so the copyable command single-quotes anything that is not a plain token,
+// the same quoting the drift remedies use.
+func TestQuestionUnlinkCommandQuotesAnUnresolvedTarget(t *testing.T) {
+	require.Equal(t, `tiller unlink question Q-1 --blocks 'old feature'"'"'s key'`, views.QuestionUnlinkCommand("Q-1", "old feature's key"))
+	require.Equal(t, `tiller unlink question Q-1 --blocks 'a;rm -rf $HOME'`, views.QuestionUnlinkCommand("Q-1", "a;rm -rf $HOME"))
+	require.Equal(t, "tiller unlink question Q-1 --blocks checkout/alpha_2.x", views.QuestionUnlinkCommand("Q-1", "checkout/alpha_2.x"))
+}

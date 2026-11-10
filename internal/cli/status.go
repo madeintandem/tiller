@@ -198,7 +198,7 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Workflow != nil {
 		fmt.Fprintf(&b, "\n  workflow: %s (%s): %s", v.Workflow.Phase, v.Workflow.Actor, v.Workflow.Reason)
 		if v.Workflow.Command != "" {
-			fmt.Fprintf(&b, "; `%s`", v.Workflow.Command)
+			fmt.Fprintf(&b, " `%s`", v.Workflow.Command)
 		}
 	}
 	if v.Workflow == nil && v.RecoveredReview != nil {

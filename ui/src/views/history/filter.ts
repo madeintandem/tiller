@@ -14,20 +14,31 @@ export interface HistoryFilter {
 export interface HistoryFacets {
   // Contributor ids present; the view shows each by its display name.
   actors: string[];
-  // Phrase verbs ("specced"), plus "asked" first when any entry asked.
+  // Phrase verbs ("specced"), plus ASKED_YOU first when any entry asked the
+  // reader.
   kinds: string[];
   epics: { id: string; title: string }[];
 }
 
 export type FilteredRecap = Recap & { shown: number };
 
-export const ASKED = "asked";
+// The special kind for the events that asked the reader: exactly the entries
+// whose ask flag is set, the same set the head's `N asked you` tally and a
+// row's `asked you` link count. It is not the verb "asked", which an added
+// question carries whether or not it asked the reader; those are found under
+// that verb, a kind of its own. Its URL value is `asked-you`; it reads
+// `asked you` on screen (kindLabel).
+export const ASKED_YOU = "asked-you";
 
-// An entry's kind is the verb of its event phrase, never the raw type. The
-// special kind "asked" also matches any entry whose ask flag is set.
+export function kindLabel(kind: string): string {
+  return kind === ASKED_YOU ? "asked you" : kind;
+}
+
+// An entry's kind is the verb of its event phrase, never the raw type, or
+// ASKED_YOU, which matches the ask flag alone.
 function kindMatches(e: RecapEntry, kind: string): boolean {
-  if (kind === ASKED && e.ask) {
-    return true;
+  if (kind === ASKED_YOU) {
+    return e.ask;
   }
   return eventPhrase(e.type, 1).verb === kind;
 }
@@ -51,20 +62,15 @@ export function historyFacets(recap: Recap): HistoryFacets {
       asked = asked || e.ask;
     }
   }
-  verbs.delete(ASKED);
   const kinds = [...verbs].sort();
-  if (asked || hasAskedVerb(recap)) {
-    kinds.unshift(ASKED);
+  if (asked) {
+    kinds.unshift(ASKED_YOU);
   }
   return {
     actors: [...actors].sort(),
     kinds,
     epics: [...epics].map(([id, title]) => ({ id, title })),
   };
-}
-
-function hasAskedVerb(recap: Recap): boolean {
-  return recap.groups.some((g) => g.entries.some((e) => eventPhrase(e.type, 1).verb === ASKED));
 }
 
 // Recomputes each group's entries and drops empty groups. total stays the

@@ -641,21 +641,6 @@
   color: var(--ink-3);
 }
 
-/* Text for assistive tech only: the outbound cue on a link that leaves the
-   console (the header's a.ext carries a glyph in ::after, which a screen
-   reader never hears). */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* The head's lead row (InstrHead's lead slot, node header pass 2026-08-30):
    the eyebrow and its companion on one line over one hairline; the h2 inside
    gives its own hairline up to the row. The Spec section's "from <source>"

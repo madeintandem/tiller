@@ -270,6 +270,25 @@ describe("Home tiles from retained reads say when a reread failed", () => {
     await waitFor(() => expect(container.querySelectorAll(".stat-stale")).toHaveLength(0));
     expect(screen.getByRole("link", { name: "3 epics, open the epic list" })).not.toHaveAccessibleDescription(/out of date/i);
   });
+
+  it("marks the Fix tile the same way when one of its shelf reads fails", async () => {
+    const s = stubFetch(table());
+    const { container } = renderHome();
+    const fix = await screen.findByRole("link", { name: "0 open Fix items, open the Fix board" });
+    expect(fix).not.toHaveAccessibleDescription(/out of date/i);
+
+    s.failing.add("/api/ls?noun=chore");
+    s.reread();
+
+    await waitFor(() => expect(fix.querySelector(".stat-stale")).not.toBeNull());
+    expect(fix).toHaveAccessibleDescription(/out of date.*500/i);
+    expect(container.querySelectorAll(".stat-stale")).toHaveLength(1);
+
+    s.failing.clear();
+    s.reread();
+    await waitFor(() => expect(fix.querySelector(".stat-stale")).toBeNull());
+    expect(fix).not.toHaveAccessibleDescription(/out of date/i);
+  });
 });
 
 describe("the stat band is a named group", () => {

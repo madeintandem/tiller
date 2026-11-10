@@ -10,21 +10,19 @@ import RefLink from "../../components/RefLink";
 import Time from "../../components/Time";
 import { PersonName } from "../../people";
 import { historyPath, viewOf } from "./controls";
+import { ASKED_YOU } from "./filter";
 
-// One row per burst: the mock's `.hrow` anatomy (mono time, a dot, the bold
-// "what", a trailing mono ref where the burst has a single leaf key to show,
-// and the owner right-aligned), expanding in place for a run of more than
-// one. The count is still always rendered, at every run length including
-// one, because it is still the chart (see the top-of-file note): what varies
-// at n=1 is that the SUBJECT names its own node instead of a bare count, and
-// it has nothing to expand.
+// One row per burst: the `.hrow` anatomy (the mono clock of its latest event,
+// then the "what", a trailing mono ref where the burst has a single leaf key
+// to show, and the owner right-aligned), expanding in place for a run of more
+// than one. A lone event reads its verb then the node it names; a run reads
+// its count and subject in bold ("3 features specced") and nothing else
+// carries the count.
 //
-// The dot never paints a status: a RecapEntry carries none to paint honestly,
-// and home/Pulse.tsx's JustHappenedRow already declined to invent one from the
-// event's verb for the identical data. What it marks instead is ask, which
-// the entry genuinely carries and which never goes stale the way a "current
-// status" claim would - lit only when the burst holds one, same as the WORD
-// beside it, so the fact is still never carried by color alone.
+// No row paints a status: a RecapEntry carries none to paint honestly. What a
+// row marks instead is ask, which the entry genuinely carries: the ask style
+// rides the verb or the "what", always beside the words "asked you" (or "of
+// you"), so the fact is never carried by color alone.
 //
 // `origin` is undefined in epic mode (the section head already says it) and
 // always set in flat mode (FlatBody), where the row has no section head and
@@ -58,11 +56,13 @@ export default function BurstRow({
   // entry in the run asked (the row's own bold "what" already printed the
   // count once, to its left), and kept whenever only SOME did, because then
   // it says something the "what" phrase did not.
-  // "asked you" is a link that filters the page to asks, keeping every other
-  // parameter (historyPath composes them). A row whose own verb is already
+  // "asked you" is a link that filters the page to the events that asked the
+  // reader (ASKED_YOU, the ask flag alone, the same set the head's tally
+  // counts), keeping every other parameter (historyPath composes them). A row
+  // whose own verb is already
   // "asked" (a run of asked questions) reads "2 questions asked of you", so no
   // row doubles the word.
-  const askTo = historyPath({ ...viewOf(params), kind: "asked" });
+  const askTo = historyPath({ ...viewOf(params), kind: ASKED_YOU });
   const askWords = phrase.verb === "asked" ? "of you" : "asked you";
   const askClause = hasAsk && (
     <span className="recap-asks-count">

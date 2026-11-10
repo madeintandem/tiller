@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import type { BookkeepingRun, Burst } from "../../lib/bursts";
-import { tierBursts } from "../../lib/bursts";
+import { burstKey, tierBursts, uniqueKeys } from "../../lib/bursts";
 
 // The milestones-by-default view's folded row: one disclosure standing for a
 // run of adjacent bookkeeping bursts ("14 bookkeeping changes (linked,
@@ -14,12 +14,15 @@ import { tierBursts } from "../../lib/bursts";
 export default function BookkeepingRow<T>({
   run,
   origin,
+  keyOf,
   renderBurst,
 }: {
   run: BookkeepingRun<T>;
   origin?: string;
-  renderBurst: (item: T, index: number) => ReactNode;
+  keyOf: (item: T) => string;
+  renderBurst: (item: T, key: string) => ReactNode;
 }) {
+  const keys = uniqueKeys(run.bursts.map(keyOf));
   const [open, setOpen] = useState(false);
   return (
     <li className="recap-burst recap-bookkeeping">
@@ -46,7 +49,7 @@ export default function BookkeepingRow<T>({
           {open ? "– close" : "+ open"}
         </span>
       </button>
-      {open && <ul className="recap-bursts">{run.bursts.map((b, i) => renderBurst(b, i))}</ul>}
+      {open && <ul className="recap-bursts">{run.bursts.map((b, i) => renderBurst(b, keys[i]))}</ul>}
     </li>
   );
 }
@@ -76,24 +79,34 @@ export function TieredBursts<T = Burst>({
   burstOf?: (item: T) => Burst;
   runKey?: (item: T) => string | number;
   originOf?: (item: T) => string;
-  renderBurst: (item: T, index: number) => ReactNode;
+  renderBurst: (item: T, key: string) => ReactNode;
 }) {
-  const tiered =
+  const tiered = (
     burstOf === undefined
       ? tierBursts(bursts as unknown as Burst[], showAll)
-      : tierBursts(bursts, showAll, { burstOf, runKey });
+      : tierBursts(bursts, showAll, { burstOf, runKey })
+  ) as (T | BookkeepingRun<T>)[];
+  // Every row and fold is keyed by what it shows, never its position: a
+  // reread keeps this list mounted, and one new burst at the top of a day
+  // would otherwise hand every open row's state to the row above it. A fold
+  // is keyed by its first burst.
+  const keyOf = (item: T) => burstKey(burstOf === undefined ? (item as unknown as Burst) : burstOf(item), runKey?.(item));
+  const isFold = (item: T | BookkeepingRun<T>): item is BookkeepingRun<T> =>
+    typeof item === "object" && item !== null && "kind" in item && item.kind === "bookkeeping";
+  const keys = uniqueKeys(tiered.map((item) => (isFold(item) ? `fold:${item.bursts.length > 0 ? keyOf(item.bursts[0]) : ""}` : keyOf(item))));
   return (
     <>
-      {(tiered as (T | BookkeepingRun<T>)[]).map((item, i) =>
-        typeof item === "object" && item !== null && "kind" in item && item.kind === "bookkeeping" ? (
+      {tiered.map((item, i) =>
+        isFold(item) ? (
           <BookkeepingRow
-            key={i}
-            run={item as BookkeepingRun<T>}
-            origin={originOf === undefined ? undefined : runOrigin(item as BookkeepingRun<T>, originOf)}
+            key={keys[i]}
+            run={item}
+            origin={originOf === undefined ? undefined : runOrigin(item, originOf)}
+            keyOf={keyOf}
             renderBurst={renderBurst}
           />
         ) : (
-          renderBurst(item as T, i)
+          renderBurst(item, keys[i])
         ),
       )}
     </>

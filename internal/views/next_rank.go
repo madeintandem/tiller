@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/madeintandem/tiller/internal/core/readiness"
@@ -254,6 +255,11 @@ func (r ranker) place(c NextCandidate) rankedMove {
 func withBase(reason string, c NextCandidate) string {
 	if c.Actor != actorHuman || c.Reason == "" {
 		return reason
+	}
+	// A workflow reason is already a sentence: the locality reason closes into
+	// one of its own before it rather than gluing the sentence on as a clause.
+	if strings.HasSuffix(c.Reason, ".") {
+		return Sentence(reason) + " " + c.Reason
 	}
 	return reason + "; " + c.Reason
 }

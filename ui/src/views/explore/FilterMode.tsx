@@ -110,7 +110,9 @@ export default function FilterMode() {
             ...option, selected: value !== undefined && (option.value === value || option.key === value),
           }));
           // A status option reads in words; the value it sends stays the
-          // stored status. Other axes keep the server's label.
+          // status token, which the server matches against the board column
+          // (the status the console draws), not the stored status. Other
+          // axes keep the server's label.
           const options = facet.axis !== "status" ? served :
             served.map((option) => ({ ...option, label: statusLabel(option.value) }));
           return <FilterCombobox key={`${noun}-${facet.axis}`} name={facet.axis} options={options}

@@ -9,6 +9,7 @@
 import type { AttestationView, PolicyViolationView } from "../api";
 import { evidenceLabel } from "../lib/evidenceLabel";
 import { has } from "../lib/has";
+import { statusLabel } from "../lib/statusLabel";
 import { PersonName } from "../people";
 import Time from "./Time";
 
@@ -39,7 +40,7 @@ function AttestationRow({ attestation: a }: { attestation: AttestationView }) {
     <li className="instr-integrity-row">
       <span className="mono">{a.id}</span>
       {target !== "" && <span className="mono muted">{target}</span>}
-      <span>{a.status ?? ""}</span>
+      {has(a.status) && <span>{statusLabel(a.status)}</span>}
       {has(a.by) && <span className="muted">by <PersonName id={a.by} /></span>}
       {has(a.at) && <span className="muted integrity-at"><Time iso={a.at} /></span>}
       {has(a.evidence_ref) && (
@@ -57,7 +58,7 @@ function ViolationRow({ violation: v }: { violation: PolicyViolationView }) {
   return (
     <li className="instr-integrity-row">
       <span className="instr-integrity-name">{v.gate ?? ""}</span>
-      <span>{v.status ?? ""}</span>
+      {has(v.status) && <span>{statusLabel(v.status)}</span>}
       {has(v.observed) && <span className="muted">observed {v.observed}</span>}
       {has(v.evidence_ref) && <EvidenceLink evidenceRef={v.evidence_ref} kind={v.gate} />}
       {has(v.source_revision) && <span className="mono muted">historical source {v.source_revision}</span>}

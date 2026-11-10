@@ -39,7 +39,7 @@ import AllClear from "../components/AllClear";
 import type { AllClearReviewItem } from "../components/AllClear";
 import DecisionBand from "../components/DecisionBand";
 import { CopyButton } from "../components/CopyCmd";
-import DecisionCard, { KIND_LABEL } from "../components/DecisionCard";
+import DecisionCard, { kindLabel } from "../components/DecisionCard";
 import DependencyDiagnostics from "../components/DependencyDiagnostics";
 import ExecutionSources from "../components/ExecutionSources";
 import NodeTabs from "../components/NodeTabs";
@@ -193,12 +193,18 @@ export default function Home({ summary, summaryError }: HomeProps) {
 
   // Drift is a tab here, not a page of its own (R4, replacing the old /drift
   // address, which now forwards). It renders from the same /api/drift read the
-  // header band's tile uses. Present only while the sweep has something to
-  // show, like Recovered reviews; its count is candidates plus uncovered and
-  // warns when any candidate exists (an uncovered row is a gap in coverage,
-  // not a finding). The count stays text beside the name, never color alone.
+  // header band's tile uses. Present while the sweep has something to show,
+  // or while the URL asks for it (?tab=drift, where the old /drift address,
+  // the node page's drift panel, and the file page land): then the tab shows
+  // the sweep loading, its error, or the clean result rather than dropping
+  // the reader on Overview with no word, and a reread that comes back clean
+  // never removes the tab under a reader on it. Its count is candidates plus
+  // uncovered and warns when any candidate exists (an uncovered row is a gap
+  // in coverage, not a finding). The count stays text beside the name, never
+  // color alone.
   const driftBand = drift.data === null ? null : composeDriftBand(drift.data);
   const driftCandidates = drift.data === null ? 0 : candidateCount(drift.data);
+  const showDriftTab = driftBand !== null || search.get("tab") === "drift";
 
   const overview = (
     <>
@@ -231,7 +237,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
               onSelect={selectKind}
               tabs={runs.map((run) => ({
                 key: runKind(run),
-                label: KIND_LABEL[runKind(run)] ?? runKind(run),
+                label: kindLabel(runKind(run)),
                 count: runCount(run),
                 render: () => {
                   // One Copy all per tab, for both the band and the card form:
@@ -289,11 +295,11 @@ export default function Home({ summary, summaryError }: HomeProps) {
               render: () => <RecoveredReviews owners={recoveryOwners} features={features.data?.nodes ?? []} titles={taskTitles} />,
             }]
             : []),
-          ...(driftBand !== null
+          ...(showDriftTab
             ? [{
               key: "drift",
               label: "Drift",
-              count: driftBand.total,
+              count: driftBand?.total,
               countTone: driftCandidates > 0 ? "warning" as const : undefined,
               render: () => <DriftReport state={drift} />,
             }]

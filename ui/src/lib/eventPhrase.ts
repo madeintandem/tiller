@@ -9,6 +9,8 @@
 // types the code can mint is listed in vocabulary.json (event_types) and
 // pinned against the lifecycle table by a Go test.
 
+import { tokenWords } from "./statusLabel";
+
 export interface EventPhrase {
   // The count-led subject a collapsed row carries: "features linked", which
   // the view prints after the count numeral.
@@ -68,9 +70,8 @@ const PARTICIPLE: Record<string, string> = {
 // again and the same at any count.
 const PLURAL_NOUNS = new Set(["features", "tasks", "bugs", "chores", "tweaks"]);
 
-// Irregular plurals. criterion -> criteria is lifted from
-// DecisionCard.contextLine, which solved the same problem for the same
-// vocabulary.
+// Irregular plurals: criterion -> criteria, the plural the decision cards'
+// plan line also uses.
 const PLURAL: Record<string, string> = {
   criterion: "criteria",
 };
@@ -141,21 +142,18 @@ export function eventPhrase(type: string, count: number): EventPhrase {
     if (participle !== undefined) {
       return { subject: `${pluralize(noun, count)} ${participle}`, verb: participle };
     }
-    return { subject: `${pluralize(noun, count)} ${humanize(verb)}`, verb: humanize(verb) };
+    return { subject: `${pluralize(noun, count)} ${tokenWords(verb)}`, verb: tokenWords(verb) };
   }
-  const words = humanize(type);
+  const words = tokenWords(type);
   return { subject: words, verb: words };
 }
 
+// pluralize also words the noun (statusLabel.ts's tokenWords), so a noun
+// this build has never seen ("work_item") reads "work items", never as
+// minted. It never guesses at a participle.
 function pluralize(noun: string, count: number): string {
   if (count === 1 || PLURAL_NOUNS.has(noun)) {
-    return noun;
+    return tokenWords(noun);
   }
-  return PLURAL[noun] ?? `${noun}s`;
-}
-
-// humanize turns a token the build does not know into words: separators
-// become spaces. It never guesses at a participle.
-function humanize(token: string): string {
-  return token.replace(/[._-]+/g, " ").trim();
+  return tokenWords(PLURAL[noun] ?? `${noun}s`);
 }

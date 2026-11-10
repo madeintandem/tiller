@@ -1501,7 +1501,8 @@ describe("Home header band: shelf tile", () => {
     renderHome(summary());
 
     const link = await screen.findByRole("link", { name: /21.*Fix/ });
-    expect(link).toHaveAttribute("href", "/fix");
+    // The unfiltered view, so stored Fix filters cannot shrink the count it opens.
+    expect(link).toHaveAttribute("href", "/fix?filters=none");
     expect(link.textContent).toContain("21");
     expect(link.textContent).toContain("open: 6 bugs · 13 chores · 2 tweaks");
   });
@@ -1682,11 +1683,10 @@ describe("Home pulse: Just happened", () => {
     expect(screen.getByRole("link", { name: "Full history →" })).toHaveAttribute("href", "/history?window=24h");
   });
 
-  // BurstPhrase's own subject carries
-  // no numeral ("tasks done", not "4 tasks done" - History renders the count
-  // in its own separate column), so a naive reshape of its grammar onto the
-  // pulse's one-line .prow silently dropped the count on every multi-entry
-  // burst. The two prior fixtures above happen to use alternating types,
+  // eventPhrase's own subject carries
+  // no numeral ("tasks done", not "4 tasks done"), so a naive reshape of its
+  // grammar onto the pulse's one-line .prow silently dropped the count on
+  // every multi-entry burst. The two prior fixtures above happen to use alternating types,
   // which never collapse past one entry each - this fixture is the one that
   // actually exercises n > 1.
   it("shows the count on a collapsed multi-entry burst, not just the bare noun phrase", async () => {
@@ -2080,9 +2080,10 @@ describe("Home in flight: the pool line and the blocked cap", () => {
     const remainder = blockedCount - ROW_CAP;
     const foot = screen.getByText(new RegExp(`${remainder} more blocked`));
     expect(foot.textContent).toContain(`${remainder} more blocked`);
+    // Every epic, not a stored selection that could hide the rows it counts.
     expect(within(foot.closest(".pfoot") as HTMLElement).getByRole("link", { name: /Build/ })).toHaveAttribute(
       "href",
-      "/build",
+      "/build?epics=all",
     );
 
     // Motion (active rows) is never capped: all 8 render.
@@ -2226,7 +2227,7 @@ describe("Home pulse: Up next", () => {
     stubFetch(baseRoutes({ "/api/queue": { entries: [] }, "/api/board": { contributors: [], unclaimed } }));
     renderHome(summary());
 
-    expect(await screen.findByRole("link", { name: "1 unclaimed task" })).toHaveAttribute("href", "/build");
+    expect(await screen.findByRole("link", { name: "1 unclaimed task" })).toHaveAttribute("href", "/build?epics=all");
     expect(screen.queryByRole("link", { name: "Available task" })).not.toBeInTheDocument();
   });
 

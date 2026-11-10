@@ -89,7 +89,7 @@ describe("History filters", () => {
     const actor = screen.getByLabelText("Actor") as HTMLSelectElement;
     expect([...actor.options].map((o) => o.textContent)).toEqual(["All actors", "Allen", "JC Grubbs"]);
     const kind = screen.getByLabelText("Kind") as HTMLSelectElement;
-    expect(kind.options[1].textContent).toBe("asked");
+    expect(kind.options[1].textContent).toBe("asked you");
     const epic = screen.getByLabelText("Epic") as HTMLSelectElement;
     expect([...epic.options].map((o) => o.textContent)).toEqual(["All epics", "Audit Engine", "Billing"]);
   });
@@ -137,18 +137,25 @@ describe("History filters", () => {
   });
 
   it("says no events match, with a link that clears the filters", async () => {
-    await load("/history?window=7d&actor=allen&kind=asked");
+    await load("/history?window=7d&actor=allen&kind=asked-you");
     expect(screen.getByText(/No events match the filters/)).toBeTruthy();
     fireEvent.click(screen.getByRole("link", { name: "Clear filters" }));
     expect(loc()).toBe("/history?window=7d");
   });
 
-  it("turns the ask clause into a link that sets kind=asked", async () => {
+  it("turns the ask clause into a link that sets kind=asked-you", async () => {
     await load("/history?window=7d&actor=jc&epic=E-1&show=all");
     const row = document.querySelector(".recap-burst .recap-asks-count") as HTMLElement;
     // The row is a lone asked question, whose verb is already "asked".
     const link = within(row).getByRole("link", { name: "of you" });
     fireEvent.click(link);
-    expect(loc()).toBe("/history?window=7d&show=all&actor=jc&kind=asked&epic=E-1");
+    expect(loc()).toBe("/history?window=7d&show=all&actor=jc&kind=asked-you&epic=E-1");
+  });
+
+  it("agrees with the head's asked-you tally once the ask link filters", async () => {
+    await load("/history?window=7d&show=all&kind=asked-you");
+    const tally = document.querySelector(".recap-tally .recap-asks-count")?.textContent ?? "";
+    const asks = Number(tally.split(" ")[0]);
+    expect(sub()).toContain(`${asks} of 1000 events`);
   });
 });

@@ -134,6 +134,26 @@ export function tierBursts<T>(
   return out;
 }
 
+// burstKey is a burst's stable React identity across a reread: its first
+// entry's type, actor, instant, and first target, plus the served group it
+// came from. A reread keeps History mounted, so an index key would hand one
+// row's open state to whichever row lands at its position.
+export function burstKey(burst: Burst, group: string | number = ""): string {
+  const first = burst.entries[0];
+  return [group, burst.type, burst.contributor, first?.at ?? "", first?.targets[0]?.id ?? ""].join("|");
+}
+
+// uniqueKeys suffixes a repeated key (two identical events, say) with its
+// occurrence, so siblings never share a key.
+export function uniqueKeys(keys: string[]): string[] {
+  const seen = new Map<string, number>();
+  return keys.map((key) => {
+    const n = seen.get(key) ?? 0;
+    seen.set(key, n + 1);
+    return n === 0 ? key : `${key}#${n}`;
+  });
+}
+
 // leafKey drops the owning group's key prefix from a node's key, so a row
 // under the form-engine head reads "audit-overlay-rendering" rather than
 // "form-engine/audit-overlay-rendering". This is the mock's own decision at

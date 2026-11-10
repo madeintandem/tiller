@@ -5,6 +5,7 @@ import InstrSection from "../../components/InstrSection";
 import SourceCitation from "../../components/relationships/SourceCitation";
 import { relationshipHref } from "../../lib/relationshipHref";
 import { relationshipTitle } from "../../lib/relationshipTitle";
+import { statusLabel } from "../../lib/statusLabel";
 import "./backlinks.css";
 
 function VertexReference({ vertex }: { vertex: RelationshipVertex }) {
@@ -84,7 +85,7 @@ export default function BacklinksPanel({ backlinks }: { backlinks: BacklinksView
         <ul className="backlinks-diagnostics" aria-label="Relationship diagnostics">
           {diagnostics.map((diagnostic) => (
             <li key={JSON.stringify(diagnostic)}>
-              <span>{diagnostic.facet}: {diagnostic.message}</span>
+              <span>{statusLabel(diagnostic.facet)}: {diagnostic.message}</span>
               {diagnostic.source && <ul className="backlinks-citations"><SourceCitation
                 source={diagnostic.source}
                 allowSourceNavigation={diagnostic.code !== "unresolved_document" && diagnostic.code !== "document_unreadable"}

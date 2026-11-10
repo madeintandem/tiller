@@ -105,16 +105,17 @@ func TestDesignRemedyPreservesLiteralShellArgument(t *testing.T) {
 	require.Equal(t, "tiller\napprove\ndesign\n--\n"+doc+"\n", string(out))
 }
 
-// TestDriftRowsCarryTheNodeTitleAndDesignRowsDoNot pins the additive title:
-// a work node's rows lead with its title, a design row has none and keeps its
-// document path in key.
-func TestDriftRowsCarryTheNodeTitleAndDesignRowsDoNot(t *testing.T) {
+// TestDriftRowsCarryTheNodeTitleAndDesignRowsTheSweepTitle pins the additive
+// title: a work node's rows lead with the node's title, and a design row,
+// which has no node, carries the document title the sweep read (empty when
+// the sweep found none) and keeps its document path in key.
+func TestDriftRowsCarryTheNodeTitleAndDesignRowsTheSweepTitle(t *testing.T) {
 	tree := driftTree(t)
 	tree.Features["F-aaaaaa"].Title = "Certification form loading"
 	rep := drift.Report{
 		Candidates: []drift.Candidate{
 			{Marker: drift.MarkerActiveBasis, Noun: store.NounFeature, ID: "F-aaaaaa", Key: "form-engine/certification-form-loading"},
-			{Marker: drift.MarkerShiftedDesign, Noun: "design", Key: "as-is/api.md"},
+			{Marker: drift.MarkerShiftedDesign, Noun: "design", Key: "as-is/api.md", Title: "API notes"},
 		},
 		Uncovered: []drift.Uncovered{
 			{Marker: drift.MarkerOrphanEval, Noun: store.NounFeature, ID: "F-aaaaaa", Reason: "ref_unreadable"},
@@ -123,7 +124,8 @@ func TestDriftRowsCarryTheNodeTitleAndDesignRowsDoNot(t *testing.T) {
 	}
 	v := views.DriftReportOf(tree, rep)
 	require.Equal(t, "Certification form loading", v.Candidates[drift.MarkerActiveBasis][0].Title)
-	require.Empty(t, v.Candidates[drift.MarkerShiftedDesign][0].Title)
+	require.Equal(t, "API notes", v.Candidates[drift.MarkerShiftedDesign][0].Title)
+	require.Equal(t, "as-is/api.md", v.Candidates[drift.MarkerShiftedDesign][0].Key)
 	require.Equal(t, "Certification form loading", v.Uncovered[0].Title)
-	require.Empty(t, v.Uncovered[1].Title)
+	require.Empty(t, v.Uncovered[1].Title, "the sweep read no title for this document")
 }

@@ -32,3 +32,15 @@ describe("project key in the topbar", () => {
     expect(stylesCss).toMatch(/\.header-row\s*\{[^}]*container-type:\s*inline-size/);
   });
 });
+
+// .visually-hidden is a global utility (NodeTabs' warning words on Home,
+// Report, and the ledgers; the outbound-link cue), so it lives in the shell
+// sheet every page loads, not in a component sheet a page may never import.
+describe("the visually-hidden utility", () => {
+  it("is defined in the shell stylesheet", () => {
+    const rule = stylesCss.match(/(?:^|\n)\.visually-hidden\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/position:\s*absolute/);
+    expect(rule).toMatch(/clip:\s*rect\(0,\s*0,\s*0,\s*0\)/);
+    expect(rule).toMatch(/width:\s*1px/);
+  });
+});

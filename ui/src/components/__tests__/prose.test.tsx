@@ -8,6 +8,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 
 import Prose, { ProseInline } from "../Prose";
+import { outlineOf } from "../../lib/outline";
 
 afterEach(() => {
   cleanup();
@@ -307,6 +308,24 @@ describe("Prose work references", () => {
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByRole("link", { name: "F-79dh3q" }))
       .toHaveAttribute("href", "/node/feature/F-79dh3q");
+  });
+});
+
+describe("Prose heading ids beside GFM footnotes", () => {
+  it("keeps the generated footnotes heading's own id, the label footnote references are described by", () => {
+    const markdown = "## Footnotes\n\nA claim.[^1]\n\n## Detail\n\nMore.\n\n[^1]: The source.\n";
+    const { container } = renderProse(markdown);
+    const label = container.querySelector("section[data-footnotes] > .sr-only");
+    expect(label?.textContent).toBe("Footnotes");
+    expect(label?.id).toBe("footnote-label");
+  });
+
+  it("keeps the authored headings' ids in step with the outline", () => {
+    const markdown = "## Footnotes\n\nA claim.[^1]\n\n## Detail\n\n## Footnotes\n\n[^1]: The source.\n";
+    const { container } = renderProse(markdown);
+    const authored = [...container.querySelectorAll("h3")].filter((h) => h.closest("[data-footnotes]") === null).map((h) => h.id);
+    expect(authored).toEqual(outlineOf(markdown).map((item) => item.id));
+    expect(authored).toEqual(["footnotes", "detail", "footnotes-2"]);
   });
 });
 

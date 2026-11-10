@@ -80,6 +80,13 @@ export function sourceBindingLabel(binding: string): string {
   return BINDING[binding] ?? `bound to ${plainToken(binding)}`;
 }
 
+// bindingTypeLabel is the bare type word a contract row's type column shows
+// (test, command, manual, eval): each known type is already one plain word,
+// and one this build does not know reads as words, never as minted.
+export function bindingTypeLabel(binding: string): string {
+  return plainToken(binding);
+}
+
 const CLASSIFICATION: Record<string, string> = {
   path: "a path",
   opaque: "not a path",

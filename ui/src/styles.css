@@ -88,6 +88,22 @@ a:hover {
   color: var(--error);
 }
 
+/* Text for assistive tech only: the outbound cue on a link that leaves the
+   console (a.ext carries a glyph in ::after, which a screen reader never
+   hears) and the words beside a tab's warning count. A global utility, so it
+   lives here in the shell sheet every page loads. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Header (mock:64-70) */
 
 /* The topbar is a white band over the paper, not paper over paper. It sticks

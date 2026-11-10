@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { RecapWindow } from "../../api";
 import { usePersonName } from "../../people";
 import type { HistoryFacets, HistoryFilter } from "./filter";
+import { kindLabel } from "./filter";
 
 export const WINDOWS: RecapWindow[] = ["visit", "24h", "7d"];
 
@@ -138,7 +139,7 @@ function FilterSelects({ view, facets, disabled }: { view: HistoryView; facets: 
   const actors = facets.actors
     .map((id) => ({ value: id, label: nameOf(id) }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  const kinds = facets.kinds.map((k) => ({ value: k, label: k }));
+  const kinds = facets.kinds.map((k) => ({ value: k, label: kindLabel(k) }));
   const epics = facets.epics.map((e) => ({ value: e.id, label: e.title }));
 
   function pick(axis: keyof HistoryFilter, value: string) {

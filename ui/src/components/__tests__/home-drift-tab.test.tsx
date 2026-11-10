@@ -65,6 +65,28 @@ function stubFetch(table: Record<string, unknown>) {
   return spy;
 }
 
+// A stub that never answers one path (a first read still in flight), or
+// answers it with a server error.
+function stubFetchHolding(table: Record<string, unknown>, heldPath: string) {
+  vi.stubGlobal("fetch", vi.fn((input: unknown) => {
+    const url = String(input);
+    if (url === heldPath) return new Promise(() => {});
+    if (url in table) return Promise.resolve({ ok: true, json: () => Promise.resolve(table[url]) });
+    return Promise.resolve({ ok: false, status: 404, statusText: "Not Found", text: () => Promise.resolve("") });
+  }));
+}
+
+function stubFetchFailing(table: Record<string, unknown>, failingPath: string) {
+  vi.stubGlobal("fetch", vi.fn((input: unknown) => {
+    const url = String(input);
+    if (url === failingPath) {
+      return Promise.resolve({ ok: false, status: 500, statusText: "Internal Server Error", text: () => Promise.resolve("disk on fire") });
+    }
+    if (url in table) return Promise.resolve({ ok: true, json: () => Promise.resolve(table[url]) });
+    return Promise.resolve({ ok: false, status: 404, statusText: "Not Found", text: () => Promise.resolve("") });
+  }));
+}
+
 // A stub whose next read of one path is held pending until the test settles
 // it: the shape of a refetch in flight after a generation bump.
 function stubHeld(table: Record<string, unknown>, heldPath: string) {
@@ -172,13 +194,31 @@ describe("Home Drift tab", () => {
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift"));
   });
 
-  it("falls back to the default tab for ?tab=drift when there is nothing to show", async () => {
+  it("opens the tab on ?tab=drift with nothing to show, and says the sweep came back clean", async () => {
     stubFetch(routes({ compared: 4, uncovered: [] }));
     renderHome("/?tab=drift");
 
-    expect(await screen.findByText(/all clear/i)).toBeInTheDocument();
+    expect(await screen.findByText(/nothing moved/)).toBeInTheDocument();
     const rail = screen.getByRole("tablist", { name: "Home view" });
-    expect(within(rail).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    expect(within(rail).getByRole("tab", { name: "Drift" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens the tab on ?tab=drift while the sweep is still loading", async () => {
+    stubFetchHolding(routes(withCandidates), "/api/drift");
+    renderHome("/?tab=drift");
+
+    expect(await screen.findByText("Sweeping the working tree...")).toBeInTheDocument();
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    expect(within(rail).getByRole("tab", { name: "Drift" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens the tab on ?tab=drift when the sweep failed, and shows the error", async () => {
+    stubFetchFailing(routes(withCandidates), "/api/drift");
+    renderHome("/?tab=drift");
+
+    expect(await screen.findByText(/disk on fire/)).toBeInTheDocument();
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    expect(within(rail).getByRole("tab", { name: "Drift" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("the Drift stat tile links to the tab", async () => {
@@ -205,6 +245,20 @@ describe("Home Drift tab while the page rereads", () => {
     await held.settle(uncoveredOnly);
     expect(await screen.findByRole("tab", { name: "Drift · 1" })).toBeInTheDocument();
     expect(screen.queryByText(/Work rests on an older basis/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the tab under a reader on it when a reread comes back clean", async () => {
+    const held = stubHeld(routes(withCandidates), "/api/drift");
+    renderHome("/");
+    (await screen.findByRole("tab", { name: "Drift · 3, needs attention" })).click();
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift"));
+
+    held.refetch();
+    await held.settle({ compared: 4, uncovered: [] });
+    expect(await screen.findByText(/nothing moved/)).toBeInTheDocument();
+    const rail = screen.getByRole("tablist", { name: "Home view" });
+    expect(within(rail).getByRole("tab", { name: "Drift" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift");
   });
 });
 

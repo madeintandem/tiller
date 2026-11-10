@@ -63,6 +63,28 @@ export const SHELF_COLUMN_STATUSES: Readonly<Record<ShelfColumnKey, NodeStatus>>
   closed: "done",
 };
 
+// The URL parameters that name a filter axis, the ones stored and restored.
+export const FILTER_AXES = ["noun", "attached", "terminal", "sort", "severity"] as const;
+
+// `?filters=none` shows the board with no filters for this visit only, the
+// way Build's `?epics=all` shows every epic: arriving there restores nothing
+// and stores nothing, so Home's Fix tile can open the list its number counts
+// without touching the reader's saved filters. It is the special value only
+// when it names no filter axis beside it. The reader's own next filter change
+// drops it from the URL (setWorkItemFilter) and is stored as usual.
+const VISIT_PARAM = "filters";
+export const UNFILTERED_FIX_PATH = `/fix?${VISIT_PARAM}=none`;
+
+export function isUnfilteredVisit(params: URLSearchParams): boolean {
+  return params.get(VISIT_PARAM) === "none" && !FILTER_AXES.some((axis) => params.has(axis));
+}
+
+// True when a filter narrows the open work the toolbar counts. Sort and
+// Show older items change order and closed cards only, so they are not one.
+export function narrowsOpenWork(filters: WorkItemFilters): boolean {
+  return filters.noun !== "all" || filters.attached.length > 0 || filters.severity.length > 0;
+}
+
 export function readWorkItemFilters(params: URLSearchParams): WorkItemFilters {
   const nounParam = params.get("noun");
 
@@ -158,6 +180,7 @@ export function setWorkItemFilter(
   value: string | null,
 ): URLSearchParams {
   const next = new URLSearchParams(params);
+  next.delete(VISIT_PARAM);
   const noun = normalizedNouns(next.get("noun"));
   if (noun === "all") next.delete("noun");
   else next.set("noun", noun);

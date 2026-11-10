@@ -34,9 +34,11 @@ export interface ComposedStat {
   caption: string;
 }
 
-// composeStat groups rows by their literal wire status (so the caption reads
-// the words that were actually observed, a question's "open"/"answered"
-// included), orders those groups by the legend rank of the bucket each folds
+// composeStat groups rows by their displayed status (lib/displayStatus: the
+// board column when served, else the stored status), so the caption names
+// the statuses actually observed, a question's "open"/"answered" included,
+// in statusLabel's words; it orders those groups by the legend rank of the
+// bucket each folds
 // to, and separately sums the same rows into the seven-state mix StateBar
 // paints. Both orderings and both groupings share one fold, so "open" (->
 // in_review) always sits before "answered" (-> done) in the caption, the

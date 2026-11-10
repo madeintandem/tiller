@@ -63,6 +63,20 @@ describe("Home Just happened rows", () => {
     expect(screen.getByRole("link", { name: "Feature 1" })).toBeInTheDocument();
   });
 
+  it("says no milestones, and keeps the Full history link, when the window held only bookkeeping", () => {
+    const claims = [entry(1, 6), entry(2, 7)].map((e) => ({ ...e, type: "claim.task" }));
+    renderColumn(recapOf(claims));
+    expect(screen.getByText("No milestones in the last 24 hours.")).toBeInTheDocument();
+    expect(screen.queryByText("Nothing in the last 24 hours.")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Full history →" })).toHaveAttribute("href", "/history?window=24h");
+  });
+
+  it("says nothing happened, with no link, when the window held no events at all", () => {
+    renderColumn(recapOf([]));
+    expect(screen.getByText("Nothing in the last 24 hours.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Full history →" })).not.toBeInTheDocument();
+  });
+
   it("reads a run as .t then one spanning label at the latest clock", () => {
     const { container } = renderColumn(recapOf([entry(4, 10), entry(3, 9), entry(2, 8)]));
     const row = container.querySelector(".prow") as HTMLElement;

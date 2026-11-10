@@ -230,7 +230,7 @@ func unmetGateDetail(g mutate.GateOutcome, noun, node, aggregate string) string 
 		fmt.Fprintf(&b, "%s: %s", g.Name, strings.Join(parts, ", "))
 		for _, id := range ids {
 			if g.Criteria[id] == store.CriterionStatusNeedsAttestation {
-				fmt.Fprintf(&b, "\n  Human review required for %s; after accepting it, run: tiller attest %s %s --criterion %s --status <pass|fail>",
+				fmt.Fprintf(&b, "\n  Human review required for %s; after reviewing it, run: tiller attest %s %s --criterion %s --status <pass|fail>",
 					id, noun, node, id)
 				if aggregate != "" {
 					fmt.Fprintf(&b, " on branch %s", aggregate)

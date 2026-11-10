@@ -36,6 +36,15 @@ func TestQueryCLIAndHTTPReturnTheSameReadWithoutIdentity(t *testing.T) {
 	require.Equal(t, 200, recorder.Code, recorder.Body.String())
 	var response relationships.QueryResult
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	// The console's read adds each epic and feature vertex's board column,
+	// which the CLI's query JSON never carries; everything else is the same.
+	for i, vertex := range envelope.Data.Vertices {
+		require.Empty(t, vertex.Column, "the CLI's query JSON carries no board column")
+		if vertex.Kind == "epic" || vertex.Kind == "feature" {
+			require.Equal(t, vertex.Status, response.Vertices[i].Column, "a draft node's column is its status")
+		}
+		response.Vertices[i].Column = ""
+	}
 	require.Equal(t, envelope.Data, response)
 	require.Equal(t, before, fingerprintRepo(t, root), "query reads cannot create identity, events, or other project files")
 }

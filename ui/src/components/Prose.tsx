@@ -136,11 +136,17 @@ function hastText(node: HastNode): string {
 // rehypeHeadingIds gives each section heading (source `##` and `###`, before
 // the demotion below) the id outlineOf computes for it, from the same slugger
 // in document order, so the outline's links resolve and repeats take -2, -3.
+// A heading that already carries an id is one the pipeline generated, not one
+// the author wrote: GFM's "Footnotes" label (id footnote-label, which
+// footnote references name in aria-describedby). It keeps its id and takes no
+// slug, because outlineOf reads the markdown tree, where that heading does
+// not exist; slugging it would shift every later repeat out of step.
 function rehypeHeadingIds() {
   return (tree: HastNode) => {
     const next = slugger();
     const walk = (node: HastNode): void => {
-      if (node.type === "element" && (node.tagName === "h2" || node.tagName === "h3")) {
+      const heading = node.type === "element" && (node.tagName === "h2" || node.tagName === "h3");
+      if (heading && node.properties?.id === undefined) {
         node.properties = { ...node.properties, id: next(hastText(node).replace(/\s+/g, " ").trim()) };
       }
       node.children?.forEach(walk);

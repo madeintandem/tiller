@@ -11,6 +11,7 @@ import { statusLabel } from "../../lib/statusLabel";
 import { composeDriftBand } from "./driftBand";
 import { composeFunnel, composeShelfStat } from "./funnel";
 import { composeStat } from "./stat";
+import { UNFILTERED_FIX_PATH } from "../workitems/board";
 
 export default function HeaderBand({
   epics,
@@ -128,18 +129,28 @@ function ShelfStat({
   chores: FetchState<ListResult>;
   tweaks: FetchState<ListResult>;
 }) {
+  const noteId = useId();
   if (bugs.data === null || chores.data === null || tweaks.data === null) {
     return <UnresolvedTile label="Fix" error={bugs.error ?? chores.error ?? tweaks.error} />;
   }
   const s = composeShelfStat(bugs.data.nodes, chores.data.nodes, tweaks.data.nodes);
+  // Three retained reads stand behind one number: any of them failing its
+  // reread makes the whole tile possibly old.
+  const staleError = bugs.error ?? chores.error ?? tweaks.error;
   return (
-    <Link to="/fix" className="stat shelf" aria-label={`${s.open} open Fix items, open the Fix board`}>
+    <Link
+      to={UNFILTERED_FIX_PATH}
+      className="stat shelf"
+      aria-label={`${s.open} open Fix items, open the Fix board`}
+      aria-describedby={staleError !== null ? noteId : undefined}
+    >
       <div className="n">{s.open}</div>
       <div className="lbl">Fix</div>
       <div className="cap muted">
         open: {s.bugs} {s.bugs === 1 ? "bug" : "bugs"} · {s.chores} {s.chores === 1 ? "chore" : "chores"}
         {" · "}{s.tweaks} {s.tweaks === 1 ? "tweak" : "tweaks"}
       </div>
+      {staleError !== null && <StaleNote error={staleError} id={noteId} />}
     </Link>
   );
 }

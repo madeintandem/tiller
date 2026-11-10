@@ -16,7 +16,8 @@
 // preserves relative order, so each partition keeps the order /api/ls served
 // it in. A status rail above the list (ledgerStatus.ts) narrows it to one
 // status through ?status=; the ledger opens on Open when any question is
-// open and on All otherwise, and status=all is the explicit All.
+// open and on All otherwise (settled once per visit, so a reread never flips
+// it), and status=all is the explicit All.
 //
 // A card renders only the fields the row actually carries. The mock's own
 // question cards additionally show "Asked by jc · Wed" / "Answered by pat
@@ -25,7 +26,8 @@
 // DecisionCard.tsx's own doc comment names the identical discipline for the
 // desk's queue cards.
 
-import { useSearchParams } from "react-router-dom";
+import { useRef } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import type { ListResult, ListRow, RelatedNode } from "../../api";
 import { listPath } from "../../api";
 import Chip from "../../components/Chip";
@@ -47,6 +49,12 @@ export default function QuestionsPane() {
   useDocumentTitle(titleOf("Questions"));
   const { data, error } = useFetch<ListResult>(listPath("question"));
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  // The default tab (Open when any question is open, else All) is settled
+  // once per visit, from the first ledger this visit shows, and kept until
+  // the reader picks a tab: a reread that closes the last open question must
+  // not flip the tab under the reader. It is never written to the URL.
+  const visitDefault = useRef<{ visit: string; status: string } | null>(null);
 
   // An error replaces the ledger only before there is one; a failed reread
   // keeps the last ledger, marked out of date.
@@ -73,7 +81,11 @@ export default function QuestionsPane() {
   const known: readonly string[] = QUESTION_STATUSES;
   const other = rows.filter((r) => !known.includes(r.status));
   const tabs = ledgerStatusTabs(rows, QUESTION_STATUSES);
-  const status = activeLedgerStatus(params, tabs, "open");
+  if (visitDefault.current?.visit !== location.key) {
+    visitDefault.current = { visit: location.key, status: activeLedgerStatus(new URLSearchParams(), tabs, "open") };
+  }
+  const chosen = params.get("status");
+  const status = tabs.some((tab) => tab.key === chosen) ? (chosen as string) : visitDefault.current.status;
 
   return (
     <div className="explore-detail">

@@ -58,14 +58,15 @@ function tail<T>(items: T[], n: number): T[] {
   return items.slice(Math.max(items.length - n, 0));
 }
 
-// sliceWeeks keeps the last `weeks` weeks of every per-week series: weeks,
-// week_boundaries (one longer than weeks, so it keeps one more), burn_up,
-// throughput, bugs, and the Open questions sparkline. A feature_times row is
-// an event placed on the date axis, not a weekly value, so rows completed
-// before the first shown week are dropped (the axis would clamp them onto its
-// left edge); the rows kept carry the server's rolling medians untouched.
-// Every other KPI, and the epics, describe the whole project and are left
-// alone. A project with fewer weeks than asked keeps what it has.
+// sliceWeeks keeps the last `weeks` weeks of every per-week chart series:
+// weeks, week_boundaries (one longer than weeks, so it keeps one more),
+// burn_up, throughput, and bugs. A feature_times row is an event placed on the
+// date axis, not a weekly value, so rows completed before the first shown week
+// are dropped (the axis would clamp them onto its left edge); the rows kept
+// carry the server's rolling medians untouched. The range governs the charts
+// only: the KPIs, the Open questions sparkline among them, and the epics
+// describe the whole project and are left alone. A project with fewer weeks
+// than asked keeps what it has.
 export function sliceWeeks(report: Report, weeks: Range): Report {
   if (weeks === "all" || !(weeks >= 1) || report.weeks.length <= weeks) return report;
   const boundaries = tail(report.week_boundaries, weeks + 1);
@@ -78,7 +79,6 @@ export function sliceWeeks(report: Report, weeks: Range): Report {
     throughput: tail(report.throughput, weeks),
     bugs: tail(report.bugs, weeks),
     feature_times: report.feature_times.filter((f) => !(Date.parse(f.completed_at) < from)),
-    kpis: { ...report.kpis, open_questions_by_week: tail(report.kpis.open_questions_by_week, weeks) },
   };
 }
 

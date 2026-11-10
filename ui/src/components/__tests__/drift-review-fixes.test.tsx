@@ -3,8 +3,8 @@
 // count they sit over, marker names true for every node, and a report that
 // scrolls to its hash once rather than on every reread.
 
-import { cleanup, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { Link, MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DriftReportView } from "../../api";
@@ -96,5 +96,31 @@ describe("Drift report hash scroll", () => {
       </MemoryRouter>,
     );
     expect(scroll).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a malformed hash rather than blanking the page", () => {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => undefined);
+    render(
+      <MemoryRouter initialEntries={["/?tab=drift#%"]}>
+        <DriftReport state={state(report)} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(`${MARKER_COPY.missing_surface.name} (1)`)).toBeInTheDocument();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it("scrolls again when the same section link is followed after the hash cleared", () => {
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => undefined);
+    render(
+      <MemoryRouter initialEntries={["/?tab=drift#missing_surface"]}>
+        <Link to="/?tab=drift">Top</Link>
+        <Link to="/?tab=drift#missing_surface">Section</Link>
+        <DriftReport state={state(report)} />
+      </MemoryRouter>,
+    );
+    expect(scroll).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("link", { name: "Top" }));
+    fireEvent.click(screen.getByRole("link", { name: "Section" }));
+    expect(scroll).toHaveBeenCalledTimes(2);
   });
 });

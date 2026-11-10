@@ -118,8 +118,11 @@
    at the row's normal height, showing only the dot and the count (the label
    is hidden there and named by the head's aria-label); the body keeps its
    recessed background, hides what it holds, and writes the label vertically
-   at its top, where vertical room is free. Both parts are text. */
-.board-heads > [data-collapsed="true"] {
+   at its top, where vertical room is free. Both parts are text.
+   Each rule starts at .board-scroll so it outranks a board's own two-class
+   head and column rules (workitems.css's .work-items-page ...) whatever
+   order the sheets load in. */
+.board-scroll > .board-heads > [data-collapsed="true"] {
   justify-content: center;
   gap: 6px;
   padding-left: 0;
@@ -127,26 +130,26 @@
   min-width: 0;
 }
 
-.board-heads > [data-collapsed="true"] .cn,
-.board-heads > [data-collapsed="true"] .work-item-column-label {
+.board-scroll > .board-heads > [data-collapsed="true"] .cn,
+.board-scroll > .board-heads > [data-collapsed="true"] .work-item-column-label {
   display: none;
 }
 
-.board-heads > [data-collapsed="true"] .cc,
-.board-heads > [data-collapsed="true"] .work-item-column-count {
+.board-scroll > .board-heads > [data-collapsed="true"] .cc,
+.board-scroll > .board-heads > [data-collapsed="true"] .work-item-column-count {
   margin: 0;
 }
 
-.board-body > [data-collapsed="true"] {
+.board-scroll > .board-body > [data-collapsed="true"] {
   padding-left: 0;
   padding-right: 0;
 }
 
-.board-body > [data-collapsed="true"] > * {
+.board-scroll > .board-body > [data-collapsed="true"] > * {
   display: none;
 }
 
-.board-body > [data-collapsed="true"]::before {
+.board-scroll > .board-body > [data-collapsed="true"]::before {
   content: attr(data-label);
   display: block;
   writing-mode: vertical-rl;

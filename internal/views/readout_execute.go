@@ -100,7 +100,7 @@ func executeContent(t *store.Tree, in ReadoutInput, order *gen.Order, r *Readout
 		}
 		result := advice.Reason
 		if advice.Command != "" {
-			result += "; `" + advice.Command + "`"
+			result += " `" + advice.Command + "`"
 		}
 		r.Checks = append(r.Checks, ReadoutCheck{Label: "Resolved review " + gen.RefByID(t, advice.ReviewID), Result: result})
 	}

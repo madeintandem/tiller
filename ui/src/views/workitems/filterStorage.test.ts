@@ -40,6 +40,11 @@ describe("Fix filter storage", () => {
     expect(hasFilterParams(new URLSearchParams("severity=blocker"))).toBe(true);
   });
 
+  it("never stores the visit-only unfiltered marker", () => {
+    expect(hasFilterParams(new URLSearchParams("filters=none"))).toBe(false);
+    expect(filterQuery(new URLSearchParams("filters=none"))).toBe("");
+  });
+
   it("restores a legacy stored noun with shelf sort and no severity", () => {
     window.localStorage.setItem(filterStorageKey("acme"), "noun=bug");
     expect(readFilterQuery("acme")).toBe("noun=bug");

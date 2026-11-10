@@ -54,10 +54,23 @@ export function DriftReport({ state }: { state: FetchState<DriftReportView> }) {
   // hash scroll has already run, so a hash naming a section scrolls to it
   // here, once per hash: a reread brings new data but must not pull the
   // reader back to the section they arrived at.
+  // A cleared hash forgets the last one, so following the same section link
+  // again scrolls again. A malformed hash (a stray %) is ignored: the app has
+  // no error boundary, and a throw here would blank the console.
   const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (data === null || hash.length < 2 || scrolledFor.current === hash) return;
-    const section = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (hash.length < 2) {
+      scrolledFor.current = null;
+      return;
+    }
+    if (data === null || scrolledFor.current === hash) return;
+    let id: string;
+    try {
+      id = decodeURIComponent(hash.slice(1));
+    } catch {
+      return;
+    }
+    const section = document.getElementById(id);
     if (section === null) return;
     scrolledFor.current = hash;
     section.scrollIntoView?.({ block: "start" });

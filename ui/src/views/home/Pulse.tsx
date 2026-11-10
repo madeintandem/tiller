@@ -56,19 +56,30 @@ export function JustHappenedColumn({ state }: { state: FetchState<Recap> }) {
 
 function JustHappenedBody({ recap }: { recap: Recap }) {
   const { bursts, moreCount } = composeJustHappened(recap, PULSE_CAP);
+  const fullHistory = <Link to="/history?window=24h">Full history →</Link>;
   if (bursts.length === 0) {
+    // Events that were all bookkeeping are still events: History lists them
+    // for this window, so the column says no milestones and keeps the link.
+    if (recap.total > 0) {
+      return (
+        <>
+          <EmptyNote>No milestones in the last 24 hours.</EmptyNote>
+          <p className="pfoot">{fullHistory}</p>
+        </>
+      );
+    }
     return <EmptyNote>Nothing in the last 24 hours.</EmptyNote>;
   }
   return (
     <>
       {bursts.map((b, i) => (
-        // Index keys are safe here: a burst has no id of its own, and the
-        // list is rebuilt wholesale from a refetched payload.
+        // Index keys are safe here: a pulse row holds no open or expanded
+        // state for a reread to move onto another row.
         <JustHappenedRow key={i} burst={b} />
       ))}
       <p className="pfoot">
         {moreCount > 0 && <>{moreCount} more in this window · </>}
-        <Link to="/history?window=24h">Full history →</Link>
+        {fullHistory}
       </p>
     </>
   );
@@ -83,14 +94,11 @@ function JustHappenedBody({ recap }: { recap: Recap }) {
 // from the event's verb would be exactly the narration ui-surface.md's
 // "mechanical, never narrative" rule forbids.
 //
-// EventPhrase's own subject carries no
-// numeral ("tasks done", not "4 tasks done") - History renders the count in
-// its own separate .recap-burst-count column, which this row has no
-// equivalent of, so a multi-entry burst here read as a bare noun phrase with
-// the count silently dropped. n is now rendered explicitly for n > 1, the
-// only case the count is not already implied (a lone entry names its own
-// node instead of counting, and "1 task done" would be an odd thing to say
-// about one node when the node's own name is right there).
+// eventPhrase's own subject carries no numeral ("tasks done", not "4 tasks
+// done"), so this row renders n itself for n > 1, the only case the count is
+// not already implied (a lone entry names its own node instead of counting,
+// and "1 task done" would be an odd thing to say about one node when the
+// node's own name is right there).
 function JustHappenedRow({ burst }: { burst: Burst }) {
   const n = burst.entries.length;
   const phrase = eventPhrase(burst.type, n);
@@ -144,7 +152,7 @@ function InFlightBody({ streams }: { streams: Streams }) {
           among the reader's other moves. */}
       {available > 0 && (
         <p className="pool-line muted">
-          <Link to="/build">
+          <Link to="/build?epics=all">
             {available} unclaimed {available === 1 ? "task" : "tasks"}
           </Link>
         </p>
@@ -159,14 +167,15 @@ function InFlightBody({ streams }: { streams: Streams }) {
               foot carrying the full remaining count; active and in-review
               rows are motion and are never capped. */}
           <FeatureGroups rows={flightRows(o)} />
-          {/* The foot always points at /build, even when a capped row is a
+          {/* The foot always points at Build, even when a capped row is a
               shelf item, which lives on Fix instead: the
               remainder can mix all five work nouns, so no single page holds
               every row this foot stands for, and Build is where most of them
-              are. */}
+              are. It opens every epic (?epics=all), not the reader's stored
+              selection, which could hide the rows it counts. */}
           {o.blocked.length > PULSE_CAP && (
             <p className="pfoot">
-              {o.blocked.length - PULSE_CAP} more blocked · <Link to="/build">Build →</Link>
+              {o.blocked.length - PULSE_CAP} more blocked · <Link to="/build?epics=all">Build →</Link>
             </p>
           )}
         </div>

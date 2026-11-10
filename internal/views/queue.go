@@ -586,9 +586,9 @@ func queueWorkflowCloseout(t *store.Tree, order *gen.Order, in QueueInput) []Que
 		if advice.Phase == "review" {
 			switch reviewed := node.(type) {
 			case *store.Feature:
-				prose = mergeProse(reviewed.PR, reviewed.ReviewRef) + "; " + prose
+				prose = leadSentence(mergeProse(reviewed.PR, reviewed.ReviewRef), prose)
 			case *store.Epic:
-				prose = mergeProse(reviewed.PR, reviewed.ReviewRef) + "; " + prose
+				prose = leadSentence(mergeProse(reviewed.PR, reviewed.ReviewRef), prose)
 			}
 		}
 		out = append(out, QueueEntry{
@@ -618,6 +618,16 @@ func mergeProse(pr *int, ref *store.ReviewRef) string {
 	default:
 		return ""
 	}
+}
+
+// leadSentence puts a merge card's review surface ahead of its reason as a
+// sentence of its own ("PR #7. Formal submission is recorded."). The reason
+// is already a sentence, so nothing is glued onto it with "; ".
+func leadSentence(surface, reason string) string {
+	if surface == "" {
+		return reason
+	}
+	return Sentence(surface) + " " + reason
 }
 
 // liveTaskCount counts the tasks a plan still asks the human to approve:

@@ -224,11 +224,13 @@ describe("Fix board", () => {
       ...board,
       open: [...board.open, { noun: "tweak", id: "TW-1", ref: "TW-1", title: "Spacing", status: "ready", attachment_ids: ["F-1"] }],
     }, "/fix?attached=F-1");
-    expect(await screen.findByText("3 open: 1 bug, 1 chore, 1 tweak. 5 recently closed shown.")).toBeInTheDocument();
+    // The summary names the filter, so a filtered count never reads as the whole.
+    const showing = () => document.querySelector(".board-bar .showing");
+    await waitFor(() => expect(showing()).toHaveTextContent("3 open: 1 bug, 1 chore, 1 tweak. 5 recently closed shown. Filtered. Clear filters"));
     fireEvent.click(screen.getByRole("switch", { name: "Show older items" }));
-    expect(await screen.findByText("3 open: 1 bug, 1 chore, 1 tweak. 7 recently closed shown.")).toBeInTheDocument();
+    await waitFor(() => expect(showing()).toHaveTextContent("3 open: 1 bug, 1 chore, 1 tweak. 7 recently closed shown. Filtered."));
     fireEvent.click(screen.getByRole("link", { name: "Tweaks" }));
-    expect(await screen.findByText("1 open: 0 bugs, 0 chores, 1 tweak.")).toBeInTheDocument();
+    await waitFor(() => expect(showing()).toHaveTextContent("1 open: 0 bugs, 0 chores, 1 tweak. Filtered."));
     expect(screen.queryByText("Zulu")).not.toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("attached=F-1&terminal=all&noun=tweak");
   });

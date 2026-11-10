@@ -33,15 +33,10 @@ export interface DayGroup<T> {
 // flatBurstsOf below does its own sorting BEFORE this function ever runs,
 // not the other way around.
 //
-// The caller decides what an empty-vs-populated result MEANS: RecapGroupBlock
-// renders no day subheads at all when this returns a single bucket ("day
-// subheads appear within a multi-day group and NOT for a single-day group",
-// the stated rendering rule), while FlatBody always
-// renders its bucket(s) - time mode has no OTHER section head to fall back
-// on, so the day boundary is the page's one structural element and earns its
-// place even at n=1. This function only ever answers "how
-// many distinct calendar days did these items touch, and which fell on
-// which"; it does not know or care which of those two readings applies.
+// Both callers give every bucket its day heading, a one-day group included:
+// rows carry the clock only, so the date has to live somewhere
+// (RecapGroupBlock and FlatBody). This function only ever answers "how many
+// distinct calendar days did these items touch, and which fell on which".
 export function dayGroupsOf<T>(items: T[], atOf: (item: T) => string): DayGroup<T>[] {
   const out: DayGroup<T>[] = [];
   for (const item of items) {

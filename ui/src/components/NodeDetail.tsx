@@ -43,7 +43,7 @@ import type {
   UnpushedReviewView,
 } from "../api";
 import { isEvalError } from "../api";
-import { KIND_LABEL, whyLine } from "./DecisionCard";
+import { kindLabel, whyLine } from "./DecisionCard";
 import { needsAttentionFallback, type AttentionFallback } from "../lib/attentionFallback";
 import { markerCopy, shortSha } from "../lib/drift";
 import { DriftTargetLink, UncoveredLine } from "./DriftFinding";
@@ -282,7 +282,7 @@ function askKindQualifier(entry: QueueEntry): string {
 // the "needs the human" case the Global Constraint reserves it for.
 function AskBox({ entry, showCommand = true }: { entry: QueueEntry; showCommand?: boolean }) {
   const qualifier = askKindQualifier(entry);
-  const kind = KIND_LABEL[entry.kind] ?? entry.kind;
+  const kind = kindLabel(entry.kind);
   const why = whyLine(entry);
   return (
     <div className={`abox${entry.actor === "agent" ? " warn" : ""}`}>
@@ -732,6 +732,9 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
   function selectTab(key: string) {
     const next = new URLSearchParams(params);
     next.set("tab", key);
+    // A criterion deep link is an arrival, not a setting: leaving it on the
+    // URL would mark and scroll the row again each time Contract remounts.
+    next.delete("criterion");
     // A tab switch is not its own history entry (ui-surface.md never asks
     // for one); replace, not push, so the back button leaves the page the
     // way it found it.

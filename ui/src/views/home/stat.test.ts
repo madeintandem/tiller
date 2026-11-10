@@ -1,7 +1,7 @@
 // Vitest coverage for the header band's stat composition (task C1), written
-// before composeStat exists. composeStat turns a flat list of
-// wire statuses into StateBar's seven-state mix plus a caption in the
-// literal wire words, both ordered by the legend rank the status FOLDS to
+// before composeStat exists. composeStat turns a flat list of displayed
+// statuses into StateBar's seven-state mix plus a caption naming each status
+// in statusLabel's words, both ordered by the legend rank the status FOLDS to
 // (lib/states.ts's foldStatus), so a question's "open" (-> in_review) sorts
 // before "answered" (-> done) the same way the mock's "10 open . 2 answered"
 // does, even though "open"/"answered" are not chart states themselves.

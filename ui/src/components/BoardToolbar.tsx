@@ -25,7 +25,7 @@ export default function BoardToolbar({
   onTogglePanel: () => void;
   scrollMode: BoardScrollMode;
   onScrollMode: (mode: BoardScrollMode) => void;
-  summary: string;
+  summary: ReactNode;
   children?: ReactNode;
 }) {
   return (

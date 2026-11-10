@@ -3,6 +3,7 @@ import Chip from "../../components/Chip";
 import InstrSection from "../../components/InstrSection";
 import RefLink from "../../components/RefLink";
 import Time from "../../components/Time";
+import { amendmentOpLabel } from "../../lib/fieldWords";
 
 const roleLabels: Record<AmendmentEffect["role"], string> = {
   target: "target",
@@ -72,10 +73,10 @@ export default function AmendmentRelationsPanel({ relationships }: { relationshi
                 {relation.effects.map((effect, index) => (
                   <li key={index}>
                     {effect.operation_index !== undefined && <>Operation {effect.operation_index} · </>}
-                    {effect.operation} · {roleLabels[effect.role]} · {scopeLabels[effect.scope]}
+                    {amendmentOpLabel(effect.operation, effect.node?.noun)} · {roleLabels[effect.role]} · {scopeLabels[effect.scope]}
                     {effect.node && <> · <RefLink node={effect.node} /></>}
                     {!effect.node && effect.reference && <> · <span className="mono">{effect.reference}</span></>}
-                    {effect.note && <> — {effect.note}</>}
+                    {effect.note && <> · {effect.note}</>}
                   </li>
                 ))}
               </ul>

@@ -21,3 +21,11 @@ export function statusLabel(status: string): string {
   const spaced = status.replaceAll("_", " ");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
+
+// tokenWords is the lower-case form of the same fallback for a token that
+// sits mid-phrase (an event's noun or verb): `_`, `.`, and `-` become
+// spaces. statusLabel is the sentence-case form; a word table that has no
+// entry for a token falls back to one of the two.
+export function tokenWords(token: string): string {
+  return token.replace(/[._-]+/g, " ").trim();
+}

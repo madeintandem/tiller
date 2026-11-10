@@ -50,7 +50,8 @@ type CandidateView struct {
 	ID     string `json:"id"`
 	Key    string `json:"key,omitempty"`
 	// Title is the node's own title, so a row can lead with it and show the
-	// key beside it; empty for a design row, which leads with its path.
+	// key beside it. A design row carries the document title the sweep read,
+	// with its path in Key; it is empty only when the document has none.
 	Title    string              `json:"title,omitempty"`
 	Detail   string              `json:"detail,omitempty"`
 	Files    []string            `json:"files,omitempty"`

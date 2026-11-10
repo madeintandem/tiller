@@ -175,6 +175,25 @@ describe("fetchJSON's in-flight count", () => {
     unsubscribe();
   });
 
+  it("keeps a read's answer and every other listener when one settled listener throws", async () => {
+    vi.stubGlobal("fetch", okJSON({ ok: true }));
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    let reached = 0;
+    const throwing = subscribeFetchesSettled(() => {
+      throw new Error("listener broke");
+    });
+    const counting = subscribeFetchesSettled(() => {
+      reached += 1;
+    });
+
+    await expect(fetchJSON("/api/status")).resolves.toEqual({ ok: true });
+    expect(reached).toBe(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+
+    throwing();
+    counting();
+  });
+
   it("counts a read while it is out and releases it on success, refusal, and failure", async () => {
     const held = Promise.withResolvers<Response>();
     vi.stubGlobal("fetch", vi.fn()

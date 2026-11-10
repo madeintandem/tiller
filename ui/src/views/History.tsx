@@ -479,19 +479,19 @@ function FlatBody({ recap, showAll }: { recap: RecapModel; showAll: boolean }) {
             <span className="eyebrow">{d.label}</span>
           </div>
           <ul className="recap-bursts">
-            {/* Index keys are safe here for the same reason RecapGroupBlock's
-                own burst list uses them: the whole list is rebuilt wholesale
-                from a refetched payload, never mutated in place. The merged
-                items are tiered directly; runKey ends a bookkeeping fold
-                where the served group changes. */}
+            {/* Rows are keyed by what they show plus their served group
+                (TieredBursts, burstKey), never by position, so a reread that
+                adds a row above an open one leaves the open one open. The
+                merged items are tiered directly; runKey ends a bookkeeping
+                fold where the served group changes. */}
             <TieredBursts
               bursts={d.bursts}
               showAll={showAll}
               burstOf={(ob) => ob.burst}
               runKey={(ob) => ob.group}
               originOf={(ob) => ob.origin}
-              renderBurst={(ob, i) => (
-                <BurstRow key={i} burst={ob.burst} groupKey={ob.groupKey} origin={ob.origin} />
+              renderBurst={(ob, key) => (
+                <BurstRow key={key} burst={ob.burst} groupKey={ob.groupKey} origin={ob.origin} />
               )}
             />
           </ul>

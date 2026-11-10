@@ -32,6 +32,8 @@ import {
   UNATTACHED,
   UNRATED,
   workItemMatchesFilters,
+  isUnfilteredVisit,
+  narrowsOpenWork,
 } from "./workitems/board";
 import AttachmentFilter from "./workitems/AttachmentFilter";
 import type { FixSort, ShelfColumnKey, WorkItemFilters } from "./workitems/board";
@@ -63,6 +65,10 @@ export default function WorkItems() {
   const projectKey = summary.data?.project.key;
   const location = useLocation();
   const namesFilters = hasFilterParams(params);
+  // `?filters=none` (Home's Fix tile) shows every open item for this visit:
+  // like a URL naming its filters, it restores nothing, and since it names no
+  // axis it stores nothing either.
+  const skipsRestore = namesFilters || isUnfilteredVisit(params);
   // A bare /fix is two different things: the All filter (a filter control
   // chose it) or arriving at Fix (the topbar, a link, a reload). Filter
   // controls mark their navigations, so only they can store All.
@@ -80,14 +86,14 @@ export default function WorkItems() {
   const restoring =
     handledArrivalRef.current === location.key
       ? pendingRestoreRef.current
-      : namesFilters || fromFilterControl || projectKey === undefined
+      : skipsRestore || fromFilterControl || projectKey === undefined
         ? null
         : restoredParams(params, readFilterQuery(projectKey));
   const viewParams = restoring ?? params;
   const filters = readWorkItemFilters(viewParams);
   useLayoutEffect(() => {
     if (handledArrivalRef.current === location.key) return;
-    if (!namesFilters && !fromFilterControl && projectKey === undefined && summary.error === null) return;
+    if (!skipsRestore && !fromFilterControl && projectKey === undefined && summary.error === null) return;
     handledArrivalRef.current = location.key;
     pendingRestoreRef.current = restoring;
     if (restoring !== null) setParams(restoring, { replace: true });
@@ -106,7 +112,7 @@ export default function WorkItems() {
   if (board.data === null) return <PageLoading title="Fix" />;
   // Restoring needs the project key; a URL that already names its filters
   // never waits on it, and a failed status read falls back to All.
-  if (!namesFilters && summary.data === null && summary.error === null) return <PageLoading title="Fix" />;
+  if (!skipsRestore && summary.data === null && summary.error === null) return <PageLoading title="Fix" />;
 
   const columns = workItemColumns(board.data, filters);
   const filteredClosedTotal = board.data.closed.filter((item) =>
@@ -114,6 +120,13 @@ export default function WorkItems() {
   ).length;
   const scope = boardScope(columns);
   const openTotal = scope.open.bug + scope.open.chore + scope.open.tweak;
+  // A filtered count must never pass for the whole: the summary says so, with
+  // a link that clears the narrowing axes the way the rail's All links do
+  // (sort and Show older items stay), stored like any filter change.
+  let cleared = viewParams;
+  for (const axis of ["noun", "attached", "severity"] as const) cleared = setWorkItemFilter(cleared, axis, null);
+  const clearedQuery = cleared.toString();
+  const filtered = narrowsOpenWork(filters);
 
   function togglePanel() {
     const next = !panelOpen;
@@ -142,7 +155,19 @@ export default function WorkItems() {
             onTogglePanel={togglePanel}
             scrollMode={scrollMode}
             onScrollMode={changeScrollMode}
-            summary={`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
+            summary={
+              <>
+                {`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
+                {filtered && (
+                  <>
+                    {" Filtered. "}
+                    <Link to={clearedQuery === "" ? "/fix" : `/fix?${clearedQuery}`} state={FILTER_NAVIGATION}>
+                      Clear filters
+                    </Link>
+                  </>
+                )}
+              </>
+            }
           >
             {board.error !== null && (
               <span className="board-bar-notice error" title={board.error}>
