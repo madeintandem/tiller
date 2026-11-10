@@ -13,6 +13,7 @@ import { withActivityPhrase } from "../../lib/activityPhrase";
 import { displayStatus } from "../../lib/displayStatus";
 import { statusLabel } from "../../lib/statusLabel";
 import { PersonName } from "../../people";
+import "../explore-empty.css";
 import FilterCombobox from "./FilterCombobox";
 
 const nounOptions = [
@@ -132,39 +133,56 @@ function Results({ result }: { result: ListResult }) {
   if (result.nodes.length === 0) {
     return <EmptyNote>No matches.</EmptyNote>;
   }
+  // Epics and features answer to their contributors; every other noun has one
+  // owner (or none), the same split the rows made before they had a header.
+  const people = result.noun === "epic" || result.noun === "feature";
   return (
     <>
       <p className="muted">
         {result.count} {result.count === 1 ? "result" : "results"}
       </p>
-      <ul className="rule-list explore-results">
-        {result.nodes.map((row) => (
-          <li key={row.id} className="explore-result-row">
-            {/* Title leads. A materialized question keeps its Q-id beside it
-                as the keyless noun's address; keyed nouns retain their key in
-                that same muted mono slot. */}
-            <Link
-              to={`/node/${result.noun}/${row.id}`}
-              className="explore-result-title"
-              title={row.key}
-            >
-              {row.title || row.intent || row.ref}
-            </Link>
-            {result.noun === "question" && row.title !== undefined && row.title !== "" ? (
-              <span className="mono muted explore-result-key">{row.id}</span>
-            ) : (
-              row.key !== undefined &&
-              row.key !== "" && <span className="mono muted explore-result-key">{row.key}</span>
-            )}
-            <Chip status={displayStatus(row)}>{withActivityPhrase(row)}</Chip>
-            {result.noun === "epic" || result.noun === "feature" ? (
-              <span className="muted explore-result-owner">Contributors: <Contributors people={row.contributors ?? []} /></span>
-            ) : row.owner !== undefined && row.owner !== "" && (
-              <span className="muted explore-result-owner">Owner: <PersonName id={row.owner} name={row.owner_name} /></span>
-            )}
-          </li>
-        ))}
-      </ul>
+      <table className="explore-results">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Key</th>
+            <th scope="col">Status</th>
+            <th scope="col">{people ? "Contributors" : "Owner"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {result.nodes.map((row) => (
+            <tr key={row.id} className="explore-result-row">
+              {/* Title leads. A materialized question keeps its Q-id beside it
+                  as the keyless noun's address; keyed nouns retain their key in
+                  that same muted mono slot. */}
+              <td>
+                <Link to={`/node/${result.noun}/${row.id}`} className="explore-result-title" title={row.key}>
+                  {row.title || row.intent || row.ref}
+                </Link>
+              </td>
+              <td>
+                {result.noun === "question" && row.title !== undefined && row.title !== "" ? (
+                  <span className="mono muted explore-result-key">{row.id}</span>
+                ) : (
+                  row.key !== undefined &&
+                  row.key !== "" && <span className="mono muted explore-result-key">{row.key}</span>
+                )}
+              </td>
+              <td>
+                <Chip status={displayStatus(row)}>{withActivityPhrase(row)}</Chip>
+              </td>
+              <td className="muted explore-result-owner">
+                {people ? (
+                  <Contributors people={row.contributors ?? []} />
+                ) : (
+                  row.owner !== undefined && row.owner !== "" && <PersonName id={row.owner} name={row.owner_name} />
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }

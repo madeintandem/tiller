@@ -25,12 +25,15 @@
 // node request path, so each node arrival rereads it and clears the previous
 // node's asks while the read settles.
 
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import type { NodePage, Queue } from "../api";
 import { nodePagePath, queuePath } from "../api";
 import NodeDetailInstrument from "../components/NodeDetail";
 import { handleOf } from "../components/NodeHeader";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import { recordRecent } from "../lib/recentNodes";
+import { useExploreProjectKey } from "./explore/exploreContext";
 import "./node.css";
 
 export default function NodeDetail() {
@@ -67,6 +70,23 @@ export default function NodeDetail() {
   // page is still loading or failed some other way, so a tab never names a
   // node it is not showing.
   useDocumentTitle(titleOf(tabHandle(addr, page, error)));
+
+  // Explore's empty pane lists what was opened lately. A node counts once its
+  // page has loaded (never a failed load), keyed to the node's id so a reread,
+  // the merged-history swap, or a tab change does not record it again.
+  const projectKey = useExploreProjectKey();
+  const openedId = page?.node.id;
+  const openedTitle = page === null ? "" : handleOf(page.node);
+  const openedNoun = page?.node.noun ?? "";
+  const openedKey = page?.node.key;
+  useEffect(() => {
+    if (projectKey !== undefined && openedId !== undefined) {
+      recordRecent(projectKey, { noun: openedNoun, id: openedId, title: openedTitle, key: openedKey });
+    }
+    // The title is read when the node arrives; a later change of it alone is
+    // not a new visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectKey, openedId]);
 
   return (
     <div className="explore-detail">{paneContent(noun, addr, page, error, loading, queue.data)}</div>

@@ -90,6 +90,8 @@ import { readExpansion, writeExpansion } from "./explore/expansionStorage";
 import { expandableShelfIDs, selectedShelfBranch } from "./explore/shelves";
 import { clampNavWidth, defaultNavWidth, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./explore/splitSize";
 import { clearNavWidth, readNavWidth, writeNavWidth } from "./explore/splitStorage";
+import ExploreEmpty from "./explore/ExploreEmpty";
+import { type ExploreOutletContext, useExploreProjectKey } from "./explore/exploreContext";
 import FilterMode from "./explore/FilterMode";
 import MapMode from "./explore/MapMode";
 import SearchMode from "./explore/SearchMode";
@@ -500,7 +502,7 @@ export default function Explore() {
             onDoubleClick={resetNavWidth}
             onKeyDown={handleDividerKeyDown}
           />
-          <Outlet />
+          <Outlet context={{ projectKey } satisfies ExploreOutletContext} />
         </div>
       )}
       {!split && (
@@ -600,11 +602,7 @@ export function NoSelectionPane() {
   // In Browse the layout above owns no title: a node or file destination in
   // the reading pane names the tab, and the empty pane says "Explore".
   useDocumentTitle(titleOf("Explore"));
-  return (
-    <div className="explore-detail">
-      <p className="muted">Select a node from the navigator to see its detail.</p>
-    </div>
-  );
+  return <ExploreEmpty projectKey={useExploreProjectKey()} />;
 }
 
 // A mode switch keeps the other modes' params: stepping into search and back

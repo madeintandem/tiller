@@ -171,6 +171,42 @@ describe("FilterCombobox", () => {
     expect(screen.getByRole("listbox", { name: "owner" })).toBeInTheDocument();
   });
 
+  it("opens on focus with nothing typed and lets Tab move on without picking, even over a highlight", () => {
+    const { input, onPick, onClear } = setup();
+    fireEvent.focus(input);
+    expect(input).toHaveAttribute("aria-expanded", "true");
+    expect(input).toHaveValue("");
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(activeOption(input)).toHaveTextContent("Dana Lee");
+    // Tab is not handled by the combobox: the browser moves focus, which blurs.
+    const prevented = !fireEvent.keyDown(input, { key: "Tab" });
+    fireEvent.blur(input);
+    expect(prevented).toBe(false);
+    expect(onPick).not.toHaveBeenCalled();
+    expect(onClear).not.toHaveBeenCalled();
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(input).toHaveValue("Bob Chen");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("opens each of several comboboxes on focus without trapping the one before it", () => {
+    render(<>
+      <FilterCombobox name="status" options={[{ value: "ready", label: "Ready", count: 1 }]} onPick={vi.fn()} onClear={vi.fn()} />
+      <FilterCombobox name="owner" options={people} onPick={vi.fn()} onClear={vi.fn()} />
+    </>);
+    const status = screen.getByRole("combobox", { name: "status" });
+    const owner = screen.getByRole("combobox", { name: "owner" });
+    fireEvent.focus(status);
+    expect(status).toHaveAttribute("aria-expanded", "true");
+    fireEvent.blur(status);
+    fireEvent.focus(owner);
+    expect(status).toHaveAttribute("aria-expanded", "false");
+    expect(owner).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("listbox")).toHaveLength(1);
+  });
+
   it("reopens by click after Escape closes the list", () => {
     const { input } = setup();
     fireEvent.focus(input);

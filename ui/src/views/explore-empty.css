@@ -1,0 +1,65 @@
+/* Explore's empty reading pane and Filter's result table (task 32). Kept out
+   of explore.css, which is past the file-size cap. */
+
+.explore-empty-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 0 0 1rem;
+  font-size: 14px;
+}
+
+.explore-recent h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.explore-recent-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+}
+
+.explore-recent-key {
+  font-size: 11.5px;
+}
+
+.explore-recent-noun {
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* Filter's results are a table: the header row names the columns for every
+   reader, and the rows keep explore.css's .explore-result-* type. The
+   specificity below beats explore.css's flex row, which Drift still uses. */
+
+table.explore-results {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+table.explore-results th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 0.25rem 0.6rem 0.25rem 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+table.explore-results tr.explore-result-row {
+  display: table-row;
+}
+
+table.explore-results td {
+  padding: 0.5rem 0.6rem 0.5rem 0;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+}
+
+table.explore-results .explore-result-owner {
+  margin-left: 0;
+}

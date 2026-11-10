@@ -1791,10 +1791,11 @@ describe("Explore filter facets", () => {
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: "SAM" } });
     fireEvent.mouseDown(screen.getByRole("option", { name: /Sam/ }));
-    const row = (await screen.findByRole("link", { name: "Shared feature" })).closest("li") as HTMLElement;
+    const row = (await screen.findByRole("link", { name: "Shared feature" })).closest("tr") as HTMLElement;
     expect(requestedPaths(mock)).toContain("/api/ls?noun=features&contributor=sam");
     expect(screen.getByRole("combobox", { name: "contributor" })).toHaveValue("Sam");
-    expect(row).toHaveTextContent("Contributors:");
+    expect(row).not.toHaveTextContent("Contributors:");
+    expect(within(row).getByText("Sam")).toBeInTheDocument();
     expect(within(row).getByText("retired")).toBeInTheDocument();
     expect(row).not.toHaveTextContent("Owner:");
   });
