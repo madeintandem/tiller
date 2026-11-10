@@ -29,6 +29,11 @@ describe("board.css", () => {
     }
   });
 
+  it("sets a collapsed lane's rail vertical and 44px-friendly, never hidden", () => {
+    expect(boardCss).toMatch(/\[data-collapsed="true"\][^{]*\{[^}]*writing-mode:\s*vertical-rl/);
+    expect(boardCss).toMatch(/min-width:\s*var\(--board-min-width/);
+  });
+
   it("leaves the Scroll control's buttons at the shared segmented-control size", () => {
     expect(boardCss).not.toMatch(/\.board-scroll-control \.segmented-control button\s*\{[^}]*font-size/);
   });

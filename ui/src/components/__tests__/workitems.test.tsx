@@ -113,6 +113,27 @@ function renderWorkItemsError(message: string) {
   );
 }
 
+describe("Fix board empty columns", () => {
+  it("collapses a column a filter has just emptied, keeping its label and a zero", async () => {
+    const { container } = renderWorkItems(board, "/fix");
+    expect(await screen.findByText("Alpha")).toBeInTheDocument();
+    expect(container.querySelector('.board-heads [data-collapsed="true"][aria-label="Proposed, 0"]')).toBeNull();
+    expect(container.querySelector('.board-heads [data-collapsed="true"]')?.textContent).toContain("In progress");
+
+    fireEvent.click(screen.getByRole("link", { name: "Chores" }));
+    await waitFor(() => expect(screen.queryByText("Alpha")).not.toBeInTheDocument());
+    const rail = container.querySelector('.board-heads [data-collapsed="true"][aria-label="Proposed, 0"]');
+    expect(rail).not.toBeNull();
+    expect(rail?.textContent).toBe("Proposed0");
+  });
+
+  it("keeps every lane full width when the whole board is empty", async () => {
+    const { container } = renderWorkItems({ open: [], closed: [], attachments: [] }, "/fix");
+    await waitFor(() => expect(container.querySelectorAll(".board-heads h2")).toHaveLength(6));
+    expect(container.querySelectorAll('[data-collapsed="true"]')).toHaveLength(0);
+  });
+});
+
 describe("Fix board filter memory", () => {
   it("restores the project's last filters when the page is opened with none", async () => {
     const first = renderWorkItems(board, "/fix", "acme");

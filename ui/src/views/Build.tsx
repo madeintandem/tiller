@@ -46,7 +46,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { BuildBoard, BuildEpic, BuildFeature, DriftReportView, ProjectSummary, Queue, RelatedNode } from "../api";
 import { buildPath, driftPath, queuePath, statusPath } from "../api";
-import BoardGrid from "../components/BoardGrid";
+import BoardGrid, { type LaneMark } from "../components/BoardGrid";
 import BoardToolbar from "../components/BoardToolbar";
 import Contributors from "../components/Contributors";
 import EmptyNote from "../components/EmptyNote";
@@ -259,6 +259,8 @@ export default function Build() {
               const laneCards = columnCards(cards, def.status);
               return {
                 key: def.status,
+                empty: laneCards.length === 0,
+                label: def.label,
                 head: <ColumnHead def={def} count={laneCards.length} />,
                 body: (
                   <ColumnBody
@@ -370,9 +372,9 @@ function EpicRow({ epic, on, onToggle }: { epic: BuildEpic; on: boolean; onToggl
 
 // A column is two pieces of one lane (components/BoardGrid.tsx): its head in
 // the board's static heads row, and its cards in the scrolling body below.
-function ColumnHead({ def, count }: { def: BuildColumnDef; count: number }) {
+function ColumnHead({ def, count, ...mark }: { def: BuildColumnDef; count: number } & LaneMark) {
   return (
-    <div className="col-head">
+    <div className="col-head" role="group" {...mark}>
       <span className="dot" style={{ background: statusColor(def.status) }} />
       <span className="cn" style={{ color: statusTextColor(def.status) }}>
         {def.label}
@@ -388,15 +390,16 @@ function ColumnBody({
   driftIds,
   expandedIds,
   onToggleExpand,
+  ...mark
 }: {
   cards: BoardCard[];
   askLabels: Map<string, string>;
   driftIds: Set<string>;
   expandedIds: ReadonlySet<string>;
   onToggleExpand: (id: string) => void;
-}) {
+} & LaneMark) {
   return (
-    <div className="col board-column">
+    <div className="col board-column" {...mark}>
       {cards.map(({ epic, feature }) => (
         <FeatureCard
           key={feature.id}

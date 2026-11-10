@@ -473,6 +473,51 @@ describe("Build columns", () => {
   });
 });
 
+describe("Build empty columns collapse to a rail", () => {
+  function sparseBoard(statuses: string[]): BuildBoard {
+    return {
+      epics: [
+        epic({
+          id: "E-1",
+          key: "intake",
+          title: "Intake",
+          features: statuses.map((status, i) => feature({ id: `F-${i}`, status, title: `Feature ${i}` })),
+        }),
+      ],
+    };
+  }
+
+  it("collapses the four empty lanes to 44px rails that keep their label and a zero", async () => {
+    stubFetch(baseRoutes({ "/api/build": sparseBoard(["ready", "in_review"]) }));
+    const { container } = renderBuild("/build?epics=intake");
+    await screen.findByText("Feature 0");
+
+    const collapsed = container.querySelectorAll('.board-heads [data-collapsed="true"]');
+    expect(collapsed).toHaveLength(4);
+    const names = Array.from(collapsed).map((el) => el.textContent);
+    expect(names).toEqual(["Draft0", "Specced0", "Active0", "Done0"]);
+    for (const head of Array.from(collapsed)) {
+      expect(head.getAttribute("aria-label")).toMatch(/, 0$/);
+    }
+    expect(container.querySelectorAll('.board-body [data-collapsed="true"]')).toHaveLength(4);
+    const template = (container.querySelector(".board-heads") as HTMLElement).style.gridTemplateColumns;
+    expect(template).toBe(
+      "44px 44px minmax(var(--board-col-min), 1fr) 44px minmax(var(--board-col-min), 1fr) 44px",
+    );
+    expect(container.querySelector(".board-scroll")?.getAttribute("style")).toContain("--board-min-width");
+  });
+
+  it("keeps every lane at full width when no column has a card", async () => {
+    stubFetch(baseRoutes({ "/api/build": sparseBoard([]) }));
+    const { container } = renderBuild("/build?epics=intake");
+    await waitFor(() => expect(container.querySelectorAll(".board-heads .col-head")).toHaveLength(6));
+
+    expect(container.querySelectorAll('[data-collapsed="true"]')).toHaveLength(0);
+    const template = (container.querySelector(".board-heads") as HTMLElement).style.gridTemplateColumns;
+    expect(template).toBe(Array(6).fill("minmax(var(--board-col-min), 1fr)").join(" "));
+  });
+});
+
 // ---------- A cancelled feature: counted but never rendered ----------
 
 describe("Build counting agrees with what actually renders", () => {

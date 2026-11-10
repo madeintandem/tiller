@@ -65,9 +65,11 @@
 .board-heads,
 .board-body {
   display: grid;
+  /* BoardGrid sets the real template inline (a collapsed lane is a rail);
+     this one is the fallback for a grid that does not. */
   grid-template-columns: repeat(var(--board-columns), minmax(var(--board-col-min), 1fr));
   column-gap: var(--board-gap);
-  min-width: calc(var(--board-columns) * var(--board-col-min) + (var(--board-columns) - 1) * var(--board-gap));
+  min-width: var(--board-min-width, calc(var(--board-columns) * var(--board-col-min) + (var(--board-columns) - 1) * var(--board-gap)));
 }
 
 /* The heads paint above the body, so nothing the body draws at its top edge
@@ -105,4 +107,32 @@
 .board-scroll[data-scroll-mode="columns"] > .board-body > .board-column {
   overflow-y: auto;
   overscroll-behavior-y: contain;
+}
+
+/* A lane with no cards is a rail: the head writes its label vertically with
+   the count beneath, in the same static heads row, and the body keeps its
+   recessed background but hides what it holds. */
+.board-heads > [data-collapsed="true"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 12px 0 10px;
+  writing-mode: vertical-rl;
+  min-width: 0;
+}
+
+.board-heads > [data-collapsed="true"] .cc,
+.board-heads > [data-collapsed="true"] .work-item-column-count {
+  margin: 0;
+}
+
+.board-body > [data-collapsed="true"] {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.board-body > [data-collapsed="true"] > * {
+  display: none;
 }

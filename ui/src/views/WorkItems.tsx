@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import type { ProjectSummary, WorkItemCard, WorkItemsBoard } from "../api";
 import { statusPath, workItemsPath } from "../api";
-import BoardGrid from "../components/BoardGrid";
+import BoardGrid, { type LaneMark } from "../components/BoardGrid";
 import BoardToolbar from "../components/BoardToolbar";
 import Chip from "../components/Chip";
 import SeverityChip from "../components/SeverityChip";
@@ -145,6 +145,8 @@ export default function WorkItems() {
             scrollMode={scrollMode}
             lanes={SHELF_COLUMNS.map((column) => ({
               key: column.key,
+              empty: columns[column.key].length === 0,
+              label: column.label,
               head: <WorkItemColumnHeading column={column} count={columns[column.key].length} />,
               body: <WorkItemColumn column={column} items={columns[column.key]} />,
             }))}
@@ -299,12 +301,13 @@ function FilterLink({
 function WorkItemColumnHeading({
   column,
   count,
+  ...mark
 }: {
   column: { key: ShelfColumnKey; label: string };
   count: number;
-}) {
+} & LaneMark) {
   return (
-    <h2 className="work-item-column-heading">
+    <h2 className="work-item-column-heading" {...mark}>
       <StateDot status={SHELF_COLUMN_STATUSES[column.key]} />
       <span>{column.label}</span>
       <span className="work-item-column-count">{count}</span>
@@ -315,12 +318,13 @@ function WorkItemColumnHeading({
 function WorkItemColumn({
   column,
   items,
+  ...mark
 }: {
   column: { key: ShelfColumnKey; label: string };
   items: WorkItemCard[];
-}) {
+} & LaneMark) {
   return (
-    <section className="work-item-column board-column" role="region" aria-label={column.label}>
+    <section className="work-item-column board-column" role="region" aria-label={column.label} {...mark}>
       {items.length === 0 ? (
         <EmptyNote />
       ) : (

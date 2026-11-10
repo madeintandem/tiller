@@ -9,18 +9,36 @@
 // not inside the scroller has nothing to drift against.
 //
 // Each lane supplies its own head and body elements with their own classes
-// and semantics; this component owns only the two-row structure.
+// and semantics; this component owns only the two-row structure and the
+// column template. A lane with no cards collapses to a slim rail so the
+// columns that hold work get the width. A board where every lane is empty
+// collapses nothing: a row of rails would read as a broken board, so each
+// lane stays full width. The collapsed head stays in the same static heads
+// row, and keeps an accessible name of its label and count because its text
+// is written vertically.
 
 import type { CSSProperties, ReactNode } from "react";
-import { Fragment } from "react";
+import { Fragment, cloneElement, isValidElement } from "react";
 import type { BoardScrollMode } from "../lib/boardScroll";
 import "./board.css";
+
+// What BoardGrid adds to a collapsed lane's head and body elements; a lane's
+// own components spread it onto their root element.
+export interface LaneMark {
+  "data-collapsed"?: string;
+  "aria-label"?: string;
+}
 
 export interface BoardLane {
   key: string;
   head: ReactNode;
   body: ReactNode;
+  empty: boolean;
+  label: string;
 }
+
+const RAIL_WIDTH = "44px";
+const OPEN_WIDTH = "minmax(var(--board-col-min), 1fr)";
 
 export default function BoardGrid({
   className,
@@ -33,17 +51,31 @@ export default function BoardGrid({
 }) {
   // The column count rides a custom property so both rows (board.css) share
   // one template however many lanes a board has.
-  const style = { "--board-columns": lanes.length } as CSSProperties;
+  const allEmpty = lanes.every((lane) => lane.empty);
+  const collapsed = lanes.map((lane) => lane.empty && !allEmpty);
+  const railCount = collapsed.filter(Boolean).length;
+  const openCount = lanes.length - railCount;
+  const style = {
+    "--board-columns": lanes.length,
+    "--board-min-width": `calc(${railCount} * ${RAIL_WIDTH} + ${openCount} * var(--board-col-min) + ${Math.max(lanes.length - 1, 0)} * var(--board-gap))`,
+  } as CSSProperties;
+  const rowStyle = { gridTemplateColumns: collapsed.map((c) => (c ? RAIL_WIDTH : OPEN_WIDTH)).join(" ") };
+  // A lane's own head and body elements carry the collapsed mark, so the
+  // two-row grid keeps its direct-child structure.
+  const mark = (node: ReactNode, on: boolean, name?: string): ReactNode =>
+    on && isValidElement<Record<string, unknown>>(node)
+      ? cloneElement(node, { "data-collapsed": "true", ...(name === undefined ? {} : { "aria-label": name }) })
+      : node;
   return (
     <div className={`${className} board-scroll`} data-scroll-mode={scrollMode} style={style}>
-      <div className="board-heads">
-        {lanes.map((lane) => (
-          <Fragment key={lane.key}>{lane.head}</Fragment>
+      <div className="board-heads" style={rowStyle}>
+        {lanes.map((lane, i) => (
+          <Fragment key={lane.key}>{mark(lane.head, collapsed[i], `${lane.label}, 0`)}</Fragment>
         ))}
       </div>
-      <div className="board-body">
-        {lanes.map((lane) => (
-          <Fragment key={lane.key}>{lane.body}</Fragment>
+      <div className="board-body" style={rowStyle}>
+        {lanes.map((lane, i) => (
+          <Fragment key={lane.key}>{mark(lane.body, collapsed[i])}</Fragment>
         ))}
       </div>
     </div>
