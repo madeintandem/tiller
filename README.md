@@ -26,7 +26,7 @@ the calls.
 
 ## Install
 
-The current release is **v0.22.0**, for macOS and Linux on amd64 and arm64.
+The current release is **v0.23.0**, for macOS and Linux on amd64 and arm64.
 
 ```sh
 # macOS, with Homebrew
@@ -42,7 +42,7 @@ a regular user, it installs to `~/.local/bin`, so add that to your `PATH` if
 it isn't there already. Go 1.27 users can also run
 `go install github.com/madeintandem/tiller/cmd/tiller@latest`, and checksummed
 archives are on the [releases page](https://github.com/madeintandem/tiller/releases).
-Check that `tiller --version` reports 0.22.0.
+Check that `tiller --version` reports 0.23.0.
 
 ## Start on the repo you already have
 
