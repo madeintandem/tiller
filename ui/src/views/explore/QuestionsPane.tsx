@@ -15,7 +15,8 @@
 // already take), never a re-sort within a group: Array.prototype.filter
 // preserves relative order, so each partition keeps the order /api/ls served
 // it in. A status rail above the list (ledgerStatus.ts) narrows it to one
-// status through ?status=; All is the default.
+// status through ?status=; the ledger opens on Open when any question is
+// open and on All otherwise, and status=all is the explicit All.
 //
 // A card renders only the fields the row actually carries. The mock's own
 // question cards additionally show "Asked by jc · Wed" / "Answered by pat
@@ -24,9 +25,8 @@
 // DecisionCard.tsx's own doc comment names the identical discipline for the
 // desk's queue cards.
 
-import { Fragment } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { ListResult, ListRow } from "../../api";
+import type { ListResult, ListRow, RelatedNode } from "../../api";
 import { listPath } from "../../api";
 import Chip from "../../components/Chip";
 import CopyCmd from "../../components/CopyCmd";
@@ -34,8 +34,10 @@ import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
 import RefLink from "../../components/RefLink";
 import { titleOf, useDocumentTitle, useFetch } from "../../hooks";
+import Prose from "../../components/Prose";
 import { has } from "../../lib/has";
 import { PersonName } from "../../people";
+import "../explore-ledgers.css";
 import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus } from "./ledgerStatus";
 
 const QUESTION_STATUSES = ["open", "answered", "cancelled"] as const;
@@ -68,7 +70,7 @@ export default function QuestionsPane() {
   const known: readonly string[] = QUESTION_STATUSES;
   const other = rows.filter((r) => !known.includes(r.status));
   const tabs = ledgerStatusTabs(rows, QUESTION_STATUSES);
-  const status = activeLedgerStatus(params, tabs);
+  const status = activeLedgerStatus(params, tabs, "open");
 
   return (
     <div className="explore-detail">
@@ -107,10 +109,17 @@ export default function QuestionsPane() {
   );
 }
 
+// A blocked feature leads with its title (its ref when it has none, as a
+// dangling edge does); the key follows in mono unless it would only repeat the
+// label.
+const blockLabel = (b: RelatedNode) => (has(b.title) ? b.title : b.ref);
+const blockKey = (b: RelatedNode) => (has(b.key) ? b.key : b.id);
+
 function QuestionCard({ row }: { row: ListRow }) {
   const isOpen = row.status === "open";
   const blocks = row.blocks_refs ?? [];
   const title = has(row.title) ? row.title : row.ref;
+  const commands = isOpen ? row.commands : undefined;
   return (
     <div className={isOpen ? "qcard open-q" : "qcard"}>
       <div className="q-top">
@@ -118,38 +127,47 @@ function QuestionCard({ row }: { row: ListRow }) {
         <Chip status={row.status} />
       </div>
       <span className="q-id mono">{row.id}</span>
+      {has(row.statement) && (
+        // The statement through Prose, the renderer the node page uses, so
+        // markdown markers never show and paragraphs keep their breaks. The
+        // four-line clamp is CSS: line-clamp backed by a four-line
+        // max-height (explore-ledgers.css).
+        <div className="q-statement">
+          <Prose markdown={row.statement} />
+        </div>
+      )}
       <div className="q-meta">
         {has(row.due) && <span className="due">Due {row.due}</span>}
-        {blocks.length > 0 && (
-          <span>
-            Blocks{" "}
-            {blocks.map((b, i) => (
-              <Fragment key={b.id}>
-                {i > 0 && ", "}
-                <RefLink node={b} label={has(b.title) ? b.title : b.ref} className="mono" />
-              </Fragment>
-            ))}
-          </span>
-        )}
         {has(row.owner) && <span>Owner <PersonName id={row.owner} name={row.owner_name} /></span>}
       </div>
-      {isOpen ? (
-        // Hand-built, not deduped away like QuestionBody.tsx's own copy was
-        // (that page's node-level command IS a queue entry's own
-        // entry.command, so it could just render the wire value). This pane
-        // renders ListRow, which carries no command field of its own, so there
-        // is no wire value to reuse - this string is a deliberate byte-for-
-        // byte mirror of internal/views/queue.go:257's own construction
-        // (queueAnswerQuestions, `tiller answer question ` + q.ID + `
-        // --answer "..."`), kept in sync by hand rather than re-derived.
+      {blocks.length > 0 && (
+        <div className="q-blocked">
+          <span className="q-blocked-label">Blocks</span>
+          <ul className="q-blocks">
+            {blocks.map((b) => (
+              <li key={b.id}>
+                <RefLink node={b} label={blockLabel(b)} className="q-blocks-title" />{" "}
+                {blockKey(b) !== blockLabel(b) && <span className="mono muted">{blockKey(b)}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {commands !== undefined && (
+        // Only what the server supplied: the list payload carries the
+        // commands (serve/list.go), so this card never composes one.
         <>
-          <CopyCmd cmd={`tiller answer question ${row.id} --answer "..."`} accent />
-          <CopyCmd cmd={`tiller cancel question ${row.id} --reason "..."`} />
-          {blocks.map((b) => (
-            <CopyCmd key={b.id} cmd={`tiller unlink question ${row.id} --blocks ${b.id}`} />
-          ))}
+          <CopyCmd cmd={commands.answer} accent />
+          <details className="q-more">
+            <summary>More commands</summary>
+            <CopyCmd cmd={commands.cancel} />
+            {(commands.unlink ?? []).map((cmd) => (
+              <CopyCmd key={cmd} cmd={cmd} />
+            ))}
+          </details>
         </>
-      ) : (
+      )}
+      {!isOpen && (
         <>
           {has(row.answer) && <div className="q-ans">{row.answer}</div>}
           {has(row.cancel_reason) && <div className="q-ans">{row.cancel_reason}</div>}

@@ -1,23 +1,43 @@
 // AmendmentsPane is the amendments ledger at /amendments, a child of the
 // Explore layout like QuestionsPane, so the navigator stays standing beside
-// it. Rows keep the order /api/ls serves (proposed before terminal, then key
-// and immutable ID), and every row links by its A-ID because terminal
-// records can share a reused key. The status rail (ledgerStatus.ts) narrows
+// it. Rows are a four-column grid (title, key, date, status) ordered proposed
+// first, then newest by the proposed date; rows with no date keep the served
+// order (proposed before terminal, then key and immutable ID). Every row links
+// by its A-ID because terminal records can share a reused key. The status rail (ledgerStatus.ts) narrows
 // the ledger through ?status=. The Filter subtab's amendments noun remains
 // for faceted reads.
 
 import { Link, useSearchParams } from "react-router-dom";
-import type { ListResult } from "../../api";
+import type { ListResult, ListRow } from "../../api";
 import { listPath } from "../../api";
 import Chip from "../../components/Chip";
 import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
+import Time from "../../components/Time";
 import { titleOf, useDocumentTitle, useFetch } from "../../hooks";
 import { has } from "../../lib/has";
-import { PersonName } from "../../people";
+import "../explore-ledgers.css";
 import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus } from "./ledgerStatus";
 
 const AMENDMENT_STATUSES = ["proposed", "approved", "withdrawn"] as const;
+
+// The grid's order: proposed amendments lead, each group newest first by the
+// date it was proposed. An undated row follows the dated ones in its group, and
+// equal rows keep the order the server served (Array.sort is stable).
+function proposedFirstNewest(rows: ListRow[]): ListRow[] {
+  const rank = (row: ListRow) => (row.status === "proposed" ? 0 : 1);
+  const at = (row: ListRow) => (has(row.proposed_at) ? Date.parse(row.proposed_at) : Number.NaN);
+  return [...rows].sort((a, b) => {
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
+    const x = at(a);
+    const y = at(b);
+    if (Number.isNaN(x) || Number.isNaN(y)) {
+      if (Number.isNaN(x) === Number.isNaN(y)) return 0;
+      return Number.isNaN(x) ? 1 : -1;
+    }
+    return y - x;
+  });
+}
 
 export default function AmendmentsPane() {
   useDocumentTitle(titleOf("Amendments"));
@@ -64,22 +84,33 @@ export default function AmendmentsPane() {
               return shown.length === 0 ? (
                 <EmptyNote>No {tab.label.toLowerCase()} amendments.</EmptyNote>
               ) : (
-                <ul className="rule-list explore-results">
-                  {shown.map((row) => (
-                    <li key={row.id} className="explore-result-row">
-                      <Link to={`/node/amendment/${row.id}`} className="explore-result-title" title={row.key}>
-                        {has(row.title) ? row.title : row.ref}
-                      </Link>
-                      {has(row.key) && <span className="mono muted explore-result-key">{row.key}</span>}
-                      <Chip status={row.status} />
-                      {has(row.owner) && (
-                        <span className="muted explore-result-owner">
-                          Owner: <PersonName id={row.owner} name={row.owner_name} />
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <table className="amend-grid">
+                  <caption>Proposed first, then newest</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Title</th>
+                      <th scope="col">Key</th>
+                      <th scope="col">Date</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proposedFirstNewest(shown).map((row) => (
+                      <tr key={row.id}>
+                        <td className="amend-title">
+                          <Link to={`/node/amendment/${row.id}`} className="explore-result-title">
+                            {has(row.title) ? row.title : row.ref}
+                          </Link>
+                        </td>
+                        <td className="amend-key">{has(row.key) && <span className="mono muted">{row.key}</span>}</td>
+                        <td className="amend-date">{has(row.proposed_at) && <Time iso={row.proposed_at} />}</td>
+                        <td>
+                          <Chip status={row.status} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               );
             },
           }))}

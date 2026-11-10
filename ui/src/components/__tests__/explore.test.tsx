@@ -1470,6 +1470,11 @@ function questionRows(): ListRow[] {
       title: QUESTION_TITLE,
       statement: QUESTION_STATEMENT,
       due: "Friday",
+      commands: {
+        answer: 'tiller answer question Q-h2n7m5 --answer "..."',
+        cancel: 'tiller cancel question Q-h2n7m5 --reason "..."',
+        unlink: ["tiller unlink question Q-h2n7m5 --blocks F-elig"],
+      },
       blocks_refs: [
         {
           noun: "feature",
@@ -1557,7 +1562,7 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
     expect(screen.getByRole("link", { name: /Questions/ })).toHaveAttribute("aria-current", "page");
   });
 
-  it("leads every question card with its title, keeps the id, and omits the full statement", async () => {
+  it("leads every question card with its title, keeps the id, and shows the statement as the body", async () => {
     stubFetch(
       baseRoutes({ "/api/ls?noun=question": { noun: "question", count: 2, nodes: questionRows() } }),
     );
@@ -1570,7 +1575,10 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
     expect(title).toHaveAttribute("href", "/node/question/Q-h2n7m5");
     expect(card.querySelector(".q-top")?.firstElementChild).toBe(title);
     expect(within(card).getByText("Q-h2n7m5")).toBeInTheDocument();
-    expect(within(card).queryByText((_, element) => element?.textContent === QUESTION_STATEMENT)).not.toBeInTheDocument();
+    // R9: the statement is the card's clamped body; the title stays the link.
+    expect(card.querySelector(".q-statement")?.textContent).toContain(
+      "Should the audit select one record per project or one record per project phase?",
+    );
     expect(within(card).getByText("Due Friday")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Eligibility rules" })).toHaveAttribute(
       "href",
@@ -1593,8 +1601,11 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
     const { container } = renderExplore("/questions");
 
     const rail = within(await screen.findByRole("navigation", { name: "Question status" }));
-    expect(rail.getByRole("button", { name: "All · 2" })).toHaveAttribute("aria-current", "true");
-    expect(container.querySelectorAll(".qcard")).toHaveLength(2);
+    // The ledger opens on Open when a question is open; All is one press away.
+    expect(rail.getByRole("button", { name: "Open · 1" })).toHaveAttribute("aria-current", "true");
+    expect(container.querySelectorAll(".qcard")).toHaveLength(1);
+    fireEvent.click(rail.getByRole("button", { name: "All · 2" }));
+    await waitFor(() => expect(container.querySelectorAll(".qcard")).toHaveLength(2));
 
     fireEvent.click(rail.getByRole("button", { name: "Open · 1" }));
     await waitFor(() => expect(container.querySelectorAll(".qcard")).toHaveLength(1));
@@ -1605,7 +1616,7 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
     expect(container.querySelectorAll(".qcard")).toHaveLength(1);
   });
 
-  it("opens on the status a ?status= link names, and reads an unknown one as All", async () => {
+  it("opens on the status a ?status= link names, and reads an unknown one as no parameter", async () => {
     stubFetch(
       baseRoutes({ "/api/ls?noun=question": { noun: "question", count: 2, nodes: questionRows() } }),
     );
@@ -1618,7 +1629,7 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
 
     renderExplore("/questions?status=bogus");
     const rail2 = within(await screen.findByRole("navigation", { name: "Question status" }));
-    expect(rail2.getByRole("button", { name: "All · 2" })).toHaveAttribute("aria-current", "true");
+    expect(rail2.getByRole("button", { name: "Open · 1" })).toHaveAttribute("aria-current", "true");
   });
 
   it("keeps an answered question's answer visible and carries no copy command for it", async () => {
@@ -1626,7 +1637,7 @@ describe("Questions ledger: /questions renders inside the Explore layout", () =>
       baseRoutes({ "/api/ls?noun=question": { noun: "question", count: 2, nodes: questionRows() } }),
     );
 
-    renderExplore("/questions");
+    renderExplore("/questions?status=all");
 
     await screen.findByRole("heading", { level: 1, name: "Questions" });
     expect(

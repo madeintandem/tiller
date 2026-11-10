@@ -29,17 +29,26 @@ export function ledgerStatusTabs(rows: ListRow[], order: readonly string[]): Led
   ];
 }
 
-// The active tab from ?status=: anything that names no tab reads as All, so a
-// stale or hand-edited link still shows the whole ledger.
-export function activeLedgerStatus(params: URLSearchParams, tabs: LedgerStatusTab[]): string {
+// The active tab from ?status=. A value naming a tab selects it (status=all
+// selects All explicitly). A missing or unknown value means "the default":
+// the fallback status when some row holds it, else All. The fallback is how a
+// ledger opens on the status that needs attention without hiding the rest.
+export function activeLedgerStatus(
+  params: URLSearchParams,
+  tabs: LedgerStatusTab[],
+  fallback?: string,
+): string {
   const raw = params.get("status");
-  return tabs.some((tab) => tab.key === raw) ? (raw as string) : ALL_STATUSES;
+  if (tabs.some((tab) => tab.key === raw)) return raw as string;
+  if (fallback !== undefined && tabs.some((tab) => tab.key === fallback && tab.count > 0)) return fallback;
+  return ALL_STATUSES;
 }
 
+// Every tab writes its own key, All included: a missing parameter means the
+// default, so All must be explicit to stay All.
 export function withLedgerStatus(params: URLSearchParams, status: string): URLSearchParams {
   const next = new URLSearchParams(params);
-  if (status === ALL_STATUSES) next.delete("status");
-  else next.set("status", status);
+  next.set("status", status);
   return next;
 }
 

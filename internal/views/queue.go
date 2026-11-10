@@ -344,7 +344,7 @@ func queueAnswerQuestions(t *store.Tree) []QueueEntry {
 		out = append(out, QueueEntry{
 			Kind: "answer_question", Noun: store.NounQuestion, ID: q.ID,
 			Ref: gen.Ref(t, q), Prose: gen.QuestionTitle(q), Title: gen.QuestionTitle(q),
-			Command: `tiller answer question ` + q.ID + ` --answer "..."`,
+			Command: QuestionAnswerCommand(q.ID),
 			Due:     gen.QuestionDue(q),
 		})
 	}

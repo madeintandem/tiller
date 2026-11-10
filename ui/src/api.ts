@@ -994,6 +994,18 @@ export interface ListRow {
   cancel_reason?: string;
   due?: string;
   blocks_refs?: RelatedNode[];
+  // An amendment's proposed instant (RFC3339), from its opened event; absent
+  // for every other noun and when the event is not retained.
+  proposed_at?: string;
+  // An open question's commands, composed by the server (serve/list.go): the
+  // console shows them and never writes a command string itself.
+  commands?: QuestionCommands;
+}
+
+export interface QuestionCommands {
+  answer: string;
+  cancel: string;
+  unlink?: string[];
 }
 
 // GET /api/ls (serve's listPayload, the CLI's ls envelope with refs on the

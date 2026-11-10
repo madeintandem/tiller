@@ -110,6 +110,7 @@ func runLs(cmd *cobra.Command, nounArg string, f lsFilters) error {
 		items = append(items, views.Item(tree, n))
 	}
 	views.SortListItems(tree, noun, items)
+	views.AttachProposedAt(tree, noun, items)
 
 	result := ListResult{Noun: noun, Count: len(items), Nodes: items}
 	return emitSuccess(cmd, "ls", result, renderListHuman(result, typed))

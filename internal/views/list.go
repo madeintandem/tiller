@@ -70,6 +70,10 @@ type ListItem struct {
 	// target: nothing hidden, least of all a broken edge. Empty for every
 	// other noun.
 	BlocksRefs []RelatedNode `json:"blocks_refs,omitempty"`
+	// ProposedAt is the RFC3339 instant an amendment was proposed, read from
+	// its amendment_opened event (AttachProposedAt). Empty for every other
+	// noun and for an amendment whose opened event is not retained.
+	ProposedAt string `json:"proposed_at,omitempty"`
 
 	// Ref is the node's human reference ("<key-path> (<id>)", gen.Ref) for the
 	// plain-text renderer only; the JSON payload carries id and key structurally.

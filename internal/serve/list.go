@@ -24,6 +24,33 @@ type listNode struct {
 	views.ListItem
 	Ref    string `json:"ref"`
 	Column string `json:"column,omitempty"`
+	// Commands is an open question's answer, cancel, and unlink commands, the
+	// copyable CLI the ledger offers. Console-only: the CLI's ls omits it.
+	Commands *questionCommands `json:"commands,omitempty"`
+}
+
+// questionCommands are composed here, beside the queue's own builder, so the
+// UI never writes a command string.
+type questionCommands struct {
+	Answer string   `json:"answer"`
+	Cancel string   `json:"cancel"`
+	Unlink []string `json:"unlink,omitempty"`
+}
+
+// commandsFor returns the commands for an open question row, nil otherwise.
+// A question with no status key reads as open, as the CLI treats it.
+func commandsFor(noun string, it views.ListItem) *questionCommands {
+	if noun != store.NounQuestion || (it.Status != "open" && it.Status != "") {
+		return nil
+	}
+	c := &questionCommands{
+		Answer: views.QuestionAnswerCommand(it.ID),
+		Cancel: views.QuestionCancelCommand(it.ID),
+	}
+	for _, b := range it.BlocksRefs {
+		c.Unlink = append(c.Unlink, views.QuestionUnlinkCommand(it.ID, b.ID))
+	}
+	return c
 }
 
 // listPayload adds console filter-bar data to the CLI's list envelope.
@@ -81,6 +108,7 @@ func ListHandler(root string) http.HandlerFunc {
 				items = append(items, views.Item(t, n))
 			}
 			views.SortListItems(t, noun, items)
+			views.AttachProposedAt(t, noun, items)
 		}
 		if noun == store.NounFeature || noun == store.NounEpic {
 			if owners := views.RecoveredOwners(t, noun, items); len(owners) > 0 {
@@ -92,7 +120,7 @@ func ListHandler(root string) http.HandlerFunc {
 		// lifts it into the JSON.
 		nodes := make([]listNode, len(items))
 		for i, it := range items {
-			nodes[i] = listNode{ListItem: it, Ref: it.Ref, Column: gen.BoardColumnByID(t, noun, it.ID)}
+			nodes[i] = listNode{ListItem: it, Ref: it.Ref, Column: gen.BoardColumnByID(t, noun, it.ID), Commands: commandsFor(noun, it)}
 		}
 		return listPayload{
 			Noun: noun, Count: len(nodes), Nodes: nodes,
