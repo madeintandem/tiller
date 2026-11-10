@@ -53,8 +53,8 @@ describe("composeJustHappened", () => {
           epic: null,
           stream: "jc",
           entries: [
-            entry({ type: "add.epic", contributor: "jc" }),
-            entry({ type: "add.feature", contributor: "jc" }),
+            entry({ type: "approve.epic", contributor: "jc" }),
+            entry({ type: "approve.feature", contributor: "jc" }),
             entry({ type: "add.question", contributor: "jc" }),
           ],
           omitted: 0,
@@ -81,7 +81,7 @@ describe("composeJustHappened", () => {
       reader: "jc",
       total: 50,
       groups: [
-        { epic: null, stream: "jc", entries: [entry({ type: "add.feature", contributor: "jc" })], omitted: 9 },
+        { epic: null, stream: "jc", entries: [entry({ type: "approve.feature", contributor: "jc" })], omitted: 9 },
       ],
     };
     const { bursts, moreCount } = composeJustHappened(recap, 5);
@@ -94,5 +94,45 @@ describe("composeJustHappened", () => {
     const { bursts, moreCount } = composeJustHappened(recap, 6);
     expect(bursts).toHaveLength(0);
     expect(moreCount).toBe(0);
+  });
+
+  it("drops bookkeeping before the cap, so the list fills from milestones", () => {
+    const recap: Recap = {
+      since: "",
+      window: "24h",
+      reader: "jc",
+      total: 5,
+      groups: [
+        {
+          epic: null,
+          stream: "jc",
+          entries: [
+            entry({ type: "link.feature", contributor: "jc" }),
+            entry({ type: "order.tasks", contributor: "jc" }),
+            entry({ type: "approve.feature", contributor: "jc" }),
+            entry({ type: "submit.task", contributor: "jc" }),
+            entry({ type: "start.task", contributor: "jc" }),
+          ],
+          omitted: 0,
+        },
+      ],
+    };
+    const { bursts, moreCount } = composeJustHappened(recap, 2);
+    expect(bursts.map((b) => b.type)).toEqual(["approve.feature", "submit.task"]);
+    // The dropped bookkeeping is not "more": only the milestone past the cap is.
+    expect(moreCount).toBe(1);
+  });
+
+  it("keeps a bookkeeping burst that asked", () => {
+    const recap: Recap = {
+      since: "",
+      window: "24h",
+      reader: "jc",
+      total: 1,
+      groups: [
+        { epic: null, stream: "jc", entries: [entry({ type: "link.feature", contributor: "jc", ask: true })], omitted: 0 },
+      ],
+    };
+    expect(composeJustHappened(recap, 5).bursts).toHaveLength(1);
   });
 });

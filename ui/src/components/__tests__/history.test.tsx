@@ -383,7 +383,7 @@ describe("History view: the empty state, which is the steady state", () => {
 
 describe("History view: burst collapsing", () => {
   it("renders a run of 8 as ONE row carrying the count, not 8 rows carrying it 8 times", async () => {
-    const { container } = (stubFetch({ "/api/recap?window=visit": loadedRecap() }), renderHistory());
+    const { container } = (stubFetch({ "/api/recap?window=visit": loadedRecap() }), renderHistory("/history?show=all"));
     await screen.findByText(/12 events/);
 
     const group = container.querySelectorAll(".recap-group")[0];
@@ -404,7 +404,7 @@ describe("History view: burst collapsing", () => {
 
   it("keeps every collapsed entry reachable, one click, no refetch", async () => {
     const spy = stubFetch({ "/api/recap?window=visit": loadedRecap() });
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
 
     const burst = container.querySelector(".recap-burst details") as HTMLDetailsElement;
@@ -420,7 +420,7 @@ describe("History view: burst collapsing", () => {
 
   it("names its node instead of a count at a run of one, with nothing to expand", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
 
     const lone = container.querySelector(".recap-burst-lone")!;
@@ -466,7 +466,7 @@ describe("History view: burst collapsing", () => {
 describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () => {
   it("renders a lone row's five parts", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
 
     const lone = container.querySelector(".recap-burst-lone") as HTMLElement;
@@ -505,7 +505,7 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
     };
     stubFetch({ "/api/recap?window=visit": single });
 
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByRole("link", { name: "Feature 7" });
 
     const lone = container.querySelector(".recap-burst-lone")!;
@@ -516,7 +516,7 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
 
   it("renders a group row's five parts, with the count folded into the bold what", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
 
     const groupRow = container.querySelectorAll(".recap-group")[0].querySelector(
@@ -566,7 +566,7 @@ describe("History view: the restyled row anatomy (time/dot/what/ref/who)", () =>
 describe("History view: burst expand-in-place with toggle wording", () => {
   it("reads '+ open' closed and '– close' open, expanding in place with no refetch", async () => {
     const spy = stubFetch({ "/api/recap?window=visit": loadedRecap() });
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
 
     const details = container.querySelector(".recap-burst details") as HTMLDetailsElement;
@@ -906,7 +906,7 @@ describe("History view: the row's own voices", () => {
   it("leads an expanded entry with its title and trails the LEAF key", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
 
-    const { container } = renderHistory();
+    const { container } = renderHistory("/history?show=all");
     await screen.findByText(/12 events/);
     fireEvent.click(container.querySelector(".recap-burst summary")!);
 
@@ -1251,7 +1251,7 @@ describe("History view: the anti-merge pin holds in flat mode", () => {
     };
     stubFetch({ "/api/recap?window=7d": adjacent });
 
-    const { container } = renderHistory("/history?window=7d&group=time");
+    const { container } = renderHistory("/history?window=7d&group=time&show=all");
     await screen.findByText(/2 events in the last 7 days/);
 
     expect(container.querySelectorAll(".recap-burst")).toHaveLength(2);

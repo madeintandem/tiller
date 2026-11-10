@@ -1719,7 +1719,7 @@ describe("Home pulse: Just happened", () => {
   it("shows how many more events the window held beyond the capped rows", async () => {
     const entries = Array.from({ length: 8 }, (_, i) => ({
       at: `2026-08-10T${String(14 - i).padStart(2, "0")}:00:00Z`,
-      type: i % 2 === 0 ? "add.epic" : "add.feature",
+      type: i % 2 === 0 ? "approve.epic" : "approve.feature",
       contributor: "jc",
       command: "tiller add",
       ask: false,

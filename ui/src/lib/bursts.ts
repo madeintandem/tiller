@@ -27,6 +27,8 @@
 // when they do not. The precision decides, not a constant.
 
 import type { RecapEntry } from "../api";
+import { eventPhrase } from "./eventPhrase";
+import { eventTier } from "./eventTier";
 
 // A run of consecutive entries sharing one (type, contributor). The actor is in the key
 // even though a group is already one (epic, stream) cell and its entries
@@ -58,6 +60,47 @@ export function burstsOf(entries: RecapEntry[]): Burst[] {
       entries: [entry],
       asks: entry.ask ? 1 : 0,
     });
+  }
+  return out;
+}
+
+// A maximal run of adjacent bookkeeping bursts, folded into one row by the
+// milestones-by-default view. count is EVENTS (the sum of the bursts' sizes),
+// verbs the participles seen, deduplicated in first-seen order.
+export interface BookkeepingRun {
+  kind: "bookkeeping";
+  bursts: Burst[];
+  count: number;
+  verbs: string[];
+}
+
+// tierBursts folds each maximal run of adjacent bookkeeping bursts (see
+// eventTier.ts) into one BookkeepingRun. A burst holding any ask is a
+// milestone burst and ends a run. showAll returns the input unchanged. The
+// caller passes one day group's bursts at a time, so a run never spans a day
+// heading or a group boundary.
+export function tierBursts(bursts: Burst[], showAll: boolean): (Burst | BookkeepingRun)[] {
+  if (showAll) {
+    return bursts;
+  }
+  const out: (Burst | BookkeepingRun)[] = [];
+  let open: BookkeepingRun | undefined;
+  for (const burst of bursts) {
+    if (eventTier(burst.type, burst.asks > 0) === "milestone") {
+      open = undefined;
+      out.push(burst);
+      continue;
+    }
+    if (open === undefined) {
+      open = { kind: "bookkeeping", bursts: [], count: 0, verbs: [] };
+      out.push(open);
+    }
+    open.bursts.push(burst);
+    open.count += burst.entries.length;
+    const verb = eventPhrase(burst.type, 1).verb;
+    if (!open.verbs.includes(verb)) {
+      open.verbs.push(verb);
+    }
   }
   return out;
 }

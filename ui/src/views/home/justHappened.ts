@@ -19,6 +19,7 @@
 import type { Recap, TargetRef } from "../../api";
 import type { Burst } from "../../lib/bursts";
 import { burstsOf } from "../../lib/bursts";
+import { eventTier } from "../../lib/eventTier";
 import { has } from "../../lib/has";
 
 export interface JustHappened {
@@ -32,10 +33,16 @@ export interface JustHappened {
 }
 
 export function composeJustHappened(recap: Recap, cap: number): JustHappened {
+  // Bookkeeping (lib/eventTier.ts) is dropped BEFORE the cap, so the list
+  // still fills from milestones. A burst holding an ask is a milestone. The
+  // dropped events are not "more in this window" either: moreCount counts what
+  // the cap or the server's own omission left out, not what the tier hid.
   const allBursts = recap.groups.flatMap((g) => burstsOf(g.entries));
-  const bursts = allBursts.slice(0, cap);
-  const shownEntryCount = bursts.reduce((n, b) => n + b.entries.length, 0);
-  return { bursts, moreCount: Math.max(0, recap.total - shownEntryCount) };
+  const milestones = allBursts.filter((b) => eventTier(b.type, b.asks > 0) === "milestone");
+  const bursts = milestones.slice(0, cap);
+  const countOf = (list: Burst[]) => list.reduce((n, b) => n + b.entries.length, 0);
+  const hidden = countOf(allBursts) - countOf(milestones);
+  return { bursts, moreCount: Math.max(0, recap.total - countOf(bursts) - hidden) };
 }
 
 // targetLabel picks a burst target's own display text: the title where the

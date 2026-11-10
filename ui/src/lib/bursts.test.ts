@@ -6,7 +6,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { RecapEntry } from "../api";
-import { burstWhen, burstsOf, leafKey } from "./bursts";
+import { burstWhen, burstsOf, leafKey, tierBursts } from "./bursts";
+import type { BookkeepingRun } from "./bursts";
 
 function entry(overrides: Partial<RecapEntry> = {}): RecapEntry {
   return {
@@ -154,5 +155,46 @@ describe("leafKey", () => {
   it("passes a key through whole in the project group, which has no key", () => {
     expect(leafKey("form-engine/thing", "")).toBe("form-engine/thing");
     expect(leafKey("", "")).toBe("");
+  });
+});
+
+describe("tierBursts", () => {
+  const bk = (type: string, n = 1) => burstsOf(Array.from({ length: n }, () => entry({ type })));
+
+  it("folds adjacent bookkeeping bursts into one run, counting events and listing verbs once", () => {
+    const bursts = [...bk("link.feature", 8), ...bk("order.features", 4), ...bk("rename.title.task", 2)];
+    const out = tierBursts(bursts, false);
+    expect(out).toHaveLength(1);
+    const run = out[0] as BookkeepingRun;
+    expect(run.kind).toBe("bookkeeping");
+    expect(run.count).toBe(14);
+    expect(run.bursts).toHaveLength(3);
+    expect(run.verbs).toEqual(["linked", "reordered", "retitled"]);
+  });
+
+  it("dedupes verbs in first-seen order", () => {
+    const e = (type: string, contributor: string) => entry({ type, contributor });
+    const bursts = burstsOf([e("link.feature", "a"), e("order.tasks", "a"), e("link.task", "b")]);
+    const run = tierBursts(bursts, false)[0] as BookkeepingRun;
+    expect(run.verbs).toEqual(["linked", "reordered"]);
+    expect(run.count).toBe(3);
+  });
+
+  it("a milestone between two bookkeeping bursts gives two runs", () => {
+    const bursts = [...bk("link.feature"), ...bk("approve.feature"), ...bk("order.tasks")];
+    const out = tierBursts(bursts, false);
+    expect(out.map((o) => ("kind" in o ? "run" : "burst"))).toEqual(["run", "burst", "run"]);
+  });
+
+  it("a burst holding an ask stays a milestone burst and splits a run", () => {
+    const asking = burstsOf([entry({ type: "link.feature", ask: true })]);
+    const out = tierBursts([...bk("order.tasks"), ...asking, ...bk("order.bugs")], false);
+    expect(out).toHaveLength(3);
+    expect("kind" in out[1]).toBe(false);
+  });
+
+  it("returns the input unchanged when showAll is set", () => {
+    const bursts = [...bk("link.feature"), ...bk("order.tasks")];
+    expect(tierBursts(bursts, true)).toBe(bursts);
   });
 });

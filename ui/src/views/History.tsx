@@ -169,6 +169,7 @@ import type { Burst } from "../lib/bursts";
 import { burstsOf } from "../lib/bursts";
 import EmptyNote from "../components/EmptyNote";
 import { PersonName } from "../people";
+import { TieredBursts } from "./history/BookkeepingRow";
 import BurstRow from "./history/BurstRow";
 import { emptyTextFor, histSubFor } from "./history/copy";
 import { burstAt, dayGroupsOf } from "./history/days";
@@ -185,18 +186,26 @@ const WINDOWS: RecapWindow[] = ["visit", "24h", "7d"];
 type GroupMode = "epic" | "time";
 const GROUP_MODES: GroupMode[] = ["epic", "time"];
 
+// The detail level: milestones by default, everything on request.
+type ShowMode = "milestones" | "all";
+const SHOWS: ShowMode[] = ["milestones", "all"];
+
 // The one place window and group compose into an address, so the two seg
 // controls (WindowLink, GroupLink) and the empty state's own escape hatch
 // can never build a URL that drops the param neither of them owns. Each
 // param omits itself at its own default value, so the canonical /history
 // (both defaults) stays exactly as clean as it was before this task.
-function historyPath(window: RecapWindow, group: GroupMode): string {
+function historyPath(window: RecapWindow, group: GroupMode, showAll: boolean): string {
   const params = new URLSearchParams();
   if (window !== "visit") {
     params.set("window", window);
   }
   if (group !== "epic") {
     params.set("group", group);
+  }
+  // Milestones is the default, so only Everything writes a parameter.
+  if (showAll) {
+    params.set("show", "all");
   }
   const search = params.toString();
   return search === "" ? "/history" : `/history?${search}`;
@@ -214,6 +223,9 @@ export default function History() {
   // reads as epic, never a blank page.
   const rawGroup = params.get("group");
   const groupMode: GroupMode = rawGroup === "time" ? "time" : "epic";
+  // Milestones by default (ruling R3); ?show=all is Everything, and any other
+  // value degrades to the default like the two params above.
+  const showAll = params.get("show") === "all";
   // Only the visit window advances the horizon, and only when marked as the
   // console's own visit; a fixed window is a free read either way.
   const { data, error, loading } = useFetch<RecapModel>(recapPath(active), {
@@ -233,7 +245,7 @@ export default function History() {
         <div className="hist-controls">
           <div className="seg" role="group" aria-label="History grouping">
             {GROUP_MODES.map((g) => (
-              <GroupLink key={g} target={g} current={groupMode} window={active} />
+              <GroupLink key={g} target={g} current={groupMode} window={active} showAll={showAll} />
             ))}
           </div>
           {/* The segmented-control idiom the topbar's theme toggle already
@@ -248,14 +260,22 @@ export default function History() {
               back through to leave the page. */}
           <div className="seg" role="group" aria-label="History window">
             {WINDOWS.map((w) => (
-              <WindowLink key={w} target={w} current={active} groupMode={groupMode} />
+              <WindowLink key={w} target={w} current={active} groupMode={groupMode} showAll={showAll} />
+            ))}
+          </div>
+          {/* The detail seg: milestones by default, everything on request.
+              Real links like the other two, so the choice rides the URL and
+              survives a window or grouping change (historyPath). */}
+          <div className="seg" role="group" aria-label="History detail">
+            {SHOWS.map((s) => (
+              <ShowLink key={s} target={s} window={active} groupMode={groupMode} showAll={showAll} />
             ))}
           </div>
         </div>
       </div>
       {error !== null && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading history...</p>}
-      {data !== null && <RecapBody recap={data} window={active} groupMode={groupMode} />}
+      {data !== null && <RecapBody recap={data} window={active} groupMode={groupMode} showAll={showAll} />}
     </section>
   );
 }
@@ -264,15 +284,17 @@ function WindowLink({
   target,
   current,
   groupMode,
+  showAll,
 }: {
   target: RecapWindow;
   current: RecapWindow;
   groupMode: GroupMode;
+  showAll: boolean;
 }) {
   const active = target === current;
   return (
     <Link
-      to={historyPath(target, groupMode)}
+      to={historyPath(target, groupMode, showAll)}
       className={active ? "active" : undefined}
       aria-current={active ? "page" : undefined}
       replace
@@ -292,15 +314,17 @@ function GroupLink({
   target,
   current,
   window: activeWindow,
+  showAll,
 }: {
   target: GroupMode;
   current: GroupMode;
   window: RecapWindow;
+  showAll: boolean;
 }) {
   const active = target === current;
   return (
     <Link
-      to={historyPath(activeWindow, target)}
+      to={historyPath(activeWindow, target, showAll)}
       className={active ? "active" : undefined}
       aria-current={active ? "page" : undefined}
       replace
@@ -310,14 +334,40 @@ function GroupLink({
   );
 }
 
+function ShowLink({
+  target,
+  window: activeWindow,
+  groupMode,
+  showAll,
+}: {
+  target: ShowMode;
+  window: RecapWindow;
+  groupMode: GroupMode;
+  showAll: boolean;
+}) {
+  const active = (target === "all") === showAll;
+  return (
+    <Link
+      to={historyPath(activeWindow, groupMode, target === "all")}
+      className={active ? "active" : undefined}
+      aria-current={active ? "page" : undefined}
+      replace
+    >
+      {target === "all" ? "Everything" : "Milestones"}
+    </Link>
+  );
+}
+
 function RecapBody({
   recap,
   window: active,
   groupMode,
+  showAll,
 }: {
   recap: RecapModel;
   window: RecapWindow;
   groupMode: GroupMode;
+  showAll: boolean;
 }) {
   const asks = recap.groups.reduce(
     (n, g) => n + g.entries.filter((e) => e.ask).length,
@@ -367,10 +417,10 @@ function RecapBody({
           where they already were, at each section's own foot. */}
       {groupMode === "time" && <FlatDroppedNote recap={recap} />}
       {recap.groups.length === 0 ? (
-        <RecapEmpty window={active} groupMode={groupMode} />
+        <RecapEmpty window={active} groupMode={groupMode} showAll={showAll} />
       ) : groupMode === "time" ? (
         <div className="recap-flat">
-          <FlatBody recap={recap} />
+          <FlatBody recap={recap} showAll={showAll} />
         </div>
       ) : (
         <div className="recap-groups">
@@ -379,6 +429,7 @@ function RecapBody({
               key={`${g.epic === null ? "" : g.epic.id}:${g.stream}`}
               group={g}
               showStream={oneStream === ""}
+              showAll={showAll}
             />
           ))}
         </div>
@@ -392,7 +443,15 @@ function RecapBody({
 // finds nothing new. Measured on the live tree, window=visit already returns
 // zero groups. So it hands over the escape hatch rather than dead-ending, with
 // live links to every window WIDER than the one that came up empty.
-function RecapEmpty({ window: active, groupMode }: { window: RecapWindow; groupMode: GroupMode }) {
+function RecapEmpty({
+  window: active,
+  groupMode,
+  showAll,
+}: {
+  window: RecapWindow;
+  groupMode: GroupMode;
+  showAll: boolean;
+}) {
   const wider = WINDOWS.slice(WINDOWS.indexOf(active) + 1);
   return (
     <div className="recap-empty">
@@ -406,7 +465,7 @@ function RecapEmpty({ window: active, groupMode }: { window: RecapWindow; groupM
                 the reader had open rather than silently resetting it to
                 epic. */}
             {wider.map((w) => (
-              <WindowLink key={w} target={w} current={active} groupMode={groupMode} />
+              <WindowLink key={w} target={w} current={active} groupMode={groupMode} showAll={showAll} />
             ))}
           </span>
         </p>
@@ -471,7 +530,7 @@ function burstTimeMs(burst: Burst): number {
 // aggregate cap line used to render at its foot; it moved up
 // to RecapBody's own FlatDroppedNote, under the page head, so this component
 // is back to doing exactly one job.
-function FlatBody({ recap }: { recap: RecapModel }) {
+function FlatBody({ recap, showAll }: { recap: RecapModel; showAll: boolean }) {
   const flat = flatBurstsOf(recap.groups);
   const days = dayGroupsOf(flat, (ob) => burstAt(ob.burst));
 
@@ -483,12 +542,19 @@ function FlatBody({ recap }: { recap: RecapModel }) {
             <span className="eyebrow">{d.label}</span>
           </div>
           <ul className="recap-bursts">
-            {d.bursts.map((ob, i) => (
-              // Index keys are safe here for the same reason RecapGroupBlock's
-              // own burst list uses them: the whole list is rebuilt wholesale
-              // from a refetched payload, never mutated in place.
-              <BurstRow key={i} burst={ob.burst} groupKey={ob.groupKey} origin={ob.origin} />
-            ))}
+            {/* Index keys are safe here for the same reason RecapGroupBlock's
+                own burst list uses them: the whole list is rebuilt wholesale
+                from a refetched payload, never mutated in place. A folded run
+                spans bursts from different epics, so each burst is mapped
+                back to its own group key and origin. */}
+            <TieredBursts
+              bursts={d.bursts.map((ob) => ob.burst)}
+              showAll={showAll}
+              renderBurst={(b, i) => {
+                const ob = d.bursts.find((x) => x.burst === b);
+                return <BurstRow key={i} burst={b} groupKey={ob?.groupKey ?? ""} origin={ob?.origin} />;
+              }}
+            />
           </ul>
         </div>
       ))}

@@ -4,6 +4,7 @@ import { burstsOf } from "../../lib/bursts";
 import { has } from "../../lib/has";
 import RefLink from "../../components/RefLink";
 import { PersonName } from "../../people";
+import { TieredBursts } from "./BookkeepingRow";
 import BurstRow from "./BurstRow";
 import { burstAt, dayGroupsOf } from "./days";
 
@@ -13,7 +14,15 @@ import { burstAt, dayGroupsOf } from "./days";
 // The head leads with the epic's TITLE and lets the key follow as muted mono
 // (ui-surface.md's console-scoped carve-out), carries the cell's TRUE count
 // (what was served plus what the API's cap omitted), and starts open.
-export default function RecapGroupBlock({ group, showStream }: { group: RecapGroup; showStream: boolean }) {
+export default function RecapGroupBlock({
+  group,
+  showStream,
+  showAll,
+}: {
+  group: RecapGroup;
+  showStream: boolean;
+  showAll: boolean;
+}) {
   const [open, setOpen] = useState(true);
   const total = group.entries.length + group.omitted;
   const groupKey = group.epic === null ? "" : group.epic.key;
@@ -67,20 +76,24 @@ export default function RecapGroupBlock({ group, showStream }: { group: RecapGro
               <span className="eyebrow">{d.label}</span>
             </div>
             <ul className="recap-bursts">
-              {d.bursts.map((b, i) => (
-                <BurstRow key={i} burst={b} groupKey={groupKey} />
-              ))}
+              <TieredBursts
+                bursts={d.bursts}
+                showAll={showAll}
+                renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
+              />
             </ul>
           </div>
         ))
       ) : (
         <ul className="recap-bursts">
-          {bursts.map((b, i) => (
-            // Index keys are safe here: a burst has no id of its own, the
-            // list is rebuilt wholesale from a refetched payload, and its
-            // order never changes in place.
-            <BurstRow key={i} burst={b} groupKey={groupKey} />
-          ))}
+          {/* Index keys are safe here: a burst has no id of its own, the
+              list is rebuilt wholesale from a refetched payload, and its
+              order never changes in place. */}
+          <TieredBursts
+            bursts={bursts}
+            showAll={showAll}
+            renderBurst={(b, i) => <BurstRow key={i} burst={b} groupKey={groupKey} />}
+          />
         </ul>
       )}
       {group.omitted > 0 && (

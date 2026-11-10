@@ -390,6 +390,28 @@ summary.hrow {
   font-size: 11px;
 }
 
+/* The folded bookkeeping run (BookkeepingRow): a real button dressed as a row,
+   quieter than a burst because it stands for upkeep. Its bursts open beneath
+   it, indented one step. */
+.recap-bookkeeping-toggle {
+  width: 100%;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recap-bookkeeping-toggle:hover {
+  background: var(--recess);
+}
+
+.recap-bookkeeping > .recap-bursts {
+  padding-left: var(--space-5);
+}
+
 .burst-toggle {
   flex: none;
   font-family: var(--font-mono);
