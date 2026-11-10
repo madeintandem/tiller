@@ -48,27 +48,27 @@ describe("StateGlyph", () => {
 
   it("names the status label for assistive tech", () => {
     render(<StateGlyph status="in_review" />);
-    const glyph = screen.getByRole("img", { name: "In Review" });
+    const glyph = screen.getByRole("img", { name: "In review" });
     expect(glyph).toHaveAttribute("data-status", "in_review");
   });
 
-  it("labels each status in Title Case, specced as Specified", () => {
+  it("labels each status in sentence case, specced as Specified", () => {
     const labels: Record<string, string> = {
       draft: "Draft",
       specced: "Specified",
       proposed: "Proposed",
       ready: "Ready",
       active: "Active",
-      in_progress: "In Progress",
+      in_progress: "In progress",
       check: "Check",
-      in_review: "In Review",
+      in_review: "In review",
       done: "Done",
       blocked: "Blocked",
       cancelled: "Cancelled",
       archived: "Archived",
       open: "Open",
       answered: "Answered",
-      someday_maybe_later: "Someday Maybe Later",
+      someday_maybe_later: "Someday maybe later",
     };
     for (const [status, label] of Object.entries(labels)) {
       render(<StateGlyph status={status} />);
@@ -86,14 +86,14 @@ describe("StateGlyph", () => {
   it("shows the label shortly after a mouse hover, and hides on leave", () => {
     vi.useFakeTimers();
     render(<StateGlyph status="in_review" />);
-    const glyph = screen.getByRole("img", { name: "In Review" });
+    const glyph = screen.getByRole("img", { name: "In review" });
 
     hover(glyph, "mouse");
     expect(screen.queryByRole("tooltip")).toBeNull();
     act(() => {
       vi.advanceTimersByTime(200);
     });
-    expect(screen.getByRole("tooltip")).toHaveTextContent(/^In Review$/);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(/^In review$/);
 
     fireEvent.pointerLeave(glyph, { pointerType: "mouse" });
     expect(screen.queryByRole("tooltip")).toBeNull();

@@ -168,9 +168,10 @@ describe("Chip", () => {
     expect(screen.getByText(state)).toBeInTheDocument();
   });
 
-  it("falls back to the raw status word when children is omitted", () => {
+  it("reads the status as plain words when children is omitted", () => {
     render(<Chip status="in_review" />);
-    expect(screen.getByText("in_review")).toBeInTheDocument();
+    expect(screen.getByText("In review")).toBeInTheDocument();
+    expect(screen.queryByText("in_review")).toBeNull();
   });
 
   it("pairs the word with a dot colored by statusColor", () => {
@@ -182,7 +183,7 @@ describe("Chip", () => {
 
   it("renders a wire-only status with its word and folded color", () => {
     const { container } = render(<Chip status="open" />);
-    expect(screen.getByText("open")).toBeInTheDocument();
+    expect(screen.getByText("Open")).toBeInTheDocument();
     const dot = container.querySelector(".state-dot") as HTMLElement;
     expect(dot.style.background).toBe("var(--st-in_review)");
   });

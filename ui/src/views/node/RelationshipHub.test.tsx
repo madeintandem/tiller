@@ -88,7 +88,7 @@ describe("RelationshipHub", () => {
       "/node/task/task-9",
     );
     expect(row.textContent).not.toContain("(task-9)");
-    expect(within(row).getByText("ready")).toBeInTheDocument();
+    expect(within(row).getByText("Ready")).toBeInTheDocument();
   });
 
   // Task 2: the parent-climb groups moved to the node header, so the hub

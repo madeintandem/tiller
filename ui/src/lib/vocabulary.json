@@ -1,0 +1,29 @@
+{
+  "statuses": [
+    "draft",
+    "specced",
+    "ready",
+    "active",
+    "done",
+    "archived",
+    "cancelled",
+    "unfinished",
+    "proposed",
+    "in_progress",
+    "check",
+    "in_review",
+    "open",
+    "answered",
+    "approved",
+    "withdrawn",
+    "pass",
+    "fail",
+    "pending",
+    "skipped",
+    "stale",
+    "needs_attestation"
+  ],
+  "event_types": [],
+  "drift_markers": [],
+  "drift_reasons": []
+}

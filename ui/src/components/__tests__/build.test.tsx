@@ -771,7 +771,7 @@ describe("Build overlay-failure notice", () => {
 // ---------- Expand: card navigates, chevron does not ----------
 
 describe("Build expanded task rows: readable status", () => {
-  it("names each task's raw status as text, in the link and on dangling rows", async () => {
+  it("names each task's status in plain words, in the link and on dangling rows", async () => {
     renderBuild({
       status: "active",
       task_done: 0,
@@ -788,16 +788,18 @@ describe("Build expanded task rows: readable status", () => {
     fireEvent.click(within(card).getByRole("button", { name: /expand tasks/i }));
 
     for (const [title, status, id] of [
-      ["Wire the parser", "in_progress", "T-a"],
-      ["Grade the parser", "check", "T-b"],
-      ["Review the parser", "in_review", "T-c"],
+      ["Wire the parser", "In progress", "T-a"],
+      ["Grade the parser", "Check", "T-b"],
+      ["Review the parser", "In review", "T-c"],
     ]) {
       const link = within(card).getByRole("link", { name: new RegExp(title) });
       expect(link).toHaveAttribute("href", `/node/task/${id}`);
       expect(link).toHaveAccessibleName(expect.stringContaining(status));
     }
     const dangling = within(card).getByText("Vanished task").closest(".trow") as HTMLElement;
-    expect(dangling).toHaveTextContent("check");
+    expect(dangling).toHaveTextContent("Check");
+    expect(screen.queryByText("in_review")).toBeNull();
+    expect(screen.queryByText("in_progress")).toBeNull();
   });
 });
 

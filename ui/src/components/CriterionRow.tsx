@@ -28,6 +28,7 @@
 import type { AttestationView, CriterionStatusView, EvalCriterionView } from "../api";
 import { dotStateFor, resultStatus } from "../lib/gateDisplay";
 import { has } from "../lib/has";
+import { statusLabel } from "../lib/statusLabel";
 import { usePersonName } from "../people";
 import Chip from "./Chip";
 
@@ -53,24 +54,6 @@ function attestedByFor(
   return undefined;
 }
 
-// statusWord is the chip's own plain-status text absent an attestation: the
-// mock's own words (pass, needs attestation), extended the same way to fail
-// and the pre-check default, underscores never reaching the page.
-function statusWord(status: string): string {
-  switch (status) {
-    case "pass":
-      return "pass";
-    case "fail":
-      return "fail";
-    case "needs_attestation":
-      return "needs attestation";
-    case "stale":
-      return "stale";
-    default:
-      return "pending";
-  }
-}
-
 export default function CriterionRow({
   criterion,
   result,
@@ -83,7 +66,7 @@ export default function CriterionRow({
   const personName = usePersonName();
   const status = resultStatus(result?.status);
   const by = attestedByFor(criterion.id, status, attestations);
-  const label = by !== undefined ? `attested · ${personName(by)}` : statusWord(status);
+  const label = by !== undefined ? `attested · ${personName(by)}` : statusLabel(status);
   const evidence = result?.evidence ?? [];
   const firstEvidence = evidence.find((e) => has(e.ref));
   return (

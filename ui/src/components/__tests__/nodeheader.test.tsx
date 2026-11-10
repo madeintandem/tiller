@@ -367,7 +367,7 @@ describe("Node header: the facts block", () => {
       "href",
       "/node/feature/F-2",
     );
-    expect(within(value).getByText("done")).toHaveClass("chip");
+    expect(within(value).getByText("Done")).toHaveClass("chip");
   });
 
   it("draws no facts block at all when the node carries none of its facts", () => {

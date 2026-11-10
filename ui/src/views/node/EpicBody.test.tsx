@@ -111,7 +111,7 @@ describe("EpicBody decomposition list", () => {
     );
     expect(first.getByText("billing/refunds")).toBeInTheDocument();
     expect(first.queryByRole("link", { name: "billing/refunds" })).not.toBeInTheDocument();
-    expect(first.getByText("in_review")).toBeInTheDocument();
+    expect(first.getByText("In review")).toBeInTheDocument();
   });
 
   it("carries no provenance or surface sub-lines: one line per node, nothing stacked", () => {

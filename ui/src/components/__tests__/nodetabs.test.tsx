@@ -315,7 +315,7 @@ function expectBlockerOnlyDependencies() {
 
   const row = questionLink.closest("li") as HTMLElement;
   expect(within(row).getByText(BLOCKER_QUESTION.id)).toBeInTheDocument();
-  expect(within(row).getByText("open")).toHaveClass("chip");
+  expect(within(row).getByText("Open")).toHaveClass("chip");
   expect(screen.queryByText(BLOCKER_QUESTION.statement)).not.toBeInTheDocument();
 }
 

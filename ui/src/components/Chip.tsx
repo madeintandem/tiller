@@ -21,6 +21,7 @@
 
 import type { ReactNode } from "react";
 import { statusColor, statusTextColor } from "../lib/states";
+import { statusLabel } from "../lib/statusLabel";
 import StateDot from "./StateDot";
 
 // size is the node header's one addition (node header pass, 2026-08-30): the
@@ -55,7 +56,7 @@ export default function Chip({
       style={{ color: text, background: `color-mix(in srgb, ${color} var(--tint), var(--panel))` }}
     >
       <StateDot status={status} size={size === "hero" ? 8 : 6} />
-      {children ?? status}
+      {children ?? statusLabel(status)}
     </span>
   );
 }

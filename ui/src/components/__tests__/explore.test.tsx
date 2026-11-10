@@ -744,7 +744,7 @@ describe("Navigator: status freshness across selection", () => {
     for (const task of feature.children) {
       const row = screen.getAllByRole("link", { name: task.title })
         .find((link) => link.closest(".instr-taskrow"));
-      expect(within(row!.closest(".instr-taskrow") as HTMLElement).getByText("done"))
+      expect(within(row!.closest(".instr-taskrow") as HTMLElement).getByText("Done"))
         .toBeInTheDocument();
     }
   });

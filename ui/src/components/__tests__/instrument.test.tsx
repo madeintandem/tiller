@@ -88,7 +88,7 @@ describe("CriterionRow: the contract's own row (the mock's .crow grid)", () => {
     // Type only - never the ref/run detail the old stacked row appended.
     expect(screen.getByText("command")).toBeInTheDocument();
     expect(screen.queryByText(/bin\/ci$/)).not.toBeInTheDocument();
-    expect(screen.getByText("pending")).toBeInTheDocument();
+    expect(screen.getByText("Pending")).toBeInTheDocument();
   });
 
   it("paints the chip draft/slate before any check has run", () => {
@@ -125,7 +125,7 @@ describe("CriterionRow: needs_attestation reads amber", () => {
       />,
     );
 
-    const chip = screen.getByText("needs attestation");
+    const chip = screen.getByText("Needs attestation");
     expect(chip.closest(".chip")).toHaveAttribute("data-status", "in_review");
     // The binding type is its own cell now, never folded into the chip's word.
     expect(screen.getByText("manual")).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe("CriterionRow: attested-by (task 17 item 6's fifth field)", () => {
 
   it("reads the plain pass word when no attestation targets this criterion", () => {
     render(<CriterionRow criterion={criterion({ id: "C1" })} result={{ status: "pass" }} />);
-    expect(screen.getByText("pass")).toBeInTheDocument();
+    expect(screen.getByText("Pass")).toBeInTheDocument();
   });
 
   it("never folds an attestation recorded against a different criterion", () => {
@@ -164,7 +164,7 @@ describe("CriterionRow: attested-by (task 17 item 6's fifth field)", () => {
         ]}
       />,
     );
-    expect(screen.getByText("pass")).toBeInTheDocument();
+    expect(screen.getByText("Pass")).toBeInTheDocument();
     expect(screen.queryByText(/attested/)).not.toBeInTheDocument();
   });
 
@@ -195,7 +195,7 @@ describe("CriterionRow: attested-by (task 17 item 6's fifth field)", () => {
         ]}
       />,
     );
-    expect(screen.getByText("fail")).toBeInTheDocument();
+    expect(screen.getByText("Fail")).toBeInTheDocument();
     expect(screen.queryByText(/attested/)).not.toBeInTheDocument();
   });
 });
@@ -637,7 +637,7 @@ describe("TaskList", () => {
     expect(container.textContent).not.toContain("T-br7z1r");
   });
 
-  it("renders each task's raw status as a row-local chip without changing its reference", () => {
+  it("renders each task's plain-word status as a row-local chip without changing its reference", () => {
     const { container } = withRouter(
       <TaskList
         tasks={[
@@ -666,7 +666,7 @@ describe("TaskList", () => {
     );
     const doneChip = doneRow.querySelector(".chip");
     expect(doneChip).toHaveAttribute("data-status", "done");
-    expect(doneChip).toHaveTextContent(/^done$/);
+    expect(doneChip).toHaveTextContent(/^Done$/);
     expect(within(doneRow).getByRole("link", { name: "Boot the app" })).toHaveAttribute(
       "href",
       "/node/task/T-done",
@@ -675,7 +675,7 @@ describe("TaskList", () => {
 
     const reviewChip = reviewRow.querySelector(".chip");
     expect(reviewChip).toHaveAttribute("data-status", "in_review");
-    expect(reviewChip).toHaveTextContent(/^in_review$/);
+    expect(reviewChip).toHaveTextContent(/^In review$/);
     expect(within(reviewRow).getByRole("link", { name: "Verify startup" })).toHaveAttribute(
       "href",
       "/node/task/T-review",
@@ -1385,7 +1385,7 @@ describe("NodeDetail header: the breadcrumb chain", () => {
     // reference-convention carve-out every other rendered row already takes.
     const link = crumbs.getByRole("link", { name: "Billing overhaul" });
     expect(link).toHaveAttribute("href", "/node/epic/E-1");
-    expect(crumbs.getByText("specced")).toBeInTheDocument();
+    expect(crumbs.getByText("Specified")).toBeInTheDocument();
   });
 
   // The phase acceptance line, verbatim: "A task page shows the full
@@ -1418,8 +1418,8 @@ describe("NodeDetail header: the breadcrumb chain", () => {
     expect(Boolean(epic.compareDocumentPosition(feature) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(
       true,
     );
-    expect(crumbs.getByText("draft")).toBeInTheDocument();
-    expect(crumbs.getByText("ready")).toBeInTheDocument();
+    expect(crumbs.getByText("Draft")).toBeInTheDocument();
+    expect(crumbs.getByText("Ready")).toBeInTheDocument();
     // The chain's third link: the task's own title and chip, in the header
     // beneath the crumbs.
     const header = within(container.querySelector(".instr-header") as HTMLElement);

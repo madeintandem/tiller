@@ -14,10 +14,10 @@ import { PersonName } from "../../people";
 import FilterCombobox from "./FilterCombobox";
 
 const nounOptions = [
-  { value: "epics", noun: "epic", label: "epics" },
-  { value: "features", noun: "feature", label: "features" },
-  { value: "tasks", noun: "task", label: "tasks" },
-  { value: "questions", noun: "question", label: "questions" },
+  { value: "epics", noun: "epic", label: "Epics" },
+  { value: "features", noun: "feature", label: "Features" },
+  { value: "tasks", noun: "task", label: "Tasks" },
+  { value: "questions", noun: "question", label: "Questions" },
   { value: "amendments", noun: "amendment", label: "Amendments" },
   { value: "bug", noun: "bug", label: "Bugs" },
   { value: "chore", noun: "chore", label: "Chores" },

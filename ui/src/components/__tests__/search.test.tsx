@@ -169,7 +169,7 @@ describe("Explore search: a result row", () => {
     expect(title.querySelector("mark")?.textContent).toBe("boot");
     const row = title.closest("li") as HTMLElement;
     expect(within(row).getByText("foundation/app-boot")).toBeInTheDocument();
-    expect(within(row).getByText("active")).toBeInTheDocument();
+    expect(within(row).getByText("Active")).toBeInTheDocument();
     expect(within(row).getByText("feature.md:3")).toBeInTheDocument();
     expect(within(row).getByText("+2 more matches")).toBeInTheDocument();
     expect(container.querySelectorAll(".search-result .hit-snippet mark")[0]?.textContent).toBe("boot");

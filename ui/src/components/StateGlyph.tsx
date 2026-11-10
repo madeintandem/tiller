@@ -25,6 +25,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type R
 import { createPortal } from "react-dom";
 import type { NodeStatus } from "../api";
 import { foldStatus, statusColor } from "../lib/states";
+import { statusLabel } from "../lib/statusLabel";
 
 const RING = <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" />;
 
@@ -69,20 +70,6 @@ const SHAPES: Record<NodeStatus, ReactElement> = {
     </>
   ),
 };
-
-// The label a status reads as, where Title Casing the wire word is not
-// enough; every other status Title Cases its words (statusLabel).
-const LABELS: ReadonlyMap<string, string> = new Map([["specced", "Specified"]]);
-
-export function statusLabel(status: string): string {
-  return (
-    LABELS.get(status) ??
-    status
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-  );
-}
 
 // Quick enough to feel like an answer, slow enough that sweeping the
 // pointer down the tree does not flash a tooltip on every row it crosses.
