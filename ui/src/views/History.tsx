@@ -20,9 +20,10 @@
 // The window rides the URL (?window=), the same rule Explore's mode follows,
 // so a window a human can switch to is a window they can link to. Absent means
 // visit, which keeps /history canonical, and an unrecognized value degrades to
-// visit rather than blanking the page. This has a horizon consequence that is
-// a feature: only the visit window advances the last-visit mark (serve/
-// home.go), so /history?window=7d is a link that consumes nothing.
+// visit rather than blanking the page. Viewing never advances the last-visit
+// mark on any window (serve/home.go); only the visit window offers the
+// `Mark caught up` button (history/CatchUp.tsx), so /history?window=7d is a
+// link with no button and no cost.
 //
 // THE PAGE'S GRAMMAR. The digest is not a list of events, it is a handful of
 // facts repeated: the live Acme 7d window is 167 events, one owner, two
@@ -160,7 +161,8 @@
 
 import { Link, useSearchParams } from "react-router-dom";
 import type { Recap as RecapModel, RecapGroup } from "../api";
-import { recapPath, visitMarker } from "../api";
+import { recapPath } from "../api";
+import Time from "../components/Time";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import type { Burst } from "../lib/bursts";
 import { burstsOf } from "../lib/bursts";
@@ -177,7 +179,8 @@ import {
   viewOf,
   type HistoryView,
 } from "./history/controls";
-import { emptyTextFor, histSubFor } from "./history/copy";
+import CatchUp from "./history/CatchUp";
+import { countFor, emptyTextFor, fixedSubFor } from "./history/copy";
 import { burstAt, dayGroupsOf } from "./history/days";
 import { filterRecap, historyFacets, type HistoryFilter } from "./history/filter";
 import RecapGroupBlock from "./history/RecapGroupBlock";
@@ -196,11 +199,9 @@ export default function History() {
   useDocumentTitle(titleOf("History"));
   const [params] = useSearchParams();
   const view = viewOf(params);
-  // Only the visit window advances the horizon, and only when marked as the
-  // console's own visit; a fixed window is a free read either way.
-  const { data, error, loading } = useFetch<RecapModel>(recapPath(view.window), {
-    headers: view.window === "visit" ? visitMarker : undefined,
-  });
+  // Viewing never moves the horizon, on any window: this read carries no visit
+  // marker. Only the CatchUp button's own one-shot press does.
+  const { data, error, loading } = useFetch<RecapModel>(recapPath(view.window));
   const facets = data !== null ? historyFacets(data) : null;
   // Only a value this recap holds filters it; anything else is ignored.
   const valid: HistoryFilter = {
@@ -255,7 +256,24 @@ function RecapBody({
           default view (histSubFor's own comment carries the exact wording
           rule). Unconditional, the same way .recap-since always was, because
           the marking fact matters on an empty page as much as a full one. */}
-      <p className="hist-sub muted">{histSubFor(active, recap, filterOn ? recap.shown : undefined)}</p>
+      <p className="hist-sub muted">
+        {active === "visit" ? (
+          <>
+            {countFor(recap, filterOn ? recap.shown : undefined)}
+            {/* Empty on a first visit, which recaps nothing: a blank "since"
+                would read as a claim about an instant nobody has. */}
+            {recap.since !== "" && (
+              <>
+                {" since "}
+                <Time iso={recap.since} />
+              </>
+            )}
+          </>
+        ) : (
+          fixedSubFor(active, recap, filterOn ? recap.shown : undefined)
+        )}
+      </p>
+      {active === "visit" && <CatchUp />}
       {(oneStream !== "" || asks > 0) && (
         <p className="recap-tally">
           {oneStream !== "" && <span className="muted">all by <PersonName id={oneStream} /></span>}
@@ -305,11 +323,9 @@ function RecapBody({
   );
 }
 
-// The empty state is the steady state, not an edge case: the visit horizon
-// advances the moment this page loads, so coming back after the session gap
-// finds nothing new. Measured on the live tree, window=visit already returns
-// zero groups. So it hands over the escape hatch rather than dead-ending, with
-// live links to every window WIDER than the one that came up empty.
+// An empty window is an ordinary state, so it hands over the escape hatch
+// rather than dead-ending, with live links to every window WIDER than the one
+// that came up empty.
 // A filter that matches nothing is not an empty window: say so plainly and
 // hand over the way back.
 function FilterEmpty({ view }: { view: HistoryView }) {

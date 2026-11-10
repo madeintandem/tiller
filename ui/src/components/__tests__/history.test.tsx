@@ -195,9 +195,9 @@ describe("History view: the route and the window", () => {
   });
 
   // The server advances the visit horizon only for a request carrying this
-  // marker (internal/serve/home.go's visitHeader), so a plain GET from a
-  // foreign page or a curl reads the digest without spending it.
-  it("marks the visit-window read, and only that read, as the console's visit", async () => {
+  // marker (internal/serve/home.go's visitHeader). Since Task 25 no page read
+  // carries it: only the Mark caught up press does (history-catch-up.test.tsx).
+  it("never marks a page read, on any window, as the console's visit", async () => {
     const day: Recap = { ...loadedRecap(), window: "24h", total: 4 };
     const spy = stubFetch({ "/api/recap?window=visit": loadedRecap(), "/api/recap?window=24h": day });
     const marker = (call: unknown[]) =>
@@ -205,11 +205,11 @@ describe("History view: the route and the window", () => {
 
     renderHistory();
     await screen.findByText(/12 events/);
-    expect(spy.mock.calls.map(marker)).toEqual(["1"]);
+    expect(spy.mock.calls.map(marker)).toEqual([null]);
 
     fireEvent.click(screen.getByRole("link", { name: "24h" }));
     await screen.findByText(/4 events/);
-    expect(spy.mock.calls.map(marker)).toEqual(["1", null]);
+    expect(spy.mock.calls.map(marker)).toEqual([null, null]);
   });
 
   it("reads the window off the URL and marks that switch active", async () => {
@@ -273,17 +273,15 @@ describe("History view: the route and the window", () => {
 });
 
 describe("History view: the marking one-liner under the head", () => {
-  it("states the visit window marks the reader caught up", async () => {
+  it("states the count and the horizon, with no claim that reading marks anything", async () => {
     stubFetch({ "/api/recap?window=visit": loadedRecap() });
     const { container } = renderHistory();
     await screen.findByText(/12 events/);
 
-    // The exact "since" clock time is locale/timezone-formatted (formatTime),
-    // so this pins the STRUCTURE - count, the since clause, the marking
-    // clause - without hardcoding a formatted instant.
-    expect(container.querySelector(".hist-sub")?.textContent).toMatch(
-      /^12 events since .+ · reading this view marks you caught up$/,
-    );
+    // The exact "since" clock time is locale/timezone-formatted, so this pins
+    // the STRUCTURE - count, the since clause - without hardcoding an instant.
+    expect(container.querySelector(".hist-sub")?.textContent).toMatch(/^12 events since .+$/);
+    expect(container.querySelector(".hist-sub")?.textContent).not.toContain("marks you caught up");
   });
 
   it("states a fixed window never does, adapted to the window actually open", async () => {
@@ -314,14 +312,11 @@ describe("History view: the empty state, which is the steady state", () => {
 
     const { container } = renderHistory();
 
-    // Opening the page advances the horizon, so an empty visit window is what
-    // a second look normally returns. It must be a working surface.
+    // An empty visit window is an ordinary state. It must be a working surface.
     expect(await screen.findByText("Nothing new since your last visit.")).toBeInTheDocument();
     // The instant is stated once, on the hist-sub line, not again in the
     // sentence four lines below it.
-    expect(container.querySelector(".hist-sub")?.textContent).toMatch(
-      /^0 events since .+ · reading this view marks you caught up$/,
-    );
+    expect(container.querySelector(".hist-sub")?.textContent).toMatch(/^0 events since .+$/);
     expect(container.textContent?.match(/Jul 25/g)).toHaveLength(1);
     expect(container.querySelector(".recap-empty-more")?.textContent).toContain(
       "Look back further",
@@ -349,9 +344,7 @@ describe("History view: the empty state, which is the steady state", () => {
     const { container } = renderHistory();
 
     expect(await screen.findByText("Nothing new since your last visit.")).toBeInTheDocument();
-    expect(container.querySelector(".hist-sub")?.textContent).toBe(
-      "0 events · reading this view marks you caught up",
-    );
+    expect(container.querySelector(".hist-sub")?.textContent).toBe("0 events");
   });
 
   it("names the window it is actually rendering, never a visit claim on an override", async () => {

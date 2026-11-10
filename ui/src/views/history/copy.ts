@@ -1,33 +1,24 @@
 import type { Recap as RecapModel, RecapWindow } from "../../api";
-import { formatWhen } from "../../lib/time";
 
-// The one-liner under the head (mock:1144's own line, adapted per window):
-// what this window holds, and whether looking at it just marked the reader
-// caught up. Only the visit window does (ui-surface.md's horizon rule, pinned
-// server-side by internal/serve/visit_test.go's
-// TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap): it is the
-// one request in the console that advances the last-visit mark, and the two
-// fixed windows never touch it no matter how often they are read. Copying the
-// mock's own sentence verbatim regardless of which window is open would put
-// "reading this view marks you caught up" under a 24h view that just did no
-// such thing, so this states the truth for whichever window is actually
-// mounted rather than reciting the sentence written for the default one.
+// The one-liner under the head: what this window holds. The visit window reads
+// "1000 events since <time>" (History.tsx renders the since time through
+// <Time>, so it shares the console's formatter and carries the absolute time
+// on hover) beside the `Mark caught up` button; looking at the page never
+// moves the horizon, only the press does (history/CatchUp.tsx). A fixed window
+// is not framed by the horizon at all, so it names itself instead.
 //
 // With a filter on, shown is the filtered count and the head reads "120 of
 // 1000 events"; total stays the unfiltered count.
-export function histSubFor(active: RecapWindow, recap: RecapModel, shown?: number): string {
-  const count =
-    shown !== undefined
-      ? `${shown} of ${recap.total} events`
-      : `${recap.total} ${recap.total === 1 ? "event" : "events"}`;
-  if (active === "visit") {
-    // since is empty on a first visit, which recaps nothing; a blank "since"
-    // would read as a claim about an instant nobody has.
-    const since = recap.since !== "" ? ` since ${formatWhen(recap.since, new Date())}` : "";
-    return `${count}${since} · reading this view marks you caught up`;
-  }
+export function countFor(recap: RecapModel, shown?: number): string {
+  return shown !== undefined
+    ? `${shown} of ${recap.total} events`
+    : `${recap.total} ${recap.total === 1 ? "event" : "events"}`;
+}
+
+// The fixed windows' line. The visit window composes its own in History.tsx.
+export function fixedSubFor(active: RecapWindow, recap: RecapModel, shown?: number): string {
   const span = active === "24h" ? "in the last 24 hours" : "in the last 7 days";
-  return `${count} ${span} · fixed windows never mark you caught up`;
+  return `${countFor(recap, shown)} ${span} · fixed windows never mark you caught up`;
 }
 
 // The empty text does not repeat the horizon: the hist-sub line above already

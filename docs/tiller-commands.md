@@ -1056,7 +1056,7 @@ served. Use only a trusted network or private
 VPN, never direct public-internet exposure. Wildcards expose all interfaces of their family,
 including other connected networks; choose a specific IP to restrict the listening interface.
 Wildcard admitted addresses are a startup snapshot, so restart after interface address changes.
-Only the console's History view advances its last-visit mark; other requests to the recap,
+Only the console's `Mark caught up` button on History advances its last-visit mark; other requests to the recap,
 such as a `curl` or a foreign page, read it without moving the mark. Serve prints the listen address separately from usable IP URLs and opens the family's loopback
 URL. Specific binds print and open the bound IP URL. All URLs use the actual port, including
 `--port 0`, and bracket IPv6. See the [serve contract](spec/cli-surface.md#tiller-serve) for Host

@@ -1725,11 +1725,12 @@ export function recapPath(window?: RecapWindow): string {
   return window === undefined ? "/api/recap" : `/api/recap?window=${window}`;
 }
 
-// The marker History's visit-window read carries, the only request the server
-// lets advance the visit horizon (internal/serve/home.go's visitHeader). A
-// cross-site page cannot attach a custom header without a CORS preflight the
-// server never answers, so a plain GET from anywhere else reads the digest
-// without spending it.
+// The marker the console's own `Mark caught up` press carries, the only
+// request the server lets advance the visit horizon (internal/serve/home.go's
+// visitHeader). Viewing History never sends it: markCaughtUp below is its one
+// caller. A cross-site page cannot attach a custom header without a CORS
+// preflight the server never answers, so a plain GET from anywhere else reads
+// the digest without spending it.
 export const visitMarker: HeadersInit = { "X-Tiller-Visit": "1" };
 
 // The recap's non-consuming twin. It is a separate route rather than a
@@ -1859,6 +1860,14 @@ export function fetchQueue(): Promise<Queue> {
 
 export function fetchRecap(window?: RecapWindow): Promise<Recap> {
   return fetchJSON<Recap>(recapPath(window));
+}
+
+// The one-shot press behind History's `Mark caught up`: a single marked GET of
+// the visit window whose answer is discarded. It is deliberately not a
+// useFetch header, so a re-render, filter change, or refetch can never send
+// the marker.
+export async function markCaughtUp(): Promise<void> {
+  await fetchJSON<Recap>(recapPath("visit"), { headers: visitMarker });
 }
 
 export function fetchRecapPeek(): Promise<RecapPeek> {
