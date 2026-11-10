@@ -2363,7 +2363,7 @@ describe("Home tabs: Overview and Branches", () => {
     expect(screen.getByText("Task state could not be read", { exact: false })).toBeVisible();
     expect(screen.getByRole("link", { name: "epic/feature/task-one" })).toHaveAttribute("href", "/node/task/T-one");
     expect(screen.getByRole("link", { name: "T-two" })).toHaveAttribute("href", "/node/task/T-two");
-    expect(screen.getByText(/The console does not fetch Git remotes/)).toBeVisible();
+    expect(screen.getByText(/The console does not fetch Git remotes/)).toBeInTheDocument();
     expect(screen.queryByText(/all clear/i)).not.toBeInTheDocument();
 
     fireEvent.click(within(viewRail()).getByRole("button", { name: "Overview" }));
@@ -2459,7 +2459,7 @@ it("shows recovered historical policy and current green acceptance on Home witho
   expect(screen.getAllByRole("region", { name: /recovered historical review/i })).toHaveLength(1);
   expect(within(panel).getByText("git:historical-head")).toBeInTheDocument();
   expect(within(panel).getByText(/C8/)).toBeInTheDocument();
-  expect(within(panel).getByText(/tests: unknown/)).toBeInTheDocument();
+  expect(within(panel).getByText(/tests: Unknown/)).toBeInTheDocument();
   expect(within(panel).getByText(/current acceptance: ready/i)).toBeInTheDocument();
   expect(screen.queryByText(/awaiting.*merge|waiting on your merge/i)).not.toBeInTheDocument();
 });
@@ -2484,7 +2484,7 @@ it("retains recovered historical observations on Home after lifecycle completion
   const panel = await screen.findByRole("region", { name: /recovered historical review/i });
   expect(within(panel).getByText("git:historic-done-head")).toBeInTheDocument();
   expect(within(panel).getByText(/C8/)).toBeInTheDocument();
-  expect(within(panel).getByText(/evals: pass/)).toBeInTheDocument();
+  expect(within(panel).getByText(/evals: Pass/)).toBeInTheDocument();
   expect(within(panel).getByText(/current acceptance: ready/i)).toBeInTheDocument();
   expect(within(panel).getByText(/source-pinned historical policy warnings: 1.*crossing-time policy warnings: 1/)).toBeInTheDocument();
   expect(screen.queryByText(/waiting on your merge/i)).not.toBeInTheDocument();
@@ -2539,8 +2539,8 @@ it("shows terminal recovered epic acceptance once with all participating feature
   expect(within(panel).getByText(/F-second: unresolved/)).toBeInTheDocument();
   expect(within(panel).getByText(/current acceptance: unresolved/i)).toBeInTheDocument();
   expect(within(panel).getByText(/source-pinned historical policy warnings: 1.*crossing-time policy warnings: 1/)).toBeInTheDocument();
-  expect(screen.getByText(/evals: pass/)).toBeInTheDocument();
-  expect(screen.getByText(/evals: fail/)).toBeInTheDocument();
+  expect(screen.getByText(/evals: Pass/)).toBeInTheDocument();
+  expect(screen.getByText(/evals: Fail/)).toBeInTheDocument();
   expect(fetch.mock.calls.map((call) => String(call[0])).some((url) => url.startsWith("/api/node/"))).toBe(false);
 });
 
@@ -2566,7 +2566,7 @@ it("lists only the features that rode a recovered epic review", async () => {
   renderHome(summary());
   await openRecoveredTab();
   await screen.findByRole("region", { name: /recovered historical review/i });
-  expect(screen.getByText(/evals: pass/)).toBeInTheDocument();
+  expect(screen.getByText(/evals: Pass/)).toBeInTheDocument();
   expect(screen.queryByText(/lint: warn/)).toBeNull();
   expect(screen.queryByText(/Current acceptance: unavailable/)).toBeNull();
 });

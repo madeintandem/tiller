@@ -33,15 +33,28 @@ type titledObservation struct {
 	Title string `json:"title,omitempty"`
 }
 
+// titledDiagnostic is a visibility diagnostic plus its task's title, so the
+// console can lead the row with the task's name rather than its id.
+type titledDiagnostic struct {
+	execution.Diagnostic
+	Title string `json:"title,omitempty"`
+}
+
 type titledExecutionReportBody struct {
-	Observations []titledObservation    `json:"observations"`
-	Diagnostics  []execution.Diagnostic `json:"diagnostics"`
+	Observations []titledObservation `json:"observations"`
+	Diagnostics  []titledDiagnostic  `json:"diagnostics"`
 }
 
 func titledExecutionReport(t *store.Tree, report execution.Report) titledExecutionReportBody {
 	out := titledExecutionReportBody{
 		Observations: make([]titledObservation, len(report.Observations)),
-		Diagnostics:  report.Diagnostics,
+		Diagnostics:  make([]titledDiagnostic, len(report.Diagnostics)),
+	}
+	for i, diagnostic := range report.Diagnostics {
+		out.Diagnostics[i] = titledDiagnostic{Diagnostic: diagnostic}
+		if task := t.Tasks[diagnostic.ID]; task != nil {
+			out.Diagnostics[i].Title = task.Title
+		}
 	}
 	for i, record := range report.Observations {
 		out.Observations[i] = titledObservation{Record: record}

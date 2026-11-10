@@ -89,6 +89,7 @@ export interface ExecutionRecord {
 
 export interface ExecutionDiagnostic {
   id?: string;
+  title?: string;
   branch?: string;
   code: string;
   message: string;

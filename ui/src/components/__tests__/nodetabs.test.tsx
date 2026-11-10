@@ -816,7 +816,7 @@ it("keeps recovered provenance visible on detail while current acceptance remain
   const panel = screen.getByRole("region", { name: /recovered historical review/i });
   expect(within(panel).getByText("git:historical-head")).toBeInTheDocument();
   expect(within(panel).getByText(/C8/)).toBeInTheDocument();
-  expect(within(panel).getByText(/tests: fail/)).toBeInTheDocument();
+  expect(within(panel).getByText(/tests: Fail/)).toBeInTheDocument();
   expect(within(panel).getByText(/current acceptance: unresolved/i)).toBeInTheDocument();
   expect(screen.queryByText(/awaiting.*merge/i)).not.toBeInTheDocument();
 });

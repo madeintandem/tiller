@@ -9,6 +9,7 @@ import CriterionRow from "../CriterionRow";
 import NodeDetail from "../NodeDetail";
 
 import HistorySection from "../../views/node/HistorySection";
+import { ExecutionProvenance } from "../ExecutionSources";
 const observation: ExecutionRecord = {
   id: "T-one", key: "epic/feature/task", branch: "origin/task-one", source: "remote_tracking",
   revision: "abcdef123456", observed_at: "2026-10-06T12:00:00Z", uncommitted: false,
@@ -37,7 +38,7 @@ describe("Execution sources", () => {
     expect(screen.getByText("local branch")).toBeVisible();
     expect(screen.getByText("working tree")).toBeVisible();
     expect(screen.getByText("uncommitted Tiller state")).toBeVisible();
-    expect(screen.getByText(/The console does not fetch Git remotes/)).toBeVisible();
+    expect(screen.getByText(/The console does not fetch Git remotes/)).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: observation.key })[0]).toHaveAttribute("href", "/node/task/T-one");
   });
 
@@ -102,6 +103,71 @@ describe("Execution sources", () => {
       expect(screen.getByText(/does not make lifecycle commands safe to run on the served checkout/)).toBeVisible();
     }
     expect(screen.queryByText("tiller attest feature F-one --criterion C1 --status pass")).not.toBeInTheDocument();
+  });
+});
+
+describe("Branches tab leads with what matters", () => {
+  const rows = [
+    { ...observation, title: "Wire the form" },
+    { ...observation, id: "T-two", key: "epic/feature/other", branch: "origin/two", observed_at: "2026-10-06T12:00:05Z" },
+  ];
+
+  it("states when it observed once, above the list, and no row repeats it", () => {
+    const { container } = render(<MemoryRouter><ExecutionSources state={settled({ observations: rows, diagnostics: [] })} /></MemoryRouter>);
+    const observed = container.querySelectorAll("time");
+    expect(observed).toHaveLength(1);
+    expect(screen.getByText(/^Observed/)).toBeVisible();
+    const line = screen.getByText(/^Observed/);
+    const list = within(screen.getByRole("region", { name: "Task observations" })).getAllByRole("list")[0];
+    expect(line.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(list).queryByText(/observed/i)).toBeNull();
+    expect(observed[0]).toHaveAttribute("title");
+  });
+
+  it("folds the two explanatory paragraphs into a closed disclosure", () => {
+    const { container } = render(<MemoryRouter><ExecutionSources state={settled({ observations: rows, diagnostics: [] })} /></MemoryRouter>);
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")?.textContent).toBe("How branch observation works");
+    expect(details).toHaveTextContent(/does not fetch Git remotes/);
+    expect(details).toHaveTextContent(/Global History shows integration history/);
+  });
+
+  it("keeps the node page's provenance observed time by default and drops it on request", () => {
+    const { rerender } = render(<MemoryRouter><ExecutionProvenance observation={observation} /></MemoryRouter>);
+    expect(screen.getByText(/observed/)).toBeInTheDocument();
+    rerender(<MemoryRouter><ExecutionProvenance observation={observation} showObserved={false} /></MemoryRouter>);
+    expect(screen.queryByText(/observed/)).toBeNull();
+  });
+
+  it("leads a diagnostic with the task title, the branch in mono, and plain words with no code", () => {
+    render(<MemoryRouter><ExecutionSources state={settled({
+      observations: [],
+      diagnostics: [
+        { id: "T-ir6f27", title: "Extract params", branch: "tiller/foundation/extract-params", code: "branch_missing", message: "recorded execution branch cannot be resolved locally" },
+        { id: "T-bare", branch: "tiller/bare", code: "brand_new_code", message: "something new" },
+        { code: "discovery_unavailable", message: "cannot list refs" },
+      ],
+    })} /></MemoryRouter>);
+    const region = screen.getByRole("region", { name: "Visibility diagnostics" });
+    const [first, second, third] = within(region).getAllByRole("listitem");
+    expect(within(first).getByRole("link", { name: "Extract params" })).toHaveAttribute("href", "/node/task/T-ir6f27");
+    expect(first.querySelector(".title-ref-key")?.textContent).toBe("T-ir6f27");
+    expect(first.querySelector(".mono:not(.title-ref-key)")?.textContent).toBe("tiller/foundation/extract-params");
+    expect(first).toHaveTextContent("Branch not found");
+    expect(first).toHaveTextContent("recorded execution branch cannot be resolved locally");
+    expect(within(second).getByRole("link", { name: "T-bare" })).toBeInTheDocument();
+    expect(second).toHaveTextContent("Brand new code");
+    expect(third).toHaveTextContent("Branch discovery unavailable");
+    expect(region.textContent).not.toMatch(/[a-z]+_[a-z]+/);
+  });
+
+  it("shows no raw underscore token on the tab outside ids, paths, and branch names", () => {
+    const { container } = render(<MemoryRouter><ExecutionSources state={settled({
+      observations: [{ ...observation, source: "local_branch", freshness: "local_branch_behind" }, { ...observation, id: "T-b", source: "remote_tracking", freshness: "remote_tracking_behind" }],
+      diagnostics: [{ id: "T-x", code: "divergent_refs", message: "local and tracking diverge" }],
+    })} /></MemoryRouter>);
+    expect(container.textContent).not.toMatch(/[a-z]+_[a-z_]+/);
   });
 });
 

@@ -338,3 +338,25 @@ func TestExecutionObservationsCarryTheTaskTitle(t *testing.T) {
 	require.Equal(t, "T-cccccc", report.Observations[0].ID)
 	require.Equal(t, "One", report.Observations[0].Title)
 }
+
+func TestExecutionDiagnosticsCarryTheTaskTitle(t *testing.T) {
+	srv, root, _ := observationFixture(t)
+	observationFile(t, root, observationTaskPath, "id: T-cccccc\nkey: work/build/one\ntitle: One\nstatus: in_progress\nstarted: true\nowner: jc\nbranch: tiller/work/build/gone\n")
+	observationGit(t, root, "add", ".")
+	observationGit(t, root, "commit", "-qm", "record a branch that does not exist")
+	var report struct {
+		Diagnostics []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+		} `json:"diagnostics"`
+	}
+	require.Equal(t, http.StatusOK, getJSON(t, srv, "/api/execution", &report))
+	found := false
+	for _, d := range report.Diagnostics {
+		if d.ID == "T-cccccc" {
+			found = true
+			require.Equal(t, "One", d.Title)
+		}
+	}
+	require.True(t, found, "a diagnostic names the task")
+}

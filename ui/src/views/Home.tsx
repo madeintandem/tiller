@@ -50,6 +50,7 @@ import SectionHead from "../components/SectionHead";
 import TitleRef from "../components/TitleRef";
 import { addrOf } from "../lib/addr";
 import { has } from "../lib/has";
+import { statusLabel } from "../lib/statusLabel";
 import { DriftReport } from "./Drift";
 import type { BandRun } from "./home/bands";
 import { bandRuns, batchCommand, queueEntryKey } from "./home/bands";
@@ -125,6 +126,8 @@ export default function Home({ summary, summaryError }: HomeProps) {
     { noun: "chore", state: chores },
     { noun: "tweak", state: tweaks },
   ];
+  // Riding tasks show by title; the task list is already read for the desk.
+  const taskTitles = new Map((tasks.data?.nodes ?? []).filter((row) => has(row.title)).map((row) => [row.id, row.title as string]));
   const queueEntries = queue.data?.entries ?? [];
   // Gravity re-ranks the KIND buckets only (queueGroups.ts's own contract);
   // bandRuns turns that ranking into the runs the needs-you section draws,
@@ -282,7 +285,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
               label: "Recovered reviews",
               count: recoveryCount,
               countTone: recoveryUnsettled ? "warning" as const : undefined,
-              render: () => <RecoveredReviews owners={recoveryOwners} features={features.data?.nodes ?? []} />,
+              render: () => <RecoveredReviews owners={recoveryOwners} features={features.data?.nodes ?? []} titles={taskTitles} />,
             }]
             : []),
           ...(driftBand !== null
@@ -389,9 +392,10 @@ function recoveredOwners(features: ListRow[], epics: ListRow[]): RecoveryOwner[]
 
 // Terminal reviews remain visible even when no next move names them.
 // Current acceptance comes from the observed list projection, not gate inference.
-function RecoveredReviews({ owners, features }: {
+function RecoveredReviews({ owners, features, titles }: {
   owners: RecoveryOwner[];
   features: ListRow[];
+  titles: ReadonlyMap<string, string>;
 }) {
   return <>{owners.map(({ noun, row }) => {
     const record = row.recovered_review;
@@ -399,7 +403,7 @@ function RecoveredReviews({ owners, features }: {
     return (
       <section key={row.id}>
         <TitleRef node={{ noun, id: row.id, ref: row.ref }} title={row.title} addr={addrOf(row)} />
-        <RecoveredReview record={record} gates={row.gates}
+        <RecoveredReview record={record} titles={titles} gates={row.gates}
           acceptanceReady={row.current_acceptance?.acceptance_ready}
           outstanding={row.current_acceptance?.outstanding}
           currentAcceptance={row.participating_acceptance}
@@ -411,7 +415,7 @@ function RecoveredReviews({ owners, features }: {
           <section key={feature.id}>
             <TitleRef node={{ noun: "feature", id: feature.id, ref: feature.ref }} title={feature.title} addr={addrOf(feature)} />
             <p>Current acceptance: {feature.current_acceptance === undefined ? "unavailable" : feature.current_acceptance.acceptance_ready ? "ready" : "unresolved"}.</p>
-            <ul>{Object.entries(feature.gates ?? {}).map(([name, gate]) => <li key={name}>{name}: {gate.status ?? "pending"}</li>)}</ul>
+            <ul>{Object.entries(feature.gates ?? {}).map(([name, gate]) => <li key={name}>{name}: {statusLabel(gate.status ?? "pending")}</li>)}</ul>
           </section>
         ))}
       </section>

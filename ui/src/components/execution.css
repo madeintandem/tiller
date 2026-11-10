@@ -9,3 +9,6 @@
 .execution-provenance { overflow-wrap: anywhere; font-size: 0.8rem; }
 .instr > .execution-provenance { padding: 0.75rem 0; }
 .execution-boundary { margin: 0 0 0.75rem; font-size: 0.8rem; }
+.execution-fold { margin: 0 0 0.5rem; }
+.execution-fold > summary { cursor: pointer; }
+.execution-fold > p { margin: 0.5rem 0 0; }
