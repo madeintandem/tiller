@@ -59,7 +59,7 @@ func TestNodePageBasisFollowsTheDriftSweepsStatusRule(t *testing.T) {
 
 	got := read()
 	require.NotNil(t, got, "a ready feature with a changed eval reports its basis drift")
-	require.Contains(t, got.Drifted, "feature.eval.md")
+	require.Contains(t, got.Drifted, ".tiller/epics/form-engine/features/schema-engine/feature.eval.md")
 	require.Equal(t, "tiller approve feature form-engine/schema-engine --refresh-basis", got.Command)
 
 	setFeatureStatusOnDisk(t, root, "done")

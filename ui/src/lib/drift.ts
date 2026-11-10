@@ -61,13 +61,15 @@ export const MARKER_COPY: Record<string, MarkerCopy> = {
     name: "Spec changed after the work",
     meaning: "Finished work was verified against a spec, eval, or surface that has since changed or gone missing.",
     next: "Review what changed against the work, and for finished work make any correction through a reviewed amendment.",
-    unchecked: "Finished work not checked against its spec",
+    // Heads spec, eval, and surface rows alike, and a finished node with no
+    // record at all: each is the completion record's comparison not running.
+    unchecked: "Finished work not checked against its completion record",
   },
   // The sweep covers ready and active features and approved tasks that are
   // not finished (drift.ActiveBasisApplies), so the meaning holds for
   // approved work that has not started as well as work under way.
   active_basis: {
-    name: "Work started from an older basis",
+    name: "Work rests on an older basis",
     meaning: "Approved work rests on a spec, eval, or task file that has changed since it was approved.",
     next: "Read what changed, then refresh the basis once the work agrees with the current files.",
     unchecked: "Approved work not checked against its basis",
@@ -138,8 +140,9 @@ export const MARKER_COPY: Record<string, MarkerCopy> = {
 //
 // detailRestatesCause marks a reason whose row detail from the server is a
 // fixed sentence that says the cause again in other words (design.go's "no
-// human confirmation of the described code is recorded", drift.go's "done but
-// carries no ... completion record"). The Uncovered group already states the
+// human confirmation of the described code is recorded" and shifted_design's
+// "confirmation is not an ancestor of current project HEAD; no bounded
+// range", drift.go's "done but carries no ... completion record"). The Uncovered group already states the
 // cause, so such a row shows no detail of its own; every other reason's detail
 // names something specific to its row (a path, a question id, an error) and
 // stays.
@@ -230,9 +233,12 @@ export const REASON_COPY_BY_MARKER: Record<string, Record<string, ReasonCopy>> =
       cause: "A path this document describes could not be read, so it could not be compared.",
       fix: "Make the path readable, then run the check again.",
     },
+    // design.go's detail here is a fixed sentence ("confirmation is not an
+    // ancestor of current project HEAD; no bounded range"), the cause again.
     history_diverged: {
       cause: "The confirmation is not an ancestor of the project's current commit, so no single range can be compared.",
       fix: "Bring the branches together, then run the check again.",
+      detailRestatesCause: true,
     },
   },
 };

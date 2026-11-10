@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/madeintandem/tiller/internal/core/drift"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/review"
 	"github.com/madeintandem/tiller/internal/gen"
@@ -103,6 +104,12 @@ func runStatusNode(cmd *cobra.Command, noun, node string) error {
 // run. What it does not do is assert clean; the drift line is printed when there
 // IS drift, and its absence is the same silence a node with no pin produces.
 func statusBasisDrift(tree *store.Tree, n store.Node) ([]string, string) {
+	// Only a node the drift sweep compares reports basis drift
+	// (drift.ActiveBasisApplies): a done feature keeps its old pin, but the
+	// refresh-basis move is refused from done, so status must not offer it.
+	if !drift.ActiveBasisApplies(n) {
+		return nil, ""
+	}
 	var ab *mutate.ActiveBasisError
 	if err := mutate.BasisDrift(tree, n, vcs.New(tree.Root)); errors.As(err, &ab) {
 		// The line leads with the files rather than with the node, because the

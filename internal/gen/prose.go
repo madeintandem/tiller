@@ -47,6 +47,31 @@ func ProsePath(t *store.Tree, n store.Node) (string, bool) {
 	return "", false
 }
 
+// NodeFilePaths names files that sit in a node's own folder (the bare names an
+// accepted basis pins: feature.md, feature.eval.md, task.md) by their path
+// from the repository root, so every surface shows one form of a file name.
+// A name that already carries a folder, or a node the tree cannot place, is
+// returned as it was.
+func NodeFilePaths(t *store.Tree, n store.Node, names []string) []string {
+	if len(names) == 0 {
+		return names
+	}
+	prose, ok := ProsePath(t, n)
+	if !ok {
+		return names
+	}
+	dir := path.Dir(prose)
+	out := make([]string, len(names))
+	for i, name := range names {
+		if path.Base(name) == name {
+			out[i] = path.Join(dir, name)
+		} else {
+			out[i] = name
+		}
+	}
+	return out
+}
+
 // taskDir is a task's own folder under its parent feature: the feature's folder,
 // then tasks/, then the LOCAL task-key segment (artifact-schema.md, Keys and
 // paths).

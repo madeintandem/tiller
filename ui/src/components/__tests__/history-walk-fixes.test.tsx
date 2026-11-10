@@ -64,17 +64,31 @@ const T2 = "2026-07-24T10:02:00Z";
 const T3 = "2026-07-24T10:01:00Z";
 
 describe("History head", () => {
-  it("names a point in time after since, never a relative age", async () => {
-    const since = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-    stubFetch({
-      "/api/recap?window=visit": recapOf([group("audit", [entry("approve.feature", T1)])], { since, window: "visit" }),
-    });
-    const { container } = renderHistory("/history");
-    await screen.findByText(/approved/, { selector: ".verb, b" });
-    const sub = container.querySelector(".hist-sub") as HTMLElement;
-    expect(sub.textContent).toMatch(/^1 event since (\w{3} \d+, )?\d+:\d\d [AP]M$/);
-    expect(sub.textContent).not.toContain("ago");
-    expect(sub.querySelector("time")).toHaveAttribute("title");
+  // Fixed local-time instants (only Date is faked, so the page's own timers
+  // still run): the head must read the same on every day of the year,
+  // including the first hours after a local New Year.
+  it.each([
+    ["the day before", new Date(2027, 0, 1, 2, 0), new Date(2026, 11, 31, 23, 26), "1 event since Dec 31, 2026, 11:26 PM"],
+    ["earlier the same day", new Date(2026, 10, 10, 11, 0), new Date(2026, 10, 10, 8, 5), "1 event since 8:05 AM"],
+    ["another day this year", new Date(2026, 10, 10, 11, 0), new Date(2026, 10, 9, 23, 26), "1 event since Nov 9, 11:26 PM"],
+  ])("names a point in time after since, never a relative age (%s)", async (_case, now, since, head) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    try {
+      stubFetch({
+        "/api/recap?window=visit": recapOf([group("audit", [entry("approve.feature", T1)])], {
+          since: since.toISOString(),
+          window: "visit",
+        }),
+      });
+      const { container } = renderHistory("/history");
+      await screen.findByText(/approved/, { selector: ".verb, b" });
+      const sub = container.querySelector(".hist-sub") as HTMLElement;
+      expect(sub.textContent).toBe(head);
+      expect(sub.querySelector("time")).toHaveAttribute("title");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("is only the nothing-new sentence when nothing is new", async () => {

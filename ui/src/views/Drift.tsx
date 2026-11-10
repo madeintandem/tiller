@@ -12,7 +12,7 @@
 // adds only what that flat, single-line row shape never needed, the
 // multi-line detail/files/since/context stack a candidate row carries.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import type { CandidateView, DriftReportView, UncoveredView } from "../api";
 import EmptyNote from "../components/EmptyNote";
@@ -51,10 +51,15 @@ export function DriftReport({ state }: { state: FetchState<DriftReportView> }) {
   const { hash } = useLocation();
   // The sections exist only once the report arrives, after the browser's own
   // hash scroll has already run, so a hash naming a section scrolls to it
-  // here.
+  // here, once per hash: a reread brings new data but must not pull the
+  // reader back to the section they arrived at.
+  const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (data === null || hash.length < 2) return;
-    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView?.({ block: "start" });
+    if (data === null || hash.length < 2 || scrolledFor.current === hash) return;
+    const section = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (section === null) return;
+    scrolledFor.current = hash;
+    section.scrollIntoView?.({ block: "start" });
   }, [data, hash]);
   return (
     <section className="drift-page">
@@ -219,22 +224,32 @@ function coverageEntries(report: DriftReportView): Array<[string, Record<string,
 
 // COVERAGE_BUCKETS is internal/cli/drift.go's coverageBucketOrder, each bucket
 // worded for what drift.go counts in it, with its verb agreeing with the
-// count:
+// count and, where the grain differs, with the marker:
 //   checked           the comparison ran
-//   unresolvable      a path, file, or history could not be read, or a test
-//                     ref is not a path, so nothing was compared
+//   unresolvable      a work or design marker: a path, file, or history could
+//                     not be read, so nothing was compared ("could not be
+//                     compared"). orphan_eval compares nothing; its count is
+//                     an eval it could not load or a criterion's test ref it
+//                     could not check, either unreadable or, by design, a
+//                     runner argument rather than a path ("could not be
+//                     checked")
 //   out_of_scope      an orphan_eval criterion bound to a command, a manual
 //                     check, or a rubric, which names no file to look for
-//   not_yet_in_scope  an orphan_eval criterion whose polarity is checked
-//                     only once the work is approved (preserve) or finished
-//                     (introduce)
-const COVERAGE_BUCKETS: Array<{ key: string; label: (n: number) => string }> = [
+//   not_yet_in_scope  an orphan_eval criterion the sweep skips: its polarity's
+//                     clock has not started (preserve before approval,
+//                     introduce before done), or its polarity is empty or
+//                     unknown, so it is never checked. "Not checked at this
+//                     stage of the work" is true of both
+const COVERAGE_BUCKETS: Array<{ key: string; label: (n: number, marker: string) => string }> = [
   { key: "checked", label: () => "checked" },
-  { key: "unresolvable", label: () => "could not be compared" },
+  {
+    key: "unresolvable",
+    label: (_n, marker) => (marker === "orphan_eval" ? "could not be checked" : "could not be compared"),
+  },
   { key: "out_of_scope", label: (n) => (n === 1 ? "has no file to check" : "have no file to check") },
   {
     key: "not_yet_in_scope",
-    label: (n) => `${n === 1 ? "is" : "are"} checked only once the work reaches a later stage`,
+    label: (n) => `${n === 1 ? "is" : "are"} not checked at this stage of the work`,
   },
 ];
 
@@ -255,7 +270,7 @@ function coverageLine(marker: string, buckets: Record<string, number>): string {
     if (n === 0) {
       continue;
     }
-    parts.push(parts.length === 0 ? `${n} ${coverageUnit(marker, n)} ${label(n)}` : `${n} ${label(n)}`);
+    parts.push(parts.length === 0 ? `${n} ${coverageUnit(marker, n)} ${label(n, marker)}` : `${n} ${label(n, marker)}`);
   }
   return parts.length === 0 ? `0 ${coverageUnit(marker, 0)} checked` : parts.join(", ");
 }

@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
 import type { RelationshipSource } from "../../api";
 import { relationshipFileHref } from "../../lib/relationshipHref";
+import {
+  sourceBasisLabel,
+  sourceBindingLabel,
+  sourceClassificationLabel,
+  sourceFieldLabel,
+  sourceRevisionKindLabel,
+  sourceRoleLabel,
+  sourceScopeLabel,
+  sourceStateLabel,
+} from "../../lib/sourceWords";
 import CopyCmd from "../CopyCmd";
 import Time from "../Time";
 import "./sourceCitation.css";
@@ -18,16 +28,18 @@ export default function SourceCitation({ source, allowSourceNavigation = true, a
   const citationHref = source.citation_path && allowCitationNavigation
     ? relationshipFileHref(source.citation_path, source.citation_line ?? 1)
     : null;
+  // Every recorded token reads as words (lib/sourceWords.ts); paths and ids
+  // pass through as they are.
   const details = [
-    source.field,
+    source.field && sourceFieldLabel(source.field),
     source.criterion && `criterion ${source.criterion}`,
-    source.basis,
-    source.binding_type && `binding ${source.binding_type}`,
-    source.classification,
+    source.basis && sourceBasisLabel(source.basis),
+    source.binding_type && sourceBindingLabel(source.binding_type),
+    source.classification && sourceClassificationLabel(source.classification),
     source.operation !== undefined && `operation ${source.operation}`,
-    source.role,
-    source.state,
-    source.scope,
+    source.role && sourceRoleLabel(source.role),
+    source.state && sourceStateLabel(source.state),
+    source.scope && sourceScopeLabel(source.scope),
   ].filter(Boolean);
   return (
     <li className="relationship-source-citation">
@@ -45,7 +57,7 @@ export default function SourceCitation({ source, allowSourceNavigation = true, a
       )}
       {source.revision && (
         <div className="muted">
-          Pinned {source.revision.kind}: <span className="mono">{source.revision.value}</span>
+          Pinned {sourceRevisionKindLabel(source.revision.kind)}: <span className="mono">{source.revision.value}</span>
           {source.revision.path && <> · <span className="mono">{source.revision.path}</span></>}
           {source.revision.observed_at && <> · <span className="mono"><Time iso={source.revision.observed_at} /></span></>}
           {(href !== null || citationHref !== null) && " · File link opens current contents, not the pinned revision."}

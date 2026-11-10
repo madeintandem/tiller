@@ -779,7 +779,8 @@ describe("App routing: loose Markdown files live under the Explore shell", () =>
     render(<MemoryRouter initialEntries={[route]}><App /></MemoryRouter>);
     const baseline = await screen.findByRole("region", { name: "As-is baseline" });
     expect(within(baseline).getByText("Unconfirmed")).toBeInTheDocument();
-    expect(within(baseline).getByText(/not checked\. The comparison failed before it could finish/)).toBeInTheDocument();
+    expect(within(baseline).getByText("Design doc not compared.")).toBeInTheDocument();
+    expect(within(baseline).getByText(/The comparison failed before it could finish/)).toBeInTheDocument();
     expect(within(baseline).getByRole("button", { name: "tiller approve design -- '-owner'\\''s notes.md'" })).toBeInTheDocument();
     expect(within(baseline).queryByText(/nothing moved|clean/i)).not.toBeInTheDocument();
   });

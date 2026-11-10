@@ -128,7 +128,7 @@ describe("Drift page: marker sections", () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    const activeBasisHead = await screen.findByText(/Work started from an older basis \(1\)/);
+    const activeBasisHead = await screen.findByText(/Work rests on an older basis \(1\)/);
     const missingSurfaceHead = await screen.findByText(/Recorded file is gone \(1\)/);
     const orphanEvalHead = await screen.findByText(/Eval points at something missing \(1\)/);
 
@@ -158,7 +158,7 @@ describe("Drift page: marker sections", () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    await screen.findByText(/Work started from an older basis \(1\)/);
+    await screen.findByText(/Work rests on an older basis \(1\)/);
     // "git:e5f9d28a1b2c3d4e5f6" shortens to the first 7 hex characters,
     // mirroring internal/cli/drift.go's own shortSHA exactly.
     expect(screen.getByText("git:e5f9d28")).toBeInTheDocument();
@@ -205,13 +205,13 @@ describe("Drift page: footer", () => {
 
     expect(await screen.findByText("Compared 9 nodes across 4 checks.")).toBeInTheDocument();
     expect(screen.getByText("Disabled: Spec changed after the work")).toBeInTheDocument();
-    expect(screen.getByText("Exempted: Work started from an older basis: 2")).toBeInTheDocument();
+    expect(screen.getByText("Exempted: Work rests on an older basis: 2")).toBeInTheDocument();
     // orphan_eval counts CRITERIA, the finer grain its own existence checks
     // operate at; the other four count nodes, the same unit Compared
     // counts in (drift.Report's own Coverage doc comment).
-    expect(screen.getByText(/Work started from an older basis: 4 nodes checked, 1 could not be compared/)).toBeInTheDocument();
+    expect(screen.getByText(/Work rests on an older basis: 4 nodes checked, 1 could not be compared/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Eval points at something missing: 3 criteria checked, 1 could not be compared, 2 have no file to check/),
+      screen.getByText(/Eval points at something missing: 3 criteria checked, 1 could not be checked, 2 have no file to check/),
     ).toBeInTheDocument();
   });
 });

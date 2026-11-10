@@ -30,7 +30,9 @@ const baselineTitleScanBytes = 64 << 10
 // its first level-one ATX heading ("# Routing design"), read through the same
 // symlink-refusing open BaselineDocPresent uses. It answers "" when the file
 // cannot be opened safely or carries no such heading near its top, and a
-// caller then names the document by its path alone.
+// caller then names the document by its path alone. Front matter (a leading
+// "---" block) and fenced code blocks (``` or ~~~) are skipped, so a shell or
+// YAML comment is never taken for a heading.
 func BaselineDocTitle(root, doc string) string {
 	file, ok := openBaselineDoc(root, doc)
 	if !ok {
@@ -38,9 +40,30 @@ func BaselineDocTitle(root, doc string) string {
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(io.LimitReader(file, baselineTitleScanBytes))
-	for scanner.Scan() {
-		if title, found := strings.CutPrefix(scanner.Text(), "# "); found {
-			return strings.TrimSpace(title)
+	fence := ""
+	frontMatter := false
+	for first := true; scanner.Scan(); first = false {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case first && trimmed == "---":
+			frontMatter = true
+		case frontMatter:
+			if trimmed == "---" || trimmed == "..." {
+				frontMatter = false
+			}
+		case fence != "":
+			if strings.HasPrefix(trimmed, fence) {
+				fence = ""
+			}
+		case strings.HasPrefix(trimmed, "```"):
+			fence = "```"
+		case strings.HasPrefix(trimmed, "~~~"):
+			fence = "~~~"
+		default:
+			if title, found := strings.CutPrefix(line, "# "); found {
+				return strings.TrimSpace(title)
+			}
 		}
 	}
 	return ""

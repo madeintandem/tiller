@@ -45,8 +45,8 @@ import type {
 import { isEvalError } from "../api";
 import { KIND_LABEL, whyLine } from "./DecisionCard";
 import { needsAttentionFallback, type AttentionFallback } from "../lib/attentionFallback";
-import { markerCopy, reasonCopy, shortSha, uncoveredDetail } from "../lib/drift";
-import { DriftTargetLink } from "./DriftFinding";
+import { markerCopy, shortSha } from "../lib/drift";
+import { DriftTargetLink, UncoveredLine } from "./DriftFinding";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
 import AttentionFold from "./AttentionFold";
@@ -151,16 +151,9 @@ function DriftPanel({ page }: { page: NodePage }) {
       {candidates.map((c, i) => (
         <DriftCandidateRow key={`${c.marker}-${i}`} row={c} pageNodeId={page.node.id} />
       ))}
-      {uncovered.map((u, i) => {
-        const detail = uncoveredDetail(u);
-        return (
-          <p key={`${u.marker}-${i}`} className="muted instr-drift-uncovered">
-            <span className="instr-drift-say">{markerCopy(u.marker).unchecked}.</span> {reasonCopy(u.marker, u.reason).cause}{" "}
-            {reasonCopy(u.marker, u.reason).fix}
-            {detail !== "" && <> ({detail})</>}
-          </p>
-        );
-      })}
+      {uncovered.map((u, i) => (
+        <UncoveredLine key={`${u.marker}-${i}`} row={u} />
+      ))}
       <Link to={`/?tab=drift#${reportSection(page)}`} className="instr-drift-more">
         project-wide drift report
       </Link>

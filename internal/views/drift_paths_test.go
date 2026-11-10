@@ -4,38 +4,37 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/drift"
+	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
 
-// TestActiveBasisFilesAreRepositoryPaths pins one form for a row's files
-// across the drift report: an active_basis finding names its pinned files by
-// their path from the repository root, the same form stale_spec already uses,
-// never a bare file name.
-func TestActiveBasisFilesAreRepositoryPaths(t *testing.T) {
+// TestActiveBasisViewNamesFilesByRepositoryPath pins one form for a file name
+// on the node page's basis row: the drifted and missing files are named by
+// their path from the repository root, as the drift report's files and
+// sentence name them (drift's active_basis_paths_test.go), never by the bare
+// name the pin records.
+func TestActiveBasisViewNamesFilesByRepositoryPath(t *testing.T) {
 	fKey := "docs/handbook"
 	tKey := "docs/handbook/write-intro"
 	tree := &store.Tree{
 		Features: map[string]*store.Feature{"F-aaaaaa": {ID: "F-aaaaaa", Key: &fKey, EpicKey: "docs", Status: "ready"}},
 		Tasks:    map[string]*store.Task{"T-bbbbbb": {ID: "T-bbbbbb", Key: &tKey, FeatureID: "F-aaaaaa", Status: "ready"}},
 	}
-	rep := drift.Report{Candidates: []drift.Candidate{
-		{Marker: drift.MarkerActiveBasis, Noun: store.NounFeature, ID: "F-aaaaaa", Key: fKey, Files: []string{"feature.md", "feature.eval.md"}},
-		{Marker: drift.MarkerActiveBasis, Noun: store.NounTask, ID: "T-bbbbbb", Key: tKey, Files: []string{"task.md"}},
-		{Marker: drift.MarkerStaleSpec, Noun: store.NounFeature, ID: "F-aaaaaa", Key: fKey, Files: []string{".tiller/epics/docs/features/handbook/feature.md"}},
-	}}
 
-	v := views.DriftReportOf(tree, rep)
-	basis := v.Candidates[drift.MarkerActiveBasis]
-	require.Len(t, basis, 2)
+	v := views.ActiveBasisOf(tree, &mutate.ActiveBasisError{
+		NodeID: "F-aaaaaa", Noun: store.NounFeature,
+		Drifted: []string{"feature.md", "feature.eval.md"}, Missing: []string{"feature.eval.md"},
+	})
 	require.Equal(t, []string{
 		".tiller/epics/docs/features/handbook/feature.md",
 		".tiller/epics/docs/features/handbook/feature.eval.md",
-	}, basis[0].Files)
-	require.Equal(t, []string{".tiller/epics/docs/features/handbook/tasks/write-intro/task.md"}, basis[1].Files)
-	require.Equal(t, []string{".tiller/epics/docs/features/handbook/feature.md"}, v.Candidates[drift.MarkerStaleSpec][0].Files,
-		"a path that is already repository-relative is left as it is")
+	}, v.Drifted)
+	require.Equal(t, []string{".tiller/epics/docs/features/handbook/feature.eval.md"}, v.Missing)
+
+	task := views.ActiveBasisOf(tree, &mutate.ActiveBasisError{NodeID: "T-bbbbbb", Noun: store.NounTask, Drifted: []string{"task.md"}})
+	require.Equal(t, []string{".tiller/epics/docs/features/handbook/tasks/write-intro/task.md"}, task.Drifted)
 }
 
 // TestDesignRowsLeadWithTheDocumentTitle pins the design row's title, carried

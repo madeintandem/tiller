@@ -567,7 +567,7 @@ func TestActiveBasisSweep(t *testing.T) {
 	require.Equal(t, store.NounFeature, c.Noun)
 	require.Equal(t, featA, c.ID)
 	require.Equal(t, "form-engine/feat-active", c.Key)
-	require.Contains(t, c.Files, "feature.md")
+	require.Contains(t, basisFileNames(c.Files), "feature.md")
 	require.NotNil(t, c.Since, "the accepted_against commit anchor is the since-when")
 }
 
@@ -634,7 +634,7 @@ func TestActiveBasisNamesTaskOwnDriftBesideParentDrift(t *testing.T) {
 		require.Len(t, cs, 1, "the feature's own pin is clean; only the task's own edit should surface")
 		require.Equal(t, store.NounTask, cs[0].Noun)
 		require.Equal(t, taskID, cs[0].ID)
-		require.Contains(t, cs[0].Files, "task.md")
+		require.Contains(t, basisFileNames(cs[0].Files), "task.md")
 		require.NotNil(t, cs[0].Since)
 	})
 
@@ -664,13 +664,13 @@ func TestActiveBasisNamesTaskOwnDriftBesideParentDrift(t *testing.T) {
 		featC, ok := byNoun[store.NounFeature]
 		require.True(t, ok, "the feature's own drift is still reported")
 		require.Equal(t, featID, featC.ID)
-		require.Contains(t, featC.Files, "feature.md")
+		require.Contains(t, basisFileNames(featC.Files), "feature.md")
 		require.NotNil(t, featC.Since)
 
 		taskC, ok := byNoun[store.NounTask]
 		require.True(t, ok, "the task's own drift is no longer masked by the parent-walk short-circuit")
 		require.Equal(t, taskID, taskC.ID)
-		require.Contains(t, taskC.Files, "task.md")
+		require.Contains(t, basisFileNames(taskC.Files), "task.md")
 		require.NotNil(t, taskC.Since)
 	})
 }
@@ -764,7 +764,7 @@ func TestActiveBasisDetailDistinguishesDeletedFromChanged(t *testing.T) {
 		cs := candidatesFor(rep, drift.MarkerActiveBasis)
 		require.Len(t, cs, 1)
 		require.Equal(t, featID, cs[0].ID)
-		require.Contains(t, cs[0].Files, "feature.md")
+		require.Contains(t, basisFileNames(cs[0].Files), "feature.md")
 		require.Contains(t, cs[0].Detail, "deleted")
 		require.NotContains(t, cs[0].Detail, "changed since", "a deletion is not a change, and the remedy differs")
 	})
@@ -787,7 +787,7 @@ func TestActiveBasisDetailDistinguishesDeletedFromChanged(t *testing.T) {
 		cs := candidatesFor(rep, drift.MarkerActiveBasis)
 		require.Len(t, cs, 1)
 		require.Equal(t, featID, cs[0].ID)
-		require.ElementsMatch(t, []string{"feature.md", "feature.eval.md"}, cs[0].Files)
+		require.ElementsMatch(t, []string{"feature.md", "feature.eval.md"}, basisFileNames(cs[0].Files))
 		require.Contains(t, cs[0].Detail, "deleted")
 		require.Contains(t, cs[0].Detail, "feature.md")
 		require.NotEmpty(t, cs[0].Context, "the merely-edited file rides as context beside the deleted one")
@@ -2409,7 +2409,7 @@ func TestForNodeYieldsCandidatesForADriftedNode(t *testing.T) {
 	require.Equal(t, drift.MarkerActiveBasis, cs[0].Marker)
 	require.Equal(t, store.NounFeature, cs[0].Noun)
 	require.Equal(t, featID, cs[0].ID)
-	require.Contains(t, cs[0].Files, "feature.md")
+	require.Contains(t, basisFileNames(cs[0].Files), "feature.md")
 }
 
 // TestForNodeOnACleanNodeYieldsNothing pins the empty case beside the
@@ -2708,4 +2708,15 @@ func TestStaleSpecSurfaceBlobHashFailureIsUncoveredWithItsOwnReason(t *testing.T
 		}
 	}
 	require.True(t, found, "a git failure reading the surface's blob hash is uncovered, not silently clean")
+}
+
+// basisFileNames reduces an active_basis finding's repository paths to their
+// file names, for the tests that pin which pinned file moved rather than
+// where it lives (active_basis_paths_test.go pins the paths).
+func basisFileNames(files []string) []string {
+	out := make([]string, len(files))
+	for i, f := range files {
+		out[i] = filepath.Base(f)
+	}
+	return out
 }

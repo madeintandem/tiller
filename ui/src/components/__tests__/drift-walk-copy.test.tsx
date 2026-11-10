@@ -122,10 +122,10 @@ describe("Drift report: footer counts in plain words", () => {
     expect(screen.getByText("Design doc is behind the code: 1 design doc could not be compared")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Eval points at something missing: 1 criterion checked, 3 have no file to check, 10 are checked only once the work reaches a later stage",
+        "Eval points at something missing: 1 criterion checked, 3 have no file to check, 10 are not checked at this stage of the work",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Work started from an older basis: 1 node checked")).toBeInTheDocument();
+    expect(screen.getByText("Work rests on an older basis: 1 node checked")).toBeInTheDocument();
   });
 
   it("says one node and one check in the singular", () => {

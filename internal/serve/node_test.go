@@ -1222,7 +1222,7 @@ func TestNodePageReportsActiveBasisDrift(t *testing.T) {
 
 	got := read("/api/node/task/T-000001")
 	require.NotNil(t, got, "the task page reports the drift its own pin took")
-	require.Equal(t, []string{store.TaskProseFile}, got.Drifted)
+	require.Equal(t, []string{taskProseRel}, got.Drifted, "named by its path from the repository root")
 	require.Empty(t, got.Missing, "the file changed, it did not go away")
 	require.Equal(t, "task", got.Noun, "the task's own pin is the one that moved")
 	require.Equal(t, "T-000001", got.ID)
@@ -1245,7 +1245,7 @@ func TestNodePageReportsActiveBasisDrift(t *testing.T) {
 	require.NotNil(t, got)
 	require.Equal(t, "feature", got.Noun, "the pin that moved belongs to the parent")
 	require.Equal(t, "F-000001", got.ID)
-	require.Contains(t, got.Drifted, "feature.md")
+	require.Contains(t, got.Drifted, ".tiller/epics/form-engine/features/schema-engine/feature.md")
 	require.Equal(t,
 		"tiller approve feature form-engine/schema-engine --refresh-basis",
 		got.Command, "the remedy addresses the grain that owns the pin")

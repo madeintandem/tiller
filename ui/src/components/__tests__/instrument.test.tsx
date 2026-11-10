@@ -1851,7 +1851,7 @@ describe("NodeDetail active-basis drift", () => {
       />,
     );
 
-    expect(screen.getByText("Work started from an older basis")).toBeInTheDocument();
+    expect(screen.getByText("Work rests on an older basis")).toBeInTheDocument();
     expect(screen.getByText("task.md")).toBeInTheDocument();
     expect(screen.getByText(/no longer matches the accepted basis/)).toBeInTheDocument();
     expect(
@@ -1952,7 +1952,7 @@ describe("NodeDetail: the Drifted chip", () => {
     // presentational.
     const button = chip.closest("button");
     expect(button).not.toBeNull();
-    expect(button).toHaveAttribute("title", "Spec changed after the work, Work started from an older basis");
+    expect(button).toHaveAttribute("title", "Spec changed after the work, Work rests on an older basis");
     expect(button).toHaveAttribute("aria-expanded", "true");
   });
 

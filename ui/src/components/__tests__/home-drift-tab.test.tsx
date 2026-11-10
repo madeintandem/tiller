@@ -154,7 +154,7 @@ describe("Home Drift tab", () => {
     const spy = stubFetch(routes(withCandidates));
     renderHome("/?tab=drift");
 
-    expect(await screen.findByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
     // The title sits above the rail on every tab, so the page's one h1 is
     // Home's title and the report adds none.
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -193,17 +193,17 @@ describe("Home Drift tab while the page rereads", () => {
   it("keeps the tab, its count, and the report on screen until the new answer lands", async () => {
     const held = stubHeld(routes(withCandidates), "/api/drift");
     renderHome("/?tab=drift");
-    expect(await screen.findByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
 
     held.refetch();
 
     expect(screen.getByRole("button", { name: "Drift · 3" })).toBeInTheDocument();
-    expect(screen.getByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
     expect(screen.getByTestId("where")).toHaveTextContent("/?tab=drift");
 
     await held.settle(uncoveredOnly);
     expect(await screen.findByRole("button", { name: "Drift · 1" })).toBeInTheDocument();
-    expect(screen.queryByText(/Work started from an older basis/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Work rests on an older basis/)).not.toBeInTheDocument();
   });
 });
 
@@ -221,7 +221,7 @@ describe("App: the old /drift address", () => {
     );
 
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent(to));
-    expect(await screen.findByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/Work rests on an older basis \(1\)/)).toBeInTheDocument();
     expect(screen.queryByText(/No such page/i)).not.toBeInTheDocument();
   });
 

@@ -46,10 +46,15 @@ type ActiveBasisView struct {
 // command comes from RefreshBasisCommand, the one composer every surface
 // shares (the CLI's remedy clause, this view, and the drift panel's
 // candidate rows), so no two surfaces can hand a reader different moves.
+//
+// The pin records its files by bare name (feature.md, task.md); the view names
+// them by their path from the repository root (gen.NodeFilePaths), the form
+// the drift report's files and sentence use, so a reader sees one form.
 func ActiveBasisOf(t *store.Tree, ab *mutate.ActiveBasisError) ActiveBasisView {
+	reported := gen.NodeByID(t, ab.NodeID)
 	return ActiveBasisView{
-		Drifted: ab.Drifted,
-		Missing: ab.Missing,
+		Drifted: gen.NodeFilePaths(t, reported, ab.Drifted),
+		Missing: gen.NodeFilePaths(t, reported, ab.Missing),
 		Noun:    ab.Noun,
 		ID:      ab.NodeID,
 		Ref:     gen.RefByID(t, ab.NodeID),

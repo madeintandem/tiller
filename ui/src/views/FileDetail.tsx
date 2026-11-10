@@ -12,11 +12,11 @@ import type { BaselineDocView, NodeDriftView, ProseFile } from "../api";
 import { prosePath } from "../api";
 import Chip from "../components/Chip";
 import CopyCmd from "../components/CopyCmd";
-import { DriftCandidateDetails } from "../components/DriftFinding";
+import { DriftCandidateDetails, UncoveredLine } from "../components/DriftFinding";
 import Prose from "../components/Prose";
 import Time from "../components/Time";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
-import { markerCopy, reasonCopy } from "../lib/drift";
+import { markerCopy } from "../lib/drift";
 import { PersonName } from "../people";
 import "../components/instrument.css";
 import "./drift.css";
@@ -148,11 +148,7 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
         );
       })}
       {uncovered.map((row, i) => (
-        <p key={`${row.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{markerCopy(row.marker).name}</span> not checked. {reasonCopy(row.marker, row.reason).cause}{" "}
-          {reasonCopy(row.marker, row.reason).fix}
-          {row.detail && <> ({row.detail})</>}
-        </p>
+        <UncoveredLine key={`${row.marker}-${i}`} row={row} />
       ))}
       {stamp === undefined && (
         <div className="instr-drift">

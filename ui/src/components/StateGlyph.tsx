@@ -4,9 +4,12 @@
 // only the second signal. The shapes read as progress: a dashed ring
 // (draft), a ring (specced), a ring with a center (ready), half filled
 // (active), three-quarters filled (in review), a solid check (done), and a
-// solid no-entry bar (blocked). A wire status folds onto its chart sibling
-// through lib/states.ts's foldStatus, the same table every dot and chip
-// paints with, so the shape and the color can never name two states.
+// solid no-entry bar (blocked). Cancelled is not a chart state but draws an
+// eighth shape of its own, a ring struck through, so it is never told from
+// draft by color and fading alone (CANCELLED below). Every other wire status
+// folds onto its chart sibling through lib/states.ts's foldStatus, the same
+// table every dot and chip paints with, so the shape and the color can never
+// name two states; an unknown status rests at draft's shape.
 //
 // Unlike StateDot, a tree row carries no status word beside it, so the glyph
 // carries its status label itself, as its accessible name (role="img") and

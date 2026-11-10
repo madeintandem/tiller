@@ -36,7 +36,7 @@ describe("drift copy", () => {
 
   it("names the markers the brief fixes", () => {
     expect(MARKER_COPY.stale_spec.name).toBe("Spec changed after the work");
-    expect(MARKER_COPY.active_basis.name).toBe("Work started from an older basis");
+    expect(MARKER_COPY.active_basis.name).toBe("Work rests on an older basis");
     expect(MARKER_COPY.answered_question.name).toBe("An answered question was not reviewed");
     expect(MARKER_COPY.missing_surface.name).toBe("Recorded file is gone");
     expect(MARKER_COPY.orphan_eval.name).toBe("Eval points at something missing");

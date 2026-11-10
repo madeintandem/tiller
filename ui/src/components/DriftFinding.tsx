@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CandidateView, UncoveredView } from "../api";
-import { markerCopy, refOf, shortSha } from "../lib/drift";
+import { markerCopy, reasonCopy, refOf, shortSha, uncoveredDetail } from "../lib/drift";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
 import RefLink from "./RefLink";
@@ -45,6 +45,21 @@ export function DriftTargetLink({ row }: { row: CandidateView | UncoveredView })
       <RefLink node={node} label={row.title} className="explore-result-title" />{" "}
       <span className="mono muted drift-row-key">{node.ref}</span>
     </>
+  );
+}
+
+// UncoveredLine is one row a check could not compare, as the node page's drift
+// panel and a design file's baseline panel both show it: what could not be
+// checked (the marker's unchecked label), the cause and the fix, then the
+// row's own detail only when it says more than the cause (uncoveredDetail).
+export function UncoveredLine({ row }: { row: UncoveredView }) {
+  const reason = reasonCopy(row.marker, row.reason);
+  const detail = uncoveredDetail(row);
+  return (
+    <p className="muted instr-drift-uncovered">
+      <span className="instr-drift-say">{markerCopy(row.marker).unchecked}.</span> {reason.cause} {reason.fix}
+      {detail !== "" && <> ({detail})</>}
+    </p>
   );
 }
 

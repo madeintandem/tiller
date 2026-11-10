@@ -410,32 +410,6 @@ func nodeKey(n store.Node) string {
 
 // --- active_basis ---
 
-// activeBasisFeatureStatuses and activeBasisTaskStatuses are the sweep's own
-// status filter, verbatim from the schema's active_basis bullet: "Sweeps
-// ready and active features and approved non-terminal tasks." The filter
-// lives here rather than inside mutate.BasisDrift/checkBasis, because
-// accepted_against is never cleared at done or cancelled, and an unfiltered
-// sweep would misfile stale_spec's business under this marker instead.
-var activeBasisFeatureStatuses = map[string]bool{"ready": true, "active": true}
-var activeBasisTaskStatuses = map[string]bool{"ready": true, "in_progress": true, "check": true, "in_review": true}
-
-// ActiveBasisApplies reports whether n is a node the active_basis sweep
-// compares at all: a ready or active feature, or an approved non-terminal
-// task. It is the one rule every reporter of basis drift shares, so the node
-// page never shows a finding (and a refresh-basis remedy the CLI refuses) on
-// a node `tiller drift` would not list, such as a done feature whose eval an
-// approved amendment corrected.
-func ActiveBasisApplies(n store.Node) bool {
-	switch v := n.(type) {
-	case *store.Feature:
-		return activeBasisFeatureStatuses[v.Status]
-	case *store.Task:
-		return activeBasisTaskStatuses[v.Status]
-	default:
-		return false
-	}
-}
-
 // sweepActiveBasis walks the ready/active features and the ready/
 // in_progress/check/in_review tasks, calling mutate.BasisDrift per node (the
 // same predicate start/check/submit refuse on) and folding each result into
@@ -576,14 +550,18 @@ func classifyBasisDrift(t *store.Tree, rep *Report, swept store.Node, err error,
 	seen[key] = true
 
 	reported := basisReportedNode(t, abErr.Noun, abErr.NodeID)
-	detail, context := activeBasisDetail(abErr)
+	// The pin records bare names (feature.md, task.md); the finding names them
+	// by their path from the repository root, the one form every marker's
+	// files take.
+	drifted := gen.NodeFilePaths(t, reported, abErr.Drifted)
+	detail, context := activeBasisDetail(drifted, gen.NodeFilePaths(t, reported, abErr.Missing))
 	rep.Candidates = append(rep.Candidates, Candidate{
 		Marker:  MarkerActiveBasis,
 		Noun:    abErr.Noun,
 		ID:      abErr.NodeID,
 		Key:     nodeKey(reported),
 		Detail:  detail,
-		Files:   abErr.Drifted,
+		Files:   drifted,
 		Since:   basisSince(reported),
 		Context: context,
 	})
@@ -597,24 +575,25 @@ func classifyBasisDrift(t *store.Tree, rep *Report, swept store.Node, err error,
 // there. A file that drifted but is still
 // present rides as "changed"; when both kinds appear together, the deleted
 // ones lead the sentence and the merely-changed ones ride beside it as
-// Context, so neither fact is lost.
-func activeBasisDetail(abErr *mutate.ActiveBasisError) (string, []string) {
-	if len(abErr.Missing) == 0 {
-		return fmt.Sprintf("%s changed since the accepted basis", strings.Join(abErr.Drifted, ", ")), nil
+// Context, so neither fact is lost. drifted and missing are the pin's files
+// by repository path (gen.NodeFilePaths).
+func activeBasisDetail(drifted, missingFiles []string) (string, []string) {
+	if len(missingFiles) == 0 {
+		return fmt.Sprintf("%s changed since the accepted basis", strings.Join(drifted, ", ")), nil
 	}
 
 	missing := map[string]bool{}
-	for _, m := range abErr.Missing {
+	for _, m := range missingFiles {
 		missing[m] = true
 	}
 	var alsoChanged []string
-	for _, d := range abErr.Drifted {
+	for _, d := range drifted {
 		if !missing[d] {
 			alsoChanged = append(alsoChanged, d)
 		}
 	}
 
-	detail := fmt.Sprintf("%s deleted since the accepted basis", strings.Join(abErr.Missing, ", "))
+	detail := fmt.Sprintf("%s deleted since the accepted basis", strings.Join(missingFiles, ", "))
 	var context []string
 	if len(alsoChanged) > 0 {
 		context = []string{fmt.Sprintf("%s also changed since the accepted basis", strings.Join(alsoChanged, ", "))}

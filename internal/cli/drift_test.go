@@ -419,10 +419,10 @@ func TestDriftContextLinesRender(t *testing.T) {
 	require.Contains(t, abRows[0]["detail"], "feature.eval.md deleted since the accepted basis")
 	context, ok := abRows[0]["context"].([]any)
 	require.True(t, ok, "context rides as a list: %v", abRows[0]["context"])
-	require.Equal(t, []any{"feature.md also changed since the accepted basis"}, context)
+	require.Equal(t, []any{".tiller/epics/form-engine/features/certification-form-loading/feature.md also changed since the accepted basis"}, context)
 
 	_, humanErr, code := execCLI(t, "drift")
 	require.Equal(t, 1, code)
 	require.Contains(t, humanErr, "feature.eval.md deleted since the accepted basis")
-	require.Contains(t, humanErr, "      context: feature.md also changed since the accepted basis")
+	require.Contains(t, humanErr, "      context: .tiller/epics/form-engine/features/certification-form-loading/feature.md also changed since the accepted basis")
 }
