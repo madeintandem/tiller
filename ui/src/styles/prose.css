@@ -197,13 +197,14 @@
   align-items: start;
 }
 
-/* Sticky below the pinned tab rail. The pin (.node-pin, top: -22px) is, once
-   stuck, about 99px of visible height: the one-line compact header (22px top
-   padding, a ~21px line, 6px bottom) plus the tab rail (12px top margin, ~36px
-   tab, 24px bottom margin), less the 22px it hides above the pane. 108px
-   clears that with a small gap. Estimated from those rules, not measured. */
+/* Sticky below the pinned tab rail. Once stuck, the pinned area runs from the
+   pane's top edge to 102px below it: the 60px band the one-line header fills
+   (node-pin.css, --node-pin-band), the 34px tab rail, and the pin's 8px
+   bottom gap. Measured in Chromium at 1512px (walk fix of batches A to C).
+   A heading an outline link lands on stops at that line; the outline itself
+   sticks 22px lower, since a sticky offset counts from the pane's padding. */
 :root {
-  --outline-top: 108px;
+  --outline-top: 102px;
 }
 
 /* An outline link lands its heading below the pinned header and rail, by the

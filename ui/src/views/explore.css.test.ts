@@ -7,6 +7,13 @@ import { describe, expect, it } from "vitest";
 
 import css from "./explore-nav.css?raw";
 
+describe("explore-nav.css: a revealed row's breathing room", () => {
+  it("gives navigator rows about one row of scroll margin, so a revealed row never sits flush on an edge", () => {
+    const rule = /\.explore-nav-tree a\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(rule).toMatch(/scroll-margin-block:\s*2rem/);
+  });
+});
+
 describe("explore-nav.css: .explore-task-title", () => {
   const rule = /\.explore-task-title\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
 

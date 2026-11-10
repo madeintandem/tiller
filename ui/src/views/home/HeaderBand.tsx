@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import type { FetchState } from "../../hooks";
 import type { DriftReportView, ListResult, ProjectSummary } from "../../api";
 import StateBar from "../../components/StateBar";
+import { statusLabel } from "../../lib/statusLabel";
 import { PersonName } from "../../people";
 import { composeDriftBand } from "./driftBand";
 import { composeFunnel, composeShelfStat } from "./funnel";
@@ -88,7 +89,7 @@ function FunnelStrip({
         {segments.map((s) => (
           <Link key={s.status} to="/build" className={s.n === 0 ? "fseg dim" : "fseg"}>
             <div className="n">{s.n}</div>
-            <div className="lbl">{s.status === "in_review" ? "in review" : s.status}</div>
+            <div className="lbl">{statusLabel(s.status)}</div>
           </Link>
         ))}
       </div>

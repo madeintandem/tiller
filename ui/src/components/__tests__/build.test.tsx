@@ -452,7 +452,7 @@ describe("Build columns", () => {
     // draft: F-1, F-4 (2); specced: F-5 (1); active: F-2 (1);
     // in_review: F-3 (1); done: none (0).
     expect(countFor("Draft")).toBe("2");
-    expect(countFor("Specced")).toBe("1");
+    expect(countFor("Specified")).toBe("1");
     expect(countFor("Ready")).toBe("0");
     expect(countFor("Active")).toBe("1");
     expect(countFor("In review")).toBe("1");
@@ -495,7 +495,7 @@ describe("Build empty columns collapse to a rail", () => {
     const collapsed = container.querySelectorAll('.board-heads [data-collapsed="true"]');
     expect(collapsed).toHaveLength(4);
     const names = Array.from(collapsed).map((el) => el.textContent);
-    expect(names).toEqual(["Draft0", "Specced0", "Active0", "Done0"]);
+    expect(names).toEqual(["Draft0", "Specified0", "Active0", "Done0"]);
     for (const head of Array.from(collapsed)) {
       expect(head.getAttribute("aria-label")).toMatch(/, 0$/);
     }

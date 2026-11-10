@@ -17,6 +17,7 @@ import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { useBoardScrollMode } from "../lib/boardScroll";
 import { ROW_CAP } from "../lib/disclosure";
 import { formatAdded } from "../lib/added";
+import { formatAbsolute } from "../lib/time";
 import { has } from "../lib/has";
 import { statusLabel } from "../lib/statusLabel";
 import { PersonName } from "../people";
@@ -364,12 +365,18 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
           Superseded by <Link to={`/node/${item.noun}/${item.superseded_by}`}>{item.superseded_by}</Link>
         </p>
       )}
-      {has(item.added_at) && <p className="work-item-added">{formatAdded(item.added_at, new Date())}</p>}
+      {has(item.added_at) && (
+        <p className="work-item-added">
+          <time dateTime={item.added_at} title={formatAbsolute(item.added_at)}>
+            {formatAdded(item.added_at, new Date())}
+          </time>
+        </p>
+      )}
       {(item.noun === "bug" || has(item.activity) || terminal) && (
         <div className="work-item-card-chips">
           {item.noun === "bug" && <SeverityChip severity={item.severity} />}
           {has(item.activity) && <Chip status={item.activity}>{statusLabel(item.activity)}</Chip>}
-          {terminal && <Chip status={item.status}>{item.status}</Chip>}
+          {terminal && <Chip status={item.status}>{statusLabel(item.status)}</Chip>}
         </div>
       )}
     </article>

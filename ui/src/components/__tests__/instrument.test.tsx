@@ -713,7 +713,7 @@ describe("TaskList", () => {
     expect(reviewRow.querySelector(".instr-taskrow-key")?.textContent).toBe("verify-startup");
 
     expect(container.querySelector(".instr-fh-caption")?.textContent).toBe(
-      "1 in_review · 1 done",
+      "1 in review · 1 done",
     );
   });
 
@@ -1403,7 +1403,7 @@ describe("NodeDetail epic: identity renders once, decomposition ordered as serve
       true,
     );
     expect(container.querySelector(".instr-decomp-bar .state-bar")).not.toBeNull();
-    expect(screen.getByText("1 specced · 1 ready")).toBeInTheDocument();
+    expect(screen.getByText("1 specified · 1 ready")).toBeInTheDocument();
   });
 });
 

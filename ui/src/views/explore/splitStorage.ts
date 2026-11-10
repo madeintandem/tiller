@@ -29,6 +29,18 @@ export function readNavWidth(viewportWidth: number = window.innerWidth): number 
   return clampNavWidth(Number(raw));
 }
 
+// clearNavWidth forgets a chosen width (the divider's double-click reset), so
+// the window-based default applies again on every later visit.
+export function clearNavWidth(): void {
+  try {
+    window.localStorage.removeItem(SPLIT_STORAGE_KEY);
+  } catch {
+    // Nothing stored can be read back either; the default already applies.
+  }
+}
+
+// writeNavWidth stores a width the reader chose. The default is never
+// stored, so it can follow the window from visit to visit.
 export function writeNavWidth(px: number): void {
   try {
     window.localStorage.setItem(SPLIT_STORAGE_KEY, String(px));

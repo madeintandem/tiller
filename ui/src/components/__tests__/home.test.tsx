@@ -1372,18 +1372,18 @@ describe("Home header band", () => {
 
     const segs = [...container.querySelectorAll(".funnel-row .fseg")];
     expect(segs.map((el) => el.querySelector(".lbl")?.textContent)).toEqual([
-      "draft",
-      "specced",
-      "ready",
-      "active",
-      "in review",
-      "done",
+      "Draft",
+      "Specified",
+      "Ready",
+      "Active",
+      "In review",
+      "Done",
     ]);
     expect(segs.map((el) => el.querySelector(".n")?.textContent)).toEqual(["40", "20", "15", "0", "12", "15"]);
     segs.forEach((el) => expect(el).toHaveAttribute("href", "/build"));
     const dimmed = segs.filter((el) => el.className.split(" ").includes("dim"));
     expect(dimmed).toHaveLength(1);
-    expect(dimmed[0].querySelector(".lbl")?.textContent).toBe("active");
+    expect(dimmed[0].querySelector(".lbl")?.textContent).toBe("Active");
   });
 
   // The caption's task count is singular at 1, and names a retired count

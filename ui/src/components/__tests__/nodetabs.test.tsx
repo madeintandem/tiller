@@ -855,6 +855,29 @@ describe("NodeDetail pinned rail", () => {
     expect(c.getByText("Active")).toBeInTheDocument();
     expect(c.getByText("Refund pipeline")).toBeInTheDocument();
     expect(container.querySelector(".node-pin .mode-nav")).not.toBeNull();
+    // The full header is still in the DOM, scrolled away; the compact copy
+    // is visual only, so assistive tech reads the pill, status, and title once.
+    expect(compact).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("times the compact header on the pin's sentinel, not the full header", () => {
+    const observed: Element[] = [];
+    globalThis.IntersectionObserver = class {
+      observe(target: Element) {
+        observed.push(target);
+      }
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    } as unknown as typeof IntersectionObserver;
+    const { container } = renderNode(featurePage());
+    expect(observed).toHaveLength(1);
+    expect(observed[0]).toHaveClass("node-pin-sentinel");
+    expect(observed[0].parentElement).toHaveClass("node-pinned");
+    expect(observed[0]).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector(".node-pinned > .node-pin")).not.toBeNull();
   });
 
   it("omits the compact header while the full header is in view", () => {
@@ -881,5 +904,7 @@ describe("NodeDetail pinned rail", () => {
       <NodeTabs tabs={[{ key: "a", label: "a", render: () => <p>A</p> }]} active="a" onSelect={() => {}} />,
     );
     expect(container.querySelector(".node-pin")).toBeNull();
+    expect(container.querySelector(".node-pinned")).toBeNull();
+    expect(container.querySelector(".node-pin-sentinel")).toBeNull();
   });
 });

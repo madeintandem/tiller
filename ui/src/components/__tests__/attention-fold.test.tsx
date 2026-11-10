@@ -86,6 +86,15 @@ describe("NodeDetail: the attention fold", () => {
     expect(screen.getByText("Workflow · Human")).toBeInTheDocument();
   });
 
+  // The node page's own "N more" affordance (EpicBody, HistorySection), not a
+  // style of its own; its focus ring is the console-wide :focus-visible rule.
+  it("dresses the fold button as the node page's existing disclosure", () => {
+    renderPage(taskPage({ workflow }), { entries: [ask("tiller attest second")] });
+    const more = screen.getByRole("button", { name: "1 more" });
+    expect(more).toHaveClass("instr-more");
+    expect(more).not.toHaveClass("attn-more");
+  });
+
   it("offers no button for exactly one box", () => {
     renderPage(taskPage(), { entries: [ask("tiller attest second")] });
     expect(screen.getByRole("button", { name: "tiller attest second" })).toBeInTheDocument();

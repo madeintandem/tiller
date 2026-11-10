@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { RelatedNode, WorkItemsBoard } from "../../api";
 import { formatAdded } from "../../lib/added";
+import { formatAbsolute } from "../../lib/time";
 import WorkItems from "../../views/WorkItems";
 
 const attachment: RelatedNode = {
@@ -331,7 +332,7 @@ describe("Fix board", () => {
     ]);
     expect(screen.getByText("Zulu")).toBeInTheDocument();
     expect(screen.getByText("Mike")).toBeInTheDocument();
-    expect(screen.getByText("cancelled")).toBeInTheDocument();
+    expect(screen.getByText("Cancelled")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("link", { name: "Bugs" }));
     await waitFor(() => expect(screen.queryByText("Mike")).not.toBeInTheDocument());
@@ -455,5 +456,28 @@ describe("Fix board severity and date added", () => {
     const key = line.querySelector(".title-ref-key") as HTMLElement;
     expect(key.textContent).toBe("foundation/console");
     expect(key).toHaveClass("mono");
+  });
+});
+
+describe("Fix card words and times (browser walk of batches A to C)", () => {
+  it("names a closed card's terminal status through statusLabel", async () => {
+    renderWorkItems(board, "/fix");
+    const closed = await screen.findByRole("region", { name: "Closed" });
+    const chips = Array.from(closed.querySelectorAll(".work-item-card-chips .chip")).map((c) => c.textContent);
+    expect(chips).toContain("Done");
+    expect(chips).toContain("Cancelled");
+    expect(chips).not.toContain("done");
+    expect(chips).not.toContain("cancelled");
+  });
+
+  it("gives the Added line its absolute time on hover, leaving the visible text alone", async () => {
+    const iso = "2025-10-12T12:00:00Z";
+    renderWorkItems({ ...board, open: [{ ...board.open[0], added_at: iso }] }, "/fix");
+    const zulu = (await screen.findByText("Zulu")).closest("article") as HTMLElement;
+    const time = zulu.querySelector(".work-item-added time") as HTMLElement;
+    expect(time).not.toBeNull();
+    expect(time).toHaveAttribute("dateTime", iso);
+    expect(time).toHaveAttribute("title", formatAbsolute(iso));
+    expect(time.textContent).toBe(formatAdded(iso, new Date()));
   });
 });

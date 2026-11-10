@@ -29,15 +29,26 @@ func NextLine(c NextCandidate) string {
 	if reason := Sentence(c.Reason); reason != "" {
 		b.WriteString(" " + reason)
 	}
-	switch {
+	switch guide := NextGuide(c); {
 	case c.Command != "":
 		b.WriteString(" `" + c.Command + "`")
 	case c.Branch != "":
 		b.WriteString(" Continue it on " + c.Branch + ".")
-	case c.Skill != "":
-		b.WriteString(" `tiller guide " + c.Skill + "`")
+	case guide != "":
+		b.WriteString(" `" + guide + "`")
 	}
 	return b.String()
+}
+
+// NextGuide is the command that loads a move's skill, for a move with no
+// command of its own that does not continue on another branch: the line
+// NextLine prints, and the guide the console's Up next row copies. It is
+// empty for every other move.
+func NextGuide(c NextCandidate) string {
+	if c.Command != "" || c.Branch != "" || c.Skill == "" {
+		return ""
+	}
+	return "tiller guide " + c.Skill
 }
 
 // Sentence ends text with one period, unless it already ends on "?" or "!",

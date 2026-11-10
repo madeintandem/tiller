@@ -33,6 +33,9 @@ func NextOf(t *store.Tree, in NextInput) Next {
 	r := newRanker(t, LocateOf(t, in.Recent, in.Reader, in.Now), in.Now)
 	next := Next{Reader: in.Reader}
 	next.Candidates, next.keep = r.rank(candidatesOf(t, order, in))
+	for i := range next.Candidates {
+		next.Candidates[i].Guide = NextGuide(next.Candidates[i])
+	}
 	next.CaughtUp = len(next.Candidates) == 0
 	switch {
 	case len(t.Epics) == 0 && len(t.ToBeDesign) == 0 && !baselineRequired(t) && noPlannedWork(next.Candidates):

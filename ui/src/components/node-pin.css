@@ -1,22 +1,63 @@
-/* The node page's pinned tab rail and one-line header. The reading pane
-   (.explore-detail) paints nothing itself, so it shows the body's --paper;
-   the pin repaints the same token so scrolled content never shows through.
-   top: -22px cancels .explore-detail's 22px top padding, so the pin sits
-   flush with the pane's top edge instead of floating 22px below it. */
+/* The node page's pinned tab rail and one-line header.
+
+   Nothing here changes normal flow when the compact header shows or hides
+   (browser walk of batches A to C: the old in-flow header pushed the page
+   45 to 55px at every crossing, and Safari has no scroll anchoring to hide
+   it). The rail always pins one band below the pane's top edge, and the
+   compact header overlays that band, absolutely positioned above the rail.
+
+   The reading pane (.explore-detail) paints nothing itself, so it shows the
+   body's --paper; the pin and the compact header repaint the same token so
+   scrolled content never shows through. The pane has 22px of top padding,
+   which the sticky offset is measured from, hence the - 22px. */
+.node-pinned {
+  --node-pin-band: 60px;
+  position: relative;
+}
+
+/* One band above the rail's place in flow, so it scrolls out of the pane at
+   the moment the rail pins; NodeTabs shows the compact header from then on.
+   Absolute, so it takes no space. */
+.node-pin-sentinel {
+  position: absolute;
+  top: calc(-1 * var(--node-pin-band));
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* The rail's own margins move onto the pin (.mode-nav keeps 0.75rem above
+   and 1.5rem below on every other page), and 8px of the space below becomes
+   opaque padding, so text scrolling under the rail is hidden a little below
+   its hairline instead of being cut against it. */
 .node-pin {
   position: sticky;
-  top: -22px;
+  top: calc(var(--node-pin-band) - 22px);
   z-index: 2;
+  margin: 0.75rem 0 1rem;
+  padding-bottom: 8px;
   background: var(--paper);
 }
 
+.node-pin > .mode-nav {
+  margin: 0;
+}
+
 .node-compact {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: var(--node-pin-band);
+  box-sizing: border-box;
+  padding: 22px 0 10px;
+  background: var(--paper);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  padding: 22px 0 6px;
 }
 
 .node-compact > .kind-pill,

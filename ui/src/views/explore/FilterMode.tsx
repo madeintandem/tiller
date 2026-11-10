@@ -11,6 +11,7 @@ import EmptyNote from "../../components/EmptyNote";
 import { useFetch } from "../../hooks";
 import { withActivityPhrase } from "../../lib/activityPhrase";
 import { displayStatus } from "../../lib/displayStatus";
+import { statusLabel } from "../../lib/statusLabel";
 import { PersonName } from "../../people";
 import FilterCombobox from "./FilterCombobox";
 
@@ -104,9 +105,13 @@ export default function FilterMode() {
           // Counts can be retained while a pick is pending, but selection
           // follows the URL immediately so another pick can supersede it.
           const value = filters[facet.axis];
-          const options = fresh !== null ? facet.options : facet.options.map((option) => ({
+          const served = fresh !== null ? facet.options : facet.options.map((option) => ({
             ...option, selected: value !== undefined && (option.value === value || option.key === value),
           }));
+          // A status option reads in words; the value it sends stays the
+          // stored status. Other axes keep the server's label.
+          const options = facet.axis !== "status" ? served :
+            served.map((option) => ({ ...option, label: statusLabel(option.value) }));
           return <FilterCombobox key={`${noun}-${facet.axis}`} name={facet.axis} options={options}
             title={axisTitles[facet.axis]}
             note={raw === undefined || raw !== value ? undefined : `no ${facet.axis} "${raw}"`}

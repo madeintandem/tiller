@@ -47,6 +47,8 @@ func (n *NextNode) Label() string {
 
 // NextCandidate is one legal next move for the reader's checkout: who makes
 // it, what it does, to which node, and the command or skill that does it.
+// Guide is NextGuide's command for a skill move with no command, set once the
+// list is ranked, so a surface can copy what the text line prints.
 type NextCandidate struct {
 	Actor    string           `json:"actor"`
 	Kind     string           `json:"kind"`
@@ -54,6 +56,7 @@ type NextCandidate struct {
 	Node     *NextNode        `json:"node,omitempty"`
 	Command  string           `json:"command,omitempty"`
 	Skill    string           `json:"skill,omitempty"`
+	Guide    string           `json:"guide,omitempty"`
 	Reason   string           `json:"reason"`
 	Tier     int              `json:"tier"`
 	Branch   string           `json:"branch,omitempty"`

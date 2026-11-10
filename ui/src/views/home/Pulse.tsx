@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import type { FetchState } from "../../hooks";
 import type {
   BlockedItem,
+  ContributorStream,
   GatesItem,
   NextAnswer,
   NextCandidate,
@@ -150,19 +151,12 @@ function InFlightBody({ streams }: { streams: Streams }) {
         <div className="contributor-group" key={o.contributor.id}>
           <div className="og-name"><PersonName id={o.contributor.id} name={o.contributor.name} /></div>
           {/* Render order is the brief's own: active, then gates in review,
-              then the blocked register. Settled decision
+              then the blocked register, read as one list so a feature gets
+              one heading. Settled decision
               6: only the blocked register caps, at ROW_CAP, with an "N more"
               foot carrying the full remaining count; active and in-review
               rows are motion and are never capped. */}
-          <FeatureGroups items={o.active}>
-            {(item, grouped) => <ActiveRow key={`active:${item.noun}:${item.id}`} item={item} grouped={grouped} />}
-          </FeatureGroups>
-          <FeatureGroups items={o.gates_in_review}>
-            {(item, grouped) => <GatesRow key={`gates:${item.noun}:${item.id}`} item={item} grouped={grouped} />}
-          </FeatureGroups>
-          <FeatureGroups items={o.blocked.slice(0, PULSE_CAP)}>
-            {(item, grouped) => <BlockedRow key={blockedRowKey(item)} item={item} grouped={grouped} />}
-          </FeatureGroups>
+          <FeatureGroups rows={flightRows(o)} />
           {/* The foot always points at /build, even when a capped row is a
               shelf item, which lives on Fix instead: the
               remainder can mix all five work nouns, so no single page holds
@@ -181,23 +175,56 @@ function InFlightBody({ streams }: { streams: Streams }) {
 
 type FlightItem = StreamItem | GatesItem | BlockedItem;
 
-// A feature's tasks sit under one heading; every other row (a shelf node, a
-// task with no feature) renders in place without one.
-function FeatureGroups<T extends FlightItem>({
-  items,
-  children,
-}: {
-  items: T[];
-  children: (item: T, grouped: boolean) => ReactNode;
-}) {
+// One In flight row, tagged with the list it came from so the group renders
+// it with that list's status words. feature_id and feature_title are the
+// item's own, lifted for groupByFeature.
+type FlightRow = { feature_id?: string; feature_title?: string } & (
+  | { kind: "active"; item: StreamItem }
+  | { kind: "gates"; item: GatesItem }
+  | { kind: "blocked"; item: BlockedItem }
+);
+
+// One owner's rows as one list, in the order the lists give them: active,
+// then in review, then the capped blocked register.
+function flightRows(o: ContributorStream): FlightRow[] {
+  const lift = (item: FlightItem) => ({ feature_id: item.feature_id, feature_title: item.feature_title });
+  return [
+    ...o.active.map((item): FlightRow => ({ kind: "active", item, ...lift(item) })),
+    ...o.gates_in_review.map((item): FlightRow => ({ kind: "gates", item, ...lift(item) })),
+    ...o.blocked.slice(0, PULSE_CAP).map((item): FlightRow => ({ kind: "blocked", item, ...lift(item) })),
+  ];
+}
+
+function FlightRowView({ row, grouped }: { row: FlightRow; grouped: boolean }) {
+  switch (row.kind) {
+    case "active":
+      return <ActiveRow item={row.item} grouped={grouped} />;
+    case "gates":
+      return <GatesRow item={row.item} grouped={grouped} />;
+    case "blocked":
+      return <BlockedRow item={row.item} grouped={grouped} />;
+  }
+}
+
+function flightRowKey(row: FlightRow): string {
+  return row.kind === "blocked" ? blockedRowKey(row.item) : `${row.kind}:${row.item.noun}:${row.item.id}`;
+}
+
+// A feature's tasks sit under one heading, whichever list each row came
+// from; every other row (a shelf node, a task with no feature) renders in
+// place without one.
+function FeatureGroups({ rows }: { rows: FlightRow[] }) {
+  const render = (row: FlightRow, grouped: boolean): ReactNode => (
+    <FlightRowView key={flightRowKey(row)} row={row} grouped={grouped} />
+  );
   return (
     <>
-      {groupByFeature(items).map((group) => {
+      {groupByFeature(rows).map((group) => {
         const featureId = group.featureId;
         if (featureId === null) {
-          return group.items.map((item) => children(item, false));
+          return group.items.map((row) => render(row, false));
         }
-        const featureKey = featureKeyOf(group.items[0].key);
+        const featureKey = featureKeyOf(group.items[0].item.key);
         return (
           <div key={`feature:${featureId}`}>
             <div className="pulse-feature">
@@ -207,7 +234,7 @@ function FeatureGroups<T extends FlightItem>({
                 addr={featureKey ?? featureId}
               />
             </div>
-            {group.items.map((item) => children(item, true))}
+            {group.items.map((row) => render(row, true))}
           </div>
         );
       })}
@@ -259,7 +286,7 @@ function GatesRow({ item, grouped }: { item: GatesItem; grouped: boolean }) {
         <b>
           <ItemRef item={item} grouped={grouped} />
         </b>{" "}
-        · in review
+        · {statusLabel("in_review")}
       </span>
     </div>
   );
@@ -366,10 +393,12 @@ function UpNextBody({ next }: { next: NextAnswer }) {
 
 // One ranked move: its actor, then the action and a link to its node (title
 // first, key after it), then why it ranks here, worded as `tiller next` words
-// it, then the command as a copy control.
+// it, then the command as a copy control, or for a skill move with no command
+// the `tiller guide <skill>` line the CLI prints for it.
 function NextRow({ candidate }: { candidate: NextCandidate }) {
   const { node } = candidate;
   const reason = nextReason(candidate);
+  const copy = has(candidate.command) ? candidate.command : candidate.guide;
   return (
     <div className="prow">
       <span className="actor">{candidate.actor === "human" ? "You" : "Agent"}</span>
@@ -388,9 +417,9 @@ function NextRow({ candidate }: { candidate: NextCandidate }) {
             <ProseInline markdown={reason} />
           </span>
         )}
-        {has(candidate.command) && (
+        {has(copy) && (
           <span className="pcmd">
-            <CopyCmd cmd={candidate.command} />
+            <CopyCmd cmd={copy} />
           </span>
         )}
       </span>

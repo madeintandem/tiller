@@ -1897,6 +1897,9 @@ export interface NextCandidate {
   node?: NextNode;
   command?: string;
   skill?: string;
+  // The `tiller guide <skill>` line `tiller next` prints for a skill move
+  // with no command and no other branch (views.NextGuide); absent otherwise.
+  guide?: string;
   reason: string;
   tier: number;
   branch?: string;

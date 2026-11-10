@@ -6,6 +6,12 @@
   align-items: flex-start;
 }
 
+/* About one row of room around a row the navigator scrolls into view (a deep
+   link's current node), so it never lands flush on the tree's edge. */
+.explore-nav-tree a {
+  scroll-margin-block: 2rem;
+}
+
 .explore-task .state-glyph {
   margin-top: 2px;
 }

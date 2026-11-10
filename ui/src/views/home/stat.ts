@@ -1,6 +1,6 @@
 // The header band's stat composition (task C1): each of the four tiles
 // (Epics, Features, Tasks, Questions) needs a StateBar mix plus a
-// caption naming the literal wire-status breakdown ("63 draft . 6 specced .
+// caption naming the status breakdown in words ("63 draft . 6 specified .
 // 1 ready"), derived from a flat list of nodes with their raw status. This is
 // page-composed on purpose (StateBar.tsx's own doc comment: "the mix is
 // typed NodeStatus, bars are page-composed"), and it folds through
@@ -12,6 +12,7 @@ import type { NodeStatus } from "../../api";
 import type { StateMixEntry } from "../../components/StateBar";
 import { displayStatus } from "../../lib/displayStatus";
 import { foldStatus } from "../../lib/states";
+import { statusLabel } from "../../lib/statusLabel";
 
 const LEGEND_ORDER: NodeStatus[] = [
   "draft",
@@ -52,7 +53,9 @@ export function composeStat(rows: Array<{ status: string; column?: string }>): C
     const rank = LEGEND_RANK[foldStatus(a)] - LEGEND_RANK[foldStatus(b)];
     return rank !== 0 ? rank : a.localeCompare(b);
   });
-  const caption = words.map((word) => `${wordCounts.get(word) ?? 0} ${word}`).join(" · ");
+  // The words themselves go through statusLabel, lower-cased mid-caption, so
+  // a wire word such as in_progress never reaches the screen.
+  const caption = words.map((word) => `${wordCounts.get(word) ?? 0} ${statusLabel(word).toLowerCase()}`).join(" · ");
 
   const bucketTotals = new Map<NodeStatus, number>();
   for (const [word, n] of wordCounts) {

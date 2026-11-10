@@ -11,16 +11,17 @@ import { describe, expect, it } from "vitest";
 import { composeStat } from "./stat";
 
 describe("composeStat", () => {
-  it("buckets by folded legend rank and captions in the literal wire words", () => {
+  it("buckets by folded legend rank and captions in statusLabel's words, lower-cased", () => {
     const rows = [
       ...Array<{ status: string }>(63).fill({ status: "draft" }),
       ...Array<{ status: string }>(6).fill({ status: "specced" }),
       { status: "ready" },
+      { status: "in_review" },
     ];
 
     const { mix, caption } = composeStat(rows);
 
-    expect(caption).toBe("63 draft · 6 specced · 1 ready");
+    expect(caption).toBe("63 draft · 6 specified · 1 ready · 1 in review");
     // Every one of the seven legend buckets is present (StateBar itself
     // drops the zero entries), in legend order, draft first.
     expect(mix.map((m) => m.state)).toEqual([

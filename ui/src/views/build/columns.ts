@@ -12,6 +12,7 @@
 // epic.
 
 import type { BuildEpic, BuildFeature } from "../../api";
+import { statusLabel } from "../../lib/statusLabel";
 
 export interface BuildColumnDef {
   status: string;
@@ -23,15 +24,12 @@ export interface BuildColumnDef {
 // is documented as keyed by exactly these six literal strings
 // (internal/views/build.go's own package comment), so no fold through
 // lib/states.ts's wider wire vocabulary is needed here the way the header
-// tiles' composeStat needs one for a mixed noun list.
-export const BUILD_COLUMNS: BuildColumnDef[] = [
-  { status: "draft", label: "Draft" },
-  { status: "specced", label: "Specced" },
-  { status: "ready", label: "Ready" },
-  { status: "active", label: "Active" },
-  { status: "in_review", label: "In review" },
-  { status: "done", label: "Done" },
-];
+// tiles' composeStat needs one for a mixed noun list. A column's name is its
+// status word, so it comes from statusLabel like every other status on the
+// console ("Specified", the word the node header uses, never "Specced").
+export const BUILD_COLUMNS: BuildColumnDef[] = ["draft", "specced", "ready", "active", "in_review", "done"].map(
+  (status) => ({ status, label: statusLabel(status) }),
+);
 
 // The set of statuses BUILD_COLUMNS actually renders. "cancelled" is a real
 // stored feature status the server does not filter out of BuildEpic.Features

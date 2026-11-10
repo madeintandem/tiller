@@ -48,7 +48,9 @@
 // bleeding into another project's tab would be visibly wrong; the split
 // width under one flat key (views/explore/splitStorage.ts), since a pane
 // width is a plain viewport preference with nothing project-specific to
-// leak. The width restores in its own useState initializer (no project key
+// leak. Only a width the reader chose is stored; the default follows the
+// window until then, and the double-click reset forgets the choice. The
+// width restores in its own useState initializer (no project key
 // to wait on); the expansion map restores in a useLayoutEffect that retries
 // until the project key resolves, mirroring Build.tsx's own restoredRef
 // guard for its epic selection.
@@ -87,7 +89,7 @@ import {
 import { readExpansion, writeExpansion } from "./explore/expansionStorage";
 import { expandableShelfIDs, selectedShelfBranch } from "./explore/shelves";
 import { clampNavWidth, defaultNavWidth, NAV_WIDTH_MAX, NAV_WIDTH_MIN } from "./explore/splitSize";
-import { readNavWidth, writeNavWidth } from "./explore/splitStorage";
+import { clearNavWidth, readNavWidth, writeNavWidth } from "./explore/splitStorage";
 import FilterMode from "./explore/FilterMode";
 import MapMode from "./explore/MapMode";
 import SearchMode from "./explore/SearchMode";
@@ -331,22 +333,26 @@ export default function Explore() {
   // own flat-keyed panel state. No layout effect, no flash: the restored
   // width is what the very first render already sets.
   const [navWidth, setNavWidth] = useState<number>(() => readNavWidth());
+  // Whether navWidth is a width the reader set (a drag or a keyboard nudge)
+  // rather than the default or a restored value. Only a chosen width is
+  // written: storing the window-based default on first mount pinned it there
+  // for every later visit, at any window size (browser walk of batches A to C).
+  const [navChosen, setNavChosen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const splitRef = useRef<HTMLDivElement>(null);
 
-  // Task 4's width persist: unconditional (no project key to wait on,
-  // matching the initializer above), but gated on `!dragging`
-  // (small finding) so a mouse drag writes once at its own end rather than
-  // once per mousemove - the drag effect below updates navWidth on every
-  // pointer move, and without this gate each of those intermediate pixels
-  // would hit localStorage too. Keyboard nudges and the double-click reset
-  // never set dragging, so they still persist immediately, one write each.
+  // Task 4's width persist, gated on `!dragging` (small finding) so a mouse
+  // drag writes once at its own end rather than once per mousemove - the
+  // drag effect below updates navWidth on every pointer move, and without
+  // this gate each of those intermediate pixels would hit localStorage too.
+  // Keyboard nudges never set dragging, so they persist immediately, one
+  // write each. The double-click reset clears the stored value instead.
   useEffect(() => {
-    if (dragging) {
+    if (dragging || !navChosen) {
       return;
     }
     writeNavWidth(navWidth);
-  }, [navWidth, dragging]);
+  }, [navWidth, dragging, navChosen]);
 
   // Wired only while dragging is true, and torn down the moment it is not -
   // on mouseup (dragging flips false, this effect's own cleanup runs before
@@ -375,6 +381,7 @@ export default function Explore() {
       if (rect === undefined) {
         return;
       }
+      setNavChosen(true);
       setNavWidth(clampNavWidth(event.clientX - rect.left));
     }
     function onUp() {
@@ -391,11 +398,21 @@ export default function Explore() {
   function handleDividerKeyDown(event: KeyboardEvent) {
     if (event.key === "ArrowLeft") {
       event.preventDefault();
+      setNavChosen(true);
       setNavWidth((w) => clampNavWidth(w - NAV_WIDTH_STEP));
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
+      setNavChosen(true);
       setNavWidth((w) => clampNavWidth(w + NAV_WIDTH_STEP));
     }
+  }
+
+  // The double-click reset forgets the chosen width, so the window's default
+  // applies now and on every later visit.
+  function resetNavWidth() {
+    setNavChosen(false);
+    clearNavWidth();
+    setNavWidth(defaultNavWidth(window.innerWidth));
   }
 
   // The split's first REAL render
@@ -480,7 +497,7 @@ export default function Explore() {
             aria-valuemax={NAV_WIDTH_MAX}
             tabIndex={0}
             onMouseDown={() => setDragging(true)}
-            onDoubleClick={() => setNavWidth(defaultNavWidth(window.innerWidth))}
+            onDoubleClick={resetNavWidth}
             onKeyDown={handleDividerKeyDown}
           />
           <Outlet />

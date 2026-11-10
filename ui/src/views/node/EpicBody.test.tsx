@@ -133,7 +133,7 @@ describe("EpicBody decomposition list", () => {
 
     expect(container.querySelector(".instr-decomp-bar .state-bar")).not.toBeNull();
     expect(screen.getByText("Features · 2")).toBeInTheDocument();
-    expect(screen.getByText("1 draft · 1 in_review")).toBeInTheDocument();
+    expect(screen.getByText("1 draft · 1 in review")).toBeInTheDocument();
     // The epic's own title/key/id never render a second time here: that is
     // NodeDetail's header's job, exactly once, whichever way this body is
     // reached.
@@ -185,7 +185,7 @@ describe("EpicBody decomposition cap", () => {
 
   it("computes the state bar's mix from every feature, capped rows or not", () => {
     renderBody(epicPage({ decomposition: { features: many } }));
-    expect(screen.getByText("15 draft · 1 specced")).toBeInTheDocument();
+    expect(screen.getByText("15 draft · 1 specified")).toBeInTheDocument();
   });
 });
 

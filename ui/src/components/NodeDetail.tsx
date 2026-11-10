@@ -30,7 +30,7 @@
 // evals tab's wire key and `tab` param stay "evals" (amended ui-surface.md,
 // 2026-08-10); only its DISPLAY label reads "Contract" now.
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type {
   ActiveBasisView,
@@ -68,7 +68,7 @@ import AmendmentBody from "../views/node/AmendmentBody";
 import AmendmentRelationsPanel, { ProposedAmendmentNotice, uniqueAmendments } from "../views/node/AmendmentRelationsPanel";
 import BacklinksPanel from "../views/node/BacklinksPanel";
 import NodeCompact from "./NodeCompact";
-import { useScrolledPast } from "../lib/useScrolledPast";
+import { statusLabel } from "../lib/statusLabel";
 import "./instrument.css";
 import "./node-pin.css";
 
@@ -692,9 +692,6 @@ function FlatBody({ page }: { page: NodePage }) {
 export default function NodeDetail({ page, queue = null }: { page: NodePage; queue?: Queue | null }) {
   const [params, setParams] = useSearchParams();
   const tabs = tabsFor(page);
-  // The full header's visibility drives the pinned one-line header (R10).
-  const headerRef = useRef<HTMLElement>(null);
-  const headerGone = useScrolledPast(headerRef);
   const recoveredReview = page.node.recovered_review ?? page.workflow?.recovered_review;
 
   // The drift panel's disclosure state: transient, component-local, never a
@@ -728,7 +725,6 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
     <article className="instr">
       <NodeDetailHeader
         page={page}
-        headerRef={headerRef}
         driftExpanded={driftExpanded}
         onDriftToggle={() => {
           setDriftOpen(!driftExpanded);
@@ -737,7 +733,7 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
       {page.execution !== undefined && (
         <>
           <ExecutionProvenance observation={page.execution} />
-          <p className="muted execution-boundary">Observed execution; served-checkout status: {page.execution.integration_status}. This observation does not establish integration eligibility or authorize lifecycle commands on the served integration checkout.</p>
+          <p className="muted execution-boundary">Observed execution; served-checkout status: {statusLabel(page.execution.integration_status).toLowerCase()}. This observation does not establish integration eligibility or authorize lifecycle commands on the served integration checkout.</p>
         </>
       )}
       <AttentionStack page={page} queue={queue} />
@@ -765,7 +761,7 @@ export default function NodeDetail({ page, queue = null }: { page: NodePage; que
           tabs={tabs}
           active={params.get("tab") ?? tabs[0].key}
           onSelect={selectTab}
-          pinned={headerGone ? <NodeCompact node={page.node} /> : null}
+          pinned={<NodeCompact node={page.node} />}
         />
       ) : (
         <>

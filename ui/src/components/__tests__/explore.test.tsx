@@ -1756,7 +1756,7 @@ describe("Explore filter facets", () => {
     fireEvent.focus(await screen.findByRole("combobox", { name: "status" }));
     fireEvent.keyDown(screen.getByRole("combobox", { name: "status" }), { key: "Enter" });
     await waitFor(() => expect(requestedPaths(mock)).toContain("/api/ls?noun=tasks&status=unfinished"));
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "status" })).toHaveValue("unfinished"));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "status" })).toHaveValue("Unfinished"));
     expect(screen.queryByRole("link", { name: "Completed task" })).not.toBeInTheDocument();
     fireEvent.focus(screen.getByRole("combobox", { name: "owner" }));
     expect(screen.getByRole("option", { name: /JC Grubbs/ })).toHaveTextContent("1");
@@ -1854,10 +1854,10 @@ describe("Explore filter facets", () => {
     await screen.findByRole("combobox", { name: "status" });
     fireEvent.change(screen.getByRole("combobox", { name: "Noun" }), { target: { value: "tasks" } });
     await waitFor(() => expect(requestedPaths(mock)).toContain("/api/ls?noun=tasks&status=specced"));
-    expect(await screen.findByRole("combobox", { name: "status" })).toHaveValue("specced");
+    expect(await screen.findByRole("combobox", { name: "status" })).toHaveValue("Specified");
     expect(screen.getByRole("button", { name: "Clear status" })).toBeInTheDocument();
     fireEvent.focus(screen.getByRole("combobox", { name: "status" }));
-    expect(screen.getByRole("option", { name: /specced/ })).toHaveTextContent("0");
+    expect(screen.getByRole("option", { name: /Specified/ })).toHaveTextContent("0");
   });
 
   it.each([["E-1", true], ["E-2", false]])("picks epic %s and retains its feature only when beneath it", async (epic, keep) => {

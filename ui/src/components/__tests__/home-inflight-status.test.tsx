@@ -25,6 +25,6 @@ describe("In flight status words", () => {
     expect(text).toContain("In progress");
     expect(text).not.toContain("in_progress");
     expect(text).not.toContain("in_review");
-    expect(text).toContain("in review");
+    expect(text).toContain("In review");
   });
 });
