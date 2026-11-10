@@ -12,15 +12,9 @@
 // change already runs, for every mounted useFetch at once - one refetch
 // mechanism, not two.
 //
-// That includes marking reads: if History is mounted on its default window, a
-// bump re-requests window=visit, the console's one horizon-advancing read.
-// This is deliberate, not an oversight the bump happens to cause. The
-// server's visit horizon holds still for any request inside its session gap
-// (internal/serve/visit.go's visitSessionGap), so a ↻ click while the same
-// digest is still on screen is part of that same visit, exactly like
-// reopening the tab, and never spends a second one
-// (TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap pins this
-// server-side; history.test.tsx pins the client actually issues the re-request).
+// That includes History's visit window: a bump re-requests window=visit, which
+// is a plain read. Only the Mark caught up press carries the visit marker, so a
+// bump never moves the horizon.
 
 import { useEffect, useState } from "react";
 import { fetchJSON, getFetchGeneration, subscribeFetchGeneration } from "./api";

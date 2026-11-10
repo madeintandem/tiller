@@ -159,6 +159,7 @@
 // never adopted, but that mismatch is why it was never a serious option
 // either.
 
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Recap as RecapModel, RecapGroup } from "../api";
 import { recapPath } from "../api";
@@ -202,6 +203,11 @@ export default function History() {
   // Viewing never moves the horizon, on any window: this read carries no visit
   // marker. Only the CatchUp button's own one-shot press does.
   const { data, error, loading } = useFetch<RecapModel>(recapPath(view.window));
+  // Which horizon the reader pressed Mark caught up against. Held here, above
+  // the fetch, so a refresh or a window round trip on this page visit cannot
+  // put the button back over a horizon that already moved: the confirmation
+  // lasts while the served horizon is still the pressed one.
+  const [caughtUpFrom, setCaughtUpFrom] = useState<string | null>(null);
   const facets = data !== null ? historyFacets(data) : null;
   // Only a value this recap holds filters it; anything else is ignored.
   const valid: HistoryFilter = {
@@ -218,7 +224,15 @@ export default function History() {
       </div>
       {error !== null && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading history...</p>}
-      {data !== null && <RecapBody recap={data} filter={valid} view={view} />}
+      {data !== null && (
+        <RecapBody
+          recap={data}
+          filter={valid}
+          view={view}
+          caughtUp={caughtUpFrom === data.since}
+          onCaughtUp={() => setCaughtUpFrom(data.since)}
+        />
+      )}
     </section>
   );
 }
@@ -227,10 +241,14 @@ function RecapBody({
   recap: fetched,
   filter,
   view,
+  caughtUp,
+  onCaughtUp,
 }: {
   recap: RecapModel;
   filter: HistoryFilter;
   view: HistoryView;
+  caughtUp: boolean;
+  onCaughtUp: () => void;
 }) {
   const { window: active, group: groupMode, showAll } = view;
   const filterOn = filter.actor !== undefined || filter.kind !== undefined || filter.epic !== undefined;
@@ -252,10 +270,10 @@ function RecapBody({
     <>
       {/* The mock's own one-liner (mocks.html:1144), adapted per window
           rather than copied verbatim: a fixed window currently open has to
-          tell the truth about ITSELF, not recite a sentence written for the
-          default view (histSubFor's own comment carries the exact wording
-          rule). Unconditional, the same way .recap-since always was, because
-          the marking fact matters on an empty page as much as a full one. */}
+          tell the truth about ITSELF (copy.ts's fixedSubFor), and the visit
+          window states the count and its horizon. Unconditional, the same way
+          .recap-since always was, because the horizon matters on an empty
+          page as much as a full one. */}
       <p className="hist-sub muted">
         {active === "visit" ? (
           <>
@@ -273,7 +291,12 @@ function RecapBody({
           fixedSubFor(active, recap, filterOn ? recap.shown : undefined)
         )}
       </p>
-      {active === "visit" && <CatchUp />}
+      {/* Nothing to catch up on when the horizon exists and no event sits
+          behind it; a first visit (no horizon yet) keeps the button, since
+          the press is the only thing that gives it one. */}
+      {active === "visit" && (caughtUp || fetched.since === "" || fetched.total > 0) && (
+        <CatchUp through={fetched.through} done={caughtUp} onDone={onCaughtUp} />
+      )}
       {(oneStream !== "" || asks > 0) && (
         <p className="recap-tally">
           {oneStream !== "" && <span className="muted">all by <PersonName id={oneStream} /></span>}

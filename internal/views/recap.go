@@ -53,6 +53,10 @@ type Recap struct {
 	Reader string       `json:"reader"`
 	Total  int          `json:"total"`
 	Groups []RecapGroup `json:"groups"`
+	// Through is the instant a visit-window digest was computed, RFC3339 UTC.
+	// The console's Mark caught up press sends it back so the new horizon is
+	// exactly what the reader saw. Only the visit window carries it.
+	Through string `json:"through,omitempty"`
 }
 
 // RecapGroup is one (epic, stream) cell of the digest: what one contributor's lane

@@ -435,7 +435,6 @@ func TestNetworkBoundaryRefusalsLeaveVisitMemory(t *testing.T) {
 						after, err := os.ReadFile(consoleCachePath(root))
 						require.NoError(t, err)
 						require.Equal(t, before, after, "refused requests cannot consume the recap")
-						require.False(t, visits.loaded, "refused requests cannot open a session")
 					})
 				}
 			}
@@ -464,7 +463,6 @@ func TestBoundaryMissingPolicyFailsClosed(t *testing.T) {
 				require.Equal(t, http.StatusForbidden, w.Code, w.Body.String())
 				require.NotContains(t, w.Body.String(), "private-version")
 				require.Zero(t, assets.opens)
-				require.False(t, visits.loaded)
 			}
 		})
 	}

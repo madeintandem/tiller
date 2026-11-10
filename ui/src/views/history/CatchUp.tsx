@@ -1,34 +1,48 @@
 import { useRef, useState } from "react";
 import { markCaughtUp } from "../../api";
 
-// The visit horizon moves only when the reader presses this button. The press
-// is a one-shot marked GET (api.ts's markCaughtUp), never a header on the
-// page's own read, so no re-render, filter change, window change, or refetch
-// can send the marker. The list on screen is left exactly as it was: the new
-// horizon applies on the next load, and the confirmation replaces the button
-// until the reader leaves the page.
+// The visit horizon moves only when the reader presses this button, at once,
+// to the instant the digest on screen was computed (through), so nothing that
+// arrived after the page loaded is swallowed. The press is a one-shot marked
+// GET (api.ts's markCaughtUp), never a header on the page's own read, so no
+// re-render, filter change, window change, or refetch can send the marker.
+// The list on screen is left exactly as it was.
+//
+// Whether the press already happened is the parent's to hold (History keeps it
+// above the fetch), so a refresh or window round trip on the same page visit
+// does not put the button back over a horizon that already moved.
 
-type Phase = "idle" | "saving" | "done" | "failed";
+type Phase = "idle" | "saving" | "failed";
 
-export default function CatchUp() {
+export default function CatchUp({
+  through,
+  done,
+  onDone,
+}: {
+  through: string | undefined;
+  done: boolean;
+  onDone: () => void;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const inFlight = useRef(false);
 
   function press() {
     // The disabled attribute is the visible guard; the ref holds even if two
     // clicks land before React re-renders.
-    if (inFlight.current || phase === "done") return;
+    if (inFlight.current || done) return;
     inFlight.current = true;
     setPhase("saving");
-    markCaughtUp().then(
-      () => setPhase("done"),
-      () => setPhase("failed"),
-    ).finally(() => {
-      inFlight.current = false;
-    });
+    markCaughtUp(through)
+      .then(
+        () => onDone(),
+        () => setPhase("failed"),
+      )
+      .finally(() => {
+        inFlight.current = false;
+      });
   }
 
-  if (phase === "done") {
+  if (done) {
     return (
       <p className="catch-up muted" role="status">
         Caught up. Your next visit starts here.

@@ -34,7 +34,8 @@ func TestVisitCacheDoesNotReadOrWriteOutsideState(t *testing.T) {
 			v := newVisitState()
 			v.now = func() time.Time { return externalVisit.Add(time.Hour) }
 			require.True(t, v.peek(root).IsZero(), "the external visit must not become the recap horizon")
-			require.True(t, v.mark(root).IsZero())
+			_, err = v.mark(root, time.Time{})
+			require.Error(t, err, "a refused cache path is a failed save, never a silent success")
 			after, err := os.ReadFile(externalCache)
 			require.NoError(t, err)
 			require.Equal(t, data, after, "outside console memory must remain byte-identical")

@@ -246,7 +246,6 @@ func TestConsoleBoundaryPreservesRecapCache(t *testing.T) {
 			after, err := os.ReadFile(consoleCachePath(root))
 			require.NoError(t, err)
 			require.Equal(t, before, after, "foreign requests cannot consume the recap")
-			require.False(t, visits.loaded, "foreign requests cannot open a session")
 		}
 	}
 	r := boundaryRequest("localhost:8080", []string{"http://localhost:8080"}, "same-origin")

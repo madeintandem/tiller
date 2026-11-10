@@ -293,7 +293,7 @@ describe("History view: the marking one-liner under the head", () => {
     // No "since" here at all: a fixed window is not framed by the visit
     // horizon, so nothing about it is stated relative to that instant.
     expect(container.querySelector(".hist-sub")?.textContent).toBe(
-      "90 events in the last 7 days · fixed windows never mark you caught up",
+      "90 events in the last 7 days",
     );
   });
 });
@@ -348,11 +348,11 @@ describe("History view: the empty state, which is the steady state", () => {
   });
 
   it("names the window it is actually rendering, never a visit claim on an override", async () => {
-    // "reading this view marks you caught up" is a claim about the VISIT
-    // mark, and the two overrides never touch it (ui-surface.md: "The window
-    // override never touches the mark at all"). Unconditional, a copy-pasted
-    // sentence would put that claim under an empty 24h view that just did no
-    // such thing: one page, one window, two framings, one of them false.
+    // A "since your last visit" clause is a claim about the VISIT horizon, and
+    // the two overrides are not framed by it (ui-surface.md: a fixed window
+    // never touches the mark). Unconditional, a copy-pasted sentence would put
+    // that clause under an empty 24h view: one page, one window, two framings,
+    // one of them false.
     const empty = (window: string) => ({ since: "", window, reader: "", total: 0, groups: [] });
     stubFetch({
       "/api/recap?window=24h": empty("24h"),
@@ -362,14 +362,14 @@ describe("History view: the empty state, which is the steady state", () => {
     const day = renderHistory("/history?window=24h");
     await screen.findByText("Nothing recorded in the last 24 hours.");
     expect(day.container.querySelector(".hist-sub")?.textContent).toBe(
-      "0 events in the last 24 hours · fixed windows never mark you caught up",
+      "0 events in the last 24 hours",
     );
     cleanup();
 
     const week = renderHistory("/history?window=7d");
     await screen.findByText("Nothing recorded in the last 7 days.");
     expect(week.container.querySelector(".hist-sub")?.textContent).toBe(
-      "0 events in the last 7 days · fixed windows never mark you caught up",
+      "0 events in the last 7 days",
     );
   });
 });
@@ -1010,14 +1010,9 @@ describe("History view: the row's own voices", () => {
 
 // The topbar's ↻ (api.ts's bumpFetchGeneration, hooks.test.ts's own coverage
 // of the mechanism at the hook level) re-issues whatever is mounted in place,
-// and History's default window is the console's one marking read. That
-// composition is deliberate, not an accident this view happens to allow: the
-// controller's settled visit semantics (ui-surface.md's recap model, pinned
-// server-side by internal/serve/visit_test.go's
-// TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap) hold that a
-// re-request inside the server's session gap is part of the same visit burst
-// and never advances the horizon, exactly like a reload - so a ↻ click while
-// History sits open is safe, and this pins that the client actually issues
+// History's default window included. That read is a plain one: only the Mark
+// caught up press carries the visit marker, so a ↻ click while History sits
+// open can never move the horizon. This pins that the client actually issues
 // the re-request rather than silently no-op'ing on a still-mounted view.
 describe("History view: the topbar ↻ re-issues the mounted visit-window recap", () => {
   it("re-requests window=visit on a generation bump, the same address the initial mount used", async () => {

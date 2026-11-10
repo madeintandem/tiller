@@ -5,8 +5,9 @@ package serve
 // "what changed while you were away" against (ui-surface.md, "The recap"). It
 // is not tree state, which is why a read-only console may touch it; the
 // prose/state discipline is untouched. The whole read-only server performs
-// exactly one kind of disk write, and it happens here, lazily, the first time a
-// visit-window recap is served, never at boot.
+// exactly one kind of disk write, and it happens here, only when the reader
+// presses Mark caught up (a marked recap request), never at boot and never on
+// a read.
 
 import (
 	"encoding/json"
@@ -17,30 +18,25 @@ import (
 	"github.com/madeintandem/tiller/internal/store"
 )
 
-// visitSessionGap bounds one visit. A visit is a burst of requests, not a
-// single click: reloading the console or clicking between views inside the gap
-// is the same visit, so the horizon holds still and the recap does not blank
-// out from under a human who is still reading it. Stepping away for longer ends
-// the visit; the next request opens a new one whose horizon is where the last
-// one left off.
-const visitSessionGap = 30 * time.Minute
-
 // consoleCache is the on-disk shape of .tiller/.cache/console.json.
 type consoleCache struct {
 	LastVisit time.Time `json:"last_visit"`
 }
 
 // visitState is the recap's visit horizon, the console's convenience memory in
-// .tiller/.cache. It is lazy on purpose: nothing is read or written until the
-// first visit-window recap request, so booting the server touches no disk and
-// does not consume the window. now is injected so the burst semantics can be
-// asserted against a controlled clock; production wires time.Now().UTC.
+// .tiller/.cache. The cache file is the single source of truth: every read
+// goes to it, so a restart, a second console over the same root, and the next
+// request in this process all see the same instant with no in-process copy to
+// drift. Nothing is read or written until a request needs it, so booting the
+// server touches no disk. now is injected so the clamping rule can be asserted
+// against a controlled clock; production wires time.Now().UTC.
+//
+// There is no session gap. Nothing advances the horizon on its own any more:
+// only a marked request does (mark), at once, so there is no burst of
+// requests to hold still.
 type visitState struct {
-	mu      sync.Mutex
-	horizon time.Time
-	lastReq time.Time
-	loaded  bool
-	now     func() time.Time
+	mu  sync.Mutex
+	now func() time.Time
 }
 
 // newVisitState builds the state with the production clock.
@@ -48,57 +44,47 @@ func newVisitState() *visitState {
 	return &visitState{now: func() time.Time { return time.Now().UTC() }}
 }
 
-// mark advances the visit horizon for one visit-window recap request against
-// root and returns the horizon that request should recap from. The first call
-// of a process reads the last recorded visit from the cache (the zero time when
-// it is absent or corrupt, so a first-ever visit recaps nothing rather than
-// everything). Later calls hold the horizon still while requests keep arriving
-// inside visitSessionGap (one visit is a burst) and advance it to the previous
-// burst's last request once a gap has passed (a new visit begins where the old
-// one ended). Every call records now as this session's last request and
-// persists it as the new last-visit, so the next process, a second console over
-// the same root, picks up where this one left off.
-func (v *visitState) mark(root string) time.Time {
+// mark moves the visit horizon for one marked visit-window recap request
+// against root and returns the horizon as it was BEFORE the move, which is the
+// horizon that request's own digest is computed against. The new horizon is
+// through, the instant the reader's on-screen digest was computed, clamped into
+// [previous horizon, now]: the horizon never moves backwards, and a client
+// cannot claim a future instant. A zero through (absent or unparseable in the
+// request) means now. The new horizon is persisted atomically; a write that
+// fails is returned, so the caller can refuse to answer as a success.
+func (v *visitState) mark(root string, through time.Time) (time.Time, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
+	prev := readLastVisit(root)
 	now := v.now()
-	switch {
-	case !v.loaded:
-		v.horizon = readLastVisit(root)
-		v.loaded = true
-	case now.Sub(v.lastReq) > visitSessionGap:
-		v.horizon = v.lastReq
+	target := through
+	if target.IsZero() || target.After(now) {
+		target = now
 	}
-	v.lastReq = now
-	writeLastVisit(root, now)
-	return v.horizon
+	if target.Before(prev) {
+		target = prev
+	}
+	if err := writeLastVisit(root, target); err != nil {
+		return prev, err
+	}
+	return prev, nil
 }
 
-// peek answers the horizon the NEXT visit-window recap would use, without
-// advancing it and without writing the cache. It is the read behind Home's
-// recap signal: glancing at Home must never spend a recap you have not opened
-// (ui-surface.md, "Recap"). It mirrors mark's horizon computation arm for arm
-// and deliberately touches none of loaded, horizon, or lastReq, so a peek can
-// neither open a visit nor freeze one, and Home and the recap view always
-// answer against the same instant.
+// peek answers the current horizon, the one an unmarked visit-window recap
+// and Home's recap signal read against, without writing the cache. It is the
+// read behind Home's recap signal: glancing at Home must never spend a recap
+// you have not opened (ui-surface.md, "Recap"), and it answers the same
+// instant the recap view reads, so the signal and the view always agree.
 func (v *visitState) peek(root string) time.Time {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-
-	switch {
-	case !v.loaded:
-		return readLastVisit(root)
-	case v.now().Sub(v.lastReq) > visitSessionGap:
-		return v.lastReq
-	default:
-		return v.horizon
-	}
+	return readLastVisit(root)
 }
 
 // readLastVisit reads the recorded last visit from the cache, returning the
 // zero time when the file is absent or its JSON is corrupt: an unreadable
-// memory recaps nothing, and the next write repairs it.
+// memory recaps nothing, and the next mark repairs it.
 func readLastVisit(root string) time.Time {
 	data, err := store.ReadRepositoryFile(root, filepath.Join(".tiller", ".cache", "console.json"))
 	if err != nil {
@@ -111,14 +97,16 @@ func readLastVisit(root string) time.Time {
 	return c.LastVisit
 }
 
-// writeLastVisit records now as the last visit, atomically so a reader (this
-// process on its next boot, or a second console over the same root) never sees
-// a half-written file. A write failure is swallowed: the cache is convenience
-// memory, and a console that cannot persist its horizon still serves.
-func writeLastVisit(root string, now time.Time) {
-	if data, err := json.Marshal(consoleCache{LastVisit: now}); err == nil {
-		_ = store.WriteRepositoryFileAtomic(root, filepath.Join(".tiller", ".cache", "console.json"), data)
+// writeLastVisit records at as the last visit, atomically so a reader (this
+// process on its next request, or a second console over the same root) never
+// sees a half-written file. A failure is returned: a marked request that could
+// not persist must not answer as a success.
+func writeLastVisit(root string, at time.Time) error {
+	data, err := json.Marshal(consoleCache{LastVisit: at})
+	if err != nil {
+		return err
 	}
+	return store.WriteRepositoryFileAtomic(root, filepath.Join(".tiller", ".cache", "console.json"), data)
 }
 
 // consoleCachePath is the console's memory file under the gitignored cache.

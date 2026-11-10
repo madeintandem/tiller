@@ -133,11 +133,10 @@
   color: var(--heading);
 }
 
-/* ---------- The marking one-liner, and the asks/stream line beneath it ---------- */
+/* ---------- The count one-liner, and the asks/stream line beneath it ---------- */
 
-/* mock:1144's own sentence, adapted per window by histSubFor (History.tsx):
-   what this window holds, and whether reading it just marked the reader
-   caught up. */
+/* mock:1144's own sentence, adapted per window (history/copy.ts, History.tsx):
+   what this window holds and, on the visit window, the horizon it reads from. */
 .hist-sub {
   font-size: 12.5px;
   padding-bottom: var(--space-4);

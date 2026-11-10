@@ -1451,6 +1451,10 @@ export interface Recap {
   reader: string;
   total: number;
   groups: RecapGroup[];
+  // The instant a visit-window digest was computed (RFC3339 UTC). The
+  // Mark caught up press sends it back so the new horizon is exactly what the
+  // reader saw. Absent on the fixed windows.
+  through?: string;
 }
 
 // The windows /api/recap accepts; anything else is a 400.
@@ -1738,8 +1742,8 @@ export const visitMarker: HeadersInit = { "X-Tiller-Visit": "1" };
 
 // The recap's non-consuming twin. It is a separate route rather than a
 // parameter on recapPath because the difference is not the payload's shape but
-// whether the request moves the visit horizon, and only the recap view is
-// allowed to move it.
+// whether the request moves the visit horizon, and only the Mark caught up
+// press is allowed to move it.
 export const recapPeekPath = "/api/recap/peek";
 
 // The Report page's metrics payload (internal/serve, GET /api/report).
@@ -1866,11 +1870,17 @@ export function fetchRecap(window?: RecapWindow): Promise<Recap> {
 }
 
 // The one-shot press behind History's `Mark caught up`: a single marked GET of
-// the visit window whose answer is discarded. It is deliberately not a
-// useFetch header, so a re-render, filter change, or refetch can never send
-// the marker.
-export async function markCaughtUp(): Promise<void> {
-  await fetchJSON<Recap>(recapPath("visit"), { headers: visitMarker });
+// the visit window whose answer is discarded. through is the instant the
+// on-screen digest was computed (Recap.through); the server moves the horizon
+// to it, clamped into [horizon, now], and to now when it is absent. It is
+// deliberately not a useFetch header, so a re-render, filter change, or
+// refetch can never send the marker. A save that failed rejects.
+export async function markCaughtUp(through?: string): Promise<void> {
+  const path =
+    through === undefined || through === ""
+      ? recapPath("visit")
+      : `${recapPath("visit")}&through=${encodeURIComponent(through)}`;
+  await fetchJSON<Recap>(path, { headers: visitMarker });
 }
 
 export function fetchRecapPeek(): Promise<RecapPeek> {

@@ -456,7 +456,12 @@ func TestRecapHandlerZeroSinceIsEmpty(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 	var raw json.RawMessage
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&raw))
-	require.JSONEq(t, `{"since":"","window":"visit","reader":"","total":0,"groups":[]}`, string(raw))
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(raw, &got))
+	require.NotEmpty(t, got["through"], "a visit digest states the instant it was taken")
+	delete(got, "through")
+	want := map[string]any{"since": "", "window": "visit", "reader": "", "total": float64(0), "groups": []any{}}
+	require.Equal(t, want, got)
 }
 
 // TestRecapHandlerRefusesUnknownWindow pins the window validation: an unknown

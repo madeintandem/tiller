@@ -2,7 +2,7 @@ package serve
 
 // These tests pin the console's visit horizon, the one piece of writable state
 // the read-only server keeps (visit.go). They drive visitState directly with an
-// injected clock so the burst and session semantics assert without real time,
+// injected clock so the clamping rule asserts without real time,
 // and one integration case runs two Handlers over the same root to pin the
 // cross-process handoff the recap relies on.
 
@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -61,28 +62,25 @@ func TestVisitStateBootWritesNothing(t *testing.T) {
 	require.True(t, os.IsNotExist(err), "no request, no cache write")
 }
 
-// TestVisitStateFirstVisitReadsZero pins the first mark of a process: with no
-// memory on disk the horizon is zero (a first-ever visit recaps nothing), and
-// the mark creates the cache recording now.
-func TestVisitStateFirstVisitReadsZero(t *testing.T) {
+// TestVisitMarkFirstVisitReadsZero pins the first mark: with no memory on disk
+// the horizon the marked request's own digest reads against is zero (a
+// first-ever visit recaps nothing), and the mark creates the cache recording
+// now when the request names no through instant.
+func TestVisitMarkFirstVisitReadsZero(t *testing.T) {
 	root := visitRepo(t)
 	now := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
 	v := &visitState{now: fixedNow(now)}
 
-	require.True(t, v.mark(root).IsZero(), "a first-ever visit recaps nothing")
+	prev, err := v.mark(root, time.Time{})
+	require.NoError(t, err)
+	require.True(t, prev.IsZero(), "a first-ever visit recaps nothing")
 	require.True(t, readCacheVisit(t, root).Equal(now), "the mark records now")
 }
 
-// TestVisitStateHoldsHorizonInSession pins the burst rule: a reload inside the
-// session gap serves the same horizon, so the recap does not blank out from
-// under a human who is still reading it. This is the primitive the topbar's
-// manual ↻ composition rests on (api.ts's fetchGeneration bump, hooks.ts's
-// useFetch subscription): a bump re-issues whatever is mounted, History's
-// default window=visit recap included, and that re-request is exactly this
-// case. TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap below
-// pins the identical rule through the real HTTP handler, the layer a ↻ click
-// actually drives.
-func TestVisitStateHoldsHorizonInSession(t *testing.T) {
+// TestVisitMarkMovesTheHorizonAtOnce replaces the old burst-hold rule: a mark
+// moves the horizon immediately, peek reads the new instant on the very next
+// call, and a second mark minutes later moves it again.
+func TestVisitMarkMovesTheHorizonAtOnce(t *testing.T) {
 	root := visitRepo(t)
 	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
 	writeLastVisit(root, seeded)
@@ -90,32 +88,49 @@ func TestVisitStateHoldsHorizonInSession(t *testing.T) {
 	clock := seeded.Add(time.Hour)
 	v := &visitState{now: func() time.Time { return clock }}
 
-	require.True(t, v.mark(root).Equal(seeded), "the first mark reads the seeded memory")
+	prev, err := v.mark(root, time.Time{})
+	require.NoError(t, err)
+	require.True(t, prev.Equal(seeded), "the marked request's own digest reads the horizon before the move")
+	require.True(t, v.peek(root).Equal(clock), "the very next read sees the new horizon, no session gap")
+
 	clock = clock.Add(5 * time.Minute)
-	require.True(t, v.mark(root).Equal(seeded), "a reload inside the gap holds the horizon still")
+	prev, err = v.mark(root, time.Time{})
+	require.NoError(t, err)
+	require.True(t, prev.Equal(clock.Add(-5*time.Minute)))
+	require.True(t, v.peek(root).Equal(clock), "a second mark minutes later moves it again")
 }
 
-// TestVisitStateGapAdvancesHorizon pins the new-visit rule: once more than
-// visitSessionGap passes, the next request opens a new visit whose horizon is
-// the previous burst's last request.
-func TestVisitStateGapAdvancesHorizon(t *testing.T) {
-	root := visitRepo(t)
+// TestVisitMarkClampsThrough pins the through rule: the new horizon is the
+// instant the on-screen digest was computed, clamped into [horizon, now]; a
+// missing instant means now.
+func TestVisitMarkClampsThrough(t *testing.T) {
 	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
-	writeLastVisit(root, seeded)
-
-	first := seeded.Add(time.Hour)
-	clock := first
-	v := &visitState{now: func() time.Time { return clock }}
-
-	require.True(t, v.mark(root).Equal(seeded), "the first mark reads the seeded memory")
-	clock = first.Add(visitSessionGap + time.Minute)
-	require.True(t, v.mark(root).Equal(first), "a gap advances the horizon to the prior burst's last request")
+	now := seeded.Add(time.Hour)
+	cases := map[string]struct {
+		through time.Time
+		want    time.Time
+	}{
+		"inside the range":   {seeded.Add(20 * time.Minute), seeded.Add(20 * time.Minute)},
+		"before the horizon": {seeded.Add(-time.Hour), seeded},
+		"in the future":      {now.Add(time.Hour), now},
+		"absent":             {time.Time{}, now},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			root := visitRepo(t)
+			writeLastVisit(root, seeded)
+			v := &visitState{now: fixedNow(now)}
+			_, err := v.mark(root, tc.through)
+			require.NoError(t, err)
+			require.True(t, v.peek(root).Equal(tc.want), "got %s", v.peek(root))
+		})
+	}
 }
 
-// TestVisitStateCorruptCacheDegradesToZero pins the corrupt-memory rule: a
-// cache that is not valid JSON is read as no memory (horizon zero) and rewritten
-// so the next visit reads a clean value.
-func TestVisitStateCorruptCacheDegradesToZero(t *testing.T) {
+// TestVisitMarkCorruptCacheDegradesToZero pins the corrupt-memory rule: a
+// cache that is not valid JSON is read as no memory (horizon zero) and
+// rewritten by the mark so the next read is clean.
+func TestVisitMarkCorruptCacheDegradesToZero(t *testing.T) {
 	root := visitRepo(t)
 	require.NoError(t, os.MkdirAll(filepath.Dir(consoleCachePath(root)), 0o755))
 	require.NoError(t, os.WriteFile(consoleCachePath(root), []byte("{not json"), 0o644))
@@ -123,63 +138,33 @@ func TestVisitStateCorruptCacheDegradesToZero(t *testing.T) {
 	now := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
 	v := &visitState{now: fixedNow(now)}
 
-	require.True(t, v.mark(root).IsZero(), "a corrupt memory recaps nothing")
+	prev, err := v.mark(root, time.Time{})
+	require.NoError(t, err)
+	require.True(t, prev.IsZero(), "a corrupt memory recaps nothing")
 	require.True(t, readCacheVisit(t, root).Equal(now), "the mark repairs the cache")
 }
 
-// TestVisitPeekBeforeMarkReadsDiskAndLeavesTheSessionClosed pins peek's cold
-// path: with nothing loaded yet it answers the recorded last visit straight
-// from disk and opens no session, so a later mark still reads the memory for
-// itself rather than inheriting a horizon a glance at Home established.
-func TestVisitPeekBeforeMarkReadsDiskAndLeavesTheSessionClosed(t *testing.T) {
+// TestVisitMarkReportsAFailedWrite pins that a mark whose cache write fails is
+// an error, not a swallowed success: the console's failure sentence depends on
+// it.
+func TestVisitMarkReportsAFailedWrite(t *testing.T) {
+	root := visitRepo(t)
+	// A directory where the cache file must go makes the atomic write fail.
+	require.NoError(t, os.MkdirAll(consoleCachePath(root), 0o755))
+	v := &visitState{now: fixedNow(time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC))}
+	_, err := v.mark(root, time.Time{})
+	require.Error(t, err)
+}
+
+// TestVisitPeekReadsDiskAndOpensNothing: peek answers the recorded last visit
+// straight from the cache.
+func TestVisitPeekReadsDisk(t *testing.T) {
 	root := visitRepo(t)
 	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
 	writeLastVisit(root, seeded)
 
-	now := seeded.Add(time.Hour)
-	v := &visitState{now: fixedNow(now)}
-
+	v := &visitState{now: fixedNow(seeded.Add(time.Hour))}
 	require.True(t, v.peek(root).Equal(seeded), "peek answers the recorded memory")
-	require.False(t, v.loaded, "a peek opens no visit")
-	require.True(t, v.mark(root).Equal(seeded), "the first real mark still reads the memory itself")
-}
-
-// TestVisitPeekInsideBurstMatchesMark is the consistency pin behind Home's
-// recap signal: inside one visit, peek must answer the same horizon mark
-// already returned, not the newer last_visit sitting on disk. Otherwise Home
-// would say "nothing new" while the recap page one click away still shows the
-// whole digest.
-func TestVisitPeekInsideBurstMatchesMark(t *testing.T) {
-	root := visitRepo(t)
-	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
-	writeLastVisit(root, seeded)
-
-	clock := seeded.Add(time.Hour)
-	v := &visitState{now: func() time.Time { return clock }}
-
-	marked := v.mark(root)
-	clock = clock.Add(5 * time.Minute)
-	require.True(t, v.peek(root).Equal(marked), "peek answers the horizon the open visit is reading against")
-	require.False(t, v.peek(root).Equal(readLastVisit(root)), "and not the newer last_visit the mark wrote")
-}
-
-// TestVisitPeekAfterGapReportsTheNextHorizon pins peek's warm path once the
-// visit has ended: it answers the horizon the NEXT mark would open on, the
-// previous burst's last request, so the signal and the page agree about the
-// instant even across the session boundary.
-func TestVisitPeekAfterGapReportsTheNextHorizon(t *testing.T) {
-	root := visitRepo(t)
-	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
-	writeLastVisit(root, seeded)
-
-	first := seeded.Add(time.Hour)
-	clock := first
-	v := &visitState{now: func() time.Time { return clock }}
-
-	require.True(t, v.mark(root).Equal(seeded), "the first mark reads the seeded memory")
-	clock = first.Add(visitSessionGap + time.Minute)
-	require.True(t, v.peek(root).Equal(first), "peek reports the horizon the next visit would open on")
-	require.True(t, v.mark(root).Equal(first), "and the next mark opens on exactly that")
 }
 
 // TestVisitPeekWritesNothing is the whole point of the second read path:
@@ -223,85 +208,164 @@ func TestVisitPeekCorruptCacheDegradesToZero(t *testing.T) {
 
 // TestSecondConsolePicksUpTheHorizon pins the cross-process handoff through the
 // mux: a second Handler over the same root (a fresh process) reads the first
-// console's last request as its horizon, so events appended in between surface
-// in the second console's recap.
+// console's mark as its horizon, so events appended in between surface in the
+// second console's recap.
 func TestSecondConsolePicksUpTheHorizon(t *testing.T) {
 	root := visitRepo(t)
 	assets := fstest.MapFS{"index.html": {Data: []byte("x")}}
 
 	t1 := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
 	first := newMux(root, assets, &visitState{now: fixedNow(t1)}, "test", DefaultAuthority())
-	// The first console's one request establishes a zero horizon (no memory yet)
-	// and persists t1 as the last visit.
-	rec := recapThrough(t, first)
+	// The first console's one marked request reads a zero horizon (no memory
+	// yet) and persists t1.
+	rec := recapThrough(t, first, "")
 	require.Equal(t, "", rec.Since, "the first-ever visit has no horizon")
 	require.Equal(t, 0, rec.Total)
 
-	// Work lands after the first console looked.
+	// Work lands after the first console marked.
 	appendVisitEvent(t, root, "EV-000001", "add.epic", t1.Add(time.Hour), []string{"E-000001"})
 
 	t2 := t1.Add(2 * time.Hour)
 	second := newMux(root, assets, &visitState{now: fixedNow(t2)}, "test", DefaultAuthority())
-	rec = recapThrough(t, second)
-	require.Equal(t, "2026-07-01T09:00:00Z", rec.Since, "the second console's horizon is the first's last request")
-	require.Equal(t, 1, rec.Total, "the event appended after the first visit surfaces")
+	rec = recapUnmarked(t, second)
+	require.Equal(t, "2026-07-01T09:00:00Z", rec.Since, "a restart reads the persisted horizon")
+	require.Equal(t, 1, rec.Total, "the event appended after the mark surfaces")
 }
 
-// TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap pins the ↻
-// composition at the layer it actually runs at: the topbar's manual refresh
-// (api.ts's bumpFetchGeneration) re-issues whatever is mounted in place, so a
-// click while History sits on its default window re-requests GET
-// /api/recap?window=visit a second time. That re-request is safe by the
-// controller's settled visit semantics (ui-surface.md's recap model): inside
-// the server's visitSessionGap a re-request is part of the same visit burst
-// and does not advance the horizon, exactly like reloading the tab, so the
-// human never loses the digest they were reading mid-read. This drives two
-// consecutive GETs through the real mux (the shape a browser's ↻ produces)
-// rather than calling visitState.mark directly, which
-// TestVisitStateHoldsHorizonInSession above already covers at the primitive
-// level.
-func TestRecapVisitWindowHoldsHorizonAcrossRequestsWithinSessionGap(t *testing.T) {
+// TestRecapMarkTakesEffectAtOnceThroughTheMux is the handler-level pin of the
+// press: a marked request moves the horizon to its through instant at once,
+// the next unmarked visit-window recap and the peek read it with no session
+// gap, a second marked request moves it again, and the marked response itself
+// is computed against the horizon BEFORE the move.
+func TestRecapMarkTakesEffectAtOnceThroughTheMux(t *testing.T) {
 	root := visitRepo(t)
 	assets := fstest.MapFS{"index.html": {Data: []byte("x")}}
-
 	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
 	writeLastVisit(root, seeded)
 
 	clock := seeded.Add(time.Hour)
 	h := newMux(root, assets, &visitState{now: func() time.Time { return clock }}, "test", DefaultAuthority())
 
-	first := recapThrough(t, h)
-	require.Equal(t, "2026-07-01T09:00:00Z", first.Since, "the first request of this process opens on the seeded horizon")
+	through := seeded.Add(30 * time.Minute).Format(time.RFC3339)
+	marked := recapThrough(t, h, through)
+	require.Equal(t, "2026-07-01T09:00:00Z", marked.Since, "the marked response reads the horizon before the move")
+	require.Equal(t, clock.Format(time.RFC3339), marked.Through, "the digest carries the instant it was computed")
 
-	// A ↻ click a few minutes later, well inside visitSessionGap: the same
-	// visit burst as the first request, so the horizon must not move.
+	require.Equal(t, through, recapUnmarked(t, h).Since, "an unmarked recap reads the new horizon at once")
+	require.Equal(t, through, peekSince(t, h), "and so does the peek")
+
 	clock = clock.Add(5 * time.Minute)
-	second := recapThrough(t, h)
-	require.Equal(t, first.Since, second.Since, "a ↻ reissue of the mounted visit-window recap inside the session gap answers the same horizon as the first read, never a newer one")
+	recapThrough(t, h, "")
+	require.Equal(t, clock.Format(time.RFC3339), recapUnmarked(t, h).Since, "a second press minutes later moves it again")
 }
 
-// visitRecap decodes the horizon and total the visit tests assert.
-type visitRecap struct {
-	Since string `json:"since"`
-	Total int    `json:"total"`
+// TestRecapMarkClampsThroughAtTheHandler pins the clamp and the garbage rule
+// through the real query parameter.
+func TestRecapMarkClampsThroughAtTheHandler(t *testing.T) {
+	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
+	now := seeded.Add(time.Hour)
+	for name, tc := range map[string]struct{ through, want string }{
+		"earlier than the horizon": {seeded.Add(-time.Hour).Format(time.RFC3339), seeded.Format(time.RFC3339)},
+		"in the future":            {now.Add(24 * time.Hour).Format(time.RFC3339), now.Format(time.RFC3339)},
+		"garbage":                  {"yesterday-ish", now.Format(time.RFC3339)},
+		"missing":                  {"", now.Format(time.RFC3339)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := visitRepo(t)
+			writeLastVisit(root, seeded)
+			h := newMux(root, nil, &visitState{now: fixedNow(now)}, "test", DefaultAuthority())
+			recapThrough(t, h, tc.through)
+			require.Equal(t, tc.want, recapUnmarked(t, h).Since)
+		})
+	}
 }
 
-// recapThrough serves one History visit (GET /api/recap carrying the console's
-// visit marker) against a handler and decodes it.
-func recapThrough(t *testing.T, h http.Handler) visitRecap {
-	t.Helper()
-	srv := httptest.NewServer(h)
+// TestRecapUnmarkedNeverMovesOrWrites: reading, with or without a through
+// parameter, leaves the cache byte-identical.
+func TestRecapUnmarkedNeverMovesOrWrites(t *testing.T) {
+	root := visitRepo(t)
+	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
+	writeLastVisit(root, seeded)
+	before, err := os.ReadFile(consoleCachePath(root))
+	require.NoError(t, err)
+
+	h := newMux(root, nil, &visitState{now: fixedNow(seeded.Add(time.Hour))}, "test", DefaultAuthority())
+	getVisit(t, h, "/api/recap?window=visit&through="+url.QueryEscape(seeded.Add(time.Minute).Format(time.RFC3339)), false)
+	recapUnmarked(t, h)
+	peekSince(t, h)
+
+	after, err := os.ReadFile(consoleCachePath(root))
+	require.NoError(t, err)
+	require.Equal(t, before, after)
+}
+
+// TestRecapMarkedRequestWhoseWriteFailsIsAnError pins D: a press that could
+// not persist answers an error status, never a success.
+func TestRecapMarkedRequestWhoseWriteFailsIsAnError(t *testing.T) {
+	root := visitRepo(t)
+	require.NoError(t, os.MkdirAll(consoleCachePath(root), 0o755)) // a directory blocks the file
+	srv := httptest.NewServer(newMux(root, nil, &visitState{now: fixedNow(time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC))}, "test", DefaultAuthority()))
 	defer srv.Close()
-	req, err := http.NewRequest(http.MethodGet, srv.URL+"/api/recap", nil)
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/api/recap?window=visit", nil)
 	require.NoError(t, err)
 	req.Header.Set(visitHeader, "1")
 	resp, err := srv.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
+	require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+}
+
+// visitRecap decodes the horizon, instant, and total the visit tests assert.
+type visitRecap struct {
+	Since   string `json:"since"`
+	Through string `json:"through"`
+	Total   int    `json:"total"`
+}
+
+func getVisit(t *testing.T, h http.Handler, path string, marked bool) []byte {
+	t.Helper()
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	req, err := http.NewRequest(http.MethodGet, srv.URL+path, nil)
+	require.NoError(t, err)
+	if marked {
+		req.Header.Set(visitHeader, "1")
+	}
+	resp, err := srv.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var raw json.RawMessage
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&raw))
+	return raw
+}
+
+// recapThrough serves one press (GET /api/recap carrying the console's visit
+// marker, and the through instant when given) against a handler.
+func recapThrough(t *testing.T, h http.Handler, through string) visitRecap {
+	t.Helper()
+	path := "/api/recap?window=visit"
+	if through != "" {
+		path += "&through=" + url.QueryEscape(through)
+	}
 	var rec visitRecap
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&rec))
+	require.NoError(t, json.Unmarshal(getVisit(t, h, path, true), &rec))
 	return rec
+}
+
+// recapUnmarked serves one plain read of the visit window.
+func recapUnmarked(t *testing.T, h http.Handler) visitRecap {
+	t.Helper()
+	var rec visitRecap
+	require.NoError(t, json.Unmarshal(getVisit(t, h, "/api/recap?window=visit", false), &rec))
+	return rec
+}
+
+func peekSince(t *testing.T, h http.Handler) string {
+	t.Helper()
+	var rec visitRecap
+	require.NoError(t, json.Unmarshal(getVisit(t, h, "/api/recap/peek", false), &rec))
+	return rec.Since
 }
 
 func appendVisitEvent(t *testing.T, root, id, typ string, at time.Time, targets []string) {

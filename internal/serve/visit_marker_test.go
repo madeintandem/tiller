@@ -67,7 +67,6 @@ func TestRecapAdvancesOnlyForTheVisitMarker(t *testing.T) {
 					after, err := os.ReadFile(consoleCachePath(root))
 					require.NoError(t, err)
 					require.Equal(t, before, after, "an unmarked request cannot consume the developer's recap")
-					require.False(t, visits.loaded, "an unmarked request cannot open a visit")
 				})
 				t.Run(name+" with marker", func(t *testing.T) {
 					root := visitRepo(t)

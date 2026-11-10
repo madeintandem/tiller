@@ -182,7 +182,7 @@ A run of consecutive same-type entries by the same actor collapses into one row 
 
 History states what changed and never restates what's open. An ask renders as a past-tense count of events, not a second copy of the queue, and links back to Home rather than duplicating Home's own live number. Every row addresses the node its event touched and links to it, and a window is its own address too, so a wider one is one click away from a digest that came up empty. A group carries a bounded number of routine entries but never drops one that asked something of you. What a cap does drop isn't recoverable through this view, by design. A wider window and the node's own history hold the full record, and a digest that refuses to truncate anything is a log, not a digest.
 
-The visit horizon is yours to move. Viewing History never advances it; the `Mark caught up` button on the default window does, and the page confirms with "Caught up. Your next visit starts here." Nothing else on the console (landing on Home, drilling a node, running a search) moves it, and a fixed window shows no button, so a slice like Home's Just happened never spends a digest you haven't read.
+The visit horizon is yours to move. Viewing History never advances it; the `Mark caught up` button on the default window does, at once and to the instant of the digest you were looking at, and the page confirms with "Caught up. Your next visit starts here." Nothing else on the console (landing on Home, drilling a node, running a search) moves it, and a fixed window shows no button, so a slice like Home's Just happened never spends a digest you haven't read.
 
 ## The node page
 

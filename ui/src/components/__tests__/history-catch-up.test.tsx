@@ -2,11 +2,12 @@
 // reader presses `Mark caught up`. Viewing never sends the server's visit
 // marker (X-Tiller-Visit), and the press is a one-shot marked GET.
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Recap, RecapEntry, RecapGroup } from "../../api";
+import { bumpFetchGeneration } from "../../api";
 import History from "../../views/History";
 
 afterEach(() => {
@@ -14,6 +15,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
+
+const THROUGH = "2026-07-24T12:00:00Z";
+const MARKED = `${"/api/recap?window=visit"}&through=${encodeURIComponent(THROUGH)}`;
 
 function entry(type: string, contributor: string): RecapEntry {
   return { at: "2026-07-24T10:00:00Z", type, contributor, command: "x", ask: false, targets: [] };
@@ -26,7 +30,7 @@ function recap(window: Recap["window"] = "visit"): Recap {
     omitted: 0,
     entries: [entry("spec.feature", "jc"), entry("approve.feature", "allen")],
   };
-  return { since: "2026-07-24T00:00:00Z", window, reader: "jc", total: 1000, groups: [audit] };
+  return { since: "2026-07-24T00:00:00Z", window, reader: "jc", total: 1000, groups: [audit], through: THROUGH };
 }
 
 type Call = { url: string; marked: boolean };
@@ -102,7 +106,7 @@ describe("History: catching up is the reader's call", () => {
     expect(screen.queryByRole("button", { name: "Mark caught up" })).toBeNull();
     expect(calls).toEqual([
       { url: VISIT, marked: false },
-      { url: VISIT, marked: true },
+      { url: MARKED, marked: true },
     ]);
     expect(document.querySelectorAll(".hrow").length).toBe(rowsBefore);
     expect(screen.getByText(/1000 events/)).toBeInTheDocument();
@@ -160,6 +164,29 @@ describe("History: catching up is the reader's call", () => {
     }
   });
 
+  it("keeps the confirmation, not the button, when the page refetches after a press", async () => {
+    const routes: Record<string, unknown> = { [VISIT]: recap() };
+    const calls = stubFetch(routes);
+    renderHistory();
+    await screen.findByText(/1000 events/);
+    fireEvent.click(button());
+    await screen.findByText("Caught up. Your next visit starts here.");
+
+    // The horizon moved to THROUGH, so the recomputed window is empty.
+    routes[VISIT] = { since: THROUGH, window: "visit", reader: "jc", total: 0, groups: [], through: "2026-07-24T12:05:00Z" };
+    act(() => bumpFetchGeneration());
+    await screen.findByText("Nothing new since your last visit.");
+    expect(screen.queryByRole("button", { name: "Mark caught up" })).toBeNull();
+    expect(calls.filter((c) => c.marked)).toHaveLength(1);
+  });
+
+  it("shows no button on an empty window whose horizon already exists", async () => {
+    stubFetch({ [VISIT]: { since: THROUGH, window: "visit", reader: "jc", total: 0, groups: [], through: THROUGH } });
+    renderHistory();
+    await screen.findByText("Nothing new since your last visit.");
+    expect(screen.queryByRole("button", { name: "Mark caught up" })).toBeNull();
+  });
+
   it("offers the button on an empty first visit, where nothing else can move the mark", async () => {
     stubFetch({ [VISIT]: { since: "", window: "visit", reader: "", total: 0, groups: [] } });
     renderHistory();
@@ -173,7 +200,7 @@ describe("History: catching up is the reader's call", () => {
     await screen.findByText(/of 1000 events/);
 
     expect(button().getAttribute("title")).toMatch(/whole window/);
-    // Filter and show-mode changes never send the marker.
+    // Opening with filters and a show mode on sends no marker.
     expect(calls.some((c) => c.marked)).toBe(false);
   });
 });

@@ -29,23 +29,28 @@ func QueueHandler(root string) http.HandlerFunc {
 
 // recapHandler serves GET /api/recap?window=visit|24h|7d: the mechanically
 // derived digest of the event stream since a horizon. The visit window (the
-// default) advances and reads the console's visit memory, so the horizon is the
-// last time this reader looked; 24h and 7d ignore that memory and use now minus
-// the window, the Monday-morning case. An unknown window is a client error, not
-// a silent default. The reader the asks are scoped to is resolved per request
-// from the checkout's identity.
+// default) reads the console's visit memory, so the horizon is the last instant
+// the reader marked themselves caught up; 24h and 7d ignore that memory and use
+// now minus the window, the Monday-morning case. An unknown window is a client
+// error, not a silent default. The reader the asks are scoped to is resolved
+// per request from the checkout's identity.
 //
-// Only a request carrying visitHeader advances the horizon. Any page or peer
-// that reaches the port can send a plain GET, but a cross-site page cannot
-// attach a custom header without a CORS preflight, and the console answers
-// none. An unmarked request reads the recap at the peeked horizon and writes
-// nothing, the way Home's count read does.
+// Only a request carrying visitHeader moves the horizon, and it moves at once,
+// to the optional through query parameter (the instant the reader's on-screen
+// digest was taken, clamped into [horizon, now]) or to now. The marked
+// response itself is computed against the horizon before the move, and a mark
+// that could not be saved is a 500. Any page or peer that reaches the port can
+// send a plain GET, but a cross-site page cannot attach a custom header
+// without a CORS preflight, and the console answers none. An unmarked request
+// reads the recap at the current horizon and writes nothing, the way Home's
+// count read does.
 func recapHandler(root string, visits *visitState) http.HandlerFunc {
 	return recapHandlerWithEvents(root, visits, events.List)
 }
 
-// visitHeader marks the console's own History visit, the one request allowed
-// to advance the recap horizon. The UI sends it as "1" (api.ts visitMarker).
+// visitHeader marks the console's own Mark caught up press, the one request
+// allowed to move the recap horizon. The UI sends it as "1" (api.ts
+// visitMarker), only from that button.
 const visitHeader = "X-Tiller-Visit"
 
 func recapHandlerWithEvents(
@@ -64,6 +69,7 @@ func recapHandlerWithEvents(
 			return nil, &httpError{http.StatusBadRequest, "unknown window " + window + "; use visit, 24h, or 7d"}
 		}
 
+		asOf := visits.now()
 		evs, err := list(t)
 		if err != nil {
 			// Unlike the node page, a broken stream is a 500 here: the digest is
@@ -81,8 +87,19 @@ func recapHandlerWithEvents(
 			horizon = time.Now().UTC().Add(-7 * 24 * time.Hour)
 		}
 		recap := views.RecapOf(t, evs, horizon, window, actingContributor(root))
-		if window == "visit" && r.Header.Get(visitHeader) == "1" {
-			return afterStability(recap, func() { visits.mark(root) }), nil
+		if window != "visit" {
+			return recap, nil
+		}
+		// The visit window states the instant its digest was taken, read
+		// BEFORE the stream was listed, so a press that names it as the new
+		// horizon can never skip an event the digest did not hold.
+		recap.Through = asOf.UTC().Format(time.RFC3339)
+		if r.Header.Get(visitHeader) == "1" {
+			through, _ := time.Parse(time.RFC3339, r.URL.Query().Get("through"))
+			return afterStability(recap, func() error {
+				_, err := visits.mark(root, through)
+				return err
+			}), nil
 		}
 		return recap, nil
 	})

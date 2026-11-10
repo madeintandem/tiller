@@ -18,7 +18,7 @@ export function countFor(recap: RecapModel, shown?: number): string {
 // The fixed windows' line. The visit window composes its own in History.tsx.
 export function fixedSubFor(active: RecapWindow, recap: RecapModel, shown?: number): string {
   const span = active === "24h" ? "in the last 24 hours" : "in the last 7 days";
-  return `${countFor(recap, shown)} ${span} · fixed windows never mark you caught up`;
+  return `${countFor(recap, shown)} ${span}`;
 }
 
 // The empty text does not repeat the horizon: the hist-sub line above already

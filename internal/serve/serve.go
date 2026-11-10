@@ -142,10 +142,12 @@ type rawText []byte
 
 type postStableResult struct {
 	value any
-	after func()
+	// after runs once the read proved stable; an error from it fails the
+	// request (a marked recap that could not persist its mark).
+	after func() error
 }
 
-func afterStability(value any, after func()) postStableResult {
+func afterStability(value any, after func() error) postStableResult {
 	return postStableResult{value: value, after: after}
 }
 
@@ -200,7 +202,10 @@ func read(root string, observe bool, project func(*store.Tree, *http.Request) (a
 			return
 		}
 		if deferred, ok := v.(postStableResult); ok {
-			deferred.after()
+			if err := deferred.after(); err != nil {
+				writeError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 			v = deferred.value
 		}
 		if raw, ok := v.(rawText); ok {
