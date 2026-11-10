@@ -356,9 +356,13 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
   // The unpushed-review check reads the served checkout's branch, not the observed one.
   const review = observed ? undefined : page.unpushed_review;
   // The start box speaks only for a node nothing else in the stack already
-  // names: no workflow box, no ask, no fallback, and not an observed task.
+  // names: no workflow box, no ask, no fallback, and not an observed task. It
+  // waits for the queue to load, like the fallback, so it never flashes
+  // before an ask the queue is about to bring.
   const start =
-    !observed && workflow === undefined && asks.length === 0 && fallback === null ? page.start : undefined;
+    !observed && queue !== null && workflow === undefined && asks.length === 0 && entries.length === 0 && fallback === null
+      ? page.start
+      : undefined;
   if (asks.length === 0 && fallback === null && review === undefined && workflow === undefined && start === undefined) {
     return null;
   }
@@ -379,7 +383,7 @@ function AttentionStack({ page, queue }: { page: NodePage; queue: Queue | null }
         <AskBox key={`${e.kind}:${e.gate ?? ""}:${e.prose ?? ""}`} entry={e} showCommand={!observed} />
       ))}
       {fallback !== null && <FallbackBox action={fallback} />}
-      {start !== undefined && <StartBox start={start} />}
+      {start !== undefined && <StartBox start={start} owner={page.node.owner} ownerName={page.node.owner_name} />}
       {review !== undefined && <WarnBox review={review} pr={page.node.pr} />}
     </div>
   );

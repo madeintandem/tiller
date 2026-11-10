@@ -61,12 +61,28 @@ describe("NodeDetail: the start box", () => {
     expect(screen.getByRole("button", { name: "tiller start task foundation/boot/boot-the-app" })).toBeInTheDocument();
   });
 
-  it("shows only the start command for a claimed task", () => {
-    renderPage(readyTaskPage({
+  it("shows only the start command for a claimed task, naming its owner", () => {
+    const { container } = renderPage(readyTaskPage({
+      node: {
+        noun: "task", id: "T-h4k2wq", key: "foundation/boot/boot-the-app", title: "Boot the app",
+        status: "ready", owner: "robin",
+      },
       start: { actor: "agent", action: "start", command: "tiller start task foundation/boot/boot-the-app" },
     }));
     expect(screen.getByText("Next · Agent")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^tiller (claim|start) task/ })).toHaveLength(1);
+    expect(container.querySelector(".abox .why")?.textContent).toBe("Claimed by robin. Their next step:");
+    expect(screen.queryByText("Ready. Start it.")).not.toBeInTheDocument();
+  });
+
+  it("waits for the queue to load", () => {
+    renderPage(readyTaskPage(), null);
+    expect(screen.queryByText("Next · Agent")).not.toBeInTheDocument();
+  });
+
+  it("shows for a loaded, empty queue", () => {
+    renderPage(readyTaskPage(), { entries: [] });
+    expect(screen.getByText("Next · Agent")).toBeInTheDocument();
   });
 
   it("renders nothing without a start", () => {
