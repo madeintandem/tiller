@@ -1,18 +1,17 @@
 // The desk's header band and its tiles, moved out of Home.tsx whole (issue
-// #96): a pure move, so Home.tsx stays the page's fetches and layout.
+// #96): a pure move, so Home.tsx stays the page's fetches and layout. Every
+// tile links to the list it counts; the title lives in HomeTitle.tsx.
 
 import { Link } from "react-router-dom";
 import type { FetchState } from "../../hooks";
-import type { DriftReportView, ListResult, ProjectSummary } from "../../api";
+import type { DriftReportView, ListResult } from "../../api";
 import StateBar from "../../components/StateBar";
 import { statusLabel } from "../../lib/statusLabel";
-import { PersonName } from "../../people";
 import { composeDriftBand } from "./driftBand";
 import { composeFunnel, composeShelfStat } from "./funnel";
 import { composeStat } from "./stat";
 
 export default function HeaderBand({
-  summary,
   epics,
   features,
   tasks,
@@ -22,7 +21,6 @@ export default function HeaderBand({
   tweaks,
   drift,
 }: {
-  summary: ProjectSummary;
   epics: FetchState<ListResult>;
   features: FetchState<ListResult>;
   tasks: FetchState<ListResult>;
@@ -34,28 +32,20 @@ export default function HeaderBand({
 }) {
   return (
     <div className="home-head">
-      <div className="home-id">
-        <h1>{summary.project.name}</h1>
-        <p className="meta muted">
-          <span className="mono">{summary.project.key}</span> · {summary.project.kind}
-          {summary.contributors.length > 0 && (
-            <>
-              {" "}
-              · Contributors:{" "}
-              {summary.contributors.map((o, i) => (
-                <span key={o.id}>
-                  {i > 0 && ", "}
-                  <PersonName id={o.id} name={o.name} />
-                </span>
-              ))}
-            </>
-          )}
-        </p>
-      </div>
       <div className="stats">
-        <StatTile label="Epics" state={epics} />
+        <StatTile
+          label="Epics"
+          state={epics}
+          to="/explore?mode=filter&noun=epics"
+          name={{ one: "epic", many: "epics", opens: "the epic list" }}
+        />
         <FunnelStrip features={features} tasks={tasks} />
-        <StatTile label="Questions" state={questions} />
+        <StatTile
+          label="Questions"
+          state={questions}
+          to="/questions?status=open"
+          name={{ one: "question", many: "questions", opens: "the questions list" }}
+        />
         <ShelfStat bugs={bugs} chores={chores} tweaks={tweaks} />
         <DriftStat state={drift} />
       </div>
@@ -63,10 +53,23 @@ export default function HeaderBand({
   );
 }
 
+// StaleNote marks a tile that renders from a retained read whose latest
+// reread failed: the last good numbers stay, and this says they may be old.
+// The visible text carries the error (the title holds it whole), so the
+// warning is never color alone.
+function StaleNote({ error }: { error: string }) {
+  return (
+    <div className="cap error stat-stale" title={error}>
+      out of date: {error}
+    </div>
+  );
+}
+
 // FunnelStrip replaces the old Features and Tasks stat tiles: Build's own six
 // columns - draft, specced, ready, active, in_review, done - read as shape
-// instead of a second StateBar mix, every segment a /build link so the strip
-// doubles as navigation. A zero segment stays in place (dim class) rather than
+// instead of a second StateBar mix, every segment a link to the features list
+// at that status (the same displayed status the segment is counted under, so
+// the number and the list it opens agree). A zero segment stays in place (dim class) rather than
 // disappearing, so the six-column shape never shifts as a project moves
 // through it. The caption's feature count is the raw node count (retired
 // statuses included), the same total the retired clause explains.
@@ -87,7 +90,12 @@ function FunnelStrip({
     <div className="funnel">
       <div className="funnel-row">
         {segments.map((s) => (
-          <Link key={s.status} to="/build" className={s.n === 0 ? "fseg dim" : "fseg"}>
+          <Link
+            key={s.status}
+            to={`/explore?mode=filter&noun=features&status=${s.status}`}
+            className={s.n === 0 ? "fseg dim" : "fseg"}
+            aria-label={`${s.n} ${statusLabel(s.status)} ${s.n === 1 ? "feature" : "features"}, open the list`}
+          >
             <div className="n">{s.n}</div>
             <div className="lbl">{statusLabel(s.status)}</div>
           </Link>
@@ -98,6 +106,7 @@ function FunnelStrip({
         {retired > 0 && `, ${retired} retired`}
         {taskCount !== undefined && ` · ${taskCount} ${taskCount === 1 ? "task" : "tasks"}`}
       </div>
+      {features.error !== null && <StaleNote error={features.error} />}
     </div>
   );
 }
@@ -118,7 +127,7 @@ function ShelfStat({
   }
   const s = composeShelfStat(bugs.data.nodes, chores.data.nodes, tweaks.data.nodes);
   return (
-    <Link to="/fix" className="stat shelf">
+    <Link to="/fix" className="stat shelf" aria-label={`${s.open} open Fix items, open the Fix board`}>
       <div className="n">{s.open}</div>
       <div className="lbl">Fix</div>
       <div className="cap muted">
@@ -145,13 +154,20 @@ function DriftStat({ state }: { state: FetchState<DriftReportView> }) {
   const band = composeDriftBand(state.data);
   if (band === null) {
     // The one state that stays silent: a RESOLVED sweep that found nothing.
-    return null;
+    // A failed reread over that clean report is not silent: the tile falls to
+    // the unavailable treatment rather than hiding the failure.
+    return state.error === null ? null : <UnresolvedTile label="Drift" error={state.error} />;
   }
   return (
-    <Link to="/?tab=drift" className="stat drift">
+    <Link
+      to="/?tab=drift"
+      className="stat drift"
+      aria-label={`${band.total} drift items (${band.text}), open the drift tab`}
+    >
       <div className="n">{band.total}</div>
       <div className="lbl">Drift</div>
       <div className="cap muted">{band.text}</div>
+      {state.error !== null && <StaleNote error={state.error} />}
     </Link>
   );
 }
@@ -178,18 +194,35 @@ function UnresolvedTile({ label, error }: { label: string; error: string | null 
   );
 }
 
-function StatTile({ label, state }: { label: string; state: FetchState<ListResult> }) {
+// A counted tile is a link to the list it counts, a zero count included. The
+// number and label stay as text; the accessible name says what it opens.
+function StatTile({
+  label,
+  state,
+  to,
+  name,
+}: {
+  label: string;
+  state: FetchState<ListResult>;
+  to: string;
+  name: { one: string; many: string; opens: string };
+}) {
   if (state.data === null) {
     return <UnresolvedTile label={label} error={state.error} />;
   }
   const rows = state.data.nodes;
   const { mix, caption } = composeStat(rows);
   return (
-    <div className="stat">
+    <Link
+      to={to}
+      className="stat"
+      aria-label={`${rows.length} ${rows.length === 1 ? name.one : name.many}, open ${name.opens}`}
+    >
       <div className="n">{rows.length}</div>
       <div className="lbl">{label}</div>
       <StateBar mix={mix} caption={caption} width={96} />
       <div className="cap muted">{rows.length === 0 ? "none yet" : caption}</div>
-    </div>
+      {state.error !== null && <StaleNote error={state.error} />}
+    </Link>
   );
 }

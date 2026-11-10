@@ -85,3 +85,29 @@ describe("home.css: decision cards lead with the decision", () => {
     expect(homeCss).toMatch(/\.dcard-statement\s*\{[^}]*-webkit-line-clamp:\s*3;/);
   });
 });
+
+// The stat band holds a funnel of six segments plus four tiles, wider than the
+// 1024px minimum window leaves it. Under 1200px the header stacks and the band
+// stays one row that scrolls inside its own box, so the page never scrolls
+// sideways. The media block must follow the base rules it overrides.
+describe("home.css: the stat band holds one row inside its own box under 1200px", () => {
+  const block = homeCss.match(/@media \(max-width: 1200px\)\s*\{([\s\S]*?)\n\}/);
+
+  it("declares the 1200px block after the base .home-head and .stats rules", () => {
+    expect(block).not.toBeNull();
+    expect(homeCss.search(/\.home-head\s*\{/)).toBeLessThan(block!.index!);
+    expect(homeCss.search(/\.stats\s*\{/)).toBeLessThan(block!.index!);
+  });
+
+  it("stacks .home-head as a column and keeps .stats one non-wrapping row that scrolls itself", () => {
+    expect(block![1]).toMatch(/\.home-head\s*\{[^}]*flex-direction:\s*column;/);
+    const stats = block![1].match(/\.stats\s*\{([^}]*)\}/);
+    expect(stats![1]).toMatch(/flex-wrap:\s*nowrap;/);
+    expect(stats![1]).toMatch(/justify-content:\s*flex-start;/);
+    expect(stats![1]).toMatch(/overflow-x:\s*auto;/);
+  });
+
+  it("gives a link tile a visible focus ring", () => {
+    expect(homeCss).toMatch(/\.stat:focus-visible,\s*\.fseg:focus-visible\s*\{[^}]*outline:/);
+  });
+});

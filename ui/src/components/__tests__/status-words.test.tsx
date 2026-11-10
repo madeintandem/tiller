@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ExecutionRecord, ListResult, NodePage, ProjectSummary, Streams } from "../../api";
+import type { ExecutionRecord, ListResult, NodePage, Streams } from "../../api";
 import type { FetchState } from "../../hooks";
 import { BUILD_COLUMNS } from "../../views/build/columns";
 import FilterMode from "../../views/explore/FilterMode";
@@ -157,12 +157,6 @@ describe("status words on Home", () => {
   });
 
   it("labels the funnel's columns through statusLabel, Specified included", () => {
-    const summary: ProjectSummary = {
-      project: { name: "Acme", key: "acme", kind: "greenfield" },
-      contributors: [],
-      counts: { epics: 0, features: 2, tasks: 0, questions: 0 },
-      whose_move: { human: 0, agent: 0 },
-    };
     const empty = (noun: string): FetchState<ListResult> => settled({ noun, count: 0, nodes: [] });
     const features: FetchState<ListResult> = settled({
       noun: "feature",
@@ -175,7 +169,6 @@ describe("status words on Home", () => {
     const { container } = render(
       <MemoryRouter>
         <HeaderBand
-          summary={summary}
           epics={empty("epic")}
           features={features}
           tasks={empty("task")}

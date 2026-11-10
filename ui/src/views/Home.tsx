@@ -55,6 +55,7 @@ import type { BandRun } from "./home/bands";
 import { bandRuns, batchCommand, queueEntryKey } from "./home/bands";
 import { candidateCount, composeDriftBand } from "./home/driftBand";
 import HeaderBand from "./home/HeaderBand";
+import HomeTitle from "./home/HomeTitle";
 import { needsTabs, runCount, runKind } from "./home/needsTabs";
 import { InFlightColumn, JustHappenedColumn, UpNextColumn } from "./home/Pulse";
 import { groupQueueByGravity } from "./home/queueGroups";
@@ -199,7 +200,6 @@ export default function Home({ summary, summaryError }: HomeProps) {
   const overview = (
     <>
       <HeaderBand
-        summary={summary}
         epics={epics}
         features={features}
         tasks={tasks}
@@ -262,6 +262,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
 
   return (
     <div className="home">
+      <HomeTitle summary={summary} />
       <NodeTabs
         label="Home view"
         active={search.get("tab") ?? "overview"}

@@ -155,7 +155,9 @@ describe("Home Drift tab", () => {
     renderHome("/?tab=drift");
 
     expect(await screen.findByText(/Work started from an older basis \(1\)/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+    // The title sits above the rail on every tab, so the page's one h1 is
+    // Home's title and the report adds none.
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     const driftCalls = spy.mock.calls.filter(([url]) => String(url) === "/api/drift");
     expect(driftCalls).toHaveLength(1);
   });

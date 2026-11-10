@@ -1355,10 +1355,10 @@ describe("Home needs-you: empty queue", () => {
 describe("Home header band", () => {
   // Task 8: the Features stat tile is gone, replaced by the six-segment
   // funnel (FunnelStrip). Every segment renders, zeros included, in
-  // FEATURE_FUNNEL order, each a /build link; only the zero segment (active,
+  // FEATURE_FUNNEL order, each a link to the features list at its status; only the zero segment (active,
   // here) carries the dim class. features.data.nodes.length (102, not the
   // sum of the six segments) is what the caption's feature count names.
-  it("renders the feature funnel with six segments in order, zeros dim, each linking to /build", async () => {
+  it("renders the feature funnel with six segments in order, zeros dim, each linking to its features list", async () => {
     const features: ListResult = {
       noun: "feature",
       count: 102,
@@ -1380,7 +1380,11 @@ describe("Home header band", () => {
       "Done",
     ]);
     expect(segs.map((el) => el.querySelector(".n")?.textContent)).toEqual(["40", "20", "15", "0", "12", "15"]);
-    segs.forEach((el) => expect(el).toHaveAttribute("href", "/build"));
+    expect(segs.map((el) => el.getAttribute("href"))).toEqual(
+      ["draft", "specced", "ready", "active", "in_review", "done"].map(
+        (status) => `/explore?mode=filter&noun=features&status=${status}`,
+      ),
+    );
     const dimmed = segs.filter((el) => el.className.split(" ").includes("dim"));
     expect(dimmed).toHaveLength(1);
     expect(dimmed[0].querySelector(".lbl")?.textContent).toBe("Active");
