@@ -60,6 +60,21 @@
   min-width: 0;
 }
 
+/* The band's paper continues up through the pane's 22px top padding. Where
+   the band sits flush with the pane's top edge this lies outside the pane and
+   is clipped away; Safari can settle the band a few pixels lower (the pane
+   starts on a fractional pixel), and this keeps scrolled rows from showing
+   through the thin line above it. */
+.node-compact::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 22px;
+  background: var(--paper);
+}
+
 .node-compact > .kind-pill,
 .node-compact > .chip {
   flex: none;

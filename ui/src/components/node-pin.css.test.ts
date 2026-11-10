@@ -35,6 +35,18 @@ describe("node pin", () => {
     expect(row).toMatch(/background:\s*var\(--paper\)/);
   });
 
+  it("carries the band's paper up through the pane's top padding, so rounding never leaves a gap above it", () => {
+    // Safari can settle the pinned band a few pixels below the pane's top
+    // edge (a fractional pane position rounds differently there), which let
+    // scrolled ledger rows show through a thin line above it.
+    const cover = rule(".node-compact::before");
+    expect(cover).toMatch(/content:\s*""/);
+    expect(cover).toMatch(/position:\s*absolute/);
+    expect(cover).toMatch(/bottom:\s*100%/);
+    expect(cover).toMatch(/height:\s*22px/);
+    expect(cover).toMatch(/background:\s*var\(--paper\)/);
+  });
+
   it("places the sentinel one band above the rail, out of flow", () => {
     expect(rule(".node-pinned")).toMatch(/position:\s*relative/);
     const sentinel = rule(".node-pin-sentinel");
