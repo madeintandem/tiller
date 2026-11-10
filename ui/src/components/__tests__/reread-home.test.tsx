@@ -112,4 +112,19 @@ describe("The shell and Home while the page rereads", () => {
     expect(screen.getAllByText(/out of date/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Out of date: GET \/api\/status failed/)).toBeInTheDocument();
   });
+
+  it("drops the recap count rather than showing a stale one when the peek reread fails", async () => {
+    const stub = stubReread({
+      ...homeRoutes(),
+      "/api/recap/peek": { since: "2026-07-24T00:00:00Z", reader: "jc", total: 7, asks: 0 },
+    });
+    renderApp("/");
+    expect(await screen.findByText(/7 events since your last visit/)).toBeInTheDocument();
+
+    stub.reread();
+    await stub.fail();
+
+    expect(document.querySelector(".recap-signal")?.textContent).toBe("History");
+    expect(screen.queryByText(/since your last visit/)).not.toBeInTheDocument();
+  });
 });

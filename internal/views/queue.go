@@ -526,6 +526,19 @@ func optionalGateApplies(on store.StringList, noun string) bool {
 
 // nodeProse is an attest_gate entry's one line of human meaning: the node's
 // title. The gate identity rides the Gate field, never here.
+func nodeProse(n store.Node) string {
+	if work, ok := store.AsWorkNode(n); ok {
+		return work.Body().Title
+	}
+	switch v := n.(type) {
+	case *store.Feature:
+		return v.Title
+	case *store.Task:
+		return v.Title
+	}
+	return ""
+}
+
 // contractCriteria counts the criteria in a feature's observed eval file; zero
 // when none was observed.
 func contractCriteria(contracts map[string]*store.EvalFile, featureID string) int {
@@ -546,19 +559,6 @@ func criterionStatement(contracts map[string]*store.EvalFile, nodeID, criterionI
 		if crit.ID == criterionID {
 			return crit.Statement
 		}
-	}
-	return ""
-}
-
-func nodeProse(n store.Node) string {
-	if work, ok := store.AsWorkNode(n); ok {
-		return work.Body().Title
-	}
-	switch v := n.(type) {
-	case *store.Feature:
-		return v.Title
-	case *store.Task:
-		return v.Title
 	}
 	return ""
 }

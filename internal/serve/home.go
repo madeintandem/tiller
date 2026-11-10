@@ -93,9 +93,12 @@ func recapHandlerWithEvents(
 		// The visit window states the instant its digest was taken, read
 		// BEFORE the stream was listed, so a press that names it as the new
 		// horizon can never skip an event the digest did not hold.
-		recap.Through = asOf.UTC().Format(time.RFC3339)
+		// Nanosecond precision: the horizon comparison (ev.At.After) is exact,
+		// so a whole-second floor would re-show events from the digest's own
+		// second. RFC3339Nano also parses whole-second values.
+		recap.Through = asOf.UTC().Format(time.RFC3339Nano)
 		if r.Header.Get(visitHeader) == "1" {
-			through, _ := time.Parse(time.RFC3339, r.URL.Query().Get("through"))
+			through, _ := time.Parse(time.RFC3339Nano, r.URL.Query().Get("through"))
 			return afterStability(recap, func() error {
 				_, err := visits.mark(root, through)
 				return err

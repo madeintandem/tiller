@@ -7,7 +7,7 @@
 import { screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { BuildBoard, ListResult, ListRow, MapView, NodePage, SearchResult, TreeModel, TreeNode } from "../../api";
+import type { BuildBoard, ListResult, ListRow, MapView, NodeBranchHistory, NodePage, SearchResult, TreeModel, TreeNode } from "../../api";
 import * as recent from "../../lib/recentNodes";
 import { expectNoLoading, renderApp, stubReread, summary, watchLoading, type Routes, settleReads } from "./rereadHarness";
 
@@ -60,6 +60,10 @@ const integrationEvent = { at: "2026-10-06T11:00:00Z", type: "add.task", contrib
 const branchEvent = { at: "2026-10-06T12:00:00Z", type: "start.task", contributor: "", command: "tiller start task T-h4k2wq" };
 const laterEvent = { at: "2026-10-06T13:00:00Z", type: "submit.task", contributor: "", command: "tiller submit task T-h4k2wq" };
 
+function branchHistory(history: NodeBranchHistory["history"]): NodeBranchHistory {
+  return { history };
+}
+
 function taskPage(overrides: Partial<NodePage> = {}): NodePage {
   return {
     node: { noun: "task", id: "T-h4k2wq", key: "foundation/skeleton/boot", title: "Boot the app", status: "active" },
@@ -73,8 +77,12 @@ function taskPage(overrides: Partial<NodePage> = {}): NodePage {
   };
 }
 
+function titled(title: string, overrides: Partial<NodePage>): NodePage {
+  return taskPage({ ...overrides, node: { ...taskPage().node, title } });
+}
+
 const FIRST = "/api/node/task/T-h4k2wq?history=integration";
-const MERGED = "/api/node/task/T-h4k2wq";
+const BRANCH = "/api/node/task/T-h4k2wq?history=branch";
 
 describe("Explore while the page rereads", () => {
   it("keeps the navigator and the empty pane, then updates both in place", async () => {
@@ -100,7 +108,7 @@ describe("Explore while the page rereads", () => {
     const stub = stubReread({
       ...exploreRoutes(),
       [FIRST]: taskPage({ history: [integrationEvent], history_pending: true }),
-      [MERGED]: taskPage({ history: [branchEvent, integrationEvent] }),
+      [BRANCH]: branchHistory([branchEvent, integrationEvent]),
     });
     renderApp("/node/task/T-h4k2wq?tab=history");
     expect(await screen.findByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
@@ -108,11 +116,11 @@ describe("Explore while the page rereads", () => {
 
     const watch = watchLoading();
     stub.reread();
-    expect(stub.heldUrls()).toEqual(expect.arrayContaining([FIRST, MERGED]));
+    expect(stub.heldUrls()).toEqual(expect.arrayContaining([FIRST, BRANCH]));
     expect(screen.getByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
     expect(screen.getByTitle("tiller add task boot-the-app")).toBeInTheDocument();
 
-    await stub.release({ [MERGED]: taskPage({ history: [laterEvent, branchEvent, integrationEvent] }) });
+    await stub.release({ [BRANCH]: branchHistory([laterEvent, branchEvent, integrationEvent]) });
     expect(await screen.findByTitle("tiller submit task T-h4k2wq")).toBeInTheDocument();
     expect(screen.getByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
     expect(screen.getByTestId("where")).toHaveTextContent("/node/task/T-h4k2wq?tab=history");
@@ -120,13 +128,37 @@ describe("Explore while the page rereads", () => {
     expectNoLoading(watch);
   });
 
-  it("shows the fresh page with the last good branch history, marked out of date, when only the merged reread fails", async () => {
-    const titled = (title: string, overrides: Partial<NodePage>) =>
-      taskPage({ ...overrides, node: { ...taskPage().node, title } });
+  it("draws the fresh page at once over the last good branch history while the branch reread is out", async () => {
     const stub = stubReread({
       ...exploreRoutes(),
       [FIRST]: titled("Boot the app", { history: [integrationEvent], history_pending: true }),
-      [MERGED]: titled("Boot the app", { history: [branchEvent, integrationEvent] }),
+      [BRANCH]: branchHistory([branchEvent, integrationEvent]),
+    });
+    renderApp("/node/task/T-h4k2wq?tab=history");
+    expect(await screen.findByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
+
+    const watch = watchLoading();
+    stub.reread();
+    await stub.releaseOnly([FIRST], {
+      [FIRST]: titled("Boot the app on its datastores", { history: [integrationEvent], history_pending: true }),
+    });
+
+    expect(await screen.findByRole("heading", { level: 1, name: /Boot the app on its datastores/ })).toBeInTheDocument();
+    expect(stub.heldUrls()).toContain(BRANCH);
+    expect(screen.getByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
+    expect(screen.queryByText(/Out of date/)).not.toBeInTheDocument();
+
+    await stub.release({ [BRANCH]: branchHistory([laterEvent, branchEvent, integrationEvent]) });
+    expect(await screen.findByTitle("tiller submit task T-h4k2wq")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /Boot the app on its datastores/ })).toBeInTheDocument();
+    expectNoLoading(watch);
+  });
+
+  it("shows the fresh page with the last good branch history, marked out of date, when only the branch reread fails", async () => {
+    const stub = stubReread({
+      ...exploreRoutes(),
+      [FIRST]: titled("Boot the app", { history: [integrationEvent], history_pending: true }),
+      [BRANCH]: branchHistory([branchEvent, integrationEvent]),
     });
     renderApp("/node/task/T-h4k2wq?tab=history");
     expect(await screen.findByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
@@ -134,13 +166,13 @@ describe("Explore while the page rereads", () => {
     stub.reread();
     await stub.release(
       { [FIRST]: titled("Boot the app on its datastores", { history: [integrationEvent], history_pending: true }) },
-      [MERGED],
+      [BRANCH],
     );
 
     expect(await screen.findByRole("heading", { level: 1, name: /Boot the app on its datastores/ })).toBeInTheDocument();
     expect(screen.getByTitle("tiller start task T-h4k2wq")).toBeInTheDocument();
     expect(screen.queryByText("Reading branch history...")).not.toBeInTheDocument();
-    expect(screen.getByText(/Out of date: GET \/api\/node\/task\/T-h4k2wq failed/)).toBeInTheDocument();
+    expect(screen.getByText(/Out of date: GET \/api\/node\/task\/T-h4k2wq\?history=branch failed/)).toBeInTheDocument();
   });
 
   it("keeps the node page and says it is out of date when the reread fails", async () => {

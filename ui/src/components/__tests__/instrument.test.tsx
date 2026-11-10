@@ -2337,9 +2337,9 @@ describe("NodeDetail view: branch history follows the page", () => {
     const spy = vi.fn((input: unknown) => {
       const url = String(input);
       if (url === "/api/node/task/T-h4k2wq?history=integration") return Promise.resolve(ok(fast));
-      if (url === "/api/node/task/T-h4k2wq") {
+      if (url === "/api/node/task/T-h4k2wq?history=branch") {
         return new Promise((resolve) => {
-          answerFull = () => resolve(ok(taskPage({ history: [branchEvent, integrationEvent] })));
+          answerFull = () => resolve(ok({ history: [branchEvent, integrationEvent] }));
         });
       }
       if (url === "/api/queue") return Promise.resolve(ok(queueOf([])));
@@ -2375,7 +2375,7 @@ describe("NodeDetail view: branch history follows the page", () => {
     const { container } = renderAt("/node/task/T-h4k2wq?tab=history");
 
     await screen.findByTitle("tiller add task boot-the-app");
-    await waitFor(() => expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration", "/api/node/task/T-h4k2wq"]));
+    await waitFor(() => expect(reads.nodeCalls()).toEqual(["/api/node/task/T-h4k2wq?history=integration", "/api/node/task/T-h4k2wq?history=branch"]));
     const rows = container.querySelectorAll(".history li");
     expect(rows[rows.length - 1]).toHaveTextContent("Reading branch history...");
 

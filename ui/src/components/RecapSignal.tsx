@@ -26,6 +26,13 @@
 // whole move fixes. And while the fetch is in flight or after it failed, the
 // link renders bare: a claim is never rendered over data that did not load,
 // the same discipline AllClearSlot holds one surface up.
+//
+// useFetch keeps the last good data beside a failed reread, so "after it
+// failed" has to be checked on the error, not on data being null. Other
+// surfaces keep retained content and say so (OutOfDate, HeaderBand's
+// StaleNote), but a one-line count has no room for that note, and a stale
+// "N events" read as current is the claim this component refuses to make, so
+// a failed reread drops the count and leaves the bare link.
 
 import { Link } from "react-router-dom";
 import type { RecapPeek } from "../api";
@@ -33,12 +40,12 @@ import { recapPeekPath } from "../api";
 import { useFetch } from "../hooks";
 
 export default function RecapSignal() {
-  const { data } = useFetch<RecapPeek>(recapPeekPath);
+  const { data, error } = useFetch<RecapPeek>(recapPeekPath);
 
   return (
     <Link to="/history" className="recap-signal">
       History
-      {data !== null && <span className="muted"> · {volumeLine(data.total)}</span>}
+      {data !== null && error === null && <span className="muted"> · {volumeLine(data.total)}</span>}
     </Link>
   );
 }

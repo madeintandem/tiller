@@ -27,12 +27,18 @@ describe("groupByFeature", () => {
     expect(groups[0].items.map((i) => i.id)).toEqual(["a", "c"]);
   });
 
-  it("puts items with no feature in one group of their own, in place", () => {
+  it("leaves items with no feature in place, each its own group, between feature groups", () => {
     const groups = groupByFeature([row("a", "F-1", "One"), row("b"), row("c", "F-1", "One"), row("d")]);
     expect(groups.map((g) => [g.featureId, g.featureTitle, g.items.map((i) => i.id)])).toEqual([
       ["F-1", "One", ["a", "c"]],
-      [null, null, ["b", "d"]],
+      [null, null, ["b"]],
+      [null, null, ["d"]],
     ]);
+  });
+
+  it("keeps a feature-less chore below the active feature task that precedes it", () => {
+    const groups = groupByFeature([row("bug"), row("task", "F-1", "One"), row("chore")]);
+    expect(groups.map((g) => g.items.map((i) => i.id))).toEqual([["bug"], ["task"], ["chore"]]);
   });
 
   it("returns no groups for no items", () => {

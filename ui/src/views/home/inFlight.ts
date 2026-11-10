@@ -9,18 +9,22 @@ export interface FeatureGroup<T> {
 
 // groupByFeature puts items of the same feature into the first group seen for
 // that feature, adjacent or not. Groups keep first-seen order and items keep
-// input order. Items with no feature share one group, in place.
+// input order. Items with no feature (shelf bugs,
+// chores, tweaks) never merge: each is its own group at its own position, so
+// they render in place and the column's order holds.
 export function groupByFeature<T extends { feature_id?: string; feature_title?: string }>(
   items: T[],
 ): FeatureGroup<T>[] {
   const groups: FeatureGroup<T>[] = [];
-  const byFeature = new Map<string | null, FeatureGroup<T>>();
+  const byFeature = new Map<string, FeatureGroup<T>>();
   for (const item of items) {
     const featureId = item.feature_id !== undefined && item.feature_id !== "" ? item.feature_id : null;
-    let group = byFeature.get(featureId);
+    let group = featureId === null ? undefined : byFeature.get(featureId);
     if (group === undefined) {
       group = { featureId, featureTitle: null, items: [] };
-      byFeature.set(featureId, group);
+      if (featureId !== null) {
+        byFeature.set(featureId, group);
+      }
       groups.push(group);
     }
     if (group.featureTitle === null && item.feature_title !== undefined && item.feature_title !== "") {

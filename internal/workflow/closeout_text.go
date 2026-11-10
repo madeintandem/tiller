@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/madeintandem/tiller/internal/store"
 )
 
 // The closeout reason reads as plain sentences a reviewer would say. The CLI
@@ -39,26 +41,47 @@ func workLabel(w Work) string {
 }
 
 // itemsClause names outstanding items: those a human owes first, then those an
-// agent owes. Agreement follows the count of items, not the look of a key.
+// agent owes. Within each, items that failed lead in their own clause and say
+// they need the work again; pending or unrecorded items keep the plain wording.
+// Agreement follows the count of items, not the look of a key.
 func itemsClause(items []Work) string {
-	var human, agent []string
+	var humanFailed, humanOpen, agentFailed, agentOpen []string
 	for _, w := range items {
-		if w.Actor == "human" {
-			human = append(human, workLabel(w))
-		} else {
-			agent = append(agent, workLabel(w)+" needs the agent's "+humanizeToken(w.Kind))
+		didFail := w.Status == store.CriterionStatusFail
+		switch {
+		case w.Actor == "human" && didFail:
+			humanFailed = append(humanFailed, workLabel(w))
+		case w.Actor == "human":
+			humanOpen = append(humanOpen, workLabel(w))
+		case didFail:
+			agentFailed = append(agentFailed, workLabel(w)+" failed and needs the agent's "+humanizeToken(w.Kind)+" again")
+		default:
+			agentOpen = append(agentOpen, workLabel(w)+" needs the agent's "+humanizeToken(w.Kind))
 		}
 	}
 	var clauses []string
-	if len(human) > 0 {
+	if len(humanFailed) > 0 {
 		verb := "needs"
-		if len(human) > 1 {
+		if len(humanFailed) > 1 {
 			verb = "need"
 		}
-		clauses = append(clauses, joinList(human)+" "+verb+" your attestation")
+		clauses = append(clauses, joinList(humanFailed)+" failed and "+verb+" your attestation again")
 	}
-	if len(agent) > 0 {
-		clauses = append(clauses, joinList(agent))
+	if len(humanOpen) > 0 {
+		verb := "needs"
+		if len(humanOpen) > 1 {
+			verb = "need"
+		}
+		clauses = append(clauses, joinList(humanOpen)+" "+verb+" your attestation")
+	}
+	if len(agentFailed) > 0 {
+		clauses = append(clauses, joinList(agentFailed))
+	}
+	if len(agentOpen) > 0 {
+		clauses = append(clauses, joinList(agentOpen))
+	}
+	if len(clauses) > 2 {
+		return strings.Join(clauses[:len(clauses)-1], ", ") + ", and " + clauses[len(clauses)-1]
 	}
 	return strings.Join(clauses, ", and ")
 }

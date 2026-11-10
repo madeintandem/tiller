@@ -4,9 +4,9 @@ Status: PROPOSED 2026-11-09. Nothing here is built and nothing is ruled. This fi
 
 ## How this was gathered
 
-The console was built from main at `5240960` and served read-only against the CALCTP project (23 epics, 152 features, 443 tasks, 75 questions, 320 shelf items). Every page was loaded in headless Chromium at 1512 by 900, with a 1024 pass and a dark mode pass on Home. Pages covered: Home and its three tabs, every Needs You tab, Explore in Browse, Filter, Map, and Search modes, the Questions and Amendments ledgers, node pages for an epic, two features, a task, and a bug with every feature tab, Build with expanded cards, Fix, Drift, Report, and History in two windows.
+The console was built from main at `5240960` and served read-only against a large client project (Acme here) (23 epics, 152 features, 443 tasks, 75 questions, 320 shelf items). Every page was loaded in headless Chromium at 1512 by 900, with a 1024 pass and a dark mode pass on Home. Pages covered: Home and its three tabs, every Needs You tab, Explore in Browse, Filter, Map, and Search modes, the Questions and Amendments ledgers, node pages for an epic, two features, a task, and a bug with every feature tab, Build with expanded cards, Fix, Drift, Report, and History in two windows.
 
-Timings come from `curl` against the running server. Positions come from `getBoundingClientRect` in the page. The screenshots were scratch files and are not kept in the repo. CALCTP was not modified.
+Timings come from `curl` against the running server. Positions come from `getBoundingClientRect` in the page. The screenshots were scratch files and are not kept in the repo. Acme was not modified.
 
 ## Defects
 

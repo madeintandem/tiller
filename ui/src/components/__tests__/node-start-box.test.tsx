@@ -61,7 +61,7 @@ describe("NodeDetail: the start box", () => {
     expect(screen.getByRole("button", { name: "tiller start task foundation/boot/boot-the-app" })).toBeInTheDocument();
   });
 
-  it("shows only the start command for a claimed task, naming its owner", () => {
+  it("shows only the start command for a claimed task, as the reader's own next step", () => {
     const { container } = renderPage(readyTaskPage({
       node: {
         noun: "task", id: "T-h4k2wq", key: "foundation/boot/boot-the-app", title: "Boot the app",
@@ -71,7 +71,7 @@ describe("NodeDetail: the start box", () => {
     }));
     expect(screen.getByText("Next · Agent")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^tiller (claim|start) task/ })).toHaveLength(1);
-    expect(container.querySelector(".abox .why")?.textContent).toBe("Claimed by robin. Their next step:");
+    expect(container.querySelector(".abox .why")?.textContent).toBe("Claimed by you. Next step:");
     expect(screen.queryByText("Ready. Start it.")).not.toBeInTheDocument();
   });
 

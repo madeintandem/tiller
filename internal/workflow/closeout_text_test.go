@@ -15,6 +15,11 @@ func agentItem(kind, id string) Work {
 	return Work{Kind: kind, ID: id, Status: "missing", Actor: "agent"}
 }
 
+func failed(w Work) Work {
+	w.Status = store.CriterionStatusFail
+	return w
+}
+
 func TestOpenAcceptanceSentence(t *testing.T) {
 	rows := []struct {
 		name  string
@@ -29,6 +34,11 @@ func TestOpenAcceptanceSentence(t *testing.T) {
 		{"three agent", []Work{agentItem("rubric", "C3"), agentItem("criterion", "C4"), agentItem("configuration", "unit_tests")}, "Acceptance is still open: C3 needs the agent's rubric, C4 needs the agent's criterion, and unit_tests needs the agent's configuration."},
 		{"mix lists human first", []Work{agentItem("rubric", "C3"), humanItem("C2"), humanItem("C5")}, "Acceptance is still open: C2 and C5 need your attestation, and C3 needs the agent's rubric."},
 		{"node prefix", []Work{{Kind: "criterion", ID: "C2", Status: "needs_attestation", Actor: "human", NodeID: "F-aaaaaa"}}, "Acceptance is still open: F-aaaaaa C2 needs your attestation."},
+		{"one human failed", []Work{failed(humanItem("C1"))}, "Acceptance is still open: C1 failed and needs your attestation again."},
+		{"two human failed", []Work{failed(humanItem("C1")), failed(humanItem("C3"))}, "Acceptance is still open: C1 and C3 failed and need your attestation again."},
+		{"human failed and pending", []Work{failed(humanItem("C1")), humanItem("C2")}, "Acceptance is still open: C1 failed and needs your attestation again, and C2 needs your attestation."},
+		{"agent failed", []Work{failed(agentItem("gate", "G-tests"))}, "Acceptance is still open: G-tests failed and needs the agent's gate again."},
+		{"all four", []Work{agentItem("rubric", "C3"), failed(agentItem("gate", "G-tests")), humanItem("C2"), failed(humanItem("C1"))}, "Acceptance is still open: C1 failed and needs your attestation again, C2 needs your attestation, G-tests failed and needs the agent's gate again, and C3 needs the agent's rubric."},
 	}
 	for _, r := range rows {
 		t.Run(r.name, func(t *testing.T) {

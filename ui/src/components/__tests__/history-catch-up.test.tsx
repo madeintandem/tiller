@@ -28,7 +28,7 @@ function recap(window: Recap["window"] = "visit"): Recap {
     epic: { key: "audit", id: "E-1", title: "Audit Engine", ref: "audit (E-1)" },
     stream: "jc",
     omitted: 0,
-    entries: [entry("spec.feature", "jc"), entry("approve.feature", "allen")],
+    entries: [entry("spec.feature", "jc"), entry("approve.feature", "dana")],
   };
   return { since: "2026-07-24T00:00:00Z", window, reader: "jc", total: 1000, groups: [audit], through: THROUGH };
 }
@@ -196,7 +196,7 @@ describe("History: catching up is the reader's call", () => {
 
   it("keeps the button under filters and show modes, and says it marks the whole window", async () => {
     const calls = stubFetch({ [VISIT]: recap() });
-    renderHistory("/history?actor=allen&show=all");
+    renderHistory("/history?actor=dana&show=all");
     await screen.findByText(/of 1000 events/);
 
     expect(button().getAttribute("title")).toMatch(/whole window/);

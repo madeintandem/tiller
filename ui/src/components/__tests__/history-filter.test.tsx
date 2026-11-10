@@ -37,7 +37,7 @@ function LocationProbe() {
 function renderHistory(entryUrl: string) {
   return render(
     <MemoryRouter initialEntries={[entryUrl]}>
-      <PeopleProvider contributors={[{ id: "jc", name: "JC Grubbs" }, { id: "allen", name: "Allen" }]}>
+      <PeopleProvider contributors={[{ id: "jc", name: "JC Grubbs" }, { id: "dana", name: "Dana" }]}>
         <Routes>
           <Route path="/history" element={<History />} />
         </Routes>
@@ -56,13 +56,13 @@ function recap(): Recap {
     epic: { key: "audit", id: "E-1", title: "Audit Engine", ref: "audit (E-1)" },
     stream: "jc",
     omitted: 0,
-    entries: [entry("spec.feature", "jc"), entry("approve.feature", "allen"), entry("add.question", "jc", true)],
+    entries: [entry("spec.feature", "jc"), entry("approve.feature", "dana"), entry("add.question", "jc", true)],
   };
   const billing: RecapGroup = {
     epic: { key: "billing", id: "E-2", title: "Billing", ref: "billing (E-2)" },
-    stream: "allen",
+    stream: "dana",
     omitted: 0,
-    entries: [entry("spec.feature", "allen")],
+    entries: [entry("spec.feature", "dana")],
   };
   return { since: "", window: "7d", reader: "jc", total: 1000, groups: [audit, billing] };
 }
@@ -87,7 +87,7 @@ describe("History filters", () => {
       expect(select.value).toBe("");
     }
     const actor = screen.getByLabelText("Actor") as HTMLSelectElement;
-    expect([...actor.options].map((o) => o.textContent)).toEqual(["All actors", "Allen", "JC Grubbs"]);
+    expect([...actor.options].map((o) => o.textContent)).toEqual(["All actors", "Dana", "JC Grubbs"]);
     const kind = screen.getByLabelText("Kind") as HTMLSelectElement;
     expect(kind.options[1].textContent).toBe("asked you");
     const epic = screen.getByLabelText("Epic") as HTMLSelectElement;
@@ -102,8 +102,8 @@ describe("History filters", () => {
 
   it("filters rows and states shown of total, riding the URL", async () => {
     await load();
-    fireEvent.change(screen.getByLabelText("Actor"), { target: { value: "allen" } });
-    expect(loc()).toBe("/history?window=7d&actor=allen");
+    fireEvent.change(screen.getByLabelText("Actor"), { target: { value: "dana" } });
+    expect(loc()).toBe("/history?window=7d&actor=dana");
     expect(sub()).toContain("2 of 1000 events");
   });
 
@@ -126,9 +126,9 @@ describe("History filters", () => {
   });
 
   it("keeps filters across a window or show change, and the reverse", async () => {
-    await load("/history?window=7d&actor=allen&epic=E-2");
+    await load("/history?window=7d&actor=dana&epic=E-2");
     fireEvent.click(screen.getByRole("link", { name: "Everything" }));
-    expect(loc()).toBe("/history?window=7d&show=all&actor=allen&epic=E-2");
+    expect(loc()).toBe("/history?window=7d&show=all&actor=dana&epic=E-2");
     fireEvent.change(screen.getByLabelText("Kind"), { target: { value: "specced" } });
     expect(loc()).toContain("show=all");
     expect(loc()).toContain("kind=specced");
@@ -137,7 +137,7 @@ describe("History filters", () => {
   });
 
   it("says no events match, with a link that clears the filters", async () => {
-    await load("/history?window=7d&actor=allen&kind=asked-you");
+    await load("/history?window=7d&actor=dana&kind=asked-you");
     expect(screen.getByText(/No events match the filters/)).toBeTruthy();
     fireEvent.click(screen.getByRole("link", { name: "Clear filters" }));
     expect(loc()).toBe("/history?window=7d");

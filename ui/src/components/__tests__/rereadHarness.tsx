@@ -67,7 +67,8 @@ const serverError = () => ({ ok: false, status: 500, statusText: "Internal Serve
 // holds every read that follows; release() answers them from the table with
 // the changes applied (and a server error for any URL it names as failing),
 // and later reads answer at once again. fail() answers every held read with a
-// server error; hold() holds without a bump. A held read whose signal aborts
+// server error; hold() holds without a bump; releaseOnly() answers some held
+// reads and keeps the rest held. A held read whose signal aborts
 // (an unmount, or a newer read superseding it) rejects with an AbortError the
 // way a browser's fetch does, so it leaves the in-flight count.
 export function stubReread(table: Routes) {
@@ -111,6 +112,17 @@ export function stubReread(table: Routes) {
       held = null;
       await act(async () => {
         for (const h of pending) h.settle(failing.includes(h.url) ? serverError() : await answer(current, h.url));
+      });
+    },
+    // Answers only the held reads for urls, with the changes applied, and
+    // keeps every other read held: one read of a pair landing first.
+    async releaseOnly(urls: string[], changes: Routes = {}) {
+      current = { ...current, ...changes };
+      const pending = held ?? [];
+      const now = pending.filter((h) => urls.includes(h.url));
+      held = pending.filter((h) => !urls.includes(h.url));
+      await act(async () => {
+        for (const h of now) h.settle(await answer(current, h.url));
       });
     },
     async fail() {

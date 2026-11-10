@@ -30,8 +30,8 @@
 
 import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import type { NodePage, Queue } from "../api";
-import { nodePagePath, queuePath } from "../api";
+import type { NodeBranchHistory, NodePage, Queue } from "../api";
+import { nodeBranchHistoryPath, nodePagePath, queuePath } from "../api";
 import NodeDetailInstrument from "../components/NodeDetail";
 import { handleOf } from "../components/NodeHeader";
 import OutOfDate from "../components/OutOfDate";
@@ -54,19 +54,21 @@ export default function NodeDetail() {
   //
   // The first read leaves out an observed task's branch history, which can
   // take far longer than the rest of the page; that answer says
-  // history_pending, and a second read of the plain path brings the merged
-  // history, whose page then replaces the first.
+  // history_pending, and a second read brings the merged history alone, which
+  // takes the place of the first answer's history rows.
   const path =
     noun !== undefined && addr !== undefined && addr !== "" ? nodePagePath(noun, addr, "integration") : null;
   const first = useFetch<NodePage>(path);
-  const mergedPath =
-    first.data?.history_pending === true && noun !== undefined && addr !== undefined ? nodePagePath(noun, addr) : null;
-  const merged = useFetch<NodePage>(mergedPath);
-  const page = withBranchHistory(first.data, merged.data, merged.error);
+  const branchPath =
+    first.data?.history_pending === true && noun !== undefined && addr !== undefined
+      ? nodeBranchHistoryPath(noun, addr)
+      : null;
+  const branch = useFetch<NodeBranchHistory>(branchPath);
+  const page = withBranchHistory(first.data, branch.data, branch.error);
   const { error } = first;
   // What a failed reread left out of date: the page read itself, or else a
-  // merged read that failed while its last good branch history stays shown.
-  const staleError = error ?? (merged.data !== null ? merged.error : null);
+  // branch read that failed while its last good history stays shown.
+  const staleError = error ?? (branch.data !== null ? branch.error : null);
   // Keyed to the node request path: navigating to another node rereads the
   // queue, so a snapshot taken on the previous node (perhaps before a CLI
   // mutation answered its ask) never drives this node's attention stack, and
@@ -138,24 +140,31 @@ function paneContent(
   );
 }
 
-// The page to draw: the merged answer once it lands, else the first answer,
-// which keeps its pending History row until then. A failed merged read ends
-// the wait with the failure named where the branch history would be. A merged
-// reread that fails while the last merged answer is kept draws the fresh
-// first answer (header, status, spec) with only the last good branch history
-// and its execution provenance carried over; the pane marks it out of date.
-function withBranchHistory(first: NodePage | null, merged: NodePage | null, mergedError: string | null): NodePage | null {
-  if (first === null) {
-    return null;
+// The page to draw. The first answer always drives it (header, status, spec,
+// workflow), so a reread's fresh page shows the moment it lands. Its History
+// takes the branch read's merged rows, or, while a reread of them is out or
+// after one failed, the last good rows (the pane marks a failure out of
+// date), so the pending row never comes back over rows already shown. Until
+// the first branch answer the pending row stands; a failed first branch read
+// ends the wait with the failure named where the branch history would be.
+function withBranchHistory(
+  first: NodePage | null,
+  branch: NodeBranchHistory | null,
+  branchError: string | null,
+): NodePage | null {
+  if (first === null || first.history_pending !== true) {
+    return first;
   }
-  if (merged !== null && mergedError !== null) {
-    return { ...first, history: merged.history, execution: merged.execution, history_pending: undefined };
+  if (branch !== null) {
+    return {
+      ...first,
+      history: branch.history,
+      execution_history_error: branch.execution_history_error,
+      history_pending: undefined,
+    };
   }
-  if (merged !== null) {
-    return merged;
-  }
-  if (mergedError !== null) {
-    return { ...first, history_pending: undefined, execution_history_error: mergedError };
+  if (branchError !== null) {
+    return { ...first, history_pending: undefined, execution_history_error: branchError };
   }
   return first;
 }

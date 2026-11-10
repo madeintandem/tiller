@@ -53,7 +53,8 @@ type Recap struct {
 	Reader string       `json:"reader"`
 	Total  int          `json:"total"`
 	Groups []RecapGroup `json:"groups"`
-	// Through is the instant a visit-window digest was computed, RFC3339 UTC.
+	// Through is the instant a visit-window digest was computed, RFC3339 UTC at
+	// full (nanosecond) precision, the grain the horizon comparison uses.
 	// The console's Mark caught up press sends it back so the new horizon is
 	// exactly what the reader saw. Only the visit window carries it.
 	Through string `json:"through,omitempty"`

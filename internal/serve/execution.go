@@ -74,6 +74,36 @@ type observedNodePage struct {
 	HistoryPending bool `json:"history_pending,omitempty"`
 }
 
+// nodeBranchHistory is the ?history=branch answer: the node's history with
+// an observed task's branch events merged in, and nothing else of the page.
+type nodeBranchHistory struct {
+	History               []views.HistoryEntry `json:"history"`
+	ExecutionHistoryError string               `json:"execution_history_error,omitempty"`
+}
+
+// branchHistoryOf answers the node page's second read. The first read
+// (?history=integration) already drew everything else, and none of it changes
+// with the branch's events: the only other reader of the event stream is the
+// amendment identity history behind relationships, and a branch carries only
+// events that target its own started task, never an amendment's lifecycle or
+// a task's add or key rename (a task key is fixed once it leaves proposed).
+// So this read merges the history alone instead of rebuilding the whole page.
+// A failed integration read leaves the history empty, as on the page.
+func branchHistoryOf(ctx context.Context, snapshot *execution.Snapshot, id string) nodeBranchHistory {
+	evs, err := snapshot.IntegrationEvents(ctx)
+	if err != nil {
+		evs = nil
+	}
+	var answer nodeBranchHistory
+	if merged, err := observedEvents(ctx, snapshot, id, evs); err != nil {
+		answer.ExecutionHistoryError = err.Error()
+	} else {
+		evs = merged
+	}
+	answer.History = views.HistoryOf(evs, id)
+	return answer
+}
+
 func observedEvents(ctx context.Context, snapshot *execution.Snapshot, id string, base []events.Event) ([]events.Event, error) {
 	if _, ok := snapshot.Observations[id]; !ok {
 		return base, nil

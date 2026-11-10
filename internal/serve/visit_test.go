@@ -368,6 +368,40 @@ func peekSince(t *testing.T, h http.Handler) string {
 	return rec.Since
 }
 
+// TestRecapMarkKeepsSubsecondPrecision pins the round trip of a press whose
+// digest instant falls mid-second: the digest names its instant at full
+// precision, the press echoes it, and the persisted horizon is exactly that
+// instant, so an event the reader saw (landing earlier in the same second) is
+// not new again on the next visit.
+func TestRecapMarkKeepsSubsecondPrecision(t *testing.T) {
+	root := visitRepo(t)
+	assets := fstest.MapFS{"index.html": {Data: []byte("x")}}
+	seeded := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
+	writeLastVisit(root, seeded)
+
+	asOf := time.Date(2026, 7, 1, 12, 0, 0, 800_000_000, time.UTC)
+	appendVisitEvent(t, root, "EV-000001", "add.epic", asOf.Add(-500*time.Millisecond), []string{"E-000001"})
+	h := newMux(root, assets, &visitState{now: fixedNow(asOf)}, "test", DefaultAuthority())
+
+	seen := recapUnmarked(t, h)
+	require.Equal(t, 1, seen.Total, "the digest holds the event")
+	press := recapThrough(t, h, seen.Through)
+	require.Equal(t, 1, press.Total)
+
+	require.True(t, readCacheVisit(t, root).Equal(asOf), "the horizon is the instant the digest was taken")
+	require.Equal(t, 0, recapUnmarked(t, h).Total, "an event the reader saw is not new again")
+}
+
+// TestVisitHorizonWholeSecondStillParses pins that a horizon persisted before
+// sub-second precision reads back unchanged.
+func TestVisitHorizonWholeSecondStillParses(t *testing.T) {
+	root := visitRepo(t)
+	require.NoError(t, os.MkdirAll(filepath.Dir(consoleCachePath(root)), 0o755))
+	require.NoError(t, os.WriteFile(consoleCachePath(root), []byte(`{"last_visit":"2026-07-01T09:00:00Z"}`), 0o644))
+	v := &visitState{now: fixedNow(time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC))}
+	require.True(t, v.peek(root).Equal(time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)))
+}
+
 func appendVisitEvent(t *testing.T, root, id, typ string, at time.Time, targets []string) {
 	t.Helper()
 	tree, err := store.Load(root)
