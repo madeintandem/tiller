@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { composeMix, composeMixCaption } from "./mix";
+import { composeMix, composeMixCaption, taskMix, taskMixCaption } from "./mix";
 
 describe("composeMix", () => {
   it("emits all six columns in fixed order, zeros included", () => {
@@ -56,5 +56,41 @@ describe("composeMixCaption", () => {
   it("is unaffected by omitting the counts argument (backward compatible with a caller that has none)", () => {
     const mix = composeMix({ draft: 2 });
     expect(composeMixCaption(mix)).toBe("2 draft");
+  });
+});
+
+describe("taskMix and taskMixCaption", () => {
+  const t = (status: string) => ({ status });
+
+  it("captions seven tasks in review as zero of seven done", () => {
+    const tasks = Array.from({ length: 7 }, () => t("in_review"));
+    expect(taskMixCaption(tasks)).toBe("0 of 7 done, 7 in review");
+    expect(taskMix(tasks).filter((m) => m.n > 0)).toEqual([{ state: "in_review", n: 7 }]);
+  });
+
+  it("orders the caption done first, then lifecycle order, with status words in lower case", () => {
+    const tasks = [t("check"), t("done"), t("ready"), t("in_progress"), t("in_progress"), t("proposed")];
+    expect(taskMixCaption(tasks)).toBe("1 of 6 done, 1 proposed, 1 ready, 2 in progress, 1 check");
+  });
+
+  it("leaves cancelled tasks out of the count and the caption", () => {
+    const tasks = [t("done"), t("cancelled"), t("ready")];
+    expect(taskMixCaption(tasks)).toBe("1 of 2 done, 1 ready");
+    expect(taskMix(tasks).reduce((sum, m) => sum + m.n, 0)).toBe(2);
+  });
+
+  it("reads all done and no tasks plainly", () => {
+    expect(taskMixCaption([t("done"), t("done")])).toBe("2 of 2 done");
+    expect(taskMixCaption([])).toBe("no tasks yet");
+    expect(taskMixCaption([t("cancelled")])).toBe("no tasks yet");
+  });
+
+  it("folds task statuses onto the bar's chart states, in lifecycle order", () => {
+    const mix = taskMix([t("done"), t("check"), t("in_progress"), t("proposed")]);
+    expect(mix.filter((m) => m.n > 0)).toEqual([
+      { state: "specced", n: 1 },
+      { state: "active", n: 2 },
+      { state: "done", n: 1 },
+    ]);
   });
 });

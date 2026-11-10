@@ -78,6 +78,21 @@ export function visibleCards(selectedEpics: BuildEpic[]): BoardCard[] {
   return cards;
 }
 
+// showEpicEyebrow: whether the card at index opens a run of its epic in its
+// column. With one epic selected every card shares it, so none repeats it;
+// otherwise a card names its epic only when the card above (same column) is
+// from another epic, so three stacked cards of one epic carry one eyebrow.
+export function showEpicEyebrow(
+  cards: readonly { epic: { id: string } }[],
+  index: number,
+  selectedEpicCount: number,
+): boolean {
+  if (selectedEpicCount <= 1) {
+    return false;
+  }
+  return index === 0 || cards[index - 1].epic.id !== cards[index].epic.id;
+}
+
 // columnCards is the one status filter every column applies to the shared
 // sequence above. It filters on the server's column (BuildFeature.column),
 // not the stored status: a ready feature with a task in flight lands in

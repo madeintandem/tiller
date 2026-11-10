@@ -327,6 +327,14 @@
   padding: 0 12px 6px;
 }
 
+/* The card's task progress: the mix bar over its caption in words. */
+.fcard .f-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
 .taskcount {
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -414,23 +422,23 @@
 
 .trow {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 7px;
   padding: 3.5px 0;
   font-size: 12px;
   color: var(--ink-2);
 }
 
-/* The title takes the row's slack and wraps; the status chip keeps its word
-   whole at the trailing edge. */
+/* The status glyph leads and the title takes the rest of the row, wrapping at
+   full width. A 2px top margin lines the glyph up with the title's first line. */
 .trow-title {
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.trow .chip {
-  flex: 0 0 auto;
+.trow .state-glyph {
+  margin-top: 2px;
 }
 
 .trow:hover {

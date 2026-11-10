@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BuildEpic, BuildFeature } from "../../api";
-import { BUILD_COLUMNS, columnCards, isColumnStatus, renderedFeatureCount, visibleCards } from "./columns";
+import { BUILD_COLUMNS, columnCards, isColumnStatus, renderedFeatureCount, showEpicEyebrow, visibleCards } from "./columns";
 
 function feature(id: string, status: string): BuildFeature {
   return {
@@ -113,5 +113,19 @@ describe("renderedFeatureCount", () => {
   it("returns 0 for no features, and counts all of them when none are cancelled", () => {
     expect(renderedFeatureCount([])).toBe(0);
     expect(renderedFeatureCount([feature("F-1", "draft"), feature("F-2", "active")])).toBe(2);
+  });
+});
+
+describe("showEpicEyebrow", () => {
+  const c = (epicId: string) => ({ epic: { id: epicId } });
+  const cards = [c("E-1"), c("E-1"), c("E-1"), c("E-2"), c("E-1")];
+
+  it("is false when one epic is selected", () => {
+    expect(showEpicEyebrow(cards, 0, 1)).toBe(false);
+    expect(showEpicEyebrow(cards, 3, 1)).toBe(false);
+  });
+
+  it("shows on the first card of a run of one epic and not on the rest of the run", () => {
+    expect([0, 1, 2, 3, 4].map((i) => showEpicEyebrow(cards, i, 2))).toEqual([true, false, false, true, true]);
   });
 });

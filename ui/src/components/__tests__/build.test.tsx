@@ -842,7 +842,7 @@ describe("Build expanded task rows: readable status", () => {
       expect(link).toHaveAccessibleName(expect.stringContaining(status));
     }
     const dangling = within(card).getByText("Vanished task").closest(".trow") as HTMLElement;
-    expect(dangling).toHaveTextContent("Check");
+    expect(within(dangling).getByRole("img", { name: "Check" })).toBeInTheDocument();
     expect(screen.queryByText("in_review")).toBeNull();
     expect(screen.queryByText("in_progress")).toBeNull();
   });
