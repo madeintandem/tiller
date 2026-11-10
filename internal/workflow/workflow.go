@@ -2,7 +2,6 @@
 package workflow
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -202,15 +201,15 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 	}
 	if review.NodeStatus() == "done" {
 		a.Phase, a.Actor, a.Action = "done", "none", "report"
-		a.Reason = "done remains recorded"
+		a.Reason = "Done is recorded."
 		if a.RecoveredReview != nil {
-			a.Reason += "; " + RecoverySummary(a.RecoveredReview)
+			a.Reason = addSentence(a.Reason, RecoverySummary(a.RecoveredReview))
 		}
 		if !a.AcceptanceReady {
-			a.Reason += "; acceptance remains unresolved: " + workflowItems(a.Outstanding)
+			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
-		if a.HistoricalViolations > 0 && a.RecoveredReview == nil {
-			a.Reason += fmt.Sprintf("; %d historical policy violations remain recorded", a.HistoricalViolations)
+		if a.RecoveredReview == nil {
+			a.Reason = addSentence(a.Reason, policyCountSentence("violation", "historical policy", a.HistoricalViolations))
 		}
 		return a
 	}
@@ -229,7 +228,7 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 			a.Reason += "; containment is not an observed merge; the existing human fast-forward decision is required before crossing"
 		}
 		if !a.AcceptanceReady {
-			a.Reason += "; current acceptance remains independently unresolved: " + workflowItems(a.Outstanding)
+			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
 		return a
 	}
@@ -305,7 +304,7 @@ func Classify(m *store.Manifest, f *store.Feature, review store.Node, grain stri
 		a.Phase, a.Actor, a.Action = "review", "human", "review_merge"
 		a.Reason = "formal submission recorded; awaiting human review and merge"
 		if !a.AcceptanceReady {
-			a.Reason += "; acceptance remains unresolved: " + workflowItems(a.Outstanding)
+			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
 		return a
 	}

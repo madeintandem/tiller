@@ -1,10 +1,6 @@
 package workflow
 
-import (
-	"fmt"
-
-	"github.com/madeintandem/tiller/internal/store"
-)
+import "github.com/madeintandem/tiller/internal/store"
 
 // CurrentAcceptance retains feature-local acceptance when an epic's next action
 // is determined by its historical review rather than by one feature's gates.
@@ -22,17 +18,13 @@ func applyRecoveredCloseout(t *store.Tree, a *Advice) {
 		return
 	}
 	defer func() {
-		if a.HistoricalViolations > 0 {
-			a.Reason += fmt.Sprintf("; %d source-pinned historical policy warnings remain recorded", a.HistoricalViolations)
-		}
-		if a.CrossingViolations > 0 {
-			a.Reason += fmt.Sprintf("; %d independent crossing-time policy warnings remain recorded", a.CrossingViolations)
-		}
+		a.Reason = addSentence(a.Reason, policyCountSentence("warning", "source-pinned historical policy", a.HistoricalViolations))
+		a.Reason = addSentence(a.Reason, policyCountSentence("warning", "independent crossing-time policy", a.CrossingViolations))
 	}()
 	if a.Phase == "done" {
-		a.Reason = "done remains recorded; " + RecoverySummary(a.RecoveredReview)
+		a.Reason = addSentence("Done is recorded.", RecoverySummary(a.RecoveredReview))
 		if !a.AcceptanceReady {
-			a.Reason += "; current acceptance remains independently unresolved: " + workflowItems(a.Outstanding)
+			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
 		return
 	}
@@ -60,7 +52,7 @@ func applyRecoveredCloseout(t *store.Tree, a *Advice) {
 			a.Reason += "; containment is not an observed merge; the human fast-forward decision is required before crossing"
 		}
 		if !a.AcceptanceReady {
-			a.Reason += "; current acceptance remains independently unresolved: " + workflowItems(a.Outstanding)
+			a.Reason = addSentence(a.Reason, openAcceptanceSentence(a.Outstanding))
 		}
 		return
 	}
