@@ -17,7 +17,9 @@ import { driftPath } from "../api";
 import EmptyNote from "../components/EmptyNote";
 import { DriftCandidateDetails, DriftTargetLink } from "../components/DriftFinding";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import { groupUncovered, markerCopy, reasonCopy } from "../lib/drift";
 import { has } from "../lib/has";
+import vocabulary from "../lib/vocabulary.json";
 import "./explore.css";
 import "./drift.css";
 
@@ -30,15 +32,11 @@ import "./drift.css";
 // section order exactly.
 //
 // Keep this order aligned with drift.KnownMarkers when adding a marker.
-const MARKER_ORDER = [
-  "stale_spec",
-  "active_basis",
-  "answered_question",
-  "missing_surface",
-  "orphan_eval",
-  "stale_design",
-  "shifted_design",
-];
+//
+// The order is vocabulary.json's drift_markers, which a Go test pins against
+// drift.KnownMarkers, so the two cannot drift apart. A marker from a newer
+// server that this list lacks still renders, after the known ones.
+const MARKER_ORDER: string[] = vocabulary.drift_markers;
 
 export default function Drift() {
   useDocumentTitle(titleOf("Drift"));
@@ -48,16 +46,19 @@ export default function Drift() {
       <h1>Drift</h1>
       {error !== null && <p className="error">{error}</p>}
       {error === null && loading && <p className="muted">Sweeping the working tree...</p>}
-      {data !== null && <DriftBody report={data} />}
+      {data !== null && <DriftReportBody report={data} />}
     </section>
   );
 }
 
-function DriftBody({ report }: { report: DriftReportView }) {
-  const sections = MARKER_ORDER.map((marker) => ({
-    marker,
-    rows: report.candidates?.[marker] ?? [],
-  })).filter((s) => s.rows.length > 0);
+// DriftReportBody is the report without its page heading, so a host that
+// supplies its own heading can render the same body.
+export function DriftReportBody({ report }: { report: DriftReportView }) {
+  const present = Object.keys(report.candidates ?? {});
+  const markers = [...MARKER_ORDER, ...present.filter((m) => !MARKER_ORDER.includes(m)).sort()];
+  const sections = markers
+    .map((marker) => ({ marker, rows: report.candidates?.[marker] ?? [] }))
+    .filter((s) => s.rows.length > 0);
   const uncovered = report.uncovered ?? [];
   const found = sections.length > 0 || uncovered.length > 0;
 
@@ -73,11 +74,13 @@ function DriftBody({ report }: { report: DriftReportView }) {
 }
 
 function MarkerSection({ marker, rows }: { marker: string; rows: CandidateView[] }) {
+  const copy = markerCopy(marker);
   return (
     <section className="drift-section">
       <h2 className="eyebrow drift-section-head">
-        {marker} ({rows.length})
+        {copy.name} ({rows.length})
       </h2>
+      <p className="muted drift-section-meaning">{copy.meaning}</p>
       <ul className="rule-list drift-rows">
         {rows.map((c, i) => (
           <CandidateRow key={`${c.noun}-${c.id}-${i}`} candidate={c} />
@@ -100,12 +103,33 @@ function UncoveredSection({ rows }: { rows: UncoveredView[] }) {
   return (
     <section className="drift-section">
       <h2 className="eyebrow drift-section-head">Uncovered ({rows.length})</h2>
+      {groupUncovered(rows).map((group) => (
+        <UncoveredGroup key={`${group.marker}/${group.reason}`} group={group} />
+      ))}
+    </section>
+  );
+}
+
+// UncoveredGroup states a cause shared by several rows once. Uncovered is one
+// flat list across every marker (drift.Uncovered's own doc comment: a node can
+// land here under more than one (marker, reason) pair), so a group names its
+// marker in plain words, then the cause and the fix, then one row per node.
+function UncoveredGroup({ group }: { group: { marker: string; reason: string; rows: UncoveredView[] } }) {
+  const marker = markerCopy(group.marker);
+  const reason = reasonCopy(group.reason);
+  return (
+    <div className="drift-group">
+      <h3 className="drift-group-head">
+        {marker.name} ({group.rows.length})
+      </h3>
+      <p className="drift-group-cause">{reason.cause}</p>
+      <p className="muted drift-group-fix">{reason.fix}</p>
       <ul className="rule-list explore-results">
-        {rows.map((u, i) => (
-          <UncoveredRow key={`${u.marker}-${u.noun}-${u.id}-${i}`} row={u} />
+        {group.rows.map((u, i) => (
+          <UncoveredRow key={`${u.noun}-${u.id}-${u.key ?? ""}-${i}`} row={u} />
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
 
@@ -116,13 +140,7 @@ function UncoveredSection({ rows }: { rows: UncoveredView[] }) {
 function UncoveredRow({ row: u }: { row: UncoveredView }) {
   return (
     <li className="explore-result-row drift-row-uncovered">
-      {/* Uncovered is one flat list across every marker (drift.Uncovered's
-          own doc comment: a node can land here under more than one (marker,
-          reason) pair), so each row has to name its own marker rather than
-          relying on section context the way a candidate row can. */}
-      <span className="mono muted drift-uncovered-marker">[{u.marker}]</span>
       <DriftTargetLink row={u} />
-      <span className="drift-uncovered-reason">{u.reason}</span>
       {has(u.detail) && <span className="muted">{u.detail}</span>}
     </li>
   );
@@ -207,10 +225,10 @@ function DriftFooter({ report, found }: { report: DriftReportView; found: boolea
         <EmptyNote>{comparedLine(report, found)}</EmptyNote>
       )}
       {(report.disabled?.length ?? 0) > 0 && (
-        <p className="muted">Disabled: {(report.disabled ?? []).join(", ")}</p>
+        <p className="muted">Disabled: {(report.disabled ?? []).map((m) => markerCopy(m).name).join(", ")}</p>
       )}
       {exempted.length > 0 && (
-        <p className="muted">Exempted: {exempted.map(([m, n]) => `${m}: ${n}`).join(", ")}</p>
+        <p className="muted">Exempted: {exempted.map(([m, n]) => `${markerCopy(m).name}: ${n}`).join(", ")}</p>
       )}
       {coverage.length > 0 && (
         <div className="drift-coverage muted">
@@ -218,7 +236,7 @@ function DriftFooter({ report, found }: { report: DriftReportView; found: boolea
           <ul>
             {coverage.map(([m, buckets]) => (
               <li key={m}>
-                {m}: {coverageLine(m, buckets)}
+                {markerCopy(m).name}: {coverageLine(m, buckets)}
               </li>
             ))}
           </ul>

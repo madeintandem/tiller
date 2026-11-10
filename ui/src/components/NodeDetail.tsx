@@ -45,7 +45,8 @@ import type {
 import { isEvalError } from "../api";
 import { KIND_LABEL, whyLine } from "./DecisionCard";
 import { needsAttentionFallback, type AttentionFallback } from "../lib/attentionFallback";
-import { refOf, shortSha } from "../lib/drift";
+import { markerCopy, reasonCopy, shortSha } from "../lib/drift";
+import { DriftTargetLink } from "./DriftFinding";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
 import AttentionFold from "./AttentionFold";
@@ -55,7 +56,6 @@ import { ExecutionProvenance } from "./ExecutionSources";
 import { ProseInline } from "./Prose";
 import RecoveredReview from "./RecoveredReview";
 import NodeTabs, { type NodeTab } from "./NodeTabs";
-import RefLink from "./RefLink";
 import HistorySection from "../views/node/HistorySection";
 import RelationshipHub, { dependencyCount, type GroupKey } from "../views/node/RelationshipHub";
 import AttachedWorkPanel from "../views/node/AttachedWorkPanel";
@@ -106,7 +106,7 @@ function BasisRow({ page }: { page: NodePage }) {
   const missing = drift.missing ?? [];
   return (
     <div className="instr-drift">
-      <span className="instr-drift-say">active_basis</span>
+      <span className="instr-drift-say">{markerCopy("active_basis").name}</span>
       <span className="mono">{drift.drifted.join(", ")}</span>
       <span>
         no longer {drift.drifted.length === 1 ? "matches" : "match"} the accepted basis
@@ -153,8 +153,9 @@ function DriftPanel({ page }: { page: NodePage }) {
       ))}
       {uncovered.map((u, i) => (
         <p key={`${u.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{u.marker}</span> not checked ({u.reason})
-          {has(u.detail) && <>: {u.detail}</>}
+          <span className="instr-drift-say">{markerCopy(u.marker).name}</span> not checked. {reasonCopy(u.reason).cause}{" "}
+          {reasonCopy(u.reason).fix}
+          {has(u.detail) && <> ({u.detail})</>}
         </p>
       ))}
       <Link to="/drift" className="muted instr-drift-more">
@@ -179,10 +180,10 @@ function DriftCandidateRow({ row, pageNodeId }: { row: CandidateView; pageNodeId
   const files = row.files ?? [];
   return (
     <div className="instr-drift">
-      <span className="instr-drift-say">{row.marker}</span>
+      <span className="instr-drift-say">{markerCopy(row.marker).name}</span>
       {elsewhere && (
         <span>
-          on {row.noun} <RefLink node={{ noun: row.noun, id: row.id, ref: refOf(row.key, row.id) }} />
+          on {row.noun} <DriftTargetLink row={row} />
         </span>
       )}
       {has(row.detail) && <span>{row.detail}</span>}
@@ -193,7 +194,7 @@ function DriftCandidateRow({ row, pageNodeId }: { row: CandidateView; pageNodeId
           {line}
         </span>
       ))}
-      {has(row.remedy) && <CopyCmd cmd={row.remedy} />}
+      {has(row.remedy) ? <CopyCmd cmd={row.remedy} /> : <span className="muted">{markerCopy(row.marker).next}</span>}
     </div>
   );
 }

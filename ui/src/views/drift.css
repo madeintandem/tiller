@@ -63,8 +63,33 @@
   padding: var(--space-1) 0;
 }
 
-.drift-uncovered-marker {
+/* The one sentence a marker means, under its section heading. */
+.drift-section-meaning {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  font-size: 13px;
+}
+
+/* The key follows the title in mono, smaller than the title it trails. */
+.drift-row-key {
   font-size: 11px;
+  margin-left: var(--space-2);
+}
+
+/* An uncovered group states its cause and fix once above its rows. */
+.drift-group {
+  margin: var(--space-5) 0;
+}
+
+.drift-group-head {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.drift-group-cause,
+.drift-group-fix {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
 }
 
 .drift-footer {

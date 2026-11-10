@@ -15,6 +15,7 @@ import { Fragment, type ReactNode } from "react";
 import type { DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
 import { withActivityPhrase } from "../lib/activityPhrase";
 import { displayStatus } from "../lib/displayStatus";
+import { markerCopy } from "../lib/drift";
 import { gateChipsFor } from "../lib/gateChips";
 import { has } from "../lib/has";
 import { kindLabel } from "../lib/kind";
@@ -137,7 +138,7 @@ function DriftedChip({
       type="button"
       className="instr-drift-chip"
       aria-expanded={expanded}
-      title={rows.map((b) => b.marker).join(", ")}
+      title={rows.map((b) => markerCopy(b.marker).name).join(", ")}
       onClick={onToggle}
     >
       <Chip status={status}>Drifted</Chip>

@@ -119,9 +119,9 @@ describe("Drift page: marker sections", () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    const activeBasisHead = await screen.findByText(/active_basis \(1\)/);
-    const missingSurfaceHead = await screen.findByText(/missing_surface \(1\)/);
-    const orphanEvalHead = await screen.findByText(/orphan_eval \(1\)/);
+    const activeBasisHead = await screen.findByText(/Work started from an older basis \(1\)/);
+    const missingSurfaceHead = await screen.findByText(/No surface recorded \(1\)/);
+    const orphanEvalHead = await screen.findByText(/Eval no longer matches its spec \(1\)/);
 
     // Schema order is active_basis, then missing_surface, then orphan_eval;
     // the fixture inserted missing_surface first, so a pass here proves the
@@ -149,7 +149,7 @@ describe("Drift page: marker sections", () => {
     stubFetch({ "/api/drift": fullReport() });
     renderDrift();
 
-    await screen.findByText(/active_basis \(1\)/);
+    await screen.findByText(/Work started from an older basis \(1\)/);
     // "git:e5f9d28a1b2c3d4e5f6" shortens to the first 7 hex characters,
     // mirroring internal/cli/drift.go's own shortSHA exactly.
     expect(screen.getByText("git:e5f9d28")).toBeInTheDocument();
@@ -181,12 +181,12 @@ describe("Drift page: Uncovered section", () => {
     await screen.findByText(/Uncovered \(1\)/);
     const link = screen.getByRole("link", { name: "form-engine/audit-export (F-unknownq)" });
     expect(link).toHaveAttribute("href", "/node/feature/F-unknownq");
-    expect(screen.getByText(/unknown_question/)).toBeInTheDocument();
+    expect(screen.getByText(/no longer in the ledger/)).toBeInTheDocument();
     expect(screen.getByText(/Q-999999 no longer exists in the ledger/)).toBeInTheDocument();
-    // The marker rides beside the row: Uncovered is one flat list across
-    // every marker, so a row cannot rely on section context to say which
-    // marker it came from the way a candidate row can.
-    expect(screen.getByText(/answered_question/)).toBeInTheDocument();
+    // The marker's plain name rides with the row's group: Uncovered is one
+    // flat list across every marker, so a group cannot rely on section
+    // context to say which marker it came from.
+    expect(screen.getByText(/An answered question was not reviewed/)).toBeInTheDocument();
   });
 });
 
@@ -196,14 +196,14 @@ describe("Drift page: footer", () => {
     renderDrift();
 
     expect(await screen.findByText("Compared 9 node(s) across 4 check(s).")).toBeInTheDocument();
-    expect(screen.getByText("Disabled: stale_spec")).toBeInTheDocument();
-    expect(screen.getByText("Exempted: active_basis: 2")).toBeInTheDocument();
+    expect(screen.getByText("Disabled: Spec changed after the work")).toBeInTheDocument();
+    expect(screen.getByText("Exempted: Work started from an older basis: 2")).toBeInTheDocument();
     // orphan_eval counts CRITERIA, the finer grain its own existence checks
     // operate at; the other four count node(s), the same unit Compared
     // counts in (drift.Report's own Coverage doc comment).
-    expect(screen.getByText(/active_basis: 4 node\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
+    expect(screen.getByText(/Work started from an older basis: 4 node\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
     expect(
-      screen.getByText(/orphan_eval: 3 criteria checked, 1 unresolvable, 2 out of scope/),
+      screen.getByText(/Eval no longer matches its spec: 3 criteria checked, 1 unresolvable, 2 out of scope/),
     ).toBeInTheDocument();
   });
 });
@@ -219,7 +219,7 @@ describe("Drift page: empty state", () => {
     ).toBeInTheDocument();
     // Disabled still rides the footer on a clean run: it is independent of
     // whether the sweep found anything.
-    expect(screen.getByText("Disabled: orphan_eval")).toBeInTheDocument();
+    expect(screen.getByText("Disabled: Eval no longer matches its spec")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
   });
 });
@@ -274,7 +274,208 @@ describe("Drift page: baseline documents", () => {
     expect(screen.getAllByText("git:abcdef0")).toHaveLength(2);
     expect(screen.getByRole("button", { name: report.candidates?.stale_design[0].remedy })).toBeInTheDocument();
     expect(screen.getByText(/Compared 2 node\(s\) and 1 design doc\(s\)/)).toBeInTheDocument();
-    expect(screen.getByText(/stale_design: 1 doc\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
+    expect(screen.getByText(/Design doc is behind the code: 1 doc\(s\) checked, 1 unresolvable/)).toBeInTheDocument();
     expect(screen.queryByText(/nothing moved/)).not.toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The report reads like the rest of the console. No marker or reason token is
+// visible anywhere on it; titles lead and keys follow in mono; a shared cause
+// is stated once.
+// ---------------------------------------------------------------------------
+
+const TOKENS = [
+  "stale_spec",
+  "active_basis",
+  "answered_question",
+  "missing_surface",
+  "orphan_eval",
+  "stale_design",
+  "shifted_design",
+  "ref_unreadable",
+  "eval_unreadable",
+  "unknown_question",
+  "unconfirmed",
+];
+
+function expectNoTokens(container: HTMLElement) {
+  const text = container.textContent ?? "";
+  for (const token of TOKENS) {
+    expect(text).not.toContain(token);
+    expect(text.toUpperCase()).not.toContain(token.toUpperCase());
+  }
+  expect(text).not.toMatch(/\[[a-z_]+\]/);
+}
+
+describe("Drift page: plain names", () => {
+  it("heads each section with the marker's plain name and its meaning beneath, never the token", async () => {
+    const report: DriftReportView = {
+      compared: 3,
+      candidates: {
+        stale_spec: [
+          { marker: "stale_spec", noun: "feature", id: "F-spec", key: "app/spec-feature", title: "Spec feature" },
+        ],
+      },
+    };
+    stubFetch({ "/api/drift": report });
+    const { container } = renderDrift();
+
+    const heading = await screen.findByRole("heading", { level: 2, name: "Spec changed after the work (1)" });
+    expect(heading.nextElementSibling).toHaveTextContent(/verified against a spec, eval, or surface that has since changed/);
+    expectNoTokens(container);
+  });
+
+  it("shows no token on the disabled, exempted, or coverage lines", async () => {
+    const report: DriftReportView = {
+      compared: 4,
+      disabled: ["shifted_design", "orphan_eval"],
+      exempted: { stale_spec: 2 },
+      coverage: { active_basis: { checked: 3 }, answered_question: { checked: 1 } },
+    };
+    stubFetch({ "/api/drift": report });
+    const { container } = renderDrift();
+
+    expect(await screen.findByText("Disabled: Design doc may have shifted, Eval no longer matches its spec")).toBeInTheDocument();
+    expect(screen.getByText("Exempted: Spec changed after the work: 2")).toBeInTheDocument();
+    expectNoTokens(container);
+  });
+
+  it("humanizes a marker and a reason from a newer server instead of printing them raw", async () => {
+    const report: DriftReportView = {
+      compared: 1,
+      candidates: {
+        stale_widget: [{ marker: "stale_widget", noun: "feature", id: "F-w", key: "app/w", title: "Widget" }],
+      },
+      uncovered: [{ marker: "stale_widget", noun: "feature", id: "F-w", key: "app/w", title: "Widget", reason: "widget_jammed" }],
+      disabled: ["future_check"],
+    };
+    stubFetch({ "/api/drift": report });
+    const { container } = renderDrift();
+
+    expect(await screen.findByRole("heading", { level: 2, name: "Stale widget (1)" })).toBeInTheDocument();
+    expect(screen.getByText("Disabled: Future check")).toBeInTheDocument();
+    expect(container.textContent).not.toContain("_");
+  });
+});
+
+describe("Drift page: rows lead with the title", () => {
+  it("shows the title as the link and the key beside it in mono", async () => {
+    const report: DriftReportView = {
+      compared: 1,
+      candidates: {
+        active_basis: [
+          {
+            marker: "active_basis",
+            noun: "feature",
+            id: "F-audit",
+            key: "form-engine/audit-export",
+            title: "Audit export",
+            detail: "feature.md changed since the accepted basis",
+            remedy: "tiller approve feature form-engine/audit-export --refresh-basis",
+          },
+        ],
+      },
+    };
+    stubFetch({ "/api/drift": report });
+    renderDrift();
+
+    const link = await screen.findByRole("link", { name: "Audit export" });
+    expect(link).toHaveAttribute("href", "/node/feature/F-audit");
+    const key = screen.getByText("form-engine/audit-export (F-audit)");
+    expect(key).toHaveClass("mono");
+    expect(link.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("leads a design row with its document path once and no title", async () => {
+    const report: DriftReportView = {
+      compared: 0,
+      compared_design: 1,
+      candidates: {
+        shifted_design: [{ marker: "shifted_design", noun: "design", id: "", key: "as-is/api.md" }],
+      },
+    };
+    stubFetch({ "/api/drift": report });
+    const { container } = renderDrift();
+
+    await screen.findByRole("link", { name: "design/as-is/api.md" });
+    expect(container.textContent?.split("as-is/api.md").length).toBe(2);
+  });
+});
+
+describe("Drift page: the clearing move (R12)", () => {
+  const report = (): DriftReportView => ({
+    compared: 2,
+    candidates: {
+      active_basis: [
+        {
+          marker: "active_basis",
+          noun: "feature",
+          id: "F-a",
+          key: "app/a",
+          title: "Has remedy",
+          remedy: "tiller approve feature app/a --refresh-basis",
+        },
+      ],
+      stale_spec: [{ marker: "stale_spec", noun: "feature", id: "F-b", key: "app/b", title: "No remedy" }],
+      orphan_eval: [{ marker: "orphan_eval", noun: "feature", id: "F-c", key: "app/c", title: "Also none" }],
+    },
+  });
+
+  it("shows a served remedy as a copy control", async () => {
+    stubFetch({ "/api/drift": report() });
+    renderDrift();
+    expect(await screen.findByRole("button", { name: "tiller approve feature app/a --refresh-basis" })).toBeInTheDocument();
+  });
+
+  it("shows the next-step sentence and no command where no remedy is served", async () => {
+    stubFetch({ "/api/drift": report() });
+    const { container } = renderDrift();
+    await screen.findByText("No remedy");
+
+    expect(screen.getByText(/Review what changed against the finished work/)).toBeInTheDocument();
+    expect(screen.getByText(/Restore the file or correct the eval/)).toBeInTheDocument();
+    // Only the one served remedy is a command; nothing else is invented.
+    expect(container.querySelectorAll(".copy-cmd")).toHaveLength(1);
+    expect(container.textContent).not.toMatch(/tiller (correct|amend)/);
+  });
+});
+
+describe("Drift page: a shared cause is stated once", () => {
+  it("renders nine rows sharing a marker and reason as one group with linked titles beneath", async () => {
+    const uncovered = Array.from({ length: 9 }, (_, i) => ({
+      marker: "orphan_eval",
+      noun: "feature",
+      id: `F-${i}`,
+      key: `app/feature-${i}`,
+      title: `Feature number ${i}`,
+      reason: "ref_unreadable",
+      detail: `criterion C${i} ref is not a single path`,
+    }));
+    stubFetch({ "/api/drift": { compared: 9, uncovered } satisfies DriftReportView });
+    const { container } = renderDrift();
+
+    await screen.findByText("Feature number 0");
+    expect(screen.getAllByText(/could not be read as a file/)).toHaveLength(1);
+    expect(screen.getAllByText("Rewrite ref as a list, then run the check again.")).toHaveLength(1);
+    expect(screen.getAllByRole("heading", { name: /Eval no longer matches its spec/ })).toHaveLength(1);
+    for (let i = 0; i < 9; i++) {
+      expect(screen.getByRole("link", { name: `Feature number ${i}` })).toHaveAttribute("href", `/node/feature/F-${i}`);
+    }
+    expectNoTokens(container);
+  });
+
+  it("splits groups by marker and reason together", async () => {
+    const report: DriftReportView = {
+      compared: 2,
+      uncovered: [
+        { marker: "orphan_eval", noun: "feature", id: "F-1", title: "One", reason: "eval_unreadable" },
+        { marker: "stale_spec", noun: "feature", id: "F-2", title: "Two", reason: "eval_unreadable" },
+      ],
+    };
+    stubFetch({ "/api/drift": report });
+    renderDrift();
+    await screen.findByText("One");
+    expect(screen.getAllByText(/could not be loaded or is not a valid contract/)).toHaveLength(2);
   });
 });

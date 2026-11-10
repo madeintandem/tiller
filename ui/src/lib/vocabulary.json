@@ -176,6 +176,27 @@
     "migrate.schema",
     "review.assumption"
   ],
-  "drift_markers": [],
-  "drift_reasons": []
+  "drift_markers": [
+    "stale_spec",
+    "active_basis",
+    "answered_question",
+    "missing_surface",
+    "orphan_eval",
+    "stale_design",
+    "shifted_design"
+  ],
+  "drift_reasons": [
+    "no_completion_record",
+    "basis_unreadable",
+    "unknown_question",
+    "spec_unreadable",
+    "eval_unreadable",
+    "surface_unreadable",
+    "ref_unreadable",
+    "unconfirmed",
+    "surface_unrecorded",
+    "history_unavailable",
+    "history_diverged",
+    "comparison_error"
+  ]
 }

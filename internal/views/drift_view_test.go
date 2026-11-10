@@ -104,3 +104,26 @@ func TestDesignRemedyPreservesLiteralShellArgument(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "tiller\napprove\ndesign\n--\n"+doc+"\n", string(out))
 }
+
+// TestDriftRowsCarryTheNodeTitleAndDesignRowsDoNot pins the additive title:
+// a work node's rows lead with its title, a design row has none and keeps its
+// document path in key.
+func TestDriftRowsCarryTheNodeTitleAndDesignRowsDoNot(t *testing.T) {
+	tree := driftTree(t)
+	tree.Features["F-aaaaaa"].Title = "Certification form loading"
+	rep := drift.Report{
+		Candidates: []drift.Candidate{
+			{Marker: drift.MarkerActiveBasis, Noun: store.NounFeature, ID: "F-aaaaaa", Key: "form-engine/certification-form-loading"},
+			{Marker: drift.MarkerShiftedDesign, Noun: "design", Key: "as-is/api.md"},
+		},
+		Uncovered: []drift.Uncovered{
+			{Marker: drift.MarkerOrphanEval, Noun: store.NounFeature, ID: "F-aaaaaa", Reason: "ref_unreadable"},
+			{Marker: drift.MarkerStaleDesign, Noun: "design", Key: "as-is/api.md", Reason: "unconfirmed"},
+		},
+	}
+	v := views.DriftReportOf(tree, rep)
+	require.Equal(t, "Certification form loading", v.Candidates[drift.MarkerActiveBasis][0].Title)
+	require.Empty(t, v.Candidates[drift.MarkerShiftedDesign][0].Title)
+	require.Equal(t, "Certification form loading", v.Uncovered[0].Title)
+	require.Empty(t, v.Uncovered[1].Title)
+}

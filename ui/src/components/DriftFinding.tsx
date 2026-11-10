@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CandidateView, UncoveredView } from "../api";
-import { refOf, shortSha } from "../lib/drift";
+import { markerCopy, refOf, shortSha } from "../lib/drift";
 import { has } from "../lib/has";
 import CopyCmd from "./CopyCmd";
 import RefLink from "./RefLink";
@@ -19,7 +19,17 @@ export function DriftTargetLink({ row }: { row: CandidateView | UncoveredView })
       </Link>
     ) : <span className="mono">design</span>;
   }
-  return <RefLink node={{ noun: row.noun, id: row.id, ref: refOf(row.key, row.id) }} className="explore-result-title mono" />;
+  const node = { noun: row.noun, id: row.id, ref: refOf(row.key, row.id) };
+  if (!has(row.title)) {
+    return <RefLink node={node} className="explore-result-title mono" />;
+  }
+  // The title leads and the key follows in mono, as on every other row.
+  return (
+    <>
+      <RefLink node={node} label={row.title} className="explore-result-title" />{" "}
+      <span className="mono muted drift-row-key">{node.ref}</span>
+    </>
+  );
 }
 
 // Shared by the project report and registered design-file disclosure. The
@@ -57,11 +67,15 @@ export function DriftCandidateDetails({ candidate: c }: { candidate: CandidateVi
           {c.context?.map((line, i) => <li key={i}>{line}</li>)}
         </ul>
       )}
-      {has(c.remedy) && (
+      {has(c.remedy) ? (
         <div className="drift-row-line">
           {c.noun === "design" && <p>After human review against current code, reconcile the document and confirm it:</p>}
           <CopyCmd cmd={c.remedy} />
         </div>
+      ) : (
+        // No command exists for this finding (stale_spec, orphan_eval): say
+        // what a person does next and invent nothing.
+        <p className="muted drift-row-line">{markerCopy(c.marker).next}</p>
       )}
     </>
   );

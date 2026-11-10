@@ -1547,6 +1547,9 @@ export interface CandidateView {
   noun: string;
   id: string;
   key?: string;
+  // The node's own title, so a row leads with it and shows the key beside
+  // it; absent for a design row, which leads with its document path.
+  title?: string;
   detail?: string;
   files?: string[];
   since?: RevisionRefView;
@@ -1584,6 +1587,7 @@ export interface UncoveredView {
   noun: string;
   id: string;
   key?: string;
+  title?: string;
   reason: string;
   detail?: string;
 }

@@ -45,10 +45,13 @@ type DriftReportView struct {
 // drift.Candidate's own doc comment), and any Context lines riding beside
 // Detail.
 type CandidateView struct {
-	Marker   string              `json:"marker"`
-	Noun     string              `json:"noun"`
-	ID       string              `json:"id"`
-	Key      string              `json:"key,omitempty"`
+	Marker string `json:"marker"`
+	Noun   string `json:"noun"`
+	ID     string `json:"id"`
+	Key    string `json:"key,omitempty"`
+	// Title is the node's own title, so a row can lead with it and show the
+	// key beside it; empty for a design row, which leads with its path.
+	Title    string              `json:"title,omitempty"`
 	Detail   string              `json:"detail,omitempty"`
 	Files    []string            `json:"files,omitempty"`
 	Since    *RevisionRefView    `json:"since,omitempty"`
@@ -92,6 +95,7 @@ type UncoveredView struct {
 	Noun   string `json:"noun"`
 	ID     string `json:"id"`
 	Key    string `json:"key,omitempty"`
+	Title  string `json:"title,omitempty"`
 	Reason string `json:"reason"`
 	Detail string `json:"detail,omitempty"`
 
@@ -132,6 +136,7 @@ func candidateViewOf(t *store.Tree, c drift.Candidate) CandidateView {
 		Noun:    c.Noun,
 		ID:      c.ID,
 		Key:     c.Key,
+		Title:   nodeTitle(gen.NodeByID(t, c.ID)),
 		Detail:  c.Detail,
 		Files:   c.Files,
 		Since:   sinceViewOf(c.Since),
@@ -219,6 +224,7 @@ func uncoveredViewOf(t *store.Tree, u drift.Uncovered) UncoveredView {
 		Noun:   u.Noun,
 		ID:     u.ID,
 		Key:    u.Key,
+		Title:  nodeTitle(gen.NodeByID(t, u.ID)),
 		Reason: u.Reason,
 		Detail: u.Detail,
 		Ref:    gen.RefByID(t, u.ID),

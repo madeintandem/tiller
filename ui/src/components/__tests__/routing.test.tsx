@@ -770,8 +770,8 @@ describe("App routing: loose Markdown files live under the Explore shell", () =>
     expect(within(baseline).getByTitle(formatAbsolute("2026-09-02T10:00:00Z"))).toBeInTheDocument();
     expect(within(baseline).getByText("docs/retired.md")).toBeInTheDocument();
     expect(within(baseline).getByText("../legacy/input")).toBeInTheDocument();
-    const stale = within(baseline).getByRole("button", { name: "stale_design" });
-    const shifted = within(baseline).getByRole("button", { name: "shifted_design" });
+    const stale = within(baseline).getByRole("button", { name: "Design doc is behind the code" });
+    const shifted = within(baseline).getByRole("button", { name: "Design doc may have shifted" });
     expect(stale).toHaveAttribute("aria-expanded", "false");
     expect(within(baseline).queryByText("Tracked feature landed")).not.toBeInTheDocument();
     fireEvent.click(stale);
@@ -797,7 +797,7 @@ describe("App routing: loose Markdown files live under the Explore shell", () =>
     render(<MemoryRouter initialEntries={[route]}><App /></MemoryRouter>);
     const baseline = await screen.findByRole("region", { name: "As-is baseline" });
     expect(within(baseline).getByText("Unconfirmed")).toBeInTheDocument();
-    expect(within(baseline).getByText(/not checked \(comparison_error\)/)).toBeInTheDocument();
+    expect(within(baseline).getByText(/not checked\. The comparison failed before it could finish/)).toBeInTheDocument();
     expect(within(baseline).getByRole("button", { name: "tiller approve design -- '-owner'\\''s notes.md'" })).toBeInTheDocument();
     expect(within(baseline).queryByText(/nothing moved|clean/i)).not.toBeInTheDocument();
   });

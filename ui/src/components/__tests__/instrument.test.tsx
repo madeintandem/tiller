@@ -1851,7 +1851,7 @@ describe("NodeDetail active-basis drift", () => {
       />,
     );
 
-    expect(screen.getByText("active_basis")).toBeInTheDocument();
+    expect(screen.getByText("Work started from an older basis")).toBeInTheDocument();
     expect(screen.getByText("task.md")).toBeInTheDocument();
     expect(screen.getByText(/no longer matches the accepted basis/)).toBeInTheDocument();
     expect(
@@ -1952,7 +1952,7 @@ describe("NodeDetail: the Drifted chip", () => {
     // presentational.
     const button = chip.closest("button");
     expect(button).not.toBeNull();
-    expect(button).toHaveAttribute("title", "stale_spec, active_basis");
+    expect(button).toHaveAttribute("title", "Spec changed after the work, Work started from an older basis");
     expect(button).toHaveAttribute("aria-expanded", "true");
   });
 
@@ -1963,7 +1963,7 @@ describe("NodeDetail: the Drifted chip", () => {
 
     const chip = screen.getByText("Drifted");
     expect(chip.getAttribute("data-status")).toBe("draft");
-    expect(chip.closest("button")).toHaveAttribute("title", "stale_spec");
+    expect(chip.closest("button")).toHaveAttribute("title", "Spec changed after the work");
     expect(chip.closest("button")).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -2091,7 +2091,7 @@ describe("NodeDetail: the drift panel", () => {
     // The finding belongs to an ancestor, so its row leads with that ref.
     expect(screen.getByRole("link", { name: "foundation/parent (F-parent)" })).toBeInTheDocument();
     // The v0.2.10 not-a-single-path rows land here, as facts, never as drift.
-    expect(screen.getByText(/not checked \(ref_unreadable\)/)).toBeInTheDocument();
+    expect(screen.getByText(/not checked\. The eval.s ref could not be read as a file/)).toBeInTheDocument();
   });
 });
 

@@ -16,6 +16,7 @@ import { DriftCandidateDetails } from "../components/DriftFinding";
 import Prose from "../components/Prose";
 import Time from "../components/Time";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import { markerCopy, reasonCopy } from "../lib/drift";
 import { PersonName } from "../people";
 import "../components/instrument.css";
 import "./drift.css";
@@ -135,7 +136,7 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
           <div key={marker}>
             <button type="button" className="instr-drift-chip" aria-expanded={open}
               onClick={() => setExpanded((current) => open ? current.filter((value) => value !== marker) : [...current, marker])}>
-              <Chip status="draft">{marker}</Chip>
+              <Chip status="draft">{markerCopy(marker).name}</Chip>
               <span className="chevron-glyph" aria-hidden="true">{open ? "▾" : "▸"}</span>
             </button>
             {open && <div className="instr-drift-panel">
@@ -148,8 +149,9 @@ function BaselineDetail({ baseline, drift }: { baseline: BaselineDocView; drift?
       })}
       {uncovered.map((row, i) => (
         <p key={`${row.marker}-${i}`} className="muted instr-drift-uncovered">
-          <span className="instr-drift-say">{row.marker}</span> not checked ({row.reason})
-          {row.detail && <>: {row.detail}</>}
+          <span className="instr-drift-say">{markerCopy(row.marker).name}</span> not checked. {reasonCopy(row.reason).cause}{" "}
+          {reasonCopy(row.reason).fix}
+          {row.detail && <> ({row.detail})</>}
         </p>
       ))}
       {stamp === undefined && (

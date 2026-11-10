@@ -681,12 +681,12 @@ describe("NodeDetail amendment navigation", () => {
     expect(notice).toHaveTextContent("2 proposed amendments");
     expect(within(notice).getAllByRole("link")).toHaveLength(2);
     expect(within(notice).queryByRole("link", { name: "Earlier reshape" })).not.toBeInTheDocument();
-    expect(screen.getByText("active_basis")).toBeInTheDocument();
+    expect(screen.getByText("Work started from an older basis")).toBeInTheDocument();
     expect(screen.getByText(/tiller attest feature F-1 --criterion C2 --status pass/)).toBeInTheDocument();
     expect(screen.getByText(/Spec body text/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Contract · 2" }));
     expect(screen.getByRole("complementary", { name: "Proposed amendments" })).toHaveTextContent("Second proposal");
-    expect(screen.getByText("active_basis")).toBeInTheDocument();
+    expect(screen.getByText("Work started from an older basis")).toBeInTheDocument();
     expect(screen.getByText(/tiller attest feature F-1 --criterion C2 --status pass/)).toBeInTheDocument();
     expect(screen.queryByText(/tiller approve amendment/)).not.toBeInTheDocument();
   });
