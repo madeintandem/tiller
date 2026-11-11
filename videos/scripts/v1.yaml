@@ -35,9 +35,8 @@ beats:
   - id: hello
     say: >-
       Hi, I'm JC Grubbs, Founder and CEO at Made In Tandem. In this video
-      we're going to set Tiller up on a codebase you already have. But first,
-      in case this is the first you've heard of it, here's what Tiller is and
-      why you might want it.
+      I'm going to introduce Tiller, an open source tool that helps human teams
+      and agents write better software, faster, and with more confidence.
     show:
       kind: card
       kicker: Tiller how-to, video 1 of 3
@@ -47,10 +46,10 @@ beats:
     chapter: What Tiller is
     say: >-
       If your team builds with coding agents, you've probably noticed that
-      writing the code isn't the slow part anymore. The slow part is
+      writing code isn't the slow part anymore. The slow part is
       everything around it. What should the agent build next? Who has which
       piece, when several people and several agents share a repo? And when an
-      agent tells you it's done, is it?
+      agent tells you it's done, are you sure?
     show:
       kind: card
       kicker: Why it exists
@@ -67,7 +66,7 @@ beats:
     say: >-
       Tiller is our answer to those questions. It's an open source tool that
       helps a team of people and coding agents ship good software quickly,
-      and trust what they shipped. It keeps the plan in your repo, as plain
+      and trust what they've shipped. It keeps the plan in your repo, as plain
       files that people and agents both read. Every piece of work gets a
       definition of done before anyone starts, and your own tests have to
       pass before Tiller will believe it. And the decisions that matter stop
@@ -87,7 +86,7 @@ beats:
           on: And the decisions
   - id: parts
     say: >-
-      What you install is small. Tiller is one binary with three parts.
+      What you install is a small binary with three parts.
       There's a command line tool, which you and your agent both use. There
       are skills, which teach your agent how to do each kind of work. And
       there's a console, a web page served from your own machine, that shows
@@ -108,8 +107,8 @@ beats:
   - id: breadth
     say: >-
       Here's all of it on one screen, every command and every skill. Please
-      don't try to read it. Most of this is there for when a real project
-      needs it. The highlighted ones are all we'll touch in this video.
+      don't try to read it all. Most of it is there for when a real project
+      needs it. The highlighted items are the ones we'll cover in this video.
     show:
       kind: card
       kicker: The whole tool
@@ -117,7 +116,7 @@ beats:
       art: cli
   - id: series
     say: >-
-      Here's the path we'll walk over three videos, with one small feature.
+      Here's the path we'll walk over three videos, taking one small feature from an idea to merged.
       In this first one, I set Tiller up, the agent writes down what the code
       does today, and I confirm it. In the second, I write one page about the
       feature, the agent turns it into a plan, and I approve it. In the third,
@@ -138,8 +137,8 @@ beats:
   - id: install
     chapter: Install
     say: >-
-      So, let's install it. On a Mac, Tiller comes from Homebrew; it's the
-      one line on the screen. Linux gets a short install script, linked from
+      So, let's install it. The easiest way to get it is from Homebrew.
+      If you're on Linux, there's a short install script linked from
       the README. Either way you end up with that single binary, and no
       settings file hiding in your home directory.
     show:
@@ -150,7 +149,7 @@ beats:
   - id: version
     say: >-
       Ask for its version to make sure it's on your path. This series was
-      recorded on version 0.22.
+      recorded on version 0.23.0.
     show:
       kind: term
       stage: s1
@@ -159,10 +158,9 @@ beats:
   - id: repo-card
     chapter: Join your repo
     say: >-
-      Here's the repo for the whole series. Acme Orders is a small order
-      service: a couple of routes, an order store, some tests, and one old doc
-      somebody may or may not have kept up. So, a
-      normal repo.
+      Here's the backstory for the feature we're going to build. Acme Orders is a small order
+      service: a couple of routes, an order store, some tests, and one old spec doc
+      somebody may or may not have kept up. So, a pretty typical brownfield repo.
     show:
       kind: card
       kicker: The demo repo
@@ -170,10 +168,10 @@ beats:
       body: Acme Orders, a small order API with tests and one old doc.
   - id: init
     say: >-
-      First, initialize. Tiller calls a repo with existing code brownfield, and
-      that one word changes what happens next. A new project starts from a
-      design. This one starts from code that already works, so before anybody
-      plans a change, Tiller wants an honest account of what's there. It's
+      First, initialize. Since there's already code in this repo we'll use the brownfield flag.
+      A new project starts from a design and we'll cover greenfield in another video.
+      But for this project, before anybody
+      plans a change, Tiller wants an honest account of what's already there. It's
       like buying an old house; you get the inspection before you start
       knocking out walls.
     show:
@@ -183,9 +181,9 @@ beats:
       to: s1-init
   - id: contributor-join
     say: >-
-      Next I register myself as a contributor. A human does that, once per
-      project, because it records who makes the decisions. Then I join, which
-      records who I am in this checkout and wires up my agent. I'm using
+      Next I register myself as a contributor. This only has to be done once
+      per project for each team member. Then I join, which
+      records who I am in this particular checkout and it wires up my agent. I'm using
       Claude Code, so it gets Tiller's skills and a pointer in its
       instructions.
     show:
@@ -195,8 +193,8 @@ beats:
       to: s1-join
   - id: first-commit
     say: >-
-      One small edit first. Tiller won't call work done until your own
-      checks pass, and it calls those checks gates. In Tiller's config file,
+      One small edit first. Tiller won't call work done until all the
+      checks and tests pass. In Tiller's config file,
       I uncomment the tests line and point it at the script this repo already
       uses. Then I commit.
       Everything Tiller knows lives in the repo, in plain files, reviewed like
@@ -209,8 +207,8 @@ beats:
   - id: baseline-card
     chapter: The baseline
     say: >-
-      Now the job I'd normally put off for a month: writing down what the code
-      does today. Not what it should do. Not what the original plan said. What
+      Now for the job I'd normally put off for a month: writing down what the code
+      does today. Not what it should do or what the original plan said. What
       it actually does.
     show:
       kind: card
@@ -234,7 +232,7 @@ beats:
     say: >-
       It reads the README, the old doc, and the source. Then it asks Tiller
       whether the project is ready, and gets a no. The right answer.
-      There's no design yet, and nobody has confirmed a baseline. That failure
+      There's no design because this is a brownfield project, and nobody has confirmed a baseline of the current code. That failure
       is the to-do list.
     show:
       kind: term
@@ -253,7 +251,7 @@ beats:
       to: s1-say-move
   - id: write-docs
     say: >-
-      The agent splits that doc in two, one for the API and one for the order
+      The agent determins it's best to split that doc in two, one for the API and one for the order
       store, and rewrites each against what the code really does.
     show:
       kind: term
