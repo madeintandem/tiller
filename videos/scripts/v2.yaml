@@ -46,7 +46,7 @@ beats:
   - id: hello
     say: >-
       Hi, I'm JC Grubbs, Founder and CEO at Made In Tandem. In this video
-      we're going to take a feature from one page of notes to a plan a coding
+      I'm going to take a feature from one page of notes to a plan a coding
       agent can build, and I'll approve every step before any code gets
       written. If you're new to Tiller, the first video covers what it is and
       how to set it up.
@@ -55,10 +55,12 @@ beats:
       kicker: Tiller how-to, video 2 of 3
       heading: From an idea to an approved plan
       art: logo
+      backdrop: flow
   - id: series
     say: >-
-      Here's where we are. In the first video I set Tiller up on a repo I
-      already had, the agent wrote down what the code does today, and I
+      Here's where we are in the series, which takes one small feature from
+      an idea to merged. In the first video I set Tiller up on a brownfield
+      repo, the agent wrote down what the code does today, and I
       confirmed it. This is the second. I write one page about a feature, the
       agent turns it into a plan, and I approve it. In the third, the agent
       builds it and I merge.
@@ -85,8 +87,8 @@ beats:
       heading: A confirmed baseline and nothing to build
   - id: guide-empty
     say: >-
-      Ask the guide and it says so. Nothing is planned, and here are the three
-      ways work gets in. A document making the case for a change. A quick
+      Ask Tiller's guide what to do next and it says so. Nothing is planned,
+      and here are the three ways work gets in. A document making the case for a change. A quick
       capture, for a bug or a chore or a small tweak. Or a design for what the
       code should become. I'm using a design. A capture is great for small
       fixes, but it skips the acceptance contract, and I want one for this.
@@ -104,7 +106,13 @@ beats:
       kind: card
       kicker: Your job
       heading: One page about what you want
-      body: The problem, what we want, what's out of scope.
+      points:
+        - text: The problem
+          on: the problem
+        - text: What we want
+          on: what we want
+        - text: What's out of scope
+          on: and what we're not doing
   - id: idea-commit
     say: >-
       The warehouse wants to see orders by status. Right now the warehouse
@@ -131,7 +139,7 @@ beats:
     chapter: The agent proposes
     say: >-
       Now I hand it to the agent, and its first job is to propose the shape
-      of the work. Not the code. The shape. Tiller sizes work in three
+      of the work. Not the code yet, just the shape. Tiller sizes work in three
       levels. An epic is a body of work. A feature is one thing the product
       does, and it carries the spec. A task is a piece of the build.
     show:
@@ -171,7 +179,7 @@ beats:
       to: s2-decompose-commit
   - id: decompose-readout
     say: >-
-      Then the readout. One epic, one feature, readiness passed, no open
+      Then it hands me a readout, the summary every skill ends with. One epic, one feature, readiness passed, no open
       questions. And one thing waiting on me: approving the epic. A feature
       this small doesn't need a big tree, and I like that the agent didn't
       invent one.
@@ -298,7 +306,9 @@ beats:
       capture: approved
   - id: outro
     say: >-
-      Next time the agent builds it, a code review finds a real bug, and I get
-      to merge.
+      That's a feature planned and approved, and nobody has written a line of
+      code yet. If you want to try this on your own repo, the install line
+      and the docs are linked in the description. Next time the agent builds
+      it, a code review finds a real bug, and I get to merge.
     show:
       kind: outro

@@ -53,7 +53,7 @@ bad=$(cat "$TMP"/out/snapshots/s*.jsonl |
 ids=$(cat "$TMP"/out/snapshots/s*.jsonl | jq -r .id | sort | uniq -d)
 [[ -z "$ids" ]] || fail "duplicate step ids: $ids"
 
-for mark in s1-end s2-end s3-review s3-end; do
+for mark in s1-end s2-end s3-review s3-end tour; do
   [[ -s "$TMP/out/marks/$mark.tar.gz" ]] || fail "mark $mark missing"
 done
 

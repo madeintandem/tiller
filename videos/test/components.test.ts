@@ -1,3 +1,4 @@
+import { site } from "../src/theme";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -26,10 +27,13 @@ describe("chapter lower third timing", () => {
 });
 
 describe("outro", () => {
-  it("hides the frame's corner wordmark, since it shows the full logo", () => {
+  it("shows the full logo and both ways to reach the company, on the flow backdrop", () => {
     const src = (f: string) => readFileSync(join(__dirname, "../src/components", f), "utf8");
-    expect(src("Outro.tsx")).toContain("<Frame wordmark={false}>");
-    expect(src("Frame.tsx")).toContain("wordmark: showWordmark = true");
-    expect(src("Frame.tsx")).toContain("{showWordmark && (");
+    const outro = src("Outro.tsx");
+    expect(outro).toContain("<FlowFrame>");
+    expect(outro).toContain("brand/mit-logo-website-white.svg");
+    expect(outro).toContain("{site.url}");
+    expect(outro).toContain("{site.email}");
+    expect(site).toEqual({ url: "madeintandem.com", email: "hello@madeintandem.com" });
   });
 });

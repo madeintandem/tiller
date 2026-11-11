@@ -32,6 +32,9 @@ export const actors = {
   agent: { label: "Agent", color: colors.coldIndigo },
 } as const;
 
+// Where the company lives, as shown on the title screen and the closing slide.
+export const site = { url: "madeintandem.com", email: "hello@madeintandem.com" } as const;
+
 export const video = { width: 1920, height: 1080, fps: 30 } as const;
 
 // Wordmark placement. The logo SVG aspect is 34725:15625; the guide's clearspace is 1X,

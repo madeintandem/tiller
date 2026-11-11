@@ -5,6 +5,7 @@ import { ffmpeg } from "../media/ffmpeg.js";
 import type { Capture } from "../script/schema.js";
 import { serveMark } from "./serve.js";
 
+// The console is shot in its dark theme, which it takes from the browser's color scheme.
 // A 1280x720 CSS viewport at device scale 2: the console's text reads at laptop size once
 // the frame shrinks the picture, and every frame is a full-resolution screenshot.
 const VIEWPORT = { width: 1280, height: 720 };
@@ -77,7 +78,7 @@ export async function shoot(capture: Capture, outDir: string): Promise<string> {
   let browser: Browser | undefined;
   try {
     browser = await chromium.launch();
-    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: "light" });
+    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: "dark" });
     const page = await context.newPage();
     await page.goto(`${server.url}${capture.path}`);
     await page.locator("main, header").first().waitFor({ state: "visible" });

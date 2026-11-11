@@ -82,6 +82,14 @@ describe("loadScript", () => {
     expect(() => loadScript(bad)).toThrow(/b1.*fireworks/);
   });
 
+  it("loads a card's flow backdrop and refuses one it does not know", () => {
+    const ok = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      backdrop: flow\n`));
+    const show = loadScript(ok).beats[0].show;
+    expect(show.kind === "card" && show.backdrop).toBe("flow");
+    const bad = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      backdrop: lava\n`));
+    expect(() => loadScript(bad)).toThrow(/b1.*lava/);
+  });
+
   it("refuses a stepped graphic without its three points", () => {
     const p = variant((s) => s.replace(POINTS_AT, `${POINTS_AT}      art: process\n      points: [a, b]\n`));
     expect(() => loadScript(p)).toThrow(/b1.*process.*3 points/);

@@ -4,7 +4,7 @@ export type Show =
   // `points` turn a card into a slide: short lines that come up one at a time as the beat is narrated.
   // `art` adds a graphic: beside the text (logo, repo) or under the heading (around, parts, cli, process, tree).
   // The graphics that reveal in steps (around, parts, process, tree) take their labels and timing from `points`.
-  | { kind: "card"; kicker: string; heading: string; body?: string; points?: Point[]; art?: Art }
+  | { kind: "card"; kicker: string; heading: string; body?: string; points?: Point[]; art?: Art; backdrop?: "flow" }
   | { kind: "term"; stage: string; from: string; to: string }
   | { kind: "console"; capture: string }
   | { kind: "outro" };
@@ -40,6 +40,8 @@ export type Script = {
   // A filmed to-camera intro clip, aligned to this transcript. Without it the video opens on
   // its first beat, narrated like the rest, with the host's name as a lower third.
   intro?: { transcript: string };
+  // The longest this video may run, in seconds, when it has a reason to pass the series' 8:00.
+  maxSeconds?: number;
   captures: Capture[];
   beats: Beat[];
 };
@@ -115,6 +117,11 @@ function validateShow(raw: unknown, beatId: string): Show {
           if (p.on !== undefined) point.on = str(p, "on", "card point", beatId);
           return point;
         });
+      }
+      // `backdrop: flow` makes the card the title screen: full-frame, on the animated flow field.
+      if (raw.backdrop !== undefined) {
+        if (raw.backdrop !== "flow") throw new ScriptError(`unknown card backdrop "${String(raw.backdrop)}" (known: flow)`, beatId);
+        show.backdrop = "flow";
       }
       if (raw.art !== undefined) {
         if (!ARTS.includes(raw.art as Art)) throw new ScriptError(`unknown card art "${String(raw.art)}" (known: ${ARTS.join(", ")})`, beatId);
@@ -212,6 +219,11 @@ export function validateScript(raw: unknown): Script {
     if (!isObj(raw.intro)) throw new ScriptError("script intro needs a transcript");
     intro = { transcript: str(raw.intro, "transcript", "intro") };
   }
+  let maxSeconds: number | undefined;
+  if (raw.maxSeconds !== undefined) {
+    if (typeof raw.maxSeconds !== "number" || !(raw.maxSeconds > 0)) throw new ScriptError("script maxSeconds must be a positive number of seconds");
+    maxSeconds = raw.maxSeconds;
+  }
   if (raw.captures !== undefined && !Array.isArray(raw.captures)) {
     throw new ScriptError("script captures must be a list");
   }
@@ -231,5 +243,5 @@ export function validateScript(raw: unknown): Script {
       throw new ScriptError(`console show references unknown capture "${b.show.capture}"`, b.id);
     }
   }
-  return { id, title, description, tags: raw.tags as string[], ...(intro ? { intro } : {}), captures, beats };
+  return { id, title, description, tags: raw.tags as string[], ...(intro ? { intro } : {}), ...(maxSeconds ? { maxSeconds } : {}), captures, beats };
 }

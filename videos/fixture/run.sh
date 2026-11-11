@@ -57,6 +57,10 @@ shape() {
     | walk(if type == "string" then gsub("\\b[A-Z]{1,2}-[a-z0-9]{6}\\b"; "<ID>") else . end)' "$1"
 }
 
+# The console tour in video 1 is shot from a second, busier project. It records
+# no steps, so a --check run has nothing of its to compare.
+[[ $CHECK -eq 1 ]] || "$HERE/tour.sh" "$WORK/out/marks" >/dev/null
+
 if [[ $CHECK -eq 1 ]]; then
   status=0
   for stage in s1 s2 s3; do

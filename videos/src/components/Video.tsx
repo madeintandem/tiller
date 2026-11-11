@@ -34,6 +34,7 @@ const Visual: React.FC<{ seg: Segment; lead: number; spoken: number; fps: number
           points={show.points}
           pointFrames={seg.pointTimes?.map((t) => lead + Math.round(t * fps))}
           art={show.art}
+          backdrop={show.backdrop}
           from={lead}
           seen={seg.seen}
           videoIndex={videoIndex}
@@ -98,7 +99,7 @@ export const Video: React.FC<{ timeline: Timeline }> = ({ timeline }) => {
             {/* With no intro clip the first beat is the hello, so the host's name goes on it. */}
             {!intro && i === 0 && !seg.chapter && (
               <Sequence from={from} durationInFrames={chapterFrames(from, slotEnd, fps, INTRO_NAME_SECONDS)} name="host name">
-                <LowerThird text={HOST_NAME} />
+                <LowerThird text={HOST_NAME} onDark={seg.show.kind === "card" && seg.show.backdrop === "flow"} />
               </Sequence>
             )}
             {seg.chapter && (

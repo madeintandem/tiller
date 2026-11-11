@@ -218,6 +218,15 @@ describe("buildTimeline", () => {
     expect(err).toBeInstanceOf(TooLongError);
     expect((err as Error).message).toContain("8:01");
   });
+
+  it("lets a script raise its own ceiling with maxSeconds", () => {
+    const n = beats.length;
+    const each = (481 - 6 - 0.4 - 0.35 * (n - 1) - 6) / n;
+    const s = { ...script(), maxSeconds: 600 };
+    expect(build(s, narrationFor(s.beats, each)).duration).toBeCloseTo(481, 3);
+    const longer = (601 - 6 - 0.4 - 0.35 * (n - 1) - 6) / n;
+    expect(() => build(s, narrationFor(s.beats, longer))).toThrow(/over the 10:00 ceiling/);
+  });
 });
 
 describe("toSrt", () => {

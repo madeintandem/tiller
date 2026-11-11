@@ -42,7 +42,9 @@ export type Narration = { audio: string; duration: number; words: Word[] };
 export const INTRO_GAP = 0.4;
 export const BEAT_GAP = 0.35;
 export const OUTRO_SECONDS = 6;
+// The series' ceiling. A script may set its own `maxSeconds` when it has a reason to run longer.
 export const MAX_SECONDS = 480;
+export const ceilingFor = (script: { maxSeconds?: number }): number => script.maxSeconds ?? MAX_SECONDS;
 
 // m:ss, rounding up so anything past 8:00 never reads as 8:00.
 export const mss = (seconds: number, round: (n: number) => number = Math.floor): string => {
@@ -54,10 +56,10 @@ export const mss = (seconds: number, round: (n: number) => number = Math.floor):
 export const openingEnd = (t: Timeline): number => t.intro?.duration ?? t.segments[0]?.end ?? 0;
 
 export class TooLongError extends Error {
-  constructor(public readonly duration: number) {
+  constructor(public readonly duration: number, max: number = MAX_SECONDS) {
     // Round to the millisecond first so float noise (481.0000001) never reads as a second more.
     const ceilMs = (s: number) => Math.ceil(Math.round(s * 1000) / 1000);
-    super(`video runs ${mss(duration, ceilMs)}, over the ${mss(MAX_SECONDS)} ceiling`);
+    super(`video runs ${mss(duration, ceilMs)}, over the ${mss(max)} ceiling`);
     this.name = "TooLongError";
   }
 }
@@ -149,6 +151,6 @@ export function buildTimeline(
   });
   const outro = { start: at, end: at + OUTRO_SECONDS };
   const duration = outro.end;
-  if (duration > MAX_SECONDS) throw new TooLongError(duration);
+  if (duration > ceilingFor(script)) throw new TooLongError(duration, ceilingFor(script));
   return { id: script.id, fps: video.fps, ...(intro ? { intro } : {}), segments, outro, duration };
 }

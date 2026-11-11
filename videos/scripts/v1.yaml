@@ -5,14 +5,17 @@ description: >-
   their name on. This video covers what it is and what you install, then sets
   it up on an existing codebase: the agent writes down what the code does
   today, and you read those docs and confirm them. That confirmed baseline is
-  what every later change gets measured against. First of three videos that
-  take one small feature from an empty plan to merged.
+  what every later change gets measured against. It ends with a short tour of
+  the console on a busier project. First of three videos that take one small
+  feature from an empty plan to merged.
 
 
   Install and docs: https://madeintandem.github.io/tiller/
 
   Source: https://github.com/madeintandem/tiller
 tags: [tiller, ai coding agents, claude code, brownfield, spec-driven development]
+# The console tour adds about a minute and a half to a video that was already near 8:00.
+maxSeconds: 600
 captures:
   - id: doc-review
     mark: s1-readout
@@ -31,6 +34,64 @@ captures:
     mark: s1-end
     path: /file/.tiller/design/as-is/orders-api.md#L1
     seconds: 12
+  # The tour is shot from a second, busier project (fixture/tour.sh), because Acme Orders
+  # has no work in it at the end of this video.
+  - id: tour-explore
+    mark: tour
+    path: /explore
+    seconds: 18
+    actions:
+      - wait: 3.5
+      - click: "text=Foundation"
+      - wait: 2.5
+      - click: "text=Error tracking"
+      - wait: 4
+      - click: "text=Alert routing"
+  - id: tour-questions
+    mark: tour
+    path: /questions
+    seconds: 12
+  - id: tour-amendments
+    mark: tour
+    path: /amendments
+    seconds: 14
+    actions:
+      - wait: 4.5
+      - click: "text=Auditors need site visits to work offline"
+      - wait: 4
+      - scrollTo: "text=What to watch"
+  - id: tour-map
+    mark: tour
+    path: /explore?mode=map
+    seconds: 11
+    actions:
+      - wait: 2.5
+      - click: "role=button[name='Expand all']"
+      - wait: 3
+      - click: ".map-card[data-noun='feature'] .map-title:has-text('Invoicing')"
+  - id: tour-build
+    mark: tour
+    # Three epics: enough that most columns hold cards, few enough that Done stays in frame.
+    path: /build?epics=foundation,form-engine,payments
+    seconds: 11
+    actions:
+      # Fold the epic panel away so the board runs draft to done in one frame.
+      - wait: 3
+      - click: "button:has-text('Epics')"
+  - id: tour-fix
+    mark: tour
+    path: /fix
+    seconds: 9
+  - id: tour-report
+    mark: tour
+    path: /report
+    seconds: 17
+    actions:
+      # Burn-up first, then throughput and bugs, then lead and cycle time, as narrated.
+      - wait: 4.5
+      - scroll: 440
+      - wait: 4
+      - scroll: 380
 beats:
   - id: hello
     say: >-
@@ -42,6 +103,7 @@ beats:
       kicker: Tiller how-to, video 1 of 3
       heading: Set Tiller up on a repo you already have
       art: logo
+      backdrop: flow
   - id: why
     chapter: What Tiller is
     say: >-
@@ -251,7 +313,7 @@ beats:
       to: s1-say-move
   - id: write-docs
     say: >-
-      The agent determins it's best to split that doc in two, one for the API and one for the order
+      The agent determines it's best to split that doc in two, one for the API and one for the order
       store, and rewrites each against what the code really does.
     show:
       kind: term
@@ -362,6 +424,72 @@ beats:
     show:
       kind: console
       capture: doc-confirmed
+  - id: tour-card
+    chapter: Console tour
+    say: >-
+      One more thing before we wrap up. Acme Orders has no work in it yet, so
+      its console is quiet. Here's the same console on a busier project, six
+      weeks in, so you can see what it does once work is moving.
+    show:
+      kind: card
+      kicker: A quick tour
+      heading: The console on a busier project
+      body: Acme Platform. Six epics, two people, six weeks in.
+  - id: tour-explore
+    say: >-
+      Explore is the whole plan as a tree. Epics hold features, and features
+      hold tasks. Open any of them and you're reading the same file your
+      agent reads: the spec, who owns it, what it depends on, and everything
+      that's happened to it.
+    show:
+      kind: console
+      capture: tour-explore
+  - id: tour-questions
+    say: >-
+      Questions get their own ledger. When the plan depends on an answer
+      nobody has yet, the question says what it's holding up and who owes the
+      answer, and that work waits.
+    show:
+      kind: console
+      capture: tour-questions
+  - id: tour-amendments
+    say: >-
+      So do amendments. Plans change, and when an approved one has to, the
+      agent writes up why and stages the changes. Nothing moves until a
+      person approves it.
+    show:
+      kind: console
+      capture: tour-amendments
+  - id: tour-map
+    say: >-
+      The map draws the same plan as a picture. Pick a feature, and it shows
+      what that feature depends on and what's waiting on it.
+    show:
+      kind: console
+      capture: tour-map
+  - id: tour-build
+    say: >-
+      Build is the board. Every feature moves left to right, from draft to
+      done, and each card shows how far along its tasks are and who has them.
+    show:
+      kind: console
+      capture: tour-build
+  - id: tour-fix
+    say: >-
+      Fix is the same board for the small stuff: bugs, chores, and tweaks,
+      with each bug graded by how much it hurts.
+    show:
+      kind: console
+      capture: tour-fix
+  - id: tour-report
+    say: >-
+      And Report is for the question you get asked every week: how's it
+      going? Scope against what's done, how much shipped each week, how long
+      work takes, and bugs reported against bugs fixed. All of it read from
+      the same files.
+    show:
+      kind: console
+      capture: tour-report
   - id: outro
     say: >-
       That's Tiller set up on a real repo. To try it on yours, the install

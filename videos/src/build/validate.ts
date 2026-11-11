@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { readSnapshot, type Step } from "../check/diff.js";
 import { WPM } from "../narration/words.js";
 import type { Script } from "../script/schema.js";
-import { BEAT_GAP, INTRO_GAP, MAX_SECONDS, OUTRO_SECONDS, mss, termSteps } from "../timeline/build.js";
+import { BEAT_GAP, INTRO_GAP, OUTRO_SECONDS, ceilingFor, mss, termSteps } from "../timeline/build.js";
 import type { Layout } from "./layout.js";
 import { youtubeFieldProblems } from "./meta.js";
 
@@ -65,10 +65,13 @@ export function checkScript(script: Script, layout: Layout): { problems: string[
 
   const est = estimateSeconds(script);
   const ceil = (s: number) => Math.ceil(s);
-  if (est > MAX_SECONDS) {
-    problems.push(`estimated length ${mss(est, ceil)} is over the ${mss(MAX_SECONDS)} ceiling (narration at ${WPM} wpm); cut words`);
-  } else if (est > WARN_SECONDS) {
-    warnings.push(`estimated length ${mss(est, ceil)} is past ${mss(WARN_SECONDS)}, close to the ${mss(MAX_SECONDS)} ceiling`);
+  // The warning sits 45 seconds under the ceiling, whichever ceiling the script runs under.
+  const max = ceilingFor(script);
+  const warn = max - (480 - WARN_SECONDS);
+  if (est > max) {
+    problems.push(`estimated length ${mss(est, ceil)} is over the ${mss(max)} ceiling (narration at ${WPM} wpm); cut words`);
+  } else if (est > warn) {
+    warnings.push(`estimated length ${mss(est, ceil)} is past ${mss(warn)}, close to the ${mss(max)} ceiling`);
   }
   return { problems, warnings };
 }

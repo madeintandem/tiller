@@ -16,7 +16,7 @@ These steps are JC's. Each one gates something the pipeline cannot do alone.
 
 **H4: Remotion license.** Buy the Remotion company license; it covers the rendering this pipeline does.
 
-**H5: Music.** Pick one licensed track for under the intro and outro. Save it as `.local/media/music.mp3` and record the track, its source, and its license in `videos/MUSIC.md` (committed).
+**H5: Music.** One track sits under the intro and outro, saved as `.local/media/music.mp3`, with the track, its source, and its license recorded in `videos/MUSIC.md` (committed). The series uses a bed this repo synthesizes itself, so there is nothing to license: `uv run --with numpy tools/ambient_bed.py bed.wav`, then `ffmpeg -i bed.wav -c:a libmp3lame -b:a 256k .local/media/music.mp3`. To use a licensed track instead, save it over that file and update `MUSIC.md`.
 
 **H6: Intro clips (optional).** A script opens on its first beat, narrated like the rest, with JC's name as a lower third for the first seconds (v1 does this). To open on a filmed clip instead, give the script an `intro.transcript` block, film one short to-camera intro once the script is approved, and save it as `.local/media/intros/<id>.mov` (`v1.mov`, `v2.mov`, `v3.mov`). On an iPhone, turn HDR off first (Settings > Camera > Formats > HDR Video): an HDR clip is refused unless this ffmpeg can tone-map it. The build trims the silence at each end (keeping 120 ms of pad), brings the voice to -16 LUFS, and conforms the picture to 1920x1080 at 30 fps.
 
@@ -59,7 +59,7 @@ Node 26 and ffmpeg (`brew install ffmpeg`). From this directory: `npm install`, 
 - `src/theme.ts`, `src/fonts.ts`, `src/components/`: MiT palette, fonts, and frame components (Frame, TitleCard, Kicker, LowerThird, Outro, Terminal, Thumbnail), with the card graphics under `src/components/art/`.
 - `src/index.ts`, `src/Root.tsx`: Remotion entry and compositions (`Smoke`, `TermSmoke`, `Thumbnail`, and `Video`, whose length comes from the timeline passed as input props).
 - `src/term/`: what the terminal shows at each frame: commands type at 40 characters a second, then their output comes out a line at a time over the rest of the step's share, with the command held in view above it.
-- `src/timeline/`: `buildTimeline` (the intro clip and a 0.4 s gap when the script has one, beats 0.35 s apart, 6 s outro, refused past 8:00), `pointTimes` (when each point of a slide comes up), `toSrt` (captions from the spoken words only), `chapters` (YouTube chapter lines, checked against YouTube's rules). Asset paths in a timeline are relative to the build directory, which the render step serves as Remotion's public directory.
+- `src/timeline/`: `buildTimeline` (the intro clip and a 0.4 s gap when the script has one, beats 0.35 s apart, 6 s outro, refused past 8:00, or past the script's own `maxSeconds`), `pointTimes` (when each point of a slide comes up), `toSrt` (captions from the spoken words only), `chapters` (YouTube chapter lines, checked against YouTube's rules). Asset paths in a timeline are relative to the build directory, which the render step serves as Remotion's public directory.
 - `src/components/Video.tsx`: the whole program: the intro clip full bleed with a name lower third (or, with no clip, the name over the first beat), then each beat's narration over its card, terminal, or console capture inside the frame, then the outro.
 - `src/build/`: `layoutFor` (every build path), `validate` (the script checks), `preflight`, `approve`, `preview`, `outputs`, `renderVideo` (Remotion bundle and render), `metadata` (the upload metadata and disclosure line); `src/cli/build.ts` runs the phases.
 - `src/capture/`: `serveMark` and `shoot` (console captures).
@@ -70,7 +70,7 @@ Node 26 and ffmpeg (`brew install ffmpeg`). From this directory: `npm install`, 
 - `public/brand/`: MiT logo SVGs used by the frame.
 - `fixture/`: the brownfield Acme Orders demo repo the videos are recorded from. `app/` is the existing app, `content/` the authored files the agent and the human write, `stage1.sh` to `stage3.sh` one script per video, `lib.sh` their helpers (`run`, `say`, `put`, `edit`, `serve_step`, `mark`). Anything a stage does to the repo that the viewer should know about goes through `run`, `edit`, or `serve_step` so it is recorded; a bare `put` or `sed` happens off screen.
 - `snapshots/s1.jsonl` to `s3.jsonl`: every step each stage ran, one JSON object per line, with each Tiller command's real output.
-- `fixture/marks/*.tar.gz`: the whole fixture checkout, `.git` included, saved at named moments (`s1-end`, `s2-design`, `s2-end`, `s3-review`, `s3-end`, and the steps between).
+- `fixture/marks/*.tar.gz`: the whole fixture checkout, `.git` included, saved at named moments (`s1-end`, `s2-design`, `s2-end`, `s3-review`, `s3-end`, and the steps between), plus `tour`: a second, busier project the console tour in video 1 is shot from, because Acme Orders has no work in it yet at that point. `fixture/tour.sh` builds it from the documentation site's Acme Platform stand-in (`site/screenshots/acme.sh` and `homepage.sh`), adds questions and amendments, and runs `fixture/backdate.py` to spread its history over six weeks so the Report page has something to draw.
 
 ## Slides
 
@@ -84,6 +84,7 @@ A card can carry `art`, one of:
 - `repo`: a file tree showing the plan as plain files next to the code, beside the text;
 - `around`: the code as the quick part and three questions as the slow part (its three `points` are the questions);
 - `parts`: one binary holding three parts (its three `points` name them);
+- `backdrop: flow` (a card option, not an art) makes the card the **title screen**: full-frame on the madeintandem.com homepage's flow-field animation (`src/components/FlowBackdrop.tsx`, traced by `src/lib/flowField.ts`, a copy of the site's generator), with light type, the Tiller mark when the card also has `art: logo`, the white Made In Tandem logo, and the site address. The closing slide uses the same backdrop and adds the contact address; both addresses live in `src/theme.ts` as `site`.
 - `cli`: every Tiller command and every skill, grouped as on the talk's slide, with the ones this script puts on screen highlighted. The list lives in `src/components/art/cliData.ts`, and `test/art.test.ts` holds it to the pinned binary's `--help`;
 - `process`: the path the series walks, one row per video with each stage marked You or Agent (its three `points` title the rows; the row for the video being built is marked).
 
@@ -100,7 +101,7 @@ A term beat draws one of two surfaces, chosen by who acts in its steps. If only 
 - every term beat's `from` and `to` steps exist, in order, in the committed snapshot for its stage;
 - every capture's fixture mark exists in `fixture/marks/`;
 - the title is at most 100 characters, and neither the title, the description, nor a chapter name contains `<` or `>` (YouTube rejects them);
-- the estimated length (narration words at 175 wpm, plus a 20 s intro estimate when the script has an intro clip, the gaps, and the 6 s outro) warns past 7:15 and fails past 8:00.
+- the estimated length (narration words at 175 wpm, plus a 20 s intro estimate when the script has an intro clip, the gaps, and the 6 s outro) warns past 7:15 and fails past 8:00. A script with a reason to run longer sets `maxSeconds`; the warning then sits 45 s under that.
 
 ## Narration
 
@@ -114,11 +115,11 @@ Fake mode: with `NARRATION_FAKE=1`, `narrate` and `align` make no network reques
 
 ## The fixture
 
-`bash fixture/run.sh` rebuilds the Acme Orders repo from scratch with the `tiller` on `PATH` (or `TILLER=<binary>`), runs the three stages, and rewrites `snapshots/` and `fixture/marks/`. Commit both. `--out DIR` writes them under `DIR` instead; `--check` writes nothing and compares the fresh steps against the committed snapshots. `bash fixture/fixture_test.sh` builds Tiller from this repo and checks the whole run.
+`bash fixture/run.sh` rebuilds the Acme Orders repo from scratch with the `tiller` on `PATH` (or `TILLER=<binary>`), runs the three stages and `fixture/tour.sh`, and rewrites `snapshots/` and `fixture/marks/`. Commit both. `--out DIR` writes them under `DIR` instead; `--check` writes nothing and compares the fresh steps against the committed snapshots. `bash fixture/fixture_test.sh` builds Tiller from this repo and checks the whole run.
 
 ## Console captures
 
-`npm run capture -- <script-id>` loads `scripts/<id>.yaml` and records every capture it names into `.local/build/<id>/captures/<capture-id>.mp4`. Each capture extracts its fixture mark to a temp dir, runs `tiller serve` there on a free port (`$TILLER` overrides the binary), and shoots the real console in Chromium at a 1280x720 viewport, device scale 2, light theme, so its text reads at laptop size inside the frame. Every frame is a 2560x1440 screenshot laid on a 30 fps clock, encoded to H.264, exactly `seconds` long. The server and the temp dir are cleaned up even when a capture throws.
+`npm run capture -- <script-id>` loads `scripts/<id>.yaml` and records every capture it names into `.local/build/<id>/captures/<capture-id>.mp4`. Each capture extracts its fixture mark to a temp dir, runs `tiller serve` there on a free port (`$TILLER` overrides the binary), and shoots the real console in Chromium at a 1280x720 viewport, device scale 2, dark theme, so its text reads at laptop size inside the frame. Every frame is a 2560x1440 screenshot laid on a 30 fps clock, encoded to H.264, exactly `seconds` long. The server and the temp dir are cleaned up even when a capture throws.
 
 A capture's `actions` run in order after the page loads:
 
@@ -139,7 +140,7 @@ The last picture holds to the end. Actions that need more than `seconds` are ref
 3. **captures**: every console capture the script names (local and free, so before anything paid).
 4. **intro** (only for a script with an `intro` block): refuse or tone-map HDR, trim the silence (keeping 120 ms of pad), normalize the voice to -16 LUFS, conform the clip, then align its transcript for captions.
 5. **narration**: each beat's `say`, cached (see Narration).
-6. **timeline**: lay out the program and validate the chapters against YouTube's rules (and the 8:00 ceiling) before rendering.
+6. **timeline**: lay out the program and validate the chapters against YouTube's rules (and the length ceiling) before rendering.
 7. **render**: Remotion `Video` composition, H.264 1920x1080 at 30 fps, to `.local/build/<id>/render.mp4`.
 8. **master**: music under the opening (the intro clip, or the first beat when there is none) and the outro only, 18 LU under the voice, then the whole program to -14 LUFS, to `out/<id>.mp4`.
 9. **outputs**: `out/<id>.srt` and `out/<id>.meta.json` (`title`, `description`, `tags`, `chapters`, `durationSeconds`, `fake` (built with `NARRATION_FAKE=1`), `scriptHash` (the approved hash the render used), `voiceId` (the narration voice, or `fake`); the description is the script's, a blank line, the chapter list, a blank line, then "The narration is my words, in my voice, performed by AI.").
