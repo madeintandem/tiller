@@ -542,27 +542,31 @@ func guardDependencyChangeOpen(tree *store.Tree, node store.Node, added []string
 	}
 }
 
+// startedTaskHistory reports which tasks have a start.task event and guards
+// each file that supplied one, once: a loose event's own file, or the segment
+// holding a compacted event.
 func startedTaskHistory(tree *store.Tree) (map[string]bool, []store.PlannedWrite, error) {
-	history, err := events.List(tree)
+	history, err := events.ListLocated(tree)
 	if err != nil {
 		return nil, nil, err
 	}
 	started := make(map[string]bool)
+	guarded := make(map[string]bool)
 	var guards []store.PlannedWrite
-	for _, event := range history {
-		if event.Type != "start.task" {
+	for _, located := range history {
+		if located.Event.Type != "start.task" {
 			continue
 		}
-		path, _, err := events.File(tree, event)
-		if err != nil {
-			return nil, nil, err
+		path := filepath.Join(tree.Root, located.Path)
+		if !guarded[path] {
+			guarded[path] = true
+			_, snapshot, err := store.ReadGuardedFileSnapshot(tree.Root, path)
+			if err != nil {
+				return nil, nil, err
+			}
+			guards = append(guards, store.PlanReadGuard(path, snapshot))
 		}
-		_, snapshot, err := store.ReadGuardedFileSnapshot(tree.Root, path)
-		if err != nil {
-			return nil, nil, err
-		}
-		guards = append(guards, store.PlanReadGuard(path, snapshot))
-		for _, target := range event.Targets {
+		for _, target := range located.Event.Targets {
 			started[target] = true
 		}
 	}

@@ -136,33 +136,53 @@ func RelPath(e Event) string {
 	)
 }
 
-// List reads every event file under .tiller/events/ and returns them sorted by
-// timestamp, then event id (artifact-schema.md, "Event stream"). A missing
-// events/ directory yields an empty slice and no error. The walk uses one
-// confined reader, so each dated directory is verified once rather than once
-// per event. Returned events are shared read-only values; callers must not
-// modify their maps or slices.
+// Located is an event with the repository-relative file it was read from.
+type Located struct {
+	Event Event
+	Path  string
+}
+
+// List reads every event under .tiller/events/, loose YAML files and compacted
+// JSONL segments alike, and returns them sorted by timestamp, then event id
+// (artifact-schema.md, "Event stream"). An event held by a loose file and a
+// segment, or by several segments, is one event. A missing events/ directory
+// yields an empty slice and no error. The walk uses one confined reader, so
+// each dated directory is verified once rather than once per event. Returned
+// events are shared read-only values; callers must not modify their maps or
+// slices.
 func List(tree *store.Tree) ([]Event, error) {
+	located, err := ListLocated(tree)
+	if err != nil {
+		return nil, err
+	}
+	return eventsOf(located), nil
+}
+
+// ListLocated is List with the file each event came from. When several files
+// hold one event, Path is a segment in preference to a loose file, and the
+// lexically first segment among several.
+func ListLocated(tree *store.Tree) ([]Located, error) {
 	cached := processCache.Load()
-	evs, listed, _, err := listWhere(tree, cached, func(string) bool { return true })
+	walked, listed, _, err := listWhere(tree, cached, func(string) bool { return true })
 	if err != nil {
 		return nil, err
 	}
 	if cached != nil {
 		cached.replace(tree.Root, listed)
 	}
-	return evs, nil
+	return dedupe(walked)
 }
 
 // ListSince is List restricted to events strictly after since. It reads only
-// the YYYY/MM/DD directories whose UTC date is on or after since's UTC date,
-// so a caller that wants the last few days never touches older partitions.
-// Directories are named by UTC date (RelPath), so the boundary day is matched
-// by its UTC date and the exact instant is checked on the decoded event. The
-// confined reader, the missing-directory rule, and the sort are List's.
+// the YYYY/MM/DD directories, and the segments, whose UTC date is on or after
+// since's UTC date, so a caller that wants the last few days never touches
+// older partitions. Directories are named by UTC date (RelPath), so the
+// boundary day is matched by its UTC date and the exact instant is checked on
+// the decoded event. The confined reader, the missing-directory rule, and the
+// sort are List's.
 //
 // A windowed read never evicts what the process cache already holds: it adds
-// the events it newly parsed and leaves every other entry alone, so a List
+// the files it newly parsed and leaves every other entry alone, so a List
 // after it stays as cheap as before. Replacing the cache with only the window
 // would make the next List reparse the whole history.
 func ListSince(tree *store.Tree, since time.Time) ([]Event, error) {
@@ -174,13 +194,72 @@ func ListSince(tree *store.Tree, since time.Time) ([]Event, error) {
 	if cached != nil {
 		cached.add(tree.Root, fresh)
 	}
+	located, err := dedupe(walked)
+	if err != nil {
+		return nil, err
+	}
 	var evs []Event
-	for _, e := range walked {
-		if e.At.After(since) {
-			evs = append(evs, e)
+	for _, l := range located {
+		if l.Event.At.After(since) {
+			evs = append(evs, l.Event)
 		}
 	}
 	return evs, nil
+}
+
+func eventsOf(located []Located) []Event {
+	evs := make([]Event, len(located))
+	for i, l := range located {
+		evs[i] = l.Event
+	}
+	return evs
+}
+
+func isSegment(path string) bool { return strings.HasSuffix(path, ".jsonl") }
+
+// Fold is the one count-once rule every reader of the stream keeps: it folds
+// records into one per event id, in the order each id was first seen. Records
+// of one id that are Equal are one event, kept at its preferred home, a
+// segment over a loose file and then the lexically first segment. Records
+// that differ are refused, naming both files (Conflict).
+func Fold(records []Located) ([]Located, error) {
+	byID := make(map[string]int, len(records))
+	out := make([]Located, 0, len(records))
+	for _, l := range records {
+		i, seen := byID[l.Event.ID]
+		if !seen {
+			byID[l.Event.ID] = len(out)
+			out = append(out, l)
+			continue
+		}
+		held := out[i]
+		if err := Conflict(held, l); err != nil {
+			return nil, err
+		}
+		if isSegment(l.Path) && (!isSegment(held.Path) || l.Path < held.Path) {
+			out[i].Path = l.Path
+		}
+	}
+	return out, nil
+}
+
+// Conflict is the refusal for two records of one event id that differ, naming
+// both files, or nil when they are Equal.
+func Conflict(held, next Located) error {
+	if Equal(held.Event, next.Event) {
+		return nil
+	}
+	return fmt.Errorf("events: %s differs between %s and %s", next.Event.ID, held.Path, next.Path)
+}
+
+// dedupe folds walked records (Fold) and sorts them in stream order.
+func dedupe(walked []Located) ([]Located, error) {
+	out, err := Fold(walked)
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(out, func(i, j int) bool { return Less(out[i].Event, out[j].Event) })
+	return out, nil
 }
 
 // keepSince reports whether a dated directory, named relative to the events
@@ -210,21 +289,23 @@ func keepSince(since time.Time) func(relative string) bool {
 
 // listWhere walks .tiller/events/ through one confined reader, descending only
 // into directories keep accepts (named relative to the events directory), and
-// returns the events sorted, every cache entry the walk saw, and the entries it
-// had to parse because cached did not already hold them. A missing events
-// directory is an empty stream.
-func listWhere(tree *store.Tree, cached *cache, keep func(relative string) bool) (evs []Event, listed, fresh map[string]cachedEvent, err error) {
+// returns every record found, every cache entry the walk saw, and the entries
+// it had to parse because cached did not already hold them. A segment is kept
+// by asking keep about its day, as if it were a day directory. The records are
+// not yet deduplicated or sorted. A missing events directory is an empty
+// stream.
+func listWhere(tree *store.Tree, cached *cache, keep func(relative string) bool) (found []Located, listed, fresh map[string]cachedFile, err error) {
 	reader, err := store.OpenRepositoryReader(tree.Root)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	defer reader.Close()
-	var known map[string]cachedEvent
+	var known map[string]cachedFile
 	if cached != nil {
 		known = cached.known(tree.Root)
 	}
-	listed = map[string]cachedEvent{}
-	fresh = map[string]cachedEvent{}
+	listed = map[string]cachedFile{}
+	fresh = map[string]cachedFile{}
 	eventsRoot := filepath.Join(".tiller", "events")
 	var walk func(string) error
 	walk = func(relative string) error {
@@ -246,33 +327,34 @@ func listWhere(tree *store.Tree, cached *cache, keep func(relative string) bool)
 				}
 				continue
 			}
-			if !strings.HasSuffix(entry.Name(), ".yml") {
+			parse, ok := parserFor(eventsRoot, relative, entry.Name(), keep)
+			if !ok {
 				continue
 			}
 			info, err := entry.Info()
 			if err != nil {
 				return err
 			}
-			if prior, ok := known[path]; ok && prior.matches(info) {
-				evs = append(evs, prior.event)
-				listed[path] = prior
-				continue
+			file, hit := known[path]
+			if !hit || !file.matches(info) {
+				raw, err := reader.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				evs, err := parse(path, raw)
+				if err != nil {
+					return err
+				}
+				if cached != nil {
+					cached.countParsed()
+				}
+				file = cachedFile{info: info, events: evs}
+				fresh[path] = file
 			}
-			raw, err := reader.ReadFile(path)
-			if err != nil {
-				return err
+			listed[path] = file
+			for _, e := range file.events {
+				found = append(found, Located{Event: e, Path: path})
 			}
-			e, err := decode(path, raw)
-			if err != nil {
-				return err
-			}
-			if cached != nil {
-				cached.countParsed()
-			}
-			evs = append(evs, e)
-			parsed := cachedEvent{info: info, event: e}
-			listed[path] = parsed
-			fresh[path] = parsed
 		}
 		return nil
 	}
@@ -282,31 +364,73 @@ func listWhere(tree *store.Tree, cached *cache, keep func(relative string) bool)
 		if errors.Is(err, fs.ErrNotExist) {
 			present, inspectErr := store.PathExistsNoSymlinks(tree.Root, filepath.Join(tree.Root, ".tiller", "events"))
 			if inspectErr == nil && !present {
-				return nil, map[string]cachedEvent{}, nil, nil
+				return nil, map[string]cachedFile{}, nil, nil
 			}
 		}
 		return nil, nil, nil, err
 	}
-	Sort(evs)
-	return evs, listed, fresh, nil
+	return found, listed, fresh, nil
 }
 
-// Load reads and parses one repository-relative event file without following
-// symlinks. The correction readout uses it for just the files git names as
-// added since a commit. A parse failure names the file.
+// parserFor picks how to read a file the walk met in directory relative, or
+// reports false when the walk ignores it: an event file (IsEventFile) is read
+// by DecodeFile, except a segment the window does not keep, which is skipped
+// when keep refuses its day, as is anything else.
+func parserFor(eventsRoot, relative, name string, keep func(string) bool) (func(path string, raw []byte) ([]Event, error), bool) {
+	rel := filepath.Join(relative, name)
+	if !IsEventFile(rel) {
+		return nil, false
+	}
+	if IsSegmentPath(rel) {
+		inside, err := filepath.Rel(eventsRoot, relative)
+		day, _ := SegmentDay(name)
+		if err != nil || !keep(filepath.Join(inside, fmt.Sprintf("%02d", day))) {
+			return nil, false
+		}
+	}
+	return DecodeFile, true
+}
+
+// IsEventFile reports whether rel, a project-relative path under
+// .tiller/events, names a file the stream reads: a loose .yml event or a
+// segment (IsSegmentPath).
+func IsEventFile(rel string) bool {
+	return strings.HasSuffix(rel, ".yml") || IsSegmentPath(rel)
+}
+
+// DecodeFile is the one decode-by-path rule: it returns the events the file
+// at relative holds, many for a segment (IsSegmentPath) and one for any other
+// file, which is a loose event, all in the one normalized shape.
+func DecodeFile(relative string, raw []byte) ([]Event, error) {
+	if IsSegmentPath(relative) {
+		return DecodeSegment(relative, raw)
+	}
+	e, err := DecodeLoose(relative, raw)
+	if err != nil {
+		return nil, err
+	}
+	return []Event{e}, nil
+}
+
+// Load reads and parses one repository-relative loose event file without
+// following symlinks. A parse failure names the file.
 func Load(root, relative string) (Event, error) {
 	raw, err := store.ReadRepositoryFile(root, relative)
 	if err != nil {
 		return Event{}, err
 	}
-	return decode(relative, raw)
+	return DecodeLoose(relative, raw)
 }
 
-func decode(relative string, raw []byte) (Event, error) {
+// DecodeLoose parses one loose event file, named relative in an error, into
+// the normalized shape a segment decodes to, so a consumer never sees a
+// different Go type because an event was compacted.
+func DecodeLoose(relative string, raw []byte) (Event, error) {
 	var e Event
 	if err := yaml.Unmarshal(raw, &e); err != nil {
 		return Event{}, fmt.Errorf("events: parse %s: %w", relative, err)
 	}
+	normalize(&e)
 	return e, nil
 }
 

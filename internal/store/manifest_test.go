@@ -431,7 +431,7 @@ func TestParseManifestUncheckedReadsAnOlderTree(t *testing.T) {
 }
 
 func TestParseManifestRefusesInvalidProjectReviewGrain(t *testing.T) {
-	data := []byte("schema_version: 13\nexecution:\n  review_grain: sideways\n")
+	data := []byte("schema_version: 14\nexecution:\n  review_grain: sideways\n")
 	_, err := ParseManifest("/repo", data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), ".tiller/tiller.yml")
@@ -451,7 +451,7 @@ func TestManifestAdoptionRoundTrip(t *testing.T) {
 		t.Run(anchor, func(t *testing.T) {
 			root := t.TempDir()
 			require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller"), 0o755))
-			data := []byte("schema_version: 13\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
+			data := []byte("schema_version: 14\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
 			path := filepath.Join(root, ".tiller", "tiller.yml")
 			require.NoError(t, os.WriteFile(path, data, 0o644))
 			m, err := LoadManifest(root)
@@ -553,4 +553,30 @@ func TestLoadManifestReadsUsageCapture(t *testing.T) {
 	m, err = LoadManifest(root)
 	require.NoError(t, err)
 	assert.True(t, m.Usage.Capture)
+}
+
+func TestCompactAfterDaysDefaultsToSeven(t *testing.T) {
+	m, err := ParseManifest("/repo", []byte("schema_version: 14\n"))
+	require.NoError(t, err)
+	assert.Nil(t, m.Events.CompactAfterDays)
+	assert.Equal(t, DefaultCompactAfterDays, m.CompactAfterDays())
+	assert.Equal(t, 7, m.CompactAfterDays())
+}
+
+func TestCompactAfterDaysReadsTheManifest(t *testing.T) {
+	m, err := ParseManifest("/repo", []byte("schema_version: 14\nevents:\n  compact_after_days: 14\n"))
+	require.NoError(t, err)
+	assert.Equal(t, 14, m.CompactAfterDays())
+}
+
+func TestCompactAfterDaysRefusesZero(t *testing.T) {
+	root := tempRepo(t, "tiller.yml", true)
+	m, err := LoadManifest(root)
+	require.NoError(t, err)
+	zero := 0
+	m.Events.CompactAfterDays = &zero
+
+	ee := asEnvError(t, m.Validate())
+	assert.Equal(t, ReasonInvalidCompactAfterDays, ee.Reason)
+	assert.Equal(t, "events.compact_after_days must be a whole number of days, 1 or more", ee.Msg)
 }

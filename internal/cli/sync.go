@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
@@ -107,6 +106,11 @@ type SyncView struct {
 	// after its own work failed, ran out of time, or was skipped. It never
 	// changes sync's exit code or what sync recorded.
 	UsageWarning string `json:"usage_warning,omitempty"`
+	// Compacted and CompactWarning report the best-effort event compaction
+	// sync runs after usage capture: the days folded, or why it could not.
+	// Neither changes sync's exit code or what sync recorded.
+	Compacted      *mutate.CompactResult `json:"compacted,omitempty"`
+	CompactWarning string                `json:"compact_warning,omitempty"`
 }
 
 // CheckDueView is one feature left awaiting its feature check after the walk.
@@ -375,6 +379,7 @@ func runSync(cmd *cobra.Command, into string, acceptFF []string) error {
 	view := syncView(res)
 	warning := syncCaptureUsage(tree)
 	view.UsageWarning = warning
+	view.Compacted, view.CompactWarning = syncCompactEvents(tree, syncNow())
 	// sync is one of the four human gates (gateMomentFor, readout_gate.go), so
 	// its confirmation carries the readout after it. act.Crossed and
 	// act.Awaiting carry res.Crossings and res.Awaiting verbatim: sync
@@ -383,7 +388,7 @@ func runSync(cmd *cobra.Command, into string, acceptFF []string) error {
 	// second time, so syncContent (internal/views/readout.go) reads them
 	// straight rather than falling back to a bare in_review count.
 	act := &views.GateAct{Crossed: syncCrossingsAct(res.Crossings), Awaiting: syncAwaitingAct(res.Awaiting)}
-	return emitReportWithReadout(cmd, "sync", true, view, withUsageWarning(humanSync(tree, res), warning), 0, gateMomentFor("sync"), tree.Root, act)
+	return emitReportWithReadout(cmd, "sync", true, view, withFollowups(humanSync(tree, res), view), 0, gateMomentFor("sync"), tree.Root, act)
 }
 
 // syncCrossingsAct projects mutate.Sync's own Crossings onto the readout's
@@ -877,7 +882,7 @@ func skippedSurfaceRemedy(sk mutate.Skipped) string {
 // remedy names the path exactly.
 func shellWord(path string) string {
 	for _, r := range path {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("._/-+@", r)) {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("._/@%+=:,-", r)) {
 			return "'" + strings.ReplaceAll(path, "'", `'\''`) + "'"
 		}
 	}
@@ -1032,50 +1037,4 @@ func humanSyncAwaiting(tree *store.Tree, res mutate.SyncResult) string {
 			"  Name the task at task grain, the reviewed feature or epic at coarse grain, or the bug/chore/tweak.")
 	}
 	return strings.Join(lines, "\n")
-}
-
-// syncCaptureUsage runs the best-effort agent usage capture after sync's own
-// work succeeded and returns the one warning line it earns, or "". When there
-// is something to write, the tree is reloaded first, because sync's commit
-// advanced the generation and the old tree's commit would be refused as stale.
-// A failure here is a warning, never a refusal, and so is a panic: sync has
-// already written its own state, so a reader bug must not crash it.
-func syncCaptureUsage(tree *store.Tree) (warning string) {
-	if !tree.Manifest.Usage.Capture {
-		return ""
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			warning = fmt.Sprintf("Agent usage not captured: %v", r)
-		}
-	}()
-	onIntegration, _, integration, err := usageBranch(tree)
-	if err != nil {
-		return "Agent usage not captured: " + err.Error()
-	}
-	if !onIntegration {
-		return fmt.Sprintf("Agent usage is captured on %s; skipped here.", integration)
-	}
-	res, err := captureUsage(tree, time.Now(), 2*time.Second, true)
-	if err != nil {
-		return "Agent usage not captured: " + err.Error()
-	}
-	if res.Partial {
-		return "Agent usage capture ran out of time; run tiller usage to finish."
-	}
-	unreadable := 0
-	for _, h := range res.Harnesses {
-		unreadable += h.Unreadable
-	}
-	if unreadable > 0 {
-		return "Agent usage: " + unreadableLogs(unreadable) + "; run tiller usage for details."
-	}
-	return ""
-}
-
-func withUsageWarning(human, warning string) string {
-	if warning == "" {
-		return human
-	}
-	return joinSyncBlocks(human, warning)
 }

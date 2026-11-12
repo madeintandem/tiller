@@ -137,13 +137,11 @@ func TestOrientationCorrectsDoneEvalBindingsThroughAmend(t *testing.T) {
 	}
 }
 
-// Generation 59 records bug severity: capture grades, approve bug requires a
+// Generation 59 recorded bug severity: capture grades, approve bug requires a
 // grade, any contributor regrades with grade, and severity never routes.
 func TestOrientationGeneration59RecordsBugSeverity(t *testing.T) {
-	require.Equal(t, 59, orientationSchemaGen)
 	text := Orientation()
 	for _, want := range []string{
-		"orientation generation 59",
 		"`tiller add bug <key> --severity <level>`",
 		"`tiller approve bug` refuses an unrated bug",
 		"`tiller grade bug <key> <level>`",
@@ -151,4 +149,12 @@ func TestOrientationGeneration59RecordsBugSeverity(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
+}
+
+// Generation 60 names the one directory exception to exact-path staging: the
+// paths sync, compact, migrate, or upgrade print for compacted events.
+func TestOrientationNamesTheCompactionStagingException(t *testing.T) {
+	require.Equal(t, 60, OrientationGeneration())
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "The one exception is compacted events: when `tiller sync`, `tiller compact`, `tiller migrate`, or `tiller upgrade` names paths to stage, stage exactly those, directories included.")
 }

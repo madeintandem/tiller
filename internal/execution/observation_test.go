@@ -183,6 +183,18 @@ func TestCommittedSourceEventsGitCallsStayBounded(t *testing.T) {
 	small, large := callsFor(5), callsFor(60)
 	require.Positive(t, small)
 	require.Equal(t, small, large, "event reads must not grow with the number of event files")
+
+	segmentCallsFor := func(days int) int {
+		s := committedSegmentSource(t, days, 5)
+		calls := countGitCalls(t)
+		evs, err := s.Events(context.Background(), firstID)
+		require.NoError(t, err)
+		require.Len(t, evs, days*5)
+		return calls()
+	}
+	fewDays, manyDays := segmentCallsFor(2), segmentCallsFor(12)
+	require.Equal(t, small, fewDays, "segments must not cost more Git calls than loose files")
+	require.Equal(t, fewDays, manyDays, "event reads must not grow with the number of segments")
 }
 
 func TestSourceEventsStopOnCancelledContext(t *testing.T) {

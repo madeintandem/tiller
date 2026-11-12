@@ -417,3 +417,95 @@ func BenchmarkList(b *testing.B) {
 		}
 	}
 }
+
+// writeSegment encodes evs into a segment for day (2026-10-13) and returns its
+// repository-relative path.
+func writeSegment(t *testing.T, root, day string, evs ...Event) string {
+	t.Helper()
+	data, err := EncodeSegment(evs)
+	require.NoError(t, err)
+	rel := SegmentRelPath(at(day+"T00:00:00Z"), data)
+	require.NoError(t, os.MkdirAll(filepath.Join(root, filepath.Dir(rel)), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, rel), data, 0o644))
+	return rel
+}
+
+func segmentEvent(evID, typ, when string) Event {
+	return Event{ID: evID, Type: typ, At: at(when), Contributor: "jc", Command: "test", Targets: []string{"F-aaaaaa"}}
+}
+
+func TestListReadsLooseAndCompactedEventsInStreamOrder(t *testing.T) {
+	tree := &store.Tree{Root: t.TempDir()}
+	writeSegment(t, tree.Root, "2026-10-13",
+		segmentEvent("EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z"),
+		segmentEvent("EV-cccccc", "add.task", "2026-10-13T10:00:00Z"))
+	writeEventAt(t, tree, "EV-bbbbbb", "add.task", "2026-10-13T09:00:00Z")
+
+	evs, err := List(tree)
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"EV-aaaaaa", "EV-bbbbbb", "EV-cccccc"}, eventIDs(evs))
+}
+
+func TestListCountsAnEventOnceWhenLooseAndCompacted(t *testing.T) {
+	tree := &store.Tree{Root: t.TempDir()}
+	writeEventAt(t, tree, "EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z")
+	writeSegment(t, tree.Root, "2026-10-13", segmentEvent("EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z"))
+
+	evs, err := List(tree)
+
+	require.NoError(t, err)
+	require.Len(t, evs, 1)
+}
+
+func TestListCountsAnEventOnceAcrossOverlappingSegments(t *testing.T) {
+	tree := &store.Tree{Root: t.TempDir()}
+	a := segmentEvent("EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z")
+	b := segmentEvent("EV-bbbbbb", "add.task", "2026-10-13T09:00:00Z")
+	c := segmentEvent("EV-cccccc", "add.task", "2026-10-13T10:00:00Z")
+	writeSegment(t, tree.Root, "2026-10-13", a, b)
+	writeSegment(t, tree.Root, "2026-10-13", b, c)
+
+	evs, err := List(tree)
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"EV-aaaaaa", "EV-bbbbbb", "EV-cccccc"}, eventIDs(evs))
+}
+
+func TestListRefusesOneIDWithTwoDifferentRecords(t *testing.T) {
+	tree := &store.Tree{Root: t.TempDir()}
+	writeEventAt(t, tree, "EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z")
+	segment := writeSegment(t, tree.Root, "2026-10-13", segmentEvent("EV-aaaaaa", "start.task", "2026-10-13T08:00:00Z"))
+
+	_, err := List(tree)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "EV-aaaaaa differs between")
+	require.Contains(t, err.Error(), filepath.Join("2026", "10", "13", "EV-aaaaaa.yml"))
+	require.Contains(t, err.Error(), segment)
+}
+
+func TestListSinceSkipsOlderSegments(t *testing.T) {
+	c := useCache(t)
+	root := t.TempDir()
+	writeSegment(t, root, "2026-10-01", segmentEvent("EV-aaaaaa", "add.task", "2026-10-01T08:00:00Z"))
+	writeSegment(t, root, "2026-10-20", segmentEvent("EV-bbbbbb", "add.task", "2026-10-20T08:00:00Z"))
+
+	evs, err := ListSince(&store.Tree{Root: root}, at("2026-10-15T00:00:00Z"))
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"EV-bbbbbb"}, eventIDs(evs))
+	require.Equal(t, 1, c.misses())
+}
+
+func TestListLocatedNamesTheSegmentThatSuppliedAnEvent(t *testing.T) {
+	tree := &store.Tree{Root: t.TempDir()}
+	writeEventAt(t, tree, "EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z")
+	segment := writeSegment(t, tree.Root, "2026-10-13", segmentEvent("EV-aaaaaa", "add.task", "2026-10-13T08:00:00Z"))
+
+	located, err := ListLocated(tree)
+
+	require.NoError(t, err)
+	require.Len(t, located, 1)
+	require.Equal(t, segment, located[0].Path)
+}

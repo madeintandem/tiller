@@ -43,7 +43,8 @@ import (
 // Generation 58 preserves settled gate-attestation guidance and permits explicit
 // feature epic grain, with exact-path staging and isolated commits.
 // Generation 59 records bug severity: capture grades, approve bug requires one, and grade changes it; severity never routes.
-const orientationSchemaGen = 59
+// Generation 60 names compacted events as the one exception to exact-path staging: stage exactly the paths sync, compact, migrate, or upgrade print.
+const orientationSchemaGen = 60
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -207,7 +208,10 @@ unrequested replan.
   describes, using plain ` + "`git`" + ` and this project's own commit conventions.
   Inspect the existing index first and preserve unrelated staged and unstaged
   work, including planning drafts. Stage exact reviewed authored/output paths,
-  never a whole directory. Isolate commits with the same exact paths so unrelated
+  never a whole directory. The one exception is compacted events: when
+  ` + "`tiller sync`" + `, ` + "`tiller compact`" + `, ` + "`tiller migrate`" + `, or
+  ` + "`tiller upgrade`" + ` names paths to stage, stage exactly those, directories
+  included. Isolate commits with the same exact paths so unrelated
   index entries stay out; if a named file has unrelated edits, isolate authorized
   hunks with a reviewed index or stop rather than commit its whole contents.
   One requirement rides on top of those conventions rather than replacing them:

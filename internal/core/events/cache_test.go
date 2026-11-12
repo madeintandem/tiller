@@ -167,3 +167,28 @@ func TestListWithoutTheCacheParsesEveryTime(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, evs, 1)
 }
+
+func TestCachedListFollowsACompaction(t *testing.T) {
+	c := useCache(t)
+	root := t.TempDir()
+	writeEvent(t, root, "13", "EV-aaaaaa", "claim.task")
+	writeEvent(t, root, "13", "EV-bbbbbb", "start.task")
+	tree := &store.Tree{Root: root}
+	first, err := List(tree)
+	require.NoError(t, err)
+	writeSegment(t, root, "2026-09-13", first...)
+	require.NoError(t, os.RemoveAll(filepath.Join(root, ".tiller", "events", "2026", "09", "13")))
+
+	second, err := List(tree)
+	require.NoError(t, err)
+	misses := c.misses()
+	third, err := List(tree)
+	require.NoError(t, err)
+
+	require.Len(t, second, len(first))
+	for i := range first {
+		require.True(t, Equal(first[i], second[i]))
+	}
+	require.Equal(t, second, third)
+	require.Equal(t, misses, c.misses(), "the segment is not reparsed")
+}

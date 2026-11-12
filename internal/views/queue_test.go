@@ -26,7 +26,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const queueManifest = `schema_version: 13
+const queueManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Queue Test

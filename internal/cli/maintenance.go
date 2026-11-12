@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/selfupdate"
@@ -201,6 +202,9 @@ func localMaintenance(cmd *cobra.Command, root, command string, inspect bool, ex
 	r.Project.SchemaAfter = migrated.To
 	r.Project.Migration.Files = migrated.Files
 	r.Project.Migration.Status = string(migrated.Outcome)
+	if migrated.Outcome == mutate.MigrateOutcomeMigrated && migrated.From < compactionSchema {
+		compactMigratedHistory(root, &r.Project)
+	}
 	if identityRename != nil {
 		if err = store.WriteRepositoryFileAtomic(root, localIdentityPath, identityRename); err != nil {
 			phaseFailure(&r.Project.Migration, err)
@@ -288,4 +292,32 @@ func resolveMigrationContributorFallback(root string) (id, source string, err er
 	}
 	id, err = store.ReadLocalIdentityForMigration(root)
 	return id, ".tiller/identity.yml", err
+}
+
+// compactionSchema is the first schema whose upgrade compacts event history.
+const compactionSchema = 14
+
+// compactMigratedHistory folds the old event days into segments right after
+// the stamp. It needs no integration-branch check: the human reviews and
+// commits the result with the rest of the migration. A failure is a warning,
+// not an error, because the next sync finishes the job, and so is a panic:
+// the stamp has landed, and the identity rename and the artifact refresh
+// still have to run.
+func compactMigratedHistory(root string, p *projectMaintenanceResult) {
+	warn := func(reason string) {
+		p.Warnings = append(p.Warnings, "Event history was not fully compacted: "+reason+". The next tiller sync on the integration branch finishes it.")
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			warn(fmt.Sprint(r))
+		}
+	}()
+	res, err := compactEvents(root, mutate.CompactOptions{Now: time.Now()})
+	if len(res.Days) > 0 {
+		res = stageable(root, res)
+		p.Compaction = &res
+	}
+	if err != nil {
+		warn(strings.Join(refusals(err), "; "))
+	}
 }

@@ -43,6 +43,7 @@ type projectMaintenanceResult struct {
 	ShimsAdded           []string                  `json:"shims_added,omitempty"`
 	ShimsRemoved         []string                  `json:"shims_removed,omitempty"`
 	Actor                *actor                    `json:"actor,omitempty"`
+	Compaction           *mutate.CompactResult     `json:"compaction,omitempty"`
 }
 
 // upgradeResult is shared by the parent and exact-target child. Legacy fields
@@ -170,6 +171,9 @@ func renderMaintenanceHuman(r upgradeResult) string {
 				fmt.Fprintf(&b, "Review/commit: %s\n", file)
 			}
 		}
+	}
+	if r.Project.Compaction != nil {
+		b.WriteString(humanCompaction(*r.Project.Compaction, false) + "\n")
 	}
 	writeFiles(r.Project.Migration.Files)
 	writeFiles(r.Project.Artifacts.Files)

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
@@ -309,6 +310,149 @@ func TestReadoutSinceRendersTheCorrectionBlock(t *testing.T) {
 	require.Equal(t, 0, code)
 	nextOf := func(block string) string { return block[strings.LastIndex(block, "**Next:**"):] }
 	require.Equal(t, nextOf(full), nextOf(out), "the correction block's Next is the full block's, unchanged")
+}
+
+// compactEventFiles replaces the loose event files at the given project
+// relative paths with one segment per day directory, the way a compaction
+// would, and returns nothing: the repository is left for the caller to commit.
+func compactEventFiles(t *testing.T, dir string, rels []string) {
+	t.Helper()
+	byDay := map[string][]events.Event{}
+	for _, rel := range rels {
+		ev, err := events.Load(dir, filepath.FromSlash(rel))
+		require.NoError(t, err)
+		day := filepath.Dir(events.RelPath(ev))
+		byDay[day] = append(byDay[day], ev)
+		require.NoError(t, os.Remove(filepath.Join(dir, filepath.FromSlash(rel))))
+	}
+	for _, evs := range byDay {
+		data, err := events.EncodeSegment(evs)
+		require.NoError(t, err)
+		seg := filepath.Join(dir, events.SegmentRelPath(evs[0].At, data))
+		require.NoError(t, os.WriteFile(seg, data, 0o644))
+	}
+}
+
+func looseEventFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	var rels []string
+	for _, rel := range strings.Fields(gitOutput(t, dir, "ls-files", ".tiller/events")) {
+		if strings.HasSuffix(rel, ".yml") {
+			rels = append(rels, rel)
+		}
+	}
+	return rels
+}
+
+func changedLines(out string) []string {
+	section := out[strings.Index(out, "**Changed**"):]
+	if end := strings.Index(section, "\nqueue:"); end >= 0 {
+		section = section[:end]
+	}
+	var lines []string
+	for _, l := range strings.Split(section, "\n") {
+		if strings.HasPrefix(l, "- ") {
+			lines = append(lines, l)
+		}
+	}
+	return lines
+}
+
+// TestReadoutSinceIgnoresEventsACompactionMoved pins that a compaction between
+// the sha and HEAD does not make the events it moved read as changed.
+func TestReadoutSinceIgnoresEventsACompactionMoved(t *testing.T) {
+	layDraftEpicTree(t)
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "lay down two events")
+	since := gitOutput(t, dir, "rev-parse", "--short", "HEAD")
+
+	compactEventFiles(t, dir, looseEventFiles(t, dir))
+	_, _, code := execCLI(t, "add", "epic", "payments", "--title", "Payments", "--source", "design/06-payments.md", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "compact, then one new event")
+
+	out, errOut, code := execCLI(t, "readout", "decompose", "--since", since)
+	require.Equal(t, 0, code, errOut)
+	lines := changedLines(out)
+	require.Len(t, lines, 1, out)
+	require.Contains(t, lines[0], "payments")
+}
+
+// TestReadoutSinceKeepsAnEventCompactedAfterTheSha pins the other direction: an
+// event recorded after the sha still counts when a later commit moves it into
+// a segment.
+func TestReadoutSinceKeepsAnEventCompactedAfterTheSha(t *testing.T) {
+	layDraftEpicTree(t)
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "lay down two events")
+	since := gitOutput(t, dir, "rev-parse", "--short", "HEAD")
+
+	_, _, code := execCLI(t, "add", "epic", "payments", "--title", "Payments", "--source", "design/06-payments.md", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "one new event")
+	added := strings.Fields(gitOutput(t, dir, "diff", "--name-only", "--diff-filter=A", since, "HEAD", "--", ".tiller/events"))
+	require.Len(t, added, 1)
+	compactEventFiles(t, dir, added)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "compact that event")
+
+	out, errOut, code := execCLI(t, "readout", "decompose", "--since", since)
+	require.Equal(t, 0, code, errOut)
+	lines := changedLines(out)
+	require.Len(t, lines, 1, out)
+	require.Contains(t, lines[0], "payments")
+}
+
+// TestReadoutSinceIgnoresEventsAlreadyInASegmentAtTheSha pins the third place an
+// event can be at the sha: a segment of its day. A later compaction writes a new
+// segment for that day, and only the event recorded since counts.
+func TestReadoutSinceIgnoresEventsAlreadyInASegmentAtTheSha(t *testing.T) {
+	layDraftEpicTree(t)
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+	compactEventFiles(t, dir, looseEventFiles(t, dir))
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "compacted at the sha")
+	since := gitOutput(t, dir, "rev-parse", "--short", "HEAD")
+
+	_, _, code := execCLI(t, "add", "epic", "payments", "--title", "Payments", "--source", "design/06-payments.md", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "one new event")
+	// A second compaction rewrites the day: old segment and the new event in one new segment.
+	old := strings.Fields(gitOutput(t, dir, "ls-files", ".tiller/events"))
+	var all []events.Event
+	for _, rel := range old {
+		raw, err := os.ReadFile(filepath.Join(dir, rel))
+		require.NoError(t, err)
+		if strings.HasSuffix(rel, ".jsonl") {
+			evs, err := events.DecodeSegment(rel, raw)
+			require.NoError(t, err)
+			all = append(all, evs...)
+			continue
+		}
+		ev, err := events.Load(dir, filepath.FromSlash(rel))
+		require.NoError(t, err)
+		all = append(all, ev)
+		require.NoError(t, os.Remove(filepath.Join(dir, rel)))
+	}
+	data, err := events.EncodeSegment(all)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, events.SegmentRelPath(all[0].At, data)), data, 0o644))
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "second compaction")
+
+	out, errOut, code := execCLI(t, "readout", "decompose", "--since", since)
+	require.Equal(t, 0, code, errOut)
+	lines := changedLines(out)
+	require.Len(t, lines, 1, out)
+	require.Contains(t, lines[0], "payments")
 }
 
 // TestReadoutSinceWithNothingRecordedSaysSo pins the honest empty case:

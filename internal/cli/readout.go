@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -271,7 +273,7 @@ func renderCorrectionOf(tree *store.Tree, m views.Moment, since, owner string) (
 	if err != nil {
 		return "", err
 	}
-	evs, err := readoutEventsSince(tree, g, since)
+	evs, err := readoutEventsSince(g, since)
 	if err != nil {
 		return "", err
 	}
@@ -332,30 +334,135 @@ func resolveSince(g *vcs.Git, since string) (string, error) {
 	return g.ShortSHA(since)
 }
 
-// readoutEventsSince reads every event file committed since the sha: the
-// stream is append-only, one immutable file per event, so the files git
-// names as added under .tiller/events between the sha and HEAD are exactly
-// the mutations the correction recorded. Order is left to views, which sorts
-// by the stream's own rule. An event file that will not parse refuses the
-// block rather than dropping the event: Changed is the block's whole reason
-// to exist, and a hole in it would read as "nothing happened".
-func readoutEventsSince(tree *store.Tree, g *vcs.Git, since string) ([]events.Event, error) {
+// readoutEventsSince reads the events recorded since the sha. The stream is
+// append-only, so the files git names as added under .tiller/events between
+// the sha and HEAD are the mutations the correction recorded, with one
+// exception: a compaction in between adds a segment of old events. A segment
+// therefore contributes only the events that were not already in the stream
+// at the sha, loose or compacted. Every file is read as committed at HEAD,
+// the history git named it from, so an uncommitted compaction that has
+// already removed a loose file from the working tree changes nothing here,
+// and an event held by several files counts once by the stream's own rule
+// (events.Fold), which refuses copies that differ. Order is left to views,
+// which sorts by the stream's own rule. An event file that will not parse
+// refuses the block rather than dropping the event: Changed is the block's
+// whole reason to exist, and a hole in it would read as "nothing happened".
+func readoutEventsSince(g *vcs.Git, since string) ([]events.Event, error) {
 	rels, err := g.AddedSince(since, ".tiller/events")
 	if err != nil {
 		return nil, err
 	}
-	evs := make([]events.Event, 0, len(rels))
+	var found []events.Located
+	var before *streamAtSha
 	for _, rel := range rels {
-		if !strings.HasSuffix(rel, ".yml") {
+		if !events.IsEventFile(rel) {
 			continue
 		}
-		ev, err := events.Load(tree.Root, filepath.FromSlash(rel))
+		raw, err := g.FileAt("HEAD", rel)
 		if err != nil {
-			return nil, &store.EnvError{Code: 3, Reason: "event_unreadable", Msg: err.Error()}
+			return nil, eventUnreadable(err)
 		}
-		evs = append(evs, ev)
+		evs, err := events.DecodeFile(rel, raw)
+		if err != nil {
+			return nil, eventUnreadable(err)
+		}
+		if events.IsSegmentPath(rel) && before == nil {
+			if before, err = newStreamAtSha(g, since); err != nil {
+				return nil, err
+			}
+		}
+		for _, ev := range evs {
+			if events.IsSegmentPath(rel) {
+				present, err := before.has(ev)
+				if err != nil {
+					return nil, err
+				}
+				if present {
+					continue
+				}
+			}
+			found = append(found, events.Located{Event: ev, Path: rel})
+		}
+	}
+	folded, err := events.Fold(found)
+	if err != nil {
+		return nil, eventUnreadable(err)
+	}
+	evs := make([]events.Event, len(folded))
+	for i, l := range folded {
+		evs[i] = l.Event
 	}
 	return evs, nil
+}
+
+func eventUnreadable(err error) error {
+	return &store.EnvError{Code: 3, Reason: "event_unreadable", Msg: err.Error()}
+}
+
+// streamAtSha answers whether an event was already recorded at a commit: as a
+// loose file, or inside a segment of its day.
+type streamAtSha struct {
+	g     *vcs.Git
+	since string
+	paths []string
+	loose map[string]bool
+	days  map[string]map[string]bool // day directory -> ids in that day's segments at the sha
+}
+
+func newStreamAtSha(g *vcs.Git, since string) (*streamAtSha, error) {
+	paths, err := g.PathsAt(since, ".tiller/events")
+	if err != nil {
+		return nil, err
+	}
+	loose := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		loose[p] = true
+	}
+	return &streamAtSha{g: g, since: since, paths: paths, loose: loose, days: map[string]map[string]bool{}}, nil
+}
+
+func (s *streamAtSha) has(ev events.Event) (bool, error) {
+	rel := filepath.ToSlash(events.RelPath(ev))
+	if s.loose[rel] {
+		return true, nil
+	}
+	ids, err := s.segmentIDs(path.Dir(path.Dir(rel)), path.Base(path.Dir(rel)))
+	if err != nil {
+		return false, err
+	}
+	return ids[ev.ID], nil
+}
+
+// segmentIDs reads the ids held by the segments at the sha for one day: the
+// month directory and the day of month name them.
+func (s *streamAtSha) segmentIDs(monthDir, dayText string) (map[string]bool, error) {
+	key := monthDir + "/" + dayText
+	if ids, ok := s.days[key]; ok {
+		return ids, nil
+	}
+	ids := map[string]bool{}
+	day, _ := strconv.Atoi(dayText)
+	for _, p := range s.paths {
+		if path.Dir(p) != monthDir || !events.IsSegmentPath(p) {
+			continue
+		}
+		if d, _ := events.SegmentDay(path.Base(p)); d != day {
+			continue
+		}
+		raw, err := s.g.FileAt(s.since, p)
+		if err != nil {
+			return nil, err
+		}
+		held, err := events.DecodeSegment(p, raw)
+		if err != nil {
+			return nil, eventUnreadable(err)
+		}
+		for _, h := range held {
+			ids[h.ID] = true
+		}
+	}
+	s.days[key] = ids
+	return ids, nil
 }
 
 func stableReadout(tree *store.Tree, project func() (string, error)) (string, error) {

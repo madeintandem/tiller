@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v0.23.0 exposes (schema 13, orientation generation 59, eleven embedded
+Every command Tiller v0.23.0 exposes (schema 14, orientation generation 60, eleven embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
@@ -17,6 +17,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller cancel`](#the-done-crossing-and-rollups) | Terminate a node or an open question. |
 | [`tiller check`](#execute-the-task-loop) | Run and record a node's gates, or check project readiness. |
 | [`tiller claim`](#ownership) | Reserve a task, bug, chore, or tweak before it starts. |
+| [`tiller compact`](#compact) | Fold old event files into immutable day segments. |
 | [`tiller completion`](#help-and-shell-completion) | Generate the shell completion script. |
 | [`tiller configure`](#configure) | Record the review grain at the project, epic, or feature home. |
 | [`tiller drift`](#reads) | Sweep the enabled drift checks and report what moved. |
@@ -765,6 +766,14 @@ With `usage: { capture: true }` in `tiller.yml`, `sync` then captures agent usag
 does, best effort and within 2 seconds (see [Agent usage](#agent-usage)). A capture problem is one
 warning line, `usage_warning` in JSON, never a sync failure.
 
+After its own work, `sync` also compacts event days older than `events.compact_after_days` (see
+`tiller compact`), best effort and never a sync failure. When it compacted something it prints one
+line and the `git add -A --` command that stages the result, plus how many events stay loose,
+and `--json` carries `compacted`. It says nothing when no day was compacted, even if an event
+stayed loose (`tiller compact` reports that), or off the integration branch, and records no event.
+A problem is one `Events not compacted: <reason>` line, several refused days' reasons joined by `; `,
+`compact_warning` in JSON.
+
 A bug, chore, and tweak each carry a branch and a PR of their own, so `sync` observes each on its own
 branch exactly as it observes a feature's, by ancestry then content, and records `done` with the
 basis it observed. The one crossing that rests on no branch is a shelf node with a carrier: see
@@ -922,6 +931,57 @@ loses nothing already captured. Each line of output is this run's: `Claude Code:
 same capture when it is on; run `usage` once after turning capture on, so the first backfill is not
 cut short by sync's 2-second budget. The Report page's Agent use tab draws the result.
 
+## Compact
+
+```sh
+tiller compact                                               # fold each day of loose event files older than
+                                                             # the delay into one immutable segment
+tiller compact --dry-run                                     # report what would be folded, write nothing
+tiller compact --all                                         # fold every day, today included
+```
+
+Every command still writes one file per event under `.tiller/events/YYYY/MM/DD/`. `compact` folds
+the days that are old enough into one JSONL segment per day, `.tiller/events/YYYY/MM/DD-<hash>.jsonl`,
+removes the loose files it carried, and removes the day directory once it is empty. A segment is
+never opened for writing or deleted afterwards. A day is old enough when it is at least
+`events.compact_after_days` whole UTC days old; the manifest key defaults to 7, and `--all` ignores it.
+`--dry-run` plans every day and changes nothing.
+
+It leaves the result unstaged and prints the command to stage it:
+
+```
+Compacted 2 days of events (3 events) into 2 files. Stage them with:
+  git add -A -- .tiller/events/2026/11/03 .tiller/events/2026/11/DD-<hash>.jsonl ...
+```
+
+It names a day directory only when compaction removed it; when the directory stays, because it holds
+a skipped event or another file, it names each loose file it removed instead, so the command stages
+nothing compaction did not do. It names only paths `git add` can match: a day directory or file git
+never tracked, because it was never committed, has no deletion to stage and is left out. The paths
+are written from the directory you ran tiller in, so the command runs as printed from there, and a
+path a shell would split or expand is single-quoted. With nothing eligible it prints
+`Nothing to compact.` and exits `0`. An event a segment cannot carry exactly stays as its own file,
+and the output says how many. This verb says so even when no day folded; `sync`, `migrate`, and
+`upgrade` report compaction only when a day folded. `--json` returns `days`, `events`,
+`skipped`, and `stage` (the same paths the command names), plus `dry_run` on a dry run.
+
+Commit the compaction with the sync or command that produced it. Two checkouts that compact the same
+day write the same segment, so if one pushed it first, the other's `git pull` refuses over the
+untracked segment ("untracked working tree files would be overwritten"). Delete that untracked file
+and pull: the committed segment is the same file, and the next sync removes any loose copies left
+behind.
+
+Each day is its own transaction, oldest first. A day that refuses, because two copies of one event
+differ or something unread sits at the new segment's path, is left as it was and the newer days
+still compact; the command then prints what it folded, adds `Some days were not compacted: <reason>`
+with one reason per refused day joined by `; `, and exits nonzero (`refused` in JSON, one entry per
+day). An event whose id is not a valid `EV-` token is never compacted and never named in the command.
+
+It writes only on `git.integration_branch` (anywhere when none is configured) and otherwise
+refuses `not_integration_branch` (exit `1`), naming both branches. A refusal `mutation_stale` means
+another Tiller write landed meanwhile and stops the run; run it again. It records no event and no person, so it needs
+no joined identity.
+
 ## Migrate
 
 ```sh
@@ -936,7 +996,10 @@ migration, then runs the same refresh as upgrade: orientation, skill shims, harn
 required ignore entries. Current-schema refresh needs no identity; a real migration needs a
 registered actor. Repeating successful maintenance writes no redundant event or identical
 artifact. A refresh failure is nonzero even after a committed migration; keep the completed source
-changes and repair the named cause before retrying. Review and commit the changed files.
+changes and repair the named cause before retrying. Review and commit the changed files. The
+13-to-14 migration also compacts event history, in `migrate` and `upgrade` alike, and prints the
+same `git add -A --` command `compact` prints; run it as given so the deletions and the new segments
+are committed together.
 `--dry-run` and `--ownership-review` apply only to a project on an old schema that predates claim
 ownership. The [migration contract](spec/distribution.md#migration) owns schema boundaries,
 drain requirements, and the reviewed ownership format.

@@ -37,7 +37,7 @@ func movingFile(t *testing.T, root, path, content string) {
 func TestAPISettlesAMovedExecutionSourceInsteadOfFailing(t *testing.T) {
 	root := t.TempDir()
 	movingGit(t, root, "init", "-q", "-b", "main")
-	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 13\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
+	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 14\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
 	movingFile(t, root, ".tiller/epics/work/epic.yml", "id: E-aaaaaa\nkey: work\nstatus: ready\n")
 	movingFile(t, root, ".tiller/epics/work/features/build/feature.yml", "id: F-bbbbbb\nkey: work/build\nstatus: ready\n")
 	movingFile(t, root, movingTaskPath, "id: T-cccccc\nkey: work/build/one\nstatus: ready\n")

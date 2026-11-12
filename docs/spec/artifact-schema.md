@@ -91,6 +91,8 @@ Everything Tiller owns lives under `.tiller/` at the repo root, beside the code 
         <adr-id>-<slug>.md          # designed ADR location; ADR node surface is not built
       open-questions.yml           # owned, date-gated questions
     events/                         # one event file per mutation, for recaps, history, and stale-click protection
+      YYYY/MM/DD/<event-id>.yml     # a loose event, one per mutation
+      YYYY/MM/DD-<hash>.jsonl       # a compacted segment: a day's events once the day is old enough (see Event stream)
     usage/                          # agent token usage, one file per harness session; written by capture, never by hand
       <harness>/
         <session-id>.yml
@@ -176,7 +178,7 @@ observed_at: "2026-06-23T00:00:00Z"
 ## The root manifest: `tiller.yml`
 
 ```yaml
-schema_version: 13            # current on-disk format version; moved forward by reviewed `tiller migrate`
+schema_version: 14            # current on-disk format version; moved forward by reviewed `tiller migrate`
 schema_epoch: initial         # changed only by Class 3 migrations; used as the branch fence
 
 project:
@@ -223,6 +225,9 @@ drift:                        # load-bearing: `tiller drift` runs exactly the li
 
 usage:                        # optional; capture is off when absent
   capture: true               # record agent token usage from local harness logs (see Agent usage)
+
+events:                       # optional; absent means a 7-day delay
+  compact_after_days: 7       # whole UTC days before a day of events is compacted (see Event stream)
 ```
 
 | Block | Purpose |
@@ -235,6 +240,7 @@ usage:                        # optional; capture is off when absent
 | `execution` | The project's own review-grain default, `execution.review_grain` (`task` \| `feature` \| `epic`), the widest of Review Grain's three homes; an epic's or a feature's own explicit setting beats it. Absence means `task`. The stored shape is unchanged. The loader refuses any other value, including one introduced by a hand edit. Written by `tiller configure project --review-grain <g>`, or by hand: the manifest stays the one human-owned yml. `configure project` requires `execution` to be absent or a block mapping; a flow mapping or scalar refuses before any write and must be rewritten as block-form YAML. See Review grain, under Epics. |
 | `drift` | The enabled drift checks. Load-bearing: `tiller drift` runs exactly this list, and a check removed from it is named in the report's footer rather than silently skipped, so disabling is deliberate, in-repo, and versioned. Fresh `init` seeds the five work-node markers plus `stale_design`; `shifted_design` is opt-in. Existing manifests are never backfilled. See Drift control hooks. |
 | `usage` | The opt-in agent usage setting. `usage.capture: true` lets `tiller usage` and `tiller sync` read this machine's coding-agent session logs and write `.tiller/usage/`; absent, or any other value, means off, and then neither reads a log. It is a project setting so the team decides together and every checkout behaves the same. `tiller init --capture-usage` writes the block on a fresh scaffold; an existing project adds it by hand. Turning it off again stops capture and removes the Report's Agent use tab; files already in `.tiller/usage/` stay committed but are not shown. Older binaries decode the manifest loosely and ignore the block, so turning it on needs no schema bump or migration. See [Agent usage](#agent-usage-usage). |
+| `events` | The event stream settings. `events.compact_after_days` is how many whole UTC days old a day of events must be before compaction folds it into a segment; absent means 7, and a set value must be a whole number of days, 1 or more, or readiness reports `invalid_compact_after_days`. It decides only which days are eligible, never what a segment holds, so checkouts with different values stay compatible. See Event stream. |
 | `gates` | Required vs optional. Command-backed (Tiller can run and verify) vs attestation-backed (an external signal sets it; Tiller never runs the reviewer). The canonical required set is `build`, `tests`, and `evals`. `evals` is project-agnostic (it always shells `tiller eval ${node.noun} ${node.id}`), so `tiller init` seeds it active by default at feature grain (`on: [feature]`), wiring each feature's acceptance contract into `check`: the contract gates the feature, while tasks, bugs, chores, and tweaks gate on build and tests. `build` and `tests` are project-specific, so init leaves them as commented templates (at `on: [feature, task]`) the team fills in. Optional attestation-backed gates scoped to PR review can be recorded on a bug, chore, or tweak through its existing `gates` and `attestations` fields. Shelf nodes carry no criteria or eval contract. A required command gate may declare `reuse: false` to opt out of gate reuse (The stored gate block), for a result that depends on something outside the repository, such as an integration suite against a live service; on the `evals` gate it turns reuse off for every criterion. In advisory mode a human merge can still be recorded, but any red required gate is preserved as a policy violation rather than hidden. |
 
 The manifest is human-owned after its first scaffold. A rerun uses its recorded project identity, kind, roots, and adopted anchor rather than reclassifying it from flags. Neither rerun, `join`, nor `migrate` backfills an absent anchor or injects roots. Baseline reasoning states when adoption history is absent or unavailable; it never substitutes a later HEAD as the adoption commit.
@@ -267,7 +273,7 @@ contributor: robin                     # the id you joined as; must match a cont
 |---|---|
 | `contributor` | The acting contributor id for this checkout. Written by `tiller join`, validated against the `contributors` roster, and read as the last step of contributor resolution after the `--contributor` flag and `TILLER_CONTRIBUTOR`. Never committed, so identity does not travel with a clone. |
 
-**Contributor terminology.** The shared manifest roster is `contributors:` and checkout-local identity is `contributor:`; older trees spelled them `owners:` and `owner:`. Migration from the older spelling preserves contributor IDs and names, the selected local identity, task/bug/chore/tweak claims and lifecycle, branches, reviews, accepted bases, evidence, and historical event bytes. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. New roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable without rewriting their bytes.
+**Contributor terminology.** The shared manifest roster is `contributors:` and checkout-local identity is `contributor:`; older trees spelled them `owners:` and `owner:`. Migration from the older spelling preserves contributor IDs and names, the selected local identity, task/bug/chore/tweak claims and lifecycle, branches, reviews, accepted bases, evidence, and event content. Loose legacy events keep their `owner:` key and stay readable as they are; compaction is the one place that key is rewritten to `contributor:`. An absent identity stays absent. Local identity is gitignored, so a migration renames only its own checkout's file; after pulling the migrated manifest, each other checkout's `tiller upgrade --project-only` or bare `tiller join` renames a legacy `owner:` key in place, provided that ID is on the roster. Other commands refuse a legacy key as `identity_unreadable` and name that remedy. New roster events are `contributor.add` and `contributor.remove`; historical `owner.add` and `owner.remove` events are not rewritten. There are no compatibility command, flag, environment, or current-schema key aliases. Acting identity uses `--contributor`, `TILLER_CONTRIBUTOR`, then local identity; execution/question `owner` fields and scalar ownership filters remain unchanged. New event actor attribution uses `contributor:`; historical events with `owner:` remain readable as they are until compaction folds them.
 
 ---
 
@@ -1047,8 +1053,12 @@ Detection is Tiller's; the proposed fix is the agent's (a doc, test, or eval dif
 
 ## Event stream
 
-The event stream is stored as one immutable YAML file per logical event under `events/`, partitioned by date: `events/YYYY/MM/DD/<event-id>.yml`. The event id uses the compact random token rule from [IDs](#ids), prefixed as `EV-`, and the file records `type`, timestamp, acting `contributor`, literal command, target node ids, opaque before and after maps, and affected files. Each file change carries its repo-relative path plus optional before and after RevisionRefs: a create may omit `before`, and a delete may omit `after`.
+An event is written as one immutable YAML file under `events/`, partitioned by date: `events/YYYY/MM/DD/<event-id>.yml`. The event id uses the compact random token rule from [IDs](#ids), prefixed as `EV-`, and the file records `type`, timestamp, acting `contributor`, literal command, target node ids, opaque before and after maps, and affected files. Each file change carries its repo-relative path plus optional before and after RevisionRefs: a create may omit `before`, and a delete may omit `after`.
 Events are not the source of truth for current state; the node files are. An event records the node status its own checkout saw when it was written, so an `attest` event written on a branch that still saw the feature as `active` stays `active` in the stream after a later sync moved the node file to `done`. That is the stream working as designed, not a conflict to repair; read current state from the node file. Events are the source of truth for recaps, node timelines, and stale review protection, because commit history can squash several state transitions into one commit and uncommitted working-tree changes have no commit yet. Event creation participates in the same journaled transaction as the source-state writes and deletions it describes. Sorting is by timestamp, then event id. Appending an event creates a new file rather than editing a shared log, so parallel branches merge event histories by adding files.
+
+**Compacted segments.** A day whose UTC date is at least `events.compact_after_days` whole days old (default 7) is folded by compaction into an immutable segment beside its day directory, `events/YYYY/MM/DD-<hash>.jsonl`, where `<hash>` is the first 12 lowercase hex characters of the SHA-256 of the segment's bytes. A segment is JSON Lines: one event per line, sorted by timestamp then event id, each line the canonical JSON encoding of the event with keys in a fixed order. Compaction proves each event by value before it deletes anything: it decodes the new segment and compares every event with the loose file it came from, then deletes the loose files it carried and the day directory once nothing else remains in it. A loose event whose copy a segment already holds has the loose copy deleted; a copy that differs from the segment's refuses that day, naming both files, and leaves it untouched while newer days still compact. An event compaction cannot carry faithfully, such as one with a key the event shape does not define or an id that is not a valid `EV-` token, stays loose and is counted. Compaction normalizes a legacy `owner:` key to `contributor:` and otherwise preserves content. It records no event.
+
+Segments are never rewritten or removed. Events that arrive after their day was compacted go into an additional segment for that day, so a day can hold several segments, and two segments can overlap. Two checkouts that compact the same events write the same name and the same bytes; two that compact different sets write different names, and both files survive a merge. A reader takes the union of loose files and segments and counts each event id once, whichever form or forms hold it. An id held twice with equal content is one event; an id held twice with different content refuses the read and names both files.
 
 ---
 
@@ -1143,6 +1153,15 @@ For bug severity, settled 2026-11-01:
 - Bugs only. Chores and tweaks carry no severity. (JC)
 - Optional at add, required at approval, never backfilled: schema 12 to 13 is a stamp-only migration, and no code path writes a grade nobody chose. (JC)
 - Date added on the Fix board is derived from the `add.<noun>` event, a transfer replacement taking its original's date, never stored. (JC)
+
+For event compaction, settled 2026-11-11 (rationale in [event compaction, immutable segments](../design-history.md#event-compaction-immutable-segments)):
+
+- Segments are immutable and named by their content: `.tiller/events/YYYY/MM/DD-<hash>.jsonl`, the hash being the first 12 hex characters of the SHA-256 of the file's bytes. Compaction never opens one for writing or deletes one, events that arrive after their day was compacted get another segment, and overlap is never garbage-collected. (JC)
+- Segments are JSONL, one event per line sorted by timestamp then id, chosen over YAML for read cost at scale. Loose events stay YAML, and compaction proves each segment by value before deleting anything. (JC)
+- A reader counts each event id once across loose files and segments; the same id with different content refuses the read and names both paths. (JC)
+- Legacy `owner:` records are normalized to `contributor:` when compacted, and one decode boundary normalizes types, so a consumer never sees a different type because an event was compacted. (JC)
+- A day is compacted once it is a set number of whole UTC days old: 7 by default, set per project with `events.compact_after_days`. The delay no longer protects correctness, so different values on different checkouts are harmless. (JC)
+- Schema 14 marks the change, so an older binary refuses a compacted tree, and the upgrade compacts under the ordinary rules. (JC)
 
 ---
 

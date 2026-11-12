@@ -103,3 +103,23 @@ func (g *Git) TreeInventoryAt(commit, path string) ([]string, error) {
 	sort.Strings(names)
 	return names, nil
 }
+
+// PathsAt lists the files under path in commit, as forward-slash paths
+// relative to g.Dir. A path with no files in commit yields an empty list.
+func (g *Git) PathsAt(commit, path string) ([]string, error) {
+	out, err := g.run("ls-tree", "-r", "--name-only", commit, "--", path)
+	if err != nil {
+		return nil, g.classifyPathErr(err, path)
+	}
+	return nonEmptyLines(out), nil
+}
+
+// FileAt reads the bytes of path as committed in commit, resolved from g.Dir
+// like BlobHashAt. A path absent from commit is an error.
+func (g *Git) FileAt(commit, path string) ([]byte, error) {
+	out, err := g.runRaw("show", projectObject(commit, path))
+	if err != nil {
+		return nil, g.classifyPathErr(err, path)
+	}
+	return []byte(out), nil
+}

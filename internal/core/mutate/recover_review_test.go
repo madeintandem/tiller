@@ -114,7 +114,7 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 	if mode == "schema9" {
 		data, err := os.ReadFile(filepath.Join(root, ".tiller/tiller.yml"))
 		require.NoError(t, err)
-		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte(strings.Replace(string(data), "schema_version: 13", "schema_version: 9", 1)), 0600))
+		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte(strings.Replace(string(data), "schema_version: 14", "schema_version: 9", 1)), 0600))
 	}
 	gitCommitAllM(t, root, "complete reviewed implementation")
 	head, err := vcs.New(root).CurrentCommit()
@@ -160,7 +160,7 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 	if mode == "schema9" {
 		data, err := os.ReadFile(filepath.Join(root, ".tiller/tiller.yml"))
 		require.NoError(t, err)
-		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte(strings.Replace(string(data), "schema_version: 9", "schema_version: 13", 1)), 0600))
+		require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte(strings.Replace(string(data), "schema_version: 9", "schema_version: 14", 1)), 0600))
 		gitCommitAllM(t, root, "adopt additive schema ten")
 	}
 	return root, d, mutate.RecoverReviewInput{Noun: noun, Key: key, Head: strings.TrimPrefix(head.Value, "git:"), MergeCommit: strings.TrimPrefix(result.Value, "git:"), Reason: "Authorized historical recovery"}

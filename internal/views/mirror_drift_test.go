@@ -16,7 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const mirrorDriftManifest = `schema_version: 13
+const mirrorDriftManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Mirror Drift Test

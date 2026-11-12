@@ -77,7 +77,7 @@ func runUsage(cmd *cobra.Command, _ []string) error {
 		return emitReport(cmd, "usage", false, UsageRefusedData{Reason: reasonUsageCaptureOff},
 			"Agent usage capture is off. Set usage.capture: true in .tiller/tiller.yml to turn it on.", 1)
 	}
-	onIntegration, current, integration, err := usageBranch(tree)
+	onIntegration, current, integration, err := onIntegrationBranch(tree)
 	if err != nil {
 		return emitFailure(cmd, "usage", err)
 	}
@@ -96,20 +96,6 @@ func runUsage(cmd *cobra.Command, _ []string) error {
 		return emitFailure(cmd, "usage", err)
 	}
 	return emitReport(cmd, "usage", true, usageView(res), humanUsage(res), 0)
-}
-
-// usageBranch says whether the checkout is on the branch capture may write
-// on: the declared integration branch, or any branch when none is declared.
-func usageBranch(tree *store.Tree) (ok bool, current, integration string, err error) {
-	integration = tree.Manifest.Git.IntegrationBranch
-	if integration == "" {
-		return true, "", "", nil
-	}
-	current, err = vcs.New(tree.Root).Branch()
-	if err != nil {
-		return false, "", integration, err
-	}
-	return current == integration, current, integration, nil
 }
 
 // usageBeforeCommit is a test seam called just before the capture commit, so a

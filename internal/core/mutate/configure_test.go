@@ -165,7 +165,7 @@ func TestConfigureProjectWritesTheManifestSurgically(t *testing.T) {
 // review_grain key yet, the shape RenderExecutionReviewGrain's insert-inside
 // arm handles: Task 1 shipped that render path untested, and this fixture
 // pins it (Task 1 review finding).
-const manifestWithEmptyExecutionBlock = `schema_version: 13
+const manifestWithEmptyExecutionBlock = `schema_version: 14
 schema_epoch: initial
 project:
   name: Test Project

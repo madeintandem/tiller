@@ -55,7 +55,7 @@ func gitCommitAll(t *testing.T, dir, msg string) {
 // scratchManifest is a minimal manifest carrying one owner and all five
 // drift checks, enough for the fixtures below (spec/approve/start touch
 // nothing gate-related, so no gates: block is needed).
-const scratchManifest = `schema_version: 13
+const scratchManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Test Project

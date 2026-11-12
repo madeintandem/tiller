@@ -12,6 +12,7 @@ What Tiller does today, what is designed but not built, and what it deliberately
 - **Agent guidance.** Embedded skills for every stage of the workflow, a generated orientation file, gitignored skill shims written by `join`, and deterministic lifecycle readouts.
 - **Console.** A read-only local console (`tiller serve`) with Home, Explore (tree, map, search, filters, relationships), Build, Fix, Report (Project and Agent use tabs), History, and node detail. Pages reread on navigation, on the manual refresh, and when the window regains focus after 30 seconds, keeping what they show until the new answer lands.
 - **Agent usage.** Opt-in capture of coding-agent token usage from Claude Code, Codex, and Pi or OhMyPi session logs, by `tiller usage` and best effort inside `sync`, into committed per-session files credited to work items and workflow stages, with no metric on a person. The Report's Agent use tab draws it, with partial coverage shown as partial.
+- **Event compaction.** Old loose event files fold into immutable, content-named JSONL day segments, by `tiller compact`, best effort inside `sync`, and the schema 14 upgrade. Writes still produce one YAML file per event.
 - **Storage and distribution.** Journaled, lock-guarded mutation batches, schema migrations, checksum-verified `tiller upgrade`, release automation, an installer, a Homebrew cask, and the documentation site.
 
 ## Not built yet
@@ -26,6 +27,7 @@ These are retained scope, not a promised sequence.
 - **Search and reads.** Ranked prose search and Explore filters by activity phase or unowned work.
 - **More agent usage readers.** OpenCode and Gemini CLI are the likely next harnesses; Cursor's logs showed no usable token data. OpenTelemetry ingestion could become another reader. Token costs in dollars are not designed.
 - **Hardening questions.** Repair of merge-produced duplicate ids, evidence garbage collection, and bulk reaffirmation of stale criteria. These are open questions, not known regressions.
+- **Event compaction follow-ups.** Designed but not built: a local index or cache for very large histories, loose events written as JSON, and splitting a very large day across segments.
 - **Guided discovery.** Tiller covers execution, from specs and a plan to merged and done. Covering discovery, from the first meeting to a plan, is a later goal.
 
 ## Out of scope

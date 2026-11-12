@@ -16,10 +16,8 @@ import (
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/events"
-	"github.com/madeintandem/tiller/internal/id"
 	"github.com/madeintandem/tiller/internal/rootpath"
 	"github.com/madeintandem/tiller/internal/store"
-	"gopkg.in/yaml.v3"
 )
 
 type source struct {
@@ -466,12 +464,14 @@ func (s *source) eventPaths() ([]string, error) {
 			if entry.kind == "blob" && entry.mode != "100644" && entry.mode != "100755" {
 				return nil, fmt.Errorf("execution event path %s is not a regular Git blob", path)
 			}
-			if entry.kind == "blob" && strings.HasSuffix(path, ".yml") {
+			if entry.kind == "blob" {
 				projectPath := strings.TrimPrefix(path, s.repo.projectPrefix+"/")
 				if s.repo.projectPrefix == "" {
 					projectPath = path
 				}
-				paths = append(paths, filepath.FromSlash(projectPath))
+				if events.IsEventFile(projectPath) {
+					paths = append(paths, filepath.FromSlash(projectPath))
+				}
 			}
 		}
 		// A symlink/gitlink at the events root must not become an empty history.
@@ -506,7 +506,7 @@ func (s *source) eventPaths() ([]string, error) {
 				if err := walk(child); err != nil {
 					return err
 				}
-			} else if strings.HasSuffix(entry.Name(), ".yml") {
+			} else if events.IsEventFile(child) {
 				paths = append(paths, child)
 			}
 		}
@@ -533,21 +533,30 @@ func (s *source) events(ctx context.Context, taskID string) ([]events.Event, err
 	if err != nil {
 		return nil, err
 	}
-	out := make([]events.Event, 0)
+	var found []events.Located
 	for i, path := range paths {
-		data := contents[i]
-		var event events.Event
-		if err := yaml.Unmarshal(data, &event); err != nil {
-			return nil, fmt.Errorf("execution event %s: %w", path, err)
+		decoded, err := decodeEventFile(path, contents[i])
+		if err != nil {
+			return nil, err
 		}
-		// Another task's event cannot make this task's history incomplete.
-		if !slices.Contains(event.Targets, taskID) {
-			continue
+		for _, event := range decoded {
+			// Another task's event cannot make this task's history incomplete.
+			if !slices.Contains(event.Targets, taskID) {
+				continue
+			}
+			if err := checkEvent(path, event); err != nil {
+				return nil, err
+			}
+			found = append(found, events.Located{Event: event, Path: path})
 		}
-		if !id.Valid(event.ID) || !strings.HasPrefix(event.ID, "EV-") || filepath.Base(path) != event.ID+".yml" || event.At.IsZero() || event.Type == "" {
-			return nil, fmt.Errorf("execution event %s has invalid identity, timestamp, or type", path)
-		}
-		out = append(out, event)
+	}
+	folded, err := events.Fold(found)
+	if err != nil {
+		return nil, fmt.Errorf("execution events: %w", err)
+	}
+	out := make([]events.Event, len(folded))
+	for i, f := range folded {
+		out[i] = f.Event
 	}
 	events.Sort(out)
 	return out, nil
@@ -592,11 +601,15 @@ func (s *source) eventContents(ctx context.Context, paths []string) ([][]byte, e
 	return contents, nil
 }
 
-// hasEvent reports whether the source carries an event file at its dated path.
+// hasEvent reports whether the source carries the event, as a file at its
+// dated path or inside a segment of its day.
 func (s *source) hasEvent(event events.Event) (bool, error) {
 	_, err := s.read(events.RelPath(event))
-	if errors.Is(err, fs.ErrNotExist) {
-		return false, nil
+	if err == nil {
+		return true, nil
 	}
-	return err == nil, err
+	if !errors.Is(err, fs.ErrNotExist) {
+		return false, err
+	}
+	return s.compactedHolds(event)
 }

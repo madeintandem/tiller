@@ -663,7 +663,7 @@ func TestLoadedTreeStabilityRecheckDetectsLaterGeneration(t *testing.T) {
 }
 
 func TestLoadIdentityPreservingMovedKeysKeepStableParentLinks(t *testing.T) {
-	root := writeManifestFixture(t, "schema_version: 13\nschema_epoch: initial\nproject:\n  name: X\n  key: x\n  kind: greenfield\ncontributors: []\n")
+	root := writeManifestFixture(t, "schema_version: 14\nschema_epoch: initial\nproject:\n  name: X\n  key: x\n  kind: greenfield\ncontributors: []\n")
 	epicDir := filepath.Join(root, ".tiller", "epics", "platform-foundation")
 	featureDir := filepath.Join(epicDir, "features", "application")
 	taskDir := filepath.Join(featureDir, "tasks", "bootstrap")

@@ -97,6 +97,7 @@ func runMaintenanceChild(parent context.Context, selected selfupdate.ExecutableI
 	if decodeErr != nil {
 		return r, decodeErr
 	}
+	restage(root, parsed.result.Project.Compaction)
 	return parsed.result, parsed.err
 }
 

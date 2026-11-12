@@ -28,14 +28,16 @@ func EnableProcessCache() {
 	enableOnce.Do(func() { processCache.Store(newCache()) })
 }
 
-type cachedEvent struct {
-	info  fs.FileInfo
-	event Event
+// cachedFile is every event parsed from one file: one for a loose file, many
+// for a segment.
+type cachedFile struct {
+	info   fs.FileInfo
+	events []Event
 }
 
-// matches reports whether a fresh Lstat still names the file this event was
+// matches reports whether a fresh Lstat still names the file these events were
 // parsed from: the same file, size, modification time, and mode.
-func (c cachedEvent) matches(info fs.FileInfo) bool {
+func (c cachedFile) matches(info fs.FileInfo) bool {
 	return os.SameFile(c.info, info) &&
 		c.info.Size() == info.Size() &&
 		c.info.ModTime().Equal(info.ModTime()) &&
@@ -44,12 +46,12 @@ func (c cachedEvent) matches(info fs.FileInfo) bool {
 
 type cache struct {
 	mu     sync.Mutex
-	roots  map[string]map[string]cachedEvent
+	roots  map[string]map[string]cachedFile
 	parsed int
 }
 
 func newCache() *cache {
-	return &cache{roots: map[string]map[string]cachedEvent{}}
+	return &cache{roots: map[string]map[string]cachedFile{}}
 }
 
 func cacheKey(root string) string {
@@ -61,14 +63,14 @@ func cacheKey(root string) string {
 
 // known returns the root's cached events by repository-relative path. The map
 // is never modified after replace stores it, so callers read it without a lock.
-func (c *cache) known(root string) map[string]cachedEvent {
+func (c *cache) known(root string) map[string]cachedFile {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.roots[cacheKey(root)]
 }
 
 // replace stores what one successful walk saw, dropping every path it did not.
-func (c *cache) replace(root string, listed map[string]cachedEvent) {
+func (c *cache) replace(root string, listed map[string]cachedFile) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.roots[cacheKey(root)] = listed
@@ -78,14 +80,14 @@ func (c *cache) replace(root string, listed map[string]cachedEvent) {
 // walk newly parsed. A windowed walk did not see the whole stream, so it must
 // not drop the entries outside its window. The stored map is replaced, never
 // modified, because known hands it to readers without a lock.
-func (c *cache) add(root string, parsed map[string]cachedEvent) {
+func (c *cache) add(root string, parsed map[string]cachedFile) {
 	if len(parsed) == 0 {
 		return
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	key := cacheKey(root)
-	merged := make(map[string]cachedEvent, len(c.roots[key])+len(parsed))
+	merged := make(map[string]cachedFile, len(c.roots[key])+len(parsed))
 	for path, entry := range c.roots[key] {
 		merged[path] = entry
 	}
@@ -101,7 +103,7 @@ func (c *cache) countParsed() {
 	c.parsed++
 }
 
-// misses is how many event files this cache has parsed, for tests.
+// misses is how many event files (loose or segment) this cache has parsed, for tests.
 func (c *cache) misses() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()

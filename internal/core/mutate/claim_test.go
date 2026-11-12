@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const twoOwnerManifest = `schema_version: 13
+const twoOwnerManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Test Project

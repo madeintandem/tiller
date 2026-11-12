@@ -585,7 +585,7 @@ func TestInitAndJoinDoNotCreateRetiredBoard(t *testing.T) {
 
 // twoOwnerManifest is the roster the cross-owner routing fixture needs: two
 // humans who can hold work, which every other manifest in this package lacks.
-const twoOwnerManifest = `schema_version: 13
+const twoOwnerManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Test Project

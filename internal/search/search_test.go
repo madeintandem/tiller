@@ -22,7 +22,7 @@ import (
 // fixed while minting each immutable event onto its own stable path.
 // fixed while minting each immutable event onto its own stable path.
 
-const searchManifest = `schema_version: 13
+const searchManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Search Test

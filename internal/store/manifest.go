@@ -58,6 +58,7 @@ const (
 	ReasonMigrationReservedEpicKey = "migration_reserved_epic_key"
 	ReasonOwnershipReviewRequired  = "ownership_review_required"
 	ReasonOwnershipReviewInvalid   = "ownership_review_invalid"
+	ReasonInvalidCompactAfterDays  = "invalid_compact_after_days"
 )
 
 // CurrentSchemaVersion is the on-disk schema_version this binary writes and
@@ -67,7 +68,7 @@ const (
 // CurrentSchemaVersion-1, tiller upgrade --project-only (distribution.md's Versioning
 // section); above CurrentSchemaVersion, upgrade the binary (since removing
 // .tiller/ would discard data ahead of this binary).
-const CurrentSchemaVersion = 13
+const CurrentSchemaVersion = 14
 
 // MinMigratableSchemaVersion is the oldest stamp tiller migrate can carry
 // forward. Below it lies the 1-to-2 boundary, which shipped as a refusal with
@@ -106,6 +107,7 @@ type Manifest struct {
 	Execution     ExecutionBlock `yaml:"execution,omitempty"`
 	Drift         DriftBlock     `yaml:"drift,omitempty"`
 	Usage         UsageBlock     `yaml:"usage,omitempty"`
+	Events        EventsBlock    `yaml:"events,omitempty"`
 
 	// root is the repo root the manifest was loaded from. It is not part of the
 	// on-disk shape; LoadManifest sets it, and Validate's filesystem checks
@@ -117,6 +119,37 @@ type Manifest struct {
 // manifest says usage.capture: true; an absent block means off.
 type UsageBlock struct {
 	Capture bool `yaml:"capture"`
+}
+
+// DefaultCompactAfterDays is how many whole UTC days old a day of events must
+// be before compaction folds it into a segment, when the manifest sets no delay.
+const DefaultCompactAfterDays = 7
+
+// EventsBlock holds the event stream settings. CompactAfterDays is the
+// compaction delay in whole UTC days; absent means DefaultCompactAfterDays.
+type EventsBlock struct {
+	CompactAfterDays *int `yaml:"compact_after_days,omitempty"`
+}
+
+// Validate refuses a compaction delay below one day.
+func (b EventsBlock) Validate() error {
+	if b.CompactAfterDays != nil && *b.CompactAfterDays < 1 {
+		return &EnvError{
+			Code:   3,
+			Reason: ReasonInvalidCompactAfterDays,
+			Msg:    "events.compact_after_days must be a whole number of days, 1 or more",
+		}
+	}
+	return nil
+}
+
+// CompactAfterDays is the compaction delay the manifest sets, or
+// DefaultCompactAfterDays when it sets none.
+func (m *Manifest) CompactAfterDays() int {
+	if m.Events.CompactAfterDays == nil {
+		return DefaultCompactAfterDays
+	}
+	return *m.Events.CompactAfterDays
 }
 
 // ProjectBlock identifies the project and its archetype.
@@ -487,8 +520,9 @@ func (m *Manifest) Root() string { return m.root }
 func (m *Manifest) SetRoot(root string) { m.root = root }
 
 // Validate is the readiness gate (cli-surface.md, `tiller check readiness`): it
-// verifies design/ is non-empty, project.kind and contributors are set, and every
-// declared code root exists on disk. It returns the first gap as an *EnvError,
+// verifies design/ is non-empty, project.kind and contributors are set, every
+// declared code root exists on disk, and any events.compact_after_days is at
+// least 1. It returns the first gap as an *EnvError,
 // or nil when ready. Gaps reports the full set.
 func (m *Manifest) Validate() error {
 	gaps := m.Gaps()
@@ -554,6 +588,9 @@ func (m *Manifest) Gaps() []error {
 			Reason: ReasonNoReferenceRoot,
 			Msg:    fmt.Sprintf("legacy-migration needs an existing code root tagged mode: reference in %s; declare the old system under inputs.code", manifestPath),
 		})
+	}
+	if err := m.Events.Validate(); err != nil {
+		gaps = append(gaps, err)
 	}
 
 	return gaps

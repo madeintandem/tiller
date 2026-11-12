@@ -431,18 +431,18 @@ func parsePorcelainZ(out string) []string {
 
 // AddedSince reports the files that commits after `commit` up to HEAD added
 // under path, as forward-slash paths relative to Dir, in git's own sorted
-// order. It shells `git diff --name-only --diff-filter=A <commit> HEAD -- <path>`.
-// It is the read the correction readout (`tiller readout <seam> --since
-// <sha>`) makes to find exactly the event files a correction committed: the
-// event stream is append-only, one immutable file per event, so an added file
-// under .tiller/events is one recorded mutation and nothing else changes there.
+// order. It shells `git diff --name-only --no-renames --diff-filter=A <commit>
+// HEAD -- <path>`, the read the correction readout (`tiller readout <seam>
+// --since <sha>`) makes to find the event files a correction committed. A
+// compaction deletes loose files that look like new ones of the same type, so
+// --no-renames keeps git from pairing them as a rename and dropping the add.
 // --relative keeps the answer relative to Dir rather than the repository root,
 // the same shape the caller joins onto its own tree root. A commit that does
 // not resolve, or any other git failure, is a git_unavailable EnvError: the
 // caller validates the commit ahead of this read, so a failure here is the
 // environment, not the argument.
 func (g *Git) AddedSince(commit, path string) ([]string, error) {
-	out, err := g.run("diff", "--name-only", "--relative", "--diff-filter=A", commit, "HEAD", "--", path)
+	out, err := g.run("diff", "--name-only", "--relative", "--no-renames", "--diff-filter=A", commit, "HEAD", "--", path)
 	if err != nil {
 		return nil, g.asEnv(err)
 	}

@@ -3,10 +3,13 @@ package cli
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
@@ -248,4 +251,188 @@ func TestProjectOnlyNamesTheRemedyForAnUnlistedLegacyIdentity(t *testing.T) {
 	require.Equal(t, 3, code, stderr)
 	require.Contains(t, stderr, `.tiller/identity.yml names contributor "ghost", who is not in the project contributors: `+
 		"run `tiller join --as <id>` to select a listed contributor, or `tiller add contributor ghost --name <name>` to register them")
+}
+
+// thirteenFixture is a committed schema 13 checkout, the last schema before
+// event history compacts on upgrade.
+func thirteenFixture(t *testing.T) string {
+	t.Helper()
+	root := maintenanceFixture(t)
+	path := filepath.Join(root, ".tiller", "tiller.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	old, err := store.RenderSchemaVersion(data, 13)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, old, 0o644))
+	return root
+}
+
+func commitAll(t *testing.T, root, message string) {
+	t.Helper()
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-qm", message)
+}
+
+func migratedManifestSchema(t *testing.T, root string) int {
+	t.Helper()
+	m, err := store.ParseManifest(root, []byte(readFile(t, root, ".tiller", "tiller.yml")))
+	require.NoError(t, err)
+	return m.SchemaVersion
+}
+
+func looseEventPaths(t *testing.T, root string) []string {
+	t.Helper()
+	loose, err := filepath.Glob(filepath.Join(root, ".tiller", "events", "*", "*", "*", "*.yml"))
+	require.NoError(t, err)
+	return loose
+}
+
+func daysAgo(n int) string {
+	return time.Now().UTC().AddDate(0, 0, -n).Format(time.RFC3339)
+}
+
+func TestMigrateFromThirteenCompactsOldEvents(t *testing.T) {
+	root := thirteenFixture(t)
+	old := layLooseEvent(t, root, "EV-oldold", daysAgo(10))
+	today := layLooseEvent(t, root, "EV-newnew", daysAgo(0))
+	commitAll(t, root, "schema thirteen with history")
+	looseBefore := looseEventPaths(t, root)
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+
+	require.Equal(t, 0, code, out)
+	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.NoFileExists(t, old)
+	require.FileExists(t, today)
+	segments, err := filepath.Glob(filepath.Join(filepath.Dir(filepath.Dir(old)), "*.jsonl"))
+	require.NoError(t, err)
+	require.Len(t, segments, 1)
+	var e struct {
+		Data struct {
+			Project struct {
+				Compaction *struct {
+					Days []json.RawMessage `json:"days"`
+				} `json:"compaction"`
+			} `json:"project"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &e))
+	require.NotNil(t, e.Data.Project.Compaction)
+	require.Len(t, e.Data.Project.Compaction.Days, 1)
+	require.Len(t, looseEventPaths(t, root), len(looseBefore), "the old event left and the migrate.schema event arrived")
+}
+
+// TestMigrateHumanOutputCarriesTheStageCommand pins that a migration that
+// compacted hands over the same git add line sync and compact print, so the
+// deletions and the new segments are staged together, and the skipped line.
+func TestMigrateHumanOutputCarriesTheStageCommand(t *testing.T) {
+	root := thirteenFixture(t)
+	layLooseEvent(t, root, "EV-oldold", daysAgo(10))
+	layUncarriableEvent(t, root, "EV-oddodd", daysAgo(10))
+	commitAll(t, root, "schema thirteen with history")
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc")
+
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, "Compacted 1 day of events (1 event) into 1 file. Stage them with:\n  git add -A -- .tiller/events/")
+	require.Contains(t, out, "1 event could not be compacted and stays as its own file.")
+	line := stageLine(t, out)
+	git := exec.Command("git", strings.Fields(line)[1:]...)
+	git.Dir = root
+	output, err := git.CombinedOutput()
+	require.NoError(t, err, "%s\n%s", line, output)
+}
+
+// TestMigrateSaysNothingAboutCompactionWhenNoDayFolded pins that a migration
+// whose only eligible event cannot be carried reports no compaction at all,
+// in human output or in JSON.
+func TestMigrateSaysNothingAboutCompactionWhenNoDayFolded(t *testing.T) {
+	root := thirteenFixture(t)
+	layUncarriableEvent(t, root, "EV-oddodd", daysAgo(10))
+	commitAll(t, root, "schema thirteen with an uncarriable event")
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+
+	require.Equal(t, 0, code, out)
+	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.NotContains(t, out, `"compaction"`)
+	require.NotContains(t, out, "could not be compacted")
+}
+
+func TestMigrateHumanOutputSaysNothingAboutCompactionWhenNoDayFolded(t *testing.T) {
+	root := thirteenFixture(t)
+	layUncarriableEvent(t, root, "EV-oddodd", daysAgo(10))
+	commitAll(t, root, "schema thirteen with an uncarriable event")
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc")
+
+	require.Equal(t, 0, code, out)
+	require.NotContains(t, out, "Compacted")
+	require.NotContains(t, out, "could not be compacted")
+	require.NotContains(t, out, "git add -A --")
+}
+
+func TestMigrateOnACurrentTreeDoesNotCompact(t *testing.T) {
+	root := maintenanceFixture(t)
+	old := layLooseEvent(t, root, "EV-oldold", daysAgo(10))
+	commitAll(t, root, "current with history")
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+
+	require.Equal(t, 0, code, out)
+	require.FileExists(t, old)
+	require.NotContains(t, out, `"compaction"`)
+}
+
+func TestMigrateSurvivesACompactionFailure(t *testing.T) {
+	root := thirteenFixture(t)
+	when := daysAgo(10)
+	loose := layLooseEvent(t, root, "EV-oldold", when)
+	at, err := time.Parse(time.RFC3339, when)
+	require.NoError(t, err)
+	held := events.Event{ID: "EV-oldold", Type: "start.task", At: at, Contributor: "jc", Command: "tiller start", Targets: []string{"T-aaaaaa"}}
+	raw, err := events.EncodeSegment([]events.Event{held})
+	require.NoError(t, err)
+	segment := filepath.Join(root, events.SegmentRelPath(at.UTC(), raw))
+	require.NoError(t, os.WriteFile(segment, raw, 0o644))
+	commitAll(t, root, "schema thirteen with disagreeing history")
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+
+	require.Equal(t, 0, code, out)
+	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.FileExists(t, loose)
+	require.Contains(t, out, "Event history was not fully compacted:")
+}
+
+// TestMigrateSurvivesACompactionPanic pins that a panic inside the upgrade's
+// compaction is the same warning a failure is, and maintenance goes on to
+// the identity rename and the artifact refresh.
+func TestMigrateSurvivesACompactionPanic(t *testing.T) {
+	root := thirteenFixture(t)
+	loose := layLooseEvent(t, root, "EV-oldold", daysAgo(10))
+	commitAll(t, root, "schema thirteen with history")
+	panickingCompaction(t)
+
+	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+
+	require.Equal(t, 0, code, out)
+	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.FileExists(t, loose)
+	require.Contains(t, out, "Event history was not fully compacted: segment reader exploded.")
+	var e struct {
+		Data struct {
+			Complete bool `json:"complete"`
+			Project  struct {
+				Status    string `json:"status"`
+				Artifacts struct {
+					Status string `json:"status"`
+				} `json:"artifacts"`
+			} `json:"project"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &e))
+	require.True(t, e.Data.Complete, out)
+	require.Equal(t, "complete", e.Data.Project.Status)
+	require.Contains(t, []string{"refreshed", "current"}, e.Data.Project.Artifacts.Status)
 }

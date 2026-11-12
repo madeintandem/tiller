@@ -138,6 +138,11 @@ var schemaMigrations = []schemaMigration{
 		note:  "stamp schema_version 13; bug severity is additive; preserve work, events, and active reviews without drain",
 		apply: func(d []byte) ([]byte, error) { return store.RenderSchemaVersion(d, 13) },
 	},
+	{
+		from:  13,
+		note:  "stamp schema_version 14; event history older than the compaction delay moves into day segments",
+		apply: func(d []byte) ([]byte, error) { return store.RenderSchemaVersion(d, 14) },
+	},
 }
 
 // Migrate brings root's .tiller/tiller.yml forward from its stamped

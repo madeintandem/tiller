@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const evidenceTestManifest = `schema_version: 13
+const evidenceTestManifest = `schema_version: 14
 schema_epoch: initial
 project:
   name: Evidence Serve Test
