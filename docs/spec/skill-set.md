@@ -2,7 +2,7 @@
 
 **Scope.** This document defines the skills: the reasoning procedures an AI coding agent runs against the Tiller structure, their CLI choreography, and their stopping points. It is the counterpart to [cli-surface.md](./cli-surface.md). That document defines the operations that record or expose the agent's inputs; this one defines the reasoning, normally recorded through mutations, with the explicitly requested `design-brief` export and the `code-review` review arm as read-only exceptions. The CLI surface stays canonical for the commands themselves. Where this document and that one disagree about a command, the CLI surface wins and this one gets fixed.
 
-**Status.** Current reference for the eleven skills embedded in Tiller v0.23.0 (schema 14, orientation generation 60). A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
+**Status.** Current reference for the ten skills embedded in Tiller (stamped v0.23.0, schema 15 and orientation generation 61). `decompose` absorbed the former `intake` skill; `intake` remains only as the command a person runs. A checkout picks up these skills when `tiller join` or `tiller upgrade --project-only` refreshes its generated instructions. The [roadmap](../roadmap.md) says which surfaces are not built yet.
 
 ---
 
@@ -48,7 +48,7 @@ The third is the **node reference convention.** When a skill names a node to the
 
 The fourth is **developer authorship.** The developer owns and is responsible for the work. No agent identifies itself, a model, provider, or harness as an author or contributor in any output, including code, comments, docs, commit messages, PR titles and descriptions, issues, reviews, reports, and replies. Generated-by notices, agent signatures, badges, footers, and agent co-author trailers are prohibited. Use the developer's configured Git identity, never an agent author or committer identity or an invented human identity. Describe the work, its reasoning, and observed verification rather than the tool that produced it. Preserve necessary technical references, real human credits, and required third-party notices. Every skill inherits this rule from `.tiller/orientation.md`; `orient` introduces it and `execute` checks authored content and publication text, including template and host-tool defaults, before committing or posting. This is agent guidance, not CLI enforcement or a rewrite of existing history.
 
-The fifth is **external references.** The canonical writing rule is stated once in the **External references** section of `tiller guide orient`; decompose, specify, capture, intake, and amend point to that section rather than copying it. The generated orientation points there as well. The rule governs provenance of authored links, not implementation craft, lifecycle approval, or a rewrite of accepted history.
+The fifth is **external references.** The canonical writing rule is stated once in the **External references** section of `tiller guide orient`; decompose, specify, capture, and amend point to that section rather than copying it. The generated orientation points there as well. The rule governs provenance of authored links, not implementation craft, lifecycle approval, or a rewrite of accepted history.
 
 Guidance must be complete in the skill text the binary serves. The main file carries the trigger and Reasoning, Choreography, and Hand-off sections, including any lifecycle readout instructions. `design-brief` carries its complete seven-part output contract in that single file. No reference-file loader or extra dependency is introduced for this export.
 
@@ -58,7 +58,7 @@ Guidance must be complete in the skill text the binary serves. The main file car
 
 Approval accepts a basis and preserves structural history; it does not turn every later correction into an amendment. Skills classify explicit human review feedback by what changes and by the affected node's state:
 
-Before negotiating structural placement, load the relevant installed guide and supported command help. Use read-only show/status/query and history inspection to check affected nodes, every descendant's prior starts and execution/review history, source and destination parents, accepted bases, dependencies, effective direct/inherited question holds, and review grain. Never discover capability by trial mutation or an invented dry-run flag. Separate the recommended product outcome, what the installed binary can apply, and the smallest safe alternative before asking unresolved product questions. Repository facts are not questions for the developer. Amend and intake perform this preflight before placement; decompose, specify, and orient reuse the same rules.
+Before negotiating structural placement, load the relevant installed guide and supported command help. Use read-only show/status/query and history inspection to check affected nodes, every descendant's prior starts and execution/review history, source and destination parents, accepted bases, dependencies, effective direct/inherited question holds, and review grain. Never discover capability by trial mutation or an invented dry-run flag. Separate the recommended product outcome, what the installed binary can apply, and the smallest safe alternative before asking unresolved product questions. Repository facts are not questions for the developer. Amend and decompose (on a later document) perform this preflight before placement; specify and orient reuse the same rules.
 
 | Correction class | Route |
 |---|---|
@@ -97,15 +97,14 @@ One skill dispatches; eight carry lifecycle/operator seams; design-brief is an e
 |---|---|---|---|
 | `orient` | you enter a Tiller repo or choose unrelated next work | how to read state, relay the ranked next list, and pick the top agent move | a briefing that ends the reply on the list; the developer's next message redirects or lets the top agent move start; reported merges/acceptance decisions re-enter related execute instead |
 | `derive-baseline` | brownfield or legacy-migration has no confirmed baseline doc | undocumented code to as-is docs, or existing material to reconciled translations or pointers with provenance | committed docs and ledger, complete baseline readout, then human per-doc confirmation |
-| `decompose` | to-be inputs exist but the tree does not reflect them | inputs to a draft epic and feature tree | `add epic` / `add feature`, left in `draft` |
+| `decompose` | to-be inputs exist but the tree does not reflect them, or `tiller intake` landed a later document and opened a draft amendment, or the developer hands over a document that critiques or redirects the work | one set of rules for what becomes an epic, feature, task, question, or shelf item, and two ways to record it: a draft tree for the founding design, an amendment of held drafts for a later document | a committed draft tree left in `draft` for `approve epic`, or a draft amendment handed over with `tiller propose amendment` for the human's `approve amendment` |
 | `specify` | the human pulls a `draft` feature forward | the specification, the acceptance contract, and the task explosion | `spec feature`, to `specced` |
 | `execute` | authorized ready, in-progress, or checked work; requested changes or acceptance re-entry; coarse finish line or reported merge | the protocol and discipline of the bounded work loop | prepared acceptance review, published formal submission, or integration-branch closeout, stopping at the exact human decision or real blocker |
 | `capture` | an investigation or developer description identifies a concrete bug, chore, or tweak | one complete shelf contract with provenance, attachment, and shelf dependencies where applicable | a committed `proposed` shelf node awaiting human triage |
 | `mend-drift` | `tiller drift` flags a candidate | a drift candidate to a drafted fix | a diff for the human to approve |
-| `amend` | a change reshapes the plan, a drift cascade is too big to mend, or the code shifted under planned work | the existing tree and code to corrections plus a staged reshape | edits cleared by `approve --refresh-basis`, and a `proposed` amendment awaiting the human's `approve amendment` |
-| `intake` | a document written outside the tree critiques or redirects the work, or `tiller intake` already landed one with nothing staged | the feedback, mapped onto a staged explosion of epics, features, tasks, and questions, every operation sourced | a proposed, sourced amendment awaiting the human's `approve amendment` |
+| `amend` | a change reshapes the plan, a drift cascade is too big to mend, or the code shifted under planned work | the existing tree and code to corrections plus a staged reshape | edits cleared by `approve --refresh-basis`, and an amendment handed over with `tiller propose amendment` for the human's `approve amendment` |
 | `design-brief` | the developer explicitly requests a UI/UX design brief or prototype handoff for an epic, feature, or task | scoped requirements, source authority, journeys, states, constraints, and acceptance coverage | one self-contained Markdown snapshot, with no lifecycle mutation or terminal readout |
-| `code-review` | the developer explicitly requests a code review of one epic, feature, task, bug, chore, or tweak, or names rows of an existing review | the node's net change reviewed read-only into graded findings, then named rows recorded through capture and intake shapes | one uncommitted review file and a summary table; on disposition, one commit of `proposed` shelf nodes and at most one `proposed` amendment |
+| `code-review` | the developer explicitly requests a code review of one epic, feature, task, bug, chore, or tweak, or names rows of an existing review | the node's net change reviewed read-only into graded findings, then named rows recorded through capture and decompose shapes | one uncommitted review file and a summary table; on disposition, one commit of `proposed` shelf nodes and at most one `proposed` amendment |
 
 ### orient
 
@@ -189,7 +188,7 @@ The human edits these human-owned docs in place or rejects the translation, then
 
 ### decompose
 
-**Trigger.** To-be inputs exist under `design/`, files the baseline ledger neither registers nor cites as sources, but the epic and feature tree does not reflect them; or a new design doc landed that the tree does not yet reflect; or the developer explicitly names decompose. An empty tree with only as-is docs has nothing to decompose.
+**Trigger.** Two doors lead here, and the door decides how the result is recorded. The founding design: to-be inputs exist under `design/`, files the baseline ledger neither registers nor cites as sources, but the epic and feature tree does not reflect them; or a new design doc landed that the tree does not yet reflect; or the developer explicitly names decompose. An empty tree with only as-is docs has nothing to decompose. A document that an amendment names as its source is never a founding design. A later document: `tiller intake <file or folder>` has landed it under `.tiller/design/` and opened a `draft` amendment carrying it as `source` with nothing staged, which `tiller guide` names as this move; or the developer hands the agent a document written outside the tree that critiques or redirects the work (a code review, a product critique, user research, any prose making a case for change); or a forward-work question cites a source the human has now said to build, even on a tree with no epics yet. An amendment a developer opened by hand has no source document and is `amend`'s.
 
 **Reasoning.** Read the design docs, the `current_state` layer, and brownfield `code` surfaces. `tiller check readiness` checks input presence and manifest coherence, not product richness. Infer supported actors, outcomes, and delivery progression through the full known initial scope before choosing containers. Propose a defensible sequence; record consequential missing information as questions rather than inventing journeys or defaulting to subsystems. Epics are bounded delivery increments, not permanent ownership buckets; related capabilities may recur in later epics. Features carry independently acceptable outcomes and contracts satisfiable within their own scope. Keep one unfinished feature where no honest acceptance boundary exists; a simulated experience requires explicit prototype intent. Tasks may be technical execution units, not individually end-user-useful products.
 
@@ -226,7 +225,11 @@ tiller order epic import-foundation first-import bulk-import
 # Stop for the human's epic approval; features remain draft until specified and approved.
 ```
 
-**Hand-off.** Up to the human, who reviews the draft tree and approves it. `decompose` never approves. Approval is the first gate of the arc, not its end: once the human approves the epic tree, the next move is theirs, choosing from the frontier which feature to pull forward, and `specify` runs against only what they name, just in time, never the whole draft tree. There is no craft exit: decomposition reads code to understand it and never writes any.
+**What becomes what.** One set of rules maps a document onto the tree whichever door it came through. Work with a statable acceptance contract becomes a feature, under an existing epic when it serves that epic's bounded outcome and under a new epic for a distinct outcome or delivery phase. A correction inside an existing feature's scope becomes a task, added only under a feature that is already approved, since a new feature's tasks come from `specify`. A judgment call the document explicitly declines to make becomes a question. A concrete defect, chore, or tweak goes straight onto its shelf as a proposed item citing the document, as `capture` writes one, and waits for its own triage; shelf items are never amendment operations. An ordering claim is never a node: a true prerequisite is a `tiller link`, a preferred sequence is `tiller order`, and the narrative names the difference. Every finding is mapped with an honest source citation, and a folder is read as one body. The rules that were written in two skills now live here, so they cannot drift; `capture` keeps its own trigger for a defect found outside any document.
+
+**Recording an amendment.** For a later document the agent reads the landed document whole, then stages each add with `tiller amend --add-epic`, `--add-feature`, and `--add-task`, which create inert held drafts at once, every operation carrying `--source` (for a folder, one file per operation). It finishes each held draft with the ordinary commands: writes the epic and feature narratives and each held task's `task.md` (approval promotes it without a second look), links dependencies and surfaces under the same completeness bar as a draft tree, and corrects in place with `tiller rename` and `tiller remove`. Changes to existing work are staged through `amend`'s surface and cannot be edited once staged. It writes the amendment's narrative, then hands it over with `tiller propose amendment`, including when nothing was staged: an empty amendment is a result worth recording, and the human sees "nothing proposed from this document" with the withdraw command beside it.
+
+**Hand-off.** Up to the human, who reviews the draft tree and approves it. `decompose` never approves. Approval is the first gate of the arc, not its end: once the human approves the epic tree, the next move is theirs, choosing from the frontier which feature to pull forward, and `specify` runs against only what they name, just in time, never the whole draft tree. There is no craft exit: decomposition reads code to understand it and never writes any. On the amendment route the gate is the amendment's: the human runs `tiller approve amendment` once for the whole document, which promotes each held epic and each held task to `ready`, leaves each held feature a `draft` for `specify`, and applies the staged changes to existing work atomically; `tiller withdraw amendment` removes every draft it still holds. Approve and withdraw run only on an explicit human instruction naming the amendment. There is no `tiller readout intake`, the same deliberate omission `mend-drift` carries; the amendment route ends in a handed-over amendment, not a rendered seam block.
 
 ### specify
 
@@ -437,7 +440,7 @@ tiller add task form-engine/certification-form-loading/csp-regression \
 tiller approve task form-engine/certification-form-loading/csp-regression
 ```
 
-For a structural reshape, open the amendment, write its narrative, stage the operations, show the batch, and stop.
+For a structural reshape, open the amendment, write its narrative, stage the operations (each add creates a held draft to finish with the ordinary commands), show the batch, hand it over with `tiller propose amendment`, and stop.
 
 ```
 tiller drift                                               # when a cascade brought you here, read it first
@@ -450,8 +453,8 @@ tiller add amendment form-engine-rework \
 # resolves only against operations already on this amendment
 # new scope this review also names: an epic. Stage it first and a later
 # add-feature in this same amendment may name it as parent (epic before
-# feature is the order that makes it legal); add-task's feature must still
-# be live in the tree, never a same-batch staged one
+# feature is the order that makes it legal); add-task's feature must already
+# be approved in the tree, never one this amendment holds
 tiller amend form-engine-rework --add-epic print-layouts --title "Printable form layouts"
 tiller amend form-engine-rework --add-feature print-layouts/pdf-export \
   --change-type create --title "PDF export" \
@@ -491,71 +494,7 @@ tiller readout amend
 
 **Readout.** `tiller readout amend` closes the reply, naming what is proposed, how many operations each batch stages, and how those preconditions read against the live tree right now. The notes ahead of it carry more weight at this seam than at any other, because what the block cannot know is most of the judgment: the radius that was read and what was deliberately left standing, which nodes were sorted as corrections rather than casualties and the refresh each of those needs, the reason behind each destructive operation, the behavior a replacement has to preserve, and any precondition already reading stale that the human has to settle before the gate can land.
 
-**Hand-off.** Up to the human, whose `approve amendment` is the one act that executes the supersessions, cancels, revisions, and materializations the skill only ever staged, and it applies them as one batch or not at all. `withdraw amendment` is the escape, on the same explicit-instruction terms. Out to craft for the rework itself, which once the amendment is applied runs through `execute` like any other work, and back through `specify` for a materialized feature when the human pulls it forward.
-
-### intake
-
-**Trigger.** The developer hands the agent a document written outside the tree that critiques or redirects the work, a code review, a product critique, user research, any prose making a case for change rather than describing work already agreed. Or `tiller intake <file>` has already run: the document is landed under `.tiller/feedback/`, a proposed amendment carries it as `source`, and nothing is staged yet. That includes a source a forward-work question cites, once the human answers that they want it built, even on a tree with no epics yet.
-
-**Reasoning.** Land the document if needed and read the entire artifact before mapping it. A changed document is a new intake, not an edit to the fingerprinted source. Before placement, run the correction matrix's read-only feasibility preflight against installed help and affected history, settings, and holds. Explain outcome, installed capability, and safe alternative separately. Then map requested outcomes onto bounded increments without disguising legitimate technical, security, or platform work as invented customer-facing scope. A statable acceptance contract becomes a feature under the epic whose bounded outcome it serves, or a new increment for a distinct outcome or later delivery phase. A same-outcome correction can become a task under an existing feature; a done parent alone is not a reason to create a new container. Preserve completed history and use ordinary sync and approval for continuation, never cancelled or archived ancestors.
-
-An unresolved judgment becomes a question, not an invented decision. Split findings across justified increments when needed without losing coverage. Every staged operation cites honest source lines with `--source`, conventionally `path#Lstart-Lend`; the CLI checks presence, while the agent and human review source fidelity. A staged epic may parent features staged later in the same amendment. A task's feature must already exist; new features receive tasks later through ordinary specification. Question `--blocks` may name earlier staged keys.
-
-Confine reshaping to the requested affected scope; broader replanning needs developer direction. Separate preferred order from actual prerequisites in the narrative, name affected existing work, and identify legal post-materialization `tiller order` or `tiller link` actions. Amendment cannot link, unlink, or order. Eligible unchanged feature relocation uses sourced `move-feature` operations and the same refusal/approval boundary as amend; genuine scope replacement still uses cancellation/supersession. Never promise a new hard edge on unchanged started work, a move with started descendants, automatic narrative ordering, or approval without the human decision.
-
-An `add-epic` operation has one automatic ordering consequence when approval materializes it: the fresh epic id receives a default final root ordinal, appended after the existing root soft order in staged order and in the same approval transaction. This does not turn the reviewer's narrative into intended placement, fill an existing partial list, or order features or tasks. When the feedback intends a different explicit sequence, intake still records that claim in the amendment narrative and points to `tiller order epic ...` after approval; that verb remains the replace or clear surface.
-
-**Choreography.** Land the document if it is not landed, read it whole, map each finding to its rule, cite every op, write the narrative, then stop for the human.
-
-```
-tiller intake docs/feedback/opus-review.md --contributor robin
-# lands .tiller/feedback/opus-review.md and opens amendment opus-review with source
-# set and nothing staged; read the landed document whole before mapping anything below
-
-# new scope the review names: an epic, staged FIRST, so the features it
-# parents can name it as their parent in this very same amendment
-tiller amend opus-review --add-epic hardening --title "Hardening" \
-  --source .tiller/feedback/opus-review.md#L1-9
-# a statable contract under the epic just staged above: epic before feature,
-# in this one amendment, is the order that makes this legal
-tiller amend opus-review --add-feature hardening/csp-headers \
-  --change-type create --title "CSP headers" \
-  --source .tiller/feedback/opus-review.md#L10-15
-# a statable contract under the EXISTING form-engine epic: a feature,
-# resolved the ordinary way, against the live tree
-tiller amend opus-review --add-feature form-engine/csrf-token-rotation \
-  --change-type create --title "CSRF token rotation" \
-  --source .tiller/feedback/opus-review.md#L16-21
-# a correction inside an existing feature's scope: a task, on the PRE-EXISTING
-# feature form-engine/certification-form-loading, never on either feature staged
-# above, since a new feature's task explosion is specify's own act
-tiller amend opus-review --add-task form-engine/certification-form-loading/csp-regression-test \
-  --title "Add a CSP regression test" \
-  --source .tiller/feedback/opus-review.md#L34-36
-# a judgment call the review explicitly declines: a question, not a decision
-# invented here. --blocks may name a key staged earlier in this same call,
-# even the same-batch epic's own feature above
-tiller amend opus-review --add-question "Keep or trim the legacy image parsers?" \
-  --title "Legacy image parsers" \
-  --blocks hardening/csp-headers \
-  --source .tiller/feedback/opus-review.md#L48-52
-# an ordering claim is never an op: name it in the narrative for the human to apply
-# once the batch lands (tiller link feature ... --depends-on ..., tiller order epic ...)
-# write the distilled narrative over the stub at .tiller/amendments/<A-id>-opus-review.md
-
-tiller show amendment opus-review          # the whole batch, every op sourced
-git add -- <each-reviewed-feedback-proposal-and-output-path>
-git diff --cached -- <same-exact-paths>
-git commit --only -m "intake: stage the opus review explosion" -- <same-exact-paths>
-# stop. the human reads the narrative and the batch beside the git diff; on their explicit
-# instruction naming the amendment you may run the gate yourself, otherwise hand them
-# `tiller approve amendment opus-review`, or the escape,
-# `tiller withdraw amendment opus-review --reason "<why it is dropped>"`.
-```
-
-**Hand-off.** Up to the human. `tiller approve amendment` is the one act that materializes the epics, features, tasks, and questions this skill only ever staged, atomically: every precondition and the amendment's own source both validate first, and then all of it lands or none of it does. A materialized task lands unclaimed, same as one added by hand; feature/epic nodes have no owner and amendment approval does not assign tasks. `withdraw amendment` is the escape, on the same explicit-instruction terms. Out to `specify` for a materialized feature once the human pulls it forward, to `execute` for a materialized task once it clears its own `approve task`, and to `tiller answer question` for a materialized question, the same as any question regardless of how it landed; a materialized epic clears `approve epic` before either starts. There is no `tiller readout intake`, the same deliberate omission `mend-drift` carries: intake's edge of done is a staged batch for the human to approve, not a rendered seam block.
-
-Approval's root-order append is part of the same all-or-nothing hand-off: every epic this approval freshly materializes lands with its default final root ordinal, while every pre-existing entry and omission stays untouched. If the human wants one of those epics placed anywhere else, the next explicit act is `tiller order epic ...`, not a different amendment operation.
+**Hand-off.** Up to the human, whose `approve amendment` is the one act that executes the supersessions, cancels, revisions, and materializations the skill only ever staged, promoting the drafts the amendment holds, and it applies them as one batch or not at all, once the agent has handed the amendment over with `tiller propose amendment`. `withdraw amendment` is the escape, on the same explicit-instruction terms. Out to craft for the rework itself, which once the amendment is applied runs through `execute` like any other work, and back through `specify` for a materialized feature when the human pulls it forward.
 
 ### design-brief
 
@@ -617,7 +556,7 @@ That agnosticism is a hard rule, not an aspiration. **A skill may use only what 
 
 This buys a backstop worth the discipline. Because a skill is just a file and `tiller` is just a CLI, the lowest-common-denominator harness, a local open-weights model with a shell and no skill system at all, can use Tiller completely: run `tiller`, read the skill. A richer harness gets description-triggered activation for free; a bare one loses nothing essential. To make the guidance reachable without depending on the harness at all, the CLI surfaces it directly, since `tiller guide` prints the skill for the current state, so the same reasoning a fancy harness auto-loads is one command away in any of them.
 
-Tiller embeds eleven neutral skills. Join installs eleven gitignored catalog-derived discovery shims during onboarding; upgrade and project-only maintain them alongside orientation, harness managed regions, and required ignore entries. The shims delegate full bodies to `tiller guide`; stable generated ownership markers permit conservative obsolete-shim cleanup without deleting custom skills or extra files. Maintenance touches only this resolved checkout and can refresh current schema without identity; teammates pull a reviewed migration and maintain their own checkouts. Do not hand-edit installed shims or generated orientation.
+Tiller embeds ten neutral skills. Join installs ten gitignored catalog-derived discovery shims during onboarding; upgrade and project-only maintain them alongside orientation, harness managed regions, and required ignore entries. The shims delegate full bodies to `tiller guide`; stable generated ownership markers permit conservative obsolete-shim cleanup without deleting custom skills or extra files. Maintenance touches only this resolved checkout and can refresh current schema without identity; teammates pull a reviewed migration and maintain their own checkouts. Do not hand-edit installed shims or generated orientation.
 
 ---
 
@@ -656,6 +595,9 @@ Each line is a settled decision; the sections above carry the current contracts,
 - `capture` proposes one complete shelf contract and stops for human triage.
 - `capture` owns the bug severity scale and grades every bug it files, or leaves it unrated with the reason in the contract; `code-review` grades from that table and records the grade as the field; `execute` never regrades. (JC, 2026-11-01)
 - `derive-baseline` records unbuilt capabilities as questions rather than deciding to build them.
+- One skill, `decompose`, owns the rules for what a document becomes and two ways to record it, a draft tree for the founding design and an amendment of held drafts for a later document. The `intake` skill is retired and `intake` remains only the command; the skill count falls from eleven to ten and the orientation generation moves to 61. (JC, 2026-11-11)
+- Bugs, chores, and tweaks a document yields go straight onto their shelves through `capture`'s contract, never into an amendment. (JC, 2026-11-11)
+- An agent hands an amendment over with `tiller propose amendment` when it has finished staging, including an empty one; it never approves. (JC, 2026-11-12)
 
 ---
 

@@ -3,8 +3,8 @@ title: Quickstart
 description: Complete a scratch project with the v0.23.0 release.
 ---
 
-This walkthrough is for **v0.23.0**. It uses schema **13**, orientation generation
-**59**, and **eleven skills**. Tasks are claimed and started one at a time, each on
+This walkthrough is for **v0.23.0**. It uses schema **15**, orientation generation
+**61**, and **ten skills**. Tasks are claimed and started one at a time, each on
 its own branch, and maintenance runs through `tiller upgrade`. The longer
 [source walkthrough](/tiller/source-quickstart/) covers the same contract in more
 detail, including existing code, review grain, bugs, and ownership transfer.
@@ -34,8 +34,8 @@ git init -b main
 tiller init --name "Acme Platform" --key acme --kind greenfield
 tiller add contributor robin --name "Robin Hale"
 tiller join --as robin
-mkdir -p .tiller/design
-printf '# Acme\n\nA small application with a health route.\n' > .tiller/design/overview.md
+printf '# Acme\n\nA small application with a health route.\n' > /tmp/acme-overview.md
+tiller intake --no-amendment /tmp/acme-overview.md
 git add -A
 git commit -m "Initialize Acme planning"
 tiller check readiness
@@ -43,9 +43,10 @@ tiller guide
 ```
 
 Use your own contributor ID and full name. Registration is committed; `join` selects
-that identity for this checkout and installs eleven gitignored skill shims for
-Claude Code. A greenfield project with design inputs and a contributor starts at
-decomposition, so `tiller guide` names the `decompose` skill. For an existing
+that identity for this checkout and installs ten gitignored skill shims for
+Claude Code. `tiller intake --no-amendment` lands the design (a file or a folder) under
+`.tiller/design/` as the founding design and opens no amendment. A greenfield project with a
+landed design and a contributor starts at decomposition, so `tiller guide` names the `decompose` skill. For an existing
 repository, use `--kind brownfield` and follow `tiller guide derive-baseline`:
 existing docs and code need a reviewed baseline before decomposition.
 

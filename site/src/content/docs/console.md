@@ -57,7 +57,7 @@ When the recorded dependencies have a problem, such as two tasks that depend on 
 The action queue is what currently needs you, and it's the part that makes the console a console and not a dashboard. Nothing in it clears on its own, so the work sits parked until you act. It gathers:
 
 - epics awaiting approval of their decomposition, and features specced and awaiting approval of their plans;
-- later-added tasks awaiting approval, and amendments staged, leading the queue since a staged reshape can supersede or cancel what the rows below it ask about;
+- later-added tasks awaiting approval, and amendments the agent has handed over with `tiller propose amendment`, leading the queue since a reshape can supersede or cancel what the rows below it ask about (one that proposes nothing shows a withdraw card instead, and an amendment still being staged shows nothing); the drafts an amendment holds never get approval rows of their own;
 - questions due for an answer;
 - optional review gates and eval criteria still waiting on a human for in-review work;
 - a feature whose every task is done with a required feature-grain gate unrecorded, parked here because nothing else in the tree is going to run it;
@@ -134,7 +134,7 @@ and links to Questions and Amendments. Search opens from the search field in the
 there is no dedicated Search tab, but direct search URLs still work. Questions carries
 only its open-count badge, with no total count. Amendments opens its own ledger without
 inherited filters. Both ledgers keep the navigator beside them, keep Explore highlighted in
-the top bar, and narrow by status from a rail of tabs, each with its count.
+the top bar, and narrow by status from a rail of tabs, each with its count. The Amendments rail adds a Draft tab for an amendment the agent is still staging; its page says so, lists each draft it holds with a link that opens it, and shows a draft removed by hand as a `Removed` line with its reason. A draft an open amendment holds appears in Browse, Build, and the map where its status puts it, with an "In amendment" flag in words.
 
 - **Browse** shows the work tree as a real tree, epics to features to tasks, with chevrons, indent guides, and a status glyph on every row whose shape, not only its color, says the state, alongside entry points for the cross-cutting artifacts: amendments, decisions, design docs. Bugs, Chores, and Tweaks are independent shelf branches below the epics, each with its own expansion state, and a direct address to a shelf node opens the matching branch; all are valid filter nouns too.
 - **The questions ledger** opens from the navigation strip, with only the open count in the accent badge. The questions page lists every question, open ones first with id and short title, due date, what they block, and copyable commands to answer, cancel, or unlink one of the things it blocks, and answered ones staying listed with their answers inline. A fixed Cancelled tab lists cancelled questions, each card showing the reason it needed no decision. The full statement is one click away on the question's own page.
@@ -192,11 +192,11 @@ The visit horizon is yours to move. Viewing History never advances it; the `Mark
 
 Every node-owned drill, queue item, History entry, and search result lands on the same node page, one consistent surface instead of a layout per type. It renders inside Explore's shell, with the browse navigator standing at its left, opened to the node's own position in the tree.
 
-No gate crossing happens blind. Opening a queue item lands you on the node it asks about, with what the action would change rendered in full: a decomposition as the tree of proposed nodes with their change types and provenance, an amendment as its staged operations, a feature as its spec and eval criteria. The exact command sits beside it, copyable. The console never writes. You run the command in your terminal, and the page picks up the result on its next refresh.
+No gate crossing happens blind. Opening a queue item lands you on the node it asks about, with what the action would change rendered in full: a decomposition as the tree of proposed nodes with their change types and provenance, an amendment as its staged operations and the drafts it holds, a feature as its spec and eval criteria. The exact command sits beside it, copyable. The console never writes. You run the command in your terminal, and the page picks up the result on its next refresh.
 
 ### The header
 
-The header reads as a chain. Ancestors render as a breadcrumb, each crumb carrying its own state chip, with a separator between crumbs and none after the last. Below that sits a kind line, the noun on a solid kind pill (Epic, Feature, Task, Bug, Chore, Tweak, Question, or Amendment) beside the node's own state chip at a hero size a step above the crumbs' chips, with the recorded gate ticks and any Drifted, Held, or review-grain chip on the same line.
+The header reads as a chain. Ancestors render as a breadcrumb, each crumb carrying its own state chip, with a separator between crumbs and none after the last. Below that sits a kind line, the noun on a solid kind pill (Epic, Feature, Task, Bug, Chore, Tweak, Question, or Amendment) beside the node's own state chip at a hero size a step above the crumbs' chips, with the recorded gate ticks and any Drifted, Held, review-grain, or "In amendment" chip on the same line. The last marks a draft an open amendment holds and links to that amendment.
 
 Then the title stands alone, then one quiet mono reference line carries the canonical key path with the id in parentheses and a copy affordance, so two nodes that happen to share a title are still tellable apart. An epic or a feature adds the children's state bar beneath that, with a count caption such as "5 features · 5 done."
 

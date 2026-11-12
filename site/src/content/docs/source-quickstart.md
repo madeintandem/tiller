@@ -5,8 +5,8 @@ description: Run the current source build through project setup, human gates, ta
 
 From a repository to a tree you can see. The walkthrough uses a greenfield scratch project called Acme, with an existing-code path below; ids and commit hashes are illustrative.
 
-This page documents version **0.23.0**, schema **13**, orientation generation
-**59**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
+This page documents version **0.23.0**, schema **15**, orientation generation
+**61**, and **ten embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
 installs the v0.23.0 release instead of building from source.
 
 ## Build the matching source
@@ -58,12 +58,14 @@ exists; the evals gate is already active.
 
 `--kind` describes the relationship to code that predates Tiller adoption: `greenfield` for a new system, `brownfield` for this repository's existing system, or `legacy-migration` for a new system replacing an old reference system. It does not restrict later feature change types. A greenfield project's own shipped code can later be modified, replaced, or migrated without changing kind. `init` scaffolds `.tiller/` and writes `.tiller/orientation.md`, the generated page an agent reads first.
 
-Then put a design input in place, as the first **Next** step says. For this walkthrough one short page is enough:
+Then bring a design input in, as the first **Next** step says. A document comes in through `tiller intake`, as a file or a folder from anywhere on disk, and you never place files under `.tiller/` by hand. With no epics yet, `--no-amendment` lands it as the founding design and opens no amendment. For this walkthrough one short page is enough:
 
 ```sh
-mkdir -p .tiller/design
-printf '# Acme\n\nA small application with a health route.\n' > .tiller/design/overview.md
+printf '# Acme\n\nA small application with a health route.\n' > /tmp/acme-overview.md
+tiller intake --no-amendment /tmp/acme-overview.md
 ```
+
+The page lands at `.tiller/design/acme-overview.md`. A folder lands under its own name with its relative paths kept, and a name already under `design/` is refused rather than overwritten.
 
 ### Bringing existing code
 
@@ -146,7 +148,7 @@ existing-code kinds until one ledger doc is confirmed, and `missing_design_doc` 
 prose in every kind. A ledger alone does not satisfy non-empty design. One confirmation releases
 the startup baseline route, even when other docs remain unconfirmed; other readiness gaps still
 need repair. With no tree, decompose is next only when a to-be design doc exists under
-`.tiller/design/`; otherwise Tiller reports that no work is planned and names how work enters.
+`.tiller/design/` that no amendment cites as its source; otherwise Tiller reports that no work is planned and names how work enters (`tiller intake`).
 Build and test gate configuration
 is not a readiness prerequisite.
 
@@ -185,7 +187,7 @@ Project files kept current: orientation.md (generation 57).
   tiller guide      lists your ranked next moves and the skill that fits
 ```
 
-`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the eleven current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
+`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the ten current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
 
 Init seeds `.gitignore` only if it is missing. Join adds missing Tiller-owned ignore groups,
 including the local identity, the optional `.tiller/local.yml` preferences file, cache, skill shims, `/.bin/`, and `/artifacts/tiller/`, while leaving
@@ -213,10 +215,10 @@ Epics 0  Features 0  Tasks 0  Questions 0
 
 ```
 Up next for robin:
-1. Agent: decompose. No epics recorded yet; 1 to-be design doc awaits decomposition, starting with .tiller/design/overview.md. `tiller guide decompose`
+1. Agent: decompose. No epics recorded yet; 1 to-be design doc awaits decomposition, starting with .tiller/design/acme-overview.md. `tiller guide decompose`
 
 Suggested skill: decompose
-The tree is undecomposed; lay a draft epic and feature tree for the human to approve. No epics recorded yet; 1 to-be design doc awaits decomposition, starting with .tiller/design/overview.md.
+The tree is undecomposed; lay a draft epic and feature tree for the human to approve. No epics recorded yet; 1 to-be design doc awaits decomposition, starting with .tiller/design/acme-overview.md.
 queue: 0 bugs, 0 chores, 0 tweaks ready
 Run `tiller guide decompose` to load it.
 ```
@@ -225,7 +227,7 @@ Run `tiller guide decompose` to load it.
 
 ## Hand it to your agent
 
-Open your coding agent in the repository and ask it to decompose the project once `tiller check readiness` passes. Put new inputs under `.tiller/design/`; for existing in-repo docs use the move-or-pointer choice above. `init --design <dir>` imports only on the first scaffold, not now. The agent reads the block in `AGENTS.md`, then `orientation.md`, then `tiller guide decompose`, and lays the tree down as narrative through the CLI. For Acme that looked like this:
+Open your coding agent in the repository and ask it to decompose the project once `tiller check readiness` passes. Bring later documents in with `tiller intake <file or folder>`, which opens a draft amendment the agent decomposes into drafts it holds until you approve the amendment once; for existing in-repo docs use the move-or-pointer choice above. `init --design <dir>` imports only on the first scaffold, not now. The agent reads the block in `AGENTS.md`, then `orientation.md`, then `tiller guide decompose`, and lays the tree down as narrative through the CLI. For Acme that looked like this:
 
 Ask for a product progression through the full known initial scope, not an exhaustive platform followed by its consumers. For example, documented invoice workflows might justify a small runnable foundation, issuing one invoice, collecting its payment, and only then bulk billing and reconciliation. Bound the first foundation to the first workflow's needs; keep later shared capabilities in the later increments rather than dropping them or prebuilding them. An epic is a delivery increment, not a permanent billing bucket. The compact Acme commands below illustrate the lifecycle; a real decomposition includes all known outcomes and explains its boundaries in the epic and feature narratives.
 

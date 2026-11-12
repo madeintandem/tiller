@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v0.23.0 exposes (schema 14, orientation generation 60, eleven embedded
+Every command Tiller v0.23.0 exposes (schema 15, orientation generation 61, ten embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
@@ -9,7 +9,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | Command | What it does |
 |---|---|
 | [`tiller add`](#decompose) | Register a contributor or create a work node. |
-| [`tiller amend`](#amend-a-reshape-of-the-plan) | Stage one operation onto a proposed amendment. |
+| [`tiller amend`](#amend-a-reshape-of-the-plan) | Stage one operation onto an open amendment. |
 | [`tiller answer`](#acceptance-and-gates) | Record the answer to an open question. |
 | [`tiller approve`](#specify) | Approve a proposed plan across its start gate, an amendment, or a design doc. |
 | [`tiller archive`](#the-done-crossing-and-rollups) | Move a done epic to archived. |
@@ -25,13 +25,14 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller guide`](#orient-and-guidance) | Print a skill, or list your next moves and name the skill that fits. |
 | [`tiller help`](#help-and-shell-completion) | Help about any command. |
 | [`tiller init`](#onboard) | Scaffold a new `.tiller/` workspace. |
-| [`tiller intake`](#amend-a-reshape-of-the-plan) | Land an external feedback document and open its amendment. |
+| [`tiller intake`](#amend-a-reshape-of-the-plan) | Land a file or folder under `.tiller/design/` and open a draft amendment, or land a founding design. |
 | [`tiller join`](#onboard) | Select your identity and wire your coding agent to the project. |
 | [`tiller link`](#decompose) | Record a dependency, surface, attachment, design baseline link, or question hold. |
 | [`tiller ls`](#reads) | List nodes of a noun, optionally filtered. |
 | [`tiller migrate`](#migrate) | Migrate this checkout and refresh its generated instructions. |
 | [`tiller next`](#orient-and-guidance) | List your likely next moves, ranked. |
 | [`tiller order`](#decompose) | Record the soft order among siblings. |
+| [`tiller propose`](#amend-a-reshape-of-the-plan) | Hand a finished amendment over: draft to proposed. |
 | [`tiller query`](#relationship-discovery) | Traverse recorded work, document, and path relationships. |
 | [`tiller queue`](#reads) | List every current action-queue entry. |
 | [`tiller readout`](#orient-and-guidance) | Print the readout block for a seam. |
@@ -55,7 +56,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller unlink`](#correct-a-proposal-or-accepted-plan) | Remove dependencies, surfaces, attachments, design baseline links, or question holds. |
 | [`tiller upgrade`](#upgrade) | Update Tiller and maintain the current checkout. |
 | [`tiller usage`](#agent-usage) | Capture agent token usage from local harness logs. |
-| [`tiller withdraw`](#amend-a-reshape-of-the-plan) | Drop a proposed amendment without applying it. |
+| [`tiller withdraw`](#amend-a-reshape-of-the-plan) | Drop an open amendment without applying it. |
 
 ## Conventions
 
@@ -106,7 +107,10 @@ kind, roots, and original or absent anchor; `join` and `migrate` do not backfill
 
 Prepare docs before readiness. Reconcile existing docs against code; an import is not baseline
 confirmation. Move in-repo docs into `.tiller/design/` when ownership moves to Tiller, or put a
-pointer page there if another consumer needs the original location. External `--design` imports
+pointer page there if another consumer needs the original location. A document that arrives after
+`init` comes in through `tiller intake`, never by placing a file under `.tiller/design/` by hand;
+a founding design on a project with no epics comes in with `tiller intake --no-amendment`
+(see Amend). External `--design` imports
 are copies on the first scaffold only and never delete their sources. A valid `--design` rerun
 succeeds and says the import was skipped; it does not import or change provenance.
 Fresh imports refuse a root-level `baseline.yml` entry, case-insensitively, before writing any
@@ -138,7 +142,7 @@ tiller next                        # your ranked next moves, top five
 tiller next --all                  # every legal move, ranked
 tiller guide                       # the ranked list, then the skill for the top agent move
 tiller guide <skill>               # orient | derive-baseline | decompose | specify | execute |
-                                   # capture | mend-drift | amend | intake | design-brief |
+                                   # capture | mend-drift | amend | design-brief |
                                    # code-review
 tiller readout <seam>              # orient | derive-baseline | decompose | specify | execute | amend
 tiller readout <seam> --since <sha> # the lighter correction block instead: what the event stream
@@ -191,8 +195,8 @@ review for epic E-2hjdhh". Any epic, feature, task, bug, chore, or tweak is a va
 reviews the node's net change read-only, writes `.tiller/reviews/<date>-<node-id>.md`, and replies
 with a table of numbered findings: bugs by severity (B), tweaks (TW), chores (CH), and plan changes
 (P). Then say which to keep, for example "log bugs 1, 3, and 7, chore 2, and tweaks 1-3": bugs,
-tweaks, and chores land `proposed` through `tiller add`, and plan changes land as one `proposed`
-amendment through `tiller intake`. "fix B2 on its branch", "drop CH1", and "commit the review" are
+tweaks, and chores land `proposed` through `tiller add`, and plan changes land as one amendment
+through `tiller intake`. "fix B2 on its branch", "drop CH1", and "commit the review" are
 the other verbs. Every disposition is one commit; approval stays with you. There is no review
 command or `code-review` readout seam.
 
@@ -434,6 +438,7 @@ tiller unlink <bug|chore|tweak> <node> --detach                    # clear attac
 tiller remove task <task> --reason "<why this proposed task is removed>"
 tiller remove feature <feature> --reason "<why this task-free draft feature is removed>"
 tiller remove epic <epic> --reason "<why this task-free draft subtree is removed>"
+# a draft an open amendment holds is removable the same way; its amendment operation is marked removed
 tiller remove <bug|chore|tweak> <node> --reason "<why this proposed shelf node is removed>"
 ```
 
@@ -476,8 +481,8 @@ fields and stales feature gates as appropriate, preserving completed descendants
 archived ancestors are not executable continuation targets. A fresh task under an active feature
 can still receive legal sibling prerequisites.
 
-An amendment may stage an epic before same-batch features. A new feature's tasks follow its
-materialization through ordinary specification. Approval appends new epics to root soft order;
+An amendment may stage an epic before same-batch features. A new feature's tasks follow the
+amendment's approval through ordinary specification. Approval appends new epics to root soft order;
 intended placement requires a separate explicit `tiller order`, and hard links after approval
 still require an eligible dependent. Proposing a plan neither approves it nor authorizes broad
 replanning or arbitrary reordering of accepted work.
@@ -841,21 +846,38 @@ triage as `approve_bug`, `approve_chore`, and `approve_tweak`, plus stale carrie
 
 ## Amend (a reshape of the plan)
 
-Staging records proposals and executes nothing. One human `approve amendment` validates every
-precondition against the working tree and then applies the whole batch, or none of it.
+Staging creates inert drafts; only approval moves anything. `tiller intake` is the one way a
+document enters a project after `init`: a file or a folder, from anywhere on disk. It lands under
+`.tiller/design/` and opens a `draft` amendment holding the source, and `tiller guide` names the
+agent's next move (decompose it). An add the agent stages (`--add-epic`, `--add-feature`,
+`--add-task`) creates a real draft node at once, held by the amendment: every lifecycle verb on it
+(`approve epic`, `spec feature`, `approve feature`, `approve task`) refuses with `held_by_amendment`
+and names the amendment, while `rename`, `link`, prose edits, and `remove` stay legal. When the
+agent has finished it runs `tiller propose amendment`, and only then does the human's queue ask for
+approval. One human `approve amendment` validates every precondition against the working tree, then
+promotes the held epics and the tasks added to an approved feature to `ready` (a held feature stays
+a draft and goes through specify), applies the rest of the batch, and does all of it or none of it.
+`tiller withdraw amendment` removes every draft the amendment still holds. Bugs, chores, and tweaks
+a document yields go straight onto their shelves, not into the amendment.
 
 ```sh
 tiller add amendment <amendment-key> [--title "<title>"] [--triggered-by <design/doc.md>]... \
-  [--implements <ADR-id>]                                    # opens it, records base_revision from HEAD
-tiller intake <file> [--key <key>] [--title "<title>"]       # the other way to open one: lands <file> under
-                                                             # .tiller/feedback/, fingerprinted, source set
+  [--implements <ADR-id>]                                    # opens it in draft, records base_revision from HEAD
+tiller intake <file-or-folder> [--key <key>] [--title "<title>"] # the one door for a document: a file lands at
+                                                             # .tiller/design/<name>, a folder at .tiller/design/<folder>/,
+                                                             # fingerprinted (one per file), a draft amendment opened
+tiller intake --no-amendment <file-or-folder>                # a founding design: lands it, opens nothing; refused once
+                                                             # any epic exists (amendment_required)
 # exactly one operation per call, plus any number of --precondition name=value guards:
 tiller amend <amendment> --add-epic <epic-key> [--title "<title>"]  # a root: no parent to resolve
 tiller amend <amendment> --add-feature <epic-key>/<feature-key> [--change-type create|modify|replace|migrate] \
   [--title "<title>"]
 tiller amend <amendment> --add-task <epic-key>/<feature-key>/<task-key> --title "<what it accomplishes>"
+# each add creates a held draft at once, printed as: Staged add-epic <key> (<id>) as a draft held by <amendment> (<A-id>)
 # add-feature's epic may be live or a same-amendment add-epic staged first;
-# add-task's feature must still be live, never same-batch
+# add-task's feature must be approved (ready, active, or done) and not held by this amendment:
+# task_under_held_feature and feature_not_approved refuse; a parent held by another amendment
+# refuses as parent_held_elsewhere. A new feature's tasks come from specify.
 tiller amend <amendment> --add-question "<statement>" --title "<short title>" [--blocks <epic|feature|task|staged key>]...  # no key at all
 tiller amend <amendment> --supersede <feature|task> --by <feature|task|staged key> # done target only at approval
 tiller amend <amendment> --cancel <feature|task> --reason "<why>" [--superseded-by <feature|task|staged key>]
@@ -868,11 +890,15 @@ tiller amend <amendment> --amends-design <design/doc.md>     # rides alone or be
 # --source <citation> rides alongside any operation above, free text by convention
 # path#Lstart-Lend (more ranges of the same file after commas: path#L3-L8, #L40);
 # required on every op once the amendment it stages onto was minted by intake
+# (for a folder, cite the file inside it: .tiller/design/<folder>/<file>.md#L3-9)
 # the five precondition names: target_status, target_revision, key_absent, spec_revision, eval_revision
-tiller show amendment <amendment>                            # the batch, each precondition's live validity
-tiller approve amendment <amendment>                         # human: proposed -> approved, and applies it
-tiller withdraw amendment <amendment> --reason "<why>"       # human: proposed -> withdrawn, applies nothing
-tiller ls amendments [--status proposed]                     # what reshape is waiting
+tiller show amendment <amendment>                            # the batch, each add with its held draft, each precondition's live validity
+tiller propose amendment <amendment>                         # agent: draft -> proposed, the hand-over; idempotent
+tiller approve amendment <amendment>                         # human: proposed -> approved; promotes held drafts, applies the rest
+                                                             # (a draft or an empty amendment refuses: amendment_not_proposed,
+                                                             # amendment_empty, which names withdraw)
+tiller withdraw amendment <amendment> --reason "<why>"       # human: draft or proposed -> withdrawn; removes held drafts
+tiller ls amendments [--status draft|proposed]               # what reshape is waiting
 tiller readout amend                                         # the staged batches and their live preconditions
 ```
 

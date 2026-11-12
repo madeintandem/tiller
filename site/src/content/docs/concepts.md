@@ -276,7 +276,7 @@ Before approval, prose feedback re-enters the proposal seam. `decompose` can ren
 
 Approving a feature plan pins its spec and contract, and each task's spec, as `accepted_against` revisions. Edit one afterwards and tiller reports `active_basis`, and `start`, `check`, and `submit` refuse until a human follows the refresh, return, or amendment route above. `tiller drift` sweeps the other markers too: a done node whose spec or code surface no longer matches what was verified (`stale_spec`), a plan made under an assumption whose answer has since arrived (`answered_question`), or a recorded surface or eval reference that no longer exists. Detection is tiller's, the proposed fix is the agent's through `mend-drift`, and approval is the human's.
 
-`tiller intake` starts the amendment path from an external review or field report. It lands the document under `.tiller/feedback/` and opens the proposed amendment it implies. The agent still classifies each finding first, so lightweight corrections stay direct and only the structural casualties enter the batch.
+`tiller intake` is the one door for a document after `init`, whether an external review, a field report, or a one-page feature idea. It takes a file or a folder from anywhere on disk, lands it under `.tiller/design/`, and opens a draft amendment that cites it. The agent decomposes the document into that amendment: each new epic, feature, or task it stages is a real draft the amendment holds, inert until the amendment is approved, so you read the narratives, dependencies, and surfaces in the tree and drop what you do not want with `tiller remove`. Bugs, chores, and tweaks the document yields go straight onto their shelves for their own triage. When the agent has finished it runs `tiller propose amendment`, and your queue asks for approval only then. One `tiller approve amendment` approves the new epics and the tasks added to an approved feature together and applies any changes to existing work; a new feature stays a draft and goes through specify and its own plan approval. A founding design on a project with no epics comes in with `tiller intake --no-amendment` instead and becomes a draft tree, approved epic by epic.
 
 ## Bugs, chores, and tweaks
 
@@ -352,7 +352,7 @@ The console, `tiller serve`, is a small set of lenses over that same tree: Home 
   <text x="370" y="140" class="mono small">features/&lt;key&gt;/feature.md,</text>
   <text x="370" y="158" class="mono small">  feature.eval.md, feature.yml</text>
   <text x="370" y="176" class="mono small">tasks/&lt;key&gt;/task.md + .yml</text>
-  <text x="370" y="194" class="mono small">events/ · feedback/ · design/</text>
+  <text x="370" y="194" class="mono small">events/ · design/</text>
   <text x="370" y="212" class="mono small">orientation.md</text><text x="632" y="212" text-anchor="end" class="small muted">generated</text>
   <text x="370" y="228" class="mono small">identity.yml</text><text x="632" y="228" text-anchor="end" class="small muted">gitignored</text>
   <rect x="346" y="244" width="298" height="92" rx="3" class="recess"/>
@@ -423,8 +423,7 @@ binary. `join` selects identity; it is not routine maintenance. The
   orientation.md        generated; the agent's front door (committed, do not hand-edit)
   identity.yml          who this checkout is (gitignored)
   local.yml             your own preferences for this checkout (optional, gitignored)
-  design/               your input documents
-  feedback/             documents landed by tiller intake
+  design/               your input documents, including everything tiller intake lands
   amendments/           reviewed, recorded changes to the plan
   decisions/            open questions and architecture decision records
   reviews/              code-review files written by the code-review skill

@@ -6,7 +6,7 @@
 # Clones the source (never touching it), upgrades the clone to the current
 # schema, then captures the same reads three ways and diffs them:
 #   A  compacted: loose files older than the delay are gone, segments exist
-#   B  loose: the schema 14 tree rebuilt with no segments at all
+#   B  loose: the upgraded tree rebuilt with no segments at all
 #   C  both: segments restored beside the loose files
 # Any difference is a failure. The work directory defaults to a mktemp -d
 # and must never sit inside either repository.
@@ -119,7 +119,7 @@ capture() {
 rm -rf "$work/A" "$work/B" "$work/C"
 capture "$work/A"
 
-# B: the loose form at schema 14, with no segment anywhere.
+# B: the loose form of the upgraded tree, with no segment anywhere.
 git checkout --quiet HEAD~1 -- .tiller/events
 find .tiller/events -name '*.jsonl' -delete
 git add -A

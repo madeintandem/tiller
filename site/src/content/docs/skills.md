@@ -11,17 +11,16 @@ tiller guide            # the same list, then the skill for the top agent move
 tiller guide execute    # prints that skill in full
 ```
 
-v0.23.0 carries eleven skills. Nine of them are the workflow seams:
+This build, stamped v0.23.0, carries ten skills. Eight of them are the workflow seams:
 
 - `orient` reads state, names the next move, and stops.
 - `derive-baseline` derives or translates as-is docs and stops at human per-doc confirmation.
-- `decompose` lays a draft epic and feature tree for the human to approve.
+- `decompose` turns a document into work: a draft epic and feature tree for a founding design, or the drafts one amendment holds for a document that arrives later through `tiller intake`. It stops for the human's approve.
 - `specify` writes one feature's specification, acceptance contract, and tasks, then runs `tiller spec feature`.
 - `execute` runs the task loop and stops at the resolved task, feature, or epic review surface.
 - `capture` writes one complete proposed bug, chore, or tweak and stops before human triage.
 - `mend-drift` reads a drift candidate and drafts the smallest honest fix.
 - `amend` stages a reshape for human approval.
-- `intake` lands a document written outside the tree and opens the amendment it implies.
 
 The other two run only when you ask for them: `design-brief` exports a brief for a design tool, and `code-review` reviews what a node delivered. Both are described below.
 
@@ -40,9 +39,9 @@ The four planning seams share one principle: recommend bounded delivery incremen
 - **Decompose** proposes the epic and feature tree through the full known initial scope, including later requirements. Infer the progression before choosing containers, then audit every actual prerequisite after targets exist. Record prerequisites as `depends_on` and preferred sibling order with `tiller order`. Independent epics need no invented cross-epic edges.
 - **Specify** writes the selected feature's complete spec, acceptance contract, and task breakdown just in time. Technical tasks may have real dependencies without each being independently useful to an end user. Shared tasks serve this increment, not speculative later needs. Discoveries that affect future scope or order use existing correction routes without silently widening the named batch. Each concrete claim the plan rests on about code it does not own cites the file and line or documentation section it was read from, with the version, tag, or commit for code outside the repository, and specify re-reads those citations before `tiller spec feature`. A fact only building can settle is written as an open fact for the task to determine, never a provisional answer marked as assumed, and the run notes list those open facts for the human's approval.
 - **Amend** reshapes only the requested affected scope. Extend prior containers for the same bounded outcome; choose a new increment for a distinct outcome or delivery phase, even within the same subsystem. Completion alone neither requires nor forbids continuation. Preserve terminal prose and completed descendants; broader replanning needs developer direction.
-- **Intake** reads the whole feedback document, preserves technical and security requests, and maps findings onto bounded outcomes with honest source citations on every operation. Splitting findings must retain coverage. Stage an epic before same-batch features; tasks under a new feature follow materialization and ordinary specification.
+- **Decompose, on a later document,** reads the whole document, preserves technical and security requests, and maps findings onto bounded outcomes with honest source citations on every operation. Splitting findings must retain coverage. Stage an epic before same-batch features; tasks under a new feature come from ordinary specification after the amendment is approved. A concrete defect, chore, or tweak in the document goes straight onto its shelf, never into the amendment.
 
-These are recommendations for the existing review, not a new gate. Missing information warrants questions only when it materially changes boundaries or sequence. Planning permission does not approve the proposal, authorize arbitrary reordering of an accepted tree, or start work. Amendment approval appends new epics to root soft order; intended placement is a separate explicit `tiller order` after materialization. New hard links remain subject to the dependent's eligibility.
+These are recommendations for the existing review, not a new gate. Missing information warrants questions only when it materially changes boundaries or sequence. Planning permission does not approve the proposal, authorize arbitrary reordering of an accepted tree, or start work. Amendment approval appends new epics to root soft order; intended placement is a separate explicit `tiller order` after approval. New hard links remain subject to the dependent's eligibility.
 
 Updated skill bodies come from the running binary. For existing checkouts, refresh shared orientation and discovery descriptions with the intended binary's `tiller upgrade --project-only`, review its generated diff, and reload agent instructions. This does not rewrite or replan accepted work.
 
