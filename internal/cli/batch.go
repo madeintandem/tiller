@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
@@ -103,7 +105,7 @@ func runApproveTasksByFeature(cmd *cobra.Command, featureAddr string, in mutate.
 		// node: hardcoding it false here printed "Approval recorded" over a
 		// `--refresh-basis` run that approved nothing.
 		return emitReportWithReadout(cmd, "approve", true, data,
-			fmt.Sprintf("No proposed tasks on feature %s.", gen.Ref(tree, n)), 0,
+			fmt.Sprintf("No proposed tasks on feature %s.%s", gen.Ref(tree, n), heldTasksNote(tree, feat)), 0,
 			gateMomentFor("approve"), tree.Root, &views.GateAct{BasisRefresh: in.RefreshBasis})
 	}
 	nodes := make([]store.Node, len(tasks))
@@ -293,4 +295,30 @@ func mixedOutcomes(s BatchSummary) bool {
 		}
 	}
 	return kinds > 1
+}
+
+// heldTasksNote says why proposed tasks exist yet are not approved here: an
+// open amendment holds them, and its approval is what moves them. It is empty
+// when the feature has no held proposed task. Amendments are listed once each,
+// in key order.
+func heldTasksNote(tree *store.Tree, f *store.Feature) string {
+	var holders []string
+	seen := map[string]bool{}
+	for _, tk := range tree.FeatureTasks[f.ID] {
+		a := gen.AmendmentHold(tree, tk)
+		if a == nil || tk.Status != "proposed" || seen[a.ID] {
+			continue
+		}
+		seen[a.ID] = true
+		addr := views.Key(a)
+		if addr == "" {
+			addr = a.ID
+		}
+		holders = append(holders, "tiller approve amendment "+addr)
+	}
+	if len(holders) == 0 {
+		return ""
+	}
+	sort.Strings(holders)
+	return " Its proposed tasks are held by an open amendment and move when it is approved (" + strings.Join(holders, "; ") + ")."
 }

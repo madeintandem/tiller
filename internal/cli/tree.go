@@ -205,6 +205,9 @@ func formatTreeLine(left string, n gen.TreeNode, f treeFlags, l treeLayout, widt
 		}
 		title += " [contributors: " + strings.Join(ids, ", ") + "]"
 	}
+	if n.InAmendment != "" {
+		title += " (in amendment " + n.InAmendment + ")"
+	}
 	b.WriteString(truncate(title, width-utf8.RuneCountInString(b.String())))
 	return strings.TrimRight(b.String(), " ")
 }

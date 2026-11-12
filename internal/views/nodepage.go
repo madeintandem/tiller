@@ -732,22 +732,25 @@ type AmendmentPageView struct {
 // than leaving them for the serve handler the way Live is left: unlike a
 // precondition or Source's own live read, there is no git here to defer.
 type AmendmentOperationPageView struct {
-	Index         int                             `json:"index"`
-	Op            string                          `json:"op"`
-	Target        *RelatedNode                    `json:"target,omitempty"`
-	By            *RelatedNode                    `json:"by,omitempty"`
-	Key           string                          `json:"key,omitempty"`
-	Title         string                          `json:"title,omitempty"`
-	Statement     string                          `json:"statement,omitempty"`
-	ChangeType    string                          `json:"change_type,omitempty"`
-	Reason        string                          `json:"reason,omitempty"`
-	SupersededBy  *RelatedNode                    `json:"superseded_by,omitempty"`
-	Blocks        []RelatedNode                   `json:"blocks,omitempty"`
-	Retire        []string                        `json:"retire,omitempty"`
-	Source        string                          `json:"source,omitempty"`
-	SourceMissing bool                            `json:"source_missing,omitempty"`
-	ShapeError    string                          `json:"shape_error,omitempty"`
-	Created       *RelatedNode                    `json:"created,omitempty"`
+	Index         int           `json:"index"`
+	Op            string        `json:"op"`
+	Target        *RelatedNode  `json:"target,omitempty"`
+	By            *RelatedNode  `json:"by,omitempty"`
+	Key           string        `json:"key,omitempty"`
+	Title         string        `json:"title,omitempty"`
+	Statement     string        `json:"statement,omitempty"`
+	ChangeType    string        `json:"change_type,omitempty"`
+	Reason        string        `json:"reason,omitempty"`
+	SupersededBy  *RelatedNode  `json:"superseded_by,omitempty"`
+	Blocks        []RelatedNode `json:"blocks,omitempty"`
+	Retire        []string      `json:"retire,omitempty"`
+	Source        string        `json:"source,omitempty"`
+	SourceMissing bool          `json:"source_missing,omitempty"`
+	ShapeError    string        `json:"shape_error,omitempty"`
+	Created       *RelatedNode  `json:"created,omitempty"`
+	// Removed is the reason a held draft was removed from the proposal; the
+	// operation stays on the list, and Created keeps the draft's historical id.
+	Removed       string                          `json:"removed,omitempty"`
 	Parent        *RelatedNode                    `json:"parent,omitempty"`
 	IdentityNotes []string                        `json:"identity_notes,omitempty"`
 	Preconditions []AmendmentPreconditionPageView `json:"preconditions,omitempty"`
@@ -883,6 +886,7 @@ func amendmentOperationPageOf(index int, op store.AmendmentOp, identity amendmen
 		Blocks:        identity.blocks,
 		Retire:        op.Retire,
 		Created:       identity.created,
+		Removed:       op.Removed,
 		Parent:        identity.parent,
 		IdentityNotes: identity.notes,
 		Source:        op.Source,

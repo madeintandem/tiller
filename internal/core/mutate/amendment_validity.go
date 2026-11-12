@@ -115,6 +115,11 @@ func EvaluateAmendmentPreconditions(tree *store.Tree, deps Deps, amendment *stor
 	b := newBatch()
 	var out []PreconditionValidity
 	for _, r := range plan {
+		// A removed operation is out of the proposal: it applies nothing, so
+		// nothing it guarded can be stale (checkPreconditions skips it too).
+		if r.op.Removed != "" {
+			continue
+		}
 		if r.op.Op == store.AmendmentOpMoveFeature {
 			pv := PreconditionValidity{Index: r.index, Op: r.op.Op, Target: r.op.Target, Precondition: "move", Expected: "reviewed move snapshot", Actual: "reviewed move snapshot", Status: PreconditionValid}
 			fresh, err := store.Load(tree.Root)

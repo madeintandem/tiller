@@ -74,6 +74,9 @@ type ListItem struct {
 	// its amendment_opened event (AttachProposedAt). Empty for every other
 	// noun and for an amendment whose opened event is not retained.
 	ProposedAt string `json:"proposed_at,omitempty"`
+	// AmendmentHold names the open amendment holding this draft, nil for a
+	// node no amendment holds. The Build feature card embeds this row.
+	AmendmentHold *AmendmentHoldView `json:"amendment_hold,omitempty"`
 
 	// Ref is the node's human reference ("<key-path> (<id>)", gen.Ref) for the
 	// plain-text renderer only; the JSON payload carries id and key structurally.
@@ -254,6 +257,7 @@ func Item(tree *store.Tree, n store.Node) ListItem {
 		Contributors: Contributors(tree, n),
 	}
 	item.Activity = activity(tree, n)
+	item.AmendmentHold = amendmentHoldViewOf(tree, n)
 	item.RecoveredReview, item.ReviewMissing = workflow.ReviewStateOf(tree, n)
 	switch t := n.(type) {
 	case *store.Epic:

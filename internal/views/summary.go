@@ -90,11 +90,14 @@ type TreeCounts struct {
 // and what has been checked", not "everything about it". LegalNext is always
 // present, an empty array at a terminal state, so a caller parses one shape.
 type NodeStatusView struct {
-	Noun             string                    `json:"noun"`
-	ID               string                    `json:"id"`
-	Key              string                    `json:"key,omitempty"`
-	Status           string                    `json:"status"`
-	LegalNext        []string                  `json:"legal_next"`
+	Noun      string   `json:"noun"`
+	ID        string   `json:"id"`
+	Key       string   `json:"key,omitempty"`
+	Status    string   `json:"status"`
+	LegalNext []string `json:"legal_next"`
+	// AmendmentHold names the open amendment holding this draft. A held node
+	// has an empty LegalNext: its amendment's approval is the only move.
+	AmendmentHold    *AmendmentHoldView        `json:"amendment_hold,omitempty"`
 	Workflow         *workflow.Advice          `json:"workflow,omitempty"`
 	RecoveredReview  *workflow.RecoveredReview `json:"recovered_review,omitempty"`
 	ReviewMissing    bool                      `json:"review_missing,omitempty"`
@@ -190,13 +193,22 @@ func NodeStatus(tree *store.Tree, n store.Node, in workflow.Input) NodeStatusVie
 	if b, ok := n.(*store.Bug); ok {
 		severity = b.Severity
 	}
+	// A held draft takes no lifecycle step (mutate refuses each with
+	// held_by_amendment), so the oracle offers none: the amendment's approval
+	// is what moves it, and AmendmentHold names that amendment.
+	hold := amendmentHoldViewOf(tree, n)
+	next := legalNext(n)
+	if hold != nil {
+		next = []string{}
+	}
 	return NodeStatusView{
+		AmendmentHold:    hold,
 		Severity:         severity,
 		Noun:             n.Noun(),
 		ID:               n.NodeID(),
 		Key:              Key(n),
 		Status:           n.NodeStatus(),
-		LegalNext:        legalNext(n),
+		LegalNext:        next,
 		Workflow:         advice,
 		RecoveredReview:  recovered,
 		ReviewMissing:    missing,

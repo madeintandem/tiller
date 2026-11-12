@@ -497,3 +497,95 @@ func proposeAmendment(t *testing.T, root string, deps mutate.Deps, amendmentID s
 	_, err := mutate.ProposeAmendment(tree, deps, a)
 	require.NoError(t, err)
 }
+
+// heldDraftAmendment lays an approved feature and a proposed amendment that
+// stages two held tasks under it, returning the amendment id and the held ids.
+func heldDraftAmendment(t *testing.T) (root string, deps mutate.Deps, amendmentID, keptID, droppedID string) {
+	t.Helper()
+	root, deps = identityRepo(t)
+	_, err := mutate.AddEpic(identityTree(t, root), deps, mutate.EpicInput{Key: "engine", Title: "Engine"})
+	require.NoError(t, err)
+	_, err = mutate.AddFeature(identityTree(t, root), deps, mutate.FeatureInput{Key: "engine/parse", Title: "Parse", ChangeType: "create"})
+	require.NoError(t, err)
+	approveFeatureOnDisk(t, root, "engine/parse")
+	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "reshape", Title: "Reshape parsing"})
+	require.NoError(t, err)
+	identityStage(t, root, deps, a.ID,
+		mutate.StageInput{Op: "add-task", Key: "engine/parse/kept", Title: "Kept"},
+		mutate.StageInput{Op: "add-task", Key: "engine/parse/dropped", Title: "Dropped"},
+	)
+	ops := identityTree(t, root).Amendments[a.ID].Operations
+	return root, deps, a.ID, ops[0].Node, ops[1].Node
+}
+
+// TestAmendmentPageLinksHeldDraftsBeforeApproval: an open amendment's page
+// links each held draft from the operation's own node, never reads the add as
+// applied, and carries a removed operation's reason.
+func TestAmendmentPageLinksHeldDraftsBeforeApproval(t *testing.T) {
+	root, deps, amendmentID, keptID, droppedID := heldDraftAmendment(t)
+	srv := httptest.NewServer(serve.NodeHandler(root))
+	t.Cleanup(srv.Close)
+
+	// Still a draft: the page already links both held drafts.
+	page := identityPage(t, srv, "amendment", amendmentID).Amendment
+	require.Equal(t, keptID, page.Operations[0].Created.ID)
+	require.Equal(t, "engine/parse/kept", page.Operations[0].Created.Key)
+	require.Equal(t, "task", page.Operations[0].Created.Noun, "the link is live, openable")
+	require.Equal(t, droppedID, page.Operations[1].Created.ID)
+	require.Empty(t, page.Operations[0].Removed)
+	require.Empty(t, page.Operations[0].IdentityNotes)
+
+	// The held draft's own page lists the amendment, its effect proposed.
+	rels := identityPage(t, srv, "task", keptID).Relationships.Amendments
+	require.Len(t, rels, 1)
+	require.Equal(t, amendmentID, rels[0].Amendment.ID)
+	hold := identityPage(t, srv, "task", keptID).Node.AmendmentHold
+	require.NotNil(t, hold, "the held draft's own page names its amendment")
+	require.Equal(t, amendmentID, hold.ID)
+
+	// Hand removal marks the operation removed, with the reason, and the
+	// operation keeps its place and the draft's historical id.
+	proposeAmendment(t, root, deps, amendmentID)
+	_, err := mutate.RemoveDraft(identityTree(t, root), deps, mutate.RemoveInput{Noun: "task", Node: droppedID, Reason: "Not this quarter"})
+	require.NoError(t, err)
+	page = identityPage(t, srv, "amendment", amendmentID).Amendment
+	require.Len(t, page.Operations, 2)
+	require.Equal(t, "Not this quarter", page.Operations[1].Removed)
+	require.Equal(t, droppedID, page.Operations[1].Created.ID)
+	require.Empty(t, page.Operations[1].Created.Noun, "the removed draft is text, not a link")
+	require.Empty(t, page.Operations[0].Removed)
+}
+
+func historyTypes(page views.NodePage) []string {
+	var out []string
+	for _, h := range page.History {
+		out = append(out, h.Type)
+	}
+	return out
+}
+
+// TestAmendmentHistoryShowsHandRemovalAndWithdraw: a hand removal of a held
+// draft targets the amendment whose operation it marked, so it shows on the
+// amendment page's history; a withdraw's removals are the amendment_withdrawn
+// event's, on the same page, with every operation still carrying the removed
+// draft's id.
+func TestAmendmentHistoryShowsHandRemovalAndWithdraw(t *testing.T) {
+	root, deps, amendmentID, keptID, droppedID := heldDraftAmendment(t)
+	srv := httptest.NewServer(serve.NodeHandler(root))
+	t.Cleanup(srv.Close)
+	require.NotContains(t, historyTypes(identityPage(t, srv, "amendment", amendmentID)), "remove.proposed.task")
+
+	_, err := mutate.RemoveDraft(identityTree(t, root), deps, mutate.RemoveInput{Noun: "task", Node: droppedID, Reason: "Not this quarter"})
+	require.NoError(t, err)
+	require.Contains(t, historyTypes(identityPage(t, srv, "amendment", amendmentID)), "remove.proposed.task",
+		"the hand removal shows beside the operation it marked")
+
+	tree := identityTree(t, root)
+	res, err := mutate.WithdrawAmendment(tree, deps, tree.Amendments[amendmentID], "Superseded by a rewrite")
+	require.NoError(t, err)
+	require.Equal(t, []string{keptID}, res.RemovedIDs)
+	page := identityPage(t, srv, "amendment", amendmentID)
+	require.Contains(t, historyTypes(page), "amendment_withdrawn")
+	require.Equal(t, keptID, page.Amendment.Operations[0].Created.ID, "the withdrawn amendment still names what it held")
+	require.Equal(t, "Not this quarter", page.Amendment.Operations[1].Removed)
+}

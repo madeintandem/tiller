@@ -170,6 +170,14 @@ type AmendmentOperationView struct {
 	// staged, which the amendment holds until approval or withdrawal. It is
 	// empty for an add staged before schema 15, created at approval instead.
 	Node string `json:"node,omitempty"`
+	// Removed is the reason a held draft was removed from the proposal; the
+	// operation stays on the list and applies nothing.
+	Removed string `json:"removed,omitempty"`
+	// DraftRef is the held draft's reference for the plain-text renderer, and
+	// DraftMissing is true when the operation names a draft the tree no longer
+	// carries. Neither is on the wire; Node and Removed are.
+	DraftRef     string `json:"-"`
+	DraftMissing bool   `json:"-"`
 }
 
 // AmendmentRefView names a target, by, or superseded_by: an id and a key when
@@ -280,6 +288,12 @@ func amendmentOperationView(tree *store.Tree, index int, op store.AmendmentOp, v
 		Move:             op.Move,
 		Retire:           op.Retire,
 		Node:             op.Node,
+		Removed:          op.Removed,
+	}
+	if n := tree.AddedNode(op); n != nil {
+		v.DraftRef = gen.Ref(tree, n)
+	} else if op.Node != "" && op.Removed == "" {
+		v.DraftMissing = true
 	}
 	if op.Target != "" {
 		v.Target = amendmentRefView(tree, op.Target)
@@ -413,6 +427,9 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 	if len(v.AmendsDesign) > 0 {
 		fmt.Fprintf(&b, "  amends_design: %s\n", strings.Join(v.AmendsDesign, ", "))
 	}
+	if line := newWorkRule(v); line != "" {
+		fmt.Fprintf(&b, "  %s\n", line)
+	}
 	if len(v.Operations) == 0 {
 		fmt.Fprint(&b, "  operations: (none staged)")
 		return strings.TrimRight(b.String(), "\n")
@@ -422,6 +439,14 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 		fmt.Fprintf(&b, "\n    %d. %s", op.Index, renderOperationHeadline(op))
 		if op.Note != "" {
 			fmt.Fprintf(&b, "\n       note: %s", op.Note)
+		}
+		switch {
+		case op.Removed != "":
+			fmt.Fprintf(&b, "\n       removed: %s", op.Removed)
+		case op.DraftMissing:
+			fmt.Fprintf(&b, "\n       held draft %s: missing", op.Node)
+		case op.DraftRef != "" && store.AmendmentStatusOpen(v.Status):
+			fmt.Fprintf(&b, "\n       held draft %s", op.DraftRef)
 		}
 		if op.Move != nil {
 			fmt.Fprintf(&b, "\n       reviewed source: %s", op.Move.SourceKey)
@@ -470,6 +495,33 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 		fmt.Fprintf(&b, "\n  live validity unavailable: %s", validityErr)
 	}
 	return b.String()
+}
+
+// newWorkRule is the one line under the header that says which rule an
+// amendment's new epics, features, and tasks follow: held drafts, promoted at
+// approval, or created at approval for adds staged before schema 15. It is
+// empty when no operation adds an epic, feature, or task. An amendment holding
+// both kinds of add reads both lines.
+func newWorkRule(v AmendmentData) string {
+	var held, legacy bool
+	for _, op := range v.Operations {
+		switch op.Op {
+		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
+			if op.Node != "" {
+				held = true
+			} else {
+				legacy = true
+			}
+		}
+	}
+	var lines []string
+	if held {
+		lines = append(lines, "New work: held drafts, promoted at approval")
+	}
+	if legacy {
+		lines = append(lines, "New work: created at approval (staged before schema 15)")
+	}
+	return strings.Join(lines, "\n  ")
 }
 
 // renderOperationHeadline is one staged operation's one-line summary, in the
@@ -1255,6 +1307,10 @@ type AmendmentAppliedView struct {
 	Outcome     string                          `json:"outcome,omitempty"`
 	Note        string                          `json:"note,omitempty"`
 	Move        *store.FeatureMovePreconditions `json:"move,omitempty"`
+	// HeldDraft is true for an add whose draft staging created and this
+	// approval promoted or released; absent for one created at approval
+	// under the pre-schema-15 rule.
+	HeldDraft bool `json:"held_draft,omitempty"`
 }
 
 func amendmentApproveView(res mutate.ApproveResult) AmendmentApproveView {
@@ -1263,7 +1319,7 @@ func amendmentApproveView(res mutate.ApproveResult) AmendmentApproveView {
 		out.Applied = append(out.Applied, AmendmentAppliedView{
 			Index: op.Index, Op: op.Op, Noun: op.Noun, ID: op.NodeID, Key: op.Key,
 			Status: op.Status, Replacement: op.Replacement, Outcome: op.Outcome, Note: op.Note,
-			Move: op.Move,
+			Move: op.Move, HeldDraft: op.HeldDraft,
 		})
 	}
 	return out

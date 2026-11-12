@@ -150,6 +150,9 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 		fmt.Fprintf(&b, "  statement: %s\n", v.Statement)
 	}
 	fmt.Fprintf(&b, "  state: %s", v.Status)
+	if v.AmendmentHold != nil {
+		fmt.Fprintf(&b, " (in amendment %s)", holdAmendmentAddr(*v.AmendmentHold))
+	}
 	if v.Activity == gen.EpicActivityActive {
 		// Make it obvious an approved epic is being worked while it is stored ready.
 		fmt.Fprint(&b, " (active: work in flight)")
@@ -207,7 +210,9 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Workflow == nil && v.ReviewMissing {
 		fmt.Fprintf(&b, "\n  %s", workflow.MissingReviewNotice)
 	}
-	if len(v.LegalNext) == 0 {
+	if v.AmendmentHold != nil {
+		fmt.Fprintf(&b, "\n  next:  tiller approve amendment %s (held draft: the amendment's approval is the only move)", holdAmendmentAddr(*v.AmendmentHold))
+	} else if len(v.LegalNext) == 0 {
 		fmt.Fprint(&b, "\n  next:  (none, terminal)")
 	} else {
 		fmt.Fprintf(&b, "\n  next:  %s", strings.Join(v.LegalNext, ", "))
@@ -335,4 +340,13 @@ func renderStatusHuman(s ProjectSummary) string {
 			len(s.UncommittedState))
 	}
 	return b.String()
+}
+
+// holdAmendmentAddr is how a command line names the holding amendment: its key
+// when it has one, else its id.
+func holdAmendmentAddr(h views.AmendmentHoldView) string {
+	if h.Key != "" {
+		return h.Key
+	}
+	return h.ID
 }

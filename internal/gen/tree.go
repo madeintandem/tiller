@@ -44,9 +44,12 @@ type TreeNode struct {
 	Owner        string              `json:"owner,omitempty"`
 	Contributors []store.Contributor `json:"contributors,omitzero"`
 	Activity     string              `json:"activity,omitempty"`
-	Path         string              `json:"path"`
-	Files        []string            `json:"files"`
-	Children     []TreeNode          `json:"children"`
+	// InAmendment is the key (or id when keyless) of the open amendment
+	// holding this draft; empty for a node no amendment holds.
+	InAmendment string     `json:"in_amendment,omitempty"`
+	Path        string     `json:"path"`
+	Files       []string   `json:"files"`
+	Children    []TreeNode `json:"children"`
 }
 
 // Tree builds the whole-project map: every epic in DependencyOrder, each with
@@ -125,6 +128,7 @@ func epicNode(t *store.Tree, order *Order, e *store.Epic) TreeNode {
 		Status:       e.Status,
 		Contributors: treeContributors(t, e.ID),
 		Activity:     EpicActivity(t, e),
+		InAmendment:  amendmentHoldLabel(t, e),
 		Path:         path.Join(dir, "epic.md"),
 		Files:        files,
 		Children:     children,
@@ -141,7 +145,9 @@ func featureNode(t *store.Tree, f *store.Feature, tasks []*store.Task) TreeNode 
 	// where one is already available.
 	children := make([]TreeNode, 0, len(tasks))
 	for _, tk := range tasks {
-		children = append(children, taskNode(dir, tk))
+		child := taskNode(dir, tk)
+		child.InAmendment = amendmentHoldLabel(t, tk)
+		children = append(children, child)
 	}
 
 	files := []string{path.Join(dir, "feature.md"), path.Join(dir, "feature.yml")}
@@ -156,10 +162,24 @@ func featureNode(t *store.Tree, f *store.Feature, tasks []*store.Task) TreeNode 
 		Title:        f.Title,
 		Status:       f.Status,
 		Contributors: treeContributors(t, f.ID),
+		InAmendment:  amendmentHoldLabel(t, f),
 		Path:         path.Join(dir, "feature.md"),
 		Files:        files,
 		Children:     children,
 	}
+}
+
+// amendmentHoldLabel names the amendment holding n by key, falling back to its
+// id, and is empty when none holds it.
+func amendmentHoldLabel(t *store.Tree, n store.Node) string {
+	a := AmendmentHold(t, n)
+	if a == nil {
+		return ""
+	}
+	if key := keyStr(a.Key); key != "" {
+		return key
+	}
+	return a.ID
 }
 
 func treeContributors(t *store.Tree, id string) []store.Contributor {

@@ -128,6 +128,9 @@ type NodeView struct {
 	// already refuse under a retired ancestor (mutate.guardParentState);
 	// this field says why, before a human runs the verb that would refuse.
 	Held *HeldView `json:"held,omitempty"`
+	// AmendmentHold names the open amendment holding this draft, nil for a
+	// node no amendment holds.
+	AmendmentHold *AmendmentHoldView `json:"amendment_hold,omitempty"`
 
 	// Supersedes and SupersededBy record replacement lineage for features,
 	// tasks, bugs, and chores. The envelope carries immutable IDs; readers
@@ -213,6 +216,28 @@ func heldViewOf(h *gen.Held) *HeldView {
 		return nil
 	}
 	return &HeldView{Noun: h.Noun, ID: h.ID, Ref: h.Ref, State: h.State}
+}
+
+// AmendmentHoldView names the open amendment holding a draft (gen.AmendmentHold):
+// its id, key, reference, title, and status (draft or proposed). It is a
+// different fact from HeldView, a node under a retired ancestor: a held draft is
+// a proposal waiting on its amendment's approval.
+type AmendmentHoldView struct {
+	ID     string `json:"id"`
+	Key    string `json:"key,omitempty"`
+	Ref    string `json:"ref"`
+	Title  string `json:"title"`
+	Status string `json:"status"`
+}
+
+// amendmentHoldViewOf projects the amendment holding n, nil when none does so
+// the field's omitempty drops the key.
+func amendmentHoldViewOf(t *store.Tree, n store.Node) *AmendmentHoldView {
+	a := gen.AmendmentHold(t, n)
+	if a == nil {
+		return nil
+	}
+	return &AmendmentHoldView{ID: a.ID, Key: Key(a), Ref: gen.Ref(t, a), Title: a.Title, Status: a.Status}
 }
 
 // GateView is one recorded gate result in the read envelope, the JSON face of
@@ -453,6 +478,7 @@ func Node(tree *store.Tree, n store.Node) NodeView {
 	}
 	v.NextOwner = NextOwner(n)
 	v.Held = heldViewOf(gen.RetiredAncestor(tree, n))
+	v.AmendmentHold = amendmentHoldViewOf(tree, n)
 	v.OrderRefs = orderRefsOf(tree, v.Order)
 	return v
 }

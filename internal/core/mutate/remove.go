@@ -97,7 +97,8 @@ func RemoveDraft(tree *store.Tree, deps Deps, in RemoveInput) (RemoveResult, err
 	if err != nil {
 		return RemoveResult{}, err
 	}
-	plan, err := planRemoval(tree, removed, amendmentRemovalEdit{edit: markHeldOpsRemoved(tree, removedNodeSet(removed), reason)})
+	var marked []string
+	plan, err := planRemoval(tree, removed, amendmentRemovalEdit{edit: markHeldOpsRemoved(tree, removedNodeSet(removed), reason, &marked)})
 	if err != nil {
 		return RemoveResult{}, err
 	}
@@ -120,8 +121,12 @@ func RemoveDraft(tree *store.Tree, deps Deps, in RemoveInput) (RemoveResult, err
 			eventType = "remove.proposed." + removed[0].noun
 		}
 	}
+	// An amendment whose held operation this removal marked is a target too,
+	// so the removal shows on that amendment's page history beside the
+	// operation it changed.
+	sort.Strings(marked)
 	ev := events.NewEvent(deps.clock(), eventType, owner.ID,
-		fmt.Sprintf("remove %s %s --reason %q", in.Noun, node.NodeID(), reason), removedIDs...)
+		fmt.Sprintf("remove %s %s --reason %q", in.Noun, node.NodeID(), reason), append(append([]string{}, removedIDs...), marked...)...)
 	ev.ID = deps.mintRaw("EV")
 	ev.Before = map[string]any{"removed": metadata}
 	ev.After = map[string]any{"reason": reason, "removed_ids": removedIDs, "changed_files": changedFiles}
@@ -683,15 +688,23 @@ func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, change
 // operation numbering do not change. Only the amendment the hold index names
 // as the holder is marked; an operation that no longer holds anything is
 // left alone.
-func markHeldOpsRemoved(tree *store.Tree, removed map[string]struct{}, reason string) func(*store.Amendment) {
+//
+// Every amendment the edit marks is appended to marked, for the removal event
+// to target.
+func markHeldOpsRemoved(tree *store.Tree, removed map[string]struct{}, reason string, marked *[]string) func(*store.Amendment) {
 	return func(a *store.Amendment) {
+		touched := false
 		for i, op := range a.Operations {
 			if op.Node == "" || op.Removed != "" || tree.AmendmentHolds[op.Node] != a.ID {
 				continue
 			}
 			if _, gone := removed[op.Node]; gone {
 				a.Operations[i].Removed = reason
+				touched = true
 			}
+		}
+		if touched {
+			*marked = append(*marked, a.ID)
 		}
 	}
 }

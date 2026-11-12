@@ -21,6 +21,8 @@ type MapNode struct {
 	Contributors []store.Contributor `json:"contributors,omitzero"`
 	Parent       string              `json:"parent,omitempty"` // a feature's epic id, a task's feature id; empty for an epic or a shelf node
 	Holds        int                 `json:"holds,omitempty"`  // open questions naming this node itself, not the holds it inherits
+	// AmendmentHold names the open amendment holding this draft.
+	AmendmentHold *AmendmentHoldView `json:"amendment_hold,omitempty"`
 }
 
 // MapEdge is one recorded relationship. From is always the node whose record
@@ -62,7 +64,7 @@ func MapOf(t *store.Tree, index *relationships.Index) MapView {
 		}
 		nodes = append(nodes, MapNode{
 			Noun: store.NounEpic, ID: e.ID, Key: Key(e), Title: e.Title, Status: e.Status, Column: gen.BoardStatus(t, e), Contributors: Contributors(t, e),
-			Holds: gen.DirectQuestionHolds(t, e),
+			Holds: gen.DirectQuestionHolds(t, e), AmendmentHold: amendmentHoldViewOf(t, e),
 		})
 		for _, featureID := range order.Features(Key(e)) {
 			f := t.Features[featureID]
@@ -71,12 +73,12 @@ func MapOf(t *store.Tree, index *relationships.Index) MapView {
 			}
 			nodes = append(nodes, MapNode{
 				Noun: store.NounFeature, ID: f.ID, Key: Key(f), Title: f.Title, Status: f.Status, Column: gen.BoardStatus(t, f), Contributors: Contributors(t, f),
-				Parent: e.ID, Holds: gen.DirectQuestionHolds(t, f),
+				Parent: e.ID, Holds: gen.DirectQuestionHolds(t, f), AmendmentHold: amendmentHoldViewOf(t, f),
 			})
 			for _, tk := range order.Tasks(f.ID) {
 				nodes = append(nodes, MapNode{
 					Noun: store.NounTask, ID: tk.ID, Key: Key(tk), Title: tk.Title, Status: tk.Status, Owner: tk.Owner,
-					Parent: f.ID, Holds: gen.DirectQuestionHolds(t, tk),
+					Parent: f.ID, Holds: gen.DirectQuestionHolds(t, tk), AmendmentHold: amendmentHoldViewOf(t, tk),
 				})
 			}
 		}

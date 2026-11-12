@@ -279,3 +279,63 @@ func TestAmendmentMoveRetainsBothParentIdentities(t *testing.T) {
 	}
 	require.Equal(t, map[string]string{"target": "F-222222", "move_source_parent": "E-111111", "move_destination_parent": "E-444444"}, roles)
 }
+
+// heldAddTree is an open amendment whose one add-task already created its
+// draft at staging: the operation names the node, and the add.task event
+// staging wrote carries the amendment. removed marks the operation removed.
+func heldAddTree(status, removed string) (*store.Tree, []events.Event) {
+	tree := amendmentTree()
+	tree.Amendments["A-333333"].Status = status
+	taskKey := "work/reused/held"
+	tree.Tasks = map[string]*store.Task{"T-444444": {ID: "T-444444", Key: &taskKey, FeatureID: "F-222222", Status: "proposed"}}
+	tree.Amendments["A-333333"].Operations = []store.AmendmentOp{
+		{Op: store.AmendmentOpAddTask, Key: taskKey, Node: "T-444444", Removed: removed},
+	}
+	if removed != "" {
+		tree.Tasks = map[string]*store.Task{}
+	}
+	return tree, []events.Event{
+		amendmentEvent("EV-000000", "amendment_opened", 0, []string{"A-333333"}, nil),
+		amendmentEvent("EV-111111", "amendment_staged", 1, []string{"A-333333"}, map[string]any{"index": 0, "op": store.AmendmentOpAddTask, "key": taskKey}),
+		amendmentEvent("EV-222222", "add.task", 2, []string{"T-444444"}, map[string]any{"amendment": "A-333333", "key": taskKey, "feature": "F-222222"}),
+	}
+}
+
+// Staging writes the add.task event, but an open amendment has applied
+// nothing: the operation reads proposed, and its created link is the held
+// draft recorded on the operation.
+func TestAmendmentIdentitiesDoNotReadAHeldAddAsAppliedBeforeApproval(t *testing.T) {
+	for _, status := range []string{store.AmendmentStatusDraft, store.AmendmentStatusProposed} {
+		tree, evs := heldAddTree(status, "")
+		facts := relationships.AmendmentIdentities(tree, evs)
+		op := facts.Operations["A-333333"][0]
+		require.NotNil(t, op.Created, status)
+		require.Equal(t, "T-444444", op.Created.ID)
+		require.False(t, op.Created.Unresolved)
+		require.Empty(t, op.Notes, "a held draft is no identity defect")
+		require.NotEmpty(t, facts.Relations["T-444444"])
+		for _, rel := range facts.Relations["T-444444"] {
+			for _, effect := range rel.Effects {
+				require.Equal(t, "proposed", effect.State, "%s amendment: the op is not applied before approval", status)
+				require.NotEqual(t, "historical_parent", effect.Scope)
+			}
+		}
+	}
+	// An approved amendment's add did apply.
+	tree, evs := heldAddTree(store.AmendmentStatusApproved, "")
+	facts := relationships.AmendmentIdentities(tree, evs)
+	require.Equal(t, "T-444444", facts.Operations["A-333333"][0].Created.ID)
+}
+
+// A removed held draft keeps its historical id on the operation, without an
+// identity warning.
+func TestAmendmentIdentitiesKeepARemovedHeldDraftsHistoricalID(t *testing.T) {
+	tree, evs := heldAddTree(store.AmendmentStatusProposed, "folded into another task")
+	facts := relationships.AmendmentIdentities(tree, evs)
+	op := facts.Operations["A-333333"][0]
+	require.NotNil(t, op.Created)
+	require.Equal(t, "T-444444", op.Created.ID)
+	require.True(t, op.Created.Unresolved, "the draft is gone")
+	require.Empty(t, op.Notes)
+	require.Empty(t, facts.Warning)
+}

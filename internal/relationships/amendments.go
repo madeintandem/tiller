@@ -232,8 +232,12 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 		identity := &ops[i]
 		application, stages := applications[i], staging[i]
 		evidence := mergeAmendmentEvidence(amendmentEventEvidence(stages), amendmentEventEvidence(application))
+		// An open amendment's held add wrote its add event at staging: that
+		// event is the draft's creation, not an application of the operation.
+		heldAdd := op.Node != "" && store.AmendmentOpen(a)
+		applied := len(application) > 0 && !heldAdd
 		state := "proposed"
-		if len(application) > 0 {
+		if applied {
 			state = "applied"
 		}
 		replacement, conflict := uniqueEventIdentity(application, "superseded_by")
@@ -275,7 +279,14 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 			if ambiguous[join] || len(staged[op.Key]) != 1 {
 				note("Conflicting creation evidence for " + op.Key)
 				warn()
-			} else if nodeID := created[join]; nodeID != "" {
+			} else if op.Removed != "" && op.Node != "" {
+				// A removed held draft keeps its historical id; the reason
+				// rides on the operation, so this is no identity defect.
+				identity.Created = &AmendmentEndpoint{ID: op.Node, Raw: op.Node, Unresolved: true}
+			} else if nodeID := created[join]; nodeID != "" || op.Node != "" {
+				if op.Node != "" {
+					nodeID = op.Node
+				}
 				var why string
 				identity.Created, why = amendmentIDNode(t, nodeID)
 				note(why)
@@ -397,7 +408,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 				{"move_source_parent", op.Move.SourceEpicID}, {"move_destination_parent", destination},
 			} {
 				scope := "direct"
-				if len(application) > 0 || a.Status == store.AmendmentStatusApproved {
+				if applied || a.Status == store.AmendmentStatusApproved {
 					scope = "historical_parent"
 				}
 				addEffect(AmendmentEffect{OperationIndex: &number, Operation: op.Op, Role: parent.role, Scope: scope, Node: endpoint(parent.raw), Reference: op.Key, State: state, Evidence: evidence})
@@ -416,7 +427,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 				continue
 			}
 			scope := "direct"
-			if pair.role == "addition_parent" && (identity.Created != nil || len(application) > 0 || a.Status == store.AmendmentStatusApproved) {
+			if pair.role == "addition_parent" && (identity.Created != nil && !heldAdd || applied || a.Status == store.AmendmentStatusApproved) {
 				scope = "historical_parent"
 			}
 			addEffect(AmendmentEffect{OperationIndex: &number, Operation: op.Op, Role: pair.role, Scope: scope, Node: pair.node, Reference: op.Key, Note: strings.Join(identity.Notes, "; "), State: state, Evidence: mergeAmendmentEvidence(evidence, creationEvidence[pair.node.ID])})
