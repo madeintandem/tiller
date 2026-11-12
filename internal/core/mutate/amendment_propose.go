@@ -49,6 +49,9 @@ func ProposeAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	if err := store.ValidateAmendment(doc); err != nil {
 		return ProposeResult{}, err
 	}
+	if err := checkHeldNodes(tree, doc); err != nil {
+		return ProposeResult{}, err
+	}
 	if err := checkSource(tree, deps.rev(tree.Root), doc); err != nil {
 		return ProposeResult{}, err
 	}
@@ -82,4 +85,23 @@ func ProposeAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	}
 	result.Status = doc.Status
 	return result, nil
+}
+
+// checkHeldNodes refuses an amendment one of whose add operations names a node
+// the tree no longer carries (deleted outside Tiller, or a hand-edited id):
+// the human would be reviewing a draft that is not there. An operation marked
+// removed is exempt, since its node is gone by design, and an add staged
+// before schema 15 carries no node to check.
+func checkHeldNodes(tree *store.Tree, doc *store.Amendment) error {
+	for i, op := range doc.Operations {
+		if op.Node == "" || op.Removed != "" || tree.AddedNode(op) != nil {
+			continue
+		}
+		return &usageError{
+			reason: "held_node_missing",
+			msg: fmt.Sprintf("operation %d (%s %s) holds %s, which is not in the tree; withdraw the amendment and stage it again",
+				i, op.Op, op.Key, op.Node),
+		}
+	}
+	return nil
 }

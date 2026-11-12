@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/id"
@@ -44,6 +45,12 @@ type Tree struct {
 	// folder-backed subtree: each amendment is a flat file pair, so there is no
 	// per-amendment children index to keep beside it.
 	Amendments map[string]*Amendment
+	// AmendmentHolds maps a node id to the id of the open amendment that holds
+	// it: a draft staging created, not yet approved or withdrawn. It is derived
+	// on load from the add operations' Node fields (indexAmendmentHolds), never
+	// stored on the node, so the write that closes an amendment lifts its hold
+	// everywhere at once. gen.AmendmentHold is the reader.
+	AmendmentHolds map[string]string
 	// Bugs and Chores are the two shelves, keyed by id like every other
 	// map (docs/spec/artifact-schema.md).
 	Bugs   map[string]*Bug
@@ -199,6 +206,7 @@ func loadTreeWithManifest(root string, m *Manifest) (*Tree, error) {
 	if len(t.Epics) == 0 {
 		t.loadToBeDesign()
 	}
+	t.indexAmendmentHolds()
 	if m.SchemaVersion >= 6 {
 		if err := t.ValidateOwnership(); err != nil {
 			return nil, err
@@ -471,6 +479,61 @@ func (t *Tree) loadAmendments(ids *nodeIDRegistry) error {
 			return err
 		}
 		t.Amendments[amendment.ID] = &amendment
+	}
+	return nil
+}
+
+// indexAmendmentHolds derives AmendmentHolds from every open amendment's add
+// operations that carry a Node and are not Removed. An operation whose node
+// names nothing in the tree (a hand edit, or a draft deleted outside Tiller)
+// holds nothing and is not an error here: propose and approve are what refuse
+// it, naming the operation. Amendments are visited in id order, so if a hand
+// edit ever makes two amendments claim one node, the lower id keeps it, the
+// same way on every load.
+func (t *Tree) indexAmendmentHolds() {
+	t.AmendmentHolds = map[string]string{}
+	ids := make([]string, 0, len(t.Amendments))
+	for amendmentID := range t.Amendments {
+		ids = append(ids, amendmentID)
+	}
+	sort.Strings(ids)
+	for _, amendmentID := range ids {
+		a := t.Amendments[amendmentID]
+		if !AmendmentOpen(a) {
+			continue
+		}
+		for _, op := range a.Operations {
+			if op.Removed != "" || t.AddedNode(op) == nil {
+				continue
+			}
+			if _, claimed := t.AmendmentHolds[op.Node]; !claimed {
+				t.AmendmentHolds[op.Node] = a.ID
+			}
+		}
+	}
+}
+
+// AddedNode is the live node an add operation created at staging: the node
+// its Node id names, in the map of the noun the operation adds. It is nil for
+// an operation that created none (an add staged before schema 15, any other
+// kind), and for one whose node is gone or names a node of another noun.
+func (t *Tree) AddedNode(op AmendmentOp) Node {
+	if op.Node == "" {
+		return nil
+	}
+	switch AddedNodeNoun(op.Op) {
+	case NounEpic:
+		if e, ok := t.Epics[op.Node]; ok {
+			return e
+		}
+	case NounFeature:
+		if f, ok := t.Features[op.Node]; ok {
+			return f
+		}
+	case NounTask:
+		if tk, ok := t.Tasks[op.Node]; ok {
+			return tk
+		}
 	}
 	return nil
 }

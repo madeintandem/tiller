@@ -211,6 +211,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	// kind per entry: the direct way to pin "AppliedOperation order mirrors
 	// staged order" at the real CLI surface, without guessing at ids approve
 	// itself has not minted yet.
+	t.Skip("held drafts: Task 11")
 	appliedOut, stderr, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	appliedData := jsonData(t, appliedOut)

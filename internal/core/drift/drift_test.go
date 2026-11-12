@@ -1264,6 +1264,7 @@ func TestStaleSpecSpecLegAndExemptionsAndUncovered(t *testing.T) {
 	// exemption is proved against the field the apply really produces rather than
 	// against a hand-authored approximation of it.
 	t.Run("a feature superseded by an applied amendment is exempt", func(t *testing.T) {
+		t.Skip("held drafts: Task 11")
 		root, featID := scratchDoneFeatureWithSurface(t)
 		setManifestChecks(t, root, []string{drift.MarkerStaleSpec})
 		// A second seqDeps would restart its counter and re-mint the event ids

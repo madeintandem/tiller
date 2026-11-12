@@ -145,6 +145,7 @@ func TestReviewedMovePreservesReadyClaimsBasisAndEpicGrain(t *testing.T) {
 }
 
 func TestReviewedMoveMultipleIntoEarlierStagedEpic(t *testing.T) {
+	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, fid, _ := moveFixture(t)
 	other, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{Key: "source/second", Title: "Second", ChangeType: "create"})

@@ -1194,8 +1194,10 @@ func evalPrecondition(tree *store.Tree, b *batch, rev vcs.Revisions, r resolvedO
 		sp.Actual = value
 
 	case preconditionKeyAbsent:
+		// The draft this same add created at staging holds its own key by
+		// construction; key_absent claims nothing ELSE holds it.
 		holder := keyHolder(tree, expected)
-		if holder == nil {
+		if holder == nil || (r.op.Node != "" && holder.NodeID() == r.op.Node) {
 			return nil, nil
 		}
 		sp.Actual = holder.NodeID()

@@ -166,6 +166,10 @@ type AmendmentOperationView struct {
 	Preconditions    []AmendmentPreconditionView     `json:"preconditions,omitempty"`
 	Move             *store.FeatureMovePreconditions `json:"move,omitempty"`
 	Note             string                          `json:"note,omitempty"`
+	// Node is the id of the draft an add operation created when it was
+	// staged, which the amendment holds until approval or withdrawal. It is
+	// empty for an add staged before schema 15, created at approval instead.
+	Node string `json:"node,omitempty"`
 }
 
 // AmendmentRefView names a target, by, or superseded_by: an id and a key when
@@ -275,6 +279,7 @@ func amendmentOperationView(tree *store.Tree, index int, op store.AmendmentOp, v
 		ShapeError:       opShape[index],
 		Move:             op.Move,
 		Retire:           op.Retire,
+		Node:             op.Node,
 	}
 	if op.Target != "" {
 		v.Target = amendmentRefView(tree, op.Target)
@@ -939,7 +944,12 @@ const unresolvedCitationNote = "not a citation Tiller can resolve (path.md#Lstar
 func humanAmend(ref string, staged *mutate.StageResult, design *mutate.AmendsDesignResult) string {
 	var lines []string
 	if staged != nil {
-		lines = append(lines, fmt.Sprintf("Staged operation %d (%s) on amendment %s.", staged.Index, staged.Op.Op, ref))
+		if staged.Op.Node != "" {
+			lines = append(lines, fmt.Sprintf("Staged %s %s as a draft held by %s",
+				staged.Op.Op, gen.RefParts(staged.Op.Key, staged.Op.Node), ref))
+		} else {
+			lines = append(lines, fmt.Sprintf("Staged operation %d (%s) on amendment %s.", staged.Index, staged.Op.Op, ref))
+		}
 		if relationships.UnresolvedCitation(staged.Op.Source) {
 			lines = append(lines, fmt.Sprintf("Warning: --source %q is %s. Nothing edits a staged operation, so it stays opaque text unless the amendment is withdrawn and restaged.", staged.Op.Source, unresolvedCitationNote))
 		}

@@ -17,10 +17,13 @@ package mutate
 // approved or withdrawn amendment's key is free again, because it is no
 // longer an open proposal to collide with.
 //
-// StageOperation and StageAmendsDesign only ever touch an open amendment's
-// own yml; they never read or write the live epic/feature/task tree, which is
-// what lets a staged reshape be reviewed and edited freely before approve (a
-// later task) applies it atomically.
+// StageOperation and StageAmendsDesign write an open amendment's own yml. The
+// one exception to "staging executes nothing" is an added epic, feature, or
+// task: staging creates it at once as an inert draft the amendment holds
+// (store.Tree.AmendmentHolds), in the same commit as the operation that
+// records its id, so the agent can finish it with the ordinary commands
+// before approval moves anything. Every other staged change waits for
+// approve to apply it atomically.
 
 import (
 	"errors"
@@ -31,6 +34,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/id"
 	"github.com/madeintandem/tiller/internal/store"
 	"gopkg.in/yaml.v3"
@@ -371,9 +375,9 @@ func sourcelessOpErr() error {
 // riding along for add-feature only; Reason and SupersededBy record a
 // cancel's justification and optional replacement; Title and Statement are
 // add-question's independent one-line scanning title and full question; Blocks
-// names the nodes that question holds, each resolved against the live tree or
-// a same-amendment staged add's key the same way By is
-// (resolveStageBlockTarget, mirroring resolveStageReplacement); Source cites
+// names the nodes that question holds, each resolved against the live tree
+// the same way By is, a held draft included (resolveStageBlockTarget,
+// mirroring resolveStageReplacement); Source cites
 // the feedback this operation traces to, legal on every op kind; Retire names
 // the criteria a correct-eval deliberately removes and is legal on that op
 // alone; Preconditions
@@ -413,6 +417,13 @@ type StageResult struct {
 // misplaced by/superseded_by, a malformed precondition), but asserts nothing
 // about the live tree beyond id existence: whether a precondition still holds
 // is approve's question, not staging's.
+//
+// An add-epic, add-feature, or add-task also creates its node here, through
+// the same planner `tiller add` uses: an epic or feature in draft, a task in
+// proposed, held by this amendment until it is approved or withdrawn. The
+// node's id lands on the operation as Node, and the node's files, its
+// add.<noun> event, the amendment's yml, and the amendment_staged event all
+// land in one commit, so a refused or failed stage leaves neither half.
 func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in StageInput) (StageResult, error) {
 	owner, err := store.ResolveContributor(tree.Manifest, deps.Contributor)
 	if err != nil {
@@ -441,6 +452,7 @@ func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in 
 		return StageResult{}, err
 	}
 	doc.Operations = append(doc.Operations, op)
+	index := len(doc.Operations) - 1
 	if err := checkMoveConflicts(tree, doc); err != nil {
 		return StageResult{}, err
 	}
@@ -454,13 +466,26 @@ func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in 
 		return StageResult{}, err
 	}
 
+	// Only a well-formed add creates its node, and the node's id is the one
+	// field the operation gains after the shape check (Node is legal on every
+	// add kind that reaches here).
+	var added *plannedAdd
+	if store.AddedNodeNoun(op.Op) != "" {
+		pa, err := planStagedAdd(tree, deps, owner, doc, index, op)
+		if err != nil {
+			return StageResult{}, err
+		}
+		op.Node = pa.result.ID
+		doc.Operations[index] = op
+		added = &pa
+	}
+
 	data, err := yaml.Marshal(doc)
 	if err != nil {
 		return StageResult{}, err
 	}
-	index := len(doc.Operations) - 1
 
-	ev := events.NewEvent(deps.clock(), eventAmendmentStaged, owner.ID, fmt.Sprintf("amend %s --%s", doc.ID, op.Op), doc.ID)
+	ev := events.NewEvent(deps.clock(), eventAmendmentStaged, owner.ID, stageCommand(doc, op), doc.ID)
 	ev.ID = deps.mintRaw("EV")
 	ev.After = map[string]any{"op": op.Op, "index": index}
 	if op.Key != "" {
@@ -478,13 +503,82 @@ func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in 
 	}
 	ev.Files = []events.FileChange{{Path: relYml}}
 
-	if err := commitNodeWrites(tree, "amend."+op.Op, []nodeWrite{
-		{rel: relYml, data: data, before: snapshot, event: ev},
-	}); err != nil {
+	var writes []store.PlannedWrite
+	var evs []events.Event
+	if added != nil {
+		writes = append(writes, added.writes()...)
+		evs = append(evs, added.event)
+	}
+	writes = append(writes, store.PlanWrite(filepath.Join(tree.Root, relYml), snapshot, data))
+	evs = append(evs, ev)
+	if err := commitMutation(tree, "amend."+op.Op, writes, evs); err != nil {
 		return StageResult{}, err
 	}
 
 	return StageResult{AmendmentID: doc.ID, Op: op, Index: index}, nil
+}
+
+// stageCommand is the command line a staging event records.
+func stageCommand(doc *store.Amendment, op store.AmendmentOp) string {
+	return fmt.Sprintf("amend %s --%s", doc.ID, op.Op)
+}
+
+// planStagedAdd plans the node a staged add-epic, add-feature, or add-task
+// creates, through the planner `tiller add` uses, so the draft is the same
+// shape a direct add lands (an epic or feature in draft, a task in proposed,
+// the op's source carried onto an epic's or feature's own source). The
+// node's add.<noun> event carries this amendment and the operation's index,
+// as approval's materialize records them for an add staged before schema 15.
+//
+// The add verbs answer an existing key with an idempotent no-op; staging must
+// not, since the operation would then record a node it never created, and
+// approving or withdrawing the amendment would move or delete work it does
+// not own. That is key_exists, with nothing written.
+func planStagedAdd(tree *store.Tree, deps Deps, owner store.Contributor, doc *store.Amendment, index int, op store.AmendmentOp) (plannedAdd, error) {
+	var (
+		pa  plannedAdd
+		err error
+	)
+	switch op.Op {
+	case store.AmendmentOpAddEpic:
+		pa, err = planAddEpic(tree, deps, owner, EpicInput{Key: op.Key, Title: op.Title, Source: op.Source})
+	case store.AmendmentOpAddFeature:
+		pa, err = planAddFeature(tree, deps, owner, FeatureInput{
+			Key: op.Key, Title: op.Title, ChangeType: op.ChangeType, Source: op.Source}, nil)
+	case store.AmendmentOpAddTask:
+		pa, err = planAddTask(tree, deps, owner, TaskInput{Key: op.Key, Title: op.Title})
+	default:
+		return plannedAdd{}, fmt.Errorf("mutate: %s creates no node at staging", op.Op)
+	}
+	if err != nil {
+		return plannedAdd{}, err
+	}
+	if !pa.result.Created {
+		return plannedAdd{}, &usageError{
+			reason: "key_exists",
+			msg: fmt.Sprintf("%s %s already exists; an amendment never re-adds a node that exists",
+				pa.result.Noun, gen.RefParts(pa.result.Key, pa.result.ID)),
+		}
+	}
+
+	ev := pa.event
+	ev.Command = stageCommand(doc, op)
+	ev.Targets = append(ev.Targets, doc.ID)
+	ev.After["amendment"] = doc.ID
+	ev.After["operation_index"] = index
+	if op.Op == store.AmendmentOpAddFeature {
+		epicKey, _, err := splitFeatureKey(op.Key)
+		if err != nil {
+			return plannedAdd{}, err
+		}
+		epic, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: store.NounEpic, Raw: epicKey})
+		if err != nil {
+			return plannedAdd{}, err
+		}
+		ev.After["epic"] = epic.NodeID()
+	}
+	pa.event = ev
+	return pa, nil
 }
 
 // buildStagedOp validates in against the shape its Op requires and returns the
@@ -537,7 +631,7 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 			if strings.TrimSpace(in.By) == "" {
 				return store.AmendmentOp{}, supersedeByRequiredErr()
 			}
-			by, err := resolveStageReplacement(tree, doc.Operations, in.By)
+			by, err := resolveStageReplacement(tree, in.By)
 			if err != nil {
 				return store.AmendmentOp{}, err
 			}
@@ -549,7 +643,7 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 		if in.Op == store.AmendmentOpCancel {
 			op.Reason = in.Reason
 			if in.SupersededBy != "" {
-				supersededBy, err := resolveStageReplacement(tree, doc.Operations, in.SupersededBy)
+				supersededBy, err := resolveStageReplacement(tree, in.SupersededBy)
 				if err != nil {
 					return store.AmendmentOp{}, err
 				}
@@ -583,7 +677,11 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 		if err != nil {
 			return store.AmendmentOp{}, err
 		}
-		if err := resolveStageParentEpic(tree, doc.Operations, epicKey); err != nil {
+		epic, err := resolveStageParentEpic(tree, epicKey)
+		if err != nil {
+			return store.AmendmentOp{}, err
+		}
+		if err := refuseParentHeldElsewhere(tree, doc, epic); err != nil {
 			return store.AmendmentOp{}, err
 		}
 		op.Key = in.Key
@@ -601,12 +699,25 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 		if err != nil {
 			return store.AmendmentOp{}, err
 		}
-		// Unlike add-feature above, add-task always requires a LIVE feature: a
-		// new feature's task explosion is specify's act, run after the plan
-		// gate, so a same-batch staged add-feature never rescues an add-task's
-		// parent (ruled 2026-08-12).
-		if _, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: store.NounFeature, Raw: epicKey + "/" + featureKey}); err != nil {
+		r := resolve.NewResolver(tree)
+		feature, err := r.Resolve(resolve.Ref{Noun: store.NounFeature, Raw: epicKey + "/" + featureKey})
+		if err != nil {
 			return store.AmendmentOp{}, err
+		}
+		epic, err := r.Resolve(resolve.Ref{Noun: store.NounEpic, Raw: epicKey})
+		if err != nil {
+			return store.AmendmentOp{}, err
+		}
+		if err := refuseParentHeldElsewhere(tree, doc, feature, epic); err != nil {
+			return store.AmendmentOp{}, err
+		}
+		// A feature this amendment holds takes no staged task: a new feature's
+		// task explosion is specify's act, run after the plan gate, so a
+		// same-batch add-feature never parents an add-task (ruled 2026-08-12).
+		// The held draft is live now, so the rule is named rather than left to
+		// the resolver's not-found.
+		if holder := gen.AmendmentHold(tree, feature); holder != nil && holder.ID == doc.ID {
+			return store.AmendmentOp{}, taskUnderHeldFeatureErr(tree, feature)
 		}
 		op.Key = in.Key
 		op.Title = in.Title
@@ -631,7 +742,7 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 		op.Title = in.Title
 		op.Statement = in.Statement
 		for _, raw := range in.Blocks {
-			resolved, err := resolveStageBlockTarget(tree, doc.Operations, raw)
+			resolved, err := resolveStageBlockTarget(tree, raw)
 			if err != nil {
 				return store.AmendmentOp{}, err
 			}
@@ -735,50 +846,23 @@ func resolveStageTarget(tree *store.Tree, raw string) (string, error) {
 }
 
 // resolveStageReplacement resolves a supersede's --by or a cancel's
-// --superseded-by. Either name may address an existing feature or task (id or
-// key, resolved to its id), or the key of an add-feature/add-task operation
-// already staged earlier on this same amendment, whose id does not exist yet
-// and is resolved only when approve materializes it. Deliberately not add-epic:
-// see the loop below.
-func resolveStageReplacement(tree *store.Tree, staged []store.AmendmentOp, raw string) (string, error) {
-	n, isEpic := classifyStageTarget(tree, raw)
-	if isEpic {
-		return "", epicTargetErr()
-	}
-	if n != nil {
-		return n.NodeID(), nil
-	}
-	// Deliberately not store.AmendmentOpAddEpic here: a supersede or a cancel
-	// only ever targets a feature or a task, so a staged epic's key is never a
-	// legal replacement and this loop must not recognize it. A --by or
-	// --superseded-by naming one refuses unknown_target right here, at stage
-	// time, before it ever reaches the amendment's own yml. The only way such
-	// a shape reaches approve at all is a hand-edited amendment (the same
-	// class of defect resolveAmendment's own re-validation guards against
-	// elsewhere); resolveAmendment's staged-key bookkeeping DOES include
-	// add-epic (for its own duplicate-key check), but its replacement
-	// resolution enforces this exact same exclusion a second time
-	// (stagedEpicReplacementErr, amendment_approve.go), rather than letting
-	// that bookkeeping resolve the key and leaving it to checkSupersessionGraph's
-	// unrelated noun check to catch by accident.
-	for _, op := range staged {
-		if (op.Op == store.AmendmentOpAddFeature || op.Op == store.AmendmentOpAddTask) && op.Key == raw {
-			return raw, nil
-		}
-	}
-	return "", unknownTargetErr(raw)
+// --superseded-by to the id of a live feature or task, exactly as a target
+// resolves. A replacement this same amendment adds is a live held draft by
+// the time a later operation names it, so it resolves like any other node, by
+// id or by its current key, and the operation records the id, which survives
+// a rename of the draft. An epic, held or not, is refused epic_target: a
+// supersede or a cancel only ever names a feature or a task.
+func resolveStageReplacement(tree *store.Tree, raw string) (string, error) {
+	return resolveStageTarget(tree, raw)
 }
 
 // resolveStageBlockTarget resolves one --blocks entry staged on an
-// add-question op: an existing epic, feature, or task (id or key, resolved to
-// its id, the same noun-aware dispatch resolveBlockTarget already gives the
-// live `tiller add question` path in question.go), or the key of an
-// add-epic/add-feature/add-task operation already staged earlier on this same
-// amendment, whose id does not exist yet and is resolved only when approve
-// materializes it — the same same-batch allowance resolveStageReplacement
-// gives a supersede's by, above, extended to epics here since a question can
-// block one and a supersede or cancel never targets one.
-func resolveStageBlockTarget(tree *store.Tree, staged []store.AmendmentOp, raw string) (string, error) {
+// add-question op to the id of a live epic, feature, or task, by id or key,
+// the same noun-aware dispatch resolveBlockTarget gives the live `tiller add
+// question` path in question.go. A draft this amendment holds is live, so a
+// question can block it directly (decision 13); the question itself is still
+// created at approval.
+func resolveStageBlockTarget(tree *store.Tree, raw string) (string, error) {
 	n, err := resolveBlockTarget(resolve.NewResolver(tree), raw)
 	if err == nil {
 		return n.NodeID(), nil
@@ -786,18 +870,8 @@ func resolveStageBlockTarget(tree *store.Tree, staged []store.AmendmentOp, raw s
 	var notFound *resolve.ErrNotFound
 	if !errors.As(err, &notFound) {
 		// A definite refusal (raw named a non-blockable class like B- or
-		// Q-, question.go's own resolveBlockTarget): no staged key could
-		// rescue an address like that either, so propagate the refusal
-		// resolveBlockTarget already built rather than searching further.
+		// Q-, question.go's own resolveBlockTarget): propagate it as built.
 		return "", err
-	}
-	for _, op := range staged {
-		switch op.Op {
-		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
-			if op.Key == raw {
-				return raw, nil
-			}
-		}
 	}
 	return "", blocksUnknownTargetErr(raw)
 }
@@ -809,38 +883,57 @@ func blocksUnknownTargetErr(raw string) error {
 	}
 }
 
-// resolveStageParentEpic confirms an add-feature op's epic segment names a
-// real parent: an epic already live in the tree, or the key of an add-epic
-// operation already staged EARLIER on this same amendment, whose id does not
-// exist yet and is resolved only when approve materializes it — the same
-// same-batch allowance resolveStageReplacement gives a supersede's by and
-// resolveStageBlockTarget gives a question's blocks, extended here to the
-// one remaining grain.
-//
-// It mirrors resolveStageBlockTarget's own dispatch: resolve against the live
-// tree first, and only on *resolve.ErrNotFound fall through to the staged
-// scan; any other resolver error (an ambiguous key, say) propagates
-// unrescued, exactly as there.
-func resolveStageParentEpic(tree *store.Tree, staged []store.AmendmentOp, epicKey string) error {
-	_, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: store.NounEpic, Raw: epicKey})
+// resolveStageParentEpic resolves an add-feature op's epic segment against
+// the live tree. An add-epic staged earlier on this same amendment is a live
+// held draft by now, so it resolves like any other epic; staging order still
+// matters, since a later add-epic does not exist yet. Only a
+// *resolve.ErrNotFound is reworded (parentUnknownErr); any other resolver
+// error (an ambiguous key, say) propagates unchanged.
+func resolveStageParentEpic(tree *store.Tree, epicKey string) (store.Node, error) {
+	epic, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: store.NounEpic, Raw: epicKey})
 	if err == nil {
-		return nil
+		return epic, nil
 	}
 	var notFound *resolve.ErrNotFound
 	if !errors.As(err, &notFound) {
-		return err
+		return nil, err
 	}
-	for _, op := range staged {
-		if op.Op == store.AmendmentOpAddEpic && op.Key == epicKey {
-			return nil
+	return nil, parentUnknownErr(epicKey, err)
+}
+
+// refuseParentHeldElsewhere refuses an add under a parent that a different
+// open amendment holds. Approving or withdrawing that amendment would promote
+// or delete the parent under work this one still proposes, so the add belongs
+// on the amendment that holds the parent. parents run nearest first.
+func refuseParentHeldElsewhere(tree *store.Tree, doc *store.Amendment, parents ...store.Node) error {
+	for _, parent := range parents {
+		holder := gen.AmendmentHold(tree, parent)
+		if holder == nil || holder.ID == doc.ID {
+			continue
+		}
+		return &usageError{
+			reason: "parent_held_elsewhere",
+			msg: fmt.Sprintf("%s is held by amendment %s; stage this on that amendment",
+				gen.Ref(tree, parent), gen.Ref(tree, holder)),
 		}
 	}
-	return parentUnknownErr(epicKey, err)
+	return nil
+}
+
+// taskUnderHeldFeatureErr refuses an add-task under a feature this same
+// amendment holds: its tasks come from specify once the amendment is
+// approved, not from staging.
+func taskUnderHeldFeatureErr(tree *store.Tree, feature store.Node) error {
+	return &usageError{
+		reason: "task_under_held_feature",
+		msg: fmt.Sprintf("feature %s is a draft this amendment adds; its tasks come from specify after the amendment is approved, not from staging",
+			gen.Ref(tree, feature)),
+	}
 }
 
 // parentUnknownErr refuses an add-feature op whose epic segment resolved
-// nowhere: not live in the tree, and not among an add-epic staged earlier on
-// this same amendment. cause is the live resolver's *resolve.ErrNotFound,
+// nowhere: not live in the tree, which includes every add-epic staged earlier
+// on this same amendment. cause is the live resolver's *resolve.ErrNotFound,
 // carried through usageError's Unwrap so a caller unwinding for that
 // concrete type still finds it, even though the message now names both
 // misses instead of only the live-tree one.

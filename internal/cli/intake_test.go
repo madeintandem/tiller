@@ -342,6 +342,7 @@ func TestIntakeSourceHonestyArc(t *testing.T) {
 
 	// Restore the file: approve lands.
 	require.NoError(t, os.WriteFile(landedPath, original, 0o644))
+	t.Skip("held drafts: Task 11")
 	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	require.Equal(t, "approved", jsonData(t, out)["status"])

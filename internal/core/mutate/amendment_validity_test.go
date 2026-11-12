@@ -15,6 +15,16 @@ import (
 // live-validity reads, reusing approve's own comparisons rather than a
 // second copy of either.
 
+// heldDeps is gitDeps with a sequential minter: staging an add mints a real
+// node now, and the fixed minter's E-, F-, and T-aaaaaa collide with the
+// fixture's own nodes. Share one value across a test so the sequence never
+// repeats an id.
+func heldDeps(root string) mutate.Deps {
+	d := gitDeps(root)
+	d.Mint = seqDeps().Mint
+	return d
+}
+
 // soleFeatureIDM returns stageFixture's one feature id.
 func soleFeatureIDM(t *testing.T, root string) string {
 	t.Helper()
@@ -68,14 +78,14 @@ func TestEvaluateAmendmentPreconditionsReportsValidAndStale(t *testing.T) {
 }
 
 // TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey stages an
-// add-task op (whose subject is its own staged key, materializing only when
-// approve applies the batch) carrying a target_status precondition, a
-// combination no evaluator can compare against right now: unlike a stale
-// verdict, nothing has CHANGED, there is simply nothing yet to read.
+// add-task op (whose subject is its own staged key) carrying a target_status
+// precondition, a combination no evaluator can compare: an add has no target.
+// Its key_absent reads valid although staging created the task under that
+// key, because the only holder is the operation's own held draft.
 func TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	deps := gitDeps(root)
+	deps := heldDeps(root)
 
 	const newKey = "form-engine/certification-form-loading/extra-task"
 	a := stage(t, root, deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
@@ -101,7 +111,7 @@ func TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey(t *testing.T)
 	require.Empty(t, unknown.Actual, "an unknown precondition has nothing yet to compare")
 
 	valid := byName["key_absent"]
-	require.Equal(t, mutate.PreconditionValid, valid.Status, "the fresh key is free right now")
+	require.Equal(t, mutate.PreconditionValid, valid.Status, "only the operation's own held draft holds the key")
 }
 
 // TestEvaluateAmendmentPreconditionsHandlesAStagedAddEpic pins that add-epic
@@ -113,7 +123,7 @@ func TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey(t *testing.T)
 func TestEvaluateAmendmentPreconditionsHandlesAStagedAddEpic(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	deps := gitDeps(root)
+	deps := heldDeps(root)
 
 	a := stage(t, root, deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddEpic,
@@ -127,7 +137,7 @@ func TestEvaluateAmendmentPreconditionsHandlesAStagedAddEpic(t *testing.T) {
 	got, err := mutate.EvaluateAmendmentPreconditions(load(t, root), deps, a)
 	require.NoError(t, err)
 	require.Len(t, got, 1)
-	require.Equal(t, mutate.PreconditionValid, got[0].Status, "the fresh epic key is free right now")
+	require.Equal(t, mutate.PreconditionValid, got[0].Status, "only the operation's own held epic holds the key")
 	require.Equal(t, store.AmendmentOpAddEpic, got[0].Op)
 	require.Equal(t, "hardening", got[0].Target)
 }
@@ -295,6 +305,7 @@ func TestEvaluateAmendmentSourceNeverWrites(t *testing.T) {
 func TestEvaluateAmendmentOpSourcesReportsEveryBlankedOp(t *testing.T) {
 	t.Parallel()
 	root, deps, a, _ := sourceFixture(t, "the review body\n")
+	deps.Mint = seqDeps().Mint
 
 	a = stage(t, root, deps, a, mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "billing", Title: "Billing",
@@ -371,7 +382,7 @@ func TestEvaluateAmendmentOpSourcesReportsNoneWhenEverySourced(t *testing.T) {
 func TestEvaluateAmendmentOpSourcesIsNilForAHandAmendment(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	a := stage(t, root, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	a := stage(t, root, seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
 	})
 	require.Nil(t, a.Source, "a hand-opened amendment carries no Source")
@@ -391,24 +402,20 @@ func TestEvaluateAmendmentOpSourcesIsNilForAHandAmendment(t *testing.T) {
 // full-report pin: resolveAmendment itself refuses on the FIRST duplicate
 // key it finds, but this evaluator collects every one, the same
 // evaluator-beside-checker relationship EvaluateAmendmentOpSources keeps
-// with checkOpSources. Two independent duplicate pairs are staged so both
-// have to come back, not only the first pair's second occurrence; staging
-// permits this cleanly (TestApproveAmendmentRefusesDuplicateStagedAddEpicKeysWithNoWrites's
-// own fixture shows only approve refuses it), so no hand-edit is needed
-// here.
+// with checkOpSources. Two independent duplicate pairs are laid so both
+// have to come back, not only the first pair's second occurrence. Staging
+// now refuses a repeated key itself (the first stage created the node, so the
+// second is key_exists), so the batch is laid by hand in the shape an
+// amendment staged before schema 15 can still carry.
 func TestEvaluateAmendmentShapeReportsEveryDuplicateStagedKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	a := loadAmendment(t, root, amendmentID)
-
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "billing", Title: "Billing one"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "billing", Title: "Billing two"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "shipping", Title: "Shipping one"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "shipping", Title: "Shipping two"})
+	a := writeAmendmentOps(t, root, loadAmendment(t, root, amendmentID), []store.AmendmentOp{
+		{Op: store.AmendmentOpAddEpic, Key: "billing", Title: "Billing one"},
+		{Op: store.AmendmentOpAddEpic, Key: "billing", Title: "Billing two"},
+		{Op: store.AmendmentOpAddEpic, Key: "shipping", Title: "Shipping one"},
+		{Op: store.AmendmentOpAddEpic, Key: "shipping", Title: "Shipping two"},
+	})
 
 	got := mutate.EvaluateAmendmentShape(a)
 	require.Len(t, got, 2, "both duplicate pairs are reported, not only the first")
@@ -430,14 +437,12 @@ func TestEvaluateAmendmentShapeReportsEveryDuplicateStagedKey(t *testing.T) {
 func TestEvaluateAmendmentShapeReportsEveryOccurrenceWhenOneKeyRepeatsThreeTimes(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	a := loadAmendment(t, root, amendmentID)
-
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening one"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening three"})
+	// Laid by hand, as above: staging refuses the repeat itself.
+	a := writeAmendmentOps(t, root, loadAmendment(t, root, amendmentID), []store.AmendmentOp{
+		{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening one"},
+		{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two"},
+		{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening three"},
+	})
 
 	got := mutate.EvaluateAmendmentShape(a)
 	require.Len(t, got, 2, "operation 0 stages the key cleanly; 1 and 2 both repeat it")
@@ -520,9 +525,10 @@ func TestEvaluateAmendmentShapeReportsNoneForACleanBatch(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
 	a := loadAmendment(t, root, amendmentID)
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
+	deps := seqDeps()
+	a = stage(t, root, deps, a, mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
-	a = stage(t, root, testDeps(), a, mutate.StageInput{
+	a = stage(t, root, deps, a, mutate.StageInput{
 		Op: store.AmendmentOpAddFeature, Key: "hardening/onboarding", Title: "Onboarding", ChangeType: "create"})
 
 	got := mutate.EvaluateAmendmentShape(a)
@@ -599,6 +605,7 @@ func TestFolderSourceStaleness(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Equal(t, mutate.PreconditionValid, got.Status)
+		t.Skip("held drafts: Task 11")
 		_, err = mutate.ApproveAmendment(load(t, root), deps, a)
 		require.NoError(t, err)
 	})

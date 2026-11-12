@@ -183,6 +183,76 @@ func TestLoad_DuplicateAmendmentIDIsRefused(t *testing.T) {
 	assert.Contains(t, err.Error(), amendmentFixtureID)
 }
 
+// holdFixture copies the fixture tree and rewrites its one amendment's
+// add-feature and add-task operations by hand: featureNode and taskNode land
+// as each operation's node (blank leaves it off), taskRemoved as the
+// add-task's removal reason, and status replaces the amendment's own.
+func holdFixture(t *testing.T, status, featureNode, taskNode, taskRemoved string) string {
+	t.Helper()
+	root := copyTree(t, fixtureTreeRoot)
+	path := filepath.Join(root, ".tiller", "amendments", "A-d6w3f9-iphone-only.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: proposed", "status: "+status, 1)
+	if featureNode != "" {
+		out = strings.Replace(out, "  - op: add-feature\n", "  - op: add-feature\n    node: "+featureNode+"\n", 1)
+	}
+	if taskNode != "" {
+		out = strings.Replace(out, "  - op: add-task\n", "  - op: add-task\n    node: "+taskNode+"\n", 1)
+	}
+	if taskRemoved != "" {
+		out = strings.Replace(out, "  - op: add-task\n", "  - op: add-task\n    removed: "+taskRemoved+"\n", 1)
+	}
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
+	return root
+}
+
+// The loader derives which open amendment holds which node from the add
+// operations' node ids: nothing on the node itself says so (the design's
+// "Held drafts in the store"). An operation marked removed holds nothing.
+func TestLoad_AmendmentHoldsIndexesOpenAddOperations(t *testing.T) {
+	root := holdFixture(t, AmendmentStatusDraft, "F-79dh3q", "T-k3p9w6", "dropped")
+
+	tree, err := Load(root)
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{"F-79dh3q": amendmentFixtureID}, tree.AmendmentHolds)
+}
+
+// TestHoldIndexSkipsAMissingNode: an operation whose node names an id no node
+// carries (a hand edit, or a draft deleted outside Tiller) loads cleanly and
+// holds nothing; propose is what reports it.
+func TestHoldIndexSkipsAMissingNode(t *testing.T) {
+	root := holdFixture(t, AmendmentStatusProposed, "F-zzzzzz", "", "")
+
+	tree, err := Load(root)
+	require.NoError(t, err)
+	assert.Empty(t, tree.AmendmentHolds)
+}
+
+// A node id must name a node of the operation's own noun: an add-feature
+// operation pointing at a task holds nothing.
+func TestHoldIndexSkipsANodeOfTheWrongNoun(t *testing.T) {
+	root := holdFixture(t, AmendmentStatusProposed, "T-k3p9w6", "", "")
+
+	tree, err := Load(root)
+	require.NoError(t, err)
+	assert.Empty(t, tree.AmendmentHolds)
+}
+
+// TestHoldEndsWhenTheAmendmentCloses: the hold lives only while the amendment
+// is open, so the write that closes it lifts the hold everywhere at once.
+func TestHoldEndsWhenTheAmendmentCloses(t *testing.T) {
+	for _, status := range []string{AmendmentStatusWithdrawn, AmendmentStatusApproved} {
+		t.Run(status, func(t *testing.T) {
+			root := holdFixture(t, status, "F-79dh3q", "", "")
+
+			tree, err := Load(root)
+			require.NoError(t, err)
+			assert.Empty(t, tree.AmendmentHolds)
+		})
+	}
+}
+
 func TestLoad_Question(t *testing.T) {
 	tree, err := Load(fixtureTreeRoot)
 	require.NoError(t, err)

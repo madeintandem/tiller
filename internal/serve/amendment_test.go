@@ -335,6 +335,21 @@ func amendmentDocPath(t *testing.T, root, amendmentID string) string {
 	return matches[0]
 }
 
+// appendOpOnDisk hand-appends one operation to an amendment's yml, for a
+// shape staging itself refuses.
+func appendOpOnDisk(t *testing.T, root, amendmentID string, op store.AmendmentOp) {
+	t.Helper()
+	path := amendmentDocPath(t, root, amendmentID)
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var doc store.Amendment
+	require.NoError(t, yaml.Unmarshal(data, &doc))
+	doc.Operations = append(doc.Operations, op)
+	out, err := yaml.Marshal(doc)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, out, 0o644))
+}
+
 // blankOpSourceOnDisk hand-blanks one staged operation's own Source
 // citation, the shape only a hand edit can produce (StageOperation itself
 // requires a non-blank Source on every op of an intake-minted amendment):
@@ -532,11 +547,11 @@ func amendmentHandEditFixture(t *testing.T) (root, amendmentID string) {
 		})
 		return err
 	})
-	step(func(tree *store.Tree) error {
-		_, err := mutate.StageOperation(tree, deps, tree.Amendments[amendmentID], mutate.StageInput{
-			Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two", Source: "docs/feedback/review.md#L5-6",
-		})
-		return err
+	// Staging refuses a repeated key itself now (the first stage created the
+	// epic), so the duplicate is hand-appended in the node-less shape an
+	// amendment staged before schema 15 carries.
+	appendOpOnDisk(t, root, amendmentID, store.AmendmentOp{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two", Source: "docs/feedback/review.md#L5-6",
 	})
 
 	blankOpSourceOnDisk(t, root, amendmentID, 0)

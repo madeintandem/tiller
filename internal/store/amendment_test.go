@@ -185,6 +185,24 @@ func TestValidateAmendment_Rejections(t *testing.T) {
 			wantOp:  4,
 		},
 		{
+			name:    "node set on a non-add op",
+			mutate:  func(a *Amendment) { a.Operations[0].Node = "F-abc123" },
+			wantMsg: "operation 0",
+			wantOp:  0,
+		},
+		{
+			name:    "removed set on an add op with no node",
+			mutate:  func(a *Amendment) { a.Operations[3].Removed = "not wanted" },
+			wantMsg: "operation 3",
+			wantOp:  3,
+		},
+		{
+			name:    "removed set on a non-add op",
+			mutate:  func(a *Amendment) { a.Operations[2].Removed = "not wanted" },
+			wantMsg: "operation 2",
+			wantOp:  2,
+		},
+		{
 			name:    "revise with no target",
 			mutate:  func(a *Amendment) { a.Operations[0].Target = "" },
 			wantMsg: "operation 0",
@@ -258,6 +276,42 @@ func TestValidateAmendment_AddEpic(t *testing.T) {
 	var shapeErr *AmendmentShapeError
 	require.ErrorAs(t, err, &shapeErr)
 	assert.Equal(t, 0, shapeErr.OpIndex)
+}
+
+// TestValidateAmendment_HeldDraftNode pins the two fields a held draft adds to
+// an add operation: node, the id of the draft staging created, legal on the
+// three node-creating add kinds and nowhere else (a staged question is still
+// created at approval), and removed, the removal reason, legal only beside a
+// node. Both round-trip through YAML under their wire names.
+func TestValidateAmendment_HeldDraftNode(t *testing.T) {
+	key := "iphone-only"
+	a := Amendment{
+		ID: "A-d6w3f9", Key: &key, Status: AmendmentStatusDraft,
+		Operations: []AmendmentOp{
+			{Op: AmendmentOpAddEpic, Key: "hardening", Node: "E-h4rd3n"},
+			{Op: AmendmentOpAddFeature, Key: "hardening/csp", Node: "F-c5p0aa", Removed: "folded into another feature"},
+			{Op: AmendmentOpAddTask, Key: "form-engine/loading/acceptance", Node: "T-acc3pt"},
+		},
+	}
+	require.NoError(t, ValidateAmendment(&a))
+
+	data, err := yaml.Marshal(a)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "node: E-h4rd3n")
+	assert.Contains(t, string(data), "removed: folded into another feature")
+	var back Amendment
+	require.NoError(t, yaml.Unmarshal(data, &back))
+	assert.Equal(t, a.Operations, back.Operations)
+
+	question := Amendment{
+		ID: "A-d6w3f9", Key: &key, Status: AmendmentStatusDraft,
+		Operations: []AmendmentOp{
+			{Op: AmendmentOpAddQuestion, Title: "Which cipher?", Statement: "Which cipher suite?", Node: "Q-abc123"},
+		},
+	}
+	err = ValidateAmendment(&question)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "node")
 }
 
 // TestValidateAmendment_AddQuestion pins add-question's two-field shape:

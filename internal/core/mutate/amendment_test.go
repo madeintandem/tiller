@@ -9,6 +9,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -466,11 +467,10 @@ func TestStageOperationSupersedeByStagedAddFeatureKey(t *testing.T) {
 	featureID := tree.Features["F-aaaaaa"].ID
 
 	// Stage the add-feature first, so its key is available for --by to name.
-	_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
-		Op:            store.AmendmentOpAddFeature,
-		Key:           "form-engine/table-backed-forms",
-		ChangeType:    "replace",
-		Preconditions: map[string]string{"key_absent": "form-engine/table-backed-forms"},
+	added, err := mutate.StageOperation(tree, seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+		Op:         store.AmendmentOpAddFeature,
+		Key:        "form-engine/table-backed-forms",
+		ChangeType: "replace",
 	})
 	require.NoError(t, err)
 
@@ -480,8 +480,8 @@ func TestStageOperationSupersedeByStagedAddFeatureKey(t *testing.T) {
 		By:     "form-engine/table-backed-forms",
 	})
 	require.NoError(t, err)
-	require.Equal(t, "form-engine/table-backed-forms", res.Op.By,
-		"a staged add's key resolves at apply time, so staging records the key verbatim")
+	require.Equal(t, added.Op.Node, res.Op.By,
+		"a staged add is a live held draft, so --by records its id, which survives a rename")
 }
 
 func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testing.T) {
@@ -490,7 +490,7 @@ func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testin
 	tree := load(t, root)
 	taskID := tree.Tasks["T-aaaaaa"].ID
 
-	_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	added, err := mutate.StageOperation(tree, seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:  store.AmendmentOpAddTask,
 		Key: "form-engine/certification-form-loading/iphone-acceptance",
 	})
@@ -505,13 +505,13 @@ func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testin
 	require.NoError(t, err)
 	require.Equal(t, taskID, res.Op.Target)
 	require.Equal(t, "superseded under the iPhone-only decision", res.Op.Reason)
-	require.Equal(t, "form-engine/certification-form-loading/iphone-acceptance", res.Op.SupersededBy)
+	require.Equal(t, added.Op.Node, res.Op.SupersededBy, "the held replacement resolves to its id")
 }
 
 func TestStageOperationAddFeatureHappyPath(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	res, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	res, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:            store.AmendmentOpAddFeature,
 		Key:           "form-engine/table-backed-forms",
 		Title:         "Table-backed forms",
@@ -529,7 +529,7 @@ func TestStageOperationAddFeatureHappyPath(t *testing.T) {
 func TestStageOperationAddEpicHappyPath(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	res, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	res, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddEpic,
 		Key:   "hardening",
 		Title: "Hardening",
@@ -564,7 +564,7 @@ func TestStageOperationAddEpicWithBlankKeyIsCaughtByValidateAmendment(t *testing
 func TestStageOperationAddTaskHappyPath(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
-	res, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	res, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddTask,
 		Key:   "form-engine/certification-form-loading/iphone-acceptance",
 		Title: "iPhone-only acceptance",
@@ -578,18 +578,19 @@ func TestStageOperationAddTaskHappyPath(t *testing.T) {
 
 // TestStageOperationAddFeatureRescuedBySameBatchStagedEpic pins the
 // same-batch parenting allowance at feature grain: an add-epic staged
-// earlier on this same amendment rescues a later add-feature naming it, even
-// though the epic is not live yet and exists only as a staged operation.
+// earlier on this same amendment parents a later add-feature naming it,
+// because staging created the epic as a held draft.
 func TestStageOperationAddFeatureRescuedBySameBatchStagedEpic(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
+	deps := seqDeps()
 
-	_, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	_, err := mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
 	})
 	require.NoError(t, err)
 
-	res, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	res, err := mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create",
 	})
 	require.NoError(t, err)
@@ -625,43 +626,44 @@ func TestStageOperationAddFeatureRefusesBeforeItsEpicIsStaged(t *testing.T) {
 
 // TestStageOperationAddTaskRefusesUnderSameBatchStagedFeature pins the
 // deliberate asymmetry with add-feature above: a feature staged earlier on
-// this same amendment never rescues an add-task's parent, because a new
-// feature's task explosion is specify's act, run after the plan gate, not
-// staging's (ruled 2026-08-12). add-task still refuses the bare
-// *resolve.ErrNotFound the live resolver returns, exactly as it always has.
+// this same amendment never parents an add-task, because a new feature's task
+// explosion is specify's act, run after the plan gate, not staging's (ruled
+// 2026-08-12). The held draft is live, so the refusal is named
+// (task_under_held_feature) rather than the resolver's not-found.
 func TestStageOperationAddTaskRefusesUnderSameBatchStagedFeature(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
+	deps := seqDeps()
 
-	_, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	_, err := mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddFeature, Key: "form-engine/table-backed-forms", ChangeType: "replace",
 	})
 	require.NoError(t, err)
 
-	_, err = mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	_, err = mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddTask, Key: "form-engine/table-backed-forms/schema-validation",
 	})
-	require.Error(t, err)
-	var nf *resolve.ErrNotFound
-	require.ErrorAs(t, err, &nf, "a same-batch staged feature is not live, so add-task still refuses not_found")
+	var r interface{ Reason() string }
+	require.ErrorAs(t, err, &r)
+	require.Equal(t, "task_under_held_feature", r.Reason())
+	require.ErrorContains(t, err, "specify")
+	require.Len(t, load(t, root).Tasks, 1, "no task was created")
 
 	reloaded := loadAmendment(t, root, amendmentID)
 	require.Len(t, reloaded.Operations, 1, "the refused add-task must not write")
 }
 
-// TestStageOperationSupersedeByIgnoresSameBatchStagedEpicKey pins that the
-// same-batch rescue added above does not leak into supersede/cancel: a
-// staged add-epic's key is deliberately excluded from
-// resolveStageReplacement's staged-key loop (an epic reshapes only through
-// its features, never as a supersede/cancel replacement directly), so naming
-// it on --by still refuses unknown_target exactly as before this task.
+// TestStageOperationSupersedeByIgnoresSameBatchStagedEpicKey pins that a
+// staged add-epic is no supersede replacement: an epic reshapes only through
+// its features, and the held draft is a live epic, so naming it on --by
+// refuses epic_target the way a long-standing epic does.
 func TestStageOperationSupersedeByIgnoresSameBatchStagedEpicKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
 	tree := load(t, root)
 	featureID := tree.Features["F-aaaaaa"].ID
 
-	_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	_, err := mutate.StageOperation(tree, seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
 	})
 	require.NoError(t, err)
@@ -672,28 +674,19 @@ func TestStageOperationSupersedeByIgnoresSameBatchStagedEpicKey(t *testing.T) {
 	require.Error(t, err)
 	var r interface{ Reason() string }
 	require.ErrorAs(t, err, &r)
-	require.Equal(t, "unknown_target", r.Reason())
+	require.Equal(t, "epic_target", r.Reason())
 }
 
 // TestStageOperationReviseTargetIgnoresSameBatchStagedEpicKey pins the same
-// exclusion from the OTHER direction: a revise/supersede/cancel op's own
-// --revise/--supersede/--cancel TARGET never goes anywhere near the
-// same-batch rescue at all, staged epic or not. resolveStageTarget resolves
-// straight against the live tree (classifyStageTarget) and never reads
-// doc.Operations, unlike --by/--superseded-by (resolveStageReplacement) and
-// --blocks (resolveStageBlockTarget), which do consult staged ops but
-// deliberately exclude add-epic keys from the search
-// (TestStageOperationSupersedeByIgnoresSameBatchStagedEpicKey, above). A
-// staged add-epic's key named as a revise target still refuses
-// unknown_target, not epic_target: unlike a LIVE epic key ("epic target by
-// key" in TestStageOperationRefusals), a merely-staged one never resolves to
-// an epic node at all, so it reads as unrecognized rather than as the
-// wrong-noun class epic_target names.
+// exclusion from the OTHER direction: a staged add-epic's key named as a
+// revise target is a live held epic, so it refuses epic_target exactly as a
+// long-standing epic key does ("epic target by key" in
+// TestStageOperationRefusals).
 func TestStageOperationReviseTargetIgnoresSameBatchStagedEpicKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
 
-	_, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	_, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
 	})
 	require.NoError(t, err)
@@ -704,7 +697,7 @@ func TestStageOperationReviseTargetIgnoresSameBatchStagedEpicKey(t *testing.T) {
 	require.Error(t, err)
 	var r interface{ Reason() string }
 	require.ErrorAs(t, err, &r)
-	require.Equal(t, "unknown_target", r.Reason())
+	require.Equal(t, "epic_target", r.Reason())
 }
 
 // TestStageOperationAddQuestionHappyPath pins add-question's two-field staged
@@ -797,16 +790,16 @@ func TestStageOperationAddQuestionResolvesLiveBlocks(t *testing.T) {
 }
 
 // TestStageOperationAddQuestionResolvesStagedBlockKey pins the same-batch
-// allowance: a blocks entry naming the key of an
-// add-feature staged EARLIER on this same amendment is recorded as the raw
-// key, unresolved, the same shape resolveStageReplacement already gives a
-// supersede's by (TestStageOperationSupersedeByStagedAddFeatureKey).
+// allowance: a blocks entry naming the key of an add-feature staged EARLIER
+// on this same amendment names a live held draft, so it is recorded as the
+// draft's id (decision 13), the same resolution a supersede's by gets
+// (TestStageOperationSupersedeByStagedAddFeatureKey).
 func TestStageOperationAddQuestionResolvesStagedBlockKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
 
 	const stagedKey = "form-engine/table-backed-forms"
-	_, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	added, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddFeature, Key: stagedKey, ChangeType: "replace",
 	})
 	require.NoError(t, err)
@@ -816,22 +809,21 @@ func TestStageOperationAddQuestionResolvesStagedBlockKey(t *testing.T) {
 		Blocks: []string{stagedKey},
 	})
 	require.NoError(t, err)
-	require.Equal(t, []string{stagedKey}, res.Op.Blocks,
-		"a staged add's key resolves at apply time, so staging records the key verbatim")
+	require.Equal(t, []string{added.Op.Node}, res.Op.Blocks,
+		"a held draft is live, so its key resolves to its id at staging")
 }
 
 // TestStageOperationAddQuestionResolvesStagedEpicBlockKey mirrors
 // TestStageOperationAddQuestionResolvesStagedBlockKey immediately above with
 // the staged op swapped from add-feature to add-epic (#57's carried note: no
 // pin exercised an add-question blocks target naming a staged EPIC key
-// specifically). resolveStageBlockTarget's own same-batch allowance draws no
-// distinction by op kind, but nothing pinned that until now.
+// specifically). A held epic resolves like a held feature.
 func TestStageOperationAddQuestionResolvesStagedEpicBlockKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
 
 	const stagedKey = "hardening"
-	_, err := mutate.StageOperation(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+	added, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op: store.AmendmentOpAddEpic, Key: stagedKey, Title: "Hardening",
 	})
 	require.NoError(t, err)
@@ -841,8 +833,8 @@ func TestStageOperationAddQuestionResolvesStagedEpicBlockKey(t *testing.T) {
 		Blocks: []string{stagedKey},
 	})
 	require.NoError(t, err)
-	require.Equal(t, []string{stagedKey}, res.Op.Blocks,
-		"a staged add-epic's key resolves at apply time, so staging records the key verbatim")
+	require.Equal(t, []string{added.Op.Node}, res.Op.Blocks,
+		"a held epic is live, so its key resolves to its id at staging")
 }
 
 // TestStageOperationAddQuestionRefusesAnUnresolvableBlock pins the refusal:
@@ -1389,4 +1381,237 @@ func TestOpenKeyCollisionCoversDraft(t *testing.T) {
 	require.ErrorAs(t, err, &r)
 	require.Equal(t, "amendment_exists", r.Reason())
 	require.Len(t, load(t, root).Amendments, 1)
+}
+
+// --- StageOperation: held drafts ---
+
+// stageHeld stages one add onto an open amendment with a sequential minter (the
+// fixture's fixed minter collides with the fixture's own E-, F-, and T-aaaaaa
+// once staging mints real nodes) and returns the result.
+func stageHeld(t *testing.T, root string, deps mutate.Deps, amendmentID string, in mutate.StageInput) mutate.StageResult {
+	t.Helper()
+	res, err := mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, amendmentID), in)
+	require.NoError(t, err)
+	return res
+}
+
+// eventsFor filters an event list down to one type naming target first.
+func eventsFor(t *testing.T, root, typ, target string) []events.Event {
+	t.Helper()
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	var out []events.Event
+	for _, e := range eventsOfType(evs, typ) {
+		if len(e.Targets) > 0 && e.Targets[0] == target {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// requireHeldBy asserts the loaded tree's hold index and gen.AmendmentHold
+// both name amendmentID as the holder of n.
+func requireHeldBy(t *testing.T, tree *store.Tree, n store.Node, amendmentID string) {
+	t.Helper()
+	require.Equal(t, amendmentID, tree.AmendmentHolds[n.NodeID()])
+	holder := gen.AmendmentHold(tree, n)
+	require.NotNil(t, holder, "%s must be held", n.NodeID())
+	require.Equal(t, amendmentID, holder.ID)
+}
+
+// TestStageAddEpicCreatesAHeldDraft: staging an add-epic creates the epic at
+// once, in draft, records its id on the operation, and the tree knows the
+// amendment holds it (decision 7). The node's own add.epic event carries the
+// amendment and operation index, as approval wrote them before, and lands in
+// the same commit as the amendment_staged event.
+func TestStageAddEpicCreatesAHeldDraft(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+
+	res := stageHeld(t, root, seqDeps(), amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
+	})
+	require.NotEmpty(t, res.Op.Node)
+	require.FileExists(t, filepath.Join(root, ".tiller", "epics", "hardening", "epic.yml"))
+	require.FileExists(t, filepath.Join(root, ".tiller", "epics", "hardening", "epic.md"))
+
+	tree := load(t, root)
+	epic := tree.Epics[res.Op.Node]
+	require.NotNil(t, epic)
+	require.Equal(t, "draft", epic.Status)
+	require.Equal(t, "hardening", *epic.Key)
+	require.Equal(t, res.Op.Node, tree.Amendments[amendmentID].Operations[0].Node)
+	requireHeldBy(t, tree, epic, amendmentID)
+
+	added := eventsFor(t, root, "add.epic", epic.ID)
+	require.Len(t, added, 1)
+	require.Equal(t, amendmentID, added[0].After["amendment"])
+	require.EqualValues(t, 0, added[0].After["operation_index"])
+	require.Contains(t, added[0].Targets, amendmentID)
+	require.Len(t, eventsFor(t, root, "amendment_staged", amendmentID), 1)
+}
+
+// TestStageAddFeatureUnderAHeldEpic: a feature staged under an epic the same
+// amendment added finds that epic live and lands as a second held draft.
+func TestStageAddFeatureUnderAHeldEpic(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	deps := seqDeps()
+
+	epic := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
+	})
+	res := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create",
+	})
+
+	tree := load(t, root)
+	feat := tree.Features[res.Op.Node]
+	require.NotNil(t, feat)
+	require.Equal(t, "draft", feat.Status)
+	require.Equal(t, "hardening", feat.EpicKey)
+	requireHeldBy(t, tree, feat, amendmentID)
+	requireHeldBy(t, tree, tree.Epics[epic.Op.Node], amendmentID)
+
+	added := eventsFor(t, root, "add.feature", feat.ID)
+	require.Len(t, added, 1)
+	require.EqualValues(t, 1, added[0].After["operation_index"])
+	require.Equal(t, epic.Op.Node, added[0].After["epic"])
+}
+
+// TestStageAddFeatureUnderAnApprovedEpic: a new feature under existing,
+// approved work is a held draft too; the hold, not the parent, keeps it inert.
+func TestStageAddFeatureUnderAnApprovedEpic(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+
+	res := stageHeld(t, root, seqDeps(), amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/table-backed-forms", Title: "Table-backed forms", ChangeType: "replace",
+	})
+
+	tree := load(t, root)
+	feat := tree.Features[res.Op.Node]
+	require.NotNil(t, feat)
+	require.Equal(t, "draft", feat.Status)
+	require.Equal(t, "replace", feat.ChangeType)
+	requireHeldBy(t, tree, feat, amendmentID)
+	require.Nil(t, gen.AmendmentHold(tree, tree.Epics["E-aaaaaa"]), "the approved parent is not held")
+}
+
+// TestStageAddTaskCreatesAHeldProposedTask: a task staged under an approved
+// feature lands proposed, as `tiller add task` lands it, and held.
+func TestStageAddTaskCreatesAHeldProposedTask(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "ready")
+
+	res := stageHeld(t, root, seqDeps(), amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/iphone-acceptance", Title: "iPhone-only acceptance",
+	})
+
+	tree := load(t, root)
+	task := tree.Tasks[res.Op.Node]
+	require.NotNil(t, task)
+	require.Equal(t, "proposed", task.Status)
+	require.Equal(t, "F-aaaaaa", task.FeatureID)
+	require.FileExists(t, filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "iphone-acceptance", "task.md"))
+	requireHeldBy(t, tree, task, amendmentID)
+	require.Len(t, eventsFor(t, root, "add.task", task.ID), 1)
+}
+
+// TestStageAddRefusesAnExistingKey: an amendment never re-adds a node that
+// exists, so staging a key a live node holds refuses key_exists and writes
+// nothing, not even the operation.
+func TestStageAddRefusesAnExistingKey(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+
+	_, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/certification-form-loading", Title: "Again", ChangeType: "create",
+	})
+	var r interface{ Reason() string }
+	require.ErrorAs(t, err, &r)
+	require.Equal(t, "key_exists", r.Reason())
+	require.Empty(t, loadAmendment(t, root, amendmentID).Operations, "a refused stage must not write")
+	require.Empty(t, eventsFor(t, root, "amendment_staged", amendmentID))
+	require.Len(t, load(t, root).Features, 1)
+}
+
+// TestStageAddRefusesAParentHeldElsewhere: an add under a draft a different
+// open amendment holds is refused, naming that amendment, or approving or
+// withdrawing one amendment would move or delete nodes the other proposes.
+func TestStageAddRefusesAParentHeldElsewhere(t *testing.T) {
+	t.Parallel()
+	root, firstID := stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+	deps := seqDeps()
+	stageHeld(t, root, deps, firstID, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	stageHeld(t, root, deps, firstID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/table-backed-forms", Title: "Table-backed forms", ChangeType: "create",
+	})
+	secondDeps := gitDeps(root)
+	secondDeps.Mint = deps.Mint
+	second, err := mutate.AddAmendment(load(t, root), secondDeps, mutate.AmendmentInput{Key: "second", Title: "Second"})
+	require.NoError(t, err)
+
+	cases := []mutate.StageInput{
+		{Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"},
+		{Op: store.AmendmentOpAddTask, Key: "form-engine/table-backed-forms/schema", Title: "Schema"},
+	}
+	for _, in := range cases {
+		_, err := mutate.StageOperation(load(t, root), deps, loadAmendment(t, root, second.ID), in)
+		var r interface{ Reason() string }
+		require.ErrorAs(t, err, &r, in.Key)
+		require.Equal(t, "parent_held_elsewhere", r.Reason(), in.Key)
+		require.ErrorContains(t, err, "is held by amendment")
+		require.ErrorContains(t, err, firstID)
+		require.ErrorContains(t, err, "stage this on that amendment")
+	}
+	require.Empty(t, loadAmendment(t, root, second.ID).Operations, "a refused stage must not write")
+}
+
+// TestProposeRefusesAMissingHeldNode: propose checks that every node the
+// amendment holds still exists (decision 10), naming the operation whose node
+// is gone, and leaves the amendment a draft.
+func TestProposeRefusesAMissingHeldNode(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	stageHeld(t, root, seqDeps(), amendmentID, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	a := loadAmendment(t, root, amendmentID)
+	ops := append([]store.AmendmentOp(nil), a.Operations...)
+	ops[0].Node = "E-zzzzzz"
+	a = writeAmendmentOps(t, root, a, ops)
+	require.Empty(t, load(t, root).AmendmentHolds, "the index skips the missing node")
+
+	_, err := mutate.ProposeAmendment(load(t, root), gitDeps(root), a)
+	var r interface{ Reason() string }
+	require.ErrorAs(t, err, &r)
+	require.Equal(t, "held_node_missing", r.Reason())
+	require.ErrorContains(t, err, "operation 0")
+	require.Equal(t, store.AmendmentStatusDraft, loadAmendment(t, root, amendmentID).Status)
+}
+
+// TestStageSourceCitationReachesTheNode: an add's --source lands on the
+// created node's own source, as approval carried it before (a task has no
+// source field; its citation stays on the operation).
+func TestStageSourceCitationReachesTheNode(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	deps := seqDeps()
+
+	epic := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening", Source: "design/hardening.md#L1-L9",
+	})
+	feat := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", ChangeType: "create", Source: "design/hardening.md#L4-L6",
+	})
+
+	tree := load(t, root)
+	require.Contains(t, tree.Epics, epic.Op.Node)
+	require.Contains(t, tree.Features, feat.Op.Node)
+	require.Equal(t, "design/hardening.md#L1-L9", tree.Epics[epic.Op.Node].Source)
+	require.Equal(t, "design/hardening.md#L4-L6", tree.Features[feat.Op.Node].Source)
+	require.Equal(t, "design/hardening.md#L4-L6", tree.Amendments[amendmentID].Operations[1].Source)
 }

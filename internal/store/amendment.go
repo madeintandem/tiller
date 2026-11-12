@@ -186,6 +186,19 @@ type AmendmentOp struct {
 	Preconditions map[string]string         `yaml:"preconditions,omitempty"`
 	Move          *FeatureMovePreconditions `yaml:"move,omitempty" json:"move,omitempty"`
 	Retire        []string                  `yaml:"retire,omitempty"`
+
+	// Node is the id of the draft an add-epic, add-feature, or add-task created
+	// when it was staged: the amendment holds that node until it is approved or
+	// withdrawn (the hold is derived from this field, Tree.AmendmentHolds). It
+	// is the node's identity, not Key, that every reader follows, since a held
+	// draft can be renamed and Key keeps the key as staged. An add operation
+	// staged before schema 15 carries none and is created at approval instead.
+	Node string `yaml:"node,omitempty"`
+
+	// Removed is the reason a held draft was removed from the proposal. The
+	// operation stays on the list, so indexes and the record of what was
+	// staged do not change; it holds nothing. Legal only beside Node.
+	Removed string `yaml:"removed,omitempty"`
 }
 
 // FeatureMovePreconditions pins the reviewed placement, policy and complete
@@ -303,6 +316,16 @@ func validateAmendmentOp(i int, op AmendmentOp) error {
 	if op.Move != nil && op.Op != AmendmentOpMoveFeature {
 		return amendmentOpErr(i, "move preconditions are only legal on move-feature")
 	}
+	if op.Node != "" && AddedNodeNoun(op.Op) == "" {
+		return amendmentOpErr(i, fmt.Sprintf(
+			"operation %d (%s) sets node, which only an %s, %s, or %s operation may carry",
+			i, op.Op, AmendmentOpAddEpic, AmendmentOpAddFeature, AmendmentOpAddTask))
+	}
+	if op.Removed != "" && op.Node == "" {
+		return amendmentOpErr(i, fmt.Sprintf(
+			"operation %d (%s) sets removed, which only an add operation that carries node may carry",
+			i, op.Op))
+	}
 	if op.Op == AmendmentOpMoveFeature {
 		if strings.TrimSpace(op.Target) == "" || strings.TrimSpace(op.Key) == "" || strings.TrimSpace(op.Reason) == "" || op.Move == nil {
 			return amendmentOpErr(i, "move-feature requires target, key, reason and captured move preconditions")
@@ -365,6 +388,21 @@ func validateCorrectEval(i int, op AmendmentOp) error {
 // amendmentOpErr builds a named AmendmentShapeError for operation i.
 func amendmentOpErr(i int, msg string) *AmendmentShapeError {
 	return &AmendmentShapeError{OpIndex: i, Msg: msg}
+}
+
+// AddedNodeNoun names the noun of the node an add operation of kind op
+// creates when it is staged: epic, feature, or task. It is "" for every other
+// kind, add-question included, since a staged question is created at approval.
+func AddedNodeNoun(op string) string {
+	switch op {
+	case AmendmentOpAddEpic:
+		return NounEpic
+	case AmendmentOpAddFeature:
+		return NounFeature
+	case AmendmentOpAddTask:
+		return NounTask
+	}
+	return ""
 }
 
 // AmendmentEmpty reports whether a proposes nothing: it has no operation. An
