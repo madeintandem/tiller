@@ -133,6 +133,12 @@ func suggestFromNext(t *store.Tree, next views.Next) (skill, reason string) {
 	if !ok {
 		return "orient", "No agent move is legal right now; the moves above are yours."
 	}
+	switch top.Kind {
+	case "decompose_amendment":
+		return top.Skill, fmt.Sprintf("A document landed as amendment %s and has not been turned into work. Read it whole, stage what it implies, then run tiller propose amendment %s.", top.Node.Ref, amendmentAddr(top.Node))
+	case "stage_amendment":
+		return top.Skill, fmt.Sprintf("Amendment %s is still a draft. Finish staging it, then run tiller propose amendment %s.", top.Node.Ref, amendmentAddr(top.Node))
+	}
 	switch top.Skill {
 	case "derive-baseline":
 		return top.Skill, views.Sentence(top.Reason)
@@ -142,6 +148,15 @@ func suggestFromNext(t *store.Tree, next views.Next) (skill, reason string) {
 		return top.Skill, "A feature is in draft; write its spec, its acceptance contract, and its tasks, then run tiller spec feature."
 	}
 	return "execute", executeReason(t, top)
+}
+
+// amendmentAddr is the address a command names an amendment by: its key, or
+// its id when it has none.
+func amendmentAddr(n *views.NextNode) string {
+	if n.Key != "" {
+		return n.Key
+	}
+	return n.ID
 }
 
 // executeReason is the execute arm's wording for a move: work the reader holds,

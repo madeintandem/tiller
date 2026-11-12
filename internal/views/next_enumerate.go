@@ -32,39 +32,41 @@ const (
 
 // queueKindArms places every queue entry kind among the walk's arms.
 var queueKindArms = map[string]int{
-	"approve_amendment": armAmendment,
-	"workflow_closeout": armCloseout,
-	"feature_check":     armCloseout,
-	"approve_feature":   armSpecApproval,
-	"approve_tasks":     armSpecApproval,
-	"approve_epic":      armEpicApproval,
-	"merge_feature":     armReviewMerge,
-	"merge_epic":        armReviewMerge,
-	"answer_question":   armAnswer,
-	"attest_gate":       armAttest,
-	"attest_criterion":  armAttest,
-	"approve_bug":       armTriage,
-	"approve_chore":     armTriage,
-	"approve_tweak":     armTriage,
-	"carrier_cancelled": armTriage,
+	"approve_amendment":  armAmendment,
+	"withdraw_amendment": armAmendment,
+	"workflow_closeout":  armCloseout,
+	"feature_check":      armCloseout,
+	"approve_feature":    armSpecApproval,
+	"approve_tasks":      armSpecApproval,
+	"approve_epic":       armEpicApproval,
+	"merge_feature":      armReviewMerge,
+	"merge_epic":         armReviewMerge,
+	"answer_question":    armAnswer,
+	"attest_gate":        armAttest,
+	"attest_criterion":   armAttest,
+	"approve_bug":        armTriage,
+	"approve_chore":      armTriage,
+	"approve_tweak":      armTriage,
+	"carrier_cancelled":  armTriage,
 }
 
 // queueKindActions is the verb phrase each queue kind's move reads as. The
 // closeout kinds read as their workflow advice's own action instead.
 var queueKindActions = map[string]string{
-	"approve_amendment": "approve amendment",
-	"approve_feature":   "approve the spec for",
-	"approve_tasks":     "approve the tasks for",
-	"approve_epic":      "approve epic",
-	"merge_feature":     "merge",
-	"merge_epic":        "merge",
-	"answer_question":   "answer",
-	"attest_gate":       "attest",
-	"attest_criterion":  "attest",
-	"approve_bug":       "triage",
-	"approve_chore":     "triage",
-	"approve_tweak":     "triage",
-	"carrier_cancelled": "triage",
+	"approve_amendment":  "approve amendment",
+	"withdraw_amendment": "withdraw amendment",
+	"approve_feature":    "approve the spec for",
+	"approve_tasks":      "approve the tasks for",
+	"approve_epic":       "approve epic",
+	"merge_feature":      "merge",
+	"merge_epic":         "merge",
+	"answer_question":    "answer",
+	"attest_gate":        "attest",
+	"attest_criterion":   "attest",
+	"approve_bug":        "triage",
+	"approve_chore":      "triage",
+	"approve_tweak":      "triage",
+	"carrier_cancelled":  "triage",
 }
 
 // candidatesOf enumerates every legal next move for the reader's checkout:
@@ -82,6 +84,7 @@ func candidatesOf(t *store.Tree, order *gen.Order, in NextInput) []NextCandidate
 	var out []NextCandidate
 	out = append(out, confirmDesignCandidates(t)...)
 	out = append(out, continueCandidates(t, order, in)...)
+	out = append(out, draftAmendmentCandidates(t)...)
 	out = append(out, queueCandidates(t, in)...)
 	out = append(out, claimCandidates(t, order, in)...)
 	out = append(out, blockerCandidates(t, order, in)...)
@@ -90,6 +93,34 @@ func candidatesOf(t *store.Tree, order *gen.Order, in NextInput) []NextCandidate
 	out = append(out, decomposeCandidates(t)...)
 	sort.SliceStable(out, func(i, j int) bool { return out[i].arm < out[j].arm })
 	return out
+}
+
+// draftAmendmentCandidates are the agent's moves on each draft amendment,
+// id-ascending: decompose the document an intake amendment landed, or finish
+// staging one opened by hand. Both end at tiller propose amendment, which
+// hands the amendment to the human's queue.
+func draftAmendmentCandidates(t *store.Tree) []NextCandidate {
+	var drafts []*store.Amendment
+	for _, a := range t.Amendments {
+		if a.Status == store.AmendmentStatusDraft {
+			drafts = append(drafts, a)
+		}
+	}
+	sort.Slice(drafts, func(i, j int) bool { return drafts[i].ID < drafts[j].ID })
+	var out []NextCandidate
+	for _, a := range drafts {
+		c := NextCandidate{
+			Actor: actorAgent, Kind: "stage_amendment", Action: "stage amendment",
+			Node: nextNodeOf(t, a), Skill: "amend",
+			Reason: "still a draft; finish staging it, then propose it",
+		}
+		if a.Source != nil {
+			c.Kind, c.Action, c.Skill = "decompose_amendment", "decompose amendment", "intake"
+			c.Reason = "its document has not been turned into work"
+		}
+		out = append(out, c)
+	}
+	return inArm(armAmendment, out)
 }
 
 // inArm sets every candidate's arm, and its position to its index.
@@ -243,6 +274,8 @@ func queueEntryReason(entry QueueEntry, reader string) string {
 		approval = "approval"
 	}
 	switch entry.Kind {
+	case "withdraw_amendment":
+		return "nothing was proposed from its document"
 	case "approve_amendment":
 		return "its staged changes await " + approval
 	case "approve_feature":

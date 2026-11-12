@@ -236,7 +236,8 @@ func TestIntakeHumanOutputNamesTheNextStep(t *testing.T) {
 	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	require.Contains(t, out, ".tiller/design/review.md")
-	require.Contains(t, out, "tiller guide intake")
+	require.Contains(t, out, "tiller guide")
+	require.NotContains(t, out, "tiller guide intake", "the Next block names tiller guide only; the router picks the skill")
 }
 
 // --- the integration seam with task 1's amend --source rule ---

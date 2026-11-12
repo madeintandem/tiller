@@ -62,6 +62,27 @@ func openAmendmentCLI(t *testing.T, key, title string) string {
 	return ""
 }
 
+// openStagedAmendmentCLI opens an amendment, stages one add-epic operation, and
+// proposes it, so it reaches the human's queue as an approval. An amendment
+// proposed with nothing staged queues for withdrawal instead.
+func openStagedAmendmentCLI(t *testing.T, key, title string) string {
+	t.Helper()
+	_, stderr, code := execCLI(t, "add", "amendment", key, "--title", title, "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	tree := loadCwdTree(t)
+	for id, a := range tree.Amendments {
+		if a.Key != nil && *a.Key == key {
+			_, stderr, code := execCLI(t, "amend", id, "--add-epic", key+"-epic", "--title", title,
+				"--contributor", "jc")
+			require.Equal(t, 0, code, stderr)
+			proposeAmendmentCLI(t, id)
+			return id
+		}
+	}
+	t.Fatalf("amendment %q not found after add", key)
+	return ""
+}
+
 // proposeAmendmentCLI hands a draft amendment over through the real verb.
 func proposeAmendmentCLI(t *testing.T, id string) {
 	t.Helper()

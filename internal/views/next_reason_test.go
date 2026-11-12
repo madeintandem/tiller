@@ -75,6 +75,12 @@ func lineFixtures(t *testing.T) map[string]lineFixture {
 			"TW-prop00": {WorkItem: store.WorkItem{ID: "TW-prop00", Key: strPtr("tweaks/proposed"), Status: "proposed"}},
 		},
 	}
+	withdraw := &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-empty0": {ID: "A-empty0", Key: strPtr("nothing"), Title: "Nothing", Status: store.AmendmentStatusProposed},
+		},
+	}
 	derive := &store.Tree{Manifest: &store.Manifest{}}
 	derive.Manifest.Project.Kind = store.KindBrownfield
 
@@ -91,6 +97,7 @@ func lineFixtures(t *testing.T) map[string]lineFixture {
 		"check":          {tree: checkTree, in: workflowContracts(checkTree)},
 		"feature review": {tree: featureReview, in: featureIn},
 		"epic review":    {tree: epicReview, in: epicIn},
+		"withdraw":       {tree: withdraw},
 		"derive":         {tree: derive},
 		"confirm":        {tree: confirmedBrownfield(t)},
 		"decompose":      {tree: &store.Tree{Manifest: &store.Manifest{}, ToBeDesign: []string{"vision.md"}}},

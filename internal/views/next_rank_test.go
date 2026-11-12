@@ -179,7 +179,7 @@ func TestRankEverythingElseKeepsArmThenPlanOrder(t *testing.T) {
 	specced := draftFeatureUnder(t, tree, "F-bbbbb0", "epic-0/specced", "epic-0")
 	specced.Status = "specced"
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaa0": {ID: "A-aaaaa0", Key: strPtr("rework"), Title: "Rework", Status: store.AmendmentStatusProposed},
+		"A-aaaaa0": {ID: "A-aaaaa0", Key: strPtr("rework"), Title: "Rework", Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "", workflow.Input{})
@@ -231,7 +231,7 @@ func TestNextWithoutReaderIsPlanOrder(t *testing.T) {
 	specced := draftFeatureUnder(t, tree, "F-ccccc1", "epic-1/plan", "epic-1")
 	specced.Status = "specced"
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaa0": {ID: "A-aaaaa0", Key: strPtr("rework"), Title: "Rework", Status: store.AmendmentStatusProposed},
+		"A-aaaaa0": {ID: "A-aaaaa0", Key: strPtr("rework"), Title: "Rework", Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "", workflow.Input{},

@@ -536,7 +536,7 @@ func readoutEpicSpecs(t *store.Tree) map[string]views.EpicSpecStatus {
 func readoutAmendmentPreconditions(t *store.Tree) map[string][]mutate.PreconditionValidity {
 	out := map[string][]mutate.PreconditionValidity{}
 	for _, a := range t.Amendments {
-		if !store.AmendmentOpen(a) {
+		if a.Status != store.AmendmentStatusProposed {
 			continue
 		}
 		pv, err := mutate.EvaluateAmendmentPreconditions(t, mutate.Deps{}, a)

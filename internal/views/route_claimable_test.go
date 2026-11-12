@@ -50,7 +50,7 @@ func TestClaimableTaskOutranksUnrelatedPlanningButNotAmendmentReview(t *testing.
 	}
 	f.Status = "active"
 	require.Equal(t, "claim_task", topMove(t, tree, "jc", workflow.Input{}).Kind)
-	a := &store.Amendment{ID: "A-aaaaa0", Status: store.AmendmentStatusProposed}
+	a := &store.Amendment{ID: "A-aaaaa0", Status: store.AmendmentStatusProposed, Operations: oneStagedOp}
 	tree.Amendments = map[string]*store.Amendment{a.ID: a}
 	require.Equal(t, a.ID, topMove(t, tree, "jc", workflow.Input{}).Node.ID)
 }

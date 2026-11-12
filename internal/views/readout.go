@@ -522,6 +522,7 @@ type attentionCategory struct {
 // disturbing the queue entries themselves.
 var attentionCategories = [...]attentionCategory{
 	{kind: "approve_amendment", command: "tiller queue --kind approve_amendment"},
+	{kind: "withdraw_amendment", command: "tiller queue --kind withdraw_amendment"},
 	{kind: "approve_epic", command: "tiller queue --kind approve_epic"},
 	{kind: "approve_feature", command: "tiller queue --kind approve_feature"},
 	{kind: "approve_tasks", command: "tiller queue --kind approve_tasks"},
@@ -585,6 +586,8 @@ func attentionSummary(category attentionCategory, count int) string {
 	switch category.kind {
 	case "approve_amendment":
 		return fmt.Sprintf("%d %s %s your approval", count, noun("proposed amendment", "proposed amendments"), await)
+	case "withdraw_amendment":
+		return fmt.Sprintf("%d %s with nothing staged %s withdrawing", count, noun("proposed amendment", "proposed amendments"), await)
 	case "approve_epic":
 		return fmt.Sprintf("%d %s %s your approval", count, noun("epic", "epics"), await)
 	case "approve_feature":
@@ -1647,7 +1650,8 @@ func specifyContent(t *store.Tree, in ReadoutInput, r *Readout) {
 	)
 }
 
-// proposedAmendments returns every proposed amendment, id-ascending. Id order
+// proposedAmendments returns every proposed amendment, id-ascending. A draft
+// is still the agent's and surfaces through the next candidates instead. Id order
 // is the only deterministic order available: amendments carry no dependency
 // edges among themselves the way epics and features do (an amendment is a
 // flat staging document, not part of the one-tree hierarchy, store/amendment.go's
@@ -1655,7 +1659,7 @@ func specifyContent(t *store.Tree, in ReadoutInput, r *Readout) {
 func proposedAmendments(t *store.Tree) []*store.Amendment {
 	var out []*store.Amendment
 	for _, a := range t.Amendments {
-		if store.AmendmentOpen(a) {
+		if a.Status == store.AmendmentStatusProposed {
 			out = append(out, a)
 		}
 	}

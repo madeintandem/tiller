@@ -125,7 +125,8 @@ func attentionSummaryTree() *store.Tree {
 			},
 		}},
 		Amendments: map[string]*store.Amendment{
-			"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("private-amendment"), Title: "Private amendment title", Status: store.AmendmentStatusProposed},
+			"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("private-amendment"), Title: "Private amendment title", Status: store.AmendmentStatusProposed,
+				Operations: []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}},
 		},
 		Epics: map[string]*store.Epic{
 			"E-aaaaaa": {ID: "E-aaaaaa", Key: &epicAKey, Title: "Private epic alpha", Status: "draft"},
@@ -563,7 +564,7 @@ func TestSpecifyReadoutKeepsAmendmentAheadOfSeveralPlans(t *testing.T) {
 		tree.Features[feature.ID] = feature
 	}
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	r := views.ReadoutOfInput(tree, views.MomentSpecify, views.ReadoutInput{Contracts: map[string]*store.EvalFile{}})
@@ -920,7 +921,7 @@ func TestAmendReadoutCapsItsEntityListAndSaysHowMany(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		id := fmt.Sprintf("A-aaaaa%d", i)
 		key := fmt.Sprintf("amend-%d", i)
-		tree.Amendments[id] = &store.Amendment{ID: id, Key: &key, Status: store.AmendmentStatusProposed}
+		tree.Amendments[id] = &store.Amendment{ID: id, Key: &key, Status: store.AmendmentStatusProposed, Operations: oneStagedOp}
 	}
 
 	r := views.ReadoutOfInput(tree, views.MomentAmend, views.ReadoutInput{})
@@ -957,7 +958,7 @@ func TestAmendReadoutIsHonestWithNoProposedAmendments(t *testing.T) {
 func TestAmendReadoutPreconditionsReflectsTheCallersLiveRead(t *testing.T) {
 	tree := treeWithDraftEpics(t, 0)
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 	in := views.ReadoutInput{AmendmentPreconditions: map[string][]mutate.PreconditionValidity{
 		"A-aaaaaa": {
@@ -980,7 +981,7 @@ func TestAmendReadoutPreconditionsReflectsTheCallersLiveRead(t *testing.T) {
 func TestAmendReadoutNeedsAttentionUsesTheQueueSeam(t *testing.T) {
 	tree := treeWithDraftEpics(t, 0)
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Title: "Remove iPad", Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Title: "Remove iPad", Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	r := views.ReadoutOfInput(tree, views.MomentAmend, views.ReadoutInput{})
@@ -1580,7 +1581,7 @@ func TestAmendmentWaitOutranksThePlanGate(t *testing.T) {
 	tree.Features["F-aaaaa0"] = specced
 
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "jc", workflow.Input{})
@@ -1609,7 +1610,7 @@ func TestTaskInHandOutranksTheAmendmentWait(t *testing.T) {
 	tree.FeatureTasks = map[string][]*store.Task{"F-aaaaa1": {task}}
 
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "jc", workflow.Input{})
@@ -1626,8 +1627,8 @@ func TestAmendmentWaitNamesTheFirstByIDOrder(t *testing.T) {
 	tree.Epics["E-aaaaa0"].Status = "ready"
 
 	tree.Amendments = map[string]*store.Amendment{
-		"A-bbbbbb": {ID: "A-bbbbbb", Key: strPtr("first-one"), Status: store.AmendmentStatusProposed},
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("later-one"), Status: store.AmendmentStatusProposed},
+		"A-bbbbbb": {ID: "A-bbbbbb", Key: strPtr("first-one"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("later-one"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "jc", workflow.Input{})
@@ -1657,7 +1658,7 @@ func TestEpiclessTreeNamesTheAmendmentWaitBeforeDecompose(t *testing.T) {
 	tree := treeWithDraftEpics(t, 0)
 	tree.ToBeDesign = []string{"roadmap.md"}
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("first-intake"), Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("first-intake"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 	}
 
 	next := nextFor(tree, "jc", workflow.Input{})
@@ -2152,7 +2153,7 @@ var routeArmFixtures = map[string]func(t *testing.T) *store.Tree{
 		specced.Status = "specced"
 		tree.Features["F-aaaaa0"] = specced
 		tree.Amendments = map[string]*store.Amendment{
-			"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed},
+			"A-aaaaaa": {ID: "A-aaaaaa", Key: strPtr("iphone-only"), Status: store.AmendmentStatusProposed, Operations: oneStagedOp},
 		}
 		return tree
 	},

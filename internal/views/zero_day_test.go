@@ -32,7 +32,7 @@ func TestConfirmedBaselineWithNoToBeDocIsUnplanned(t *testing.T) {
 	n := rankedForJC(confirmedBrownfield(t))
 	require.True(t, n.Unplanned)
 	require.Equal(t, []string{"confirm_design"}, candidateKinds(n.Candidates))
-	require.Equal(t, "no work is planned yet (baseline established): bring work in through intake (a document making a case for change), capture (a bug, chore, or tweak), or a to-be design under .tiller/design/ (which makes decompose due)", n.Hint)
+	require.Equal(t, "no work is planned yet (baseline established): bring work in through intake (any document that should change the plan) or capture (a bug, chore, or tweak)", n.Hint)
 }
 
 func TestLegacyMigrationUsesTheExistingCodeWording(t *testing.T) {
@@ -77,10 +77,10 @@ func TestGreenfieldWithNoDesignIsUnplanned(t *testing.T) {
 	n := rankedForJC(tree)
 	require.True(t, n.CaughtUp)
 	require.True(t, n.Unplanned)
-	require.Equal(t, "no work is planned yet: add design inputs under .tiller/design/ for decompose to turn into a draft tree", n.Hint)
+	require.Equal(t, "no work is planned yet: bring the founding design in with tiller intake --no-amendment <file or folder>", n.Hint)
 
 	tree.Questions = map[string]*store.Question{"Q-aaaaaa": {ID: "Q-aaaaaa", Status: "open"}}
-	require.Equal(t, "no work is planned yet (1 open question): add design inputs under .tiller/design/ for decompose to turn into a draft tree", rankedForJC(tree).Hint)
+	require.Equal(t, "no work is planned yet (1 open question): bring the founding design in with tiller intake --no-amendment <file or folder>", rankedForJC(tree).Hint)
 }
 
 // A non-empty tree never consults ToBeDesign: with epics, decompose is no

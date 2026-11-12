@@ -54,3 +54,22 @@ func TestCaughtUpHintPrintsOnce(t *testing.T) {
 	require.NotEmpty(t, hint)
 	require.Equal(t, views.Sentence(hint), reason)
 }
+
+// After intake the document waits on the agent: bare guide names the agent
+// move and the skill, and the human's approval row stays out until propose.
+func TestGuideAfterIntakeNamesTheAgentMove(t *testing.T) {
+	initOwnedRepo(t)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	src := writeFeedbackDoc(t, "review.md", "the review body\n")
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	aid, _ := jsonData(t, out)["id"].(string)
+	require.NotEmpty(t, aid)
+
+	human, stderr, code := execCLI(t, "guide")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, human, "Suggested skill: intake")
+	require.Contains(t, human, "A document landed as amendment ")
+	require.Contains(t, human, "and has not been turned into work. Read it whole, stage what it implies, then run tiller propose amendment ")
+	require.NotContains(t, human, "approve amendment")
+}

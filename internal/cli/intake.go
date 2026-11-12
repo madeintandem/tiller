@@ -255,7 +255,7 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 	}
 
 	view := amendmentResultView(res)
-	return emitSuccess(cmd, "intake", view, renderIntakeHuman(source.Path, view.Ref, res.ID))
+	return emitSuccess(cmd, "intake", view, renderIntakeHuman(source.Path, view.Ref))
 }
 
 // statIntakeSource validates <file or folder> before any write and reports
@@ -429,23 +429,12 @@ func intakeArtifactExistsErr() error {
 
 // renderIntakeHuman is the house confirmation voice (join.go's
 // renderJoinHuman, init.go's initNextSteps): a headline naming what landed,
-// then a **Next** section pointing at the skill that guides the explosion.
-// The next-step command lines carry the bare id, not ref (which composes a
-// key path and an id with a space and parentheses, not a single shell
-// token), the same bare-id convention approve's own Next lines use
-// (readout.go).
-//
-// Forward reference: `tiller guide intake` names a skill Task 6 is the one
-// that lands (internal/skills has no "intake" entry yet as of this task).
-// Printing the pointer now, ahead of its target existing, is deliberate and
-// owned by the coordinator's own sequencing, not a gap in this task: the
-// controller has confirmed Task 6 lands before this branch ships, so by the
-// time a real user sees this line, `tiller guide intake` already resolves.
-func renderIntakeHuman(destRel, ref, amendmentID string) string {
+// then a **Next** section pointing at tiller guide, which routes the draft
+// amendment to the agent.
+func renderIntakeHuman(destRel, ref string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Landed %s as amendment %s.\n", destRel, ref)
 	b.WriteString("\n**Next**\n")
-	b.WriteString("  tiller guide intake                 explode the feedback into staged operations\n")
-	fmt.Fprintf(&b, "  tiller show amendment %s    review the batch before approval", amendmentID)
+	b.WriteString("  tiller guide    the agent turns the document into staged operations")
 	return b.String()
 }

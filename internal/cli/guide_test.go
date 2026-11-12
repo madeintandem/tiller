@@ -524,7 +524,7 @@ func mustJSON(t *testing.T, argv ...string) string {
 // and the amendment both await the human.
 func TestGuideNamesTheAmendmentWait(t *testing.T) {
 	layAmendmentTree(t)
-	aid := openAmendmentCLI(t, "form-engine-rework", "Restructure the form engine")
+	aid := openStagedAmendmentCLI(t, "form-engine-rework", "Restructure the form engine")
 
 	out, _, code := execCLI(t, "guide", "--json")
 	require.Equal(t, 0, code)

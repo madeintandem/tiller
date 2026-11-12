@@ -52,7 +52,7 @@ func FilterQueue(q Queue, filter QueueFilter) Queue {
 // QueueKinds lists every queue entry kind in the queue's group order. The
 // readout's attention categories must cover each one.
 var QueueKinds = []string{
-	"approve_amendment", "approve_epic", "approve_feature", "approve_tasks",
+	"approve_amendment", "withdraw_amendment", "approve_epic", "approve_feature", "approve_tasks",
 	"approve_bug", "approve_chore", "approve_tweak", "answer_question", "carrier_cancelled",
 	"attest_gate", "attest_criterion", "feature_check", "workflow_closeout", "merge_epic", "merge_feature",
 }
@@ -60,6 +60,7 @@ var QueueKinds = []string{
 // QueueEntry is one team attention item. Kind names its workflow boundary:
 //
 //	approve_amendment  a proposed amendment awaiting approval
+//	withdraw_amendment a proposed amendment with nothing staged, to withdraw
 //	approve_epic       a draft epic awaiting approval
 //	approve_feature    a specced feature awaiting spec approval
 //	approve_tasks      a feature with proposed tasks awaiting batch approval
@@ -186,8 +187,10 @@ func QueueOfInput(t *store.Tree, in QueueInput) Queue {
 	return Queue{Entries: entries}
 }
 
-// queueApproveAmendments lists the proposed amendments awaiting the human's
-// approval, id-ascending: an amendment carries no dependency edges among
+// queueApproveAmendments lists the proposed amendments awaiting the human,
+// id-ascending: a draft is still the agent's, so it never queues, and a
+// proposed amendment with nothing staged gets the withdraw command in place of
+// approve, which would refuse it. Id order: an amendment carries no dependency edges among
 // itself and any other amendment the way an epic or a feature does (it is a
 // flat staging document, not part of the one-tree hierarchy,
 // store/amendment.go's own doc comment), so there is no gen.Order ranking to
@@ -200,13 +203,17 @@ func QueueOfInput(t *store.Tree, in QueueInput) Queue {
 func queueApproveAmendments(t *store.Tree) []QueueEntry {
 	var out []QueueEntry
 	for _, a := range t.Amendments {
-		if !store.AmendmentOpen(a) {
+		if a.Status != store.AmendmentStatusProposed {
 			continue
 		}
+		kind, command := "approve_amendment", "tiller approve amendment "+queueAddr(a)
+		if store.AmendmentEmpty(a) {
+			kind, command = "withdraw_amendment", "tiller withdraw amendment "+queueAddr(a)+` --reason "<why>"`
+		}
 		out = append(out, QueueEntry{
-			Kind: "approve_amendment", Noun: store.NounAmendment, ID: a.ID, Key: Key(a),
+			Kind: kind, Noun: store.NounAmendment, ID: a.ID, Key: Key(a),
 			Ref: gen.Ref(t, a), Prose: a.Title, Title: a.Title,
-			Command: "tiller approve amendment " + queueAddr(a),
+			Command: command,
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })

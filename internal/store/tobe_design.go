@@ -18,6 +18,11 @@ const designDirPrefix = ".tiller/design/"
 // Registered as-is docs and the sources they cite through --from are the
 // baseline, not new work. Both match without case, because a case-insensitive
 // filesystem lets link design register a spelling that differs from disk.
+//
+// A document an amendment names as its source, or any file beneath a folder it
+// names, is that amendment's input and not a to-be design, whatever the
+// amendment's status: otherwise a document landed on an empty tree would make
+// decompose and the amendment route due at once.
 func (t *Tree) loadToBeDesign() {
 	baseline := make(map[string]bool, len(t.Baseline.Docs))
 	for _, doc := range t.Baseline.Docs {
@@ -27,6 +32,24 @@ func (t *Tree) loadToBeDesign() {
 				baseline[strings.ToLower(rel)] = true
 			}
 		}
+	}
+	var sources []string
+	for _, a := range t.Amendments {
+		if a.Source == nil {
+			continue
+		}
+		if rel, ok := strings.CutPrefix(a.Source.Path, designDirPrefix); ok {
+			sources = append(sources, strings.ToLower(rel))
+		}
+	}
+	amendmentSource := func(rel string) bool {
+		rel = strings.ToLower(rel)
+		for _, source := range sources {
+			if rel == source || strings.HasPrefix(rel, source+"/") {
+				return true
+			}
+		}
+		return false
 	}
 	var found []string
 	var walk func(rel string)
@@ -47,7 +70,7 @@ func (t *Tree) loadToBeDesign() {
 			case e.IsDir():
 				walk(child)
 			case e.Type().IsRegular():
-				if child != "baseline.yml" && baselineCoordinate(child) && !baseline[strings.ToLower(child)] {
+				if child != "baseline.yml" && baselineCoordinate(child) && !baseline[strings.ToLower(child)] && !amendmentSource(child) {
 					found = append(found, child)
 				}
 			}

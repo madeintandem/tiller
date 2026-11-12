@@ -35,11 +35,11 @@ func unplannedReason(t *store.Tree) string {
 		if questions != "" {
 			facts += ", " + questions
 		}
-		return "no work is planned yet (" + facts + "): bring work in through intake (a document making a case for change), capture (a bug, chore, or tweak), or a to-be design under .tiller/design/ (which makes decompose due)"
+		return "no work is planned yet (" + facts + "): bring work in through intake (any document that should change the plan) or capture (a bug, chore, or tweak)"
 	}
 	lead := "no work is planned yet"
 	if questions != "" {
 		lead += " (" + questions + ")"
 	}
-	return lead + ": add design inputs under .tiller/design/ for decompose to turn into a draft tree"
+	return lead + ": bring the founding design in with tiller intake --no-amendment <file or folder>"
 }

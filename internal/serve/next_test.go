@@ -315,7 +315,7 @@ func TestNextHandlerServesTheUnplannedEndState(t *testing.T) {
 	got := getNext(t, srv)
 	require.True(t, got.CaughtUp)
 	require.True(t, got.Unplanned)
-	require.Equal(t, "No work is planned yet: add design inputs under .tiller/design/ for decompose to turn into a draft tree.", views.Sentence(got.Hint))
+	require.Equal(t, "No work is planned yet: bring the founding design in with tiller intake --no-amendment <file or folder>.", views.Sentence(got.Hint))
 }
 
 // observedNext serves /api/next over observationFixture's integration

@@ -119,7 +119,12 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	aid, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, aid)
-	proposeAmendmentCLI(t, aid)
+
+	// The document waits on the agent: no approval row for the human yet.
+	waiting, stderr, code := execCLI(t, "guide")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, waiting, "Suggested skill: intake")
+	require.NotContains(t, waiting, "approve amendment")
 
 	// Every op cites the finding it traces to, in the order the mapping rules
 	// state them: new scope, a statable contract under that SAME-BATCH epic
@@ -150,6 +155,11 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 		_, stderr, code := execCLI(t, argv...)
 		require.Equalf(t, 0, code, "%v: %s", argv, stderr)
 	}
+
+	proposeAmendmentCLI(t, aid)
+	handedOver, stderr, code := execCLI(t, "guide")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, handedOver, "approve amendment")
 
 	// --- the review surfaces, before anything is applied ---
 	//

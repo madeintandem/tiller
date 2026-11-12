@@ -475,11 +475,12 @@ func TestQueueIsAlwaysAnArray(t *testing.T) {
 // approve_tasks: an amendment has no ancestor at all to be held under.
 func TestQueueApproveAmendmentsListsOnlyProposedNoSuppression(t *testing.T) {
 	keyLater, keyFirst := "later-reshape", "iphone-only"
+	stagedOps := []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}
 	tree := &store.Tree{
 		Manifest: &store.Manifest{},
 		Amendments: map[string]*store.Amendment{
-			"A-bbbbbb": {ID: "A-bbbbbb", Key: &keyLater, Title: "Later reshape", Status: store.AmendmentStatusProposed},
-			"A-aaaaaa": {ID: "A-aaaaaa", Key: &keyFirst, Title: "Remove iPad", Status: store.AmendmentStatusProposed},
+			"A-bbbbbb": {ID: "A-bbbbbb", Key: &keyLater, Title: "Later reshape", Status: store.AmendmentStatusProposed, Operations: stagedOps},
+			"A-aaaaaa": {ID: "A-aaaaaa", Key: &keyFirst, Title: "Remove iPad", Status: store.AmendmentStatusProposed, Operations: stagedOps},
 			"A-cccccc": {ID: "A-cccccc", Status: store.AmendmentStatusWithdrawn},
 			"A-dddddd": {ID: "A-dddddd", Status: store.AmendmentStatusApproved},
 		},
@@ -509,7 +510,8 @@ func TestQueueApproveAmendmentsLeadTheGroupOrder(t *testing.T) {
 	tree := queueOrderEpicsTree()
 	key := "iphone-only"
 	tree.Amendments = map[string]*store.Amendment{
-		"A-aaaaaa": {ID: "A-aaaaaa", Key: &key, Status: store.AmendmentStatusProposed},
+		"A-aaaaaa": {ID: "A-aaaaaa", Key: &key, Status: store.AmendmentStatusProposed,
+			Operations: []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}},
 	}
 
 	entries := views.QueueOf(tree).Entries
@@ -1080,4 +1082,53 @@ func TestQueueSharedCloseoutPreservesHolds(t *testing.T) {
 			require.Empty(t, entriesOfKind(queue, "workflow_closeout"))
 		})
 	}
+}
+
+// oneStagedOp makes a proposed amendment approvable: an empty one queues for
+// withdrawal instead.
+var oneStagedOp = []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}
+
+func amendmentQueueTree() *store.Tree {
+	draft, empty, full := "drafted", "empty-proposal", "staged"
+	return &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-draft0": {ID: "A-draft0", Key: &draft, Title: "Drafted", Status: store.AmendmentStatusDraft,
+				Operations: []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}},
+			"A-empty0": {ID: "A-empty0", Key: &empty, Title: "Nothing here", Status: store.AmendmentStatusProposed},
+			"A-full00": {ID: "A-full00", Key: &full, Title: "Staged", Status: store.AmendmentStatusProposed,
+				Operations: []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}},
+		},
+	}
+}
+
+func TestQueueHidesDraftAmendments(t *testing.T) {
+	for _, e := range views.QueueOf(amendmentQueueTree()).Entries {
+		require.NotEqual(t, "A-draft0", e.ID, "a draft waits on the agent, not the human: %s", e.Kind)
+	}
+}
+
+func TestQueueOffersWithdrawForAnEmptyProposedAmendment(t *testing.T) {
+	var got []views.QueueEntry
+	for _, e := range views.QueueOf(amendmentQueueTree()).Entries {
+		if e.ID == "A-empty0" {
+			got = append(got, e)
+		}
+	}
+	require.Len(t, got, 1)
+	require.Equal(t, "withdraw_amendment", got[0].Kind)
+	require.Equal(t, store.NounAmendment, got[0].Noun)
+	require.Equal(t, `tiller withdraw amendment empty-proposal --reason "<why>"`, got[0].Command)
+}
+
+func TestQueueOffersApproveForAProposedAmendmentWithOperations(t *testing.T) {
+	var got []views.QueueEntry
+	for _, e := range views.QueueOf(amendmentQueueTree()).Entries {
+		if e.ID == "A-full00" {
+			got = append(got, e)
+		}
+	}
+	require.Len(t, got, 1)
+	require.Equal(t, "approve_amendment", got[0].Kind)
+	require.Equal(t, "tiller approve amendment staged", got[0].Command)
 }

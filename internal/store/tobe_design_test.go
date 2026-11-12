@@ -127,3 +127,44 @@ func TestLoadSkipsTheToBeWalkWhenEpicsExist(t *testing.T) {
 	require.NotEmpty(t, tree.Epics)
 	require.Nil(t, tree.ToBeDesign)
 }
+
+func writeAmendment(t *testing.T, root, name, body string) {
+	t.Helper()
+	dir := filepath.Join(root, ".tiller", "amendments")
+	require.NoError(t, os.MkdirAll(dir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644))
+}
+
+// A document an amendment names as its source is that amendment's input, not
+// a to-be design for decompose, whatever the amendment's status. A folder
+// source covers every file beneath it.
+func TestToBeDesignSkipsAmendmentSources(t *testing.T) {
+	root := epiclessFixture(t)
+	writeDesign(t, root, "feedback.md", "# Feedback\n")
+	writeDesign(t, root, "review/one.md", "# One\n")
+	writeDesign(t, root, "review/deep/two.md", "# Two\n")
+	writeDesign(t, root, "unrelated.md", "# Unrelated\n")
+	writeAmendment(t, root, "A-fileaa-file.yml", `id: A-fileaa
+key: file
+status: draft
+source:
+  path: .tiller/design/feedback.md
+  revision: git:0000000000000000000000000000000000000000
+`)
+	writeAmendment(t, root, "A-foldaa-folder.yml", `id: A-foldaa
+key: folder
+status: approved
+source:
+  path: .tiller/design/review
+  files:
+    - path: .tiller/design/review/one.md
+      revision: git:0000000000000000000000000000000000000000
+`)
+
+	tree, err := Load(root)
+	require.NoError(t, err)
+	require.Contains(t, tree.ToBeDesign, "unrelated.md")
+	require.NotContains(t, tree.ToBeDesign, "feedback.md")
+	require.NotContains(t, tree.ToBeDesign, "review/one.md")
+	require.NotContains(t, tree.ToBeDesign, "review/deep/two.md")
+}

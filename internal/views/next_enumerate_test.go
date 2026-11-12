@@ -264,6 +264,12 @@ func TestEnumerateEveryQueueEntryIsACandidate(t *testing.T) {
 	checkTree, _ := awaitingCheckTree()
 	featureReview, featureIn := reviewPhaseTree(t, store.ReviewGrainFeature)
 	epicReview, epicIn := reviewPhaseTree(t, store.ReviewGrainEpic)
+	emptyProposal := &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-empty0": {ID: "A-empty0", Key: strPtr("nothing"), Title: "Nothing", Status: store.AmendmentStatusProposed},
+		},
+	}
 
 	fixtures := []struct {
 		tree *store.Tree
@@ -271,6 +277,7 @@ func TestEnumerateEveryQueueEntryIsACandidate(t *testing.T) {
 	}{
 		{attentionSummaryTree(), workflow.Input{}},
 		{shelf, workflow.Input{}},
+		{emptyProposal, workflow.Input{}},
 		{checkTree, workflowContracts(checkTree)},
 		{featureReview, featureIn},
 		{epicReview, epicIn},
@@ -442,4 +449,49 @@ func TestEnumerateCloseoutReasonsStayOneLine(t *testing.T) {
 		require.Equal(t, "merge_feature", rows[0].Kind)
 		require.Equal(t, "in review on branch tiller/reviews/features/epic-0/acceptance, waiting on merge", rows[0].Reason)
 	})
+}
+
+func draftAmendmentTree(source *store.AmendmentSource) *store.Tree {
+	key := "review"
+	return &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-draft0": {ID: "A-draft0", Key: &key, Title: "Review", Status: store.AmendmentStatusDraft, Source: source},
+			"A-prop00": {ID: "A-prop00", Key: strPtr("ready"), Title: "Ready", Status: store.AmendmentStatusProposed,
+				Operations: []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x"}}},
+		},
+	}
+}
+
+func TestNextOffersDecomposeForADraftIntakeAmendment(t *testing.T) {
+	tree := draftAmendmentTree(&store.AmendmentSource{Path: ".tiller/design/review.md", Revision: "git:abc"})
+	cands := enumerate(tree, "jc", workflow.Input{})
+	got := candidatesOfKind(cands, "decompose_amendment")
+	require.Len(t, got, 1)
+	require.Equal(t, "agent", got[0].Actor)
+	require.Equal(t, "intake", got[0].Skill)
+	require.Equal(t, "A-draft0", got[0].Node.ID)
+	require.Empty(t, candidatesOfKind(cands, "stage_amendment"))
+	require.Equal(t, "decompose_amendment", candidateKinds(cands)[0], "ranked in the amendment arm ahead of approvals")
+	require.Equal(t, "approve_amendment", candidateKinds(cands)[1])
+}
+
+func TestNextOffersStageForAHandOpenedDraft(t *testing.T) {
+	tree := draftAmendmentTree(nil)
+	cands := enumerate(tree, "jc", workflow.Input{})
+	got := candidatesOfKind(cands, "stage_amendment")
+	require.Len(t, got, 1)
+	require.Equal(t, "agent", got[0].Actor)
+	require.Equal(t, "amend", got[0].Skill)
+	require.Empty(t, candidatesOfKind(cands, "decompose_amendment"))
+}
+
+func TestNextOffersWithdrawForAnEmptyProposedAmendment(t *testing.T) {
+	tree := draftAmendmentTree(nil)
+	tree.Amendments["A-prop00"].Operations = nil
+	got := candidatesOfKind(enumerate(tree, "jc", workflow.Input{}), "withdraw_amendment")
+	require.Len(t, got, 1)
+	require.Equal(t, "withdraw amendment", got[0].Action)
+	require.Equal(t, "human", got[0].Actor)
+	require.Equal(t, "nothing was proposed from its document", got[0].Reason)
 }
