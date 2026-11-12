@@ -34,7 +34,7 @@ func dirHasFiles(dir string) bool {
 // junkFile reports whether a directory entry is OS junk the design import
 // ignores (.DS_Store, Thumbs.db). Junk filter only; everything else copies.
 func junkFile(name string) bool {
-	return name == ".DS_Store" || name == "Thumbs.db"
+	return store.IsJunkFile(name)
 }
 
 // importDocs copies an explicitly selected external source into destDir beneath

@@ -130,6 +130,12 @@ type AmendmentSource struct {
 	Files    []AmendmentSourceFile `yaml:"files,omitempty"`
 }
 
+// IsJunkFile reports whether a directory entry is OS junk (.DS_Store,
+// Thumbs.db) that document imports and folder-source checks ignore.
+func IsJunkFile(name string) bool {
+	return name == ".DS_Store" || name == "Thumbs.db"
+}
+
 // AmendmentSourceFile is one file of a folder source and its fingerprint.
 type AmendmentSourceFile struct {
 	Path     string `yaml:"path"`

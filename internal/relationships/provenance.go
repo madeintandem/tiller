@@ -72,22 +72,35 @@ func AddProvenance(t *store.Tree, idx *Index) {
 				}
 			}
 		}
-		var intake *store.RevisionRef
-		if amendment.Source != nil && amendment.Source.Path != "" {
-			intake = &store.RevisionRef{Kind: store.KindGitBlob, Value: amendment.Source.Revision, Path: amendment.Source.Path}
-			addCitation(idx, "sourced_from", amendment.ID, amendment.Source.Path, Source{File: file, Field: "source.path", Raw: amendment.Source.Path, Revision: RevisionOf(*intake)})
+		// pins maps each fingerprinted document coordinate to its revision: the one
+		// file of a file source, or every listed file of a folder source (the bare
+		// folder is not a document and is never cited).
+		pins := map[string]store.RevisionRef{}
+		if src := amendment.Source; src != nil {
+			if len(src.Files) > 0 {
+				for n, f := range src.Files {
+					pin := store.RevisionRef{Kind: store.KindGitBlob, Value: f.Revision, Path: f.Path}
+					pins[f.Path] = pin
+					addCitation(idx, "sourced_from", amendment.ID, f.Path, Source{File: file, Field: fmt.Sprintf("source.files[%d].path", n), Raw: f.Path, Revision: RevisionOf(pin)})
+				}
+			} else if src.Path != "" {
+				pin := store.RevisionRef{Kind: store.KindGitBlob, Value: src.Revision, Path: src.Path}
+				pins[src.Path] = pin
+				addCitation(idx, "sourced_from", amendment.ID, src.Path, Source{File: file, Field: "source.path", Raw: src.Path, Revision: RevisionOf(pin)})
+			}
 		}
 		for n, operation := range amendment.Operations {
 			if operation.Source == "" {
 				continue
 			}
 			source := Source{File: file, Field: fmt.Sprintf("operations[%d].source", n), Raw: operation.Source, Operation: n + 1}
-			// An operation only inherits the intake revision when it cites that same
+			// An operation only inherits an intake revision when it cites that same
 			// artifact. Other sources do not borrow a pin from an unrelated document.
-			if intake != nil {
-				if coordinate, _, ok := localCitation(operation.Source); ok {
-					if artifact, _, valid := localCitation(intake.Path); valid && artifact == coordinate {
-						source.Revision = RevisionOf(*intake)
+			if coordinate, _, ok := localCitation(operation.Source); ok {
+				for pinPath, pin := range pins {
+					if artifact, _, valid := localCitation(pinPath); valid && artifact == coordinate {
+						source.Revision = RevisionOf(pin)
+						break
 					}
 				}
 			}

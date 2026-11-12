@@ -385,7 +385,7 @@ func TestShowAmendmentHumanRendersSourceLiveAcrossAllThreeStates(t *testing.T) {
 	require.NoError(t, os.Remove(landedPath))
 	human, stderr, code = execCLI(t, "show", "amendment", aid)
 	require.Equal(t, 0, code, stderr)
-	require.Contains(t, human, "live: [stale], the feedback document no longer exists in the working tree")
+	require.Contains(t, human, "live: [stale], the source document no longer exists in the working tree")
 	require.NotContains(t, human, "live: [stale], actual ",
 		"a vanished document must never render a blank actual hash")
 	require.NotContains(t, human, "actual \n", "no line may end in a bare, valueless actual")

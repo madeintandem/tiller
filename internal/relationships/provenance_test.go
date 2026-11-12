@@ -214,3 +214,45 @@ func TestRevisionObservationJSONOmitsAbsentTimeAndPreservesPrecision(t *testing.
 	require.NoError(t, json.Unmarshal(stamped, &recorded))
 	require.True(t, when.Equal(recorded.ObservedAt), "revision evidence must retain the exact recorded instant")
 }
+
+// A folder source cites each landed file with its own revision: no citation of
+// the bare folder (not a document), no empty-valued pin, and an operation
+// citing a file under the folder carries that file's revision.
+func TestProvenanceCitesEachFileOfAFolderSource(t *testing.T) {
+	tree := contractTree()
+	key := "specs"
+	files := []store.AmendmentSourceFile{
+		{Path: ".tiller/design/specs/a.md", Revision: "git:aaaaaaa"},
+		{Path: ".tiller/design/specs/sub/b.md", Revision: "git:bbbbbbb"},
+	}
+	tree.Amendments = map[string]*store.Amendment{"A-aaaaaa": {ID: "A-aaaaaa", Key: &key, Status: store.AmendmentStatusProposed,
+		Source:     &store.AmendmentSource{Path: ".tiller/design/specs", Files: files},
+		Operations: []store.AmendmentOp{{Op: store.AmendmentOpRevise, Target: "F-79dh3q", Source: ".tiller/design/specs/sub/b.md#L3-L4"}}}}
+	idx := relationships.BuildStructural(tree)
+
+	for _, d := range idx.Diagnostics {
+		require.NotContains(t, d.Message, ".tiller/design/specs\"", "the bare folder must not be cited")
+		require.NotEqual(t, "unresolved_reference", d.Code)
+	}
+	var cited, operation bool
+	for _, edge := range idx.Edges {
+		if edge.Kind != "sourced_from" || edge.From != "A-aaaaaa" {
+			continue
+		}
+		for _, s := range edge.Sources {
+			if s.Revision != nil {
+				require.NotEmpty(t, s.Revision.Value, "no empty-valued pin")
+			}
+			if s.Operation == 1 {
+				operation = true
+				require.NotNil(t, s.Revision)
+				require.Equal(t, "git:bbbbbbb", s.Revision.Value)
+			} else if s.Field == "source.files[0].path" {
+				cited = true
+				require.Equal(t, "git:aaaaaaa", s.Revision.Value)
+			}
+		}
+	}
+	require.True(t, cited, "each listed file is cited")
+	require.True(t, operation)
+}

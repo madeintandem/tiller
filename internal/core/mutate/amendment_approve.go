@@ -922,7 +922,7 @@ func evalSource(tree *store.Tree, rev vcs.Revisions, source *store.AmendmentSour
 	if vanished {
 		return &sourceDrift{
 			Vanished: true,
-			Note:     "the feedback document no longer exists in the working tree",
+			Note:     "the source document no longer exists in the working tree",
 		}, nil
 	}
 	if !changed {
@@ -951,7 +951,7 @@ func evalFolderSource(tree *store.Tree, rev vcs.Revisions, source *store.Amendme
 		if walkErr != nil {
 			return walkErr
 		}
-		if d.IsDir() || !d.Type().IsRegular() || d.Name() == ".DS_Store" || d.Name() == "Thumbs.db" {
+		if d.IsDir() || !d.Type().IsRegular() || store.IsJunkFile(d.Name()) {
 			return nil
 		}
 		rel, err := filepath.Rel(tree.Root, path)
