@@ -141,9 +141,10 @@ func amendmentSourceView(s *store.AmendmentSource, live *mutate.AmendmentSourceV
 // merge two unrelated facts into one flag; SourceMissing stays a bool
 // because it has only ever had one shape to report. Blocks is legal
 // only on add-question, resolved through amendmentRefView the same way
-// Target/By/SupersededBy already are: a live feature or task's id and key,
-// or a staged key naming an add op on this same amendment marked Staged, so
-// `show amendment --json` can finally display what a staged question blocks.
+// Target/By/SupersededBy already are: a live epic, feature, or task's id and
+// key (a held draft included), or, on an amendment staged before schema 15
+// only, a staged key naming an add op on the same amendment marked Staged,
+// so `show amendment --json` can display what a staged question blocks.
 type AmendmentOperationView struct {
 	Index         int                 `json:"index"`
 	Op            string              `json:"op"`
@@ -178,14 +179,19 @@ type AmendmentOperationView struct {
 	// carries. Neither is on the wire; Node and Removed are.
 	DraftRef     string `json:"-"`
 	DraftMissing bool   `json:"-"`
+	// DraftHeldBy names the real holder when the operation's node is held
+	// by another amendment (or by none), which approval refuses
+	// (held_node_missing). Off the wire, like DraftMissing.
+	DraftHeldBy string `json:"-"`
 }
 
 // AmendmentRefView names a target, by, or superseded_by: an id and a key when
-// it resolves to a live feature or task, or just the staged key with Staged
-// true when it names an add op already staged on this same amendment, whose
-// node does not exist until approve materializes it
-// (mutate.resolveStageReplacement's own rule). Ref is the reference-
-// convention string for the plain-text renderer only.
+// it resolves to a live node (a held draft included, since staging an add
+// creates it), or just the staged key with Staged true. Only an amendment
+// staged before schema 15 carries a staged key: its adds have no node until
+// approve creates them. Staging today records an id, so a new amendment never
+// shows one. Ref is the reference-convention string for the plain-text
+// renderer only.
 type AmendmentRefView struct {
 	ID     string `json:"id,omitempty"`
 	Key    string `json:"key,omitempty"`
@@ -251,7 +257,7 @@ func loadAmendmentTree(cmd *cobra.Command, command, addr string) (*store.Tree, *
 func amendmentDataView(tree *store.Tree, a *store.Amendment, validity map[preKey]mutate.PreconditionValidity, sourceValidity *mutate.AmendmentSourceValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentData {
 	ops := make([]AmendmentOperationView, len(a.Operations))
 	for i, op := range a.Operations {
-		ops[i] = amendmentOperationView(tree, a.Status, i, op, validity, opSourceMissing, opShape)
+		ops[i] = amendmentOperationView(tree, a, i, op, validity, opSourceMissing, opShape)
 	}
 	return AmendmentData{
 		ID: a.ID, Key: views.Key(a), Title: a.Title, Status: a.Status,
@@ -278,7 +284,7 @@ func amendmentResultView(r mutate.AmendmentResult) AmendmentData {
 // and replacement refs against the live tree and folding in live precondition
 // validity, op-source validity, and op-shape validity when the caller
 // computed them.
-func amendmentOperationView(tree *store.Tree, status string, index int, op store.AmendmentOp, validity map[preKey]mutate.PreconditionValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentOperationView {
+func amendmentOperationView(tree *store.Tree, a *store.Amendment, index int, op store.AmendmentOp, validity map[preKey]mutate.PreconditionValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentOperationView {
 	v := AmendmentOperationView{
 		Index: index, Op: op.Op, Key: op.Key, Title: op.Title, Statement: op.Statement,
 		ChangeType: op.ChangeType, Reason: op.Reason, Source: op.Source,
@@ -290,8 +296,17 @@ func amendmentOperationView(tree *store.Tree, status string, index int, op store
 		Node:             op.Node,
 		Removed:          op.Removed,
 	}
+	status := a.Status
 	if n := tree.AddedNode(op); n != nil {
 		v.DraftRef = gen.Ref(tree, n)
+		// Two amendments naming one node (a hand edit or a merge): the hold
+		// index gives it to one, and approving this one is refused.
+		if holderID := tree.AmendmentHolds[op.Node]; op.Removed == "" && store.AmendmentStatusOpen(status) && holderID != a.ID {
+			v.DraftHeldBy = "no amendment"
+			if holder := tree.Amendments[holderID]; holder != nil {
+				v.DraftHeldBy = "amendment " + gen.Ref(tree, holder)
+			}
+		}
 	} else if op.Node != "" && op.Removed == "" && store.AmendmentStatusOpen(status) {
 		// Only an open amendment still holds its drafts; a withdrawn one
 		// removed them, and an approved one's may have been removed since.
@@ -348,9 +363,10 @@ func amendmentOperationView(tree *store.Tree, status string, index int, op store
 // amendmentRefView resolves a target/by/superseded_by/blocks raw value to
 // its structured ref: a live epic, feature, or task's id and key when raw is
 // a well-formed id the tree can find, or the staged key itself, marked
-// Staged, when raw names an add op already staged on this same amendment
-// (the only other shape resolveStageReplacement/resolveStageBlockTarget ever
-// accept). A well-formed id the tree cannot find (a vanished target)
+// Staged, when raw names an add op of an amendment staged before schema 15
+// (staging today resolves every reference to a live node's id, a held draft
+// included, so only such a legacy amendment carries one). A well-formed id
+// the tree cannot find (a vanished target)
 // degrades to the bare id, the same honest fallback gen.RefByID gives.
 // Target, By, and SupersededBy never name an epic in practice (epics
 // reshape through their features, per cli-surface.md), but Blocks can
@@ -364,7 +380,7 @@ func amendmentRefView(tree *store.Tree, raw string) *AmendmentRefView {
 		}
 		return &AmendmentRefView{ID: raw, Ref: raw}
 	}
-	return &AmendmentRefView{Key: raw, Staged: true, Ref: raw + " (staged, materializes on apply)"}
+	return &AmendmentRefView{Key: raw, Staged: true, Ref: raw + " (staged before schema 15, created at approval)"}
 }
 
 // lookupEpicFeatureOrTask finds a live epic, feature, or task by id
@@ -447,6 +463,8 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 			fmt.Fprintf(&b, "\n       removed: %s", op.Removed)
 		case op.DraftMissing:
 			fmt.Fprintf(&b, "\n       held draft %s: missing", op.Node)
+		case op.DraftHeldBy != "":
+			fmt.Fprintf(&b, "\n       draft %s: held by %s, not this amendment; approval refuses it", op.DraftRef, op.DraftHeldBy)
 		case op.DraftRef != "" && store.AmendmentStatusOpen(v.Status):
 			fmt.Fprintf(&b, "\n       held draft %s", op.DraftRef)
 		case op.DraftRef != "" && v.Status == store.AmendmentStatusApproved:
@@ -699,9 +717,9 @@ func newAmendCmd() *cobra.Command {
 			"  --add-epic <epic-key> [--title <t>] (a root: no parent to resolve)\n" +
 			"  --add-feature <epic-key>/<feature-key> --change-type <ct> [--title <t>]\n" +
 			"  --add-task <epic-key>/<feature-key>/<task-key> --title <t>\n" +
-			"  --add-question <statement> --title <short-title> [--blocks <id-or-key-or-staged-key>]... (no key at all)\n" +
-			"  --supersede <id-or-key> --by <id-or-staged-key> (done target at approve)\n" +
-			"  --cancel <id-or-key> --reason <text> [--superseded-by <id-or-staged-key>] (not-yet-done replacement)\n" +
+			"  --add-question <statement> --title <short-title> [--blocks <id-or-key>]... (no key at all)\n" +
+			"  --supersede <id-or-key> --by <id-or-key> (done target at approve)\n" +
+			"  --cancel <id-or-key> --reason <text> [--superseded-by <id-or-key>] (not-yet-done replacement)\n" +
 			"  --revise <id-or-key> (non-terminal target at approve)\n" +
 			"  --correct-eval <feature-id-or-key> --reason <text> [--retire <criterion-id>]... (a done feature's eval bindings)\n" +
 			"  --move-feature <feature-id-or-key> --to <epic-key>/<feature-key> --reason <text>\n" +
@@ -711,8 +729,9 @@ func newAmendCmd() *cobra.Command {
 			"this operation traces to (free text, by convention path#Lstart-Lend)\n" +
 			"and is required on every op staged onto an intake-minted amendment.\n" +
 			"--amends-design is repeatable and may ride alone or beside an\n" +
-			"operation. Staging an add creates an inert draft held by the amendment;\n" +
-			"only approve moves anything.\n" +
+			"operation. Staging an add creates an inert draft held by the amendment,\n" +
+			"so a later --by, --superseded-by, or --blocks names it by id or key like\n" +
+			"any node; only approve moves anything.\n" +
 			"Staging a supersede before its target is done remains legal, but approval\n" +
 			"always requires done even without a target_status precondition. Stage\n" +
 			"--precondition target_status=done as an optional stale guard when the\n" +
@@ -729,13 +748,13 @@ func newAmendCmd() *cobra.Command {
 	cmd.Flags().StringVar(&f.addTask, "add-task", "", "stage a new task at <epic-key>/<feature-key>/<task-key>")
 	cmd.Flags().StringVar(&f.title, "title", "", "the staged epic's, feature's, task's, or question's title (required with --add-task and --add-question)")
 	cmd.Flags().StringVar(&f.addQuestion, "add-question", "", "stage a new open question with this full statement (no key at all)")
-	cmd.Flags().StringSliceVar(&f.blocks, "blocks", nil, "nodes the staged question holds (id, key, or an add op's staged key; repeatable)")
+	cmd.Flags().StringSliceVar(&f.blocks, "blocks", nil, "nodes the staged question holds (id or key, a draft this amendment holds included; repeatable)")
 	cmd.Flags().StringVar(&f.supersede, "supersede", "",
 		"an existing feature or task (id or key) retired after it is done; staging may occur earlier, but approve intrinsically requires done; use --cancel with --superseded-by for non-done replacement")
-	cmd.Flags().StringVar(&f.by, "by", "", "the supersede's replacement (id, key, or an add op's staged key)")
+	cmd.Flags().StringVar(&f.by, "by", "", "the supersede's replacement (id or key, a draft this amendment holds included)")
 	cmd.Flags().StringVar(&f.cancel, "cancel", "", "an existing feature or task (id or key) this amendment cancels")
 	cmd.Flags().StringVar(&f.reason, "reason", "", "why the target is cancelled, moved, or its eval corrected (required with --cancel, --move-feature, and --correct-eval)")
-	cmd.Flags().StringVar(&f.supersededBy, "superseded-by", "", "the cancel's replacement, if any (id, key, or an add op's staged key)")
+	cmd.Flags().StringVar(&f.supersededBy, "superseded-by", "", "the cancel's replacement, if any (id or key, a draft this amendment holds included)")
 	cmd.Flags().StringVar(&f.revise, "revise", "", "an existing non-terminal feature or task (id or key) revised in place")
 	cmd.Flags().StringVar(&f.correctEval, "correct-eval", "", "a done feature (id or key) whose eval bindings are corrected in place, criteria unchanged")
 	cmd.Flags().StringSliceVar(&f.retire, "retire", nil, "a criterion id the --correct-eval deliberately removes (repeatable)")
@@ -1227,6 +1246,29 @@ func newWithdrawCmd() *cobra.Command {
 	return cmd
 }
 
+// AmendmentWithdrawBlockedView is the --json payload of a refused `withdraw
+// amendment`: the amendment, the reason, and the node or amendment that
+// stopped it (Noun, NodeID, NodeKey), which the withdraw would otherwise have
+// deleted or stranded.
+type AmendmentWithdrawBlockedView struct {
+	ID      string `json:"id"`
+	Key     string `json:"key,omitempty"`
+	Reason  string `json:"reason"`
+	Detail  string `json:"detail"`
+	Noun    string `json:"noun,omitempty"`
+	NodeID  string `json:"node_id,omitempty"`
+	NodeKey string `json:"node_key,omitempty"`
+}
+
+// reportWithdrawBlocked answers a withdraw the removal planner refused as a
+// blocked business answer (exit 1, reason on the data block), the shape
+// `tiller remove` gives the same refusals. Nothing was written.
+func reportWithdrawBlocked(cmd *cobra.Command, a *store.Amendment, blocked *mutate.RemoveBlockedError) error {
+	view := AmendmentWithdrawBlockedView{ID: a.ID, Key: views.Key(a), Reason: blocked.Code, Detail: blocked.Detail,
+		Noun: blocked.Noun, NodeID: blocked.ID, NodeKey: blocked.Key}
+	return emitReport(cmd, "withdraw", false, view, "Blocked: "+blocked.Error()+". Nothing was withdrawn or removed.", 1)
+}
+
 // AmendmentWithdrawView is the --json payload of `withdraw amendment`.
 // RemovedIDs is every held draft the withdraw removed, and Detached the shelf
 // items that lost an attachment to one.
@@ -1250,6 +1292,10 @@ func runWithdrawAmendment(cmd *cobra.Command, addr, reason string) error {
 		return emitFailure(cmd, "withdraw", err)
 	}
 	res, err := mutate.WithdrawAmendment(tree, d, a, reason)
+	var blocked *mutate.RemoveBlockedError
+	if errors.As(err, &blocked) {
+		return reportWithdrawBlocked(cmd, a, blocked)
+	}
 	if err != nil {
 		return emitFailure(cmd, "withdraw", err)
 	}

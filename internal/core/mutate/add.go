@@ -253,6 +253,10 @@ func planAddEpic(tree *store.Tree, deps Deps, owner store.Contributor, in EpicIn
 	if err != nil {
 		return plannedAdd{}, err
 	}
+	// A new node is live work, so it may not wait on a held draft.
+	if err := refuseDependencyOnHeldDraft(tree, nil, dependsOn); err != nil {
+		return plannedAdd{}, err
+	}
 
 	if fileExists(tree.Root, ymlPath) {
 		var doc store.Epic
@@ -429,6 +433,10 @@ func planAddFeature(tree *store.Tree, deps Deps, owner store.Contributor, in Fea
 	if err != nil {
 		return plannedAdd{}, err
 	}
+	// A new node is live work, so it may not wait on a held draft.
+	if err := refuseDependencyOnHeldDraft(tree, nil, dependsOn); err != nil {
+		return plannedAdd{}, err
+	}
 
 	if fileExists(tree.Root, ymlPath) {
 		var doc store.Feature
@@ -571,6 +579,10 @@ func planAddTask(tree *store.Tree, deps Deps, owner store.Contributor, in TaskIn
 	// so a refused target leaves no folder behind.
 	dependsOn, err := resolveDependsOn(tree, in.DependsOn, "", dependsScope{Sibling: true, Feature: feat.ID})
 	if err != nil {
+		return plannedAdd{}, err
+	}
+	// A new node is live work, so it may not wait on a held draft.
+	if err := refuseDependencyOnHeldDraft(tree, nil, dependsOn); err != nil {
 		return plannedAdd{}, err
 	}
 

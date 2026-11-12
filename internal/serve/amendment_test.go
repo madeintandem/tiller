@@ -547,15 +547,13 @@ func amendmentHandEditFixture(t *testing.T) (root, amendmentID string) {
 		})
 		return err
 	})
-	step(func(tree *store.Tree) error {
-		_, err := mutate.StageOperation(tree, deps, tree.Amendments[amendmentID], mutate.StageInput{
-			Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening one", Source: "docs/feedback/review.md#L3-4",
-		})
-		return err
-	})
 	// Staging refuses a repeated key itself now (the first stage created the
-	// epic), so the duplicate is hand-appended in the node-less shape an
-	// amendment staged before schema 15 carries.
+	// epic), and a held draft is its node rather than its staged key, so the
+	// duplicate check covers only node-less adds: both are hand-appended in
+	// the shape an amendment staged before schema 15 carries.
+	appendOpOnDisk(t, root, amendmentID, store.AmendmentOp{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening one", Source: "docs/feedback/review.md#L3-4",
+	})
 	appendOpOnDisk(t, root, amendmentID, store.AmendmentOp{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two", Source: "docs/feedback/review.md#L5-6",
 	})

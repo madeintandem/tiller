@@ -1,9 +1,11 @@
 package mutate
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/madeintandem/tiller/internal/core/events"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"gopkg.in/yaml.v3"
 )
@@ -88,20 +90,58 @@ func ProposeAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 }
 
 // checkHeldNodes refuses an amendment one of whose add operations names a node
-// the tree no longer carries (deleted outside Tiller, or a hand-edited id):
-// the human would be reviewing a draft that is not there. An operation marked
-// removed is exempt, since its node is gone by design, and an add staged
-// before schema 15 carries no node to check.
+// it does not hold: one the tree no longer carries (deleted outside Tiller, or
+// a hand-edited id), or one the hold index gives to a different amendment (two
+// amendments naming one node, after a hand edit or a merge). Either way the
+// human would be reviewing a draft this amendment cannot promote. An operation
+// marked removed is exempt, since its node is gone by design, and an add
+// staged before schema 15 carries no node to check.
 func checkHeldNodes(tree *store.Tree, doc *store.Amendment) error {
 	for i, op := range doc.Operations {
-		if op.Node == "" || op.Removed != "" || tree.AddedNode(op) != nil {
+		if op.Node == "" || op.Removed != "" {
 			continue
 		}
-		return &usageError{
-			reason: "held_node_missing",
-			msg: fmt.Sprintf("operation %d (%s %s) holds %s, which is not in the tree; withdraw the amendment and stage it again",
-				i, op.Op, op.Key, op.Node),
+		if _, err := heldDraftOf(tree, doc, i, op); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+// heldDraftOf is the draft the add operation at index holds for doc, the one
+// node approval may promote for it. It refuses held_node_missing when the
+// node is gone or when the hold index (store.Tree.AmendmentHolds) names a
+// different holder, naming that holder.
+func heldDraftOf(tree *store.Tree, doc *store.Amendment, index int, op store.AmendmentOp) (store.Node, error) {
+	n := tree.AddedNode(op)
+	if n == nil {
+		return nil, &usageError{
+			reason: "held_node_missing",
+			msg: fmt.Sprintf("operation %d (%s %s) holds %s, which is not in the tree; withdraw the amendment and stage it again",
+				index, op.Op, op.Key, op.Node),
+		}
+	}
+	holderID := tree.AmendmentHolds[op.Node]
+	if holderID == doc.ID {
+		return n, nil
+	}
+	holder := "no amendment holds it"
+	if a := tree.Amendments[holderID]; a != nil {
+		holder = "amendment " + gen.Ref(tree, a) + " holds it, not this one"
+	}
+	return nil, &usageError{
+		reason: "held_node_missing",
+		msg: fmt.Sprintf("operation %d (%s %s) names %s, but %s; withdraw this amendment and stage it again",
+			index, op.Op, op.Key, gen.Ref(tree, n), holder),
+	}
+}
+
+// operationRefusal prefixes a refusal approval found on one operation with
+// its index, keeping the refusal's reason.
+func operationRefusal(index int, err error) error {
+	var ue *usageError
+	if errors.As(err, &ue) {
+		return &usageError{reason: ue.reason, msg: fmt.Sprintf("operation %d: %s", index, ue.msg), cause: ue.cause}
+	}
+	return err
 }

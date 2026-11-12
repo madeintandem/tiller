@@ -1954,7 +1954,10 @@ func TestWithdrawIgnoresItsOwnReferences(t *testing.T) {
 
 // TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft: a different
 // open amendment naming one of the held drafts cannot be edited, so the
-// withdraw is refused as a whole and nothing moves.
+// withdraw is refused as a whole and nothing moves. Staging refuses that
+// reference (held_by_amendment), so it is laid by hand, the way a hand edit
+// or a merge would leave it. The refusal speaks of the withdraw, not of a
+// remove the caller never ran.
 func TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft(t *testing.T) {
 	t.Parallel()
 	root, amendmentID, _, featureID, _ := heldFixture(t)
@@ -1962,8 +1965,8 @@ func TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft(t *testing.T) 
 	other, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{Key: "tablet-later", Title: "Tablet later"})
 	require.NoError(t, err)
 	existing := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading").NodeID()
-	stageHeld(t, root, deps, other.ID, mutate.StageInput{
-		Op: store.AmendmentOpCancel, Target: existing, Reason: "replaced by table-backed forms", SupersededBy: featureID,
+	writeAmendmentOps(t, root, loadAmendment(t, root, other.ID), []store.AmendmentOp{
+		{Op: store.AmendmentOpCancel, Target: existing, Reason: "replaced by table-backed forms", SupersededBy: featureID},
 	})
 	paths := []string{
 		filepath.Join(root, filepath.FromSlash(heldAmendmentPath(t, root, amendmentID))),
@@ -1981,6 +1984,8 @@ func TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft(t *testing.T) 
 	require.ErrorAs(t, err, &blocked)
 	require.Equal(t, "proposed_amendment_reference", blocked.Reason())
 	require.Equal(t, other.ID, blocked.ID, "the refusal names the amendment that references the draft")
+	require.NotContains(t, err.Error(), "remove refuses")
+	require.ErrorContains(t, err, "cannot withdraw amendment")
 
 	for _, p := range paths {
 		data, err := os.ReadFile(p)

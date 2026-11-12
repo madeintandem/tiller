@@ -135,6 +135,9 @@ func suggestFromNext(t *store.Tree, next views.Next) (skill, reason string) {
 	}
 	switch top.Kind {
 	case "decompose_amendment":
+		if a := t.Amendments[top.Node.ID]; a != nil && len(a.Operations) > 0 {
+			return top.Skill, fmt.Sprintf("Amendment %s is still a draft. Finish staging what its document implies, then run tiller propose amendment %s.", top.Node.Ref, amendmentAddr(top.Node))
+		}
 		return top.Skill, fmt.Sprintf("A document landed as amendment %s and has not been turned into work. Read it whole, stage what it implies, then run tiller propose amendment %s.", top.Node.Ref, amendmentAddr(top.Node))
 	case "stage_amendment":
 		return top.Skill, fmt.Sprintf("Amendment %s is still a draft. Finish staging it, then run tiller propose amendment %s.", top.Node.Ref, amendmentAddr(top.Node))

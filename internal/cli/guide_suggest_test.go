@@ -72,4 +72,14 @@ func TestGuideAfterIntakeNamesTheAgentMove(t *testing.T) {
 	require.Contains(t, human, "A document landed as amendment ")
 	require.Contains(t, human, "and has not been turned into work. Read it whole, stage what it implies, then run tiller propose amendment ")
 	require.NotContains(t, human, "approve amendment")
+
+	// Once something is staged, the document has been turned into work; the
+	// amendment is a draft to finish and hand over.
+	out, stderr, code = execCLI(t, "amend", aid, "--add-epic", "review", "--title", "Review", "--source", ".tiller/design/review.md#L1", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	human, stderr, code = execCLI(t, "guide")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, human, "Suggested skill: decompose")
+	require.NotContains(t, human, "has not been turned into work")
+	require.Contains(t, human, " is still a draft. Finish staging what its document implies, then run tiller propose amendment ")
 }

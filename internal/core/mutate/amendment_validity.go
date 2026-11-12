@@ -353,7 +353,7 @@ func EvaluateAmendmentShape(amendment *store.Amendment) []OpShapeFinding {
 	for i, op := range amendment.Operations {
 		switch op.Op {
 		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
-			if duplicateStagedKey(amendment, i, op.Key) {
+			if duplicateStagedKey(amendment, i) {
 				out = append(out, OpShapeFinding{Index: i, Op: op.Op, Kind: ReasonDuplicateStagedKey})
 			}
 		case store.AmendmentOpSupersede, store.AmendmentOpCancel:

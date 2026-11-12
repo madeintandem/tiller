@@ -446,6 +446,14 @@ func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in 
 	if doc.Source != nil && strings.TrimSpace(in.Source) == "" {
 		return StageResult{}, sourcelessOpErr()
 	}
+	// Judged on the raw request, ahead of each kind's own resolution, so a
+	// draft another amendment holds is named as such rather than reported
+	// through whatever that kind would make of a draft.
+	if err := refuseOperationHeldElsewhere(tree, doc, store.AmendmentOp{
+		Op: in.Op, Target: in.Target, By: in.By, SupersededBy: in.SupersededBy, Blocks: in.Blocks, Key: in.Key,
+	}); err != nil {
+		return StageResult{}, err
+	}
 
 	op, err := buildStagedOp(tree, deps, doc, in)
 	if err != nil {
@@ -907,6 +915,21 @@ func resolveStageParentEpic(tree *store.Tree, epicKey string) (store.Node, error
 	return nil, parentUnknownErr(epicKey, err)
 }
 
+// heldElsewhere names the open amendment holding n when that amendment is not
+// actor, and is nil otherwise. It is the test every door into a held draft
+// runs, so the hold stays exclusive (decision 7): a draft is reached only
+// through the amendment that holds it. actor is the amendment doing the
+// reaching (the one staging, or the one holding the node a hand command moves
+// or links), or nil for live work, which no hold exempts. gen.AmendmentHold is
+// the predicate underneath.
+func heldElsewhere(tree *store.Tree, actor *store.Amendment, n store.Node) *store.Amendment {
+	holder := gen.AmendmentHold(tree, n)
+	if holder == nil || (actor != nil && holder.ID == actor.ID) {
+		return nil
+	}
+	return holder
+}
+
 // refuseParentHeldElsewhere refuses an add under a parent that a different
 // open amendment holds. Approving or withdrawing that amendment would promote
 // or delete the parent under work this one still proposes, so the add belongs
@@ -916,14 +939,107 @@ func resolveStageParentEpic(tree *store.Tree, epicKey string) (store.Node, error
 // approval and withdrawal would mishandle.
 func refuseParentHeldElsewhere(tree *store.Tree, doc *store.Amendment, parents ...store.Node) error {
 	for _, parent := range parents {
-		holder := gen.AmendmentHold(tree, parent)
-		if holder == nil || (doc != nil && holder.ID == doc.ID) {
+		if holder := heldElsewhere(tree, doc, parent); holder != nil {
+			return parentHeldElsewhereErr(tree, parent, holder, "stage this on that amendment")
+		}
+	}
+	return nil
+}
+
+// parentHeldElsewhereErr is parent_held_elsewhere: parent is a draft holder
+// holds, so nothing that amendment does not hold may land under it. hint says
+// what to do instead.
+func parentHeldElsewhereErr(tree *store.Tree, parent store.Node, holder *store.Amendment, hint string) error {
+	return &usageError{
+		reason: "parent_held_elsewhere",
+		msg:    fmt.Sprintf("%s is held by amendment %s; %s", gen.Ref(tree, parent), gen.Ref(tree, holder), hint),
+	}
+}
+
+// refuseOperationHeldElsewhere refuses a staged operation that reaches a draft
+// a different open amendment holds: a revise, supersede, cancel, correct-eval,
+// or move target, a supersede's by, a cancel's superseded_by, a question's
+// blocks (held_by_amendment), or a move's destination epic
+// (parent_held_elsewhere). Approving this amendment would act on a draft that
+// is still the other amendment's proposal, and withdrawing that one would
+// then strand this one. An add's own parent is judged where the add is built
+// (buildStagedOp), and the node an add creates is never a reference. Staging
+// and approval both run it, on raw values that are ids or keys.
+func refuseOperationHeldElsewhere(tree *store.Tree, doc *store.Amendment, op store.AmendmentOp) error {
+	refs := append([]string{op.Target, op.By, op.SupersededBy}, op.Blocks...)
+	for _, raw := range refs {
+		n := lookupStageRef(tree, raw)
+		if n == nil {
 			continue
 		}
-		return &usageError{
-			reason: "parent_held_elsewhere",
-			msg: fmt.Sprintf("%s is held by amendment %s; stage this on that amendment",
-				gen.Ref(tree, parent), gen.Ref(tree, holder)),
+		if holder := heldElsewhere(tree, doc, n); holder != nil {
+			return &usageError{
+				reason: "held_by_amendment",
+				msg: fmt.Sprintf("%s is a draft amendment %s holds; stage this on that amendment",
+					gen.Ref(tree, n), gen.Ref(tree, holder)),
+			}
+		}
+	}
+	if op.Op == store.AmendmentOpMoveFeature {
+		if epicKey, _, err := splitFeatureKey(op.Key); err == nil {
+			if dest := lookupStageRef(tree, epicKey); dest != nil {
+				if holder := heldElsewhere(tree, doc, dest); holder != nil {
+					return parentHeldElsewhereErr(tree, dest, holder, "stage this move on that amendment")
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// lookupStageRef resolves raw, an id or a canonical key, to a live epic,
+// feature, or task, or nil when it names none (a legacy add's staged key, or
+// nothing at all). The noun of a key follows its shape: no slash is an epic,
+// one a feature, two a task.
+func lookupStageRef(tree *store.Tree, raw string) store.Node {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	ref := resolve.Ref{Raw: raw}
+	if !id.Valid(raw) {
+		ref.Noun = store.NounEpic
+		switch strings.Count(raw, "/") {
+		case 1:
+			ref.Noun = store.NounFeature
+		case 2:
+			ref.Noun = store.NounTask
+		}
+	}
+	n, err := resolve.NewResolver(tree).Resolve(ref)
+	if err != nil {
+		return nil
+	}
+	switch n.Noun() {
+	case store.NounEpic, store.NounFeature, store.NounTask:
+		return n
+	}
+	return nil
+}
+
+// refuseDependencyOnHeldDraft refuses a depends_on edge from dependent onto a
+// draft an open amendment holds, unless that same amendment holds dependent
+// too. The edge would make live work wait on a proposal before anyone has
+// approved it, so it is recorded after the amendment is approved instead. A
+// draft depending on live work, and two drafts of one amendment, are legal.
+// dependent is nil for a node a hand add is about to create, which is live.
+func refuseDependencyOnHeldDraft(tree *store.Tree, dependent store.Node, targetIDs []string) error {
+	actor := gen.AmendmentHold(tree, dependent)
+	for _, targetID := range targetIDs {
+		target := gen.NodeByID(tree, targetID)
+		if target == nil {
+			continue
+		}
+		if holder := heldElsewhere(tree, actor, target); holder != nil {
+			return &usageError{
+				reason: "held_by_amendment",
+				msg: fmt.Sprintf("%s is a draft amendment %s holds; link the dependency after the amendment is approved",
+					gen.Ref(tree, target), gen.Ref(tree, holder)),
+			}
 		}
 	}
 	return nil
@@ -1142,7 +1258,7 @@ func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	}
 	held, err := collectHeldNodes(tree, doc)
 	if err != nil {
-		return WithdrawResult{}, err
+		return WithdrawResult{}, withdrawRefusal(tree, doc, err)
 	}
 
 	ev := events.NewEvent(deps.clock(), eventAmendmentWithdrawn, owner.ID, "withdraw amendment "+doc.ID, doc.ID)
@@ -1172,7 +1288,7 @@ func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	}
 	plan, err := planRemoval(tree, held, amendmentRemovalEdit{edit: retire, exempt: doc.ID})
 	if err != nil {
-		return WithdrawResult{}, err
+		return WithdrawResult{}, withdrawRefusal(tree, doc, err)
 	}
 	ev.After = map[string]any{"status": store.AmendmentStatusWithdrawn, "reason": reason, "removed": plan.removedIDs}
 	for _, path := range plan.changedFiles {
@@ -1185,11 +1301,25 @@ func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	return res, nil
 }
 
+// withdrawRefusal recasts a removal refusal met while withdrawing doc, so it
+// names the withdraw rather than a remove the caller never ran.
+func withdrawRefusal(tree *store.Tree, doc *store.Amendment, err error) error {
+	var blocked *RemoveBlockedError
+	if !errors.As(err, &blocked) {
+		return err
+	}
+	recast := *blocked
+	recast.Withdrawing = gen.Ref(tree, doc)
+	return &recast
+}
+
 // collectHeldNodes gathers every node a still holds, ready for planRemoval:
 // held epics first, each with the features under it, then the held features
 // and tasks not already gathered, each in the order a staged them. A held
-// epic's features are held by the same amendment (an add under a held parent
-// is refused elsewhere), so each subtree is planned once.
+// epic's features must be held by the same amendment: collectRemovedNodes
+// refuses a held epic with any other child (parent_held_elsewhere), so the
+// withdraw deletes nothing it does not hold, even on a tree a hand edit or a
+// merge put an unheld feature into. Each subtree is planned once.
 func collectHeldNodes(tree *store.Tree, a *store.Amendment) ([]removedNode, error) {
 	var out []removedNode
 	gathered := map[string]struct{}{}

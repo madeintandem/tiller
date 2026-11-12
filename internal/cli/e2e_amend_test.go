@@ -1056,3 +1056,112 @@ func TestEndToEndQueueIsSilentAboutADraftAmendmentUntilPropose(t *testing.T) {
 	require.Equal(t, 0, code)
 	require.Contains(t, queueJSON, "approve_amendment")
 }
+
+// TestEndToEndTheHoldIsExclusive: a draft one amendment holds is reached only
+// through that amendment. Through the real CLI, each other door refuses with
+// the spec's reason and writes nothing: a hand rename moving live work under a
+// held epic, another amendment's move into it, another amendment's cancel or
+// revise of a held feature, and live work linking a dependency onto one. The
+// withdraw then removes only what the amendment held, and the live feature it
+// never proposed keeps its prose.
+func TestEndToEndTheHoldIsExclusive(t *testing.T) {
+	layAmendmentTree(t)
+	_, stderr, code := execCLI(t, "add", "feature", "form-engine/old", "--title", "Old", "--change-type", "create", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	oldID := featureByKey(t, loadCwdTree(t), "form-engine/old").ID
+	oldProse := filepath.Join(".tiller", "epics", "form-engine", "features", "old", "feature.md")
+	require.NoError(t, os.WriteFile(oldProse, []byte("# Old\n\nAuthored prose the amendment never proposed.\n"), 0o644))
+
+	holder := openAmendmentCLI(t, "reshape", "Reshape")
+	epicID := heldNodeOf(t, e2eStage(t, holder, "--add-epic", "newe", "--title", "New epic"))
+	heldID := heldNodeOf(t, e2eStage(t, holder, "--add-feature", "form-engine/held", "--title", "Held", "--change-type", "create"))
+	other := openAmendmentCLI(t, "other", "Other")
+	before := fingerprintRepo(t, ".")
+
+	for _, tc := range []struct {
+		args   []string
+		reason string
+	}{
+		{[]string{"rename", "feature", "form-engine/old", "--key", "newe/old"}, "parent_held_elsewhere"},
+		{[]string{"amend", other, "--move-feature", "form-engine/old", "--to", "newe/old", "--reason", "it belongs there"}, "parent_held_elsewhere"},
+		{[]string{"amend", other, "--cancel", "form-engine/held", "--reason", "not needed"}, "held_by_amendment"},
+		{[]string{"amend", other, "--revise", "form-engine/held"}, "held_by_amendment"},
+		{[]string{"link", "feature", "form-engine/old", "--depends-on", "form-engine/held"}, "held_by_amendment"},
+	} {
+		out, _, code := execCLI(t, append(tc.args, "--contributor", "jc", "--json")...)
+		require.Equal(t, tc.reason, e2eRefusal(t, out, 2, code), strings.Join(tc.args, " "))
+		require.Contains(t, out, holder, "the refusal names the holding amendment")
+	}
+	require.Equal(t, before, fingerprintRepo(t, "."), "every refusal left the repo untouched")
+
+	out, stderr, code := execCLI(t, "withdraw", "amendment", holder, "--reason", "not now", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	removed, _ := jsonData(t, out)["removed_ids"].([]any)
+	require.ElementsMatch(t, []any{epicID, heldID}, removed)
+	tree := loadCwdTree(t)
+	require.Contains(t, tree.Features, oldID)
+	require.FileExists(t, oldProse)
+}
+
+// TestEndToEndWithdrawKeepsAnUnheldFeatureUnderAHeldEpic: on a tree where a
+// hand edit already put an unheld feature under a held epic, withdraw refuses,
+// naming the feature, and deletes nothing.
+func TestEndToEndWithdrawKeepsAnUnheldFeatureUnderAHeldEpic(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "reshape", "Reshape")
+	e2eStage(t, aid, "--add-epic", "newe", "--title", "New epic")
+	// Before the hold existed this was an ordinary rename; lay its result by
+	// hand: the feature's folder under the held epic, its key rewritten.
+	_, stderr, code := execCLI(t, "add", "feature", "form-engine/old", "--title", "Old", "--change-type", "create", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	from := filepath.Join(".tiller", "epics", "form-engine", "features", "old")
+	to := filepath.Join(".tiller", "epics", "newe", "features", "old")
+	require.NoError(t, os.MkdirAll(filepath.Dir(to), 0o755))
+	require.NoError(t, os.Rename(from, to))
+	yml := filepath.Join(to, "feature.yml")
+	data, err := os.ReadFile(yml)
+	require.NoError(t, err)
+	rewritten := strings.Replace(string(data), "key: form-engine/old", "key: newe/old", 1)
+	require.NotEqual(t, string(data), rewritten)
+	require.NoError(t, os.WriteFile(yml, []byte(rewritten), 0o644))
+	require.Equal(t, "newe", featureByKey(t, loadCwdTree(t), "newe/old").EpicKey)
+	before := fingerprintRepo(t, ".")
+
+	out, _, code := execCLI(t, "withdraw", "amendment", aid, "--reason", "not now", "--contributor", "jc", "--json")
+	require.Equal(t, "parent_held_elsewhere", e2eRefusal(t, out, 1, code))
+	require.Contains(t, out, "newe/old")
+	require.NotContains(t, out, "remove refuses")
+	require.Equal(t, before, fingerprintRepo(t, "."), "the refused withdraw deleted nothing")
+}
+
+// TestEndToEndShowAmendmentNamesTheRealHolder: when a hand edit makes two
+// amendments name one draft, show amendment says which one holds it, and
+// approving the other refuses held_node_missing.
+func TestEndToEndShowAmendmentNamesTheRealHolder(t *testing.T) {
+	layAmendmentTree(t)
+	holder := openAmendmentCLI(t, "reshape", "Reshape")
+	epicID := heldNodeOf(t, e2eStage(t, holder, "--add-epic", "newe", "--title", "New epic"))
+	other := openAmendmentCLI(t, "other", "Other")
+	tree := loadCwdTree(t)
+	a := tree.Amendments[other]
+	path := filepath.Join(".tiller", "amendments", a.ID+"-"+*a.Key+".yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "operations:", "the fixture appends the only operation")
+	edited := string(data) + "operations:\n    - op: add-epic\n      key: newe\n      title: New epic\n      node: " + epicID + "\n"
+	require.NoError(t, os.WriteFile(path, []byte(edited), 0o644))
+	heldBy := loadCwdTree(t).AmendmentHolds[epicID]
+	notHolder := other
+	if heldBy == other {
+		notHolder = holder
+	}
+
+	out, stderr, code := execCLI(t, "show", "amendment", notHolder)
+	require.Equal(t, 0, code, out+stderr)
+	require.Contains(t, out, "held by amendment")
+	require.Contains(t, out, heldBy)
+
+	out, _, code = execCLI(t, "approve", "amendment", notHolder, "--contributor", "jc", "--json")
+	require.Equal(t, "held_node_missing", e2eRefusal(t, out, 2, code))
+	require.Equal(t, "draft", loadCwdTree(t).Epics[epicID].Status)
+}

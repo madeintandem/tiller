@@ -449,8 +449,8 @@ tiller add amendment form-engine-rework \
   --title "Restructure form engine from embedded JSON to discrete tables" \
   --triggered-by design/solution-design/04-form-engine.md
 # write the reshape's narrative over the stub at .tiller/amendments/<A-id>-form-engine-rework.md
-# stage the additions first: a --by, --superseded-by, or --blocks naming a staged key
-# resolves only against operations already on this amendment
+# stage the additions first: staging an add creates its held draft, and a later
+# --by, --superseded-by, or --blocks names that draft by id or key
 # new scope this review also names: an epic. Stage it first and a later
 # add-feature in this same amendment may name it as parent (epic before
 # feature is the order that makes it legal); add-task's feature must already

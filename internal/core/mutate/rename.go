@@ -10,6 +10,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"gopkg.in/yaml.v3"
 )
@@ -325,6 +326,13 @@ func RenameKey(tree *store.Tree, deps Deps, in RenameKeyInput) (RenameKeyResult,
 			if destinationEpic.Status != statusDraft {
 				return RenameKeyResult{}, keyRenameLocked(store.NounFeature, oldKey, n.Status,
 					fmt.Sprintf("destination epic %s is %s", newEpicKey, destinationEpic.Status))
+			}
+			// The hold is exclusive: only a draft the destination's own
+			// amendment holds may move under it, or approving or withdrawing
+			// that amendment would promote or delete work it never proposed.
+			if holder := heldElsewhere(tree, gen.AmendmentHold(tree, n), destinationEpic); holder != nil {
+				return RenameKeyResult{}, parentHeldElsewhereErr(tree, destinationEpic, holder,
+					"only a draft that amendment holds moves under it")
 			}
 			orderWrite, orderChanged, err := planFeatureSourceOrder(tree, sourceEpic, n.ID)
 			if err != nil {

@@ -476,6 +476,23 @@ func TestNextOffersDecomposeForADraftIntakeAmendment(t *testing.T) {
 	require.Equal(t, "approve_amendment", candidateKinds(cands)[1])
 }
 
+// TestNextSaysAStagedIntakeDraftIsStillADraft: once an intake amendment has
+// operations, its document has been turned into work, so the move still
+// decomposes but the reason says the amendment is a draft to finish and
+// propose.
+func TestNextSaysAStagedIntakeDraftIsStillADraft(t *testing.T) {
+	tree := draftAmendmentTree(&store.AmendmentSource{Path: ".tiller/design/review.md", Revision: "git:abc"})
+	got := candidatesOfKind(enumerate(tree, "jc", workflow.Input{}), "decompose_amendment")
+	require.Len(t, got, 1)
+	require.Equal(t, "its document has not been turned into work", got[0].Reason)
+
+	tree.Amendments["A-draft0"].Operations = []store.AmendmentOp{{Op: store.AmendmentOpAddEpic, Key: "x", Node: "E-xxxxxx"}}
+	got = candidatesOfKind(enumerate(tree, "jc", workflow.Input{}), "decompose_amendment")
+	require.Len(t, got, 1)
+	require.Equal(t, "decompose", got[0].Skill)
+	require.Equal(t, "still a draft; finish staging it, then propose it", got[0].Reason)
+}
+
 func TestNextOffersStageForAHandOpenedDraft(t *testing.T) {
 	tree := draftAmendmentTree(nil)
 	cands := enumerate(tree, "jc", workflow.Input{})

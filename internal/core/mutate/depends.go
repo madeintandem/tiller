@@ -120,6 +120,13 @@ func linkNode(tree *store.Tree, deps Deps, owner store.Contributor, node store.N
 	if err != nil {
 		return LinkResult{}, err
 	}
+	// An edge from live work onto a held draft would act before the
+	// amendment is approved (the design's anti-goal), so it waits for the
+	// approval; a draft may depend on live work or on its own amendment's
+	// drafts.
+	if err := refuseDependencyOnHeldDraft(tree, node, targets); err != nil {
+		return LinkResult{}, err
+	}
 	var attachment *string
 	if attach != "" {
 		target, err := resolveAttachRequest(tree, attach)

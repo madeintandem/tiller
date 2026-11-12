@@ -398,6 +398,13 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 	// generic staged[raw] != "" arm.
 	staged := map[string]string{}
 	for i, op := range doc.Operations {
+		// A held draft (or a removed one) is its node, not its staged key:
+		// the key may have been renamed since, and the tree already keeps
+		// node keys unique. Only a legacy add, created here from its key,
+		// joins the duplicate check and the key lookup below.
+		if op.Node != "" {
+			continue
+		}
 		var noun string
 		switch op.Op {
 		case store.AmendmentOpAddEpic:
@@ -419,7 +426,7 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 		// returns the moment a duplicate is found, so it never advances past
 		// one), which is precisely what duplicateStagedKey's own backward scan
 		// over doc.Operations[0:i] recomputes.
-		if duplicateStagedKey(doc, i, op.Key) {
+		if duplicateStagedKey(doc, i) {
 			return nil, &usageError{
 				reason: ReasonDuplicateStagedKey,
 				msg: fmt.Sprintf("operation %d stages the key %q a second time; one amendment materializes each key once",
@@ -446,15 +453,25 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 		if err := validatePreconditions(op.Preconditions); err != nil {
 			return nil, err
 		}
+		// Staging refused this already; a hand edit or a merge can still put
+		// it here, and approving it would act on another amendment's draft.
+		if err := refuseOperationHeldElsewhere(tree, doc, op); err != nil {
+			return nil, operationRefusal(i, err)
+		}
 
 		switch op.Op {
 		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
 			// A held draft is resolved by its id, so a rename after staging
-			// cannot lose it; checkHeldNodes already refused one that is gone.
-			// A legacy add (no node) has nothing to resolve: its key IS the
-			// node, and it does not exist yet.
+			// cannot lose it; checkHeldNodes already refused one that is gone
+			// or that another amendment holds. A legacy add (no node) has
+			// nothing to resolve: its key IS the node, and it does not exist
+			// yet.
 			if op.Node != "" && op.Removed == "" {
-				r.draft = tree.AddedNode(op)
+				draft, err := heldDraftOf(tree, doc, i, op)
+				if err != nil {
+					return nil, err
+				}
+				r.draft = draft
 			}
 		case store.AmendmentOpAddQuestion:
 			// Nothing to resolve either, for a different reason: a question
@@ -591,15 +608,21 @@ func stagedEpicReplacementErr(index int, key string) error {
 	}
 }
 
-// duplicateStagedKey reports whether an EARLIER add-epic, add-feature, or
-// add-task operation in doc.Operations (any index below index) already
-// stages key. It is resolveAmendment's own duplicate-key predicate (above),
-// extracted so EvaluateAmendmentShape (amendment_validity.go, #57) shares
-// ONE definition of the fact rather than a second copy of the loop:
-// resolveAmendment tests it and refuses on the first index it holds for,
-// phase 1's first-offender posture; the evaluator collects every one
-// instead, the same evaluator-beside-checker split EvaluateAmendmentOpSources
-// already keeps with checkOpSources.
+// duplicateStagedKey reports whether the add operation at index is a legacy
+// add (no node, staged before schema 15) whose key an EARLIER legacy add in
+// doc.Operations already stages. It is resolveAmendment's own duplicate-key
+// predicate (above), extracted so EvaluateAmendmentShape
+// (amendment_validity.go, #57) shares ONE definition of the fact rather than
+// a second copy of the loop: resolveAmendment tests it and refuses on the
+// first index it holds for, phase 1's first-offender posture; the evaluator
+// collects every one instead, the same evaluator-beside-checker split
+// EvaluateAmendmentOpSources already keeps with checkOpSources.
+//
+// An add with a node is out of it on both sides. Its draft is the node, not
+// the key it was staged under: the draft may have been renamed since, which
+// frees that key to be staged again, and the tree already keeps live keys
+// unique. A removed add carries a node too, so removing a draft frees its key
+// the same way.
 //
 // Deliberately excludes add-question, mirroring the exclusion resolveAmendment
 // itself has always kept for the identical reason (this function's own call
@@ -609,14 +632,13 @@ func stagedEpicReplacementErr(index int, key string) error {
 // batch are unrelated (a question's own notion of "duplicate" is its
 // statement, and foldQuestion's idempotency rule, question.go, already
 // handles that correctly without this predicate's help).
-func duplicateStagedKey(doc *store.Amendment, index int, key string) bool {
-	for i, op := range doc.Operations {
-		if i >= index {
-			return false
-		}
-		// A removed operation created nothing that a later add could collide
-		// with: removing a draft frees its key to be staged again.
-		if op.Removed != "" {
+func duplicateStagedKey(doc *store.Amendment, index int) bool {
+	key := doc.Operations[index].Key
+	if doc.Operations[index].Node != "" {
+		return false
+	}
+	for _, op := range doc.Operations[:index] {
+		if op.Node != "" {
 			continue
 		}
 		switch op.Op {

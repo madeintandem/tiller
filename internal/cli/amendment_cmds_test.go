@@ -1330,8 +1330,9 @@ func TestShowAmendmentJSONRendersSourceMissingForABlankedOpSource(t *testing.T) 
 // refused duplicate_staged_key; now show flags the SECOND occurrence
 // itself, in --json and in the human render, before approve ever runs.
 // Staging refuses the repeat itself now (the first stage created the epic,
-// so the second is key_exists), so the second operation is hand-appended in
-// the node-less shape an amendment staged before schema 15 carries.
+// so the second is key_exists), and a held draft is its node rather than its
+// staged key, so the check covers only the node-less adds an amendment staged
+// before schema 15 carries: both operations are hand-appended in that shape.
 func TestShowAmendmentJSONRendersShapeErrorForADuplicateStagedKey(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "hardening", "Land hardening work")
@@ -1341,17 +1342,17 @@ func TestShowAmendmentJSONRendersShapeErrorForADuplicateStagedKey(t *testing.T) 
 	out, _, code = execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening two", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out)
 	require.Contains(t, out, `"reason": "key_exists"`)
-	appendAmendmentOpOnDisk(t, aid, store.AmendmentOp{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two"})
+	appendAmendmentOpOnDisk(t, aid, store.AmendmentOp{Op: store.AmendmentOpAddEpic, Key: "legacy", Title: "Legacy one"})
+	appendAmendmentOpOnDisk(t, aid, store.AmendmentOp{Op: store.AmendmentOpAddEpic, Key: "legacy", Title: "Legacy two"})
 
 	show, _, code := execCLI(t, "show", "amendment", aid, "--json")
 	require.Equal(t, 0, code, show)
 	data := jsonData(t, show)
 	ops := data["operations"].([]any)
-	op0 := ops[0].(map[string]any)
-	op1 := ops[1].(map[string]any)
-	require.Empty(t, op0["shape_error"], "the FIRST operation to stage the key is clean")
-	require.Equal(t, "duplicate_staged_key", op1["shape_error"],
-		"the second operation to stage the same key is flagged, before approve ever refuses")
+	require.Empty(t, ops[0].(map[string]any)["shape_error"], "a held draft is its node, never a duplicate key")
+	require.Empty(t, ops[1].(map[string]any)["shape_error"], "the FIRST legacy operation to stage the key is clean")
+	require.Equal(t, "duplicate_staged_key", ops[2].(map[string]any)["shape_error"],
+		"the second legacy operation to stage the same key is flagged, before approve ever refuses")
 
 	human, _, code := execCLI(t, "show", "amendment", aid)
 	require.Equal(t, 0, code, human)
@@ -1431,11 +1432,13 @@ func TestShowAmendmentRendersEveryHandEditDefectAlongsideTheResolutionFailure(t 
 	require.Equal(t, 0, code, out)
 
 	// Operations 1 and 2: a duplicate staged key (operation 2 repeats
-	// operation 1's own). Staging refuses the repeat itself, so operation 2
-	// is hand-appended in the node-less pre-schema-15 shape.
-	out, _, code = execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening one",
-		"--source", "docs/feedback/opus-review.md#L3-4", "--contributor", "jc", "--json")
-	require.Equal(t, 0, code, out)
+	// operation 1's own). Staging refuses the repeat itself, and the check
+	// covers only node-less adds, so both are hand-appended in the
+	// pre-schema-15 shape.
+	appendAmendmentOpOnDisk(t, aid, store.AmendmentOp{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening one",
+		Source: "docs/feedback/opus-review.md#L3-4",
+	})
 	appendAmendmentOpOnDisk(t, aid, store.AmendmentOp{
 		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening two",
 		Source: "docs/feedback/opus-review.md#L5-6",

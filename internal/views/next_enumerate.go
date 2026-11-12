@@ -98,7 +98,9 @@ func candidatesOf(t *store.Tree, order *gen.Order, in NextInput) []NextCandidate
 // draftAmendmentCandidates are the agent's moves on each draft amendment,
 // id-ascending: decompose the document an intake amendment landed, or finish
 // staging one opened by hand. Both end at tiller propose amendment, which
-// hands the amendment to the human's queue.
+// hands the amendment to the human's queue. An intake amendment with
+// operations staged has had its document turned into work already, so its
+// reason says it is still a draft to finish.
 func draftAmendmentCandidates(t *store.Tree) []NextCandidate {
 	var drafts []*store.Amendment
 	for _, a := range t.Amendments {
@@ -116,7 +118,9 @@ func draftAmendmentCandidates(t *store.Tree) []NextCandidate {
 		}
 		if a.Source != nil {
 			c.Kind, c.Action, c.Skill = "decompose_amendment", "decompose amendment", "decompose"
-			c.Reason = "its document has not been turned into work"
+			if len(a.Operations) == 0 {
+				c.Reason = "its document has not been turned into work"
+			}
 		}
 		out = append(out, c)
 	}

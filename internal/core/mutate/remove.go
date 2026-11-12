@@ -10,6 +10,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"gopkg.in/yaml.v3"
 )
@@ -20,6 +21,7 @@ const (
 	reasonProposedAmendmentReference = "proposed_amendment_reference"
 	reasonRemoveLineageReference     = "remove_lineage_reference"
 	reasonNonRegularRemoveEntry      = "non_regular_remove_entry"
+	reasonParentHeldElsewhere        = "parent_held_elsewhere"
 )
 
 type RemoveInput struct {
@@ -51,6 +53,10 @@ type RemoveBlockedError struct {
 	Status string
 	Code   string
 	Detail string
+	// Withdrawing names the amendment a withdraw was removing drafts for,
+	// empty for a hand removal, so the refusal speaks of the command that
+	// actually ran.
+	Withdrawing string
 }
 
 func (e *RemoveBlockedError) Error() string {
@@ -58,10 +64,14 @@ func (e *RemoveBlockedError) Error() string {
 	if e.Key != "" {
 		ref = e.Key + " (" + e.ID + ")"
 	}
-	if e.Detail == "" {
-		return fmt.Sprintf("remove refuses %s %s", e.Noun, ref)
+	prefix := "remove refuses"
+	if e.Withdrawing != "" {
+		prefix = "cannot withdraw amendment " + e.Withdrawing + ":"
 	}
-	return fmt.Sprintf("remove refuses %s %s: %s", e.Noun, ref, e.Detail)
+	if e.Detail == "" {
+		return fmt.Sprintf("%s %s %s", prefix, e.Noun, ref)
+	}
+	return fmt.Sprintf("%s %s %s: %s", prefix, e.Noun, ref, e.Detail)
 }
 func (e *RemoveBlockedError) Reason() string { return e.Code }
 
@@ -307,8 +317,18 @@ func collectRemovedNodes(tree *store.Tree, node store.Node) ([]removedNode, erro
 		}
 		sort.Slice(children, func(i, j int) bool { return *children[i].Key < *children[j].Key })
 		out := []removedNode{{noun: store.NounEpic, id: n.ID, key: key, title: n.Title, dir: filepath.Join(tree.Root, epicRelDir(n))}}
+		// A held epic's folder carries only what its amendment holds: a child
+		// it does not hold (an unheld feature, or another amendment's draft,
+		// put there by a hand edit or a merge) would be deleted as a held
+		// draft by a removal or a withdraw that never proposed it.
+		holder := gen.AmendmentHold(tree, n)
 		for _, feature := range children {
 			featureKey := *feature.Key
+			if holder != nil && tree.AmendmentHolds[feature.ID] != holder.ID {
+				return nil, &RemoveBlockedError{Noun: store.NounEpic, ID: n.ID, Key: key, Status: n.Status, Code: reasonParentHeldElsewhere,
+					Detail: fmt.Sprintf("feature %s (%s) sits under it, but amendment %s does not hold that feature; move it out first (tiller rename feature %s --key <epic-key>/<feature-key>)",
+						featureKey, feature.ID, gen.Ref(tree, holder), featureKey)}
+			}
 			if feature.Status != statusDraft {
 				return locked(store.NounEpic, n.ID, key, n.Status, fmt.Sprintf("child feature %s is %s, not draft", feature.ID, feature.Status))
 			}
@@ -606,10 +626,10 @@ func planRemovalProjectOrder(tree *store.Tree, removed map[string]struct{}, chan
 
 // planRemovalAmendments guards every amendment file against change and
 // refuses the removal when an operation on an open amendment names a removed
-// node as its target, by, superseded_by, or blocks: a staged change to
-// existing work cannot be edited, so it must be withdrawn first. The add
-// operation that created a held draft names it only through Node, which this
-// scan does not read, so removing the draft itself is never refused here.
+// node as its target, by, superseded_by, blocks, or move destination: a staged
+// change to existing work cannot be edited, so it must be withdrawn first. The
+// add operation that created a held draft names it only through Node, which
+// this scan does not read, so removing the draft itself is never refused here.
 //
 // amendments.edit, when not nil, may change an amendment as part of the same
 // removal; a file it changes is written against the snapshot read here and
@@ -617,7 +637,9 @@ func planRemovalProjectOrder(tree *store.Tree, removed map[string]struct{}, chan
 // passes markHeldOpsRemoved; WithdrawAmendment passes the status change that
 // retires its own amendment, and exempts that amendment from the reference
 // refusal, since none of its operations will ever run. Every other open
-// amendment's references still refuse.
+// amendment's references still refuse. A staged move's destination epic is a
+// reference like a target: removing it would leave a move that can never
+// apply.
 func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, changed map[string]struct{}, amendments amendmentRemovalEdit) ([]store.PlannedWrite, error) {
 	edit := amendments.edit
 	dir := filepath.Join(tree.Root, ".tiller", "amendments")
@@ -655,9 +677,26 @@ func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, change
 		if store.AmendmentOpen(&disk) && disk.ID != amendments.exempt {
 			for _, op := range disk.Operations {
 				refs := append([]string{op.Target, op.By, op.SupersededBy}, op.Blocks...)
+				// A staged move names its destination epic too, by the
+				// reviewed snapshot's id and by the key it lands under.
+				if op.Op == store.AmendmentOpMoveFeature {
+					if op.Move != nil {
+						refs = append(refs, op.Move.DestinationEpicID)
+					}
+					if epicKey, _, err := splitFeatureKey(op.Key); err == nil {
+						refs = append(refs, epicKey)
+					}
+				}
 				for _, ref := range refs {
+					if ref == "" {
+						continue
+					}
 					if removalReferenceMatches(tree, ref, removed) {
-						return nil, &RemoveBlockedError{Noun: store.NounAmendment, ID: disk.ID, Key: deref(disk.Key), Status: disk.Status, Code: reasonProposedAmendmentReference, Detail: fmt.Sprintf("proposed operation references removed node %s", ref)}
+						detail := fmt.Sprintf("proposed operation references removed node %s", ref)
+						if amendments.exempt != "" {
+							detail = fmt.Sprintf("its open operation references %s, a draft the withdraw would remove", ref)
+						}
+						return nil, &RemoveBlockedError{Noun: store.NounAmendment, ID: disk.ID, Key: deref(disk.Key), Status: disk.Status, Code: reasonProposedAmendmentReference, Detail: detail}
 					}
 				}
 			}

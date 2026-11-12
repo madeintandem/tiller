@@ -291,6 +291,8 @@ tiller add epic <epic-key> [--title "<title>"] [--source <design/doc.md>] [--dep
 tiller add feature <epic-key>/<feature-key> [--title "<title>"] [--source <design/doc.md>] \
   [--change-type create|modify|replace|migrate] [--depends-on <epic|feature>]...
 tiller link <epic|feature> <node> --depends-on <epic|feature> [--depends-on <epic|feature>]...
+# a dependency onto a draft an open amendment holds refuses as held_by_amendment unless that
+# amendment holds the dependent too; link it after the amendment is approved
 # --surface unions existing project-relative files or directories into surface.paths.
 # Either flag runs alone or both together in one source transaction:
 tiller link <epic|feature> <node> --surface <path> [--surface <path>]...
@@ -448,8 +450,11 @@ answer names that edge rule in `detail` and never an illegal `return` command or
 remedy: amendment cannot link, unlink, or order, and `revise` re-pins prose without unlocking work. Reviewed `move-feature` supports
 eligible unstarted subtrees only; relocation of started work remains unsupported. An absent-edge
 unlink remains an exit-0 no-op. A key move outside its proposal window is `key_rename_locked`, exit 2.
+A feature rename that would move it under an epic an open amendment holds, when that amendment does
+not hold the feature, is `parent_held_elsewhere`, exit 2.
 Unsafe removal is blocked, exit 1, with
-`remove_state_locked`, `proposed_amendment_reference`, `remove_lineage_reference`, or
+`remove_state_locked`, `proposed_amendment_reference`, `parent_held_elsewhere` (a held epic carrying
+a feature its amendment does not hold), `remove_lineage_reference`, or
 `non_regular_remove_entry`, plus a copyable amendment remedy and, for a ready task, a return remedy.
 `remove` also scrubs
 across the shelves: a removed node's id leaves every surviving bug's and chore's `depends_on`, and
@@ -852,12 +857,18 @@ document enters a project after `init`: a file or a folder, from anywhere on dis
 agent's next move (decompose it). An add the agent stages (`--add-epic`, `--add-feature`,
 `--add-task`) creates a real draft node at once, held by the amendment: every lifecycle verb on it
 (`approve epic`, `spec feature`, `approve feature`, `approve task`) refuses with `held_by_amendment`
-and names the amendment, while `rename`, `link`, prose edits, and `remove` stay legal. When the
+and names the amendment, while `rename`, `link`, prose edits, and `remove` stay legal. The hold is
+exclusive: nothing another amendment or a hand command does may reach a held draft. A rename or a
+move that lands work the amendment does not hold under its held epic refuses as
+`parent_held_elsewhere`; another amendment's operation naming a held draft, and a dependency from
+live work onto one, refuse as `held_by_amendment` (link the dependency after approval). When the
 agent has finished it runs `tiller propose amendment`, and only then does the human's queue ask for
 approval. One human `approve amendment` validates every precondition against the working tree, then
 promotes the held epics and the tasks added to an approved feature to `ready` (a held feature stays
 a draft and goes through specify), applies the rest of the batch, and does all of it or none of it.
-`tiller withdraw amendment` removes every draft the amendment still holds. Bugs, chores, and tweaks
+`tiller withdraw amendment` removes every draft the amendment still holds, and nothing it does not
+hold: a held epic carrying a feature the amendment does not hold refuses the withdraw
+(`parent_held_elsewhere`) with nothing written. Bugs, chores, and tweaks
 a document yields go straight onto their shelves, not into the amendment.
 
 ```sh
@@ -878,14 +889,17 @@ tiller amend <amendment> --add-task <epic-key>/<feature-key>/<task-key> --title 
 # add-task's feature must be approved (ready, active, or done) and not held by this amendment:
 # task_under_held_feature and feature_not_approved refuse; a parent held by another amendment
 # refuses as parent_held_elsewhere. A new feature's tasks come from specify.
-tiller amend <amendment> --add-question "<statement>" --title "<short title>" [--blocks <epic|feature|task|staged key>]...  # no key at all
-tiller amend <amendment> --supersede <feature|task> --by <feature|task|staged key> # done target only at approval
-tiller amend <amendment> --cancel <feature|task> --reason "<why>" [--superseded-by <feature|task|staged key>]
+tiller amend <amendment> --add-question "<statement>" --title "<short title>" [--blocks <epic|feature|task>]...  # no key at all
+tiller amend <amendment> --supersede <feature|task> --by <feature|task> # done target only at approval
+tiller amend <amendment> --cancel <feature|task> --reason "<why>" [--superseded-by <feature|task>]
+# a target, --by, --superseded-by, or --blocks may name a draft this amendment holds, by id or key;
+# a draft another amendment holds refuses as held_by_amendment (stage it on that amendment)
 tiller amend <amendment> --revise <feature|task>             # non-terminal target only at approval
 tiller amend <amendment> --correct-eval <feature> --reason "<why>" [--retire <criterion-id>]...
 # done feature only at approval; bindings and baseline artifacts only, re-pins verified_against.eval
 tiller amend <amendment> --move-feature <feature-id-or-key> --to <epic-key>/<feature-key> --reason "<why>"
-# unstarted subtree only; destination epic may be live or staged earlier; identities and lifecycle survive
+# unstarted subtree only; destination epic may be live or staged earlier; identities and lifecycle survive;
+# an epic another amendment holds refuses as parent_held_elsewhere
 tiller amend <amendment> --amends-design <design/doc.md>     # rides alone or beside an operation
 # --source <citation> rides alongside any operation above, free text by convention
 # path#Lstart-Lend (more ranges of the same file after commas: path#L3-L8, #L40);
