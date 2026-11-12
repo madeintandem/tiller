@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const stabilityManifest = `schema_version: 14
+const stabilityManifest = `schema_version: 15
 schema_epoch: initial
 project:
   name: Stability Test

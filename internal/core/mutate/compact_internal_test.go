@@ -18,7 +18,7 @@ import (
 func TestCompactStopsAtOnceWhenTheTreeChangesUnderIt(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller"), 0o755))
-	manifest := "schema_version: 14\nschema_epoch: initial\nproject:\n  name: Acme\n  key: acme\n  kind: greenfield\n" +
+	manifest := "schema_version: 15\nschema_epoch: initial\nproject:\n  name: Acme\n  key: acme\n  kind: greenfield\n" +
 		"contributors:\n  - { id: lantern, name: Lantern }\n"
 	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "tiller.yml"), []byte(manifest), 0o644))
 	for _, e := range []events.Event{

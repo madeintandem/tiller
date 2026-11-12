@@ -26,13 +26,13 @@ func loadRepo(t *testing.T, manifest string, withDesign bool) *store.Manifest {
 	return m
 }
 
-const completeManifest = `schema_version: 14
+const completeManifest = `schema_version: 15
 project: { name: P, key: p, kind: greenfield }
 contributors:
   - { id: jc, name: JC Grubbs }
 `
 
-const noOwnersManifest = `schema_version: 14
+const noOwnersManifest = `schema_version: 15
 project: { name: P, key: p, kind: greenfield }
 contributors: []
 `

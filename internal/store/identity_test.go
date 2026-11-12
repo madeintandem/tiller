@@ -15,7 +15,7 @@ import (
 // surgical.
 const rosterManifest = `# Tiller project manifest.
 
-schema_version: 14
+schema_version: 15
 schema_epoch: initial
 
 project:
@@ -136,13 +136,13 @@ func TestLocalIdentityRoundTrip(t *testing.T) {
 // the old indentation-only scan mishandled. Each trails a comment-led key so the
 // rewrite must stop at the structure, not at the next unindented line.
 var contributorLayouts = map[string]string{
-	"indentless sequence": "schema_version: 14\ncontributors:\n- { id: a, name: A }\n- { id: b, name: B }\n# review dial\nexecution:\n  review_grain: task\n",
-	"blank separated":     "schema_version: 14\ncontributors:\n  - { id: a, name: A }\n\n  - { id: b, name: B }\n\n# review dial\nexecution:\n  review_grain: task\n",
-	"comment separated":   "schema_version: 14\ncontributors:\n  - { id: a, name: A }\n# who b is\n  - { id: b, name: B }\n# review dial\nexecution:\n  review_grain: task\n",
-	"flow sequence":       "schema_version: 14\ncontributors: [{ id: a, name: A }, { id: b, name: B }]\n# review dial\nexecution:\n  review_grain: task\n",
-	"multiline flow":      "schema_version: 14\ncontributors: [\n{ id: a, name: A },\n{ id: b, name: B }]\n# review dial\nexecution:\n  review_grain: task\n",
-	"empty roster":        "schema_version: 14\ncontributors: []\n# review dial\nexecution:\n  review_grain: task\n",
-	"last key":            "schema_version: 14\nexecution:\n  review_grain: task\ncontributors:\n- { id: a, name: A }\n- { id: b, name: B }\n",
+	"indentless sequence": "schema_version: 15\ncontributors:\n- { id: a, name: A }\n- { id: b, name: B }\n# review dial\nexecution:\n  review_grain: task\n",
+	"blank separated":     "schema_version: 15\ncontributors:\n  - { id: a, name: A }\n\n  - { id: b, name: B }\n\n# review dial\nexecution:\n  review_grain: task\n",
+	"comment separated":   "schema_version: 15\ncontributors:\n  - { id: a, name: A }\n# who b is\n  - { id: b, name: B }\n# review dial\nexecution:\n  review_grain: task\n",
+	"flow sequence":       "schema_version: 15\ncontributors: [{ id: a, name: A }, { id: b, name: B }]\n# review dial\nexecution:\n  review_grain: task\n",
+	"multiline flow":      "schema_version: 15\ncontributors: [\n{ id: a, name: A },\n{ id: b, name: B }]\n# review dial\nexecution:\n  review_grain: task\n",
+	"empty roster":        "schema_version: 15\ncontributors: []\n# review dial\nexecution:\n  review_grain: task\n",
+	"last key":            "schema_version: 15\nexecution:\n  review_grain: task\ncontributors:\n- { id: a, name: A }\n- { id: b, name: B }\n",
 }
 
 func TestRenderContributorsHandlesLayouts(t *testing.T) {
@@ -181,17 +181,17 @@ func TestRenderContributorsHandlesLayouts(t *testing.T) {
 // rewrite from being committed: output that changes another value, carries the
 // wrong roster, or does not parse must each be refused.
 func TestVerifyRenderedContributorsRefusesUnsafeOutput(t *testing.T) {
-	original := []byte("schema_version: 14\ncontributors: []\nexecution:\n  review_grain: task\n")
+	original := []byte("schema_version: 15\ncontributors: []\nexecution:\n  review_grain: task\n")
 	owners := []Contributor{{ID: "a", Name: "A"}}
-	good := []byte("schema_version: 14\ncontributors:\n  - { id: \"a\", name: \"A\" }\nexecution:\n  review_grain: task\n")
+	good := []byte("schema_version: 15\ncontributors:\n  - { id: \"a\", name: \"A\" }\nexecution:\n  review_grain: task\n")
 	require.NoError(t, verifyRenderedContributors(original, good, owners))
 
 	for name, rendered := range map[string]string{
-		"other value changed": "schema_version: 14\ncontributors:\n  - { id: \"a\", name: \"A\" }\nexecution:\n  review_grain: epic\n",
-		"other key dropped":   "schema_version: 14\ncontributors:\n  - { id: \"a\", name: \"A\" }\n",
-		"roster mismatch":     "schema_version: 14\ncontributors:\n  - { id: \"b\", name: \"B\" }\nexecution:\n  review_grain: task\n",
-		"roster too long":     "schema_version: 14\ncontributors:\n  - { id: \"a\", name: \"A\" }\n  - { id: \"b\", name: \"B\" }\nexecution:\n  review_grain: task\n",
-		"unparsable":          "schema_version: 14\ncontributors: [\nexecution:\n",
+		"other value changed": "schema_version: 15\ncontributors:\n  - { id: \"a\", name: \"A\" }\nexecution:\n  review_grain: epic\n",
+		"other key dropped":   "schema_version: 15\ncontributors:\n  - { id: \"a\", name: \"A\" }\n",
+		"roster mismatch":     "schema_version: 15\ncontributors:\n  - { id: \"b\", name: \"B\" }\nexecution:\n  review_grain: task\n",
+		"roster too long":     "schema_version: 15\ncontributors:\n  - { id: \"a\", name: \"A\" }\n  - { id: \"b\", name: \"B\" }\nexecution:\n  review_grain: task\n",
+		"unparsable":          "schema_version: 15\ncontributors: [\nexecution:\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			require.Error(t, verifyRenderedContributors(original, []byte(rendered), owners))
@@ -203,7 +203,7 @@ func TestVerifyRenderedContributorsRefusesUnsafeOutput(t *testing.T) {
 // ends in a block scalar line that looks like a comment. It is roster content, so
 // the rewrite must replace it rather than leave a stray line behind.
 func TestRenderContributorsReplacesBlockScalarTail(t *testing.T) {
-	body := "schema_version: 14\ncontributors:\n  - id: a\n    name: |\n      A\n      # not a comment\nexecution:\n  review_grain: task\n"
+	body := "schema_version: 15\ncontributors:\n  - id: a\n    name: |\n      A\n      # not a comment\nexecution:\n  review_grain: task\n"
 	out, err := RenderContributors([]byte(body), []Contributor{{ID: "a", Name: "A"}})
 	require.NoError(t, err)
 	require.NotContains(t, string(out), "not a comment")
@@ -214,7 +214,7 @@ func TestRenderContributorsReplacesBlockScalarTail(t *testing.T) {
 // aliases an anchor defined on the roster, so replacing the roster would leave an
 // alias with no anchor. The rewrite must error rather than return that manifest.
 func TestRenderContributorsRefusesDanglingAlias(t *testing.T) {
-	body := "schema_version: 14\ncontributors: &roster\n  - { id: a, name: A }\nshared: *roster\n"
+	body := "schema_version: 15\ncontributors: &roster\n  - { id: a, name: A }\nshared: *roster\n"
 	out, err := RenderContributors([]byte(body), []Contributor{{ID: "a", Name: "A"}, {ID: "b", Name: "B"}})
 	require.Error(t, err)
 	require.Nil(t, out)

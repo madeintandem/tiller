@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const proseTestManifest = `schema_version: 14
+const proseTestManifest = `schema_version: 15
 schema_epoch: initial
 project:
   name: Prose Serve Test

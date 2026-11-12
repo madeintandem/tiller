@@ -236,7 +236,7 @@ func TestMigrate12To13StampsOnly(t *testing.T) {
 	require.Equal(t, strings.Replace(string(data), "schema_version: 12", fmt.Sprintf("schema_version: %d", store.CurrentSchemaVersion), 1), string(written))
 }
 
-func TestMigrateFromThirteenStampsFourteen(t *testing.T) {
+func TestMigrateFromThirteenChainsToCurrent(t *testing.T) {
 	root := schemaNineRecoveryFixture(t)
 	path := filepath.Join(root, ".tiller/tiller.yml")
 	data, err := os.ReadFile(path)
@@ -253,7 +253,7 @@ func TestMigrateFromThirteenStampsFourteen(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mutate.MigrateOutcomeMigrated, result.Outcome)
 	require.Equal(t, 13, result.From)
-	require.Equal(t, 14, result.To)
+	require.Equal(t, store.CurrentSchemaVersion, result.To)
 	after := snapshotDir(t, filepath.Join(root, ".tiller"))
 	for name, content := range before {
 		if name == "tiller.yml" || strings.HasPrefix(name, ".cache/") {
@@ -263,5 +263,43 @@ func TestMigrateFromThirteenStampsFourteen(t *testing.T) {
 	}
 	written, err := os.ReadFile(path)
 	require.NoError(t, err)
-	require.Equal(t, strings.Replace(string(data), "schema_version: 13", "schema_version: 14", 1), string(written))
+	require.Equal(t, strings.Replace(string(data), "schema_version: 13", fmt.Sprintf("schema_version: %d", store.CurrentSchemaVersion), 1), string(written))
+}
+
+func TestMigrate14To15StampsOnly(t *testing.T) {
+	root := schemaNineRecoveryFixture(t)
+	path := filepath.Join(root, ".tiller/tiller.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	data, err = store.RenderSchemaVersion(data, 14)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, data, 0o644))
+	amendment := "id: A-m15aaa\nkey: add-widget\nstatus: proposed\noperations:\n  - op: add-feature\n    key: widget\n    title: Widget\n"
+	writeMigrationFile(t, root, "amendments/A-m15aaa-add-widget.yml", amendment)
+	gitCommitAllM(t, root, "schema fourteen")
+	amendmentPath := filepath.Join(root, ".tiller/amendments/A-m15aaa-add-widget.yml")
+	amendmentBefore, err := os.ReadFile(amendmentPath)
+	require.NoError(t, err)
+	before := snapshotDir(t, filepath.Join(root, ".tiller"))
+	inspection, err := mutate.InspectMigration(root, testDeps())
+	require.NoError(t, err)
+	require.Contains(t, inspection.Notes, "stamp schema_version 15; amendment draft status, held-draft node ids, and folder sources are additive; preserve work, events, and active reviews without drain")
+	result, err := mutate.Migrate(root, testDeps())
+	require.NoError(t, err)
+	require.Equal(t, mutate.MigrateOutcomeMigrated, result.Outcome)
+	require.Equal(t, 14, result.From)
+	require.Equal(t, 15, result.To)
+	amendmentAfter, err := os.ReadFile(amendmentPath)
+	require.NoError(t, err)
+	require.Equal(t, amendmentBefore, amendmentAfter)
+	after := snapshotDir(t, filepath.Join(root, ".tiller"))
+	for name, content := range before {
+		if name == "tiller.yml" || strings.HasPrefix(name, ".cache/") {
+			continue
+		}
+		require.Equal(t, content, after[name], "work files stay byte-identical: %s", name)
+	}
+	written, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, strings.Replace(string(data), "schema_version: 14", "schema_version: 15", 1), string(written))
 }

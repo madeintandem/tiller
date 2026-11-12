@@ -17,7 +17,7 @@ import (
 
 // ownedManifest is a minimal manifest carrying one owner, enough for the add
 // verbs whose only environment precondition is a resolvable owner.
-const ownedManifest = `schema_version: 14
+const ownedManifest = `schema_version: 15
 schema_epoch: initial
 project:
   name: Test Project

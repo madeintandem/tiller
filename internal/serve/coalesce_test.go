@@ -135,7 +135,7 @@ func movingGenerationRepo(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	movingGit(t, root, "init", "-q", "-b", "main")
-	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 14\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
+	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 15\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
 	movingFile(t, root, ".tiller/.cache/generation", "one")
 	movingGit(t, root, "add", ".tiller/tiller.yml")
 	movingGit(t, root, "commit", "-qm", "manifest")
@@ -233,7 +233,7 @@ func TestAJoinedReadRetriesOnlyOnce(t *testing.T) {
 func TestConcurrentEndpointReadsAreRaceFree(t *testing.T) {
 	root := t.TempDir()
 	movingGit(t, root, "init", "-q", "-b", "main")
-	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 14\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
+	movingFile(t, root, ".tiller/tiller.yml", "schema_version: 15\nschema_epoch: initial\nproject: {name: Moving, key: moving, kind: greenfield}\ncontributors:\n  - {id: jc, name: JC}\ngit: {integration_branch: main}\n")
 	movingFile(t, root, ".tiller/epics/work/epic.yml", "id: E-aaaaaa\nkey: work\nstatus: ready\n")
 	movingFile(t, root, ".tiller/epics/work/features/build/feature.yml", "id: F-bbbbbb\nkey: work/build\nstatus: ready\n")
 	movingFile(t, root, movingTaskPath, "id: T-cccccc\nkey: work/build/one\nstatus: ready\n")

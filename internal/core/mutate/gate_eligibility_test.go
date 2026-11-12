@@ -26,7 +26,7 @@ import (
 // the gate-reuse design keeps for a result that depends on something outside
 // the repository. signoff is a required attestation gate on the task grain,
 // which every shelf node inherits.
-const toggledManifestTmpl = `schema_version: 14
+const toggledManifestTmpl = `schema_version: 15
 schema_epoch: initial
 project:
   name: Test Project

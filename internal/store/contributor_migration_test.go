@@ -12,7 +12,7 @@ import (
 
 func TestCurrentManifestRejectsLegacyRosterRatherThanDroppingIt(t *testing.T) {
 	for _, roster := range []string{"owners: [{id: sam, name: Sam}]\n", "owners: []\ncontributors: [{id: sam, name: Sam}]\n"} {
-		data := []byte("schema_version: 14\n" + roster)
+		data := []byte("schema_version: 15\n" + roster)
 		for _, parse := range []func(string, []byte) (*Manifest, error){ParseManifest, ParseManifestUnchecked} {
 			_, err := parse("/repo", data)
 			var refusal *EnvError
@@ -20,7 +20,7 @@ func TestCurrentManifestRejectsLegacyRosterRatherThanDroppingIt(t *testing.T) {
 			require.Equal(t, "obsolete_contributor_identity", refusal.Reason)
 		}
 	}
-	manifest, err := ParseManifest("/repo", []byte("schema_version: 14\ncontributors: [{id: sam, name: Sam}]\n"))
+	manifest, err := ParseManifest("/repo", []byte("schema_version: 15\ncontributors: [{id: sam, name: Sam}]\n"))
 	require.NoError(t, err)
 	require.Equal(t, []Contributor{{ID: "sam", Name: "Sam"}}, manifest.Contributors)
 	written, err := yaml.Marshal(manifest)
@@ -44,7 +44,7 @@ func TestLegacyIdentityOnlyResolvesDuringOldSchemaMigration(t *testing.T) {
 	unchanged, err := os.ReadFile(path)
 	require.NoError(t, err)
 	require.Equal(t, legacy, unchanged, "migration inspection does not select or rewrite identity")
-	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte("schema_version: 14\ncontributors: [{id: sam, name: Sam}]\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller/tiller.yml"), []byte("schema_version: 15\ncontributors: [{id: sam, name: Sam}]\n"), 0o644))
 	_, err = ReadLocalIdentityForMigration(root)
 	require.Error(t, err, "current-schema maintenance cannot retain the legacy alias")
 }
@@ -96,7 +96,7 @@ func TestLocalIdentityWritesContributorAndRejectsMixedVocabulary(t *testing.T) {
 }
 
 func TestLegacyLocalIdentityRenamesOnlyTheOwnerKey(t *testing.T) {
-	root := writeManifestFixture(t, "schema_version: 14\ncontributors: [{id: sam, name: Sam}]\n")
+	root := writeManifestFixture(t, "schema_version: 15\ncontributors: [{id: sam, name: Sam}]\n")
 	path := filepath.Join(root, ".tiller/identity.yml")
 
 	id, renamed, err := LegacyLocalIdentity(root)

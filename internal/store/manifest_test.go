@@ -431,7 +431,7 @@ func TestParseManifestUncheckedReadsAnOlderTree(t *testing.T) {
 }
 
 func TestParseManifestRefusesInvalidProjectReviewGrain(t *testing.T) {
-	data := []byte("schema_version: 14\nexecution:\n  review_grain: sideways\n")
+	data := []byte("schema_version: 15\nexecution:\n  review_grain: sideways\n")
 	_, err := ParseManifest("/repo", data)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), ".tiller/tiller.yml")
@@ -451,7 +451,7 @@ func TestManifestAdoptionRoundTrip(t *testing.T) {
 		t.Run(anchor, func(t *testing.T) {
 			root := t.TempDir()
 			require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller"), 0o755))
-			data := []byte("schema_version: 14\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
+			data := []byte("schema_version: 15\nproject:\n  kind: brownfield" + anchor + "\ninputs:\n  code: [{root: ., mode: surface}]\n")
 			path := filepath.Join(root, ".tiller", "tiller.yml")
 			require.NoError(t, os.WriteFile(path, data, 0o644))
 			m, err := LoadManifest(root)
@@ -556,7 +556,7 @@ func TestLoadManifestReadsUsageCapture(t *testing.T) {
 }
 
 func TestCompactAfterDaysDefaultsToSeven(t *testing.T) {
-	m, err := ParseManifest("/repo", []byte("schema_version: 14\n"))
+	m, err := ParseManifest("/repo", []byte("schema_version: 15\n"))
 	require.NoError(t, err)
 	assert.Nil(t, m.Events.CompactAfterDays)
 	assert.Equal(t, DefaultCompactAfterDays, m.CompactAfterDays())
@@ -564,7 +564,7 @@ func TestCompactAfterDaysDefaultsToSeven(t *testing.T) {
 }
 
 func TestCompactAfterDaysReadsTheManifest(t *testing.T) {
-	m, err := ParseManifest("/repo", []byte("schema_version: 14\nevents:\n  compact_after_days: 14\n"))
+	m, err := ParseManifest("/repo", []byte("schema_version: 15\nevents:\n  compact_after_days: 14\n"))
 	require.NoError(t, err)
 	assert.Equal(t, 14, m.CompactAfterDays())
 }

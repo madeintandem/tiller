@@ -23,7 +23,7 @@ import (
 // gatedManifestTmpl is a manifest carrying the required command gates check runs.
 // The build/tests commands are substituted so a test can make them pass or fail;
 // the evals gate is the `tiller eval` recursion point check no-ops until T13.
-const gatedManifestTmpl = `schema_version: 14
+const gatedManifestTmpl = `schema_version: 15
 schema_epoch: initial
 project:
   name: Test Project

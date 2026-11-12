@@ -301,7 +301,7 @@ func TestMigrateFromThirteenCompactsOldEvents(t *testing.T) {
 	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
 
 	require.Equal(t, 0, code, out)
-	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.Equal(t, 15, migratedManifestSchema(t, root))
 	require.NoFileExists(t, old)
 	require.FileExists(t, today)
 	segments, err := filepath.Glob(filepath.Join(filepath.Dir(filepath.Dir(old)), "*.jsonl"))
@@ -354,7 +354,7 @@ func TestMigrateSaysNothingAboutCompactionWhenNoDayFolded(t *testing.T) {
 	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
 
 	require.Equal(t, 0, code, out)
-	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.Equal(t, 15, migratedManifestSchema(t, root))
 	require.NotContains(t, out, `"compaction"`)
 	require.NotContains(t, out, "could not be compacted")
 }
@@ -400,7 +400,7 @@ func TestMigrateSurvivesACompactionFailure(t *testing.T) {
 	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
 
 	require.Equal(t, 0, code, out)
-	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.Equal(t, 15, migratedManifestSchema(t, root))
 	require.FileExists(t, loose)
 	require.Contains(t, out, "Event history was not fully compacted:")
 }
@@ -417,7 +417,7 @@ func TestMigrateSurvivesACompactionPanic(t *testing.T) {
 	out, _, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
 
 	require.Equal(t, 0, code, out)
-	require.Equal(t, 14, migratedManifestSchema(t, root))
+	require.Equal(t, 15, migratedManifestSchema(t, root))
 	require.FileExists(t, loose)
 	require.Contains(t, out, "Event history was not fully compacted: segment reader exploded.")
 	var e struct {

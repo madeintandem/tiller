@@ -10,7 +10,7 @@ import (
 
 func ownershipTreeFixture(t *testing.T) string {
 	t.Helper()
-	root := writeManifestFixture(t, "schema_version: 14\ncontributors: [{id: ada, name: Ada}, {id: bob, name: Bob}]\n")
+	root := writeManifestFixture(t, "schema_version: 15\ncontributors: [{id: ada, name: Ada}, {id: bob, name: Bob}]\n")
 	writeFile(t, filepath.Join(root, ".tiller/epics/work/epic.yml"), "id: E-aaaaaa\nkey: work\nstatus: ready\n")
 	writeFile(t, filepath.Join(root, ".tiller/epics/work/features/build/feature.yml"), "id: F-aaaaaa\nkey: work/build\nstatus: active\n")
 	return root
@@ -87,7 +87,7 @@ func TestLoadRefusesRetiredAncestorOwnershipAndClaiming(t *testing.T) {
 			case "feature":
 				writeFile(t, filepath.Join(root, ".tiller/epics/work/features/build/feature.yml"), "id: F-aaaaaa\nkey: work/build\nowner: ada\n")
 			case "claiming":
-				writeFile(t, filepath.Join(root, ".tiller/tiller.yml"), "schema_version: 14\nclaiming: {scope: feature}\n")
+				writeFile(t, filepath.Join(root, ".tiller/tiller.yml"), "schema_version: 15\nclaiming: {scope: feature}\n")
 			}
 			_, err := Load(root)
 			var refused *EnvError

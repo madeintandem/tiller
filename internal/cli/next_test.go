@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const nextManifest = `schema_version: 14
+const nextManifest = `schema_version: 15
 schema_epoch: initial
 project:
   name: Test Project
