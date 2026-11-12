@@ -177,6 +177,23 @@ describe("ProseSection: a stub is not content", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("names the amendment's approval, not spec, on a feature an amendment holds", () => {
+    // `tiller spec feature` refuses a held draft (held_by_amendment): the only
+    // thing that moves it is its amendment's next step.
+    const hold = { id: "A-9", key: "iphone-only", ref: "iphone-only (A-9)", title: "iPhone only", status: "proposed" };
+    renderSection(prose({ stub: true }), { ...featureNode, amendment_hold: hold });
+    expect(screen.queryByRole("button", { name: /tiller spec feature/ })).not.toBeInTheDocument();
+    expect(screen.getByText("held by amendment iphone-only (A-9); its approval is the human's move")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /tiller approve amendment iphone-only/ })).toBeInTheDocument();
+    cleanup();
+
+    renderSection(prose({ stub: true }), { ...featureNode, amendment_hold: { ...hold, status: "draft" } });
+    expect(
+      screen.getByText("held by amendment iphone-only (A-9), which the agent is still working on"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
   it("addresses the command by id when the noun carries no key", () => {
     renderSection(prose({ stub: true }), { ...featureNode, key: undefined });
     expect(

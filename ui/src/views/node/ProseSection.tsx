@@ -137,7 +137,23 @@ interface Move {
 // unwrittenTaskSpecs). Naming that feature's command here would hand a reader a
 // verb addressed at some other node, so the line names what to write instead:
 // the headings `tiller add task` generated, which are what the spec has to say.
+//
+// A feature an open amendment holds is the exception to the feature's answer:
+// `tiller spec feature` refuses a held draft (held_by_amendment), so offering
+// it would hand the reader a refused command. The only thing that moves a held
+// draft is its amendment's next step: the human's `tiller approve amendment`
+// once the agent has proposed it, and before that the agent's own staging.
 function moveFor(node: NodeView): Move | null {
+  const hold = node.amendment_hold;
+  if (node.noun === "feature" && hold !== undefined) {
+    if (hold.status === "proposed") {
+      return {
+        who: `held by amendment ${hold.ref}; its approval is the human's move`,
+        command: `tiller approve amendment ${hold.key ?? hold.id}`,
+      };
+    }
+    return { who: `held by amendment ${hold.ref}, which the agent is still working on` };
+  }
   if (node.noun === "feature") {
     return { who: "the agent's move", command: `tiller spec feature ${addrOf(node)}` };
   }
