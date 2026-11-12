@@ -3171,7 +3171,11 @@ func TestApproveIsResumable(t *testing.T) {
 	a = stage(t, root, deps, a, mutate.StageInput{
 		Op: store.AmendmentOpAddTask, Key: "app-experience/fast-logging/export-the-log", Title: "Export the log"})
 	epicID, taskID := a.Operations[0].Node, a.Operations[1].Node
+	// The interrupted run had promoted the epic and appended it to the root
+	// order, so the re-run must not append it twice.
 	setEpicStatusOnDisk(t, root, "hardening", "draft", "ready")
+	require.NoError(t, os.WriteFile(filepath.Join(root, store.OrderRelPath),
+		[]byte("epics:\n  - "+epicID+"\n"), 0o644))
 	require.Equal(t, store.AmendmentStatusProposed, load(t, root).Amendments[a.ID].Status)
 
 	res := approve(t, root, deps, a)
@@ -3182,7 +3186,7 @@ func TestApproveIsResumable(t *testing.T) {
 	tree := load(t, root)
 	require.Equal(t, "ready", tree.Epics[epicID].Status)
 	require.Equal(t, "ready", tree.Tasks[taskID].Status)
-	require.Contains(t, tree.ProjectOrder.Epics, epicID)
+	require.Equal(t, []string{epicID}, tree.ProjectOrder.Epics, "the root order keeps the epic once")
 	require.Empty(t, amendmentEvents(t, root, "approve.epic", a.ID), "no promotion is reported for the epic this run did not move")
 	require.Len(t, amendmentEvents(t, root, "approve.task", a.ID), 1)
 }
@@ -3328,4 +3332,78 @@ func TestApproveRefusesAHeldTaskUnderAFeatureNoLongerApproved(t *testing.T) {
 	require.ErrorAs(t, err, &ungated)
 	requireNoWrites(t, before, snapshotDir(t, root))
 	require.Equal(t, "proposed", load(t, root).Tasks[a.Operations[0].Node].Status)
+}
+
+// TestApproveRefusesAHeldTaskBlockedByAnOpenQuestion: promotion runs the
+// open-question gate approve task runs, so a question on the task's feature
+// refuses the whole approval and nothing is written.
+func TestApproveRefusesAHeldTaskBlockedByAnOpenQuestion(t *testing.T) {
+	t.Parallel()
+	root, deps, featureID, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "export")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "app-experience/fast-logging/export-the-log", Title: "Export the log"})
+	_, err := mutate.AddQuestion(load(t, root), deps, mutate.QuestionInput{
+		Title: "Export format", Statement: "Which export format?", Blocks: []string{featureID}})
+	require.NoError(t, err)
+
+	before := snapshotDir(t, root)
+	err = tryApprove(t, root, deps, a)
+	var blocked *mutate.BlockedByQuestionsError
+	require.ErrorAs(t, err, &blocked)
+	require.Equal(t, a.Operations[0].Node, blocked.NodeID)
+	require.Equal(t, "approve", blocked.Verb)
+	requireNoWrites(t, before, snapshotDir(t, root))
+	require.Equal(t, store.AmendmentStatusProposed, load(t, root).Amendments[a.ID].Status)
+}
+
+// TestApproveRefusesAHeldTaskUnderAFeatureTheBatchCancels: the task would
+// land ready under a feature the same batch retires, so the batch refuses in
+// phase 1 and nothing is written.
+func TestApproveRefusesAHeldTaskUnderAFeatureTheBatchCancels(t *testing.T) {
+	t.Parallel()
+	root, deps, featureID, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "export")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "app-experience/fast-logging/export-the-log", Title: "Export the log"})
+	a = writeAmendmentOps(t, root, a, append(a.Operations, store.AmendmentOp{
+		Op: store.AmendmentOpCancel, Target: featureID, Reason: "dropped from v1"}))
+
+	before := snapshotDir(t, root)
+	err := tryApprove(t, root, deps, a)
+	require.Equal(t, "feature_not_approved", reasonOf(t, err))
+	require.ErrorContains(t, err, "operation 0")
+	require.ErrorContains(t, err, "operation 1 of this amendment cancels")
+	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+// TestApproveAcceptsAKeyRestagedAfterItsDraftWasRemoved: removing a held
+// draft frees its key, so staging the same key again leaves two add
+// operations for one key, only one of them live. The removed one is neither a
+// duplicate nor a stale key_absent guard, and the approval promotes the new
+// draft.
+func TestApproveAcceptsAKeyRestagedAfterItsDraftWasRemoved(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	guard := map[string]string{"key_absent": "hardening"}
+	a := openAmendment(t, root, deps, "restaged")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening", Preconditions: guard})
+	firstID := a.Operations[0].Node
+	_, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounEpic, Node: firstID, Reason: "wrong title"})
+	require.NoError(t, err)
+	a = stage(t, root, deps, loadAmendment(t, root, a.ID), mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening, retitled", Preconditions: guard})
+	secondID := a.Operations[1].Node
+	require.NotEqual(t, firstID, secondID)
+	require.Empty(t, mutate.EvaluateAmendmentShape(a), "a removed operation is no duplicate")
+
+	res := approve(t, root, deps, a)
+	require.Equal(t, mutate.OperationRemoved, res.Applied[0].Status)
+	require.Equal(t, "ready", res.Applied[1].Status)
+	tree := load(t, root)
+	require.Nil(t, tree.Epics[firstID])
+	require.Equal(t, "ready", tree.Epics[secondID].Status)
+	require.Equal(t, "Hardening, retitled", tree.Epics[secondID].Title)
 }

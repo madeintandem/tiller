@@ -46,10 +46,10 @@ package mutate
 // A held draft is the exception by design: its promotion is idempotent, so a
 // draft already at its promoted status is accepted as done and the re-approve
 // finishes the rest. A legacy add (no node) whose node now exists refuses
-// key_exists (it does not fold into the idempotent no-op `tiller add` gives)
-// — EXCEPT add-question, whose own
-// idempotency rule (question.go's foldQuestion, the same rule `tiller add
-// question` itself follows) is a legal fold rather than a refusal: a
+// key_exists (it does not fold into the idempotent no-op `tiller add` gives).
+// The one other exception is add-question, whose own idempotency rule
+// (question.go's foldQuestion, the same rule `tiller add question` itself
+// follows) is a legal fold rather than a refusal: a
 // re-approve landing on a statement it, or a prior interrupted run, already
 // recorded reports AppliedOperation.Outcome as AppliedNoChange (or
 // AppliedUpdated, when blocks this run staged were genuinely new) rather
@@ -73,6 +73,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/lifecycle"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/vcs"
 	"gopkg.in/yaml.v3"
@@ -408,11 +409,6 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 		default:
 			continue
 		}
-		// A removed operation creates nothing, so its key is free for a later
-		// add to stage again.
-		if op.Removed != "" {
-			continue
-		}
 		// duplicateStagedKey (below) is the extracted predicate
 		// EvaluateAmendmentShape (amendment_validity.go, #57) shares: this call
 		// site tests it and refuses immediately (phase 1's first-offender
@@ -431,6 +427,10 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 			}
 		}
 		staged[op.Key] = noun
+	}
+
+	if err := refuseHeldTaskUnderCancelledFeature(tree, doc); err != nil {
+		return nil, err
 	}
 
 	out := make([]resolvedOp, 0, len(doc.Operations))
@@ -532,6 +532,45 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 		out = append(out, r)
 	}
 	return out, nil
+}
+
+// refuseHeldTaskUnderCancelledFeature refuses a batch that adds a held task
+// under a feature the same batch cancels. Promotion would take the task to
+// ready (D9) while the cancel, applied after it, retires the feature above it,
+// and promote's parent-state guard reads the tree as it stands before the
+// batch, so it cannot see that. The reason is staging's own for a task under
+// a feature that is not approved, feature_not_approved: by the end of the
+// batch the feature is not.
+func refuseHeldTaskUnderCancelledFeature(tree *store.Tree, doc *store.Amendment) error {
+	cancelledBy := map[string]int{}
+	for i, op := range doc.Operations {
+		if op.Op != store.AmendmentOpCancel {
+			continue
+		}
+		if n, _ := classifyStageTarget(tree, op.Target); n != nil && n.Noun() == store.NounFeature {
+			cancelledBy[n.NodeID()] = i
+		}
+	}
+	if len(cancelledBy) == 0 {
+		return nil
+	}
+	for i, op := range doc.Operations {
+		if op.Op != store.AmendmentOpAddTask || op.Node == "" || op.Removed != "" {
+			continue
+		}
+		tk, ok := tree.AddedNode(op).(*store.Task)
+		if !ok {
+			continue
+		}
+		if j, cancelled := cancelledBy[tk.FeatureID]; cancelled {
+			return &usageError{
+				reason: "feature_not_approved",
+				msg: fmt.Sprintf("operation %d adds task %s under feature %s, which operation %d of this amendment cancels; remove the task or drop the cancel",
+					i, tk.ID, tk.FeatureID, j),
+			}
+		}
+	}
+	return nil
 }
 
 // stagedEpicReplacementErr refuses a supersede's --by or a cancel's
@@ -2133,8 +2172,10 @@ func (b *batch) materialize(tree *store.Tree, deps Deps, owner store.Contributor
 // the status change `approve epic` makes, at the project's default review
 // grain. A held task goes proposed to ready with its task.md pinned as
 // accepted_against by recordTaskBasis (D9), under the same parent-state guard
-// `approve task` runs, so a task never reaches ready under a feature that has
-// since left its approved states. A held feature is left a draft: its spec,
+// and open-question gate `approve task` runs, so a task never reaches ready
+// under a feature that has since left its approved states or under an open
+// question. `approve epic` has no question gate, so a held epic has none
+// either. A held feature is left a draft: its spec,
 // contract, and tasks come from specify and its own plan approval (D9).
 //
 // The node is loaded through editFor, so it joins this batch's one journaled
@@ -2176,6 +2217,18 @@ func (b *batch) promote(tree *store.Tree, deps Deps, owner store.Contributor, re
 			}
 			if err := guardParentState(tree, feat, tk); err != nil {
 				return err
+			}
+			// The open-question gate approve task runs on proposed to ready:
+			// a question naming the task, its feature, or its epic holds the
+			// promotion, and so the whole approval, until it is answered.
+			if blockers := gen.TaskQuestionBlockers(tree, feat, tk); len(blockers) > 0 {
+				return &BlockedByQuestionsError{
+					NodeID:       tk.ID,
+					Noun:         store.NounTask,
+					CurrentState: before,
+					Blockers:     blockers,
+					Verb:         "approve",
+				}
 			}
 			if err := recordTaskBasis(e.dir(), tk, deps, rev); err != nil {
 				return err
