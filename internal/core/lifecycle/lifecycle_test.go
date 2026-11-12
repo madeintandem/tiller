@@ -574,7 +574,7 @@ func TestEmittableVerbs(t *testing.T) {
 	got := EmittableVerbs()
 	want := []string{
 		"answer", "approve", "archive", "cancel", "check",
-		"resume", "return", "spec", "start", "submit", "sync", "withdraw",
+		"propose", "resume", "return", "spec", "start", "submit", "sync", "withdraw",
 	}
 	assert.Equal(t, want, got, "the emittable verb set is the sorted union over the store-modeled nouns plus answer")
 	assert.True(t, sort.StringsAreSorted(got))

@@ -115,6 +115,7 @@ const FIXED_PHRASE: Record<string, string> = {
   amendment_opened: "amendment opened",
   amendment_staged: "amendment staged",
   amendment_approved: "amendment approved",
+  amendment_proposed: "amendment proposed",
   amendment_withdrawn: "amendment withdrawn",
   superseded: "superseded",
   "migrate.schema": "schema migrated",

@@ -1544,24 +1544,13 @@ func setFeatureLineageOnDisk(t *testing.T, root, featKey string, supersedes []st
 	require.NoError(t, os.WriteFile(path, out, 0o644))
 }
 
-// TestApproveAmendmentWithNoOperationsJustFlipsTheStatus is the degenerate case
-// worth pinning: an amendment nobody staged onto still approves, which is what
-// isolates the status write and its event from the operation passes.
-func TestApproveAmendmentWithNoOperationsJustFlipsTheStatus(t *testing.T) {
-	t.Parallel()
-	root, deps, _, _ := lanternFixture(t)
-	a := openAmendment(t, root, deps, "iphone-only")
-
-	res := approve(t, root, deps, a)
-	require.Equal(t, store.AmendmentStatusApproved, res.Status)
-	require.Empty(t, res.Applied)
-	require.Equal(t, store.AmendmentStatusApproved, load(t, root).Amendments[a.ID].Status)
-}
-
-func TestApproveAmendmentWithNoOperationsDoesNotReadOrRewriteLineageInputs(t *testing.T) {
+// The one staged operation here is a new epic, which touches no existing
+// feature or task, so the lineage inputs below must stay unread and unwritten.
+func TestApproveAmendmentWithoutLineageOperationsDoesNotReadOrRewriteLineageInputs(t *testing.T) {
 	t.Parallel()
 	root, deps, _, taskID := lanternFixture(t)
 	a := openAmendment(t, root, deps, "design-only")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "audit", Title: "Audit"})
 	stale := load(t, root)
 	amendment := stale.Amendments[a.ID]
 	featurePath := filepath.Join(root, lanternFeatureDir, "feature.yml")
@@ -2737,6 +2726,9 @@ func sourceFixture(t *testing.T, body string) (root string, deps mutate.Deps, a 
 func TestApproveAmendmentAcceptsAFreshIntakeSource(t *testing.T) {
 	t.Parallel()
 	root, deps, a, _ := sourceFixture(t, "the review body\n")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "audit", Title: "Audit", Source: "review.md#L1-2",
+	})
 	res := approve(t, root, deps, a)
 	require.Equal(t, store.AmendmentStatusApproved, res.Status)
 }
@@ -2748,6 +2740,9 @@ func TestApproveAmendmentAcceptsAFreshIntakeSource(t *testing.T) {
 func TestApproveAmendmentRefusesAChangedIntakeSourceWithNoWrites(t *testing.T) {
 	t.Parallel()
 	root, deps, a, relPath := sourceFixture(t, "the review body\n")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "audit", Title: "Audit", Source: "review.md#L1-2",
+	})
 	recorded := a.Source.Revision
 
 	require.NoError(t, os.WriteFile(filepath.Join(root, relPath), []byte("the EDITED review body\n"), 0o644))
@@ -2770,6 +2765,9 @@ func TestApproveAmendmentRefusesAChangedIntakeSourceWithNoWrites(t *testing.T) {
 func TestApproveAmendmentRefusesAVanishedIntakeSourceWithNoWrites(t *testing.T) {
 	t.Parallel()
 	root, deps, a, relPath := sourceFixture(t, "the review body\n")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "audit", Title: "Audit", Source: "review.md#L1-2",
+	})
 	require.NoError(t, os.Remove(filepath.Join(root, relPath)))
 
 	before := snapshotDir(t, root)

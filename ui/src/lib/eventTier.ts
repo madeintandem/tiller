@@ -37,6 +37,7 @@ export const KNOWN_MILESTONE_VERBS: ReadonlySet<string> = new Set([
   "accept",
   "amendment_approved",
   "amendment_opened",
+  "amendment_proposed",
   "amendment_staged",
   "amendment_withdrawn",
   "answer",
