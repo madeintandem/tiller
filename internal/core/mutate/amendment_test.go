@@ -110,7 +110,7 @@ func TestAddAmendmentCreatesFilesAndEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "A-aaaaaa", res.ID)
 	require.Equal(t, "iphone-only", res.Key)
-	require.Equal(t, store.AmendmentStatusProposed, res.Status)
+	require.Equal(t, store.AmendmentStatusDraft, res.Status)
 	require.Equal(t, "ADR-v7b2d5", res.Implements)
 	require.Equal(t, []string{"design/04-platform-and-constraints.md"}, res.TriggeredBy)
 	require.Equal(t, []string{"design/01-overview.md"}, res.AmendsDesign)
@@ -124,7 +124,7 @@ func TestAddAmendmentCreatesFilesAndEvent(t *testing.T) {
 	reloaded := load(t, root)
 	a := reloaded.Amendments["A-aaaaaa"]
 	require.NotNil(t, a)
-	require.Equal(t, store.AmendmentStatusProposed, a.Status)
+	require.Equal(t, store.AmendmentStatusDraft, a.Status)
 	require.Equal(t, res.BaseRevision, a.BaseRevision)
 	require.Empty(t, a.Operations)
 
@@ -1305,7 +1305,7 @@ func TestWithdrawAmendmentRequiresReason(t *testing.T) {
 	var r interface{ Reason() string }
 	require.ErrorAs(t, err, &r)
 	require.Equal(t, "reason_required", r.Reason())
-	require.Equal(t, store.AmendmentStatusProposed, loadAmendment(t, root, amendmentID).Status)
+	require.Equal(t, store.AmendmentStatusDraft, loadAmendment(t, root, amendmentID).Status)
 }
 
 func TestWithdrawAmendmentRefusesWhenNotProposed(t *testing.T) {
@@ -1318,4 +1318,75 @@ func TestWithdrawAmendmentRefusesWhenNotProposed(t *testing.T) {
 	var r interface{ Reason() string }
 	require.ErrorAs(t, err, &r)
 	require.Equal(t, "amendment_not_open", r.Reason())
+}
+
+func TestAddAmendmentOpensAsDraft(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	res, err := mutate.AddAmendment(load(t, root), gitDeps(root), mutate.AmendmentInput{
+		Key: "iphone-only", Title: "Remove native iPad support from v1"})
+	require.NoError(t, err)
+	require.Equal(t, store.AmendmentStatusDraft, res.Status)
+
+	tree := load(t, root)
+	require.Equal(t, store.AmendmentStatusDraft, tree.Amendments[res.ID].Status)
+
+	evs, err := events.List(tree)
+	require.NoError(t, err)
+	opened := eventsOfType(evs, "amendment_opened")
+	require.Len(t, opened, 1)
+	require.Equal(t, store.AmendmentStatusDraft, opened[0].After["status"])
+}
+
+func TestStageAndWithdrawWorkOnDraftAndProposed(t *testing.T) {
+	t.Parallel()
+	for _, status := range []string{store.AmendmentStatusDraft, store.AmendmentStatusProposed} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+			root, amendmentID := stageFixture(t) // opens as draft
+			if status != store.AmendmentStatusDraft {
+				setAmendmentStatus(t, root, amendmentID, status)
+			}
+
+			tree := load(t, root)
+			_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+				Op: store.AmendmentOpRevise, Target: tree.Features["F-aaaaaa"].ID,
+			})
+			require.NoError(t, err)
+
+			_, err = mutate.WithdrawAmendment(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), "changed course")
+			require.NoError(t, err)
+			require.Equal(t, store.AmendmentStatusWithdrawn, loadAmendment(t, root, amendmentID).Status)
+		})
+	}
+
+	t.Run("approved is refused", func(t *testing.T) {
+		t.Parallel()
+		root, amendmentID := stageFixture(t)
+		setAmendmentStatus(t, root, amendmentID, store.AmendmentStatusApproved)
+		tree := load(t, root)
+		_, err := mutate.StageOperation(tree, testDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
+			Op: store.AmendmentOpRevise, Target: tree.Features["F-aaaaaa"].ID,
+		})
+		var r interface{ Reason() string }
+		require.ErrorAs(t, err, &r)
+		require.Equal(t, "amendment_not_open", r.Reason())
+		_, err = mutate.WithdrawAmendment(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), "late")
+		require.ErrorAs(t, err, &r)
+		require.Equal(t, "amendment_not_open", r.Reason())
+	})
+}
+
+func TestOpenKeyCollisionCoversDraft(t *testing.T) {
+	t.Parallel()
+	root := writeOwnedRepo(t)
+	first, err := mutate.AddAmendment(load(t, root), gitDeps(root), mutate.AmendmentInput{Key: "iphone-only", Title: "First"})
+	require.NoError(t, err)
+	require.Equal(t, store.AmendmentStatusDraft, first.Status)
+
+	_, err = mutate.AddAmendment(load(t, root), gitDeps(root), mutate.AmendmentInput{Key: "iphone-only", Title: "Second"})
+	var r interface{ Reason() string }
+	require.ErrorAs(t, err, &r)
+	require.Equal(t, "amendment_exists", r.Reason())
+	require.Len(t, load(t, root).Amendments, 1)
 }

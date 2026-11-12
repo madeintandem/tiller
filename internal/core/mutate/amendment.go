@@ -164,7 +164,7 @@ func AddAmendment(tree *store.Tree, deps Deps, in AmendmentInput) (AmendmentResu
 		ID:           aid,
 		Key:          &key,
 		Title:        in.Title,
-		Status:       store.AmendmentStatusProposed,
+		Status:       store.AmendmentStatusDraft,
 		Implements:   in.Implements,
 		TriggeredBy:  in.TriggeredBy,
 		AmendsDesign: amendsDesign,
@@ -184,7 +184,7 @@ func AddAmendment(tree *store.Tree, deps Deps, in AmendmentInput) (AmendmentResu
 	// maps, so there is nothing to retry against (artifact-schema.md, The eval
 	// model: the AT- and EV- classes are separate non-node identifiers).
 	ev.ID = deps.mintRaw("EV")
-	ev.After = map[string]any{"status": store.AmendmentStatusProposed, "key": in.Key}
+	ev.After = map[string]any{"status": store.AmendmentStatusDraft, "key": in.Key}
 	// The artifact path rides the SAME event intake mints, present only
 	// when this call is intake's own (in.Source set); a hand `add amendment`
 	// carries no source key at all, so this event's After is unchanged from
@@ -209,7 +209,7 @@ func AddAmendment(tree *store.Tree, deps Deps, in AmendmentInput) (AmendmentResu
 		ID:           aid,
 		Key:          in.Key,
 		Title:        in.Title,
-		Status:       store.AmendmentStatusProposed,
+		Status:       store.AmendmentStatusDraft,
 		Implements:   in.Implements,
 		TriggeredBy:  in.TriggeredBy,
 		AmendsDesign: amendsDesign,
@@ -267,12 +267,12 @@ func PrecheckAddAmendment(tree *store.Tree, deps Deps, key string) (store.Revisi
 	return head, nil
 }
 
-// openAmendmentKeyExists reports whether a PROPOSED amendment already carries
+// openAmendmentKeyExists reports whether an open (draft or proposed) amendment already carries
 // key. An approved or withdrawn amendment is terminal and no longer an open
 // proposal, so its key is free to reuse.
 func openAmendmentKeyExists(tree *store.Tree, key string) bool {
 	for _, a := range tree.Amendments {
-		if a.Status == store.AmendmentStatusProposed && a.Key != nil && *a.Key == key {
+		if store.AmendmentOpen(a) && a.Key != nil && *a.Key == key {
 			return true
 		}
 	}
@@ -345,12 +345,12 @@ func loadAmendmentDoc(tree *store.Tree, amendment *store.Amendment) (doc *store.
 	return doc, relYml, snapshot, nil
 }
 
-// amendmentNotOpenErr refuses an action that only a proposed amendment
-// accepts, naming the amendment's actual status.
+// amendmentNotOpenErr refuses an action that only an open (draft or proposed)
+// amendment accepts, naming the amendment's actual status.
 func amendmentNotOpenErr(doc *store.Amendment) error {
 	return &usageError{
 		reason: "amendment_not_open",
-		msg:    fmt.Sprintf("amendment %s is %s, not %s", doc.ID, doc.Status, store.AmendmentStatusProposed),
+		msg:    fmt.Sprintf("amendment %s is %s, not open", doc.ID, doc.Status),
 	}
 }
 
@@ -423,7 +423,7 @@ func StageOperation(tree *store.Tree, deps Deps, amendment *store.Amendment, in 
 	if err != nil {
 		return StageResult{}, err
 	}
-	if doc.Status != store.AmendmentStatusProposed {
+	if !store.AmendmentOpen(doc) {
 		return StageResult{}, amendmentNotOpenErr(doc)
 	}
 	// An intake-minted amendment (doc.Source set) traces every operation to the
@@ -927,7 +927,7 @@ func StageAmendsDesign(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	if err != nil {
 		return AmendsDesignResult{}, err
 	}
-	if doc.Status != store.AmendmentStatusProposed {
+	if !store.AmendmentOpen(doc) {
 		return AmendsDesignResult{}, amendmentNotOpenErr(doc)
 	}
 
@@ -1002,7 +1002,7 @@ func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	if err != nil {
 		return WithdrawResult{}, err
 	}
-	if doc.Status != store.AmendmentStatusProposed {
+	if !store.AmendmentOpen(doc) {
 		return WithdrawResult{}, amendmentNotOpenErr(doc)
 	}
 

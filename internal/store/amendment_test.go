@@ -458,3 +458,22 @@ func TestValidateAmendment_CorrectEval(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateAmendmentAcceptsDraft(t *testing.T) {
+	a := parseWellFormedAmendment(t)
+	a.Status = AmendmentStatusDraft
+	require.NoError(t, ValidateAmendment(&a))
+	require.True(t, AmendmentOpen(&a))
+
+	a.Status = AmendmentStatusProposed
+	require.True(t, AmendmentOpen(&a))
+	a.Status = AmendmentStatusApproved
+	require.False(t, AmendmentOpen(&a))
+
+	a.Status = "drafting"
+	err := ValidateAmendment(&a)
+	require.Error(t, err)
+	for _, want := range []string{"draft", "proposed", "approved", "withdrawn"} {
+		require.Contains(t, err.Error(), want)
+	}
+}

@@ -40,8 +40,8 @@ type amendmentIdentityIndex struct {
 }
 
 func amendmentLess(as, ak, ai, bs, bk, bi string) bool {
-	if (as == store.AmendmentStatusProposed) != (bs == store.AmendmentStatusProposed) {
-		return as == store.AmendmentStatusProposed
+	if store.AmendmentStatusOpen(as) != store.AmendmentStatusOpen(bs) {
+		return store.AmendmentStatusOpen(as)
 	}
 	if ak != bk {
 		return ak < bk

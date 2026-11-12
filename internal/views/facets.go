@@ -51,7 +51,7 @@ var statusOrder = map[string][]string{
 	store.NounChore:     assignmentStatuses,
 	store.NounTweak:     assignmentStatuses,
 	store.NounQuestion:  {"open", "answered", "cancelled"},
-	store.NounAmendment: {"proposed", "approved", "withdrawn"},
+	store.NounAmendment: {"draft", "proposed", "approved", "withdrawn"},
 }
 
 // FilterAxes is the axes noun answers, in render order; nil for an unknown noun.

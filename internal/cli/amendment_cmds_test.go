@@ -44,7 +44,7 @@ func layAmendmentTree(t *testing.T) {
 	require.Equal(t, 0, code)
 }
 
-// openAmendmentCLI opens a proposed amendment through the CLI and returns its
+// openAmendmentCLI opens an amendment through the CLI, then (stopgap) marks it proposed, and returns its
 // minted A-id, read back off disk (the same way soleFeatureID reads a minted
 // F-id) so a test can address it without parsing the id out of stdout.
 func openAmendmentCLI(t *testing.T, key, title string) string {
@@ -54,11 +54,34 @@ func openAmendmentCLI(t *testing.T, key, title string) string {
 	tree := loadCwdTree(t)
 	for id, a := range tree.Amendments {
 		if a.Key != nil && *a.Key == key {
+			stopgapPropose(t, a)
 			return id
 		}
 	}
 	t.Fatalf("amendment %q not found after add", key)
 	return ""
+}
+
+// stopgapProposeByID is stopgapPropose for a caller holding only the id.
+func stopgapProposeByID(t *testing.T, id string) {
+	t.Helper()
+	stopgapPropose(t, loadCwdTree(t).Amendments[id])
+}
+
+// stopgapPropose rewrites a draft amendment's on-disk status to proposed.
+// Stopgap until `tiller propose amendment` exists (Task 3), which replaces
+// every caller: `add amendment` and `intake` now open a draft, and approval
+// needs a proposed one.
+func stopgapPropose(t *testing.T, a *store.Amendment) {
+	t.Helper()
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	path := filepath.Join(cwd, ".tiller", "amendments", a.ID+"-"+*a.Key+".yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: "+a.Status, "status: "+store.AmendmentStatusProposed, 1)
+	require.NotEqual(t, string(data), out, "the status rewrite must land")
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }
 
 // jsonData unmarshals an envelope's data block into a map for field-by-field
@@ -304,7 +327,7 @@ func TestAddAmendmentEnvelopeShape(t *testing.T) {
 
 	data := jsonData(t, out)
 	require.Equal(t, "iphone-only", data["key"])
-	require.Equal(t, "proposed", data["status"])
+	require.Equal(t, "draft", data["status"])
 	require.Equal(t, "Remove native iPad support from v1", data["title"])
 	require.Equal(t, "ADR-3", data["implements"])
 	require.NotEmpty(t, data["id"])
@@ -1817,6 +1840,7 @@ func TestWithdrawThenReopenLeavesTheKeyAddressable(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	second, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, second)
+	stopgapProposeByID(t, second)
 	require.NotEqual(t, first, second)
 
 	out, stderr, code = execCLI(t, "show", "amendment", "iphone-only", "--json")

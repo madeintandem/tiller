@@ -87,6 +87,7 @@ func TestEndToEndContributorRegistrationBootstrapAttributionAndRefusals(t *testi
 	require.Equal(t, 0, code, stderr)
 	aid, _ := jsonData(t, intakeOut)["id"].(string)
 	require.NotEmpty(t, aid, "intake mints an amendment id")
+	stopgapProposeByID(t, aid)
 
 	_, stderr, code = execCLI(t, "amend", aid, "--add-epic", "reliability",
 		"--title", "Reliability hardening",

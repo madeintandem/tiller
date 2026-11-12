@@ -192,7 +192,7 @@ func preferOpenAmendment(candidates []store.Node) []store.Node {
 	}
 	var open []store.Node
 	for _, c := range candidates {
-		if a, ok := c.(*store.Amendment); ok && a.Status == store.AmendmentStatusProposed {
+		if a, ok := c.(*store.Amendment); ok && store.AmendmentOpen(a) {
 			open = append(open, a)
 		}
 	}

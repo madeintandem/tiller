@@ -103,6 +103,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 		"--triggered-by", amendE2EDesignDoc, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	amendmentID := amendmentIDByKey(t, "form-engine-rework")
+	stopgapProposeByID(t, amendmentID)
 
 	// The authoring order a human reaches for first is refused, and saying so
 	// here is the point: a --superseded-by naming a staged addition resolves only

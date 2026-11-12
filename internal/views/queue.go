@@ -200,7 +200,7 @@ func QueueOfInput(t *store.Tree, in QueueInput) Queue {
 func queueApproveAmendments(t *store.Tree) []QueueEntry {
 	var out []QueueEntry
 	for _, a := range t.Amendments {
-		if a.Status != store.AmendmentStatusProposed {
+		if !store.AmendmentOpen(a) {
 			continue
 		}
 		out = append(out, QueueEntry{

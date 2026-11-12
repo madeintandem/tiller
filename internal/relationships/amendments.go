@@ -72,8 +72,8 @@ func amendmentNodeKey(n store.Node) string {
 }
 
 func amendmentLess(as, ak, ai, bs, bk, bi string) bool {
-	if (as == store.AmendmentStatusProposed) != (bs == store.AmendmentStatusProposed) {
-		return as == store.AmendmentStatusProposed
+	if store.AmendmentStatusOpen(as) != store.AmendmentStatusOpen(bs) {
+		return store.AmendmentStatusOpen(as)
 	}
 	if ak != bk {
 		return ak < bk
@@ -202,7 +202,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 			}
 			// Before approval applies the staging operation, its node is
 			// expected not to exist; that is not a defect to report.
-			if a.Status == store.AmendmentStatusProposed && len(applications[indices[0]]) == 0 {
+			if store.AmendmentOpen(a) && len(applications[indices[0]]) == 0 {
 				return &AmendmentEndpoint{Raw: raw, Unresolved: true, Pending: true}, ""
 			}
 			return unresolvedAmendmentRef(raw), "Staged reference " + raw + " has no proven materialized identity"

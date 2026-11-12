@@ -261,6 +261,12 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	if err != nil {
 		return ApproveResult{}, err
 	}
+	if doc.Status == store.AmendmentStatusDraft {
+		return ApproveResult{}, &usageError{
+			reason: "amendment_not_proposed",
+			msg:    fmt.Sprintf("amendment %s is draft; hand it over first: tiller propose amendment %s", doc.ID, deref(doc.Key)),
+		}
+	}
 	if doc.Status != store.AmendmentStatusProposed {
 		return ApproveResult{}, amendmentNotOpenErr(doc)
 	}

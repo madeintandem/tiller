@@ -18,10 +18,22 @@ import (
 
 // Amendment status values (artifact-schema.md, Amendments: States).
 const (
+	AmendmentStatusDraft     = "draft"
 	AmendmentStatusProposed  = "proposed"
 	AmendmentStatusApproved  = "approved"
 	AmendmentStatusWithdrawn = "withdrawn"
 )
+
+// AmendmentStatusOpen reports whether status names an open amendment: one
+// still being staged (draft) or handed over and awaiting approval (proposed).
+func AmendmentStatusOpen(status string) bool {
+	return status == AmendmentStatusDraft || status == AmendmentStatusProposed
+}
+
+// AmendmentOpen reports whether a is open, meaning draft or proposed.
+func AmendmentOpen(a *Amendment) bool {
+	return a != nil && AmendmentStatusOpen(a.Status)
+}
 
 // Amendment operation kinds: the staged verbs an amendment's operations list
 // may name. revise marks a feature or task revised in place, its
@@ -194,7 +206,7 @@ func (e *AmendmentShapeError) ExitCode() int  { return 2 }
 func (e *AmendmentShapeError) Reason() string { return "amendment_shape_invalid" }
 
 // ValidateAmendment checks a parsed amendment is a well-formed staged reshape
-// (artifact-schema.md, Amendments): Status must be one of the three recognized
+// (artifact-schema.md, Amendments): Status must be one of the four recognized
 // values, and every operation's Op must be one of the recognized kinds,
 // carry only the fields legal for that kind, and carry every field that kind
 // requires. It returns an AmendmentShapeError naming the first offending
@@ -208,12 +220,12 @@ func ValidateAmendment(a *Amendment) error {
 	}
 
 	switch a.Status {
-	case AmendmentStatusProposed, AmendmentStatusApproved, AmendmentStatusWithdrawn:
+	case AmendmentStatusDraft, AmendmentStatusProposed, AmendmentStatusApproved, AmendmentStatusWithdrawn:
 	default:
 		return &AmendmentShapeError{
 			OpIndex: -1,
-			Msg: fmt.Sprintf("amendment %s has an unrecognized status %q (want %s, %s, or %s)",
-				a.ID, a.Status, AmendmentStatusProposed, AmendmentStatusApproved, AmendmentStatusWithdrawn),
+			Msg: fmt.Sprintf("amendment %s has an unrecognized status %q (want %s, %s, %s, or %s)",
+				a.ID, a.Status, AmendmentStatusDraft, AmendmentStatusProposed, AmendmentStatusApproved, AmendmentStatusWithdrawn),
 		}
 	}
 

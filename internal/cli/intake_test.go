@@ -33,7 +33,7 @@ func TestIntakeLandsArtifactAndMintsAmendmentWithSource(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 
 	data := jsonData(t, out)
-	require.Equal(t, "proposed", data["status"])
+	require.Equal(t, "draft", data["status"])
 	require.Equal(t, "acme-review", data["key"], "default key is a slug of the basename")
 	require.Equal(t, "Intake: Acme-review.md", data["title"])
 	require.Equal(t, []any{".tiller/feedback/Acme-review.md"}, data["triggered_by"])
@@ -294,6 +294,7 @@ func TestIntakeSourceHonestyArc(t *testing.T) {
 	data := jsonData(t, out)
 	aid, _ := data["id"].(string)
 	require.NotEmpty(t, aid)
+	stopgapProposeByID(t, aid)
 	source, ok := data["source"].(map[string]any)
 	require.True(t, ok, "intake's own envelope carries source: %s", out)
 	recorded, _ := source["revision"].(string)

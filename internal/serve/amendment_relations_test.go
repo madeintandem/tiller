@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -68,6 +69,7 @@ func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testin
 	require.NoError(t, err)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "reshape", Title: "Replace parser"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, a.ID)
 	identityStage(t, root, deps, a.ID,
 		mutate.StageInput{Op: "add-task", Key: "engine/parse/new", Title: "New parser"},
 		mutate.StageInput{Op: "add-task", Key: "engine/parse/extra", Title: "Extra parser"},
@@ -128,12 +130,14 @@ func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testin
 	// Terminal amendment keys are reusable, but links and row membership are IDs.
 	withdrawn, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "reshape", Title: "Withdrawn alternative"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, withdrawn.ID)
 	identityStage(t, root, deps, withdrawn.ID, mutate.StageInput{Op: "cancel", Target: newID, Reason: "Alternative"})
 	tree = identityTree(t, root)
 	_, err = mutate.WithdrawAmendment(tree, deps, tree.Amendments[withdrawn.ID], "Not selected")
 	require.NoError(t, err)
 	pending, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "reshape", Title: "Pending alternative"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, pending.ID)
 	identityStage(t, root, deps, pending.ID, mutate.StageInput{Op: "cancel", Target: newID, Reason: "Consider removal"})
 	rows := identityPage(t, srv, "task", newID).Relationships.Amendments
 	require.Len(t, rows, 3)
@@ -156,6 +160,7 @@ func TestAmendmentSameBatchParentAndHistoricalEpicDoNotRetarget(t *testing.T) {
 	root, deps := identityRepo(t)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "new-area", Title: "New area"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, a.ID)
 	identityStage(t, root, deps, a.ID,
 		mutate.StageInput{Op: "add-epic", Key: "area", Title: "Area"},
 		mutate.StageInput{Op: "add-feature", Key: "area/feature", Title: "Feature", ChangeType: "create"},
@@ -199,6 +204,7 @@ func TestAmendmentQuestionFoldsAndPartialApplicationRemainHonest(t *testing.T) {
 	require.NoError(t, err)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "questions", Title: "Question update"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, a.ID)
 	identityStage(t, root, deps, a.ID,
 		mutate.StageInput{Op: "add-feature", Key: "area/new", Title: "New feature", ChangeType: "create"},
 		mutate.StageInput{Op: "add-question", Title: "Existing policy", Statement: "Which policy?", Blocks: []string{ep.ID}},
@@ -279,6 +285,7 @@ func TestLegacyAmendmentParentUsesBoundedIdentityEvidence(t *testing.T) {
 	require.NoError(t, err)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "proposal", Title: "Proposal"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, a.ID)
 	identityStage(t, root, deps, a.ID, mutate.StageInput{Op: "add-feature", Key: "original/feature", Title: "Feature", ChangeType: "create"})
 	tree := identityTree(t, root)
 	_, err = mutate.WithdrawAmendment(tree, deps, tree.Amendments[a.ID], "Deferred")
@@ -362,6 +369,7 @@ func TestLegacyReplacementEventSurvivesMissingAddAndAmbiguousOperationJoin(t *te
 	require.NoError(t, err)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "replace", Title: "Replace"})
 	require.NoError(t, err)
+	stopgapProposed(t, root, a.ID)
 	identityStage(t, root, deps, a.ID,
 		mutate.StageInput{Op: "add-task", Key: "area/feature/new", Title: "New"},
 		mutate.StageInput{Op: "cancel", Target: old.ID, SupersededBy: "area/feature/new", Reason: "Replaced"},
@@ -403,4 +411,20 @@ func TestLegacyReplacementEventSurvivesMissingAddAndAmbiguousOperationJoin(t *te
 	require.Len(t, unknownJoin[0].Effects, 1)
 	require.Equal(t, "replacement", unknownJoin[0].Effects[0].Role)
 	require.Nil(t, unknownJoin[0].Effects[0].OperationIndex)
+}
+
+// stopgapProposed rewrites a draft amendment's on-disk status to proposed.
+// Stopgap until `tiller propose amendment` exists (Task 3), which replaces
+// every caller: AddAmendment now opens a draft and these tests exercise
+// proposed amendments.
+func stopgapProposed(t *testing.T, root, amendmentID string) {
+	t.Helper()
+	a := identityTree(t, root).Amendments[amendmentID]
+	require.NotNil(t, a)
+	path := filepath.Join(root, ".tiller", "amendments", a.ID+"-"+*a.Key+".yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: "+a.Status, "status: "+store.AmendmentStatusProposed, 1)
+	require.NotEqual(t, string(data), out, "the status rewrite must land")
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }

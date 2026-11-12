@@ -592,7 +592,7 @@ func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}) ([]sto
 			return nil, removalStale(path)
 		}
 		seen[disk.ID] = struct{}{}
-		if disk.Status == store.AmendmentStatusProposed {
+		if store.AmendmentOpen(&disk) {
 			for _, op := range disk.Operations {
 				refs := append([]string{op.Target, op.By, op.SupersededBy}, op.Blocks...)
 				for _, ref := range refs {

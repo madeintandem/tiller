@@ -119,6 +119,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	aid, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, aid)
+	stopgapProposeByID(t, aid)
 
 	// Every op cites the finding it traces to, in the order the mapping rules
 	// state them: new scope, a statable contract under that SAME-BATCH epic
@@ -379,6 +380,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	aid2, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, aid2)
+	stopgapProposeByID(t, aid2)
 
 	_, stderr, code = execCLI(t, "amend", aid2, "--add-task",
 		"form-engine/certification-form-loading/tighten-request-timeout",

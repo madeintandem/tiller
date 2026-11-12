@@ -229,6 +229,9 @@ func openAmendment(t *testing.T, root string, deps mutate.Deps, key string) *sto
 	res, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{
 		Key: key, Title: "Remove native iPad support from v1"})
 	require.NoError(t, err)
+	// Stopgap until `tiller propose amendment` exists (Task 3): AddAmendment
+	// now opens a draft, and the approval tests below need a proposed one.
+	setAmendmentStatus(t, root, res.ID, store.AmendmentStatusProposed)
 	return loadAmendment(t, root, res.ID)
 }
 
@@ -2721,6 +2724,8 @@ func sourceFixture(t *testing.T, body string) (root string, deps mutate.Deps, a 
 		Source: &store.AmendmentSource{Path: relPath, Revision: blobOf(t, root, relPath)},
 	})
 	require.NoError(t, err)
+	// Stopgap until `tiller propose amendment` exists (Task 3).
+	setAmendmentStatus(t, root, res.ID, store.AmendmentStatusProposed)
 	return root, deps, loadAmendment(t, root, res.ID), relPath
 }
 
@@ -2951,4 +2956,21 @@ func TestApproveAmendmentApprovesASourcelessOpOnANonIntakeAmendment(t *testing.T
 	res := approve(t, root, deps, a)
 	require.Equal(t, store.AmendmentStatusApproved, res.Status)
 	require.Len(t, res.Applied, 1)
+}
+
+func TestApproveRefusesDraft(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	res, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{
+		Key: "iphone-only", Title: "Remove native iPad support from v1"})
+	require.NoError(t, err)
+	a := loadAmendment(t, root, res.ID)
+	require.Equal(t, store.AmendmentStatusDraft, a.Status)
+
+	before := snapshotDir(t, root)
+	err = tryApprove(t, root, deps, a)
+	require.Error(t, err)
+	require.Equal(t, "amendment_not_proposed", reasonOf(t, err))
+	require.Equal(t, "amendment "+a.ID+" is draft; hand it over first: tiller propose amendment iphone-only", err.Error())
+	requireNoWrites(t, before, snapshotDir(t, root))
 }

@@ -328,7 +328,7 @@ func checkMoveConflicts(tree *store.Tree, doc *store.Amendment) error {
 			}
 		}
 		for _, pending := range tree.Amendments {
-			if pending.ID == doc.ID || pending.Status != store.AmendmentStatusProposed {
+			if pending.ID == doc.ID || !store.AmendmentOpen(pending) {
 				continue
 			}
 			for _, op := range pending.Operations {

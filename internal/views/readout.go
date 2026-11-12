@@ -1655,7 +1655,7 @@ func specifyContent(t *store.Tree, in ReadoutInput, r *Readout) {
 func proposedAmendments(t *store.Tree) []*store.Amendment {
 	var out []*store.Amendment
 	for _, a := range t.Amendments {
-		if a.Status == store.AmendmentStatusProposed {
+		if store.AmendmentOpen(a) {
 			out = append(out, a)
 		}
 	}
