@@ -15,6 +15,8 @@ For authored prose, follow **External references** in `tiller guide orient`.
 
 Choose `bug` when observed behavior violates expected product or system behavior. Choose `chore` for housekeeping without code side effects, such as documentation or operational upkeep. This is classification guidance, not policing or validation of Chores. Choose `tweak` for a minor adjustment that may change code; choose a Task for substantive planned work. Done work stays done: capture forward adjustments as new work rather than reopening completed records. If the work needs its own feature acceptance contract or changes the work tree, route to `decompose`, `specify`, or `amend` instead.
 
+Capture is the trigger for a defect found outside any document. A defect, chore, or tweak found while decomposing a document is added the same way, directly to its shelf with `--source` citing the document, and `decompose` carries the mapping rules that decide what in a document is a shelf item and what is a feature, task, or question; load `tiller guide decompose` for them.
+
 Write one contract per independently triageable outcome. A bug contract records the reproduction, expected behavior, actual behavior, and the observable fixed-when condition. A chore or tweak contract records what must be done, why it matters, and the observable done-when condition. Do not write an implementation plan here.
 
 Grade every bug by impact with `--severity`, on this scale:

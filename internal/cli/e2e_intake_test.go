@@ -123,7 +123,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	// The document waits on the agent: no approval row for the human yet.
 	waiting, stderr, code := execCLI(t, "guide")
 	require.Equal(t, 0, code, stderr)
-	require.Contains(t, waiting, "Suggested skill: intake")
+	require.Contains(t, waiting, "Suggested skill: decompose")
 	require.NotContains(t, waiting, "approve amendment")
 
 	// Every op cites the finding it traces to, in the order the mapping rules

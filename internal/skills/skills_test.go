@@ -22,9 +22,57 @@ var harnessTools = []string{
 // TestNamesAreTheShippedSkills keeps the discoverable catalog in lifecycle order.
 func TestNamesAreTheShippedSkills(t *testing.T) {
 	require.Equal(t, []string{
-		"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "intake", "design-brief", "code-review",
+		"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "design-brief", "code-review",
 	}, Names())
 	require.False(t, Has("break-down"), "break-down is retired into specify")
+}
+
+// TestSkillNamesDropIntake pins the unification: intake is only a command now,
+// and decompose carries the rules the retired skill held.
+func TestSkillNamesDropIntake(t *testing.T) {
+	names := Names()
+	require.Len(t, names, 10)
+	require.NotContains(t, names, "intake")
+	require.False(t, Has("intake"))
+	_, ok := Lookup("intake")
+	require.False(t, ok)
+}
+
+// TestDecomposeSkillCoversBothRoutes pins the three parts of the one skill: the
+// shared mapping rules, the founding design, and the amendment.
+func TestDecomposeSkillCoversBothRoutes(t *testing.T) {
+	text, ok := Lookup("decompose")
+	require.True(t, ok)
+	for _, want := range []string{
+		"## What becomes what",
+		"## Recording a founding design",
+		"## Recording an amendment",
+		"tiller propose amendment",
+		"tiller add bug",
+		"--source",
+		"tiller intake --no-amendment",
+		"tiller amend <A> --add-epic",
+		"held_by_amendment",
+		"feature_not_approved",
+		"task_under_held_feature",
+		"parent_held_elsewhere",
+		"amendment_required",
+		"including when nothing was staged",
+	} {
+		require.Containsf(t, text, want, "decompose carries %q", want)
+	}
+	require.Less(t, strings.Index(text, "## What becomes what"), strings.Index(text, "## Recording a founding design"))
+	require.Less(t, strings.Index(text, "## Recording a founding design"), strings.Index(text, "## Recording an amendment"))
+	require.NotContains(t, text, ".tiller/feedback/", "documents land under .tiller/design/ now")
+}
+
+// The ambient description carries the amendment door and the stop.
+func TestDecomposeDescriptionCarriesBothDoors(t *testing.T) {
+	d, ok := Description("decompose")
+	require.True(t, ok)
+	require.Contains(t, d, "tiller intake")
+	require.Contains(t, d, "draft amendment")
+	require.Contains(t, d, "stops for the human")
 }
 
 func TestCaptureWritesAProposalAndStopsBeforeTriage(t *testing.T) {
@@ -268,7 +316,7 @@ func TestCodeReviewReviseNeedsTheDraftedEdit(t *testing.T) {
 	require.Contains(t, text, "write the drafted prose edit to the target's spec or contract before staging `--revise`")
 }
 
-// Deferring to capture and intake borrows their shapes, never their commits, and
+// Deferring to capture and decompose borrows their shapes, never their commits, and
 // the one commit lands on the integration branch.
 func TestCodeReviewBorrowsShapesNotCommits(t *testing.T) {
 	text, ok := Lookup("code-review")
@@ -902,54 +950,33 @@ func TestAmendChoreographyNamesAddQuestionsBlocksReach(t *testing.T) {
 	}
 }
 
-// TestIntakeDescriptionCarriesTheStop pins the frontmatter description on its
-// own, since Description() is what `tiller join` writes onto the harness
-// shim: the ambient signal must say what lands the artifact and what the
-// skill does with it, and it must carry the same stop every other seam's
-// description carries (TestOrientDescriptionCarriesTheStop,
-// TestAmendStagesAndStopsForTheHuman's own Description assertion).
-func TestIntakeDescriptionCarriesTheStop(t *testing.T) {
-	d, ok := Description("intake")
+// TestDecomposeNamesTheIntakeRefusals pins the refusal messages the amendment
+// route can meet, quoted so the agent recognizes them.
+func TestDecomposeNamesTheIntakeRefusals(t *testing.T) {
+	text, ok := Lookup("decompose")
 	require.True(t, ok)
-	require.Contains(t, d, "a document written outside the tree that critiques or redirects the work",
-		"the description names what triggers the skill")
-	require.Contains(t, d, "tiller intake` has already landed one and opened an amendment with nothing staged",
-		"and the already-landed re-entry point")
-	require.Contains(t, d, "stops for the human's approve", "the description carries the stop")
-}
-
-// TestIntakeNamesItsOwnRefusals pins the two refusal messages intake mints
-// itself, quoted verbatim so the agent recognizes them rather than
-// treating them as a generic amend staging failure.
-func TestIntakeNamesItsOwnRefusals(t *testing.T) {
-	text, ok := Lookup("intake")
-	require.True(t, ok)
-	require.Contains(t, text, "re-intake is a new intake: rename the document or remove the old artifact",
-		"the artifact_exists refusal, quoted verbatim")
 	require.Contains(t, text, "intake amendments trace every operation: pass --source citing the feedback document",
 		"the source_required refusal, quoted verbatim")
+	require.Contains(t, text, "re-intake is a new intake: rename the document or remove the old artifact", "a landed name is refused, quoted verbatim")
 	require.Contains(t, text, "tiller guide amend",
 		"staging refusals otherwise point at amend's own guide rather than restating it")
 }
 
-// TestIntakeHandsOffToSpecifyAndExecute pins the hand-off: approve amendment
-// is the one materializing act, run only on explicit instruction, and once
-// nodes are real they rejoin the ordinary lifecycle every other seam already
-// owns, specify for a feature, execute for a task, answer question for a
-// question, rather than intake inventing a second path for work it only
-// ever staged.
-func TestIntakeHandsOffToSpecifyAndExecute(t *testing.T) {
-	text, ok := Lookup("intake")
+// TestDecomposeHandsAmendmentToTheHuman pins the amendment hand-off: propose
+// hands it over, approve is the human's one act, and what approval promotes
+// rejoins the ordinary lifecycle.
+func TestDecomposeHandsAmendmentToTheHuman(t *testing.T) {
+	text, ok := Lookup("decompose")
 	require.True(t, ok)
 	for _, want := range []string{
-		"the one act that materializes the epics, features, tasks, and questions this skill only ever staged",
-		"every precondition and the amendment's own source both validate first, and then all of it lands or none of it does",
+		"`tiller approve amendment` is the one act that lifts the hold",
+		"promotes each held epic and each held task to `ready`",
+		"leaves each held feature `draft`",
 		"Approve and withdraw each run only on an explicit human instruction naming the amendment",
-		"Out to `specify` for a materialized feature once the human pulls it forward from the frontier",
-		"to `execute` for a materialized task once it clears its own `approve task`",
-		"a materialized question sits on the ledger until `tiller answer question` closes it",
+		"`tiller withdraw amendment` removes every node the amendment still holds",
+		"A materialized question sits on the ledger until `tiller answer question` closes it",
 	} {
-		require.Containsf(t, text, want, "intake hands off to the ordinary lifecycle: %q", want)
+		require.Containsf(t, text, want, "decompose hands the amendment off: %q", want)
 	}
 }
 
@@ -975,10 +1002,8 @@ func TestSkillsRequireShortQuestionTitlesForNewWrites(t *testing.T) {
 	require.Contains(t, amend, "--add-question \"Keep the legacy embedded-JSON fallback for offline mode, or drop it once the table model ships?\" \\\n  --title \"Legacy offline fallback\"",
 		"amend's staged question carries a separate title")
 
-	intake, ok := Lookup("intake")
-	require.True(t, ok)
-	require.Contains(t, intake, "--add-question \"Keep or trim the legacy image parsers?\" \\\n  --title \"Legacy image parsers\"",
-		"intake's staged question carries a separate title")
+	require.Contains(t, decompose, "--add-question \"Keep or trim the legacy image parsers?\" \\\n  --title \"Legacy image parsers\"",
+		"decompose's staged question carries a separate title")
 }
 
 // TestDeriveBaselineRecordsForwardWorkAsQuestions pins the brownfield zero-day
@@ -1031,9 +1056,7 @@ func TestEmptyTreeSkillsNeedToBeInputs(t *testing.T) {
 	require.NotContains(t, orient, "derive-baseline for an unconfirmed existing-code project or decompose otherwise")
 	require.Contains(t, orient, "decompose when a to-be design doc exists")
 
-	intake, ok := Lookup("intake")
-	require.True(t, ok)
-	require.Contains(t, intake, "a source that a forward-work question cites, once the human answers that they want it built")
+	require.Contains(t, decompose, "a source that a forward-work question cites, once the human answers that they want it built")
 
 	capture, ok := Lookup("capture")
 	require.True(t, ok)

@@ -124,9 +124,9 @@ Never recheck an unselected row. A fix always rechecks, because execute is about
 
 Follow `tiller guide capture` for keys, contracts, and its stopping point, except their commits: this disposition makes the one commit. Pass the row's Found in as `--attach` and cite the row's block in the current review file as `--source`, so the developer's edits to the file carry through. Write the contract from the block: a bug's Reproduction, Expected, Actual, and Fixed when; a tweak's or chore's What, Why, and Done when. Pass the row's severity as `--severity`, lowercase. Keep the review's confidence as the opening line of `bug.md`; the severity lives in the field, not in the prose. For a row in unmerged code, warn that the new node cannot start until its unit merges, because a shelf branch is cut from the integration branch.
 
-#### Log plan changes through intake's shapes
+#### Log plan changes through decompose's amendment shapes
 
-Follow `tiller guide intake` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation outside the repository named `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/feedback/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/feedback/`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request never stages onto an earlier review's amendment.
+Follow `Recording an amendment` in `tiller guide decompose` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation outside the repository named `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/design/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/design/`, then hand the amendment over with `tiller propose amendment`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request never stages onto an earlier review's amendment.
 
 #### Fix on its branch
 
@@ -140,7 +140,7 @@ Append each disposition to the end of its row's heading line, so no line moves a
 
 On a refusal, follow `.tiller/orientation.md`. In the review arm, recovery is limited to corrected reads: a missing branch, an unreadable diff, or stale instructions go under Limitations, never become a reason to repair, fetch, refresh, or mutate anything.
 
-In the disposition arm, a `tiller add` refusal means fixing the key, attachment, or citation and rerunning; re-adding the same key is an idempotent readback. An `artifact_exists` refusal from `tiller intake` means choosing the next suffix for the distillation. Commit nothing until every selected row is recorded.
+In the disposition arm, a `tiller add` refusal means fixing the key, attachment, or citation and rerunning; re-adding the same key is an idempotent readback. A refusal from `tiller intake` because the name is already landed means choosing the next suffix for the distillation. Commit nothing until every selected row is recorded.
 
 ## Choreography
 
@@ -318,14 +318,15 @@ tiller add chore <key> --title "<title>" --attach <found-in> \
 
 ```sh
 tiller intake <distillation> --contributor <you>
-# lands .tiller/feedback/<distillation>.md and opens its amendment
+# lands .tiller/design/<distillation>.md and opens its draft amendment
 
 tiller amend <amendment-key> --add-task <epic>/<feature>/<task-key> --title "<title>" \
-  --source .tiller/feedback/<distillation>.md#L<n>-L<m>
+  --source .tiller/design/<distillation>.md#L<n>-L<m>
 # or --add-feature, --add-epic, or --revise, per the row's proposed shape
 # write the narrative over .tiller/amendments/<A-id>-<amendment-key>.md
 
 tiller show amendment <amendment-key>
+tiller propose amendment <amendment-key>
 ```
 
 #### 4. Annotate and commit once

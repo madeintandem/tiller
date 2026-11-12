@@ -469,7 +469,7 @@ func TestNextOffersDecomposeForADraftIntakeAmendment(t *testing.T) {
 	got := candidatesOfKind(cands, "decompose_amendment")
 	require.Len(t, got, 1)
 	require.Equal(t, "agent", got[0].Actor)
-	require.Equal(t, "intake", got[0].Skill)
+	require.Equal(t, "decompose", got[0].Skill)
 	require.Equal(t, "A-draft0", got[0].Node.ID)
 	require.Empty(t, candidatesOfKind(cands, "stage_amendment"))
 	require.Equal(t, "decompose_amendment", candidateKinds(cands)[0], "ranked in the amendment arm ahead of approvals")

@@ -51,7 +51,7 @@ func TestOrientationRoutesExplicitCodeReviewsOutsideTheWalk(t *testing.T) {
 	text := Orientation()
 	for _, want := range []string{
 		"`tiller guide code-review`",
-		"`tiller guide` serves eleven skills:",
+		"`tiller guide` serves ten skills:",
 		"- `code-review`: the developer explicitly asks",
 		"`.tiller/reviews/`",
 		"Do not invent a `tiller readout code-review` command.",
@@ -151,10 +151,25 @@ func TestOrientationGeneration59RecordsBugSeverity(t *testing.T) {
 	}
 }
 
-// Generation 60 names the one directory exception to exact-path staging: the
+// Generation 61 keeps the one directory exception to exact-path staging: the
 // paths sync, compact, migrate, or upgrade print for compacted events.
 func TestOrientationNamesTheCompactionStagingException(t *testing.T) {
-	require.Equal(t, 60, OrientationGeneration())
+	require.Equal(t, 61, OrientationGeneration())
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "The one exception is compacted events: when `tiller sync`, `tiller compact`, `tiller migrate`, or `tiller upgrade` names paths to stage, stage exactly those, directories included.")
+}
+
+// Generation 61 retires the intake skill: decompose carries both routes for a
+// document, and the orientation text says so without naming an intake skill.
+func TestOrientationGeneration61(t *testing.T) {
+	got, ok := OrientationStampGeneration([]byte(Orientation()))
+	require.True(t, ok)
+	require.Equal(t, 61, got)
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.NotContains(t, text, "- `intake`:", "intake is a command, not a skill")
+	require.NotContains(t, text, "Use intake when")
+	require.NotContains(t, text, "capture and intake shapes")
+	require.Contains(t, text, "`tiller intake`")
+	require.Contains(t, text, "draft amendment")
+	require.Contains(t, text, "`tiller propose amendment`")
 }

@@ -68,7 +68,7 @@ func TestGuideAfterIntakeNamesTheAgentMove(t *testing.T) {
 
 	human, stderr, code := execCLI(t, "guide")
 	require.Equal(t, 0, code, stderr)
-	require.Contains(t, human, "Suggested skill: intake")
+	require.Contains(t, human, "Suggested skill: decompose")
 	require.Contains(t, human, "A document landed as amendment ")
 	require.Contains(t, human, "and has not been turned into work. Read it whole, stage what it implies, then run tiller propose amendment ")
 	require.NotContains(t, human, "approve amendment")

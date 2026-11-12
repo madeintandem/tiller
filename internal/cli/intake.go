@@ -23,9 +23,9 @@ import (
 // fingerprinted source artifact under .tiller/design/, and it opens a
 // draft amendment carrying that fingerprint as its Source. It stages no
 // operations itself — the explosion of feedback into epics, features, tasks,
-// and questions is model judgment a skill guides (`tiller guide intake`, a
-// later task), staged afterward through the ordinary `tiller amend` surface,
-// which task 1 already requires to cite this artifact on every op.
+// and questions is model judgment the decompose skill guides (`tiller guide
+// decompose`), staged afterward through the ordinary `tiller amend` surface,
+// which already requires every op to cite this artifact.
 //
 // Who may run it: both, under the standard delegation rules (cli-surface.md,
 // "The actor model"). intake carries no verb entry in lifecycle's verbActors
@@ -62,10 +62,11 @@ func newIntakeCmd() *cobra.Command {
 			"whose Source cites that artifact. A folder opens one amendment covering\n" +
 			"every file in it. The amendment\n" +
 			"opens with no operations staged: explode the feedback into the tree's\n" +
-			"grammar with `tiller guide intake`, then stage each operation with\n" +
+			"grammar with `tiller guide decompose`, then stage each operation with\n" +
 			"`tiller amend --source <citation>` (every op on an intake-minted\n" +
 			"amendment must cite one), review the whole batch with `tiller show\n" +
-			"amendment`, and cross the human gate with `tiller approve amendment`.\n" +
+			"amendment`, hand it over with `tiller propose amendment`, and the human\n" +
+			"crosses the gate with `tiller approve amendment`.\n" +
 			"Re-intake of a changed document is a new intake: a name already\n" +
 			"present under .tiller/design/ is refused rather than overwritten,\n" +
 			"since the old artifact's fingerprint keeps the old amendment's\n" +

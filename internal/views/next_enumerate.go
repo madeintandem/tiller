@@ -115,7 +115,7 @@ func draftAmendmentCandidates(t *store.Tree) []NextCandidate {
 			Reason: "still a draft; finish staging it, then propose it",
 		}
 		if a.Source != nil {
-			c.Kind, c.Action, c.Skill = "decompose_amendment", "decompose amendment", "intake"
+			c.Kind, c.Action, c.Skill = "decompose_amendment", "decompose amendment", "decompose"
 			c.Reason = "its document has not been turned into work"
 		}
 		out = append(out, c)

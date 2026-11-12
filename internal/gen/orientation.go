@@ -44,7 +44,8 @@ import (
 // feature epic grain, with exact-path staging and isolated commits.
 // Generation 59 records bug severity: capture grades, approve bug requires one, and grade changes it; severity never routes.
 // Generation 60 names compacted events as the one exception to exact-path staging: stage exactly the paths sync, compact, migrate, or upgrade print.
-const orientationSchemaGen = 60
+// Generation 61 retires the intake skill: decompose carries both ways a document becomes work, a draft tree for the founding design and drafts held by one amendment for a later document.
+const orientationSchemaGen = 61
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -130,7 +131,7 @@ and outcomes; implement shared machinery for its consuming increment, retaining
 known later needs in later features. Record true prerequisites as
 ` + "`depends_on`" + ` and preferred sibling sequence with ` + "`tiller order`" + `.
 Specify tasks just in time. Apply the same placement rule to amendments and
-intake: extend the same bounded outcome, create a new increment for a distinct
+documents that arrive through ` + "`tiller intake`" + `: extend the same bounded outcome, create a new increment for a distinct
 outcome or delivery phase, and preserve accepted history. Missing information
 that materially changes boundaries or order needs a focused question, not an
 invented journey. Propose wider changes for developer direction, not as an
@@ -540,7 +541,7 @@ skip either step: without them there is no acting contributor here, so the first
 ` + "`tiller add`" + ` exits ` + "`3`" + `, ` + "`check readiness`" + ` reports the empty roster as a gap,
 and the ranked list below cannot rank your own work. Then
 ` + "`tiller check readiness`" + ` names any missing inputs or manifest gaps.
-For greenfield, prepare design inputs and name ` + "`decompose`" + ` to turn them into
+For greenfield, prepare design inputs (` + "`tiller init --design`" + `, or ` + "`tiller intake --no-amendment`" + ` while no epic exists) and name ` + "`decompose`" + ` to turn them into
 a draft tree. Brownfield and legacy-migration first use ` + "`derive-baseline`" + `
 when no as-is doc is confirmed, even if docs were imported or work already exists.
 Name the applicable seam and stop for the developer's go.
@@ -844,9 +845,13 @@ The moves, and the seam each leads to:
   basis, questions, dependency, ownership, and retired-node diagnostics; do not
   advertise a known-refusing operation. Never tell the developer the frontier
   shows only their own work.
+- A ` + "`draft`" + ` amendment is the agent's. With a source document, the seam is
+  ` + "`decompose`" + `; opened by hand with no source, the seam is ` + "`amend`" + `. Either ends
+  at ` + "`tiller propose amendment`" + `, which hands it to the human.
 - A ` + "`proposed`" + ` amendment awaiting approval: a human move, not a seam. Name
   ` + "`tiller approve amendment`" + ` as the developer's move and stop. Several amendments
-  can be open at once, each its own row.
+  can be open at once, each its own row. One with nothing staged reads as
+  nothing proposed from its document and carries the withdraw command instead.
 - An unclaimed eligible ` + "`ready`" + ` task under an approved ready or active feature and
   an epic past decomposition, with no unmet recorded dependency or operative
   question hold. The seam is ` + "`execute`" + `, and the row names
@@ -907,8 +912,8 @@ The moves, and the seam each leads to:
   decompose is due only when a to-be design doc exists: a file under
   ` + "`.tiller/design/`" + `, dotfiles excepted, that ` + "`baseline.yml`" + ` neither registers
   as an as-is doc nor cites as a source. Then the seam is ` + "`decompose`" + `. With none, no work is planned yet: a human wait, not a seam. Name
-  the open-question count and the ways work enters (intake a document that makes
-  a case for change, capture a bug, chore, or tweak, or add a to-be design), and
+  the open-question count and the ways work enters (` + "`tiller intake`" + ` a document
+  that makes a case for change, capture a bug, chore, or tweak, or add a to-be design), and
   stop. Never turn as-is docs or old specs into epics nobody asked for. On a tree
   with no epics, owned shelf work, a proposed amendment, and a shelf merge wait
   are still real work or a real wait.
@@ -927,7 +932,7 @@ ordinal does not compare across unrelated features. Completed prerequisite depth
 does not outrank a live preference, and historical tree order and dependency edges
 are unchanged.
 
-` + "`tiller guide`" + ` serves eleven skills:
+` + "`tiller guide`" + ` serves ten skills:
 
 - ` + "`orient`" + `: you need the next move. Read state, relay the ranked list above to
   the developer, and end the reply.
@@ -935,8 +940,13 @@ are unchanged.
   Derive or translate module-grain descriptions, record recoverable provenance,
   commit, and stop for human named-doc confirmation. Review existing pending
   docs in place rather than regenerate them.
-- ` + "`decompose`" + `: to-be inputs exist but the tree does not reflect them. Lay a
-  draft epic and feature tree for the human to approve.
+- ` + "`decompose`" + `: to-be inputs exist but the tree does not reflect them.
+  For the founding design, lay a draft epic and feature tree for the human to
+  approve. For a later document, ` + "`tiller intake`" + ` landed it under
+  ` + "`.tiller/design/`" + ` and opened a draft amendment: stage the mapping as drafts the
+  amendment holds, add concrete defects, chores, and tweaks straight to their
+  shelves with ` + "`--source`" + `, and run ` + "`tiller propose amendment`" + `, even when
+  nothing was staged.
 - ` + "`specify`" + `: a feature is in draft. Write its specification, its acceptance
   contract, and its tasks in one pass, then ` + "`tiller spec feature`" + `.
 - ` + "`execute`" + `: you hold a ready, in-progress, or checked task or shelf node,
@@ -952,10 +962,6 @@ are unchanged.
 - ` + "`amend`" + `: a change reshapes the plan rather than extends it. Sort the
   corrections from the casualties, stage the reshape as one amendment, and stop
   for the human's ` + "`approve amendment`" + `.
-- ` + "`intake`" + `: the developer hands you a document written outside the tree
-  that makes a case for change, or ` + "`tiller intake`" + ` already landed one and
-  opened an amendment with nothing staged. Read it whole, stage the mapping as
-  one sourced amendment, and stop for the human's ` + "`approve amendment`" + `.
 - ` + "`design-brief`" + `: the developer explicitly requests a UI/UX design brief
   or prototype handoff for an epic, feature, or task. Gather bounded requirements
   and export one self-contained Markdown snapshot for a non-production prototype.
@@ -963,7 +969,7 @@ are unchanged.
 - ` + "`code-review`" + `: the developer explicitly asks for a code review of one
   node, or names rows of an existing review. Review its net change read-only into
   one file under ` + "`.tiller/reviews/`" + ` and reply with a summary table; on a
-  later disposition, log the named rows through capture and intake shapes and
+  later disposition, log the named rows through capture and decompose shapes and
   commit once, leaving every approval to the human.
 
 After a successful feature done crossing, sync may name as-is docs touched;
@@ -986,13 +992,13 @@ seam sits outside that list for a reason of its own: no field in the tree
 says a reshape is due. When the change in front of you reshapes the plan rather
 than extends it, because the developer says so or one upstream change cascades
 across a dozen nodes, the seam is ` + "`amend`" + `. Name what you think it is and let the
-developer confirm before anything is staged: staging records proposals and
-executes nothing, and the human's ` + "`approve amendment`" + ` is the one act that
-applies the batch. Capture and intake sit outside the list too: both are
-operator-initiated, not ranked moves computed from recorded state. Use ` + "`capture`" + `
-when an investigation or developer description identifies a concrete shelf
-item. Use intake when the developer hands over external feedback, or
-` + "`tiller intake`" + ` already has.
+developer confirm before anything is staged: staging creates inert drafts the
+amendment holds, and the human's ` + "`approve amendment`" + ` is the one act that
+moves anything. Capture sits outside the list too: it is operator-initiated,
+not a ranked move computed from recorded state. Use ` + "`capture`" + ` when an
+investigation or developer description identifies a concrete shelf item. When the
+developer hands over a document, run ` + "`tiller intake`" + ` to land it; the draft
+amendment it opens then ranks as a decompose move.
 
 Process is Tiller's; craft is the repo's own. How you write the code, the testing
 discipline, and the architecture live in this project's ` + "`AGENTS.md`" + ` and

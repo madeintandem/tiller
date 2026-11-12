@@ -43,6 +43,16 @@ func TestGuideUnknownSkillIsMisuse(t *testing.T) {
 	require.Contains(t, out, "decompose")
 }
 
+// intake is a command only; the retired skill name is refused as unknown and
+// the message points at decompose.
+func TestGuideIntakeNamesDecompose(t *testing.T) {
+	out, stderr, code := execCLI(t, "guide", "intake")
+	require.Equal(t, 2, code, out)
+	require.Contains(t, stderr, "unknown skill")
+	require.Contains(t, stderr, "decompose")
+	require.NotContains(t, stderr, "intake,", "intake is not listed as a skill")
+}
+
 // TestGuideNoArgSuggestsDecomposeOnFreshRepo is the routing guarantee: on a fresh,
 // undecomposed repo the fitting skill is decompose.
 // A fresh greenfield repo has nothing under design/ to decompose: guide
