@@ -58,7 +58,7 @@ func newAddCmd() *cobra.Command {
 			"Other add commands lay a node down in its initial state: an epic or feature in draft\n" +
 			"with source provenance, a task proposed in its own folder under a\n" +
 			"feature, an open question on the decisions ledger, or an amendment\n" +
-			"opened as a proposed staging document for a reshape.\n" +
+			"opened as a draft staging document for a reshape.\n" +
 			"The agent proposes; the human approves later. Re-adding the same epic,\n" +
 			"feature, task, or question is an idempotent no-op success; an amendment\n" +
 			"is the one exception, since a second open proposal under one key is not\n" +

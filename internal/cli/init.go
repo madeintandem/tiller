@@ -152,7 +152,7 @@ func runInit(cmd *cobra.Command, name, key, kind string) error {
 // legacy reference declarations remain necessary even when docs were imported.
 // Gate configuration is guidance, not an additional readiness prerequisite.
 func initNextSteps(result initResult) string {
-	first := "Put your design inputs under .tiller/design/."
+	first := "Land your design with `tiller intake --no-amendment <file or folder>`."
 	if result.Design != nil {
 		first = "Review the imported design under .tiller/design/."
 	}

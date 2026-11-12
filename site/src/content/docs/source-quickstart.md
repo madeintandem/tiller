@@ -36,7 +36,7 @@ tiller init --name "Acme Platform" --key acme --kind greenfield
 Initialized "Acme Platform" (acme, greenfield).
 
 **Next**
-  1. Put your design inputs under .tiller/design/.
+  1. Land your design with `tiller intake --no-amendment <file or folder>`.
      For in-repo docs, choose a move into .tiller/design/ when Tiller takes ownership,
      or a pointer page there when another consumer needs the original location.
      Record committed source provenance with `tiller link design --from` before retiring translated sources.

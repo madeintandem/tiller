@@ -711,7 +711,8 @@ func newAmendCmd() *cobra.Command {
 			"this operation traces to (free text, by convention path#Lstart-Lend)\n" +
 			"and is required on every op staged onto an intake-minted amendment.\n" +
 			"--amends-design is repeatable and may ride alone or beside an\n" +
-			"operation. Nothing here executes: only approve does.\n" +
+			"operation. Staging an add creates an inert draft held by the amendment;\n" +
+			"only approve moves anything.\n" +
 			"Staging a supersede before its target is done remains legal, but approval\n" +
 			"always requires done even without a target_status precondition. Stage\n" +
 			"--precondition target_status=done as an optional stale guard when the\n" +
