@@ -2,6 +2,7 @@ package mutate_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -669,4 +670,147 @@ func TestRemoveDraftPreservesStagedAddKeyReferencesThatDoNotResolveToRemovedNode
 	_, err := mutate.RemoveDraft(load(t, f.root), f.deps, mutate.RemoveInput{Noun: store.NounTask, Node: f.task1, Reason: "replace proposal"})
 	require.NoError(t, err)
 	require.FileExists(t, path)
+}
+
+// --- corrections on a held draft (decision 7) ---
+
+// correctionDeps is gitDeps with its own sequential minter, for the
+// corrections a test makes after heldFixture: a fresh heldDeps would restart
+// the fixture's sequence and collide with the ids it already minted. Share one
+// value across a test.
+func correctionDeps(root string) mutate.Deps {
+	d := gitDeps(root)
+	seq := 0
+	d.Mint = func(prefix string) string {
+		seq++
+		return fmt.Sprintf("%s-c%05d", prefix, seq)
+	}
+	return d
+}
+
+// heldAmendmentPath is the repo-relative yml of an amendment.
+func heldAmendmentPath(t *testing.T, root, amendmentID string) string {
+	t.Helper()
+	a := loadAmendment(t, root, amendmentID)
+	return filepath.ToSlash(filepath.Join(".tiller", "amendments", a.ID+"-"+*a.Key+".yml"))
+}
+
+// opIndexForNode is the index of the add operation that created node.
+func opIndexForNode(t *testing.T, a *store.Amendment, node string) int {
+	t.Helper()
+	for i, op := range a.Operations {
+		if op.Node == node {
+			return i
+		}
+	}
+	t.Fatalf("amendment %s has no operation for node %s", a.ID, node)
+	return -1
+}
+
+// TestRemoveHeldFeatureMarksItsOperationRemoved: removing a held draft is a
+// correction to its proposal, not a refusal. The draft's folder goes, and the
+// add operation that created it stays at its index marked removed with the
+// reason, so the record of what was staged and the numbering do not change.
+func TestRemoveHeldFeatureMarksItsOperationRemoved(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+	deps := correctionDeps(root)
+	before := loadAmendment(t, root, amendmentID)
+	index := opIndexForNode(t, before, featureID)
+	featureDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "table-backed-forms")
+	require.DirExists(t, featureDir)
+
+	res, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounFeature, Node: featureID, Reason: "not part of v1",
+	})
+	require.NoError(t, err)
+	require.NoDirExists(t, featureDir)
+	amendmentPath := heldAmendmentPath(t, root, amendmentID)
+	require.Contains(t, res.ChangedFiles, amendmentPath)
+
+	tree := load(t, root)
+	after := tree.Amendments[amendmentID]
+	require.Len(t, after.Operations, len(before.Operations), "the operations list is append-only")
+	require.Equal(t, featureID, after.Operations[index].Node)
+	require.Equal(t, "not part of v1", after.Operations[index].Removed)
+	for i, op := range after.Operations {
+		if i != index {
+			require.Equal(t, before.Operations[i], op, "operation %d is untouched", i)
+		}
+	}
+	require.NotContains(t, tree.AmendmentHolds, featureID)
+	require.Equal(t, amendmentID, tree.AmendmentHolds[epicID], "the other drafts stay held")
+	require.Equal(t, amendmentID, tree.AmendmentHolds[taskID])
+	require.NoError(t, store.ValidateAmendment(after))
+
+	removes := removalEvents(t, root)
+	require.Len(t, removes, 1)
+	var files []string
+	for _, file := range removes[0].Files {
+		files = append(files, filepath.ToSlash(file.Path))
+	}
+	require.Contains(t, files, amendmentPath, "the remove event names the amendment it rewrote")
+}
+
+// TestRemoveHeldEpicMarksItsFeaturesOperationsToo: removing a held epic
+// removes the held features under it, and each one's add operation is marked
+// removed with the same reason.
+func TestRemoveHeldEpicMarksItsFeaturesOperationsToo(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+	deps := correctionDeps(root)
+	child := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/audit-log", Title: "Audit log", ChangeType: "create",
+	}).Op.Node
+	before := loadAmendment(t, root, amendmentID)
+	epicIndex, childIndex := opIndexForNode(t, before, epicID), opIndexForNode(t, before, child)
+
+	res, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounEpic, Node: "hardening", Reason: "hardening waits for v2",
+	})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{epicID, child}, res.RemovedIDs)
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "hardening"))
+	require.Contains(t, res.ChangedFiles, heldAmendmentPath(t, root, amendmentID))
+
+	tree := load(t, root)
+	after := tree.Amendments[amendmentID]
+	require.Len(t, after.Operations, len(before.Operations))
+	require.Equal(t, "hardening waits for v2", after.Operations[epicIndex].Removed)
+	require.Equal(t, "hardening waits for v2", after.Operations[childIndex].Removed)
+	require.Empty(t, after.Operations[opIndexForNode(t, after, featureID)].Removed)
+	require.Empty(t, after.Operations[opIndexForNode(t, after, taskID)].Removed)
+	require.NotContains(t, tree.AmendmentHolds, epicID)
+	require.NotContains(t, tree.AmendmentHolds, child)
+	require.Equal(t, amendmentID, tree.AmendmentHolds[featureID])
+	require.NoError(t, store.ValidateAmendment(after))
+}
+
+// TestRemoveHeldReplacementIsStillRefused: only the add that created the
+// draft is exempt. A staged cancel that names the held feature as its
+// replacement cannot be edited, so the removal is refused and nothing moves.
+func TestRemoveHeldReplacementIsStillRefused(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+	tree := load(t, root)
+	existing := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading").NodeID()
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpCancel, Target: existing, Reason: "replaced by table-backed forms", SupersededBy: featureID,
+	})
+	path := filepath.Join(root, filepath.FromSlash(heldAmendmentPath(t, root, amendmentID)))
+	before, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	_, err = mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounFeature, Node: featureID, Reason: "not part of v1",
+	})
+	var reasoned interface{ Reason() string }
+	require.ErrorAs(t, err, &reasoned)
+	require.Equal(t, "proposed_amendment_reference", reasoned.Reason())
+	after, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, string(before), string(after))
+	require.Contains(t, load(t, root).Features, featureID)
+	require.Empty(t, removalEvents(t, root))
 }

@@ -965,3 +965,29 @@ func TestLinkFeatureStillLockedWithDoneTarget(t *testing.T) {
 	var locked *mutate.DependencyChangeLockedError
 	require.ErrorAs(t, err, &locked)
 }
+
+// TestLinkOnAHeldDraft: linking dependencies and surfaces is a correction
+// legal on a held draft (decision 7), and it leaves the hold in place.
+func TestLinkOnAHeldDraft(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "app", "forms"), 0o755))
+
+	res, err := mutate.Link(load(t, root), deps, mutate.LinkInput{
+		Noun: store.NounFeature, Node: featureID, DependsOn: []string{"form-engine/certification-form-loading"},
+	})
+	require.NoError(t, err)
+	require.True(t, res.DependenciesChanged)
+	res, err = mutate.Link(load(t, root), deps, mutate.LinkInput{
+		Noun: store.NounFeature, Node: featureID, Surface: []string{"app/forms"},
+	})
+	require.NoError(t, err)
+	require.True(t, res.SurfaceChanged)
+
+	tree := load(t, root)
+	feature := tree.Features[featureID]
+	require.Len(t, feature.DependsOn, 1)
+	require.Equal(t, []string{"app/forms"}, feature.Surface.Paths)
+	require.Equal(t, amendmentID, tree.AmendmentHolds[featureID], "the linked draft is still held")
+}

@@ -154,11 +154,11 @@ func RemoveDraft(tree *store.Tree, deps Deps, in RemoveInput) (RemoveResult, err
 		}
 		writes = append(writes, shelfOrderWrite)
 	}
-	amendmentGuards, err := planRemovalAmendments(tree, removedSet)
+	amendmentWrites, err := planRemovalAmendments(tree, removedSet, changed, markHeldOpsRemoved(tree, removedSet, reason))
 	if err != nil {
 		return RemoveResult{}, err
 	}
-	writes = append(writes, amendmentGuards...)
+	writes = append(writes, amendmentWrites...)
 
 	for _, item := range removed {
 		if item.dir == "" {
@@ -559,7 +559,19 @@ func planRemovalProjectOrder(tree *store.Tree, removed map[string]struct{}, chan
 	return store.PlanWrite(path, snapshot, out), nil
 }
 
-func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}) ([]store.PlannedWrite, error) {
+// planRemovalAmendments guards every amendment file against change and
+// refuses the removal when an operation on an open amendment names a removed
+// node as its target, by, superseded_by, or blocks: a staged change to
+// existing work cannot be edited, so it must be withdrawn first. The add
+// operation that created a held draft names it only through Node, which this
+// scan does not read, so removing the draft itself is never refused here.
+//
+// edit, when not nil, may change an amendment as part of the same removal; a
+// file it changes is written against the snapshot read here and recorded in
+// changed, and every other file keeps a read guard. RemoveDraft passes
+// markHeldOpsRemoved; a caller removing held drafts for its own reason can
+// pass a different edit, or none.
+func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, changed map[string]struct{}, edit func(*store.Amendment)) ([]store.PlannedWrite, error) {
 	dir := filepath.Join(tree.Root, ".tiller", "amendments")
 	inventory, err := store.ReadDirectorySnapshot(tree.Root, dir)
 	if err != nil {
@@ -602,12 +614,43 @@ func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}) ([]sto
 				}
 			}
 		}
-		writes = append(writes, store.PlanReadGuard(path, snapshot))
+		if edit == nil {
+			writes = append(writes, store.PlanReadGuard(path, snapshot))
+			continue
+		}
+		after := disk
+		after.Operations = append([]store.AmendmentOp(nil), disk.Operations...)
+		edit(&after)
+		write, err := removalStateWrite(tree.Root, path, snapshot, disk, after, changed)
+		if err != nil {
+			return nil, err
+		}
+		writes = append(writes, write)
 	}
 	if len(seen) != len(tree.Amendments) {
 		return nil, removalStale(dir)
 	}
 	return writes, nil
+}
+
+// markHeldOpsRemoved is the correction a hand removal records on the
+// amendments that held what it removed (the design's decision 7): each add
+// operation whose held draft is removed keeps its place on the list and
+// carries the removal's reason, so the record of what was staged and the
+// operation numbering do not change. Only the amendment the hold index names
+// as the holder is marked; an operation that no longer holds anything is
+// left alone.
+func markHeldOpsRemoved(tree *store.Tree, removed map[string]struct{}, reason string) func(*store.Amendment) {
+	return func(a *store.Amendment) {
+		for i, op := range a.Operations {
+			if op.Node == "" || op.Removed != "" || tree.AmendmentHolds[op.Node] != a.ID {
+				continue
+			}
+			if _, gone := removed[op.Node]; gone {
+				a.Operations[i].Removed = reason
+			}
+		}
+	}
 }
 
 func planRemovalTree(root, sourceDir string, validatedState map[string]store.FileSnapshot) ([]store.PlannedWrite, []string, error) {

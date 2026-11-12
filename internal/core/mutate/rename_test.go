@@ -1276,3 +1276,39 @@ func TestRenameKeyExistingLargeSparseDestinationIsStableCollision(t *testing.T) 
 	require.Equal(t, int64(8<<30), info.Size())
 	require.DirExists(t, filepath.Join(root, ".tiller", "epics", "foundation", "features", "app"))
 }
+
+// TestRenameHeldDraftKeepsTheHold: renaming is a correction legal on a held
+// draft (decision 7). The hold follows the node's id, not its key, so after a
+// key and a title rename the amendment still holds the feature, and the add
+// operation's key stays the key as it was staged.
+func TestRenameHeldDraftKeepsTheHold(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+
+	res, err := mutate.RenameKey(load(t, root), deps, mutate.RenameKeyInput{
+		Noun: store.NounFeature, Node: featureID, Key: "form-engine/table-forms",
+	})
+	require.NoError(t, err)
+	require.True(t, res.Changed)
+	_, err = mutate.RenameTitle(load(t, root), deps, mutate.RenameTitleInput{
+		Noun: store.NounFeature, Node: featureID, Title: "Table forms",
+	})
+	require.NoError(t, err)
+
+	tree := load(t, root)
+	feature := tree.Features[featureID]
+	require.Equal(t, "form-engine/table-forms", *feature.Key)
+	require.Equal(t, "Table forms", feature.Title)
+	holder := gen.AmendmentHold(tree, feature)
+	require.NotNil(t, holder, "the renamed draft is still held")
+	require.Equal(t, amendmentID, holder.ID)
+	for _, op := range holder.Operations {
+		if op.Node == featureID {
+			require.Equal(t, "form-engine/table-backed-forms", op.Key, "the operation keeps the key as staged")
+			require.Equal(t, "Table-backed forms", op.Title)
+			return
+		}
+	}
+	t.Fatalf("no operation names %s", featureID)
+}
