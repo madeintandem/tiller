@@ -2,10 +2,12 @@ package cli
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -648,4 +650,409 @@ func TestApproveAmendmentReportsARemovedDraftApart(t *testing.T) {
 	require.Contains(t, out, ": 1 operation(s) applied, 1 removed.")
 	require.Contains(t, out, "operation 1 (add-epic) observability ("+removedID+"): removed")
 	require.Contains(t, out, "Operations applied: 1")
+}
+
+// The arcs below drive the held-draft model through the real CLI (docs/plans/
+// 2026-11-12-intake-decompose-design.md, "Verification"). Each is one test, named
+// for what it proves.
+
+// e2eRefusal reads a blocked or misuse answer's reason: the envelope puts it in
+// error.reason for misuse (exit 2) and in data.reason for a blocked answer
+// (exit 1).
+func e2eRefusal(t *testing.T, out string, wantCode, gotCode int) string {
+	t.Helper()
+	require.Equal(t, wantCode, gotCode, out)
+	var env struct {
+		Data  map[string]any `json:"data"`
+		Error map[string]any `json:"error"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env), out)
+	for _, m := range []map[string]any{env.Data, env.Error} {
+		if r, ok := m["reason"].(string); ok {
+			return r
+		}
+	}
+	t.Fatalf("no reason in %s", out)
+	return ""
+}
+
+// e2eStage stages one operation on an amendment and returns the answer's JSON.
+func e2eStage(t *testing.T, aid string, args ...string) string {
+	t.Helper()
+	out, stderr, code := execCLI(t, append(append([]string{"amend", aid}, args...), "--contributor", "jc", "--json")...)
+	require.Equal(t, 0, code, out+stderr)
+	return out
+}
+
+// TestEndToEndDocumentThatReplacesWork: one amendment adds a feature and cancels
+// the existing feature it replaces, naming the held feature as the replacement.
+// Approval cancels the old feature with the lineage pointing at the new one,
+// which stays a draft awaiting specify.
+func TestEndToEndDocumentThatReplacesWork(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "replace-loading", "Replace certification loading")
+	oldFeature := "form-engine/certification-form-loading"
+	newFeature := "form-engine/certification-v2"
+
+	out := e2eStage(t, aid, "--add-feature", newFeature, "--title", "Certification v2", "--change-type", "create")
+	newID := heldNodeOf(t, out)
+	e2eStage(t, aid, "--cancel", oldFeature, "--reason", "the document replaces it", "--superseded-by", newFeature)
+	oldID := featureByKey(t, loadCwdTree(t), oldFeature).ID
+
+	// The cancel is staged, not applied: the old feature is untouched.
+	require.Equal(t, "draft", loadCwdTree(t).Features[oldID].Status)
+
+	out, stderr, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	require.Equal(t, "approved", tree.Amendments[aid].Status)
+	require.Equal(t, "cancelled", tree.Features[oldID].Status)
+	require.Equal(t, "draft", tree.Features[newID].Status, "the replacement stays a draft; specify is next")
+	require.NotNil(t, tree.Features[oldID].SupersededBy)
+	require.Equal(t, newID, *tree.Features[oldID].SupersededBy, "the old feature records what replaced it")
+}
+
+// TestEndToEndPartialAcceptance: the human takes most of a batch. One held draft
+// is removed, its operation is marked removed and stays on the record, and the
+// rest approves.
+func TestEndToEndPartialAcceptance(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "two-epics", "Two epics")
+	keep := heldNodeOf(t, e2eStage(t, aid, "--add-epic", "hardening", "--title", "Hardening"))
+	drop := heldNodeOf(t, e2eStage(t, aid, "--add-epic", "observability", "--title", "Observability"))
+
+	out, stderr, code := execCLI(t, "remove", "epic", "observability", "--reason", "not this quarter", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	require.NotContains(t, tree.Epics, drop)
+	ops := tree.Amendments[aid].Operations
+	require.Len(t, ops, 2, "removal never deletes the operation entry")
+	require.NotEmpty(t, ops[1].Removed)
+
+	out, stderr, code = execCLI(t, "show", "amendment", aid)
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "removed")
+
+	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Contains(t, out, ": 1 operation(s) applied, 1 removed.")
+	tree = loadCwdTree(t)
+	require.Equal(t, "approved", tree.Amendments[aid].Status)
+	require.Equal(t, "ready", tree.Epics[keep].Status)
+	require.NotContains(t, tree.Epics, drop)
+}
+
+// TestEndToEndNothingToBuild: a document that yields no work is proposed empty.
+// approve refuses it (amendment_empty), the human's queue offers the withdraw,
+// and the withdraw closes it.
+func TestEndToEndNothingToBuild(t *testing.T) {
+	initOwnedRepo(t)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	src := writeFeedbackDoc(t, "praise.md", "A fine product, nothing to change.\n")
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	aid, _ := jsonData(t, out)["id"].(string)
+
+	out, stderr, code = execCLI(t, "propose", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "It proposes nothing; withdraw it with: tiller withdraw amendment praise")
+
+	out, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
+	require.Equal(t, "amendment_empty", e2eRefusal(t, out, 2, code))
+
+	_, human := e2eGuideSkill(t)
+	require.Contains(t, human, "withdraw amendment praise")
+	require.NotContains(t, human, "tiller approve amendment")
+
+	out, stderr, code = execCLI(t, "withdraw", "amendment", aid, "--reason", "nothing to build", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, "withdrawn", loadCwdTree(t).Amendments[aid].Status)
+	_, human = e2eGuideSkill(t)
+	require.NotContains(t, human, "withdraw amendment praise")
+}
+
+// TestEndToEndFolderGoesStale: a folder intake is one tracking unit. Change one
+// file under the landed folder and show amendment reads stale and approve
+// refuses; restoring the file lets the approval land.
+func TestEndToEndFolderGoesStale(t *testing.T) {
+	initOwnedRepo(t)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	src := filepath.Join(t.TempDir(), "specs")
+	require.NoError(t, os.MkdirAll(filepath.Join(src, "sub"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(src, "a.md"), []byte("alpha\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(src, "sub", "b.md"), []byte("beta\n"), 0o644))
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	aid, _ := jsonData(t, out)["id"].(string)
+	e2eStage(t, aid, "--add-epic", "specs-epic", "--title", "Specs epic", "--source", ".tiller/design/specs/a.md#L1")
+	proposeAmendmentCLI(t, aid)
+
+	out, _, code = execCLI(t, "show", "amendment", aid, "--json")
+	require.Equal(t, 0, code)
+	source, _ := jsonData(t, out)["source"].(map[string]any)
+	require.Equal(t, "valid", source["status"])
+
+	changed := filepath.Join(".tiller", "design", "specs", "sub", "b.md")
+	require.NoError(t, os.WriteFile(changed, []byte("beta, edited\n"), 0o644))
+	out, _, code = execCLI(t, "show", "amendment", aid, "--json")
+	require.Equal(t, 0, code)
+	source, _ = jsonData(t, out)["source"].(map[string]any)
+	require.Equal(t, "stale", source["status"], "one changed file stales the whole folder")
+
+	out, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
+	require.Equal(t, "source_changed", e2eRefusal(t, out, 2, code))
+	require.Equal(t, "proposed", loadCwdTree(t).Amendments[aid].Status)
+
+	require.NoError(t, os.WriteFile(changed, []byte("beta\n"), 0o644))
+	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, "approved", loadCwdTree(t).Amendments[aid].Status)
+}
+
+var nodeLineRe = regexp.MustCompile(`(?m)^\s+node: .*\n`)
+
+// TestEndToEndLegacyAmendment: an amendment staged before schema 15 (a proposed
+// amendment whose add operations carry no node) is migrated and then approved
+// under the old rule: approval mints the nodes, since no draft was ever held.
+func TestEndToEndLegacyAmendment(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "legacy", "Legacy reshape")
+	e2eStage(t, aid, "--add-epic", "hardening", "--title", "Hardening")
+	e2eStage(t, aid, "--add-feature", "hardening/csp-headers", "--title", "CSP headers", "--change-type", "create")
+
+	// Rewind to what schema 14 wrote: no held nodes on disk, no node on the
+	// operations, the manifest stamped 14.
+	require.NoError(t, os.RemoveAll(filepath.Join(".tiller", "epics", "hardening")))
+	matches, err := filepath.Glob(filepath.Join(".tiller", "amendments", "A-*-legacy.yml"))
+	require.NoError(t, err)
+	require.Len(t, matches, 1)
+	body, err := os.ReadFile(matches[0])
+	require.NoError(t, err)
+	stripped := nodeLineRe.ReplaceAll(body, nil)
+	require.NotEqual(t, string(body), string(stripped), "the fixture must drop the node lines")
+	require.NoError(t, os.WriteFile(matches[0], stripped, 0o644))
+	manifest := filepath.Join(".tiller", "tiller.yml")
+	mbody, err := os.ReadFile(manifest)
+	require.NoError(t, err)
+	require.Contains(t, string(mbody), "schema_version: 15")
+	require.NoError(t, os.WriteFile(manifest, []byte(strings.Replace(string(mbody), "schema_version: 15", "schema_version: 14", 1)), 0o644))
+	gitRun(t, ".", "add", "-A")
+	gitRun(t, ".", "commit", "-m", "schema 14 fixture")
+
+	out, stderr, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, 15, migratedManifestSchema(t, "."))
+	tree := loadCwdTree(t)
+	require.Equal(t, "proposed", tree.Amendments[aid].Status)
+	for _, op := range tree.Amendments[aid].Operations {
+		require.Empty(t, op.Node, "migration is stamp-only; it holds nothing")
+	}
+	for _, e := range tree.Epics {
+		require.NotEqual(t, "hardening", *e.Key)
+	}
+
+	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	tree = loadCwdTree(t)
+	require.Equal(t, "approved", tree.Amendments[aid].Status)
+	require.Equal(t, "draft", tree.Epics[epicIDByKey(t, tree, "hardening")].Status, "the old rule mints the epic as a draft for its own gate")
+	require.Contains(t, out, "minted", "the old rule creates the nodes at approval")
+	require.Equal(t, "draft", featureByKey(t, tree, "hardening/csp-headers").Status)
+}
+
+// TestEndToEndNoAmendmentRefusedByAHeldEpic: a held draft epic is an epic, so a
+// project whose only epic is staged on an open amendment is no longer founding.
+// The flag refuses with amendment_required and lands nothing.
+func TestEndToEndNoAmendmentRefusedByAHeldEpic(t *testing.T) {
+	initOwnedRepo(t)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	out, stderr, code := execCLI(t, "intake", writeFeedbackDoc(t, "idea.md", "an idea\n"), "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	aid, _ := jsonData(t, out)["id"].(string)
+	e2eStage(t, aid, "--add-epic", "ideas", "--title", "Ideas", "--source", ".tiller/design/idea.md#L1")
+
+	src := writeFeedbackFolder(t, "specs")
+	out, _, code = execCLI(t, "intake", src, "--no-amendment", "--contributor", "jc", "--json")
+	require.Equal(t, "amendment_required", e2eRefusal(t, out, 2, code))
+	require.NoDirExists(t, filepath.Join(".tiller", "design", "specs"))
+}
+
+// TestEndToEndHoldRefusals: each way the hold refuses, through the CLI, with the
+// reason the spec names, and each refusal writes nothing.
+func TestEndToEndHoldRefusals(t *testing.T) {
+	layAmendmentTree(t)
+	approveFixtureFeatureOnDisk(t)
+	_, stderr, code := execCLI(t, "add", "feature", "form-engine/draft-sibling", "--title", "Draft sibling", "--change-type", "create", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	aid := openAmendmentCLI(t, "reshape", "Reshape")
+	e2eStage(t, aid, "--add-epic", "hardening", "--title", "Hardening")
+	e2eStage(t, aid, "--add-feature", "hardening/csp-headers", "--title", "CSP headers", "--change-type", "create")
+	before := fingerprintRepo(t, ".")
+
+	// A lifecycle verb on a held node: held_by_amendment, a blocked answer.
+	for _, args := range [][]string{
+		{"approve", "epic", "hardening"},
+		{"approve", "feature", "hardening/csp-headers"},
+		{"spec", "feature", "hardening/csp-headers"},
+		{"cancel", "feature", "hardening/csp-headers", "--reason", "no"},
+		{"cancel", "epic", "hardening", "--reason", "no"},
+	} {
+		out, _, code := execCLI(t, append(args, "--contributor", "jc", "--json")...)
+		require.Equal(t, "held_by_amendment", e2eRefusal(t, out, 1, code), strings.Join(args, " "))
+	}
+
+	// A plain add under a held parent belongs to the amendment, not to a loose command.
+	out, _, code := execCLI(t, "add", "feature", "hardening/other", "--title", "Other", "--change-type", "create", "--contributor", "jc", "--json")
+	require.Equal(t, "parent_held_elsewhere", e2eRefusal(t, out, 2, code))
+
+	// A task is staged only under an approved feature, and never under a held one.
+	out, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/draft-sibling/t1", "--title", "T1", "--contributor", "jc", "--json")
+	require.Equal(t, "feature_not_approved", e2eRefusal(t, out, 2, code))
+	out, _, code = execCLI(t, "amend", aid, "--add-task", "hardening/csp-headers/t1", "--title", "T1", "--contributor", "jc", "--json")
+	require.Equal(t, "task_under_held_feature", e2eRefusal(t, out, 2, code))
+
+	require.Equal(t, before, fingerprintRepo(t, "."), "every refusal left the repo untouched")
+
+	// A held node deleted by hand is caught before the human is asked.
+	require.NoError(t, os.RemoveAll(filepath.Join(".tiller", "epics", "hardening")))
+	out, _, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
+	require.Equal(t, "held_node_missing", e2eRefusal(t, out, 2, code))
+	require.Equal(t, "proposed", loadCwdTree(t).Amendments[aid].Status)
+}
+
+// e2eDoneEpic drives one epic with one feature and one task all the way to done
+// through the real CLI and returns the epic's and the feature's ids.
+func e2eDoneEpic(t *testing.T) (dir, epicID string) {
+	t.Helper()
+	dir = initGatedGitRepo(t, "true")
+	for _, args := range [][]string{
+		{"add", "epic", "form-engine", "--title", "Form Engine"},
+		{"add", "feature", cliFeatureKey, "--title", "Certification form loading", "--change-type", "create"},
+		{"approve", "epic", "form-engine"},
+	} {
+		out, stderr, code := execCLI(t, append(args, "--contributor", "jc")...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	writeRealSpec(t)
+	addSpeccedTask(t, "transcribe-the-schema", "Transcribe the schema")
+	for _, args := range [][]string{{"spec", "feature", cliFeatureKey}, {"approve", "feature", cliFeatureKey}} {
+		out, stderr, code := execCLI(t, append(args, "--contributor", "jc")...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	tid := soleTaskID(t)
+	claimTaskAsOwner(t, tid, "jc")
+	for _, args := range [][]string{{"start", "task", tid}} {
+		out, stderr, code := execCLI(t, append(args, "--contributor", "jc")...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	branch := checkoutTaskBranchCLI(t, tid)
+	for _, args := range [][]string{{"check", "task", tid}, {"submit", "task", tid, "--pr", "41"}, {"check", "feature", cliFeatureKey}} {
+		out, stderr, code := execCLI(t, append(args, "--contributor", "jc")...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "lay tree and task work")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "work.txt"), []byte("work\n"), 0o644))
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "feature work")
+	gitRun(t, dir, "checkout", "main")
+	gitRun(t, dir, "merge", "--no-ff", "-m", "merge feature", branch)
+	out, stderr, code := execCLI(t, "sync", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	epic := soleEpic(t, tree)
+	require.Equal(t, "done", epic.Status)
+	return dir, epic.ID
+}
+
+// TestEndToEndHeldDraftUnderADoneEpicDoesNotReopenIt: new work under a done epic
+// reopens it on the next sync, but a draft an amendment holds is not work yet.
+// sync leaves the epic done while the draft is held, and the approved draft then
+// reopens it the ordinary way.
+func TestEndToEndHeldDraftUnderADoneEpicDoesNotReopenIt(t *testing.T) {
+	dir, epicID := e2eDoneEpic(t)
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "state after sync")
+	aid := openAmendmentCLI(t, "more-forms", "More forms")
+	heldID := heldNodeOf(t, e2eStage(t, aid, "--add-feature", "form-engine/table-forms", "--title", "Table forms", "--change-type", "create"))
+	require.Equal(t, "draft", loadCwdTree(t).Features[heldID].Status)
+
+	out, stderr, code := execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	require.Equal(t, "done", tree.Epics[epicID].Status, "a held draft keeps a done epic done")
+	require.Equal(t, "draft", tree.Features[heldID].Status)
+
+	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	out, stderr, code = execCLI(t, "sync", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	require.Equal(t, "ready", loadCwdTree(t).Epics[epicID].Status, "once approved, the new feature reopens the epic")
+}
+
+// TestEndToEndWithdrawRemovesDraftsAndDetachesTheirReferences: withdrawing an
+// amendment removes the drafts it held, detaches a question that blocked one and
+// a shelf item attached to one, and frees the key.
+func TestEndToEndWithdrawRemovesDraftsAndDetachesTheirReferences(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "reshape", "Reshape")
+	epicID, featureID := stageHeldEpicCLI(t, aid)
+
+	out, stderr, code := execCLI(t, "add", "question", "Which audit sink?", "--title", "Audit sink", "--blocks", "hardening/audit-log", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	out, stderr, code = execCLI(t, "add", "bug", "audit-gap", "--title", "Audit gap", "--attach", "hardening/audit-log", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	q := questionByStatement(t, tree, "Which audit sink?")
+	require.Equal(t, []string{featureID}, q.Blocks)
+	var bugID string
+	for id, b := range tree.Bugs {
+		require.Equal(t, featureID, b.AttachedTo)
+		bugID = id
+	}
+	require.NotEmpty(t, bugID)
+
+	out, stderr, code = execCLI(t, "withdraw", "amendment", aid, "--reason", "not now", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	removed, _ := jsonData(t, out)["removed_ids"].([]any)
+	require.ElementsMatch(t, []any{epicID, featureID}, removed)
+
+	tree = loadCwdTree(t)
+	require.NotContains(t, tree.Epics, epicID)
+	require.NotContains(t, tree.Features, featureID)
+	require.Equal(t, "withdrawn", tree.Amendments[aid].Status)
+	require.Empty(t, questionByStatement(t, tree, "Which audit sink?").Blocks, "the question no longer blocks a node that is gone")
+	require.Empty(t, tree.Bugs[bugID].AttachedTo, "the bug is detached, and kept")
+	require.NoDirExists(t, filepath.Join(".tiller", "epics", "hardening"))
+
+	// The key is free again.
+	out, stderr, code = execCLI(t, "add", "amendment", "reshape", "--title", "Reshape again", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+}
+
+// TestEndToEndQueueIsSilentAboutADraftAmendmentUntilPropose: the human's queue
+// carries an approval only once the agent hands the amendment over.
+func TestEndToEndQueueIsSilentAboutADraftAmendmentUntilPropose(t *testing.T) {
+	layAmendmentTree(t)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	_, stderr, code := execCLI(t, "add", "amendment", "reshape", "--title", "Reshape", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	aid := amendmentIDByKey(t, "reshape")
+	e2eStage(t, aid, "--add-epic", "hardening", "--title", "Hardening")
+
+	for _, cmd := range [][]string{{"guide"}, {"queue"}, {"next"}, {"readout", "amend"}} {
+		out, stderr, code := execCLI(t, cmd...)
+		require.Equal(t, 0, code, stderr)
+		require.NotContains(t, out, "approve amendment", strings.Join(cmd, " "))
+	}
+	queueJSON, _, code := execCLI(t, "queue", "--json")
+	require.Equal(t, 0, code)
+	require.NotContains(t, queueJSON, "approve_amendment")
+
+	proposeAmendmentCLI(t, aid)
+	_, human := e2eGuideSkill(t)
+	require.Contains(t, human, "approve amendment reshape")
+	queueJSON, _, code = execCLI(t, "queue", "--json")
+	require.Equal(t, 0, code)
+	require.Contains(t, queueJSON, "approve_amendment")
 }

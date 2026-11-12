@@ -71,10 +71,10 @@ describe("AmendmentsPane", () => {
       "Date",
       "Status",
     ]);
-    expect(container.querySelector("caption")?.textContent).toBe("Proposed first, then newest");
+    expect(container.querySelector("caption")?.textContent).toBe("Open first, then newest");
   });
 
-  it("sorts proposed first, then newest, and keeps served order among undated rows", () => {
+  it("sorts open (draft and proposed) first, then newest, and keeps served order among undated rows", () => {
     serve([
       row("A-old", "approved", "2026-01-01T10:00:00Z"),
       row("A-new", "approved", "2026-03-01T10:00:00Z"),
@@ -82,6 +82,7 @@ describe("AmendmentsPane", () => {
       row("A-p-new", "proposed", "2026-04-01T10:00:00Z"),
       row("A-p-none", "proposed"),
       row("A-none", "withdrawn"),
+      row("A-draft", "draft", "2026-05-01T10:00:00Z"),
     ]);
     renderPane();
     const titles = screen
@@ -89,6 +90,7 @@ describe("AmendmentsPane", () => {
       .slice(1)
       .map((r) => within(r).getAllByRole("cell")[0].textContent);
     expect(titles).toEqual([
+      "Title A-draft",
       "Title A-p-new",
       "Title A-p-old",
       "Title A-p-none",

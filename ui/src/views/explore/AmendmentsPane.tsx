@@ -22,10 +22,10 @@ import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus }
 
 const AMENDMENT_STATUSES = ["draft", "proposed", "approved", "withdrawn"] as const;
 
-// The grid's order: proposed amendments lead, each group newest first by the
-// date it was proposed. An undated row follows the dated ones in its group, and
+// The grid's order: open amendments (draft and proposed) lead, each group
+// newest first by the date it was proposed. An undated row follows the dated ones in its group, and
 // equal rows keep the order the server served (Array.sort is stable).
-function proposedFirstNewest(rows: ListRow[]): ListRow[] {
+function openFirstNewest(rows: ListRow[]): ListRow[] {
   const rank = (row: ListRow) => (row.status === "draft" || row.status === "proposed" ? 0 : 1);
   const at = (row: ListRow) => (has(row.proposed_at) ? Date.parse(row.proposed_at) : Number.NaN);
   return [...rows].sort((a, b) => {
@@ -89,7 +89,7 @@ export default function AmendmentsPane() {
                 <EmptyNote>No {tab.label.toLowerCase()} amendments.</EmptyNote>
               ) : (
                 <table className="amend-grid">
-                  <caption>Proposed first, then newest</caption>
+                  <caption>Open first, then newest</caption>
                   <thead>
                     <tr>
                       <th scope="col">Title</th>
@@ -99,7 +99,7 @@ export default function AmendmentsPane() {
                     </tr>
                   </thead>
                   <tbody>
-                    {proposedFirstNewest(shown).map((row) => (
+                    {openFirstNewest(shown).map((row) => (
                       <tr key={row.id}>
                         <td className="amend-title">
                           <Link to={`/node/amendment/${row.id}`} className="explore-result-title">

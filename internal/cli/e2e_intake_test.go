@@ -546,3 +546,173 @@ func amendmentEventsByType(t *testing.T, tree *store.Tree, amendmentID, typ stri
 	}
 	return found
 }
+
+// The arcs below are the one-door verification list (docs/plans/
+// 2026-11-12-intake-decompose-design.md, "Verification"), driven through the
+// real CLI the way the decompose skill teaches the choreography. They follow
+// the file's rule: every fact an assertion reads is written by a command.
+
+// e2eNewProject scaffolds a project through `tiller init` in a fresh git repo,
+// registers jc, and returns the project root. design, when set, is a folder
+// handed to init --design.
+func e2eNewProject(t *testing.T, kind, design string) string {
+	t.Helper()
+	dir := t.TempDir()
+	t.Chdir(dir)
+	testgit.Init(t, dir)
+	args := []string{"init", "--name", "Scratch", "--key", "scratch", "--kind", kind}
+	if design != "" {
+		args = append(args, "--design", design)
+	}
+	out, stderr, code := execCLI(t, args...)
+	require.Equal(t, 0, code, out+stderr)
+	out, stderr, code = execCLI(t, "add", "contributor", "jc", "--name", "JC Grubbs")
+	require.Equal(t, 0, code, out+stderr)
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	gitRun(t, dir, "add", "-A")
+	gitRun(t, dir, "commit", "-m", "scaffold")
+	return dir
+}
+
+// e2eGuideSkill is the skill bare `tiller guide` suggests.
+func e2eGuideSkill(t *testing.T) (skill, human string) {
+	t.Helper()
+	out, stderr, code := execCLI(t, "guide", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	skill, _ = jsonData(t, out)["skill"].(string)
+	human, stderr, code = execCLI(t, "guide")
+	require.Equal(t, 0, code, stderr)
+	return skill, human
+}
+
+// e2eFoundingDraftTree is the decompose a founding design earns: an epic and a
+// feature in draft, then the epic gate.
+func e2eFoundingDraftTree(t *testing.T) {
+	t.Helper()
+	for _, args := range [][]string{
+		{"add", "epic", "foundation", "--title", "Foundation"},
+		{"add", "feature", "foundation/app-scaffold", "--title", "App scaffold", "--change-type", "create"},
+	} {
+		out, stderr, code := execCLI(t, append(args, "--contributor", "jc")...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	out, stderr, code := execCLI(t, "approve", "epic", "foundation", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	tree := loadCwdTree(t)
+	require.Equal(t, "ready", tree.Epics[epicIDByKey(t, tree, "foundation")].Status)
+	require.Equal(t, "draft", featureByKey(t, tree, "foundation/app-scaffold").Status, "the epic gate approves the tree, not the feature")
+	require.Empty(t, tree.Amendments, "a founding design opens no amendment")
+}
+
+// TestEndToEndFoundingDesignThroughInit: init --design lands the design, guide
+// names decompose, the agent lays a draft tree, the human takes the epic gate.
+func TestEndToEndFoundingDesignThroughInit(t *testing.T) {
+	src := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(src, "vision.md"), []byte("# Vision\n\nBuild the thing.\n"), 0o644))
+	e2eNewProject(t, "greenfield", src)
+	require.FileExists(t, filepath.Join(".tiller", "design", "vision.md"))
+
+	skill, human := e2eGuideSkill(t)
+	require.Equal(t, "decompose", skill)
+	require.Contains(t, human, "decompose")
+
+	e2eFoundingDraftTree(t)
+}
+
+// TestEndToEndFoundingDesignThroughIntakeNoAmendment: the same founding design
+// arrives through intake --no-amendment; no amendment is opened.
+func TestEndToEndFoundingDesignThroughIntakeNoAmendment(t *testing.T) {
+	e2eNewProject(t, "greenfield", "")
+	skill, _ := e2eGuideSkill(t)
+	require.NotEqual(t, "decompose", skill, "nothing to decompose before a design lands")
+
+	src := writeFeedbackFolder(t, "specs")
+	out, stderr, code := execCLI(t, "intake", src, "--no-amendment", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.FileExists(t, filepath.Join(".tiller", "design", "specs", "a.md"))
+	require.Empty(t, loadCwdTree(t).Amendments)
+
+	skill, human := e2eGuideSkill(t)
+	require.Equal(t, "decompose", skill)
+	require.Contains(t, human, "decompose")
+
+	e2eFoundingDraftTree(t)
+}
+
+// e2eConfirmedBrownfield scaffolds a brownfield project whose baseline is
+// confirmed and which has no epics: the zero-day state a one-page idea meets.
+func e2eConfirmedBrownfield(t *testing.T) string {
+	t.Helper()
+	root := layDesignCLI(t)
+	for _, doc := range []string{"as-is/one.md", "as-is/two.md"} {
+		designCLIData(t, "link", "design", doc, "--describes", "app")
+	}
+	designCLIData(t, "approve", "design", "as-is/one.md", "as-is/two.md")
+	t.Setenv("TILLER_CONTRIBUTOR", "jc")
+	return root
+}
+
+// TestEndToEndOnePagerOnBrownfield: a one-page idea on a brownfield project with
+// a confirmed baseline and no epics. Intake opens a draft amendment and guide
+// names decompose; the agent stages one epic and one feature (held drafts),
+// writes the epic prose, records the surface, and proposes; guide then names the
+// human's approve amendment; approval leaves the epic ready and the feature a
+// draft, and guide names specify.
+func TestEndToEndOnePagerOnBrownfield(t *testing.T) {
+	e2eConfirmedBrownfield(t)
+	skill, _ := e2eGuideSkill(t)
+	require.NotEqual(t, "decompose", skill, "a confirmed baseline with no to-be doc has nothing to decompose")
+
+	src := writeFeedbackDoc(t, "export-csv.md", "# Export to CSV\n\nUsers want to export a report to CSV.\n\n## Format\n\nOne row per record, header first.\n")
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	aid, _ := jsonData(t, out)["id"].(string)
+	require.Equal(t, "draft", jsonData(t, out)["status"])
+
+	skill, human := e2eGuideSkill(t)
+	require.Equal(t, "decompose", skill)
+	require.Contains(t, human, "tiller propose amendment export-csv")
+	require.NotContains(t, human, "approve amendment", "the human's row waits for propose")
+
+	cite := ".tiller/design/export-csv.md"
+	out, stderr, code = execCLI(t, "amend", aid, "--add-epic", "export", "--title", "Export", "--source", cite+"#L1-L3", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	epicID := heldNodeOf(t, out)
+	out, stderr, code = execCLI(t, "amend", aid, "--add-feature", "export/csv-export", "--title", "CSV export",
+		"--change-type", "create", "--source", cite+"#L5-L7", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+	featureID := heldNodeOf(t, out)
+
+	tree := loadCwdTree(t)
+	require.Equal(t, "draft", tree.Epics[epicID].Status)
+	require.Equal(t, "draft", tree.Features[featureID].Status)
+
+	require.NoError(t, os.WriteFile(filepath.Join(".tiller", "epics", "export", "epic.md"),
+		[]byte("# Export\n\n## Intent\n\nLet users take report data out as CSV.\n\n## Scope\n\nCSV only.\n\n## Definition of done\n\nCSV export is done.\n"), 0o644))
+	out, stderr, code = execCLI(t, "link", "feature", "export/csv-export", "--surface", "app", "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+
+	// The held draft is inert until the amendment is approved.
+	out, _, code = execCLI(t, "approve", "epic", "export", "--contributor", "jc", "--json")
+	require.Equal(t, 1, code, out)
+	require.Contains(t, out, `"reason": "held_by_amendment"`)
+
+	out, stderr, code = execCLI(t, "propose", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	skill, human = e2eGuideSkill(t)
+	require.Equal(t, "orient", skill, "no agent move is legal; the move is the human's")
+	require.Contains(t, human, "approve amendment export-csv")
+
+	out, stderr, code = execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	require.Contains(t, out, "stays draft; specify is next")
+	tree = loadCwdTree(t)
+	require.Equal(t, "approved", tree.Amendments[aid].Status)
+	require.Equal(t, "ready", tree.Epics[epicID].Status)
+	require.Equal(t, "draft", tree.Features[featureID].Status)
+	require.Equal(t, []string{"app"}, tree.Features[featureID].Surface.Paths)
+
+	skill, human = e2eGuideSkill(t)
+	require.Equal(t, "specify", skill)
+	require.Contains(t, human, "export/csv-export")
+}

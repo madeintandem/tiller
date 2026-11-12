@@ -19,6 +19,8 @@ import (
 // unresolved historical coordinate. Only an ID may be looked up in today's tree.
 // Pending marks an unresolved key that this proposed amendment stages itself
 // and has not yet applied: its node is expected not to exist before approval.
+// A removed held draft's historical id is marked the same way: its node is
+// gone by design, and the removal reason is the explanation.
 type AmendmentEndpoint struct {
 	ID         string
 	Raw        string
@@ -283,7 +285,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 				// A removed held draft, or one a withdrawal removed, keeps
 				// its historical id; the reason rides on the operation or
 				// the withdrawal, so this is no identity defect.
-				identity.Created = &AmendmentEndpoint{ID: op.Node, Raw: op.Node, Unresolved: true}
+				identity.Created = &AmendmentEndpoint{ID: op.Node, Raw: op.Node, Unresolved: true, Pending: true}
 			} else if nodeID := created[join]; nodeID != "" || op.Node != "" {
 				if op.Node != "" {
 					nodeID = op.Node

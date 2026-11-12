@@ -339,3 +339,19 @@ func TestAmendmentIdentitiesKeepARemovedHeldDraftsHistoricalID(t *testing.T) {
 	require.Empty(t, op.Notes)
 	require.Empty(t, facts.Warning)
 }
+
+// A removed held draft, or one a withdrawal removed, is gone by design: the
+// reason rides on the operation, so the relationships read raises no
+// unresolved-endpoint diagnostic for it.
+func TestAmendmentIndexRaisesNoDiagnosticForARemovedHeldDraft(t *testing.T) {
+	tree, evs := heldAddTree(store.AmendmentStatusProposed, "folded into another task")
+	index := relationships.BuildStructural(tree)
+	relationships.AddAmendments(tree, index, evs, "")
+	require.Empty(t, unresolvedEndpointDiagnostics(index))
+
+	tree, evs = heldAddTree(store.AmendmentStatusWithdrawn, "")
+	tree.Tasks = map[string]*store.Task{}
+	index = relationships.BuildStructural(tree)
+	relationships.AddAmendments(tree, index, evs, "")
+	require.Empty(t, unresolvedEndpointDiagnostics(index))
+}
