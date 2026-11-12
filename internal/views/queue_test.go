@@ -1132,3 +1132,44 @@ func TestQueueOffersApproveForAProposedAmendmentWithOperations(t *testing.T) {
 	require.Equal(t, "approve_amendment", got[0].Kind)
 	require.Equal(t, "tiller approve amendment staged", got[0].Command)
 }
+
+// holdByAmendment marks nodes as held by one open amendment, the index
+// store.Load derives from the amendment's add operations.
+func holdByAmendment(tree *store.Tree, amendmentID string, nodeIDs ...string) {
+	key := "iphone-only"
+	if tree.Amendments == nil {
+		tree.Amendments = map[string]*store.Amendment{}
+	}
+	tree.Amendments[amendmentID] = &store.Amendment{ID: amendmentID, Key: &key, Title: "iPhone only", Status: store.AmendmentStatusDraft}
+	if tree.AmendmentHolds == nil {
+		tree.AmendmentHolds = map[string]string{}
+	}
+	for _, id := range nodeIDs {
+		tree.AmendmentHolds[id] = amendmentID
+	}
+}
+
+// TestQueueSkipsHeldEpicsAndHeldTasks: a held node's approval belongs to its
+// amendment's queue entry, never its own. A held draft epic offers no
+// approve_epic row; a held proposed task does not keep an approve_tasks row
+// alive, while an unheld proposed task on the same feature still does.
+func TestQueueSkipsHeldEpicsAndHeldTasks(t *testing.T) {
+	tree := queueOrderEpicsTree()
+	featKey, otherKey := "foundation/loader", "foundation/other"
+	loader := &store.Feature{ID: "F-loader", Key: &featKey, Title: "Loader", Status: "active", EpicKey: "foundation"}
+	other := &store.Feature{ID: "F-other0", Key: &otherKey, Title: "Other", Status: "active", EpicKey: "foundation"}
+	heldKey, freeKey, onlyKey := "foundation/loader/held", "foundation/loader/free", "foundation/other/held"
+	held := &store.Task{ID: "T-held00", Key: &heldKey, Status: "proposed", FeatureID: loader.ID}
+	free := &store.Task{ID: "T-free00", Key: &freeKey, Status: "proposed", FeatureID: loader.ID}
+	only := &store.Task{ID: "T-only00", Key: &onlyKey, Status: "proposed", FeatureID: other.ID}
+	tree.Features = map[string]*store.Feature{loader.ID: loader, other.ID: other}
+	tree.Tasks = map[string]*store.Task{held.ID: held, free.ID: free, only.ID: only}
+	tree.FeatureTasks = map[string][]*store.Task{loader.ID: {held, free}, other.ID: {only}}
+	holdByAmendment(tree, "A-aaaaaa", "E-zeta", held.ID, only.ID)
+
+	q := views.QueueOf(tree)
+	require.Equal(t, []string{"foundation", "alpha"}, queueEntryKeys(q.Entries, "approve_epic"),
+		"the held epic is its amendment's to approve")
+	require.Equal(t, []string{"foundation/loader"}, queueEntryKeys(q.Entries, "approve_tasks"),
+		"a feature whose only proposed task is held offers no row; the unheld task keeps its feature's row")
+}

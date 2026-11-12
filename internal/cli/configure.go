@@ -202,6 +202,17 @@ func configureNextGate(tree *store.Tree, res mutate.ConfigureResult) string {
 	if addr == "" {
 		addr = res.ID
 	}
+	// A draft an open amendment holds refuses its own gates; the amendment's
+	// approval is what moves it, so that is the gate to name.
+	if n := gen.NodeByID(tree, res.ID); n != nil {
+		if holder := gen.AmendmentHold(tree, n); holder != nil {
+			amendmentAddr := holder.ID
+			if holder.Key != nil {
+				amendmentAddr = *holder.Key
+			}
+			return "tiller approve amendment " + amendmentAddr
+		}
+	}
 	switch res.Noun {
 	case store.NounEpic:
 		e := tree.Epics[res.ID]

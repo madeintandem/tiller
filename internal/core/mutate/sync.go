@@ -1814,8 +1814,14 @@ func epicRollupReady(tree *store.Tree, epicKey string) bool {
 // rather than as the negation of epicRollupReady on purpose, so an epic whose
 // features all vanished from the layout is not read as reopened by their
 // absence.
+//
+// A feature an open amendment holds is skipped: it is a proposal, not landed
+// work, and an unapproved proposal must not reopen finished work (decision 7).
 func workLandedUnderEpic(tree *store.Tree, epicKey string) bool {
 	for _, f := range tree.Features {
+		if gen.AmendmentHold(tree, f) != nil {
+			continue
+		}
 		if f.EpicKey != epicKey || f.Status == "cancelled" {
 			continue
 		}
@@ -1829,9 +1835,13 @@ func workLandedUnderEpic(tree *store.Tree, epicKey string) bool {
 // workLandedUnderFeature is the same question one level down: a non-cancelled,
 // non-done task under a done feature. It deliberately does not consult the
 // feature-grain gates featureRollupReady checks, because an unchecked gate is not
-// new work: only a task still to do is.
+// new work: only a task still to do is. A held task is skipped for the same
+// reason workLandedUnderEpic skips a held feature.
 func workLandedUnderFeature(tree *store.Tree, f *store.Feature) bool {
 	for _, tk := range tree.Tasks {
+		if gen.AmendmentHold(tree, tk) != nil {
+			continue
+		}
 		if tk.FeatureID != f.ID || tk.Status == "cancelled" {
 			continue
 		}

@@ -495,3 +495,18 @@ func TestNextOffersWithdrawForAnEmptyProposedAmendment(t *testing.T) {
 	require.Equal(t, "human", got[0].Actor)
 	require.Equal(t, "nothing was proposed from its document", got[0].Reason)
 }
+
+// TestFrontierSkipsAHeldFeature: a held draft feature under an approved epic
+// is a proposal waiting on its amendment, so neither the frontier nor the
+// specify moves built on it offer it.
+func TestFrontierSkipsAHeldFeature(t *testing.T) {
+	tree := treeWithDraftEpics(t, 1)
+	tree.Epics["E-aaaaa0"].Status = "ready"
+	free := draftFeatureUnder(t, tree, "F-aaaaa0", "epic-0/free", "epic-0")
+	held := draftFeatureUnder(t, tree, "F-bbbbb0", "epic-0/held", "epic-0")
+	holdByAmendment(tree, "A-aaaaaa", held.ID)
+
+	require.Equal(t, []string{free.ID}, frontierIDs(tree))
+	specs := candidatesOfKind(enumerate(tree, "", workflow.Input{}), "specify")
+	require.Equal(t, []string{free.ID}, candidateNodeIDs(specs))
+}

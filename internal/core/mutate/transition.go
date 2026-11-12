@@ -213,7 +213,16 @@ func Transition(tree *store.Tree, deps Deps, node store.Node, in TransitionInput
 // applyTransition dispatches a transition on the concrete node type. A node type the
 // lifecycle verbs do not yet support is a clear misuse rather than a silent
 // miss.
+//
+// The amendment hold is checked first, ahead of the noun switch, so every
+// lifecycle verb at every grain, including one added later, refuses a draft
+// an open amendment holds (decision 7). Only an amendment's own approval
+// moves its drafts, and that path promotes them inside its own journaled
+// batch (amendment_approve.go), never through this dispatch.
 func applyTransition(tree *store.Tree, deps Deps, owner store.Contributor, node store.Node, in TransitionInput) (TransitionResult, error) {
+	if err := refuseAmendmentHold(tree, node, in.Verb); err != nil {
+		return TransitionResult{}, err
+	}
 	switch n := node.(type) {
 	case *store.Epic:
 		return transitionEpic(tree, deps, owner, n, in)
@@ -229,6 +238,37 @@ func applyTransition(tree *store.Tree, deps Deps, owner store.Contributor, node 
 			reason: "unsupported_noun",
 			msg:    fmt.Sprintf("lifecycle verbs do not support a %s yet", node.Noun()),
 		}
+	}
+}
+
+// refuseAmendmentHold answers HeldByAmendmentError when an open amendment
+// holds node: the one predicate (gen.AmendmentHold) every consumer of the
+// hold reads.
+func refuseAmendmentHold(tree *store.Tree, node store.Node, verb string) error {
+	holder := gen.AmendmentHold(tree, node)
+	if holder == nil {
+		return nil
+	}
+	// Only an add operation creates a held node, so it is an epic, a
+	// feature, or a task.
+	var key *string
+	var state string
+	switch n := node.(type) {
+	case *store.Epic:
+		key, state = n.Key, n.Status
+	case *store.Feature:
+		key, state = n.Key, n.Status
+	case *store.Task:
+		key, state = n.Key, n.Status
+	}
+	return &HeldByAmendmentError{
+		Noun:         node.Noun(),
+		NodeID:       node.NodeID(),
+		NodeKey:      deref(key),
+		CurrentState: state,
+		AmendmentID:  holder.ID,
+		AmendmentKey: deref(holder.Key),
+		Verb:         verb,
 	}
 }
 
@@ -1931,9 +1971,16 @@ func TaskOwnBasisDrift(tree *store.Tree, tk *store.Task, rev vcs.Revisions) erro
 // were shown. The returned values are the loaded tree's own tasks, so a caller
 // can hand them straight to Transition. A feature whose tasks/ subtree has not
 // been laid down yet simply has none.
+//
+// A task an open amendment holds is left out: its approval is its
+// amendment's (decision 7), so neither the plan gate's flip nor the
+// feature-grain batch may move it.
 func ProposedTasks(tree *store.Tree, f *store.Feature) []*store.Task {
 	var out []*store.Task
 	for _, tk := range gen.OrderTasks(tree, tree.FeatureTasks[f.ID], f.Order) {
+		if gen.AmendmentHold(tree, tk) != nil {
+			continue
+		}
 		if tk.Status == statusProposed {
 			out = append(out, tk)
 		}
@@ -2051,6 +2098,27 @@ type ParentEpicRetiredError struct {
 func (e *ParentEpicRetiredError) Error() string {
 	return fmt.Sprintf("mutate: %s %s runs under epic %s (%s); the epic is terminal",
 		e.Noun, e.NodeID, e.EpicID, e.EpicState)
+}
+
+// HeldByAmendmentError refuses every lifecycle verb on a draft an open
+// amendment holds (the design's decision 7): the node was created when the
+// amendment staged its add, and it moves only when that amendment is
+// approved, or leaves when it is removed or the amendment withdrawn. It is a
+// different fact from ParentEpicRetiredError's retired ancestor and from a
+// question hold; the refusal names the amendment and its approval.
+type HeldByAmendmentError struct {
+	Noun         string
+	NodeID       string
+	NodeKey      string
+	CurrentState string // the node's own state, unchanged by the refusal
+	AmendmentID  string
+	AmendmentKey string
+	Verb         string
+}
+
+func (e *HeldByAmendmentError) Error() string {
+	return fmt.Sprintf("mutate: %s %s is held by amendment %s; %s waits on its approval",
+		e.Noun, e.NodeID, e.AmendmentID, e.Verb)
 }
 
 // SpecIncompleteError reports that spec feature was refused because the spec or

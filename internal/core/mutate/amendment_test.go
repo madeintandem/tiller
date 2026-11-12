@@ -1615,3 +1615,59 @@ func TestStageSourceCitationReachesTheNode(t *testing.T) {
 	require.Equal(t, "design/hardening.md#L4-L6", tree.Features[feat.Op.Node].Source)
 	require.Equal(t, "design/hardening.md#L4-L6", tree.Amendments[amendmentID].Operations[1].Source)
 }
+
+// TestAddFeatureUnderAHeldEpicIsRefused: a plain `tiller add feature` under a
+// held epic would lay an unheld child beneath a proposal, which the
+// amendment's approval and withdrawal would then mishandle. It is refused,
+// naming the amendment, and nothing is written; the holding amendment's own
+// staging path stays open.
+func TestAddFeatureUnderAHeldEpicIsRefused(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	deps := heldDeps(root)
+	epic := stageHeld(t, root, deps, amendmentID, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+
+	_, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
+		Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"})
+	var r interface{ Reason() string }
+	require.ErrorAs(t, err, &r)
+	require.Equal(t, "parent_held_elsewhere", r.Reason())
+	require.ErrorContains(t, err, "hardening ("+epic.Op.Node+") is held by amendment iphone-only ("+amendmentID+"); stage this on that amendment")
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "hardening", "features", "csp-headers"))
+	require.Len(t, load(t, root).Features, 1)
+
+	res := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"})
+	require.NotEmpty(t, res.Op.Node, "the holding amendment still stages beneath its own epic")
+}
+
+// TestAddTaskUnderAHeldFeatureIsRefused: the same rule one grain down, for a
+// task under a held feature and for a task under an unheld feature whose epic
+// is held.
+func TestAddTaskUnderAHeldFeatureIsRefused(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+	deps := heldDeps(root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/table-backed-forms", Title: "Table-backed forms", ChangeType: "create"})
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	// An unheld feature under the held epic, laid by hand the way a tree from
+	// before this guard could carry one.
+	featureDir := filepath.Join(root, ".tiller", "epics", "hardening", "features", "csp-headers")
+	require.NoError(t, os.MkdirAll(featureDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(featureDir, "feature.yml"),
+		[]byte("id: F-zzzzzz\nkey: hardening/csp-headers\ntitle: CSP headers\nstatus: draft\nchange_type: create\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(featureDir, "feature.md"), []byte("# CSP headers\n"), 0o644))
+	tasksBefore := len(load(t, root).Tasks)
+
+	for _, key := range []string{"form-engine/table-backed-forms/schema", "hardening/csp-headers/schema"} {
+		_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{Key: key, Title: "Schema"})
+		var r interface{ Reason() string }
+		require.ErrorAs(t, err, &r, key)
+		require.Equal(t, "parent_held_elsewhere", r.Reason(), key)
+		require.ErrorContains(t, err, "is held by amendment iphone-only ("+amendmentID+"); stage this on that amendment", key)
+	}
+	require.Len(t, load(t, root).Tasks, tasksBefore, "a refused add writes nothing")
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "form-engine", "features", "table-backed-forms", "tasks"))
+}

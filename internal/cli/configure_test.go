@@ -157,6 +157,22 @@ func TestConfigureEpicRecordsTheGrainAndOffersTheNextGate(t *testing.T) {
 	require.Equal(t, "epic", tree.Epics[soleEpicID(t)].ReviewGrain)
 }
 
+// TestConfigureHeldEpicNamesTheAmendmentApproval: a held draft epic's own
+// approve refuses while its amendment is open, so the **Next** block names
+// the amendment's approval, the command that moves the epic.
+func TestConfigureHeldEpicNamesTheAmendmentApproval(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
+	_, stderr, code := execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+
+	out, _, code := execCLI(t, "configure", "epic", "hardening", "--review-grain", "epic", "--contributor", "jc")
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, "**Next**")
+	require.Contains(t, out, "tiller approve amendment iphone-only")
+	require.NotContains(t, out, "tiller approve epic")
+}
+
 // TestConfigureFeatureOmitsNextBlockOnceApproved pins the other half of the
 // **Next** rule: once the feature's own approve gate is behind it, there is
 // no gate left to name, so no **Next** block prints.

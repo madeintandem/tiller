@@ -2568,3 +2568,40 @@ func TestApproveSeverityAppliesToEveryNamedBug(t *testing.T) {
 	require.Equal(t, "medium", bugSeverity(t, "alpha"))
 	require.Equal(t, "medium", bugSeverity(t, "beta"))
 }
+
+// TestHeldDraftRefusesApproveNamingItsAmendment: a lifecycle verb on a draft
+// an amendment holds is a blocked answer (exit 1) naming the amendment and
+// the command that moves the draft, in the shape the question hold uses.
+func TestHeldDraftRefusesApproveNamingItsAmendment(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
+	_, stderr, code := execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	var epicID string
+	for id, e := range loadCwdTree(t).Epics {
+		if e.Key != nil && *e.Key == "hardening" {
+			epicID = id
+		}
+	}
+	require.NotEmpty(t, epicID)
+
+	out, stderr, code := execCLI(t, "approve", "epic", "hardening", "--contributor", "jc", "--json")
+	require.Equal(t, 1, code, "out=%s stderr=%s", out, stderr)
+	var env struct {
+		Data map[string]any `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env), out)
+	require.Equal(t, "held_by_amendment", env.Data["reason"])
+	require.Equal(t, aid, env.Data["amendment"])
+	require.Equal(t, "iphone-only", env.Data["amendment_key"])
+	require.Equal(t, "draft", env.Data["current_state"])
+	require.Equal(t, "tiller approve amendment iphone-only", env.Data["missing_seam"])
+	require.Equal(t, epicID, env.Data["id"])
+	require.Equal(t, "draft", loadCwdTree(t).Epics[epicID].Status, "a refused approve must not move the epic")
+
+	_, errOut, code := execCLI(t, "approve", "epic", "hardening", "--contributor", "jc")
+	require.Equal(t, 1, code)
+	require.Contains(t, errOut, fmt.Sprintf(
+		`Blocked: epic hardening (%s) is held by amendment iphone-only (%s); it moves when the amendment is approved (tiller approve amendment iphone-only), or remove it from the proposal (tiller remove epic hardening --reason "<why>").`,
+		epicID, aid))
+}

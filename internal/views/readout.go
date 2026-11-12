@@ -1440,6 +1440,11 @@ func frontierFeatures(t *store.Tree, order *gen.Order) []*store.Feature {
 	pref := newFrontierPreference(t)
 	var accepted []rankedFeature
 	for pos, feat := range flowFeatures(t, order) {
+		// A draft an open amendment holds is a proposal waiting on that
+		// amendment's approval, and `tiller spec feature` refuses it.
+		if gen.AmendmentHold(t, feat) != nil {
+			continue
+		}
 		if feat.Status != "draft" {
 			continue
 		}

@@ -3231,3 +3231,61 @@ func TestSyncTouchedDesignExcludesTaskOnlySkippedAndReopened(t *testing.T) {
 		})
 	}
 }
+
+// openHeldAmendment opens an amendment on a sync fixture and returns deps
+// whose minter cannot collide with the fixture's own ids.
+func openHeldAmendment(t *testing.T, root string) (mutate.Deps, string) {
+	t.Helper()
+	deps := heldDeps(root)
+	a, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{Key: "late-work", Title: "Late work"})
+	require.NoError(t, err)
+	return deps, a.ID
+}
+
+// TestSyncDoesNotReopenADoneEpicForAHeldFeature: a held draft feature under
+// a done epic is a proposal, not new work, so sync leaves the epic done with
+// its completion record intact (Review Focus 1).
+func TestSyncDoesNotReopenADoneEpicForAHeldFeature(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	done := load(t, root).Epics["E-aaaaaa"]
+	require.Equal(t, "done", done.Status)
+
+	deps, amendmentID := openHeldAmendment(t, root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/late-arrival", Title: "Late arrival", ChangeType: "create",
+	})
+
+	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Empty(t, res.Reopened)
+	after := load(t, root).Epics["E-aaaaaa"]
+	require.Equal(t, "done", after.Status)
+	require.Equal(t, done.VerifiedAgainst, after.VerifiedAgainst)
+}
+
+// TestSyncDoesNotReopenADoneFeatureForAHeldTask is the feature-grain half: a
+// held task under a done feature reopens neither the feature nor its epic.
+func TestSyncDoesNotReopenADoneFeatureForAHeldTask(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	done := load(t, root).Features["F-aaaaaa"]
+	require.Equal(t, "done", done.Status)
+
+	deps, amendmentID := openHeldAmendment(t, root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/one-more-thing", Title: "One more thing",
+	})
+
+	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Empty(t, res.Reopened)
+	tree := load(t, root)
+	require.Equal(t, "done", tree.Features["F-aaaaaa"].Status)
+	require.Equal(t, done.VerifiedAgainst, tree.Features["F-aaaaaa"].VerifiedAgainst)
+	require.Equal(t, "done", tree.Epics["E-aaaaaa"].Status)
+}

@@ -222,9 +222,14 @@ func queueApproveAmendments(t *store.Tree) []QueueEntry {
 
 // queueApproveEpics lists the draft epics awaiting the human's approval, the
 // first gate a decomposition passes through and so the queue's first group.
+// A draft epic an open amendment holds is left out: its approval is its
+// amendment's queue entry, and `tiller approve epic` refuses it.
 func queueApproveEpics(t *store.Tree, order *gen.Order) []QueueEntry {
 	var out []QueueEntry
 	for _, e := range t.Epics {
+		if gen.AmendmentHold(t, e) != nil {
+			continue
+		}
 		if e.Status != "draft" {
 			continue
 		}
@@ -309,9 +314,14 @@ func queueApproveTaskBatches(t *store.Tree, order *gen.Order) []QueueEntry {
 		// free to approve: `tiller approve task` refuses a task an open question
 		// holds (itself or through its feature or epic), and the row goes only
 		// when every proposed task is held, the same suppress-not-exempt rule as
-		// above.
+		// above. A task an open amendment holds is its amendment's to
+		// approve, and `approve task --feature` leaves it out
+		// (mutate.ProposedTasks), so it never keeps the row alive.
 		approvable := false
 		for _, tk := range t.FeatureTasks[f.ID] {
+			if gen.AmendmentHold(t, tk) != nil {
+				continue
+			}
 			if tk.Status == "proposed" && len(gen.TaskQuestionBlockers(t, f, tk)) == 0 {
 				approvable = true
 				break

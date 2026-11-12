@@ -204,6 +204,21 @@ type ParentEpicRetiredData struct {
 	MissingSeam  string `json:"missing_seam"`
 }
 
+// HeldByAmendmentData is the BLOCKED data block for a lifecycle verb refused
+// because an open amendment holds the node (mutate.HeldByAmendmentError,
+// decision 7). MissingSeam is the amendment's approval, the one command that
+// moves a held draft.
+type HeldByAmendmentData struct {
+	Noun         string `json:"noun"`
+	ID           string `json:"id"`
+	Key          string `json:"key,omitempty"`
+	Reason       string `json:"reason"`
+	CurrentState string `json:"current_state"`
+	Amendment    string `json:"amendment"`
+	AmendmentKey string `json:"amendment_key,omitempty"`
+	MissingSeam  string `json:"missing_seam"`
+}
+
 // ActiveBasisData is the BLOCKED data block for an active-basis refusal. Drifted
 // names the files whose current WORKING-TREE content no longer matches what was
 // pinned, which is what lets an edit be caught before it is committed; Missing
@@ -1571,6 +1586,36 @@ func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any,
 		}
 		return d, fmt.Sprintf("Blocked: %s %s runs under epic %s, which is %s; cancel the %s too (`%s`), or re-add the epic and plan the work anew.",
 			pe.Noun, gen.RefByID(tree, pe.NodeID), gen.RefByID(tree, pe.EpicID), pe.EpicState, pe.Noun, seam), true
+	}
+
+	// The amendment hold names the amendment by its key where it has one
+	// and the node by its key, so both commands copy as written; the ref
+	// halves render with gen.RefParts because the error already carries
+	// each key and id.
+	var held *mutate.HeldByAmendmentError
+	if errors.As(err, &held) {
+		amendmentAddr := held.AmendmentKey
+		if amendmentAddr == "" {
+			amendmentAddr = held.AmendmentID
+		}
+		nodeAddr := held.NodeKey
+		if nodeAddr == "" {
+			nodeAddr = held.NodeID
+		}
+		seam := "tiller approve amendment " + amendmentAddr
+		d := HeldByAmendmentData{
+			Noun:         held.Noun,
+			ID:           held.NodeID,
+			Key:          held.NodeKey,
+			Reason:       "held_by_amendment",
+			CurrentState: held.CurrentState,
+			Amendment:    held.AmendmentID,
+			AmendmentKey: held.AmendmentKey,
+			MissingSeam:  seam,
+		}
+		return d, fmt.Sprintf("Blocked: %s %s is held by amendment %s; it moves when the amendment is approved (%s), or remove it from the proposal (tiller remove %s %s --reason \"<why>\").",
+			held.Noun, gen.RefParts(held.NodeKey, held.NodeID), gen.RefParts(held.AmendmentKey, held.AmendmentID),
+			seam, held.Noun, nodeAddr), true
 	}
 
 	var ab *mutate.ActiveBasisError

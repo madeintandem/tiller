@@ -904,11 +904,14 @@ func resolveStageParentEpic(tree *store.Tree, epicKey string) (store.Node, error
 // refuseParentHeldElsewhere refuses an add under a parent that a different
 // open amendment holds. Approving or withdrawing that amendment would promote
 // or delete the parent under work this one still proposes, so the add belongs
-// on the amendment that holds the parent. parents run nearest first.
+// on the amendment that holds the parent. parents run nearest first. doc is
+// the staging amendment, or nil for a hand `tiller add`, which no hold
+// exempts: an unheld child under a held parent is work the amendment's
+// approval and withdrawal would mishandle.
 func refuseParentHeldElsewhere(tree *store.Tree, doc *store.Amendment, parents ...store.Node) error {
 	for _, parent := range parents {
 		holder := gen.AmendmentHold(tree, parent)
-		if holder == nil || holder.ID == doc.ID {
+		if holder == nil || (doc != nil && holder.ID == doc.ID) {
 			continue
 		}
 		return &usageError{

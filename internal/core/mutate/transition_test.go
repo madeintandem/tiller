@@ -2788,3 +2788,159 @@ func TestAnswerImmuneToAnotherOwnersClaim(t *testing.T) {
 		mutate.AnswerInput{Node: "Q-000001", Answer: "The 2025 revision; 2022 is read-only reference."})
 	require.NoError(t, err, "answer must succeed for jc despite pat holding the claim")
 }
+
+// --- the hold (decision 7) ---
+
+// heldFixture is stageFixture with the epic and feature approved and one held
+// draft at each grain staged on the open amendment: a new epic, a new feature
+// under the approved epic, and a new task under the approved feature. It
+// returns the root, the amendment id, and the three held node ids.
+func heldFixture(t *testing.T) (root, amendmentID, epicID, featureID, taskID string) {
+	t.Helper()
+	root, amendmentID = stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "ready")
+	deps := heldDeps(root)
+	epicID = stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
+	}).Op.Node
+	featureID = stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/table-backed-forms", Title: "Table-backed forms", ChangeType: "create",
+	}).Op.Node
+	taskID = stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/iphone-acceptance", Title: "iPhone-only acceptance",
+	}).Op.Node
+	return root, amendmentID, epicID, featureID, taskID
+}
+
+// nodeStateFile is the repo-relative state file of a loaded node, the file a
+// refused transition must leave byte-identical.
+func nodeStateFile(t *testing.T, tree *store.Tree, id string) string {
+	t.Helper()
+	switch n := gen.NodeByID(tree, id).(type) {
+	case *store.Epic:
+		return filepath.Join(".tiller", "epics", *n.Key, "epic.yml")
+	case *store.Feature:
+		return filepath.Join(".tiller", "epics", n.EpicKey, "features", localKeyOf(*n.Key), "feature.yml")
+	case *store.Task:
+		f := tree.Features[n.FeatureID]
+		return filepath.Join(store.TaskRelDir(f.EpicKey, localKeyOf(*f.Key), localKeyOf(*n.Key)), store.TaskStateFile)
+	}
+	t.Fatalf("no node %s", id)
+	return ""
+}
+
+// localKeyOf is the last segment of a canonical key.
+func localKeyOf(key string) string { return key[strings.LastIndex(key, "/")+1:] }
+
+// requireHoldRefusal runs one transition on a held node and asserts the
+// HeldByAmendmentError names the node and its amendment, that the node's
+// state file is unchanged, and that no event was recorded.
+func requireHoldRefusal(t *testing.T, root, amendmentID, nodeID string, in mutate.TransitionInput) {
+	t.Helper()
+	tree := load(t, root)
+	rel := nodeStateFile(t, tree, nodeID)
+	before, err := os.ReadFile(filepath.Join(root, rel))
+	require.NoError(t, err)
+	evsBefore, err := events.List(tree)
+	require.NoError(t, err)
+
+	node := gen.NodeByID(tree, nodeID)
+	_, err = mutate.Transition(tree, heldDeps(root), node, in)
+
+	var held *mutate.HeldByAmendmentError
+	require.ErrorAs(t, err, &held, "%s on %s", in.Verb, nodeID)
+	require.Equal(t, nodeID, held.NodeID)
+	require.Equal(t, node.Noun(), held.Noun)
+	require.Equal(t, amendmentID, held.AmendmentID)
+	require.Equal(t, "iphone-only", held.AmendmentKey)
+	require.Equal(t, in.Verb, held.Verb)
+	after, err := os.ReadFile(filepath.Join(root, rel))
+	require.NoError(t, err)
+	require.Equal(t, string(before), string(after), "a refused %s must not write %s", in.Verb, rel)
+	evsAfter, err := events.List(load(t, root))
+	require.NoError(t, err)
+	require.Len(t, evsAfter, len(evsBefore), "a refused %s must not record an event", in.Verb)
+}
+
+// TestHeldNodeRefusesEveryLifecycleVerb: no lifecycle command moves a held
+// draft (decision 7). The table is the design's named refusals; the guard
+// below it runs every verb the lifecycle can emit against a held node at
+// each grain, so a verb added later is covered without anyone remembering
+// to add it here.
+func TestHeldNodeRefusesEveryLifecycleVerb(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+
+	for _, tc := range []struct {
+		node string
+		in   mutate.TransitionInput
+	}{
+		{epicID, mutate.TransitionInput{Verb: "approve"}},
+		{featureID, mutate.TransitionInput{Verb: "spec"}},
+		{featureID, mutate.TransitionInput{Verb: "approve"}},
+		{taskID, mutate.TransitionInput{Verb: "approve"}},
+		{featureID, mutate.TransitionInput{Verb: "cancel", Reason: "not wanted"}},
+	} {
+		requireHoldRefusal(t, root, amendmentID, tc.node, tc.in)
+	}
+
+	for _, verb := range lifecycle.EmittableVerbs() {
+		for _, id := range []string{epicID, featureID, taskID} {
+			requireHoldRefusal(t, root, amendmentID, id, mutate.TransitionInput{Verb: verb, Reason: "because"})
+		}
+	}
+}
+
+// TestHoldLiftsWhenTheAmendmentCloses: the refusal is the hold's, not the
+// draft status's. Once the amendment is no longer open the same epic approves.
+func TestHoldLiftsWhenTheAmendmentCloses(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, _, _ := heldFixture(t)
+	setAmendmentStatus(t, root, amendmentID, store.AmendmentStatusWithdrawn)
+
+	tree := load(t, root)
+	res, err := mutate.Transition(tree, heldDeps(root), tree.Epics[epicID], mutate.TransitionInput{Verb: "approve"})
+	require.NoError(t, err)
+	require.Equal(t, "ready", res.Status)
+}
+
+// TestFeaturePlanGateLeavesAHeldTaskProposed: approving a feature plan flips
+// its initial proposed tasks in the same act, but a held task's approval
+// belongs to its amendment, so the gate leaves it proposed and held.
+func TestFeaturePlanGateLeavesAHeldTaskProposed(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root := laySpeccedPlan(t, deps, "alfa")
+	ad := gitDeps(root)
+	ad.Mint = deps.Mint
+	a, err := mutate.AddAmendment(load(t, root), ad, mutate.AmendmentInput{Key: "late-task", Title: "One more task"})
+	require.NoError(t, err)
+	held := stageHeld(t, root, ad, a.ID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/bravo", Title: "Task bravo",
+	}).Op.Node
+	writeTaskSpec(t, root, "bravo", "## Approach\n\nThe implementation spec for bravo.")
+
+	tree := load(t, root)
+	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading").(*store.Feature)
+	alfa := resolveNode(t, tree, store.NounTask, "form-engine/certification-form-loading/alfa")
+	require.Equal(t, []string{alfa.NodeID()}, idsOf(mutate.ProposedTasks(tree, feat)),
+		"the batch set skips the held task")
+
+	res := driveWith(t, root, ad, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
+	require.Len(t, res.Tasks, 1, "only the unheld task moves with the plan")
+
+	after := load(t, root)
+	require.Equal(t, "proposed", after.Tasks[held].Status)
+	require.Nil(t, after.Tasks[held].AcceptedAgainst, "a held task records no basis")
+	require.NotNil(t, gen.AmendmentHold(after, after.Tasks[held]))
+}
+
+// idsOf lists task ids in order.
+func idsOf(tasks []*store.Task) []string {
+	out := []string{}
+	for _, tk := range tasks {
+		out = append(out, tk.ID)
+	}
+	return out
+}

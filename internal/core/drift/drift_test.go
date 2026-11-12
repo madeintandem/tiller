@@ -1496,6 +1496,41 @@ func TestMissingSurfaceFiresOnlyOnVanish(t *testing.T) {
 	require.Equal(t, 0, rep.Compared, "a cancelled node is exempt, never compared")
 }
 
+// TestDriftSweepsAHeldFeaturesSurfaces: the hold makes a draft inert, not
+// invisible. A held feature's linked surface is still swept, so its deletion
+// reads as missing_surface like any other draft's.
+func TestDriftSweepsAHeldFeaturesSurfaces(t *testing.T) {
+	root := scratchProjectGit(t)
+	setManifestChecks(t, root, []string{drift.MarkerMissingSurface})
+	deps := seqDeps()
+	deps.Rev = vcs.New(root)
+	require.NoError(t, os.MkdirAll(filepath.Join(root, "app", "legacy"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "app/legacy/zone.rb"), []byte("class Zone\nend\n"), 0o644))
+	gitCommitAll(t, root, "legacy code")
+
+	_, err := mutate.AddEpic(loadTree(t, root), deps, mutate.EpicInput{Key: "form-engine", Title: "Form Engine"})
+	require.NoError(t, err)
+	a, err := mutate.AddAmendment(loadTree(t, root), deps, mutate.AmendmentInput{Key: "replace-zone", Title: "Replace zone"})
+	require.NoError(t, err)
+	staged, err := mutate.StageOperation(loadTree(t, root), deps, loadTree(t, root).Amendments[a.ID], mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/replace-zone", Title: "Replace zone", ChangeType: "replace",
+	})
+	require.NoError(t, err)
+	featID := staged.Op.Node
+	tree := loadTree(t, root)
+	require.Equal(t, a.ID, tree.AmendmentHolds[featID], "the feature is held")
+	_, err = mutate.SetSurface(tree, deps, tree.Features[featID], []string{"app/legacy/zone.rb"})
+	require.NoError(t, err)
+
+	require.NoError(t, os.Remove(filepath.Join(root, "app/legacy/zone.rb")))
+	rep, err := drift.Run(loadTree(t, root), vcs.New(root))
+	require.NoError(t, err)
+	cs := candidatesFor(rep, drift.MarkerMissingSurface)
+	require.Len(t, cs, 1)
+	require.Equal(t, featID, cs[0].ID)
+	require.Contains(t, cs[0].Files, "app/legacy/zone.rb")
+}
+
 // TestMissingSurfaceCancelledExemptionGatedOnCarryingASurface pins
 // A cancelled node that never carried a
 // surface is silently out of scope, symmetric with a non-cancelled

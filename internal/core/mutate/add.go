@@ -368,6 +368,13 @@ func AddFeature(tree *store.Tree, deps Deps, in FeatureInput) (Result, error) {
 	if !plan.result.Created {
 		return plan.result, nil
 	}
+	// A held epic takes new features only through its own amendment
+	// (StageOperation), never a hand add.
+	// planAddFeature has already validated the key's shape.
+	epicKey, _, _ := splitFeatureKey(in.Key)
+	if err := refuseParentHeldElsewhere(tree, nil, nodeOrNil(epicByKey(tree, epicKey))...); err != nil {
+		return Result{}, err
+	}
 	if err := commitMutation(tree, "add feature", plan.writes(), []events.Event{plan.event}); err != nil {
 		return Result{}, err
 	}
@@ -517,6 +524,14 @@ func AddTask(tree *store.Tree, deps Deps, in TaskInput) (Result, error) {
 	}
 	if !plan.result.Created {
 		return plan.result, nil
+	}
+	// A task under a held feature, or under a feature whose epic is held, is
+	// the holding amendment's to propose (AddFeature's rule, one grain down).
+	if feat := tree.Features[plan.result.Feature]; feat != nil {
+		parents := append([]store.Node{feat}, nodeOrNil(epicByKey(tree, feat.EpicKey))...)
+		if err := refuseParentHeldElsewhere(tree, nil, parents...); err != nil {
+			return Result{}, err
+		}
 	}
 	if err := commitMutation(tree, "add task", plan.writes(), []events.Event{plan.event}); err != nil {
 		return Result{}, err
@@ -804,4 +819,13 @@ func readYAML(root, relative string, out any) error {
 		return err
 	}
 	return yaml.Unmarshal(data, out)
+}
+
+// nodeOrNil lists an epic as a parent node, or nothing when the key named no
+// epic (a nil *store.Epic must not become a non-nil store.Node).
+func nodeOrNil(e *store.Epic) []store.Node {
+	if e == nil {
+		return nil
+	}
+	return []store.Node{e}
 }
