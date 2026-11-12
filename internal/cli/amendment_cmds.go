@@ -75,11 +75,18 @@ type AmendmentData struct {
 // empty exactly as they leave every precondition's own three fields empty,
 // and only show amendment computes them (mutate.EvaluateAmendmentSource).
 type AmendmentSourceView struct {
-	Path     string `json:"path,omitempty"`
-	Revision string `json:"revision,omitempty"`
-	Status   string `json:"status,omitempty"`
-	Actual   string `json:"actual,omitempty"`
-	Note     string `json:"note,omitempty"`
+	Path     string                    `json:"path,omitempty"`
+	Revision string                    `json:"revision,omitempty"`
+	Files    []AmendmentSourceFileView `json:"files,omitempty"`
+	Status   string                    `json:"status,omitempty"`
+	Actual   string                    `json:"actual,omitempty"`
+	Note     string                    `json:"note,omitempty"`
+}
+
+// AmendmentSourceFileView is one file of a folder source and its fingerprint.
+type AmendmentSourceFileView struct {
+	Path     string `json:"path"`
+	Revision string `json:"revision"`
 }
 
 // amendmentSourceView projects a.Source, or nil when the amendment carries
@@ -92,6 +99,9 @@ func amendmentSourceView(s *store.AmendmentSource, live *mutate.AmendmentSourceV
 		return nil
 	}
 	v := &AmendmentSourceView{Path: s.Path, Revision: s.Revision}
+	for _, f := range s.Files {
+		v.Files = append(v.Files, AmendmentSourceFileView{Path: f.Path, Revision: f.Revision})
+	}
 	if live != nil {
 		v.Status, v.Actual, v.Note = live.Status, live.Actual, live.Note
 	}
@@ -371,7 +381,11 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 		fmt.Fprintf(&b, "  base_revision: %s\n", v.BaseRevision)
 	}
 	if v.Source != nil {
-		fmt.Fprintf(&b, "  source: %s (%s)\n", v.Source.Path, v.Source.Revision)
+		if len(v.Source.Files) > 0 {
+			fmt.Fprintf(&b, "  source: %s (%d files)\n", v.Source.Path, len(v.Source.Files))
+		} else {
+			fmt.Fprintf(&b, "  source: %s (%s)\n", v.Source.Path, v.Source.Revision)
+		}
 		switch {
 		case v.Source.Status == "":
 			// No live read available (validityErr below explains why), the

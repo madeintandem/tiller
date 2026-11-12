@@ -477,3 +477,24 @@ func TestValidateAmendmentAcceptsDraft(t *testing.T) {
 		require.Contains(t, err.Error(), want)
 	}
 }
+
+// A source is a file (revision) or a folder (files), never both and never
+// neither.
+func TestValidateAmendment_SourceShape(t *testing.T) {
+	file := &AmendmentSource{Path: ".tiller/design/a.md", Revision: "git:abc"}
+	folder := &AmendmentSource{Path: ".tiller/design/specs", Files: []AmendmentSourceFile{{Path: ".tiller/design/specs/a.md", Revision: "git:abc"}}}
+	both := &AmendmentSource{Path: ".tiller/design/specs", Revision: "git:abc", Files: folder.Files}
+	neither := &AmendmentSource{Path: ".tiller/design/specs"}
+
+	for name, tc := range map[string]struct {
+		source *AmendmentSource
+		ok     bool
+	}{"file": {file, true}, "folder": {folder, true}, "both": {both, false}, "neither": {neither, false}} {
+		err := ValidateAmendment(&Amendment{ID: "A-aaaaaa", Status: AmendmentStatusDraft, Source: tc.source})
+		if tc.ok {
+			require.NoError(t, err, name)
+		} else {
+			require.Error(t, err, name)
+		}
+	}
+}

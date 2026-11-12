@@ -528,3 +528,119 @@ func TestEvaluateAmendmentShapeReportsNoneForACleanBatch(t *testing.T) {
 	got := mutate.EvaluateAmendmentShape(a)
 	require.Empty(t, got)
 }
+
+// --- Folder sources (intake of a folder): one amendment, one Source naming the
+// folder, a per-file fingerprint list. evalSource is shared by propose,
+// approve, and show, so one verdict serves all three. ---
+
+// folderSourceFixture is folderSourceDraft handed over to proposed.
+func folderSourceFixture(t *testing.T) (root string, deps mutate.Deps, a *store.Amendment, dir string) {
+	t.Helper()
+	root, deps, a, dir = folderSourceDraft(t)
+	_, err := mutate.ProposeAmendment(load(t, root), deps, a)
+	require.NoError(t, err)
+	return root, deps, loadAmendment(t, root, a.ID), dir
+}
+
+// folderSourceDraft lands two files under .tiller/design/specs/ and opens a
+// draft amendment whose Source is the folder with per-file revisions, with one
+// operation staged so it is not empty.
+func folderSourceDraft(t *testing.T) (root string, deps mutate.Deps, a *store.Amendment, dir string) {
+	t.Helper()
+	root = writeOwnedRepo(t)
+	deps = gitDeps(root)
+
+	dir = filepath.Join(".tiller", "design", "specs")
+	require.NoError(t, os.MkdirAll(filepath.Join(root, dir, "sub"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, dir, "a.md"), []byte("alpha\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, dir, "sub", "b.md"), []byte("beta\n"), 0o644))
+
+	var files []store.AmendmentSourceFile
+	for _, rel := range []string{filepath.Join(dir, "a.md"), filepath.Join(dir, "sub", "b.md")} {
+		files = append(files, store.AmendmentSourceFile{Path: filepath.ToSlash(rel), Revision: blobOf(t, root, rel)})
+	}
+	res, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{
+		Key: "specs-intake", Title: "Intake: specs",
+		Source: &store.AmendmentSource{Path: filepath.ToSlash(dir), Files: files},
+	})
+	require.NoError(t, err)
+	a = stage(t, root, deps, loadAmendment(t, root, res.ID), mutate.StageInput{
+		Op: store.AmendmentOpAddEpic, Key: "audit", Title: "Audit", Source: ".tiller/design/specs/a.md#L1-1",
+	})
+	return root, deps, a, dir
+}
+
+// TestFolderSourceStaleness pins decision 4's fingerprint rule: an untouched
+// folder reads valid; a changed, removed, or added file reads stale with a note
+// naming the first differing path and what happened; and the same verdict
+// refuses approve.
+func TestFolderSourceStaleness(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name   string
+		mutate func(t *testing.T, root, dir string)
+		path   string
+		what   string
+	}{
+		{"changed", func(t *testing.T, root, dir string) {
+			require.NoError(t, os.WriteFile(filepath.Join(root, dir, "sub", "b.md"), []byte("edited\n"), 0o644))
+		}, ".tiller/design/specs/sub/b.md", "changed"},
+		{"removed", func(t *testing.T, root, dir string) {
+			require.NoError(t, os.Remove(filepath.Join(root, dir, "a.md")))
+		}, ".tiller/design/specs/a.md", "removed"},
+		{"added", func(t *testing.T, root, dir string) {
+			require.NoError(t, os.WriteFile(filepath.Join(root, dir, "c.md"), []byte("new\n"), 0o644))
+		}, ".tiller/design/specs/c.md", "added"},
+	}
+	t.Run("valid when untouched", func(t *testing.T) {
+		t.Parallel()
+		root, deps, a, _ := folderSourceFixture(t)
+		got, err := mutate.EvaluateAmendmentSource(load(t, root), deps, a)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		require.Equal(t, mutate.PreconditionValid, got.Status)
+		_, err = mutate.ApproveAmendment(load(t, root), deps, a)
+		require.NoError(t, err)
+	})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			root, deps, a, dir := folderSourceFixture(t)
+			tc.mutate(t, root, dir)
+
+			got, err := mutate.EvaluateAmendmentSource(load(t, root), deps, a)
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			require.Equal(t, mutate.PreconditionStale, got.Status)
+			require.Contains(t, got.Note, tc.path)
+			require.Contains(t, got.Note, tc.what)
+
+			_, err = mutate.ApproveAmendment(load(t, root), deps, a)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.path)
+		})
+	}
+}
+
+// TestFolderSourceIgnoresOSJunk: a Finder-written .DS_Store beside the landed
+// files is not a document, the same filter the import applies.
+func TestFolderSourceIgnoresOSJunk(t *testing.T) {
+	t.Parallel()
+	root, deps, a, dir := folderSourceFixture(t)
+	require.NoError(t, os.WriteFile(filepath.Join(root, dir, ".DS_Store"), []byte("x"), 0o644))
+	got, err := mutate.EvaluateAmendmentSource(load(t, root), deps, a)
+	require.NoError(t, err)
+	require.Equal(t, mutate.PreconditionValid, got.Status)
+}
+
+// TestFolderSourceStalenessRefusesPropose: propose runs the same source check,
+// so a folder that moved while the amendment was a draft cannot be handed over.
+func TestFolderSourceStalenessRefusesPropose(t *testing.T) {
+	t.Parallel()
+	root, deps, a, dir := folderSourceDraft(t)
+	require.NoError(t, os.WriteFile(filepath.Join(root, dir, "c.md"), []byte("new\n"), 0o644))
+
+	_, err := mutate.ProposeAmendment(load(t, root), deps, a)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), ".tiller/design/specs/c.md")
+}

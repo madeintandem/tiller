@@ -76,11 +76,11 @@ const (
 	intakeE2ETaskKey         = "form-engine/certification-form-loading/guard-null-zone"
 	intakeE2EQuestion        = "Keep or trim the legacy image parsers?"
 	intakeE2EQuestionTitle   = "Legacy image parsers"
-	intakeE2EEpicCite        = ".tiller/feedback/opus-review.md#L5-L7"
-	intakeE2EEpicFeatureCite = ".tiller/feedback/opus-review.md#L9-L12"
-	intakeE2EFeatureCite     = ".tiller/feedback/opus-review.md#L14-L17"
-	intakeE2ETaskCite        = ".tiller/feedback/opus-review.md#L19-L22"
-	intakeE2EQuestCite       = ".tiller/feedback/opus-review.md#L24-L26"
+	intakeE2EEpicCite        = ".tiller/design/opus-review.md#L5-L7"
+	intakeE2EEpicFeatureCite = ".tiller/design/opus-review.md#L9-L12"
+	intakeE2EFeatureCite     = ".tiller/design/opus-review.md#L14-L17"
+	intakeE2ETaskCite        = ".tiller/design/opus-review.md#L19-L22"
+	intakeE2EQuestCite       = ".tiller/design/opus-review.md#L24-L26"
 )
 
 // TestEndToEndIntakeExplodesFeedbackIntoTheTree drives the whole intake arc
@@ -385,10 +385,10 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	_, stderr, code = execCLI(t, "amend", aid2, "--add-task",
 		"form-engine/certification-form-loading/tighten-request-timeout",
 		"--title", "Tighten the request timeout",
-		"--source", ".tiller/feedback/followup-note.md#L1-L2", "--contributor", "jc")
+		"--source", ".tiller/design/followup-note.md#L1-L2", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	landedPath := filepath.Join(dir, ".tiller", "feedback", "followup-note.md")
+	landedPath := filepath.Join(dir, ".tiller", "design", "followup-note.md")
 	original, err := os.ReadFile(landedPath)
 	require.NoError(t, err)
 

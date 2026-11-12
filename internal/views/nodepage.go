@@ -803,8 +803,15 @@ type AmendmentPreconditionLiveView struct {
 // convention store.Amendment.Source itself keeps.
 type AmendmentSourcePageView struct {
 	Path     string                         `json:"path"`
-	Revision string                         `json:"revision"`
+	Revision string                         `json:"revision,omitempty"`
+	Files    []AmendmentSourceFileView      `json:"files,omitempty"`
 	Live     *AmendmentPreconditionLiveView `json:"live,omitempty"`
+}
+
+// AmendmentSourceFileView is one file of a folder source and its fingerprint.
+type AmendmentSourceFileView struct {
+	Path     string `json:"path"`
+	Revision string `json:"revision"`
 }
 
 // amendmentPageOf projects an amendment's own staged content onto the page,
@@ -849,7 +856,11 @@ func amendmentSourcePageOf(s *store.AmendmentSource) *AmendmentSourcePageView {
 	if s == nil {
 		return nil
 	}
-	return &AmendmentSourcePageView{Path: s.Path, Revision: s.Revision}
+	v := &AmendmentSourcePageView{Path: s.Path, Revision: s.Revision}
+	for _, f := range s.Files {
+		v.Files = append(v.Files, AmendmentSourceFileView{Path: f.Path, Revision: f.Revision})
+	}
+	return v
 }
 
 // amendmentOperationPageOf projects one staged operation onto its page row.

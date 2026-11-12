@@ -60,6 +60,7 @@ package mutate
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -824,6 +825,12 @@ func checkSource(tree *store.Tree, rev vcs.Revisions, doc *store.Amendment) erro
 	if sd.Vanished {
 		return sourceVanishedErr(doc.Source.Path)
 	}
+	if len(doc.Source.Files) > 0 {
+		return &usageError{
+			reason: "source_changed",
+			msg:    fmt.Sprintf("the source folder changed since intake staged this amendment: %s; re-read it and re-stage, or withdraw", sd.Note),
+		}
+	}
 	return sourceChangedErr(doc.Source.Revision, sd.Actual)
 }
 
@@ -905,6 +912,9 @@ type sourceDrift struct {
 // the same one-computation shape: a single verdict returned, not a hash pair
 // each caller judges over again).
 func evalSource(tree *store.Tree, rev vcs.Revisions, source *store.AmendmentSource) (*sourceDrift, error) {
+	if len(source.Files) > 0 {
+		return evalFolderSource(tree, rev, source)
+	}
 	vanished, changed, err := CompareWorktreeBlob(rev, tree.Root, source.Path, source.Revision)
 	if err != nil {
 		return nil, err
@@ -923,6 +933,71 @@ func evalSource(tree *store.Tree, rev vcs.Revisions, source *store.AmendmentSour
 		return nil, err
 	}
 	return &sourceDrift{Actual: fresh.Value}, nil
+}
+
+// evalFolderSource is evalSource for a folder source: it walks the folder as it
+// is now and compares it with the recorded file list. The first differing path
+// in sorted order is the verdict: a listed file that changed or is gone, or a
+// regular file the list does not name (OS junk aside, as the import skips it).
+// The folder itself being gone is Vanished. A folder verdict carries no Actual,
+// since there is no single live hash; Note names the path and what happened.
+func evalFolderSource(tree *store.Tree, rev vcs.Revisions, source *store.AmendmentSource) (*sourceDrift, error) {
+	recorded := make(map[string]string, len(source.Files))
+	for _, f := range source.Files {
+		recorded[f.Path] = f.Revision
+	}
+	live := map[string]bool{}
+	err := filepath.WalkDir(filepath.Join(tree.Root, filepath.FromSlash(source.Path)), func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() || !d.Type().IsRegular() || d.Name() == ".DS_Store" || d.Name() == "Thumbs.db" {
+			return nil
+		}
+		rel, err := filepath.Rel(tree.Root, path)
+		if err != nil {
+			return err
+		}
+		live[filepath.ToSlash(rel)] = true
+		return nil
+	})
+	if errors.Is(err, fs.ErrNotExist) {
+		return &sourceDrift{Vanished: true, Note: "the source folder no longer exists in the working tree"}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	paths := make([]string, 0, len(recorded)+len(live))
+	for p := range recorded {
+		paths = append(paths, p)
+	}
+	for p := range live {
+		if _, ok := recorded[p]; !ok {
+			paths = append(paths, p)
+		}
+	}
+	sort.Strings(paths)
+	for _, p := range paths {
+		revision, listed := recorded[p]
+		switch {
+		case !listed:
+			return &sourceDrift{Note: p + " added since intake landed the folder"}, nil
+		case !live[p]:
+			return &sourceDrift{Note: p + " removed since intake landed the folder"}, nil
+		}
+		vanished, changed, err := CompareWorktreeBlob(rev, tree.Root, p, revision)
+		if err != nil {
+			return nil, err
+		}
+		if vanished {
+			return &sourceDrift{Note: p + " removed since intake landed the folder"}, nil
+		}
+		if changed {
+			return &sourceDrift{Note: p + " changed since intake landed the folder"}, nil
+		}
+	}
+	return nil, nil
 }
 
 // sourceChangedErr refuses approve when an intake-minted amendment's own

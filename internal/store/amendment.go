@@ -115,16 +115,25 @@ func (a *Amendment) NodeKey() *string   { return a.Key }
 func (a *Amendment) Noun() string       { return NounAmendment }
 func (a *Amendment) NodeStatus() string { return a.Status }
 
-// AmendmentSource is the fingerprinted feedback artifact an intake-minted
-// amendment was exploded from (docs/spec/artifact-schema.md). Path is the
-// artifact's repo-relative location, landed under .tiller/feedback/ by intake;
-// Revision is its content fingerprint at intake time, a "git:<blob-sha>" token
-// in the same compact idiom BaseRevision already uses (a bare string rather
-// than a RevisionRef: like BaseRevision, this pins one artifact snapshot, not a
-// field this package needs to disambiguate by kind or path).
+// AmendmentSource is the fingerprinted document an intake-minted amendment was
+// exploded from (docs/spec/artifact-schema.md). Path is the artifact's
+// repo-relative location, landed under .tiller/design/ by intake (amendments
+// minted before that move keep their .tiller/feedback/ paths). A file source
+// carries Revision, its content fingerprint at intake time, a "git:<blob-sha>"
+// token in the same compact idiom BaseRevision already uses. A folder source
+// carries Files instead: every landed file's repo-relative path (sorted) and
+// its own revision, so a changed, added, or removed file reads as stale and
+// the report can name it. Exactly one of the two is set.
 type AmendmentSource struct {
-	Path     string `yaml:"path,omitempty"`
-	Revision string `yaml:"revision,omitempty"`
+	Path     string                `yaml:"path,omitempty"`
+	Revision string                `yaml:"revision,omitempty"`
+	Files    []AmendmentSourceFile `yaml:"files,omitempty"`
+}
+
+// AmendmentSourceFile is one file of a folder source and its fingerprint.
+type AmendmentSourceFile struct {
+	Path     string `yaml:"path"`
+	Revision string `yaml:"revision"`
 }
 
 // AmendmentOp is one staged operation in an amendment's operations list. Which
@@ -226,6 +235,14 @@ func ValidateAmendment(a *Amendment) error {
 			OpIndex: -1,
 			Msg: fmt.Sprintf("amendment %s has an unrecognized status %q (want %s, %s, %s, or %s)",
 				a.ID, a.Status, AmendmentStatusDraft, AmendmentStatusProposed, AmendmentStatusApproved, AmendmentStatusWithdrawn),
+		}
+	}
+
+	if a.Source != nil && (a.Source.Revision == "") == (len(a.Source.Files) == 0) {
+		return &AmendmentShapeError{
+			OpIndex: -1,
+			Msg: fmt.Sprintf("amendment %s has a source that carries both a revision and files, or neither; a file source has a revision, a folder source has files",
+				a.ID),
 		}
 	}
 

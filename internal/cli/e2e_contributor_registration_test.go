@@ -92,7 +92,7 @@ func TestEndToEndContributorRegistrationBootstrapAttributionAndRefusals(t *testi
 	_, stderr, code = execCLI(t, "amend", aid, "--add-epic", "reliability",
 		"--title", "Reliability hardening",
 		"--precondition", "key_absent=reliability",
-		"--source", ".tiller/feedback/field-note.md#L3-L4", "--contributor", "jc")
+		"--source", ".tiller/design/field-note.md#L3-L4", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
 	approveOut, _, code := execCLI(t, "approve", "amendment", aid)

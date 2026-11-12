@@ -9,7 +9,7 @@ import (
 )
 
 // This file tests `tiller intake <file>` (intake.go): the artifact lands
-// under .tiller/feedback/, its fingerprint travels onto the minted
+// under .tiller/design/, its fingerprint travels onto the minted
 // amendment's Source, the basename-collision refusal is pinned verbatim, and
 // the integration seam with the per-op source rule is proven
 // end to end (an intake-minted amendment refuses a sourceless staged op).
@@ -36,21 +36,21 @@ func TestIntakeLandsArtifactAndMintsAmendmentWithSource(t *testing.T) {
 	require.Equal(t, "draft", data["status"])
 	require.Equal(t, "acme-review", data["key"], "default key is a slug of the basename")
 	require.Equal(t, "Intake: Acme-review.md", data["title"])
-	require.Equal(t, []any{".tiller/feedback/Acme-review.md"}, data["triggered_by"])
+	require.Equal(t, []any{".tiller/design/Acme-review.md"}, data["triggered_by"])
 	require.Equal(t, []any{}, data["operations"], "intake mints the amendment shell only; nothing stages yet")
 
 	source, ok := data["source"].(map[string]any)
 	require.True(t, ok, "source must round-trip in the envelope: %s", out)
-	require.Equal(t, ".tiller/feedback/Acme-review.md", source["path"])
+	require.Equal(t, ".tiller/design/Acme-review.md", source["path"])
 	revision, _ := source["revision"].(string)
 	require.Regexp(t, `^git:[0-9a-f]{40}$`, revision)
 
-	landed, err := os.ReadFile(filepath.Join(".tiller", "feedback", "Acme-review.md"))
+	landed, err := os.ReadFile(filepath.Join(".tiller", "design", "Acme-review.md"))
 	require.NoError(t, err)
 	require.Equal(t, "the review body\n", string(landed))
 }
 
-// Final review item 3: a file already filed under .tiller/feedback/ (here an
+// Final review item 3: a file already filed under .tiller/design/ (here an
 // archive subfolder) is a single-file copy that cannot recurse into its own
 // output, so intake lands it at the feedback root like any other document.
 func TestIntakeAcceptsAFileFromInsideTheFeedbackFolder(t *testing.T) {
@@ -61,9 +61,9 @@ func TestIntakeAcceptsAFileFromInsideTheFeedbackFolder(t *testing.T) {
 
 	out, stderr, code := execCLI(t, "intake", archived, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out+stderr)
-	require.Equal(t, []any{".tiller/feedback/review.md"}, jsonData(t, out)["triggered_by"])
+	require.Equal(t, []any{".tiller/design/review.md"}, jsonData(t, out)["triggered_by"])
 
-	landed, err := os.ReadFile(filepath.Join(".tiller", "feedback", "review.md"))
+	landed, err := os.ReadFile(filepath.Join(".tiller", "design", "review.md"))
 	require.NoError(t, err)
 	require.Equal(t, "archived review\n", string(landed))
 	kept, err := os.ReadFile(archived)
@@ -88,7 +88,7 @@ func TestIntakeShowAmendmentJSONRoundTripsSource(t *testing.T) {
 	data := jsonData(t, out)
 	source, ok := data["source"].(map[string]any)
 	require.True(t, ok, "show amendment --json must carry the intake-minted source: %s", out)
-	require.Equal(t, ".tiller/feedback/review.md", source["path"])
+	require.Equal(t, ".tiller/design/review.md", source["path"])
 	revision, _ := source["revision"].(string)
 	require.Regexp(t, `^git:[0-9a-f]{40}$`, revision)
 }
@@ -151,7 +151,7 @@ func TestIntakeRefusesBasenameCollision(t *testing.T) {
 	require.Contains(t, out, "re-intake is a new intake: rename the document or remove the old artifact")
 
 	// The refused second call must not have clobbered the first artifact.
-	landed, err := os.ReadFile(filepath.Join(".tiller", "feedback", "review.md"))
+	landed, err := os.ReadFile(filepath.Join(".tiller", "design", "review.md"))
 	require.NoError(t, err)
 	require.Equal(t, "first body\n", string(landed))
 }
@@ -175,7 +175,7 @@ func TestIntakeKeyCollisionLeavesNoArtifactAndNoAmendment(t *testing.T) {
 	require.Equal(t, 2, code)
 	require.Contains(t, out, `"reason": "amendment_exists"`)
 
-	require.NoFileExists(t, filepath.Join(".tiller", "feedback", "review-b.md"),
+	require.NoFileExists(t, filepath.Join(".tiller", "design", "review-b.md"),
 		"the precheck must refuse before the copy, not after")
 
 	tree := loadCwdTree(t)
@@ -203,7 +203,7 @@ func TestIntakeRefusesUnknownOwnerLeavingNoArtifact(t *testing.T) {
 	require.Equal(t, 3, code)
 	require.Contains(t, out, `"reason": "contributor_unknown"`)
 
-	require.NoFileExists(t, filepath.Join(".tiller", "feedback", "review.md"))
+	require.NoFileExists(t, filepath.Join(".tiller", "design", "review.md"))
 	tree := loadCwdTree(t)
 	require.Empty(t, tree.Amendments)
 }
@@ -222,7 +222,7 @@ func TestIntakeRefusesInvalidKey(t *testing.T) {
 
 	// A refused key must not have left the artifact copied with nothing to
 	// reference it (the pre-check runs before the copy).
-	require.NoFileExists(t, filepath.Join(".tiller", "feedback", "review.md"))
+	require.NoFileExists(t, filepath.Join(".tiller", "design", "review.md"))
 }
 
 // TestIntakeHumanOutputNamesTheNextStep pins the house confirmation voice's
@@ -233,7 +233,7 @@ func TestIntakeHumanOutputNamesTheNextStep(t *testing.T) {
 
 	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
-	require.Contains(t, out, ".tiller/feedback/review.md")
+	require.Contains(t, out, ".tiller/design/review.md")
 	require.Contains(t, out, "tiller guide intake")
 }
 
@@ -273,7 +273,7 @@ func TestIntakeThenAmendWithSourceStages(t *testing.T) {
 
 	out, stderr, code = execCLI(t, "amend", aid, "--add-feature", "form-engine/table-backed-forms",
 		"--change-type", "create", "--title", "Table-backed forms",
-		"--source", ".tiller/feedback/review.md#L1-L1", "--contributor", "jc", "--json")
+		"--source", ".tiller/design/review.md#L1-L1", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	data := jsonData(t, out)
 	ops := data["operations"].([]any)
@@ -305,7 +305,7 @@ func TestIntakeSourceHonestyArc(t *testing.T) {
 	recorded, _ := source["revision"].(string)
 	require.NotEmpty(t, recorded)
 
-	landedPath := filepath.Join(".tiller", "feedback", "review.md")
+	landedPath := filepath.Join(".tiller", "design", "review.md")
 	original, err := os.ReadFile(landedPath)
 	require.NoError(t, err)
 
@@ -364,7 +364,7 @@ func TestShowAmendmentHumanRendersSourceLiveAcrossAllThreeStates(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	aid, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, aid)
-	landedPath := filepath.Join(".tiller", "feedback", "review.md")
+	landedPath := filepath.Join(".tiller", "design", "review.md")
 
 	// Valid: the fresh artifact.
 	human, stderr, code := execCLI(t, "show", "amendment", aid)
@@ -387,4 +387,117 @@ func TestShowAmendmentHumanRendersSourceLiveAcrossAllThreeStates(t *testing.T) {
 	require.NotContains(t, human, "live: [stale], actual ",
 		"a vanished document must never render a blank actual hash")
 	require.NotContains(t, human, "actual \n", "no line may end in a bare, valueless actual")
+}
+
+// TestIntakeLandsAFileInDesign: decision 3. A file lands at
+// .tiller/design/<basename>, nothing is written under .tiller/feedback/, and
+// the amendment opens as a draft.
+func TestIntakeLandsAFileInDesign(t *testing.T) {
+	initOwnedRepo(t)
+	src := writeFeedbackDoc(t, "Acme-review.md", "the review body\n")
+
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+
+	data := jsonData(t, out)
+	require.Equal(t, "draft", data["status"])
+	require.Equal(t, []any{".tiller/design/Acme-review.md"}, data["triggered_by"])
+	source, _ := data["source"].(map[string]any)
+	require.Equal(t, ".tiller/design/Acme-review.md", source["path"])
+	require.NotContains(t, source, "files", "a file source carries a revision, not a files list")
+	require.FileExists(t, filepath.Join(".tiller", "design", "Acme-review.md"))
+	require.NoDirExists(t, filepath.Join(".tiller", "feedback"))
+}
+
+// writeFeedbackFolder writes a scratch folder holding a.md and sub/b.md,
+// outside the repo, and returns its path.
+func writeFeedbackFolder(t *testing.T, name string) string {
+	t.Helper()
+	dir := filepath.Join(t.TempDir(), name)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "sub"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "a.md"), []byte("alpha\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "sub", "b.md"), []byte("beta\n"), 0o644))
+	return dir
+}
+
+// TestIntakeLandsAFolderUnderItsName: decision 11. A folder lands under its own
+// name with relative paths kept; one source names the folder and lists every
+// file with its own revision, sorted; key and title default from the folder.
+func TestIntakeLandsAFolderUnderItsName(t *testing.T) {
+	initOwnedRepo(t)
+	src := writeFeedbackFolder(t, "specs")
+
+	out, stderr, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+
+	require.FileExists(t, filepath.Join(".tiller", "design", "specs", "a.md"))
+	require.FileExists(t, filepath.Join(".tiller", "design", "specs", "sub", "b.md"))
+	data := jsonData(t, out)
+	require.Equal(t, "specs", data["key"])
+	require.Equal(t, "Intake: specs", data["title"])
+	require.Equal(t, []any{".tiller/design/specs"}, data["triggered_by"])
+
+	source, ok := data["source"].(map[string]any)
+	require.True(t, ok, out)
+	require.Equal(t, ".tiller/design/specs", source["path"])
+	require.NotContains(t, source, "revision", "a folder source carries files, not one revision")
+	files, _ := source["files"].([]any)
+	require.Len(t, files, 2)
+	for i, want := range []string{".tiller/design/specs/a.md", ".tiller/design/specs/sub/b.md"} {
+		f, _ := files[i].(map[string]any)
+		require.Equal(t, want, f["path"])
+		require.Regexp(t, `^git:[0-9a-f]{40}$`, f["revision"])
+	}
+
+	// The separate read sees the same folder source.
+	aid, _ := data["id"].(string)
+	out, stderr, code = execCLI(t, "show", "amendment", aid, "--json")
+	require.Equal(t, 0, code, stderr)
+	shown, _ := jsonData(t, out)["source"].(map[string]any)
+	require.Len(t, shown["files"], 2)
+}
+
+// TestIntakeRefusesANameAlreadyInDesign: a file or folder whose landing name
+// already exists in design/ refuses artifact_exists before a byte is written.
+func TestIntakeRefusesANameAlreadyInDesign(t *testing.T) {
+	t.Run("file", func(t *testing.T) {
+		initOwnedRepo(t)
+		require.NoError(t, os.MkdirAll(filepath.Join(".tiller", "design"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(".tiller", "design", "review.md"), []byte("old\n"), 0o644))
+		src := writeFeedbackDoc(t, "review.md", "new\n")
+
+		out, _, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+		require.Equal(t, 2, code)
+		require.Contains(t, out, `"reason": "artifact_exists"`)
+		kept, err := os.ReadFile(filepath.Join(".tiller", "design", "review.md"))
+		require.NoError(t, err)
+		require.Equal(t, "old\n", string(kept))
+		require.Empty(t, loadCwdTree(t).Amendments)
+	})
+	t.Run("folder", func(t *testing.T) {
+		initOwnedRepo(t)
+		require.NoError(t, os.MkdirAll(filepath.Join(".tiller", "design", "specs"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(".tiller", "design", "specs", "old.md"), []byte("old\n"), 0o644))
+		src := writeFeedbackFolder(t, "specs")
+
+		out, _, code := execCLI(t, "intake", src, "--contributor", "jc", "--json")
+		require.Equal(t, 2, code)
+		require.Contains(t, out, `"reason": "artifact_exists"`)
+		require.NoFileExists(t, filepath.Join(".tiller", "design", "specs", "a.md"), "nothing is written on a refusal")
+		require.Empty(t, loadCwdTree(t).Amendments)
+	})
+}
+
+// TestIntakeRefusesAnEmptyFolder: a folder with no document in it (junk and
+// empty subfolders do not count) is not something intake can land.
+func TestIntakeRefusesAnEmptyFolder(t *testing.T) {
+	initOwnedRepo(t)
+	dir := filepath.Join(t.TempDir(), "empty")
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "sub"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".DS_Store"), []byte("x"), 0o644))
+
+	out, _, code := execCLI(t, "intake", dir, "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "invalid_source"`)
+	require.NoDirExists(t, filepath.Join(".tiller", "design", "empty"))
 }

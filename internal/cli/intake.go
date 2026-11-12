@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
@@ -13,13 +15,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This file implements `tiller intake <file>` (docs/spec/cli-surface.md).
+// This file implements `tiller intake <file or folder>` (docs/spec/cli-surface.md).
 // intake is the front door for a recurring input decompose and add never fit:
 // an external feedback document (a code review, a product critique, user
 // research) that implies a batch of heterogeneous changes to a living tree.
 // It does exactly two things, both mechanical: it lands the document as a
-// fingerprinted source artifact under .tiller/feedback/, and it opens a
-// proposed amendment carrying that fingerprint as its Source. It stages no
+// fingerprinted source artifact under .tiller/design/, and it opens a
+// draft amendment carrying that fingerprint as its Source. It stages no
 // operations itself — the explosion of feedback into epics, features, tasks,
 // and questions is model judgment a skill guides (`tiller guide intake`, a
 // later task), staged afterward through the ordinary `tiller amend` surface,
@@ -30,13 +32,13 @@ import (
 // table (table.go), so it defaults to ActorEither, the same default add
 // amendment and amend already get.
 
-// feedbackDir is the directory intake lands artifacts under, a sibling of
-// design/: genesis inputs and ongoing inputs are different shelves (the
-// design doc's own framing). Unlike design/, it is not part of init's
-// skeletonDirs; the first intake creates it on demand (importDocs's
-// WriteRepositoryFileAtomic already creates its target directory), the same lazy
-// creation every other per-feature/per-task folder in this codebase gets.
-const feedbackDir = "feedback"
+// intakeLandingDir is where intake lands everything: a file at
+// <dir>/<basename>, a folder at <dir>/<folder name> with its relative paths
+// kept. Tiller knows a document is an amendment's source from the amendment
+// record, not from the folder, so there is one shelf. Amendments minted before
+// this landed under .tiller/feedback/ keep their stored paths and keep
+// validating; nothing there moves.
+var intakeLandingDir = filepath.Join(".tiller", "design")
 
 // intakeKeySlugRe matches a run of characters keyRe does not accept, in the
 // slug intakeDefaultKey builds from an artifact's basename.
@@ -50,18 +52,21 @@ var intakeKeySlugRe = regexp.MustCompile(`[^a-z0-9]+`)
 func newIntakeCmd() *cobra.Command {
 	var key, title string
 	cmd := &cobra.Command{
-		Use:   "intake <file>",
-		Short: "Land an external feedback document and open its amendment.",
-		Long: "intake copies <file> into .tiller/feedback/, fingerprints the landed\n" +
-			"copy (the same git-blob idiom specs and criteria already use), and opens\n" +
-			"a proposed amendment whose Source cites that artifact. The amendment\n" +
+		Use:   "intake <file or folder>",
+		Short: "Land an external document or folder and open its amendment.",
+		Long: "intake copies a file into .tiller/design/<name>, or a folder into\n" +
+			".tiller/design/<folder name>/ with its relative paths kept, fingerprints\n" +
+			"the landed copy (the same git-blob idiom specs and criteria already use;\n" +
+			"a folder carries one fingerprint per file), and opens a draft amendment\n" +
+			"whose Source cites that artifact. A folder opens one amendment covering\n" +
+			"every file in it. The amendment\n" +
 			"opens with no operations staged: explode the feedback into the tree's\n" +
 			"grammar with `tiller guide intake`, then stage each operation with\n" +
 			"`tiller amend --source <citation>` (every op on an intake-minted\n" +
 			"amendment must cite one), review the whole batch with `tiller show\n" +
 			"amendment`, and cross the human gate with `tiller approve amendment`.\n" +
-			"Re-intake of a changed document is a new intake: a basename already\n" +
-			"landed under .tiller/feedback/ is refused rather than overwritten,\n" +
+			"Re-intake of a changed document is a new intake: a name already\n" +
+			"present under .tiller/design/ is refused rather than overwritten,\n" +
 			"since the old artifact's fingerprint keeps the old amendment's\n" +
 			"citations honest.",
 		Args: cobra.ExactArgs(1),
@@ -69,14 +74,15 @@ func newIntakeCmd() *cobra.Command {
 			return runIntake(cmd, args[0], key, title)
 		},
 	}
-	cmd.Flags().StringVar(&key, "key", "", "the amendment's key (defaults to a slug of the file's basename)")
-	cmd.Flags().StringVar(&title, "title", "", `the amendment's title (defaults to "Intake: <basename>")`)
+	cmd.Flags().StringVar(&key, "key", "", "the amendment's key (defaults to a slug of the file or folder name)")
+	cmd.Flags().StringVar(&title, "title", "", `the amendment's title (defaults to "Intake: <file or folder name>")`)
 	addContributorFlag(cmd)
 	return cmd
 }
 
 func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
-	if err := statIntakeSource(srcPath); err != nil {
+	isDir, err := statIntakeSource(srcPath)
+	if err != nil {
 		return emitFailure(cmd, "intake", err)
 	}
 
@@ -101,12 +107,16 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 		return emitFailure(cmd, "intake", err)
 	}
 
-	basename := filepath.Base(srcPath)
+	name := intakeName(srcPath)
 	if strings.TrimSpace(key) == "" {
-		key = intakeDefaultKey(basename)
+		if isDir {
+			key = intakeSlug(name)
+		} else {
+			key = intakeDefaultKey(name)
+		}
 	}
 	if strings.TrimSpace(title) == "" {
-		title = "Intake: " + basename
+		title = "Intake: " + name
 	}
 
 	// The basename-collision check runs first among the two copy-blocking
@@ -119,14 +129,9 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 	// Order between the two does not affect the no-partial-write invariant
 	// (either one refuses before the copy below runs); it only decides which
 	// message a caller sees when both happen to be true at once.
-	destRel := filepath.Join(".tiller", feedbackDir, basename)
-	destAbs := filepath.Join(tree.Root, destRel)
-	present, err := store.PathExistsNoSymlinks(tree.Root, destAbs)
+	destRel, err := intakeDestination(tree.Root, srcPath)
 	if err != nil {
 		return emitFailure(cmd, "intake", err)
-	}
-	if present {
-		return emitFailure(cmd, "intake", intakeArtifactExistsErr())
 	}
 
 	// mutate.PrecheckAddAmendment runs every remaining AddAmendment
@@ -161,18 +166,7 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 	// this copy has already cleared above (owner, key format, key
 	// collision, HEAD resolution), so nothing left below this line refuses
 	// for a reason that predates the copy.
-	if _, err := importDocs(tree.Root, srcPath, filepath.Join(".tiller", feedbackDir)); err != nil {
-		return emitFailure(cmd, "intake", err)
-	}
-
-	// The fingerprint is read AFTER the copy, over the now-on-disk artifact:
-	// WorktreeBlobRef (transition.go) hashes the working tree via `git
-	// hash-object`, which reads whatever content sits at the path regardless
-	// of whether git tracks it yet (internal/vcs's own
-	// TestWorktreeBlobHash_Untracked pins this: a brand-new, never-committed
-	// file still hashes). The fresh copy this call just wrote is untracked —
-	// intake never runs `git add` — and the hash still comes back honest.
-	ref, err := mutate.WorktreeBlobRef(vcs.New(tree.Root), tree.Root, destRel)
+	source, err := landIntakeSource(tree.Root, srcPath, destRel)
 	if err != nil {
 		return emitFailure(cmd, "intake", err)
 	}
@@ -181,43 +175,154 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 		Key:         key,
 		Title:       title,
 		TriggeredBy: []string{destRel},
-		Source:      &store.AmendmentSource{Path: destRel, Revision: ref.Value},
+		Source:      source,
 	})
 	if err != nil {
 		return emitFailure(cmd, "intake", err)
 	}
 
 	view := amendmentResultView(res)
-	return emitSuccess(cmd, "intake", view, renderIntakeHuman(destRel, view.Ref, res.ID))
+	return emitSuccess(cmd, "intake", view, renderIntakeHuman(source.Path, view.Ref, res.ID))
 }
 
-// statIntakeSource validates <file> before any write: it must exist, be
-// readable, and be a regular file. A directory, a symlink to nowhere,
-// or a permission-denied path are all refused the same way, since none of
-// them is a document intake can land.
-func statIntakeSource(path string) error {
+// statIntakeSource validates <file or folder> before any write and reports
+// which it is. A file must exist, be readable, and be regular; a folder must
+// hold at least one regular file that is not OS junk. A symlink to nowhere, a
+// permission-denied path, or an empty folder are refused the same way, since
+// none of them is a document intake can land.
+func statIntakeSource(path string) (isDir bool, err error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return &usageError{
+		return false, &usageError{
 			reason: "invalid_source",
 			msg:    fmt.Sprintf("intake source %q does not exist or is unreadable: %v", path, err),
 		}
 	}
+	if info.IsDir() {
+		files, err := listLandableFiles(path)
+		if err != nil {
+			return false, &usageError{
+				reason: "invalid_source",
+				msg:    fmt.Sprintf("intake source %q is unreadable: %v", path, err),
+			}
+		}
+		if len(files) == 0 {
+			return false, &usageError{
+				reason: "invalid_source",
+				msg:    fmt.Sprintf("intake source %q holds no documents to land", path),
+			}
+		}
+		return true, nil
+	}
 	if !info.Mode().IsRegular() {
-		return &usageError{
+		return false, &usageError{
 			reason: "invalid_source",
-			msg:    fmt.Sprintf("intake source %q is not a regular file", path),
+			msg:    fmt.Sprintf("intake source %q is not a regular file or a folder", path),
 		}
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		return &usageError{
+		return false, &usageError{
 			reason: "invalid_source",
 			msg:    fmt.Sprintf("intake source %q does not exist or is unreadable: %v", path, err),
 		}
 	}
 	_ = f.Close()
-	return nil
+	return false, nil
+}
+
+// listLandableFiles lists, sorted, the slash-separated paths relative to dir of
+// every regular file beneath it that importDocs would copy: nonregular entries
+// and OS junk are skipped, as the copy skips them.
+func listLandableFiles(dir string) ([]string, error) {
+	var files []string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() || !d.Type().IsRegular() || junkFile(d.Name()) {
+			return nil
+		}
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		files = append(files, filepath.ToSlash(rel))
+		return nil
+	})
+	sort.Strings(files)
+	return files, err
+}
+
+// intakeName is the name a source lands under: its last path element, taken
+// from the absolute path so `.` and `../x/` name what they point at.
+func intakeName(srcPath string) string {
+	abs, err := filepath.Abs(srcPath)
+	if err != nil {
+		abs = filepath.Clean(srcPath)
+	}
+	return filepath.Base(abs)
+}
+
+// intakeDestination is the landing path (repo-relative, slash-separated) for
+// srcPath, refused artifact_exists when that name is already present under
+// .tiller/design/. It writes nothing, so a refusal leaves the tree untouched.
+func intakeDestination(root, srcPath string) (string, error) {
+	destRel := filepath.ToSlash(filepath.Join(intakeLandingDir, intakeName(srcPath)))
+	present, err := store.PathExistsNoSymlinks(root, filepath.Join(root, filepath.FromSlash(destRel)))
+	if err != nil {
+		return "", err
+	}
+	if present {
+		return "", intakeArtifactExistsErr()
+	}
+	return destRel, nil
+}
+
+// landIntakeSource copies srcPath to destRel (from intakeDestination) and
+// fingerprints what landed, returning the amendment Source for it: a file
+// carries its blob revision, a folder carries one revision per landed file.
+// It opens no amendment, so a caller that only wants the document landed
+// (`--no-amendment`) uses it alone.
+func landIntakeSource(root, srcPath, destRel string) (*store.AmendmentSource, error) {
+	info, err := os.Stat(srcPath)
+	if err != nil {
+		return nil, err
+	}
+	rev := vcs.New(root)
+	if !info.IsDir() {
+		if _, err := importDocs(root, srcPath, filepath.FromSlash(filepath.Dir(destRel))); err != nil {
+			return nil, err
+		}
+		// The fingerprint is read AFTER the copy, over the now-on-disk artifact:
+		// WorktreeBlobRef hashes the working tree via `git hash-object`, which
+		// reads whatever content sits at the path whether or not git tracks it
+		// yet. Intake never runs `git add`; the hash still comes back honest. It
+		// is not vcs.WorktreeSurface, which refuses paths inside .tiller/.
+		ref, err := mutate.WorktreeBlobRef(rev, root, destRel)
+		if err != nil {
+			return nil, err
+		}
+		return &store.AmendmentSource{Path: destRel, Revision: ref.Value}, nil
+	}
+
+	if _, err := importDocs(root, srcPath, filepath.FromSlash(destRel)); err != nil {
+		return nil, err
+	}
+	rels, err := listLandableFiles(filepath.Join(root, filepath.FromSlash(destRel)))
+	if err != nil {
+		return nil, err
+	}
+	files := make([]store.AmendmentSourceFile, 0, len(rels))
+	for _, rel := range rels {
+		path := destRel + "/" + rel
+		ref, err := mutate.WorktreeBlobRef(rev, root, path)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, store.AmendmentSourceFile{Path: path, Revision: ref.Value})
+	}
+	return &store.AmendmentSource{Path: destRel, Files: files}, nil
 }
 
 // intakeDefaultKey derives the amendment key `--key` defaults to when the
@@ -229,13 +334,19 @@ func statIntakeSource(path string) error {
 // format check refuses same as a malformed --key would — an honest refusal
 // asking for an explicit --key, not a manufactured one.
 func intakeDefaultKey(basename string) string {
-	stem := strings.TrimSuffix(basename, filepath.Ext(basename))
-	slug := intakeKeySlugRe.ReplaceAllString(strings.ToLower(stem), "-")
+	return intakeSlug(strings.TrimSuffix(basename, filepath.Ext(basename)))
+}
+
+// intakeSlug lowercases name and collapses every run of characters outside
+// [a-z0-9] to one hyphen, trimmed at both ends. A folder's name is slugged
+// whole: it has no extension to drop.
+func intakeSlug(name string) string {
+	slug := intakeKeySlugRe.ReplaceAllString(strings.ToLower(name), "-")
 	return strings.Trim(slug, "-")
 }
 
-// intakeArtifactExistsErr refuses landing over a basename intake already
-// placed under .tiller/feedback/. The message is pinned verbatim.
+// intakeArtifactExistsErr refuses landing over a name intake already
+// placed under .tiller/design/. The message is pinned verbatim.
 func intakeArtifactExistsErr() error {
 	return &usageError{
 		reason: "artifact_exists",
