@@ -1295,9 +1295,9 @@ func TestStaleSpecSpecLegAndExemptionsAndUncovered(t *testing.T) {
 		require.NoError(t, err)
 		amendment = loadTree(t, root).Amendments[aRes.ID]
 
-		// Stopgap until `tiller propose amendment` exists (Task 3): an
-		// amendment opens as a draft and approval needs a proposed one.
-		setAmendmentProposed(t, root, amendment)
+		// An amendment opens as a draft and approval needs a proposed one.
+		_, err = mutate.ProposeAmendment(loadTree(t, root), deps, amendment)
+		require.NoError(t, err)
 		amendment = loadTree(t, root).Amendments[aRes.ID]
 
 		applied, err := mutate.ApproveAmendment(loadTree(t, root), deps, amendment)
@@ -2724,16 +2724,4 @@ func basisFileNames(files []string) []string {
 		out[i] = filepath.Base(f)
 	}
 	return out
-}
-
-// setAmendmentProposed rewrites an amendment's on-disk status from draft to
-// proposed. Stopgap until `tiller propose amendment` exists (Task 3).
-func setAmendmentProposed(t *testing.T, root string, a *store.Amendment) {
-	t.Helper()
-	path := filepath.Join(root, ".tiller", "amendments", a.ID+"-"+*a.Key+".yml")
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-	out := strings.Replace(string(data), "status: "+a.Status, "status: "+store.AmendmentStatusProposed, 1)
-	require.NotEqual(t, string(data), out)
-	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
 }

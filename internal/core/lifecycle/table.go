@@ -116,8 +116,10 @@ var transitions = map[string][]transition{
 	// but a whole batch of operations applied under one lock. These rows are
 	// still the spec's transcription of the amendment lifecycle
 	// (artifact-schema.md, Amendments: States), and NextMoves reads them to
-	// answer what a proposed amendment may do next.
+	// answer what an open amendment may do next.
 	store.NounAmendment: {
+		{From: "draft", Verb: "propose", To: "proposed"},
+		{From: "draft", Verb: "withdraw", To: "withdrawn"},
 		{From: "proposed", Verb: "approve", To: "approved"},
 		{From: "proposed", Verb: "withdraw", To: "withdrawn"},
 	},
@@ -159,6 +161,7 @@ var verbActors = map[string]Actor{
 	"transfer": ActorHuman,
 	"answer":   ActorHuman,
 	"spec":     ActorAgent,
+	"propose":  ActorAgent,
 	"start":    ActorEither,
 	"check":    ActorEither,
 	"submit":   ActorEither,

@@ -343,3 +343,9 @@ func validateCorrectEval(i int, op AmendmentOp) error {
 func amendmentOpErr(i int, msg string) *AmendmentShapeError {
 	return &AmendmentShapeError{OpIndex: i, Msg: msg}
 }
+
+// AmendmentEmpty reports whether a proposes nothing: it has no operation. An
+// operation marked removed will count as nothing too once removal lands.
+func AmendmentEmpty(a *Amendment) bool {
+	return len(a.Operations) == 0
+}

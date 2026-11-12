@@ -204,7 +204,7 @@ func TestAddAmendmentRefusesDuplicateProposedKey(t *testing.T) {
 }
 
 // TestAddAmendmentAllowsKeyReuseAfterWithdrawn pins the ambiguity resolution:
-// duplicate-key refusal applies only among proposed amendments, so a withdrawn
+// duplicate-key refusal applies only among open amendments, so a withdrawn
 // amendment's key is free again.
 func TestAddAmendmentAllowsKeyReuseAfterWithdrawn(t *testing.T) {
 	t.Parallel()

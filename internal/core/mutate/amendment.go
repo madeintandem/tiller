@@ -17,7 +17,7 @@ package mutate
 // approved or withdrawn amendment's key is free again, because it is no
 // longer an open proposal to collide with.
 //
-// StageOperation and StageAmendsDesign only ever touch a proposed amendment's
+// StageOperation and StageAmendsDesign only ever touch an open amendment's
 // own yml; they never read or write the live epic/feature/task tree, which is
 // what lets a staged reshape be reviewed and edited freely before approve (a
 // later task) applies it atomically.
@@ -129,7 +129,7 @@ type AmendmentResult struct {
 	Source       *store.AmendmentSource
 }
 
-// AddAmendment opens a new amendment: a proposed staging document anchored to
+// AddAmendment opens a new amendment: a draft staging document anchored to
 // the current HEAD, with an empty operations list a caller stages onto through
 // StageOperation. Re-running with the same key is not idempotent the way
 // AddEpic/AddFeature/AddTask are, because a second open amendment under one
@@ -257,7 +257,7 @@ func PrecheckAddAmendment(tree *store.Tree, deps Deps, key string) (store.Revisi
 	if openAmendmentKeyExists(tree, key) {
 		return store.RevisionRef{}, &usageError{
 			reason: "amendment_exists",
-			msg:    fmt.Sprintf("a proposed amendment already carries the key %q; withdraw or approve it before reusing the key", key),
+			msg:    fmt.Sprintf("an open amendment already carries the key %q; withdraw or approve it before reusing the key", key),
 		}
 	}
 	head, err := deps.rev(tree.Root).CurrentCommit()
@@ -983,7 +983,7 @@ type WithdrawResult struct {
 	Reason string
 }
 
-// WithdrawAmendment drops a proposed amendment without applying it: status
+// WithdrawAmendment drops an open amendment without applying it: status
 // moves to withdrawn, terminal like approved, so its key is free for reuse and
 // a later StageOperation or StageAmendsDesign on it refuses amendment_not_open.
 // The reason discipline mirrors cancel's (transition.go's reasonRequired):

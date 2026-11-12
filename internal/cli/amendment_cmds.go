@@ -540,13 +540,13 @@ func newAddAmendmentCmd() *cobra.Command {
 	var triggeredBy []string
 	cmd := &cobra.Command{
 		Use:   "amendment <key>",
-		Short: "Open a new amendment: a proposed staging document for a reshape.",
-		Long: "add amendment opens a proposed staging document anchored to the current\n" +
+		Short: "Open a new amendment: a draft staging document for a reshape.",
+		Long: "add amendment opens a draft staging document anchored to the current\n" +
 			"HEAD, with an empty operations list. Stage operations onto it with\n" +
 			"`tiller amend`, review the batch with `tiller show amendment`, and cross\n" +
 			"the one human gate with `tiller approve amendment` (or drop it with\n" +
 			"`tiller withdraw amendment`). Re-adding a key already held by another\n" +
-			"proposed amendment is refused rather than idempotent: a second open\n" +
+			"open amendment is refused rather than idempotent: a second open\n" +
 			"amendment under one key is not the same proposal as the first.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -615,8 +615,8 @@ func newAmendCmd() *cobra.Command {
 	var f amendFlags
 	cmd := &cobra.Command{
 		Use:   "amend <A-id|key> [operation flags]",
-		Short: "Stage one operation, or an amends-design addition, onto a proposed amendment.",
-		Long: "amend appends one staged operation to a proposed amendment's operations\n" +
+		Short: "Stage one operation, or an amends-design addition, onto an open amendment.",
+		Long: "amend appends one staged operation to an open amendment's operations\n" +
 			"list, unions design doc paths into its amends_design, or both in one\n" +
 			"call. Exactly one operation kind is legal per invocation:\n" +
 			"  --add-epic <epic-key> [--title <t>] (a root: no parent to resolve)\n" +
@@ -1053,15 +1053,77 @@ func runShowAmendment(cmd *cobra.Command, addr string) error {
 	return emitSuccess(cmd, "show", view, human)
 }
 
+// --- propose amendment ---
+
+func newProposeCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "propose amendment <addr>",
+		Short: "Hand a draft amendment over for approval (-> proposed).",
+		Long: "propose is the agent's hand-over of an amendment it has finished\n" +
+			"staging: draft -> proposed. It runs the checks that do not need the\n" +
+			"human (the feedback document is unchanged, every operation cites its\n" +
+			"source) and refuses, writing nothing, when one fails. A stale\n" +
+			"precondition is a warning, not a refusal. Proposing a proposed\n" +
+			"amendment changes nothing. Approval is the human's gate and refuses a\n" +
+			"draft.",
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if args[0] != store.NounAmendment {
+				return emitFailure(cmd, "propose", &usageError{
+					reason: "unknown_noun",
+					msg:    fmt.Sprintf("propose only takes the amendment noun, not %q", args[0]),
+				})
+			}
+			return runProposeAmendment(cmd, args[1])
+		},
+	}
+	addContributorFlag(cmd)
+	return cmd
+}
+
+// AmendmentProposeView is the --json payload of `propose amendment`.
+type AmendmentProposeView struct {
+	ID       string   `json:"id"`
+	Key      string   `json:"key,omitempty"`
+	Status   string   `json:"status"`
+	Empty    bool     `json:"empty"`
+	Warnings []string `json:"warnings,omitempty"`
+}
+
+func runProposeAmendment(cmd *cobra.Command, addr string) error {
+	tree, a, err := loadAmendmentTree(cmd, "propose", addr)
+	if err != nil {
+		return err
+	}
+	ref := gen.Ref(tree, a)
+	d, err := deps(cmd, tree.Root)
+	if err != nil {
+		return emitFailure(cmd, "propose", err)
+	}
+	res, err := mutate.ProposeAmendment(tree, d, a)
+	if err != nil {
+		return emitFailure(cmd, "propose", err)
+	}
+	view := AmendmentProposeView{ID: res.ID, Key: res.Key, Status: res.Status, Empty: res.Empty, Warnings: res.Warnings}
+	human := fmt.Sprintf("Proposed %s.", ref)
+	if res.Empty {
+		human += fmt.Sprintf(" It proposes nothing; withdraw it with: tiller withdraw amendment %s --reason \"<why>\"", res.Key)
+	}
+	for _, w := range res.Warnings {
+		human += "\nWarning: " + w
+	}
+	return emitSuccess(cmd, "propose", view, human)
+}
+
 // --- withdraw amendment ---
 
 func newWithdrawCmd() *cobra.Command {
 	var reason string
 	cmd := &cobra.Command{
 		Use:   "withdraw amendment <addr>",
-		Short: "Drop a proposed amendment without applying it (-> withdrawn).",
-		Long: "withdraw is the human dropping a proposed amendment before anything in\n" +
-			"it is ever applied: proposed -> withdrawn. A --reason is required and\n" +
+		Short: "Drop an open amendment without applying it (-> withdrawn).",
+		Long: "withdraw is the human dropping an open amendment before anything in\n" +
+			"it is ever applied: draft or proposed -> withdrawn. A --reason is required and\n" +
 			"recorded on the event. withdraw is the amendment's own removal verb;\n" +
 			"nothing it staged ever executes, and its key is free to reuse once\n" +
 			"withdrawn.",

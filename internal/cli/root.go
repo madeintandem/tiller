@@ -102,6 +102,7 @@ func NewRootCmd() *cobra.Command {
 		newNextCmd(),
 		newReadoutCmd(),
 		newAmendCmd(),
+		newProposeCmd(),
 		newWithdrawCmd(),
 		newIntakeCmd(),
 	)

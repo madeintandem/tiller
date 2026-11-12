@@ -270,6 +270,12 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	if doc.Status != store.AmendmentStatusProposed {
 		return ApproveResult{}, amendmentNotOpenErr(doc)
 	}
+	if store.AmendmentEmpty(doc) {
+		return ApproveResult{}, &usageError{
+			reason: "amendment_empty",
+			msg:    fmt.Sprintf("amendment %s proposes nothing; drop it: tiller withdraw amendment %s --reason \"<why>\"", doc.ID, deref(doc.Key)),
+		}
+	}
 	// The same backstop StageOperation runs: an amendment reached by a hand edit
 	// rather than by staging must still be a well-formed batch before anything
 	// is applied from it.

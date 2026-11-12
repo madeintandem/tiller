@@ -229,9 +229,9 @@ func openAmendment(t *testing.T, root string, deps mutate.Deps, key string) *sto
 	res, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{
 		Key: key, Title: "Remove native iPad support from v1"})
 	require.NoError(t, err)
-	// Stopgap until `tiller propose amendment` exists (Task 3): AddAmendment
-	// now opens a draft, and the approval tests below need a proposed one.
-	setAmendmentStatus(t, root, res.ID, store.AmendmentStatusProposed)
+	// AddAmendment opens a draft; approval needs the hand-over first.
+	_, err = mutate.ProposeAmendment(load(t, root), deps, loadAmendment(t, root, res.ID))
+	require.NoError(t, err)
 	return loadAmendment(t, root, res.ID)
 }
 
@@ -2724,8 +2724,8 @@ func sourceFixture(t *testing.T, body string) (root string, deps mutate.Deps, a 
 		Source: &store.AmendmentSource{Path: relPath, Revision: blobOf(t, root, relPath)},
 	})
 	require.NoError(t, err)
-	// Stopgap until `tiller propose amendment` exists (Task 3).
-	setAmendmentStatus(t, root, res.ID, store.AmendmentStatusProposed)
+	_, err = mutate.ProposeAmendment(load(t, root), deps, loadAmendment(t, root, res.ID))
+	require.NoError(t, err)
 	return root, deps, loadAmendment(t, root, res.ID), relPath
 }
 

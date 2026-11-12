@@ -294,7 +294,12 @@ func TestIntakeSourceHonestyArc(t *testing.T) {
 	data := jsonData(t, out)
 	aid, _ := data["id"].(string)
 	require.NotEmpty(t, aid)
-	stopgapProposeByID(t, aid)
+	// An empty amendment is refused before the source is judged, so stage one
+	// cited operation first.
+	_, stderr, code = execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening",
+		"--source", "review.md#L1", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	proposeAmendmentCLI(t, aid)
 	source, ok := data["source"].(map[string]any)
 	require.True(t, ok, "intake's own envelope carries source: %s", out)
 	recorded, _ := source["revision"].(string)

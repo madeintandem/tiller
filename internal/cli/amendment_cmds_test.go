@@ -44,7 +44,7 @@ func layAmendmentTree(t *testing.T) {
 	require.Equal(t, 0, code)
 }
 
-// openAmendmentCLI opens an amendment through the CLI, then (stopgap) marks it proposed, and returns its
+// openAmendmentCLI opens an amendment through the CLI, then proposes it, and returns its
 // minted A-id, read back off disk (the same way soleFeatureID reads a minted
 // F-id) so a test can address it without parsing the id out of stdout.
 func openAmendmentCLI(t *testing.T, key, title string) string {
@@ -54,7 +54,7 @@ func openAmendmentCLI(t *testing.T, key, title string) string {
 	tree := loadCwdTree(t)
 	for id, a := range tree.Amendments {
 		if a.Key != nil && *a.Key == key {
-			stopgapPropose(t, a)
+			proposeAmendmentCLI(t, id)
 			return id
 		}
 	}
@@ -62,26 +62,11 @@ func openAmendmentCLI(t *testing.T, key, title string) string {
 	return ""
 }
 
-// stopgapProposeByID is stopgapPropose for a caller holding only the id.
-func stopgapProposeByID(t *testing.T, id string) {
+// proposeAmendmentCLI hands a draft amendment over through the real verb.
+func proposeAmendmentCLI(t *testing.T, id string) {
 	t.Helper()
-	stopgapPropose(t, loadCwdTree(t).Amendments[id])
-}
-
-// stopgapPropose rewrites a draft amendment's on-disk status to proposed.
-// Stopgap until `tiller propose amendment` exists (Task 3), which replaces
-// every caller: `add amendment` and `intake` now open a draft, and approval
-// needs a proposed one.
-func stopgapPropose(t *testing.T, a *store.Amendment) {
-	t.Helper()
-	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	path := filepath.Join(cwd, ".tiller", "amendments", a.ID+"-"+*a.Key+".yml")
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-	out := strings.Replace(string(data), "status: "+a.Status, "status: "+store.AmendmentStatusProposed, 1)
-	require.NotEqual(t, string(data), out, "the status rewrite must land")
-	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
+	_, stderr, code := execCLI(t, "propose", "amendment", id, "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
 }
 
 // jsonData unmarshals an envelope's data block into a map for field-by-field
@@ -1782,6 +1767,55 @@ func TestApproveAmendmentTakesExactlyOneAddress(t *testing.T) {
 
 // --- withdraw amendment ---
 
+// addDraftAmendmentCLI opens an amendment and leaves it a draft.
+func addDraftAmendmentCLI(t *testing.T, key string) {
+	t.Helper()
+	_, stderr, code := execCLI(t, "add", "amendment", key, "--title", "Remove native iPad support", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+}
+
+func TestProposeAmendmentHandsADraftOver(t *testing.T) {
+	layAmendmentTree(t)
+	addDraftAmendmentCLI(t, "iphone-only")
+	_, _, code := execCLI(t, "amend", "iphone-only", "--cancel",
+		"form-engine/certification-form-loading/schema-review", "--reason", "out of scope", "--contributor", "jc")
+	require.Equal(t, 0, code)
+
+	out, stderr, code := execCLI(t, "propose", "amendment", "iphone-only", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	data := jsonData(t, out)
+	require.Equal(t, "proposed", data["status"])
+	require.Equal(t, false, data["empty"])
+}
+
+func TestProposeAmendmentRefusesAnotherNoun(t *testing.T) {
+	layAmendmentTree(t)
+	out, _, code := execCLI(t, "propose", "epic", "x", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "unknown_noun"`)
+}
+
+func TestProposeAmendmentSaysWhenItProposesNothing(t *testing.T) {
+	layAmendmentTree(t)
+	addDraftAmendmentCLI(t, "iphone-only")
+	out, stderr, code := execCLI(t, "propose", "amendment", "iphone-only", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "It proposes nothing; withdraw it with: tiller withdraw amendment iphone-only --reason \"<why>\"")
+}
+
+func TestApproveAmendmentRefusesADraftAndAnEmptyOne(t *testing.T) {
+	layAmendmentTree(t)
+	addDraftAmendmentCLI(t, "iphone-only")
+	out, _, code := execCLI(t, "approve", "amendment", "iphone-only", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "amendment_not_proposed"`)
+
+	proposeAmendmentCLI(t, "iphone-only")
+	out, _, code = execCLI(t, "approve", "amendment", "iphone-only", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "amendment_empty"`)
+}
+
 func TestWithdrawAmendmentHappyPath(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
@@ -1840,7 +1874,7 @@ func TestWithdrawThenReopenLeavesTheKeyAddressable(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	second, _ := jsonData(t, out)["id"].(string)
 	require.NotEmpty(t, second)
-	stopgapProposeByID(t, second)
+	proposeAmendmentCLI(t, second)
 	require.NotEqual(t, first, second)
 
 	out, stderr, code = execCLI(t, "show", "amendment", "iphone-only", "--json")

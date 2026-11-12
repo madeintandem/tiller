@@ -80,7 +80,7 @@ func amendmentFixture(t *testing.T) (root, amendmentID, featureID string) {
 		amendmentID = res.ID
 		return err
 	})
-	stopgapProposed(t, root, amendmentID)
+	proposeAmendment(t, root, deps, amendmentID)
 
 	tree, err := store.Load(root)
 	require.NoError(t, err)
@@ -385,7 +385,7 @@ func amendmentSourceFixture(t *testing.T, body string) (root, amendmentID, relPa
 		Source: &store.AmendmentSource{Path: relPath, Revision: "git:" + hash},
 	})
 	require.NoError(t, err)
-	stopgapProposed(t, root, res.ID)
+	proposeAmendment(t, root, deps, res.ID)
 	return root, res.ID, relPath
 }
 
@@ -509,7 +509,7 @@ func amendmentHandEditFixture(t *testing.T) (root, amendmentID string) {
 		amendmentID = res.ID
 		return err
 	})
-	stopgapProposed(t, root, amendmentID)
+	proposeAmendment(t, root, deps, amendmentID)
 
 	tree, err := store.Load(root)
 	require.NoError(t, err)
@@ -632,7 +632,7 @@ func amendmentSourceReadableFixture(t *testing.T) (root, amendmentID, relPath st
 		amendmentID = res.ID
 		return err
 	})
-	stopgapProposed(t, root, amendmentID)
+	proposeAmendment(t, root, deps, amendmentID)
 
 	tree, err := store.Load(root)
 	require.NoError(t, err)

@@ -37,7 +37,7 @@ var verbStages = map[string]Stage{
 	"submit": Publishing,
 	"spec":   SpecWriting, "return": SpecWriting,
 	"add": Planning, "link": Planning, "order": Planning, "amend": Planning, "intake": Planning,
-	"withdraw": Planning, "unlink": Planning, "rename": Planning, "remove": Planning,
+	"propose": Planning, "withdraw": Planning, "unlink": Planning, "rename": Planning, "remove": Planning,
 	"configure": Planning, "resolve": Planning,
 	"approve": Other, "answer": Other,
 	"sync": Closeout, "archive": Closeout, "cancel": Closeout,

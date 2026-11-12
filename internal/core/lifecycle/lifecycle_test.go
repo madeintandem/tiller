@@ -123,6 +123,10 @@ var specTransitions = []specTransition{
 	{store.NounChore, "in_review", "sync", "done"},
 	{store.NounChore, "in_review", "cancel", "cancelled"},
 
+	// Amendment: draft -> proposed (the agent hands it over), or withdrawn.
+	{amendmentNoun, "draft", "propose", "proposed"},
+	{amendmentNoun, "draft", "withdraw", "withdrawn"},
+
 	// Amendment: proposed -> approved (approve applies the batch), or withdrawn.
 	{amendmentNoun, "proposed", "approve", "approved"},
 	{amendmentNoun, "proposed", "withdraw", "withdrawn"},
@@ -174,6 +178,7 @@ var expectedNextMoves = map[string]map[string][]string{
 		"cancelled":   {},
 	},
 	amendmentNoun: {
+		"draft":     {"propose", "withdraw"},
 		"proposed":  {"approve", "withdraw"},
 		"approved":  {},
 		"withdrawn": {},
