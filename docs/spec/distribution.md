@@ -402,7 +402,7 @@ anchor; `join` and `migrate` never backfill it. Greenfield starts with `code: []
 
 Design preparation remains separate from scaffold success. Move in-repo docs when Tiller takes
 ownership, or use a pointer page for a source that must stay in place, then reconcile their claims
-against code. External `--design` imports copy without changing their sources on first scaffold.
+against code. That moves a project's own existing docs at adoption; a document new to the project comes in through `tiller intake`. External `--design` imports copy without changing their sources on first scaffold.
 A valid rerun succeeds with a skipped-import notice; it never imports or appends provenance.
 Contributors and any required reference declaration still need completing before readiness, even with
 imported docs. Init leaves an existing `.gitignore` alone; join upserts the shared Tiller patterns.

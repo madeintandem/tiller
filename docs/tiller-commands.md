@@ -107,7 +107,7 @@ kind, roots, and original or absent anchor; `join` and `migrate` do not backfill
 
 Prepare docs before readiness. Reconcile existing docs against code; an import is not baseline
 confirmation. Move in-repo docs into `.tiller/design/` when ownership moves to Tiller, or put a
-pointer page there if another consumer needs the original location. A document that arrives after
+pointer page there if another consumer needs the original location (an ownership move of existing docs at adoption, not an intake). A document that arrives after
 `init` comes in through `tiller intake`, never by placing a file under `.tiller/design/` by hand;
 a founding design on a project with no epics comes in with `tiller intake --no-amendment`
 (see Amend). External `--design` imports
