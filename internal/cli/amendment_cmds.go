@@ -1388,16 +1388,29 @@ func poolClause(features int) string {
 // clauses. A minted task carries neither, since its real landing owner depends
 // on live tree state Op alone cannot decide honestly (poolMinted's own doc
 // comment); a batch minting nothing at all keeps the plain headline.
+//
+// A held draft was minted at staging, not here, so a promoted epic is not
+// counted as minted; it gets its own line instead (heldDraftLine). A held
+// feature still counts into the pool, since the approval is what releases
+// it for specify. An operation whose draft was removed is reported on its own
+// line and counted apart from the applied ones.
 func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResult, owner string) string {
 	byID := make(map[string]mutate.AppliedOperation, len(res.Applied))
 	mintedEpics := 0
 	mintedQuestions := 0
 	pooledFeatures := 0
+	removed := 0
 	for _, op := range res.Applied {
+		if op.Status == mutate.OperationRemoved {
+			removed++
+			continue
+		}
 		byID[op.NodeID] = op
 		switch op.Op {
 		case store.AmendmentOpAddEpic:
-			mintedEpics++
+			if !op.HeldDraft {
+				mintedEpics++
+			}
 		case store.AmendmentOpAddQuestion:
 			if op.Outcome == mutate.AppliedCreated {
 				mintedQuestions++
@@ -1408,7 +1421,10 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 		}
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "Approved amendment %s: %d operation(s) applied", ref, len(res.Applied))
+	fmt.Fprintf(&b, "Approved amendment %s: %d operation(s) applied", ref, len(res.Applied)-removed)
+	if removed > 0 {
+		fmt.Fprintf(&b, ", %d removed", removed)
+	}
 	switch {
 	case (mintedEpics > 0 || mintedQuestions > 0) && pooledFeatures > 0:
 		fmt.Fprintf(&b, "; %s; %s.", attributionClause(mintedEpics, mintedQuestions, owner), poolClause(pooledFeatures))
@@ -1420,6 +1436,10 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 		b.WriteString(".")
 	}
 	for _, op := range res.Applied {
+		if op.HeldDraft {
+			b.WriteString(heldDraftLine(op))
+			continue
+		}
 		line := fmt.Sprintf("\n  operation %d (%s) %s: %s", op.Index, op.Op, gen.RefParts(op.Key, op.NodeID), op.Status)
 		if op.Replacement != "" {
 			replRef := gen.RefByID(tree, op.Replacement)
@@ -1442,6 +1462,18 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 		b.WriteString(line)
 	}
 	return b.String()
+}
+
+// heldDraftLine is the confirmation line for a draft the amendment held: what
+// the approval did to it, under the key it carries now. An epic or a task is
+// approved with its amendment (D8, D9); a feature stays a draft and goes to
+// specify next (D9).
+func heldDraftLine(op mutate.AppliedOperation) string {
+	ref := gen.RefParts(op.Key, op.NodeID)
+	if op.Noun == store.NounFeature {
+		return fmt.Sprintf("\n  operation %d (%s): feature %s stays %s; specify is next", op.Index, op.Op, ref, op.Status)
+	}
+	return fmt.Sprintf("\n  operation %d (%s): approved %s %s", op.Index, op.Op, op.Noun, ref)
 }
 
 // runApproveAmendment is the human gate: it runs ApproveAmendment, renders
@@ -1492,10 +1524,15 @@ func runApproveAmendment(cmd *cobra.Command, addr string) error {
 // printed directly above the block this act feeds, so nothing here repeats
 // it (the same drop-what-nothing-downstream-reads discipline
 // syncAwaitingAct, sync.go, already follows).
+//
+// An operation whose draft was removed applied nothing, so it is left out.
 func amendmentApprovedAct(res mutate.ApproveResult) *views.GateAct {
-	ops := make([]views.GateActAmendmentOp, len(res.Applied))
-	for i, op := range res.Applied {
-		ops[i] = views.GateActAmendmentOp{Op: op.Op}
+	ops := make([]views.GateActAmendmentOp, 0, len(res.Applied))
+	for _, op := range res.Applied {
+		if op.Status == mutate.OperationRemoved {
+			continue
+		}
+		ops = append(ops, views.GateActAmendmentOp{Op: op.Op})
 	}
 	return &views.GateAct{AmendmentApplied: &views.GateActAmendmentApplied{Applied: ops}}
 }

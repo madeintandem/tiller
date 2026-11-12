@@ -211,7 +211,6 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	// kind per entry: the direct way to pin "AppliedOperation order mirrors
 	// staged order" at the real CLI surface, without guessing at ids approve
 	// itself has not minted yet.
-	t.Skip("held drafts: Task 11")
 	appliedOut, stderr, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, stderr)
 	appliedData := jsonData(t, appliedOut)
@@ -252,7 +251,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	// stays exactly where every op's citation stays regardless of kind: the
 	// amendment's own operations list, asserted below through `show
 	// amendment --json` rather than a node field that does not exist.
-	require.Equal(t, "draft", tree.Epics[epicID].Status)
+	require.Equal(t, "ready", tree.Epics[epicID].Status, "the held epic is approved with its amendment")
 	require.Equal(t, intakeE2EEpicCite, tree.Epics[epicID].Source,
 		"the epic materialized with its op's citation as its own node source")
 
@@ -272,7 +271,7 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 		"the feature carries its own op's citation as its own node source")
 
 	preExistingFeatureID := featureIDByKey(t, "form-engine/certification-form-loading")
-	require.Equal(t, "proposed", tree.Tasks[taskID].Status)
+	require.Equal(t, "ready", tree.Tasks[taskID].Status, "the held task is approved with its amendment")
 	require.Equal(t, preExistingFeatureID, tree.Tasks[taskID].FeatureID,
 		"the task landed on the PRE-EXISTING feature the mapping rules name: task grain stays closed to same-batch parenting")
 
@@ -295,9 +294,14 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 		"the same-batch staged key resolved to the id materialize just minted for it, add-question's own reach into the batch (unchanged by same-batch feature parenting)")
 
 	// --- every event amendment-tagged ---
+	//
+	// Staging created each held draft, so its add event records the amend
+	// that staged it; the approval records the promotions it made.
 	addEpicEvent := soleAmendmentEvent(t, tree, aid, "add.epic")
 	require.Equal(t, intakeE2EEpicKey, addEpicEvent.After["key"])
-	require.Equal(t, "approve amendment "+aid, addEpicEvent.Command)
+	require.Equal(t, "amend "+aid+" --add-epic", addEpicEvent.Command)
+	approveEpicEvent := soleAmendmentEvent(t, tree, aid, "approve.epic")
+	require.Equal(t, "approve amendment "+aid, approveEpicEvent.Command)
 
 	// Two add-feature ops staged on this one amendment (the new shape this
 	// task adds), so soleAmendmentEvent's own exactly-one assertion no
@@ -311,14 +315,16 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	for _, e := range addFeatureEvents {
 		key, _ := e.After["key"].(string)
 		addFeatureByKey[key] = e
-		require.Equal(t, "approve amendment "+aid, e.Command)
+		require.Equal(t, "amend "+aid+" --add-feature", e.Command)
 	}
 	require.Contains(t, addFeatureByKey, intakeE2EEpicFeatureKey)
 	require.Contains(t, addFeatureByKey, intakeE2EFeatureKey)
 
 	addTaskEvent := soleAmendmentEvent(t, tree, aid, "add.task")
 	require.Equal(t, intakeE2ETaskKey, addTaskEvent.After["key"])
-	require.Equal(t, "approve amendment "+aid, addTaskEvent.Command)
+	require.Equal(t, "amend "+aid+" --add-task", addTaskEvent.Command)
+	approveTaskEvent := soleAmendmentEvent(t, tree, aid, "approve.task")
+	require.Equal(t, "approve amendment "+aid, approveTaskEvent.Command)
 
 	addQuestionEvent := soleAmendmentEvent(t, tree, aid, "add.question")
 	require.Equal(t, "approve amendment "+aid, addQuestionEvent.Command)
@@ -345,38 +351,21 @@ func TestEndToEndIntakeExplodesFeedbackIntoTheTree(t *testing.T) {
 	_, stderr, code = execCLI(t, "order", "epic", intakeE2EEpicKey, "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	// The minted epic lands draft, so its decomposition gate is the human's
-	// move and both surfaces list it. Guide suggests the skill
-	// for the highest agent move beside it, specifying the draft feature
-	// under the pre-existing approved epic, and never a feature under the
-	// draft epic.
+	// The amendment's approval was the epic's too (D8), so no decomposition
+	// gate is left for the human, and the frontier reaches into the epic
+	// through the feature this same batch staged under it. The task the batch
+	// added is ready (D9), so it is the agent's top move and guide suggests
+	// execute for it.
 	guideJSON, _, code := execCLI(t, "guide", "--json")
 	require.Equal(t, 0, code)
-	require.Equal(t, "specify", jsonData(t, guideJSON)["skill"])
-	require.Contains(t, guideJSON, `"command": "tiller approve epic `+intakeE2EEpicKey+`"`)
-	require.NotContains(t, guideJSON, `"key": "`+intakeE2EEpicFeatureKey+`"`,
-		"nothing under the draft epic is a spec move before the epic is approved")
+	require.Equal(t, "execute", jsonData(t, guideJSON)["skill"])
+	require.NotContains(t, guideJSON, `"command": "tiller approve epic `+intakeE2EEpicKey+`"`,
+		"approving the amendment approved the epic it held")
 
 	orient, _, code := execCLI(t, "readout", "orient")
 	require.Equal(t, 0, code)
 	_, next := splitAtNext(t, orient)
-	require.Contains(t, next, "You: approve epic "+intakeE2EEpicKey+" ("+epicID+").",
-		"the list reaches the epic this batch minted")
-	require.NotContains(t, next, "specify "+intakeE2EEpicFeatureKey,
-		"nothing under the draft epic is a spec move before the epic is approved")
-
-	// The human's approve clears that gate, and the frontier reaches into
-	// the minted epic through the feature this same batch staged under it.
-	_, stderr, code = execCLI(t, "approve", "epic", intakeE2EEpicKey, "--contributor", "jc")
-	require.Equal(t, 0, code, stderr)
-
-	guideJSON, _, code = execCLI(t, "guide", "--json")
-	require.Equal(t, 0, code)
-	require.Equal(t, "specify", jsonData(t, guideJSON)["skill"])
-
-	orient, _, code = execCLI(t, "readout", "orient")
-	require.Equal(t, 0, code)
-	_, next = splitAtNext(t, orient)
+	require.NotContains(t, next, "approve epic "+intakeE2EEpicKey)
 	require.Contains(t, next, "Agent: specify "+intakeE2EEpicFeatureKey+" ("+epicFeatureID+").",
 		"the frontier walk reaches into the epic this batch minted through the feature that same batch staged under it, not a node added by a separate live step")
 

@@ -695,11 +695,10 @@ func TestAmendStagesAddEpic(t *testing.T) {
 
 // TestAmendApproveMaterializesAnAddEpicWithItsSourceCitation is the CLI-level
 // arc for add-epic's own acceptance criterion: stage then
-// approve lands a draft epic whose node page (show epic --json) carries the
+// approve lands a ready epic whose node page (show epic --json) carries the
 // citation as its source line, the same generic Source rendering every epic
 // already gets (views/node.go), now reachable through the amendment batch.
 func TestAmendApproveMaterializesAnAddEpicWithItsSourceCitation(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "hardening-epic", "Land the hardening epic")
 
@@ -714,16 +713,17 @@ func TestAmendApproveMaterializesAnAddEpicWithItsSourceCitation(t *testing.T) {
 	require.Len(t, appliedOps, 1)
 	op0 := appliedOps[0].(map[string]any)
 	require.Equal(t, "add-epic", op0["op"])
-	require.Equal(t, "draft", op0["status"])
+	require.Equal(t, "ready", op0["status"], "the held epic is approved with its amendment")
 	newEpicID := op0["id"].(string)
-	require.NotEmpty(t, newEpicID)
+	require.Equal(t, loadCwdTree(t).Amendments[aid].Operations[0].Node, newEpicID,
+		"the approval names the epic staging created")
 
 	show, _, code := execCLI(t, "show", "epic", "hardening", "--json")
 	require.Equal(t, 0, code, show)
 	showData := jsonData(t, show)
 	require.Equal(t, "docs/feedback/opus-review.md#L1-9", showData["source"],
 		"the epic's node page shows the op's citation as its source line")
-	require.Equal(t, "draft", showData["status"])
+	require.Equal(t, "ready", showData["status"])
 
 	status, _, code := execCLI(t, "status", "--json")
 	require.Equal(t, 0, code, status)
@@ -881,7 +881,6 @@ func TestShowAmendmentJSONResolvesAnEpicBlockTarget(t *testing.T) {
 // CLI-level arc for the acceptance's heart: a question can
 // block a feature the same amendment stages.
 func TestAmendApproveAddQuestionBlocksAFeatureAddedInTheSameAmendment(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "table-backed", "Table-backed forms")
 
@@ -1493,10 +1492,11 @@ func TestShowAmendmentRendersEveryHandEditDefectAlongsideTheResolutionFailure(t 
 // --- approve amendment ---
 
 func TestApproveAmendmentAppliesTheBatchAndPrintsTheReadout(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 	taskID := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-review")
+
+	approveFixtureFeatureOnDisk(t)
 
 	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance",
@@ -1525,10 +1525,10 @@ func TestApproveAmendmentAppliesTheBatchAndPrintsTheReadout(t *testing.T) {
 
 // A new task created by amendment is unclaimed even when a sibling is assigned.
 func TestApproveAmendmentAddTaskDoesNotInheritSiblingOwnership(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	mustRun(t, "add", "task", cliTaskKey, "--title", "Transcribe the schema", "--contributor", "jc")
 	claimTaskAsOwner(t, cliTaskKey, "jc")
+	approveFixtureFeatureOnDisk(t)
 	aid := openAmendmentCLI(t, "claimed-add-task", "Add a task beside assigned work")
 
 	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
@@ -1546,7 +1546,6 @@ func TestApproveAmendmentAddTaskDoesNotInheritSiblingOwnership(t *testing.T) {
 
 // A same-statement amendment unions new question blocks without minting a duplicate.
 func TestApproveAmendmentDoesNotCountUpdatedQuestionAsMinted(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	statement := "Which billing provider is canonical?"
 	firstBlock := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
@@ -1573,7 +1572,6 @@ func TestApproveAmendmentDoesNotCountUpdatedQuestionAsMinted(t *testing.T) {
 
 // An idempotent question amendment preserves its existing block set.
 func TestApproveAmendmentDoesNotCountNoChangeQuestionAsMinted(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	statement := "Which table format is canonical?"
 	block := soleTaskIDByKey(t, "form-engine/certification-form-loading/schema-transcription")
@@ -1611,11 +1609,11 @@ func TestApproveAmendmentDoesNotCountNoChangeQuestionAsMinted(t *testing.T) {
 // true regardless of what got minted or who it landed with, so it is
 // pinned unchanged.
 func TestApproveAmendmentBareIdentitySpeaksTheFallbackAndCreditsTheActor(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	_, _, code := execCLI(t, "join", "--as", "jc")
 	require.Equal(t, 0, code)
 
+	approveFixtureFeatureOnDisk(t)
 	aid1 := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 	_, _, code = execCLI(t, "amend", aid1, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance",
@@ -1782,8 +1780,8 @@ func TestApproveAmendmentRefusesAReviseWithNoContractOnDisk(t *testing.T) {
 // already-approved amendment refuses amendment_not_open at exit 2, the same
 // state check every amendment verb runs before touching anything.
 func TestApproveAmendmentRefusesWhenNotOpen(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
+	approveFixtureFeatureOnDisk(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")
@@ -2041,7 +2039,6 @@ func TestLsAmendments(t *testing.T) {
 // moves for an amendment: proposed -> approve|withdraw, and terminal once
 // approved.
 func TestStatusAmendmentOracle(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
@@ -2051,6 +2048,7 @@ func TestStatusAmendmentOracle(t *testing.T) {
 	require.Equal(t, "proposed", data["status"])
 	require.Equal(t, []any{"approve", "withdraw"}, data["legal_next"])
 
+	approveFixtureFeatureOnDisk(t)
 	_, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -2081,8 +2079,8 @@ func TestStatusAmendmentOracle(t *testing.T) {
 // other mutation resolves through (--contributor/TILLER_CONTRIBUTOR/identity.yml) is
 // sufficient to run both gates, exactly as it is for every other verb.
 func TestAmendmentGatesRunForAnyActingOwnerNoCodeLevelRefusal(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	layAmendmentTree(t)
+	approveFixtureFeatureOnDisk(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc")

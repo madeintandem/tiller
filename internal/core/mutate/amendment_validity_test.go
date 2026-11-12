@@ -607,7 +607,6 @@ func TestFolderSourceStaleness(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Equal(t, mutate.PreconditionValid, got.Status)
-		t.Skip("held drafts: Task 11")
 		_, err = mutate.ApproveAmendment(load(t, root), deps, a)
 		require.NoError(t, err)
 	})

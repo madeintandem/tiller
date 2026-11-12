@@ -14,10 +14,12 @@ import (
 	"github.com/madeintandem/tiller/internal/core/lifecycle"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/id"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/vcs"
+	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -292,7 +294,6 @@ func deref(t *testing.T, s *string) string {
 // task at check naming its replacement, and the add-task that replaces it, all
 // applied in one act.
 func TestApproveAmendmentAppliesTheLanternShape(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, featureID, taskID := lanternFixture(t)
 	priorSpec := load(t, root).Features[featureID].AcceptedAgainst.Spec.Value
@@ -336,11 +337,13 @@ func TestApproveAmendmentAppliesTheLanternShape(t *testing.T) {
 	require.Equal(t, []string{"design/04-platform-and-constraints.md"}, after.AmendsDesign,
 		"amends_design rides through the status flip untouched")
 
-	// The add op materialized a proposed task under the live feature.
+	// The add op's held task, created at staging under the live feature, is
+	// promoted to ready by the approval (D9).
 	newID := res.Applied[0].NodeID
+	require.Equal(t, a.Operations[0].Node, newID, "the result names the draft staging created")
 	newTask := tree.Tasks[newID]
-	require.NotNil(t, newTask, "the staged add-task materialized")
-	require.Equal(t, "proposed", newTask.Status)
+	require.NotNil(t, newTask, "the staged add-task's draft is in the tree")
+	require.Equal(t, "ready", newTask.Status)
 	require.Equal(t, newTaskKey, deref(t, newTask.Key))
 	require.Equal(t, featureID, newTask.FeatureID)
 	require.FileExists(t, filepath.Join(root, store.TaskRelDir("app-experience", "fast-logging", "iphone-acceptance"), store.TaskProseFile))
@@ -373,7 +376,6 @@ func TestApproveAmendmentAppliesTheLanternShape(t *testing.T) {
 // apply emits the per-node event each operation implies, each naming the
 // amendment as its provenance, plus one amendment_approved.
 func TestApproveAmendmentRecordsEveryOperationAsAnEvent(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, featureID, taskID := lanternFixture(t)
 	reshapeTheSpec(t, root, featureID)
@@ -926,7 +928,6 @@ func TestApproveAmendmentSupersedesATask(t *testing.T) {
 // staged-key resolution on the supersede side: a --by naming an add-feature
 // staged in the same amendment resolves to the node that add materialized.
 func TestApproveAmendmentResolvesAStagedAddFeatureKeyAsTheReplacement(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, featureID, _ := lanternFixture(t)
 	setFeatureStatusToDone(t, root, "app-experience", "fast-logging")
@@ -943,7 +944,7 @@ func TestApproveAmendmentResolvesAStagedAddFeatureKeyAsTheReplacement(t *testing
 	require.Equal(t, newID, res.Applied[1].Replacement, "the staged key resolved to the materialized node")
 
 	tree := load(t, root)
-	require.Equal(t, "draft", tree.Features[newID].Status, "a materialized feature lands draft")
+	require.Equal(t, "draft", tree.Features[newID].Status, "a held feature stays a draft for specify")
 	require.Equal(t, "replace", tree.Features[newID].ChangeType)
 	require.Equal(t, []string{featureID}, tree.Features[newID].Supersedes)
 }
@@ -955,7 +956,6 @@ func TestApproveAmendmentResolvesAStagedAddFeatureKeyAsTheReplacement(t *testing
 // amendment resolves to the node that add materialized, the same as the
 // cancel/superseded_by direction the Lantern shape already pins.
 func TestApproveAmendmentResolvesAStagedAddTaskKeyAsTheReplacement(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, taskID := lanternFixture(t)
 	setTaskStatusOnDisk(t, root, taskID, "done")
@@ -972,7 +972,7 @@ func TestApproveAmendmentResolvesAStagedAddTaskKeyAsTheReplacement(t *testing.T)
 	require.Equal(t, newID, res.Applied[1].Replacement, "the staged key resolved to the materialized node")
 
 	tree := load(t, root)
-	require.Equal(t, "proposed", tree.Tasks[newID].Status, "a materialized task lands proposed")
+	require.Equal(t, "ready", tree.Tasks[newID].Status, "a held task is promoted with its amendment")
 	require.Equal(t, []string{taskID}, tree.Tasks[newID].Supersedes)
 }
 
@@ -1028,12 +1028,11 @@ func TestApproveAmendmentRefusesAStagedAddEpicKeyAsAReplacementWithNoWrites(t *t
 	}
 }
 
-// TestApproveAmendmentMaterializesAnAddEpic pins add-epic's own materialize
-// arm: the epic lands draft, carrying the op's Source as its
-// own node provenance, with its add.epic event tagged with the amendment
-// exactly as add-feature's and add-task's own materialized events are.
+// TestApproveAmendmentMaterializesAnAddEpic pins add-epic end to end under
+// held drafts: staging created the epic, carrying the op's Source as its own
+// node provenance and an add.epic event tagged with the amendment, and the
+// approval promotes it to ready (D8) and adds it to the root order.
 func TestApproveAmendmentMaterializesAnAddEpic(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -1047,7 +1046,8 @@ func TestApproveAmendmentMaterializesAnAddEpic(t *testing.T) {
 	require.Len(t, res.Applied, 1)
 	require.Equal(t, store.AmendmentOpAddEpic, res.Applied[0].Op)
 	require.Equal(t, store.NounEpic, res.Applied[0].Noun)
-	require.Equal(t, "draft", res.Applied[0].Status)
+	require.Equal(t, "ready", res.Applied[0].Status)
+	require.True(t, res.Applied[0].HeldDraft)
 	newID := res.Applied[0].NodeID
 
 	orderPath := filepath.Join(root, ".tiller", "order.yml")
@@ -1055,8 +1055,8 @@ func TestApproveAmendmentMaterializesAnAddEpic(t *testing.T) {
 
 	tree := load(t, root)
 	epic := tree.Epics[newID]
-	require.NotNil(t, epic, "the staged add-epic materialized")
-	require.Equal(t, "draft", epic.Status)
+	require.NotNil(t, epic, "the staged add-epic's draft is in the tree")
+	require.Equal(t, "ready", epic.Status)
 	require.Equal(t, "hardening", deref(t, epic.Key))
 	require.Equal(t, "docs/feedback/opus-review.md#L1-9", epic.Source,
 		"the op's Source lands as the materialized epic's own node provenance")
@@ -1066,22 +1066,33 @@ func TestApproveAmendmentMaterializesAnAddEpic(t *testing.T) {
 	evs, err := events.List(tree)
 	require.NoError(t, err)
 	added := eventsOfType(evs, "add.epic")
-	require.Len(t, added, 2, "the fixture's own epic plus the materialized one")
-	var materialized *events.Event
+	require.Len(t, added, 2, "the fixture's own epic plus the staged one")
+	var created *events.Event
 	for i := range added {
 		if containsStr(added[i].Targets, newID) {
-			materialized = &added[i]
+			created = &added[i]
 		}
 	}
-	require.NotNil(t, materialized, "the materialized epic has its own add.epic event")
-	require.Contains(t, materialized.Targets, a.ID, "the event carries the amendment as provenance")
-	require.Equal(t, a.ID, materialized.After["amendment"])
-	require.Equal(t, "approve amendment "+a.ID, materialized.Command,
-		"the command recorded is the gate that ran, not an add verb nobody typed")
+	require.NotNil(t, created, "the staged epic has its own add.epic event")
+	require.Contains(t, created.Targets, a.ID, "the event carries the amendment as provenance")
+	require.Equal(t, a.ID, created.After["amendment"])
+	require.Equal(t, "amend "+a.ID+" --add-epic", created.Command,
+		"the command recorded is the staging that created it")
+
+	approvals := eventsOfType(evs, "approve.epic")
+	var promoted *events.Event
+	for i := range approvals {
+		if containsStr(approvals[i].Targets, newID) {
+			promoted = &approvals[i]
+		}
+	}
+	require.NotNil(t, promoted, "the promotion records an approve.epic event")
+	require.Equal(t, a.ID, promoted.After["amendment"])
+	require.Equal(t, "approve amendment "+a.ID, promoted.Command,
+		"the command recorded is the gate that ran, not an approve epic nobody typed")
 }
 
 func TestApproveAmendmentAppendsAddedEpicsToPartialProjectOrderInStagedOrder(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, featureID, taskID := lanternFixture(t)
 	olderUnlistedID := resolveNode(t, load(t, root), store.NounEpic, "app-experience").NodeID()
@@ -1187,7 +1198,6 @@ func TestApproveAmendmentWithoutAddEpicDoesNotCreateOrRewriteProjectOrder(t *tes
 }
 
 func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 	existingID := resolveNode(t, load(t, root), store.NounEpic, "app-experience").NodeID()
@@ -1204,6 +1214,9 @@ func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
 	orderPath := filepath.Join(root, ".tiller", "order.yml")
 	beforeOrderBytes, err := os.ReadFile(orderPath)
 	require.NoError(t, err)
+	epicRel := filepath.Join(".tiller", "epics", "hardening", "epic.yml")
+	beforeEpicBytes, err := os.ReadFile(filepath.Join(root, epicRel))
+	require.NoError(t, err)
 	beforeTree := load(t, root)
 	beforeAmendment := beforeTree.Amendments[a.ID]
 	beforeEvents, err := events.List(beforeTree)
@@ -1214,6 +1227,9 @@ func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
 	// but atomic restoration necessarily gives it a new mtime.
 	delete(beforeSnapshot, filepath.Join(".tiller", ".cache", "generation"))
 	delete(beforeSnapshot, store.OrderRelPath)
+	// The held epic's promotion is rolled back the same way: original bytes,
+	// asserted below, and a new mtime.
+	delete(beforeSnapshot, epicRel)
 
 	// Match the existing transaction-failure fixture: event writes are planned
 	// after node and order writes, so refusing the destination exercises the
@@ -1234,19 +1250,24 @@ func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
 	afterTree := load(t, root)
 	require.Equal(t, []string{existingID}, afterTree.ProjectOrder.Epics,
 		"rollback restores the exact prior root-order membership")
-	require.Equal(t, beforeTree.Epics, afterTree.Epics, "no materialized epic survives the failed commit")
+	require.Equal(t, beforeTree.Epics, afterTree.Epics, "no promotion survives the failed commit")
+	require.Equal(t, "draft", afterTree.Epics[a.Operations[0].Node].Status,
+		"the held epic staging created is still a draft")
 	require.Equal(t, beforeAmendment, afterTree.Amendments[a.ID],
 		"the amendment remains proposed with its staged operations intact")
 	require.Equal(t, store.AmendmentStatusProposed, afterTree.Amendments[a.ID].Status)
-	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "hardening"))
 
 	afterEvents, err := events.List(afterTree)
 	require.NoError(t, err)
 	require.Equal(t, beforeEvents, afterEvents, "no add or approval event survives the failed commit")
 	require.NoFileExists(t, filepath.Join(root, ".tiller", ".cache", "journal.yml"))
+	afterEpicBytes, err := os.ReadFile(filepath.Join(root, epicRel))
+	require.NoError(t, err)
+	require.Equal(t, beforeEpicBytes, afterEpicBytes, "rollback restores the held epic's exact prior bytes")
 	afterSnapshot := snapshotDir(t, root)
 	delete(afterSnapshot, filepath.Join(".tiller", ".cache", "generation"))
 	delete(afterSnapshot, store.OrderRelPath)
+	delete(afterSnapshot, epicRel)
 	requireNoWrites(t, beforeSnapshot, afterSnapshot)
 }
 
@@ -1260,7 +1281,6 @@ func TestApproveAmendmentAddedEpicProjectOrderRollback(t *testing.T) {
 // one struct literal in amendment_approve.go's materialize switch, mirroring
 // the add-epic arm exactly; this test is the failing-first pin for it.
 func TestApproveAmendmentMaterializesAnAddFeatureWithSource(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -1286,7 +1306,6 @@ func TestApproveAmendmentMaterializesAnAddFeatureWithSource(t *testing.T) {
 
 // Amendment-created tasks do not inherit a sibling's implementation ownership.
 func TestApproveAmendmentMintsUnclaimedTasks(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, existingTaskID := lanternFixture(t)
 	require.Equal(t, "jc", load(t, root).Tasks[existingTaskID].Owner)
@@ -1323,7 +1342,6 @@ func TestApproveAmendmentMintsUnclaimedTasks(t *testing.T) {
 // approve call materializes the epic, then the feature, in staged order, and
 // the feature's own folder lands under the epic this same batch just minted.
 func TestApproveAmendmentMaterializesAFeatureUnderASameBatchStagedEpic(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -1372,11 +1390,13 @@ func TestApproveAmendmentSameBatchEpicCollisionAbortsBeforeItsFeature(t *testing
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
+	// Laid by hand in the pre-schema-15 shape (no node): staging a held draft
+	// now takes the key itself, so only a legacy batch can collide here.
 	a := openAmendment(t, root, deps, "hardening-collision")
-	a = stage(t, root, deps, a, mutate.StageInput{
-		Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
-	a = stage(t, root, deps, a, mutate.StageInput{
-		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"})
+	a = writeAmendmentOps(t, root, a, []store.AmendmentOp{
+		{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"},
+		{Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"},
+	})
 
 	// Another actor mints the same epic key live, between stage and approve.
 	_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "hardening", Title: "Hardening (already landed)"})
@@ -1564,7 +1584,6 @@ func setFeatureLineageOnDisk(t *testing.T, root, featKey string, supersedes []st
 // The one staged operation here is a new epic, which touches no existing
 // feature or task, so the lineage inputs below must stay unread and unwritten.
 func TestApproveAmendmentWithoutLineageOperationsDoesNotReadOrRewriteLineageInputs(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, taskID := lanternFixture(t)
 	a := openAmendment(t, root, deps, "design-only")
@@ -2018,9 +2037,12 @@ func TestApproveAmendmentRefusesAnAddWhoseKeyIsAlreadyHeld(t *testing.T) {
 	root, deps, _, _ := lanternFixture(t)
 	const newTaskKey = "app-experience/fast-logging/iphone-acceptance"
 
+	// Laid by hand in the pre-schema-15 shape (no node): a held draft is
+	// promoted idempotently instead (TestApproveIsResumable), so key_exists is
+	// the legacy path's recovery contract.
 	a := openAmendment(t, root, deps, "iphone-only")
-	a = stage(t, root, deps, a, mutate.StageInput{
-		Op: store.AmendmentOpAddTask, Key: newTaskKey, Title: "iPhone acceptance"})
+	a = writeAmendmentOps(t, root, a, []store.AmendmentOp{
+		{Op: store.AmendmentOpAddTask, Key: newTaskKey, Title: "iPhone acceptance"}})
 
 	// The batch is interrupted after this op landed, then re-approved.
 	_, err := mutate.AddTask(load(t, root), deps, mutate.TaskInput{Key: newTaskKey, Title: "iPhone acceptance"})
@@ -2108,7 +2130,6 @@ func TestApproveAmendmentMaterializesAnAddQuestion(t *testing.T) {
 // Blocks entry resolves to the feature's freshly minted id, the same
 // same-batch allowance a supersede's --by already gets against a staged key.
 func TestApproveAmendmentAddQuestionBlocksAFeatureAddedInTheSameBatch(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -2146,7 +2167,6 @@ func TestApproveAmendmentAddQuestionBlocksAFeatureAddedInTheSameBatch(t *testing
 // case above rests on), so by the time the add-question op folds, its
 // staged-key Blocks entry resolves to the epic's freshly minted id.
 func TestApproveAmendmentAddQuestionBlocksAnEpicAddedInTheSameBatch(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -2747,7 +2767,6 @@ func sourceFixture(t *testing.T, body string) (root string, deps mutate.Deps, a 
 // other empty batch (TestApproveAmendmentWithNoOperationsJustFlipsTheStatus's
 // own case, this time carrying a Source).
 func TestApproveAmendmentAcceptsAFreshIntakeSource(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, a, _ := sourceFixture(t, "the review body\n")
 	a = stage(t, root, deps, a, mutate.StageInput{
@@ -2942,7 +2961,6 @@ func TestApproveAmendmentRefusesAHandWhitespacedOpSourceWithNoWrites(t *testing.
 // the refusal above: the identical two-operation shape, staged normally with
 // neither source blanked, approves.
 func TestApproveAmendmentApprovesWhenEveryOpIsSourced(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, a, _ := sourceFixture(t, "the review body\n")
 
@@ -2967,7 +2985,6 @@ func TestApproveAmendmentApprovesWhenEveryOpIsSourced(t *testing.T) {
 // already exercises this shape incidentally (its add-task op carries no
 // Source); this test pins it directly and by name.
 func TestApproveAmendmentApprovesASourcelessOpOnANonIntakeAmendment(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
 
@@ -2997,4 +3014,318 @@ func TestApproveRefusesDraft(t *testing.T) {
 	require.Equal(t, "amendment_not_proposed", reasonOf(t, err))
 	require.Equal(t, "amendment "+a.ID+" is draft; hand it over first: tiller propose amendment iphone-only", err.Error())
 	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+// --- held drafts: approval promotes what staging created (D7, D8, D9, D12) ---
+
+// specifyCandidateIDs lists the feature ids the router offers for specify.
+func specifyCandidateIDs(tree *store.Tree) []string {
+	var out []string
+	for _, c := range views.NextOf(tree, views.NextInput{}).Candidates {
+		if c.Kind == "specify" && c.Node != nil {
+			out = append(out, c.Node.ID)
+		}
+	}
+	return out
+}
+
+// amendmentEvents keeps the events of one type that name the amendment.
+func amendmentEvents(t *testing.T, root, typ, amendmentID string) []events.Event {
+	t.Helper()
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	var out []events.Event
+	for _, ev := range eventsOfType(evs, typ) {
+		if containsStr(ev.Targets, amendmentID) {
+			out = append(out, ev)
+		}
+	}
+	return out
+}
+
+// TestApprovePromotesAHeldEpicAndLeavesItsFeatureDraft: approving the
+// amendment approves the epic it held (D8) and leaves the feature a draft for
+// specify (D9); the hold lifts from both.
+func TestApprovePromotesAHeldEpicAndLeavesItsFeatureDraft(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "hardening")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/csp-headers", Title: "CSP headers", ChangeType: "create"})
+	epicID, featureID := a.Operations[0].Node, a.Operations[1].Node
+	require.NotEmpty(t, epicID)
+	require.NotEmpty(t, featureID)
+
+	res := approve(t, root, deps, a)
+	require.Equal(t, store.AmendmentStatusApproved, res.Status)
+	require.Equal(t, epicID, res.Applied[0].NodeID)
+	require.Equal(t, "ready", res.Applied[0].Status)
+	require.Equal(t, featureID, res.Applied[1].NodeID)
+	require.Equal(t, "draft", res.Applied[1].Status)
+
+	tree := load(t, root)
+	require.Equal(t, "ready", tree.Epics[epicID].Status, "the amendment's approval is the epic's approval")
+	require.Equal(t, "draft", tree.Features[featureID].Status, "a held feature stays a draft for specify")
+	require.Nil(t, gen.AmendmentHold(tree, tree.Epics[epicID]))
+	require.Nil(t, gen.AmendmentHold(tree, tree.Features[featureID]))
+	require.NotEmpty(t, tree.ProjectOrder.Epics)
+	require.Equal(t, epicID, tree.ProjectOrder.Epics[len(tree.ProjectOrder.Epics)-1],
+		"the promoted epic joins the root order at approval")
+	require.Contains(t, specifyCandidateIDs(tree), featureID, "the feature is now offered for specify")
+
+	approvals := amendmentEvents(t, root, "approve.epic", a.ID)
+	require.Len(t, approvals, 1, "the promotion records the ordinary approve.epic event")
+	require.Equal(t, a.ID, approvals[0].After["amendment"])
+	require.EqualValues(t, 0, approvals[0].After["operation_index"])
+	require.Equal(t, "draft", approvals[0].Before["status"])
+	require.Equal(t, "ready", approvals[0].After["status"])
+	require.Len(t, amendmentEvents(t, root, "add.epic", a.ID), 1,
+		"approval adds no second add.epic: staging wrote the only one")
+}
+
+// TestApprovePromotesAHeldTaskWithItsBasis: a held task goes proposed to
+// ready with its task.md pinned, exactly as approve task pins it (D9).
+func TestApprovePromotesAHeldTaskWithItsBasis(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	const key = "app-experience/fast-logging/export-the-log"
+	a := openAmendment(t, root, deps, "export")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddTask, Key: key, Title: "Export the log"})
+	taskID := a.Operations[0].Node
+	require.Equal(t, "proposed", load(t, root).Tasks[taskID].Status)
+
+	res := approve(t, root, deps, a)
+	require.Equal(t, "ready", res.Applied[0].Status)
+
+	tree := load(t, root)
+	tk := tree.Tasks[taskID]
+	require.Equal(t, "ready", tk.Status)
+	require.NotNil(t, tk.AcceptedAgainst, "promotion pins the task's basis")
+	require.Equal(t, blobOf(t, root, filepath.Join(store.TaskRelDir("app-experience", "fast-logging", "export-the-log"), store.TaskProseFile)),
+		tk.AcceptedAgainst.Spec.Value)
+	require.NoError(t, mutate.BasisDrift(tree, tk, vcs.New(root)), "a fresh pin reports no drift")
+	approvals := amendmentEvents(t, root, "approve.task", a.ID)
+	require.Len(t, approvals, 1)
+	require.Equal(t, "proposed", approvals[0].Before["status"])
+}
+
+// TestApproveSkipsRemovedOperations: a draft removed by hand before approval
+// is reported removed and nothing is created for it.
+func TestApproveSkipsRemovedOperations(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "two-epics")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "observability", Title: "Observability"})
+	keptID, removedID := a.Operations[0].Node, a.Operations[1].Node
+	_, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounEpic, Node: removedID, Reason: "not this quarter"})
+	require.NoError(t, err)
+	a = loadAmendment(t, root, a.ID)
+	require.Equal(t, "not this quarter", a.Operations[1].Removed)
+
+	res := approve(t, root, deps, a)
+	require.Len(t, res.Applied, 2)
+	require.Equal(t, "ready", res.Applied[0].Status)
+	require.Equal(t, "removed", res.Applied[1].Status)
+	require.Equal(t, removedID, res.Applied[1].NodeID)
+	require.Equal(t, "observability", res.Applied[1].Key)
+
+	tree := load(t, root)
+	require.Equal(t, "ready", tree.Epics[keptID].Status)
+	require.Nil(t, tree.Epics[removedID], "approval re-creates nothing it was told to drop")
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "observability"))
+	require.NotContains(t, tree.ProjectOrder.Epics, removedID)
+}
+
+// TestApproveFollowsARenamedHeldDraft: the operation names its draft by id,
+// so a draft renamed after staging is promoted under its new key.
+func TestApproveFollowsARenamedHeldDraft(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "hardening")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening",
+		Preconditions: map[string]string{"key_absent": "hardening"}})
+	epicID := a.Operations[0].Node
+	_, err := mutate.RenameKey(load(t, root), deps, mutate.RenameKeyInput{Noun: store.NounEpic, Node: epicID, Key: "resilience"})
+	require.NoError(t, err)
+
+	res := approve(t, root, deps, loadAmendment(t, root, a.ID))
+	require.Equal(t, epicID, res.Applied[0].NodeID)
+	require.Equal(t, "resilience", res.Applied[0].Key, "the result names the draft's current key")
+	tree := load(t, root)
+	require.Equal(t, "ready", tree.Epics[epicID].Status)
+	require.Equal(t, "resilience", deref(t, tree.Epics[epicID].Key))
+	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "hardening"), "nothing lands under the staged key")
+}
+
+// TestApproveIsResumable: an approval cut short leaves some drafts promoted
+// under an amendment still proposed; approving again finishes the batch and
+// treats the promoted node as done (Review Focus 2).
+func TestApproveIsResumable(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "resume")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "app-experience/fast-logging/export-the-log", Title: "Export the log"})
+	epicID, taskID := a.Operations[0].Node, a.Operations[1].Node
+	setEpicStatusOnDisk(t, root, "hardening", "draft", "ready")
+	require.Equal(t, store.AmendmentStatusProposed, load(t, root).Amendments[a.ID].Status)
+
+	res := approve(t, root, deps, a)
+	require.Equal(t, store.AmendmentStatusApproved, res.Status)
+	require.Equal(t, "ready", res.Applied[0].Status, "an already promoted epic is accepted as done")
+	require.Equal(t, "ready", res.Applied[1].Status)
+
+	tree := load(t, root)
+	require.Equal(t, "ready", tree.Epics[epicID].Status)
+	require.Equal(t, "ready", tree.Tasks[taskID].Status)
+	require.Contains(t, tree.ProjectOrder.Epics, epicID)
+	require.Empty(t, amendmentEvents(t, root, "approve.epic", a.ID), "no promotion is reported for the epic this run did not move")
+	require.Len(t, amendmentEvents(t, root, "approve.task", a.ID), 1)
+}
+
+// TestApproveRefusesAMissingHeldNode: an operation whose draft is gone
+// refuses the whole approval and names the operation.
+func TestApproveRefusesAMissingHeldNode(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "vanished")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "observability", Title: "Observability"})
+	require.NoError(t, os.RemoveAll(filepath.Join(root, ".tiller", "epics", "observability")))
+
+	before := snapshotDir(t, root)
+	err := tryApprove(t, root, deps, loadAmendment(t, root, a.ID))
+	require.Error(t, err)
+	require.Equal(t, "held_node_missing", reasonOf(t, err))
+	require.ErrorContains(t, err, "operation 1")
+	requireNoWrites(t, before, snapshotDir(t, root))
+	require.Equal(t, "draft", load(t, root).Epics[a.Operations[0].Node].Status)
+}
+
+// TestApproveLegacyAddStillLandsDraft: an add staged before schema 15 carries
+// no node; approval creates it as before and it still needs its own gate
+// (D12).
+func TestApproveLegacyAddStillLandsDraft(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "legacy")
+	a = writeAmendmentOps(t, root, a, []store.AmendmentOp{
+		{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"},
+	})
+
+	res := approve(t, root, deps, a)
+	epicID := res.Applied[0].NodeID
+	require.NotEmpty(t, epicID)
+	require.Equal(t, "draft", res.Applied[0].Status)
+	tree := load(t, root)
+	require.Equal(t, "draft", tree.Epics[epicID].Status, "the old rule: created at approval, as a draft")
+	require.Contains(t, tree.ProjectOrder.Epics, epicID)
+	require.Len(t, amendmentEvents(t, root, "add.epic", a.ID), 1)
+	require.Empty(t, amendmentEvents(t, root, "approve.epic", a.ID))
+
+	driveWith(t, root, deps, store.NounEpic, "hardening", mutate.TransitionInput{Verb: "approve"})
+	require.Equal(t, "ready", load(t, root).Epics[epicID].Status, "approve epic is still needed, and now legal")
+}
+
+// TestApproveMixedBatch: a held feature and a cancel naming it as the
+// replacement apply together, and the lineage lands in both directions.
+func TestApproveMixedBatch(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	old, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{
+		Key: "app-experience/paper-logging", Title: "Paper logging", ChangeType: "create"})
+	require.NoError(t, err)
+
+	a := openAmendment(t, root, deps, "table-backed")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "app-experience/table-backed-logging", Title: "Table-backed logging", ChangeType: "replace"})
+	heldID := a.Operations[0].Node
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpCancel, Target: old.ID, Reason: "replaced by table-backed logging",
+		SupersededBy: "app-experience/table-backed-logging"})
+	require.Equal(t, heldID, a.Operations[1].SupersededBy, "staging recorded the held draft's id")
+
+	res := approve(t, root, deps, a)
+	require.Equal(t, "draft", res.Applied[0].Status)
+	require.Equal(t, "cancelled", res.Applied[1].Status)
+	require.Equal(t, heldID, res.Applied[1].Replacement)
+
+	tree := load(t, root)
+	require.Equal(t, "cancelled", tree.Features[old.ID].Status)
+	require.NotNil(t, tree.Features[old.ID].SupersededBy)
+	require.Equal(t, heldID, *tree.Features[old.ID].SupersededBy)
+	require.Equal(t, []string{old.ID}, tree.Features[heldID].Supersedes)
+	require.Equal(t, "draft", tree.Features[heldID].Status)
+	require.Nil(t, gen.AmendmentHold(tree, tree.Features[heldID]))
+}
+
+// TestStagedQuestionCanBlockAHeldDraft: a staged question stays staged (D13),
+// names the held draft by id, and blocks it once approval creates it.
+func TestStagedQuestionCanBlockAHeldDraft(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	const statement = "Which storage engine backs the table?"
+	a := openAmendment(t, root, deps, "table-backed")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "app-experience/table-backed-logging", Title: "Table-backed logging", ChangeType: "create"})
+	featureID := a.Operations[0].Node
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddQuestion, Title: "Storage engine", Statement: statement,
+		Blocks: []string{"app-experience/table-backed-logging"}})
+	require.Equal(t, []string{featureID}, a.Operations[1].Blocks, "the block names the held draft by id")
+	for _, q := range load(t, root).Questions {
+		require.NotEqual(t, statement, q.Statement, "staging creates no question")
+	}
+
+	res := approve(t, root, deps, a)
+	q := load(t, root).Questions[res.Applied[1].NodeID]
+	require.NotNil(t, q)
+	require.Equal(t, statement, q.Statement)
+	require.Equal(t, []string{featureID}, q.Blocks)
+}
+
+// TestApproveRefusesAnAmendmentWhoseEveryOperationWasRemoved: removing every
+// draft by hand leaves nothing to approve; the refusal names withdraw.
+func TestApproveRefusesAnAmendmentWhoseEveryOperationWasRemoved(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "dropped")
+	a = stage(t, root, deps, a, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "hardening", Title: "Hardening"})
+	_, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounEpic, Node: a.Operations[0].Node, Reason: "not needed"})
+	require.NoError(t, err)
+
+	before := snapshotDir(t, root)
+	err = tryApprove(t, root, deps, loadAmendment(t, root, a.ID))
+	require.Equal(t, "amendment_empty", reasonOf(t, err))
+	require.ErrorContains(t, err, "tiller withdraw amendment dropped")
+	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+// TestApproveRefusesAHeldTaskUnderAFeatureNoLongerApproved: promotion runs the
+// parent-state guard approve task runs, so a held task never reaches ready
+// under a feature that left its approved states after staging.
+func TestApproveRefusesAHeldTaskUnderAFeatureNoLongerApproved(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	a := openAmendment(t, root, deps, "export")
+	a = stage(t, root, deps, a, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "app-experience/fast-logging/export-the-log", Title: "Export the log"})
+	path := filepath.Join(root, lanternFeatureDir, "feature.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: active", "status: specced", 1)
+	require.NotEqual(t, string(data), out)
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
+
+	before := snapshotDir(t, root)
+	err = tryApprove(t, root, deps, a)
+	var ungated *mutate.ParentPlanUngatedError
+	require.ErrorAs(t, err, &ungated)
+	requireNoWrites(t, before, snapshotDir(t, root))
+	require.Equal(t, "proposed", load(t, root).Tasks[a.Operations[0].Node].Status)
 }

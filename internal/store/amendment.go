@@ -405,8 +405,14 @@ func AddedNodeNoun(op string) string {
 	return ""
 }
 
-// AmendmentEmpty reports whether a proposes nothing: it has no operation. An
-// operation marked removed will count as nothing too once removal lands.
+// AmendmentEmpty reports whether a proposes nothing: it has no operation, or
+// every operation it has was removed (a held draft removed by hand marks its
+// operation removed and leaves the entry on the list).
 func AmendmentEmpty(a *Amendment) bool {
-	return len(a.Operations) == 0
+	for _, op := range a.Operations {
+		if op.Removed == "" {
+			return false
+		}
+	}
+	return true
 }

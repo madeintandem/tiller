@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,6 +81,28 @@ func legacyStage(t *testing.T, root string, deps mutate.Deps, amendmentID string
 	require.NoError(t, os.WriteFile(amendmentDocPath(t, root, amendmentID), data, 0o644))
 }
 
+// approveFeatureOnDisk marks a feature ready, the approved state an amendment
+// needs before it may add tasks to it.
+func approveFeatureOnDisk(t *testing.T, root, featureKey string) {
+	t.Helper()
+	epicKey, local, _ := strings.Cut(featureKey, "/")
+	path := filepath.Join(root, ".tiller", "epics", epicKey, "features", local, "feature.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: draft", "status: ready", 1)
+	require.NotEqual(t, string(data), out)
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
+}
+
+// returnTask moves a task the amendment's approval promoted back to proposed,
+// the narrow reverse that makes its key and its removal legal again.
+func returnTask(t *testing.T, root string, deps mutate.Deps, taskID string) {
+	t.Helper()
+	tree := identityTree(t, root)
+	_, err := mutate.Transition(tree, deps, tree.Tasks[taskID], mutate.TransitionInput{Verb: "return", Reason: "Revisit"})
+	require.NoError(t, err)
+}
+
 func identityPage(t *testing.T, srv *httptest.Server, noun, nodeID string) views.NodePage {
 	t.Helper()
 	var page views.NodePage
@@ -88,7 +111,6 @@ func identityPage(t *testing.T, srv *httptest.Server, noun, nodeID string) views
 }
 
 func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	root, deps := identityRepo(t)
 	ep, err := mutate.AddEpic(identityTree(t, root), deps, mutate.EpicInput{Key: "engine", Title: "Engine"})
 	require.NoError(t, err)
@@ -98,6 +120,7 @@ func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testin
 	require.NoError(t, err)
 	sibling, err := mutate.AddTask(identityTree(t, root), deps, mutate.TaskInput{Key: "engine/parse/unchanged", Title: "Unchanged"})
 	require.NoError(t, err)
+	approveFeatureOnDisk(t, root, "engine/parse")
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "reshape", Title: "Replace parser"})
 	require.NoError(t, err)
 	proposeAmendment(t, root, deps, a.ID)
@@ -110,13 +133,21 @@ func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testin
 	srv := httptest.NewServer(serve.NodeHandler(root))
 	t.Cleanup(srv.Close)
 	proposed := identityPage(t, srv, "amendment", a.ID)
-	require.Nil(t, proposed.Amendment.Operations[0].Created)
-	require.Empty(t, proposed.Amendment.Operations[2].SupersededBy.ID, "a staged key is not a live identity")
+	heldNew := identityTree(t, root).Amendments[a.ID].Operations[0].Node
+	// Staging creates the held draft and resolves the replacement to its id,
+	// so both links are live before approval.
+	require.Equal(t, heldNew, proposed.Amendment.Operations[0].Created.ID)
+	require.Equal(t, heldNew, proposed.Amendment.Operations[2].SupersededBy.ID, "the replacement is the held draft's id")
 	require.Equal(t, feature.ID, proposed.Amendment.Operations[0].Parent.ID)
 	tree := identityTree(t, root)
 	approved, err := mutate.ApproveAmendment(tree, deps, tree.Amendments[a.ID])
 	require.NoError(t, err)
 	newID, extraID := approved.Applied[0].NodeID, approved.Applied[1].NodeID
+	require.Equal(t, heldNew, newID)
+	// Approval promoted both tasks to ready; returning them makes the rename
+	// and the removal below legal again.
+	returnTask(t, root, deps, newID)
+	returnTask(t, root, deps, extraID)
 	_, err = mutate.RenameKey(identityTree(t, root), deps, mutate.RenameKeyInput{Noun: "task", Node: newID, Key: "engine/parse/renamed"})
 	require.NoError(t, err)
 	reused, err := mutate.AddTask(identityTree(t, root), deps, mutate.TaskInput{Key: "engine/parse/new", Title: "Unrelated reuse"})
@@ -188,7 +219,6 @@ func TestAmendmentNavigationSurvivesApplicationRenameRemoveAndKeyReuse(t *testin
 }
 
 func TestAmendmentSameBatchParentAndHistoricalEpicDoNotRetarget(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	root, deps := identityRepo(t)
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "new-area", Title: "New area"})
 	require.NoError(t, err)
@@ -197,12 +227,16 @@ func TestAmendmentSameBatchParentAndHistoricalEpicDoNotRetarget(t *testing.T) {
 		mutate.StageInput{Op: "add-epic", Key: "area", Title: "Area"},
 		mutate.StageInput{Op: "add-feature", Key: "area/feature", Title: "Feature", ChangeType: "create"},
 	)
+	// An approved epic's key is locked, so the epic moves while it is still a
+	// held draft, the window rename is legal in.
+	epicID := identityTree(t, root).Amendments[a.ID].Operations[0].Node
+	_, err = mutate.RenameKey(identityTree(t, root), deps, mutate.RenameKeyInput{Noun: "epic", Node: epicID, Key: "moved"})
+	require.NoError(t, err)
 	tree := identityTree(t, root)
 	approved, err := mutate.ApproveAmendment(tree, deps, tree.Amendments[a.ID])
 	require.NoError(t, err)
-	epicID, featureID := approved.Applied[0].NodeID, approved.Applied[1].NodeID
-	_, err = mutate.RenameKey(identityTree(t, root), deps, mutate.RenameKeyInput{Noun: "epic", Node: epicID, Key: "moved"})
-	require.NoError(t, err)
+	require.Equal(t, epicID, approved.Applied[0].NodeID)
+	featureID := approved.Applied[1].NodeID
 	newEpic, err := mutate.AddEpic(identityTree(t, root), deps, mutate.EpicInput{Key: "area", Title: "Different area"})
 	require.NoError(t, err)
 	_, err = mutate.RemoveDraft(identityTree(t, root), deps, mutate.RemoveInput{Noun: "feature", Node: featureID, Reason: "Not needed"})
@@ -229,7 +263,6 @@ func TestAmendmentSameBatchParentAndHistoricalEpicDoNotRetarget(t *testing.T) {
 }
 
 func TestAmendmentQuestionFoldsAndPartialApplicationRemainHonest(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	root, deps := identityRepo(t)
 	ep, err := mutate.AddEpic(identityTree(t, root), deps, mutate.EpicInput{Key: "area", Title: "Area"})
 	require.NoError(t, err)
@@ -393,7 +426,6 @@ func TestLegacyAmendmentParentUsesBoundedIdentityEvidence(t *testing.T) {
 }
 
 func TestLegacyReplacementEventSurvivesMissingAddAndAmbiguousOperationJoin(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	root, deps := identityRepo(t)
 	_, err := mutate.AddEpic(identityTree(t, root), deps, mutate.EpicInput{Key: "area", Title: "Area"})
 	require.NoError(t, err)
@@ -401,6 +433,7 @@ func TestLegacyReplacementEventSurvivesMissingAddAndAmbiguousOperationJoin(t *te
 	require.NoError(t, err)
 	old, err := mutate.AddTask(identityTree(t, root), deps, mutate.TaskInput{Key: "area/feature/old", Title: "Old"})
 	require.NoError(t, err)
+	approveFeatureOnDisk(t, root, "area/feature")
 	a, err := mutate.AddAmendment(identityTree(t, root), deps, mutate.AmendmentInput{Key: "replace", Title: "Replace"})
 	require.NoError(t, err)
 	proposeAmendment(t, root, deps, a.ID)
@@ -412,16 +445,23 @@ func TestLegacyReplacementEventSurvivesMissingAddAndAmbiguousOperationJoin(t *te
 	applied, err := mutate.ApproveAmendment(tree, deps, tree.Amendments[a.ID])
 	require.NoError(t, err)
 	newID := applied.Applied[0].NodeID
+	returnTask(t, root, deps, newID)
 	_, err = mutate.RenameKey(identityTree(t, root), deps, mutate.RenameKeyInput{Noun: "task", Node: newID, Key: "area/feature/renamed"})
 	require.NoError(t, err)
 	reused, err := mutate.AddTask(identityTree(t, root), deps, mutate.TaskInput{Key: "area/feature/new", Title: "Unrelated"})
 	require.NoError(t, err)
 	tree = identityTree(t, root)
+	// The record an amendment staged before schema 15 keeps: its add carries
+	// no node, its cancel names the replacement by the staged key, and its
+	// approval wrote no approve.task promotion.
+	legacy := tree.Amendments[a.ID]
+	legacy.Operations[0].Node = ""
+	legacy.Operations[1].SupersededBy = "area/feature/new"
 	evs, err := events.List(tree)
 	require.NoError(t, err)
 	var partial []events.Event
 	for _, ev := range evs {
-		if ev.Type == "add.task" && ev.Targets[0] == newID {
+		if (ev.Type == "add.task" || ev.Type == "approve.task") && ev.Targets[0] == newID {
 			continue
 		}
 		delete(ev.After, "operation_index")

@@ -1121,6 +1121,32 @@ func TestQueueOffersWithdrawForAnEmptyProposedAmendment(t *testing.T) {
 	require.Equal(t, `tiller withdraw amendment empty-proposal --reason "<why>"`, got[0].Command)
 }
 
+// TestQueueOffersWithdrawWhenEveryOperationWasRemoved: an amendment whose
+// every held draft was removed by hand proposes nothing, so the queue offers
+// withdraw rather than an approval that would refuse amendment_empty.
+func TestQueueOffersWithdrawWhenEveryOperationWasRemoved(t *testing.T) {
+	key := "all-removed"
+	tree := &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-gone00": {ID: "A-gone00", Key: &key, Title: "Dropped", Status: store.AmendmentStatusProposed,
+				Operations: []store.AmendmentOp{
+					{Op: store.AmendmentOpAddEpic, Key: "x", Node: "E-aaaaaa", Removed: "not needed"},
+					{Op: store.AmendmentOpAddEpic, Key: "y", Node: "E-bbbbbb", Removed: "not needed either"},
+				}},
+		},
+	}
+	var got []views.QueueEntry
+	for _, e := range views.QueueOf(tree).Entries {
+		if e.ID == "A-gone00" {
+			got = append(got, e)
+		}
+	}
+	require.Len(t, got, 1)
+	require.Equal(t, "withdraw_amendment", got[0].Kind)
+	require.Equal(t, `tiller withdraw amendment all-removed --reason "<why>"`, got[0].Command)
+}
+
 func TestQueueOffersApproveForAProposedAmendmentWithOperations(t *testing.T) {
 	var got []views.QueueEntry
 	for _, e := range views.QueueOf(amendmentQueueTree()).Entries {

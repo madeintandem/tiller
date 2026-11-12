@@ -552,3 +552,14 @@ func TestValidateAmendment_SourceShape(t *testing.T) {
 		}
 	}
 }
+
+// TestAmendmentEmpty: an amendment proposes nothing when it has no operation
+// or when every operation it has was removed.
+func TestAmendmentEmpty(t *testing.T) {
+	removed := AmendmentOp{Op: AmendmentOpAddEpic, Key: "x", Node: "E-aaaaaa", Removed: "not needed"}
+	live := AmendmentOp{Op: AmendmentOpAddEpic, Key: "y", Node: "E-bbbbbb"}
+	require.True(t, AmendmentEmpty(&Amendment{}))
+	require.True(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{removed, removed}}))
+	require.False(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{removed, live}}))
+	require.False(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{live}}))
+}

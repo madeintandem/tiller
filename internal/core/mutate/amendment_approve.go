@@ -3,9 +3,10 @@ package mutate
 // This file holds the amendment's approve: the single human gate that validates
 // every staged operation against the live tree and then applies the whole batch
 // (cli-surface.md, "Large changes: amendments"; artifact-schema.md, Amendments).
-// Staging (amendment.go) writes proposals and executes nothing, so this is the
-// only code path that performs a reshape, and the only writer of the supersedes
-// link at either grain.
+// Staging (amendment.go) creates inert drafts and executes nothing else, so this
+// is the only code path that performs a reshape, the only one that moves the
+// drafts an amendment holds, and the only writer of the supersedes link at
+// either grain.
 //
 // It runs in two phases, and the split is the whole promise:
 //
@@ -15,10 +16,11 @@ package mutate
 //	amendment_preconditions_stale blocked answer (exit 1) naming each one.
 //
 //	Phase 2 applies the batch in the order the brief fixes: the add operations
-//	materialize first, so a supersedes link naming a staged key has a node to
-//	point at; then supersessions, then cancels, then the basis re-pins (revise,
-//	then correct-eval's completion-record re-pin); and the amendment's own
-//	status flips last.
+//	first (a held draft is promoted, an add staged before schema 15 is
+//	materialized, a removed one is skipped), so a supersedes link naming one
+//	has a node to point at; then supersessions, then cancels, then the basis
+//	re-pins (revise, then correct-eval's completion-record re-pin); and the
+//	amendment's own status flips last.
 //
 // ATOMICITY, honestly. Phase 2 plans every file and every event and hands them
 // to one store.Tree.Commit, which takes the repository mutation lock, journals a
@@ -40,9 +42,12 @@ package mutate
 // than leaving the events to commitMutation's append). So the one half-state a
 // kill can leave is operations landed under an amendment still proposed, and the
 // recovery contract for it is: re-approve. The gate runs again, and every
-// operation that already landed refuses loudly rather than double-applying. An
-// add whose node now exists refuses key_exists (it does not fold into the
-// idempotent no-op `tiller add` gives) — EXCEPT add-question, whose own
+// operation that already landed refuses loudly rather than double-applying.
+// A held draft is the exception by design: its promotion is idempotent, so a
+// draft already at its promoted status is accepted as done and the re-approve
+// finishes the rest. A legacy add (no node) whose node now exists refuses
+// key_exists (it does not fold into the idempotent no-op `tiller add` gives)
+// — EXCEPT add-question, whose own
 // idempotency rule (question.go's foldQuestion, the same rule `tiller add
 // question` itself follows) is a legal fold rather than a refusal: a
 // re-approve landing on a statement it, or a prior interrupted run, already
@@ -124,10 +129,12 @@ type ApproveResult struct {
 // the resolved node id even where the amendment staged a key.
 //
 // Outcome exists for add-question alone, and so does Note apart from
-// correct-eval's commit hint (below); both are blank for the other kinds. Every other add refuses key_exists before materialize ever
-// populates this struct for it (an add whose node already exists never
-// reaches here), and supersede/cancel/revise always genuinely mutate
-// something, so "was this really applied" never comes up for them. add-question
+// correct-eval's commit hint (below); both are blank for the other kinds. A
+// legacy add refuses key_exists before materialize ever populates this struct
+// for it (an add whose node already exists never reaches here), a held
+// draft's promotion reports the status it left the draft at, and
+// supersede/cancel/revise always genuinely mutate something, so "was this
+// really applied" never comes up for them. add-question
 // is different: its own idempotency rule (question.go's foldQuestion) folds a
 // same-statement duplicate rather than refusing, and a fold onto a closed
 // question, or an open one already holding every staged block, changes
@@ -145,6 +152,13 @@ type ApproveResult struct {
 // other writer: an applied correct-eval carries its commit hint there
 // (commitHint, amendment_correct_eval.go), since its new pin names a blob git
 // does not hold until the corrected feature.eval.md is committed.
+//
+// HeldDraft marks an add whose node staging created and this approval
+// promoted (an epic or a task to ready) or released (a feature, which stays a
+// draft for specify), as opposed to one materialized here under the rule
+// amendments staged before schema 15 keep (D12). An add whose operation was
+// removed reports Status OperationRemoved and names the draft that was
+// removed.
 type AppliedOperation struct {
 	Index       int
 	Op          string
@@ -156,7 +170,12 @@ type AppliedOperation struct {
 	Outcome     string
 	Note        string
 	Move        *store.FeatureMovePreconditions
+	HeldDraft   bool
 }
+
+// OperationRemoved is the Status an applied add reports when its held draft
+// was removed before approval: nothing was created, promoted, or released.
+const OperationRemoved = "removed"
 
 // The three outcomes AppliedOperation.Outcome ever carries, add-question's
 // own three-way report of what its materialize actually did (mirroring
@@ -283,6 +302,12 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 	if err := store.ValidateAmendment(doc); err != nil {
 		return ApproveResult{}, err
 	}
+	// Every draft the amendment holds must still be in the tree: approval
+	// promotes the nodes the human reviewed, never re-creates one that went
+	// missing (the same check propose runs at hand-over).
+	if err := checkHeldNodes(tree, doc); err != nil {
+		return ApproveResult{}, err
+	}
 
 	rev := deps.rev(tree.Root)
 
@@ -331,14 +356,16 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 }
 
 // resolvedOp is one staged operation with everything the live tree can settle
-// about it: the node a revise, supersede, or cancel targets, and the
-// replacement a supersede's by or a cancel's superseded_by names, which is
-// either a live node or the KEY of an add operation in this same batch, whose
-// id does not exist until phase 2 materializes it.
+// about it: the node a revise, supersede, or cancel targets, the held draft an
+// add staged since schema 15 created, and the replacement a supersede's by or a
+// cancel's superseded_by names, which is either a live node (a held draft
+// included) or the KEY of a legacy add operation in this same batch, whose id
+// does not exist until phase 2 materializes it.
 type resolvedOp struct {
 	index       int
 	op          store.AmendmentOp
 	target      store.Node
+	draft       store.Node
 	replace     store.Node
 	replaceKey  string
 	replaceNoun string
@@ -381,6 +408,11 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 		default:
 			continue
 		}
+		// A removed operation creates nothing, so its key is free for a later
+		// add to stage again.
+		if op.Removed != "" {
+			continue
+		}
 		// duplicateStagedKey (below) is the extracted predicate
 		// EvaluateAmendmentShape (amendment_validity.go, #57) shares: this call
 		// site tests it and refuses immediately (phase 1's first-offender
@@ -417,7 +449,13 @@ func resolveAmendment(tree *store.Tree, doc *store.Amendment) ([]resolvedOp, err
 
 		switch op.Op {
 		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
-			// Nothing to resolve: the key IS the node, and it does not exist yet.
+			// A held draft is resolved by its id, so a rename after staging
+			// cannot lose it; checkHeldNodes already refused one that is gone.
+			// A legacy add (no node) has nothing to resolve: its key IS the
+			// node, and it does not exist yet.
+			if op.Node != "" && op.Removed == "" {
+				r.draft = tree.AddedNode(op)
+			}
 		case store.AmendmentOpAddQuestion:
 			// Nothing to resolve either, for a different reason: a question
 			// carries no key or target at all (its identity is its
@@ -536,6 +574,11 @@ func duplicateStagedKey(doc *store.Amendment, index int, key string) bool {
 	for i, op := range doc.Operations {
 		if i >= index {
 			return false
+		}
+		// A removed operation created nothing that a later add could collide
+		// with: removing a draft frees its key to be staged again.
+		if op.Removed != "" {
+			continue
 		}
 		switch op.Op {
 		case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
@@ -1038,6 +1081,11 @@ func sourceVanishedErr(path string) error {
 func checkPreconditions(tree *store.Tree, b *batch, rev vcs.Revisions, doc *store.Amendment, plan []resolvedOp) error {
 	var stale []StalePrecondition
 	for _, r := range plan {
+		// A removed operation applies nothing, so nothing it guarded can be
+		// stale.
+		if r.op.Removed != "" {
+			continue
+		}
 		for _, name := range preconditionNames {
 			expected, ok := r.op.Preconditions[name]
 			if !ok {
@@ -1535,7 +1583,12 @@ func (b *batch) stagedNoun(noun, key string) bool {
 // addressed node, the same check loadTaskFile makes for the same reason: a
 // rewrite that lands on a sibling cancels a node nobody named.
 //
-// The two arms are asymmetric in one way worth naming. The feature arm restores
+// The epic arm serves the promotion of a held epic alone: resolveAmendment
+// refuses an epic as any operation's target, so no other pass reaches it. It
+// builds the same path moveEpicEdit does, so a move into a held epic shares
+// the one document the promotion edits.
+//
+// The two node arms are asymmetric in one way worth naming. The feature arm restores
 // EpicKey onto the fresh document, because that field comes from the directory
 // layout rather than from feature.yml (yaml:"-") and featureRelDir would build
 // the wrong path without it. The task arm restores no FeatureID, and does not
@@ -1545,6 +1598,24 @@ func (b *batch) stagedNoun(noun, key string) bool {
 // arm sets EpicKey.
 func (b *batch) editFor(tree *store.Tree, n store.Node) (*nodeEdit, error) {
 	switch t := n.(type) {
+	case *store.Epic:
+		if t.Key == nil {
+			return nil, fmt.Errorf("mutate: epic %s has no canonical key", t.ID)
+		}
+		rel := filepath.Join(epicRelDir(t), "epic.yml")
+		if e, ok := b.edits[rel]; ok {
+			return e, nil
+		}
+		var doc store.Epic
+		snapshot, err := readYAMLSnapshot(tree.Root, filepath.Join(tree.Root, rel), &doc)
+		if err != nil {
+			return nil, err
+		}
+		if doc.ID != t.ID {
+			return nil, fmt.Errorf("mutate: %s holds epic %s, not the addressed %s", rel, doc.ID, t.ID)
+		}
+		return b.register(&nodeEdit{noun: store.NounEpic, rel: rel, doc: &doc, before: snapshot}), nil
+
 	case *store.Feature:
 		if t.Key == nil {
 			return nil, fmt.Errorf("mutate: feature %s has no canonical key", t.ID)
@@ -1645,7 +1716,7 @@ func applyAmendment(tree *store.Tree, deps Deps, owner store.Contributor, rev vc
 
 	applied := make([]AppliedOperation, len(plan))
 
-	if err := b.materialize(tree, deps, owner, doc, plan, applied); err != nil {
+	if err := b.materialize(tree, deps, owner, rev, doc, plan, applied); err != nil {
 		return ApproveResult{}, err
 	}
 	if err := b.supersede(tree, deps, owner, doc, plan, applied); err != nil {
@@ -1758,7 +1829,11 @@ func applyAmendment(tree *store.Tree, deps Deps, owner store.Contributor, rev vc
 }
 
 // materialize is phase 2 step 1: the add operations become real nodes, in the
-// order they were staged, before anything can need to point at them.
+// order they were staged, before anything can need to point at them. An add
+// staged since schema 15 already has its node, a draft this amendment holds,
+// and is promoted instead (promote, below); a removed one is reported and
+// skipped. Only an add with no node, staged before schema 15, is planned here
+// from its key (D12), and everything below about planning describes that path.
 //
 // Ownership follows add.go's own rule with no separate handling here
 // (docs/spec/cli-surface.md):
@@ -1781,10 +1856,25 @@ func applyAmendment(tree *store.Tree, deps Deps, owner store.Contributor, rev vc
 // `source` key, so a staged add-task's citation stays where every other op's
 // stays regardless of kind, on the amendment's own operations list
 // (`show amendment --json`), never on the task node itself.
-func (b *batch) materialize(tree *store.Tree, deps Deps, owner store.Contributor,
+func (b *batch) materialize(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revisions,
 	doc *store.Amendment, plan []resolvedOp, applied []AppliedOperation) error {
 
 	for _, r := range plan {
+		if store.AddedNodeNoun(r.op.Op) != "" {
+			if r.op.Removed != "" {
+				applied[r.index] = AppliedOperation{
+					Index: r.index, Op: r.op.Op, Noun: store.AddedNodeNoun(r.op.Op),
+					NodeID: r.op.Node, Key: r.op.Key, Status: OperationRemoved,
+				}
+				continue
+			}
+			if r.draft != nil {
+				if err := b.promote(tree, deps, owner, rev, doc, r, applied); err != nil {
+					return err
+				}
+				continue
+			}
+		}
 		var (
 			pa  plannedAdd
 			err error
@@ -2034,6 +2124,87 @@ func (b *batch) materialize(tree *store.Tree, deps Deps, owner store.Contributor
 			Outcome: outcome,
 			Note:    note,
 		}
+	}
+	return nil
+}
+
+// promote lifts the hold on one draft this amendment created at staging, the
+// node the human reviewed in the tree. A held epic goes draft to ready (D8),
+// the status change `approve epic` makes, at the project's default review
+// grain. A held task goes proposed to ready with its task.md pinned as
+// accepted_against by recordTaskBasis (D9), under the same parent-state guard
+// `approve task` runs, so a task never reaches ready under a feature that has
+// since left its approved states. A held feature is left a draft: its spec,
+// contract, and tasks come from specify and its own plan approval (D9).
+//
+// The node is loaded through editFor, so it joins this batch's one journaled
+// transaction and its guard set, and a cancel or supersession naming it later
+// in phase 2 edits the same document. The promotion goes below
+// applyTransition's hold check on purpose: approval is the one act the hold
+// waits for.
+//
+// It is idempotent, which is the recovery contract for an approval cut short:
+// a node already at its promoted status is accepted as done and records no
+// second event. Any other status is an illegal approve, refused like a cancel
+// the lifecycle forbids. Each promotion records the ordinary approve.<noun>
+// event, carrying the amendment and the operation index.
+func (b *batch) promote(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revisions,
+	doc *store.Amendment, r resolvedOp, applied []AppliedOperation) error {
+
+	e, err := b.editFor(tree, r.draft)
+	if err != nil {
+		return err
+	}
+	before := e.doc.NodeStatus()
+	promoted := ""
+	switch e.noun {
+	case store.NounEpic:
+		promoted = "ready"
+		b.addedEpicIDs = append(b.addedEpicIDs, e.doc.NodeID())
+	case store.NounTask:
+		promoted = "ready"
+	}
+
+	if promoted != "" && before != promoted {
+		if legal, moves := lifecycle.Legal(e.doc, "approve"); !legal {
+			return &lifecycle.IllegalTransitionError{Noun: e.noun, From: before, Verb: "approve", Legal: moves}
+		}
+		if tk, ok := e.doc.(*store.Task); ok {
+			feat := tree.Features[r.draft.(*store.Task).FeatureID]
+			if feat == nil {
+				return fmt.Errorf("mutate: task %s has no resolvable parent feature", tk.ID)
+			}
+			if err := guardParentState(tree, feat, tk); err != nil {
+				return err
+			}
+			if err := recordTaskBasis(e.dir(), tk, deps, rev); err != nil {
+				return err
+			}
+		}
+		if err := lifecycle.Apply(e.doc, "approve", lifecycle.Payload{}); err != nil {
+			return err
+		}
+		b.dirty[e.rel] = true
+
+		ev := amendmentOpEvent(deps, owner, doc, "approve."+e.noun, []string{e.doc.NodeID()}, e.rel)
+		ev.Before = map[string]any{"status": before}
+		ev.After["status"] = e.doc.NodeStatus()
+		ev.After["operation_index"] = r.index
+		b.events = append(b.events, ev)
+	}
+
+	// A legacy add-question in this same batch may still name the draft by its
+	// staged key; b.staged answers that lookup the way it does for a node
+	// materialized here.
+	b.staged[r.op.Key] = e
+	applied[r.index] = AppliedOperation{
+		Index:     r.index,
+		Op:        r.op.Op,
+		Noun:      e.noun,
+		NodeID:    e.doc.NodeID(),
+		Key:       deref(e.doc.NodeKey()),
+		Status:    e.doc.NodeStatus(),
+		HeldDraft: true,
 	}
 	return nil
 }

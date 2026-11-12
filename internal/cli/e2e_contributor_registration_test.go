@@ -95,14 +95,16 @@ func TestEndToEndContributorRegistrationBootstrapAttributionAndRefusals(t *testi
 		"--source", ".tiller/design/field-note.md#L3-L4", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 
-	t.Skip("held drafts: Task 11")
 	approveOut, _, code := execCLI(t, "approve", "amendment", aid)
 	require.Equal(t, 0, code, approveOut)
 	require.Contains(t, approveOut, "acting as jc (.tiller/identity.yml)",
 		"a bare approve falls through to the identity file exactly like the incident's own approve did")
-	require.Contains(t, approveOut, "1 epic(s) minted and owned by jc.",
-		"the epic the batch minted is credited to the identity approve resolved, visible in the output "+
-			"that used to stay silent about it")
+	// Staging minted the epic, attributed to the contributor who staged it;
+	// the approval mints nothing and says what it did to the held draft
+	// instead.
+	require.Contains(t, approveOut, "approved epic reliability (",
+		"the approval names the held epic it approved")
+	require.NotContains(t, approveOut, "minted and owned by")
 	require.NotContains(t, approveOut, "minted nodes owned by")
 
 	// --- an unregistered --as refuses, naming the roster and the fix ---

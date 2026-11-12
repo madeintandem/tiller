@@ -231,7 +231,6 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 		"the restored contract hashes to exactly what the precondition pinned")
 
 	// --- the apply ---
-	t.Skip("held drafts: Task 11")
 	applied, stderr, code := execCLI(t, "approve", "amendment", "form-engine-rework", "--contributor", "jc")
 	require.Equal(t, 0, code, stderr)
 	replacementTask := taskIDByKey(t, amendE2EReplacementKey)
@@ -241,7 +240,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 		"the batch's one mint is a task, which carries no ownership clause at all: its real "+
 			"landing owner is not something Op alone can honestly report")
 	require.Contains(t, applied, "operation 0 (revise) "+cliFeatureKey+" ("+featureID+"): active")
-	require.Contains(t, applied, "operation 1 (add-task) "+amendE2EReplacementKey+" ("+replacementTask+"): proposed")
+	require.Contains(t, applied, "operation 1 (add-task): approved task "+amendE2EReplacementKey+" ("+replacementTask+")")
 	require.Contains(t, applied, "operation 2 (cancel) form-engine/certification-form-loading/transcribe-the-schema ("+
 		retiredTask+"): cancelled, replaced by "+amendE2EReplacementKey+" ("+replacementTask+")")
 	require.Contains(t, applied, "Operations applied: 3")
@@ -260,7 +259,7 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 	require.NotNil(t, retired.SupersededBy)
 	require.Equal(t, replacementTask, *retired.SupersededBy, "the retired task names what replaced it")
 	require.Equal(t, []string{retiredTask}, replacement.Supersedes, "the replacement names what it replaced")
-	require.Equal(t, "proposed", replacement.Status, "a materialized task lands proposed, ahead of its own gate")
+	require.Equal(t, "ready", replacement.Status, "the held task is approved with its amendment (D9)")
 	require.Equal(t, featureID, replacement.FeatureID, "the replacement is under the feature the reshape revised")
 	require.Nil(t, replacement.SupersededBy)
 
@@ -326,14 +325,20 @@ func TestEndToEndAmendmentReplaysTheLanternReshape(t *testing.T) {
 	require.Contains(t, cancelEvent.Targets, amendmentID)
 	require.Equal(t, "approve amendment "+amendmentID, cancelEvent.Command)
 
-	// The materialized task keeps the add.task event `tiller add task` itself
-	// would have written, with the amendment added as provenance. Selecting it by
-	// the amendment is what tells it apart from the fixture's own add.task, and
-	// that the two are distinguishable at all is the provenance working.
+	// The held task keeps the add.task event staging wrote when it created
+	// it, with the amendment added as provenance. Selecting it by the
+	// amendment is what tells it apart from the fixture's own add.task, and
+	// that the two are distinguishable at all is the provenance working. The
+	// approval's promotion is its own approve.task event, naming the gate.
 	addEvent := soleAmendmentEvent(t, after, amendmentID, "add.task")
 	require.Equal(t, amendE2EReplacementKey, addEvent.After["key"])
-	require.Equal(t, "approve amendment "+amendmentID, addEvent.Command,
-		"the command recorded is the gate that ran, not an add verb nobody typed")
+	require.Equal(t, "amend "+amendmentID+" --add-task", addEvent.Command,
+		"the command recorded is the staging that created the draft")
+	promoteEvent := soleAmendmentEvent(t, after, amendmentID, "approve.task")
+	require.Equal(t, "approve amendment "+amendmentID, promoteEvent.Command,
+		"the command recorded is the gate that ran, not an approve verb nobody typed")
+	require.Equal(t, "proposed", promoteEvent.Before["status"])
+	require.Equal(t, "ready", promoteEvent.After["status"])
 
 	reviseEvent := soleAmendmentEvent(t, after, amendmentID, "revise.feature")
 	require.Equal(t, priorSpecPin, reviseEvent.Before["spec"])
@@ -582,4 +587,65 @@ func requireRepoUnwritten(t *testing.T, before, after map[string]string) {
 	}
 	sort.Strings(changed)
 	require.Empty(t, changed, "a refused approve writes nothing at all")
+}
+
+// TestEndToEndApprovePromotesHeldDrafts drives held drafts through the CLI:
+// stage an epic, a feature under it, and a task under an approved feature,
+// hand the amendment over, and approve it. The confirmation says what the
+// approval did to each draft: the epic and the task are approved (D8, D9), and
+// the feature stays a draft with specify next.
+func TestEndToEndApprovePromotesHeldDrafts(t *testing.T) {
+	layAmendmentTree(t)
+	approveFixtureFeatureOnDisk(t)
+	_, stderr, code := execCLI(t, "add", "amendment", "hardening", "--title", "Harden the forms", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	aid := amendmentIDByKey(t, "hardening")
+
+	for _, args := range [][]string{
+		{"--add-epic", "hardening", "--title", "Hardening"},
+		{"--add-feature", "hardening/csp-headers", "--title", "CSP headers", "--change-type", "create"},
+		{"--add-task", "form-engine/certification-form-loading/load-offline", "--title", "Load offline"},
+	} {
+		_, stderr, code = execCLI(t, append(append([]string{"amend", aid}, args...), "--contributor", "jc")...)
+		require.Equal(t, 0, code, stderr)
+	}
+	proposeAmendmentCLI(t, aid)
+
+	tree := loadCwdTree(t)
+	ops := tree.Amendments[aid].Operations
+	epicID, featureID, taskID := ops[0].Node, ops[1].Node, ops[2].Node
+
+	out, stderr, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "approved epic hardening ("+epicID+")")
+	require.Contains(t, out, "feature hardening/csp-headers ("+featureID+") stays draft; specify is next")
+	require.Contains(t, out, "approved task form-engine/certification-form-loading/load-offline ("+taskID+")")
+	require.NotContains(t, out, "minted", "staging created these drafts; approval minted nothing")
+
+	tree = loadCwdTree(t)
+	require.Equal(t, "approved", tree.Amendments[aid].Status)
+	require.Equal(t, "ready", tree.Epics[epicID].Status)
+	require.Equal(t, "draft", tree.Features[featureID].Status)
+	require.Equal(t, "ready", tree.Tasks[taskID].Status)
+}
+
+// TestApproveAmendmentReportsARemovedDraftApart: a draft removed before
+// approval is named as removed and is not counted among the applied
+// operations.
+func TestApproveAmendmentReportsARemovedDraftApart(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "two-epics", "Two new epics")
+	for _, key := range []string{"hardening", "observability"} {
+		_, stderr, code := execCLI(t, "amend", aid, "--add-epic", key, "--title", key, "--contributor", "jc")
+		require.Equal(t, 0, code, stderr)
+	}
+	removedID := loadCwdTree(t).Amendments[aid].Operations[1].Node
+	_, stderr, code := execCLI(t, "remove", "epic", "observability", "--reason", "not this quarter", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+
+	out, stderr, code := execCLI(t, "approve", "amendment", aid, "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, ": 1 operation(s) applied, 1 removed.")
+	require.Contains(t, out, "operation 1 (add-epic) observability ("+removedID+"): removed")
+	require.Contains(t, out, "Operations applied: 1")
 }

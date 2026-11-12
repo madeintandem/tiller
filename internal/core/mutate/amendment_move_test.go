@@ -145,7 +145,6 @@ func TestReviewedMovePreservesReadyClaimsBasisAndEpicGrain(t *testing.T) {
 }
 
 func TestReviewedMoveMultipleIntoEarlierStagedEpic(t *testing.T) {
-	t.Skip("held drafts: Task 11")
 	t.Parallel()
 	root, deps, fid, _ := moveFixture(t)
 	other, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{Key: "source/second", Title: "Second", ChangeType: "create"})
@@ -163,7 +162,7 @@ func TestReviewedMoveMultipleIntoEarlierStagedEpic(t *testing.T) {
 	for _, epic := range tree.Epics {
 		if *epic.Key == "new-destination" {
 			require.Equal(t, []string{fid, other.ID}, epic.Order)
-			require.Equal(t, "draft", epic.Status)
+			require.Equal(t, "ready", epic.Status, "the held destination epic is approved with its amendment")
 		}
 	}
 	require.Equal(t, "new-destination/one", *tree.Features[fid].Key)
