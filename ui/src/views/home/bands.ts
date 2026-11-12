@@ -19,7 +19,7 @@ export type BandRun =
   | { type: "cards"; kind: string; entries: QueueEntry[] }
   | { type: "band"; group: QueueCardGroup };
 
-const NEVER_COMPRESSED = new Set(["approve_amendment", "attest_gate", "attest_criterion", "workflow_closeout"]);
+const NEVER_COMPRESSED = new Set(["approve_amendment", "withdraw_amendment", "attest_gate", "attest_criterion", "workflow_closeout"]);
 
 export function bandRuns(groups: QueueCardGroup[]): BandRun[] {
   return groups.map((group) =>

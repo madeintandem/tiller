@@ -58,6 +58,7 @@ import type { Expansion } from "../views/explore/expansion";
 import { isOpen } from "../views/explore/expansion";
 import { readHideCancelled, visibleRows, writeHideCancelled } from "../views/explore/hideCancelled";
 import { shelfBranchID } from "../views/explore/shelves";
+import AmendmentHoldFlag from "./AmendmentHoldFlag";
 import EmptyNote from "./EmptyNote";
 import StateBar from "./StateBar";
 import StateGlyph from "./StateGlyph";
@@ -425,6 +426,7 @@ function EpicRow({
         >
           {label}
         </Link>
+        <AmendmentHoldFlag by={epic.in_amendment} />
         <span className="explore-epic-count">{features.length}</span>
       </div>
       <div className="explore-epic-bar">
@@ -526,6 +528,7 @@ function FeatureRow({
         >
           {label}
         </Link>
+        <AmendmentHoldFlag by={feature.in_amendment} />
         {hasChildren && <span className="explore-feat-count">{tasks.length}</span>}
       </div>
       {open && hasChildren && (
@@ -560,6 +563,7 @@ function TaskRow({ task, selected }: { task: TreeNode; selected: NavigatorSelect
       >
         {label}
       </Link>
+      <AmendmentHoldFlag by={task.in_amendment} />
     </div>
   );
 }

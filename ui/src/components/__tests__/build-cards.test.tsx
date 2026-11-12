@@ -187,3 +187,25 @@ describe("Build epic eyebrow", () => {
     expect(document.querySelectorAll(".fcard .f-epic")).toHaveLength(0);
   });
 });
+
+describe("Build amendment hold flag", () => {
+  it("labels a held draft in words and leaves an unheld draft alone", async () => {
+    renderBoard([
+      epic("E-1", "form", "Form Engine", [
+        feature({
+          id: "F-held",
+          status: "draft",
+          title: "Held feature",
+          amendment_hold: { id: "A-9", key: "iphone-only", ref: "iphone-only (A-9)", title: "iPhone only", status: "draft" },
+        }),
+        feature({ id: "F-plain", status: "draft", title: "Plain feature" }),
+      ]),
+    ]);
+    const held = (await screen.findByText("Held feature")).closest(".fcard") as HTMLElement;
+    const flag = within(held).getByText("In amendment");
+    expect(flag).toHaveAttribute("title", "Held by amendment iPhone only");
+    expect(flag).not.toHaveClass("blocked");
+    const plain = screen.getByText("Plain feature").closest(".fcard") as HTMLElement;
+    expect(within(plain).queryByText("In amendment")).toBeNull();
+  });
+});

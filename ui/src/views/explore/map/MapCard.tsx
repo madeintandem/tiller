@@ -37,6 +37,7 @@ import type { PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { MapNodeView, MapView } from "../../../api";
+import AmendmentHoldFlag from "../../../components/AmendmentHoldFlag";
 import Chip from "../../../components/Chip";
 import { displayStatus } from "../../../lib/displayStatus";
 import { kindLabel } from "../../../lib/kind";
@@ -205,6 +206,11 @@ export default function MapCard({
       <div className="map-dock-body">
         <h2 className="map-dock-title">{title}</h2>
         {node.key !== undefined && <p className="map-dock-key mono">{node.key}</p>}
+        {node.amendment_hold !== undefined && (
+          <p className="map-dock-fact">
+            <AmendmentHoldFlag hold={node.amendment_hold} />
+          </p>
+        )}
         {(node.noun === "epic" || node.noun === "feature" || node.owner !== undefined || holds > 0) && (
           <div className="map-dock-facts">
             {node.noun === "epic" || node.noun === "feature" ? (

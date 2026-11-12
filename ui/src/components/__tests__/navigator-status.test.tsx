@@ -250,3 +250,33 @@ describe("Navigator: hide cancelled", () => {
     expect(window.localStorage.getItem(HIDE_CANCELLED_STORAGE_KEY)).toBe("false");
   });
 });
+
+describe("Navigator: amendment hold marker", () => {
+  it("labels a held row in words, and only that row", () => {
+    const held: TreeNode = { ...node("feature", "F-held", "Held feature", "draft"), in_amendment: "iphone-only" };
+    const heldTree: TreeModel = {
+      project: "acme",
+      nodes: [node("epic", "E-a", "Checkout", "active", [held, node("feature", "F-plain", "Plain feature", "draft")])],
+    };
+    render(
+      <MemoryRouter>
+        <Navigator
+          tree={loaded(heldTree)}
+          questions={loaded(shelf("question", []))}
+          bugs={loaded(shelf("bug", []))}
+          chores={loaded(shelf("chore", []))}
+          tweaks={loaded(shelf("tweak", []))}
+          summary={loaded({} as ProjectSummary)}
+          selected={null}
+          expansion={new Map([["E-a", true]])}
+          onToggleBranch={() => {}}
+          onOpenAll={() => {}}
+          onCloseAll={() => {}}
+        />
+      </MemoryRouter>,
+    );
+    const flag = within(rowOf("Held feature")).getByText("In amendment");
+    expect(flag).toHaveAttribute("title", "Held by amendment iphone-only");
+    expect(within(rowOf("Plain feature")).queryByText("In amendment")).toBeNull();
+  });
+});

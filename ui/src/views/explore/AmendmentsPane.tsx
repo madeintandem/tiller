@@ -20,13 +20,13 @@ import { has } from "../../lib/has";
 import "../explore-ledgers.css";
 import { activeLedgerStatus, ledgerStatusTabs, rowsForStatus, withLedgerStatus } from "./ledgerStatus";
 
-const AMENDMENT_STATUSES = ["proposed", "approved", "withdrawn"] as const;
+const AMENDMENT_STATUSES = ["draft", "proposed", "approved", "withdrawn"] as const;
 
 // The grid's order: proposed amendments lead, each group newest first by the
 // date it was proposed. An undated row follows the dated ones in its group, and
 // equal rows keep the order the server served (Array.sort is stable).
 function proposedFirstNewest(rows: ListRow[]): ListRow[] {
-  const rank = (row: ListRow) => (row.status === "proposed" ? 0 : 1);
+  const rank = (row: ListRow) => (row.status === "draft" || row.status === "proposed" ? 0 : 1);
   const at = (row: ListRow) => (has(row.proposed_at) ? Date.parse(row.proposed_at) : Number.NaN);
   return [...rows].sort((a, b) => {
     if (rank(a) !== rank(b)) return rank(a) - rank(b);

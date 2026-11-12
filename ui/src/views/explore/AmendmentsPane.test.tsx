@@ -153,3 +153,24 @@ describe("AmendmentsPane", () => {
     });
   });
 });
+
+describe("AmendmentsPane: the draft status", () => {
+  it("reads All, Draft, Proposed, Approved, Withdrawn with counts, and leads with open amendments", () => {
+    serve([row("A-1", "approved"), row("A-2", "draft"), row("A-3", "proposed"), row("A-4", "withdrawn"), row("A-5", "draft")]);
+    renderPane();
+    expect(screen.getAllByRole("tab").map((t) => t.textContent?.replace(/\s+/g, " ").trim())).toEqual([
+      "All · 5",
+      "Draft · 2",
+      "Proposed · 1",
+      "Approved · 1",
+      "Withdrawn · 1",
+    ]);
+  });
+
+  it("lists open amendments, draft and proposed, ahead of settled ones", () => {
+    serve([row("A-1", "approved", "2026-03-01T10:00:00Z"), row("A-2", "draft", "2026-01-01T10:00:00Z"), row("A-3", "withdrawn", "2026-04-01T10:00:00Z")]);
+    renderPane();
+    const titles = screen.getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0].textContent);
+    expect(titles).toEqual(["Title A-2", "Title A-3", "Title A-1"]);
+  });
+});

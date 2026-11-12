@@ -532,3 +532,19 @@ describe("Chip: the hero size", () => {
     expect(container.querySelector(".chip")).not.toHaveClass("chip-hero");
   });
 });
+
+describe("Node header: the amendment hold chip", () => {
+  const hold = { id: "A-9", key: "iphone-only", ref: "iphone-only (A-9)", title: "iPhone only", status: "draft" };
+
+  it("names the holding amendment and links to it, in words", () => {
+    const { container } = mount(<NodeDetail page={pageOf({ ...feature, status: "draft", amendment_hold: hold })} />);
+    const link = header(container).getByRole("link", { name: "Held by amendment iPhone only" });
+    expect(link).toHaveAttribute("href", "/node/amendment/A-9");
+    expect(link.textContent).toBe("In amendment");
+  });
+
+  it("is absent for a node no amendment holds", () => {
+    const { container } = mount(<NodeDetail page={pageOf({ ...feature, status: "draft" })} />);
+    expect(header(container).queryByText("In amendment")).toBeNull();
+  });
+});

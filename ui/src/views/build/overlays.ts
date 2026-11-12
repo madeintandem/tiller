@@ -27,6 +27,8 @@ export function askFlagLabel(entry: QueueEntry): string {
     case "approve_feature":
     case "approve_tasks":
       return "approve";
+    case "withdraw_amendment":
+      return "withdraw";
     case "answer_question":
       return "answer";
     case "attest_gate":

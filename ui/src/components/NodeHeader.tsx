@@ -12,7 +12,8 @@
 // reachable from NodeDetailHeader alone.
 
 import { Fragment, type ReactNode } from "react";
-import type { DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
+import { Link } from "react-router-dom";
+import type { AmendmentHoldView, DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
 import { withActivityPhrase } from "../lib/activityPhrase";
 import { displayStatus } from "../lib/displayStatus";
 import { markerCopy } from "../lib/drift";
@@ -23,6 +24,7 @@ import { kindLabel } from "../lib/kind";
 import { shortRev } from "../lib/revision";
 import { PersonName } from "../people";
 import { composeStat } from "../views/home/stat";
+import { amendmentHoldTitle } from "./AmendmentHoldFlag";
 import Chip from "./Chip";
 import Contributors from "./Contributors";
 import { CopyRef } from "./CopyCmd";
@@ -172,6 +174,22 @@ function HeldChip({ held }: { held: HeldView | undefined }) {
   );
 }
 
+// AmendmentHoldChip names the open amendment holding this draft and links to
+// it. The word "In amendment" is the visible label; the accessible name says
+// whose. A held draft is waiting on a decision, not blocked, so it takes the
+// quiet draft register Chip already gives the review-grain badge, never the
+// blocked one HeldChip uses for a retired ancestor.
+function AmendmentHoldChip({ hold }: { hold: AmendmentHoldView | undefined }) {
+  if (hold === undefined) {
+    return null;
+  }
+  return (
+    <Link to={`/node/amendment/${hold.id}`} aria-label={amendmentHoldTitle(hold.title)} className="amendment-hold-chip">
+      <Chip status="draft">In amendment</Chip>
+    </Link>
+  );
+}
+
 // ReviewGrainChip is the Review Grain build's own badge: the resolved
 // review grain in force for work under an epic or a feature
 // (node.review_grain, views.NodeView.ReviewGrain), rendered only when it
@@ -234,6 +252,7 @@ function KindLine({
       )}
       <DriftedChip badges={page.drift} expanded={driftExpanded} onToggle={onDriftToggle} />
       <HeldChip held={node.held} />
+      <AmendmentHoldChip hold={node.amendment_hold} />
       <ReviewGrainChip node={node} />
       {node.blocked === true && <span className="instr-blocked error">blocked</span>}
     </div>

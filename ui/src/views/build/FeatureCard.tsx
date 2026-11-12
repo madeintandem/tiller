@@ -3,6 +3,7 @@
 
 import { Link, useNavigate } from "react-router-dom";
 import type { BuildEpic, BuildFeature, RelatedNode } from "../../api";
+import AmendmentHoldFlag from "../../components/AmendmentHoldFlag";
 import Contributors from "../../components/Contributors";
 import StateBar from "../../components/StateBar";
 import StateGlyph from "../../components/StateGlyph";
@@ -134,6 +135,7 @@ export default function FeatureCard({
             held
           </span>
         )}
+        <AmendmentHoldFlag hold={feature.amendment_hold} />
         {isDrift && <span className="flag drift">drift</span>}
         {askLabel !== undefined && <span className="flag ask">{askLabel}</span>}
       </div>

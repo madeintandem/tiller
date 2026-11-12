@@ -437,6 +437,47 @@ function amendmentEntry(): QueueEntry {
   };
 }
 
+describe("Home needs-you: the withdraw card", () => {
+  it("titles a withdraw_amendment card with the amendment and shows its copyable command", async () => {
+    const entries: QueueEntry[] = [
+      {
+        kind: "withdraw_amendment",
+        noun: "amendment",
+        id: "A-7",
+        key: "design-intake",
+        ref: "design-intake (A-7)",
+        prose: "Intake of the iPhone design",
+        title: "Intake of the iPhone design",
+        command: 'tiller withdraw amendment design-intake --reason "<why>"',
+      },
+    ];
+    stubFetch(baseRoutes({ "/api/queue": { entries } }));
+
+    const { container } = renderHome(summary());
+    await screen.findByText("Nothing was proposed from this document.");
+    const card = container.querySelector(".dcard") as HTMLElement;
+    expect(within(card).getByRole("link", { name: "Intake of the iPhone design" })).toHaveAttribute("href", "/node/amendment/A-7");
+    expect(within(card).getByText('tiller withdraw amendment design-intake --reason "<why>"')).toBeInTheDocument();
+    expect(card.querySelector(".kind")?.textContent).toBe("Withdraw · empty amendment");
+  });
+
+  it("never folds withdraw cards into a band, however many there are", async () => {
+    const entries = Array.from({ length: ROW_CAP + 2 }, (_, i) => ({
+      ...amendmentEntry(),
+      kind: "withdraw_amendment",
+      id: `A-${i + 1}`,
+      key: `empty-${i + 1}`,
+      command: `tiller withdraw amendment empty-${i + 1} --reason "<why>"`,
+    }));
+    stubFetch(baseRoutes({ "/api/queue": { entries } }));
+
+    const { container } = renderHome(summary());
+    await screen.findByText(`${entries.length} decisions`);
+    expect(container.querySelectorAll(".dband")).toHaveLength(0);
+    expect(container.querySelectorAll(".dcard")).toHaveLength(entries.length);
+  });
+});
+
 describe("Home needs-you: decision bands", () => {
   it("compresses more than ROW_CAP entries of one kind: kind and why once, every row, no per-row command, a batch foot", async () => {
     const count = ROW_CAP + 2;

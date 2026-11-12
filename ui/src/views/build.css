@@ -400,6 +400,13 @@
   border: 1px solid var(--hair);
 }
 
+.flag.hold {
+  color: var(--ink-2);
+  background: var(--recess);
+  border: 1px solid var(--hair);
+  white-space: nowrap;
+}
+
 .flag.ask {
   color: var(--accent);
   background: var(--accent-soft);

@@ -177,10 +177,16 @@ function OperationRow({ op }: { op: AmendmentOperationPageView }) {
           <span className="muted">superseded by</span> <RefLink node={op.superseded_by} />
         </p>
       )}
-      {op.created !== undefined && (
+      {has(op.removed) ? (
         <p className="instr-amendop-detail">
-          <span className="muted">created node</span> <RefLink node={op.created} />
+          {`Removed: ${op.removed}`}
         </p>
+      ) : (
+        op.created !== undefined && (
+          <p className="instr-amendop-detail">
+            <span className="muted">created node</span> <RefLink node={op.created} />
+          </p>
+        )
       )}
       {op.parent !== undefined && (
         <p className="instr-amendop-detail">
@@ -291,6 +297,9 @@ export default function AmendmentBody({ page }: { page: NodePage }) {
   const operations = amendment.operations;
   return (
     <>
+      {page.node.status === "draft" && (
+        <p className="muted">The agent is still working on this amendment.</p>
+      )}
       <ValidityErrorBanner message={amendment.validity_error} />
       {has(page.relationships.amendment_history_warning) && (
         <div className="instr-warning">

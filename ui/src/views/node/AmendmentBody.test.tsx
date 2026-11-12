@@ -474,3 +474,36 @@ describe("AmendmentBody: identity provenance", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });
+
+describe("AmendmentBody: held drafts and the draft banner", () => {
+  const addOp = (overrides: Partial<AmendmentOperationPageView> = {}): AmendmentOperationPageView => ({
+    index: 0,
+    op: "add-feature",
+    key: "habits/streaks",
+    title: "Streaks",
+    ...overrides,
+  });
+
+  it("links an add operation's held draft before approval", () => {
+    const created = { noun: "feature", id: "F-9", key: "habits/streaks", ref: "habits/streaks (F-9)", status: "draft", title: "Streaks" };
+    withRouter(<AmendmentBody page={amendmentPage({ amendment: { operations: [addOp({ created })] } })} />);
+    expect(screen.getByRole("link", { name: "habits/streaks (F-9)" })).toHaveAttribute("href", "/node/feature/F-9");
+  });
+
+  it("says Removed with the reason and draws no link for a removed draft", () => {
+    const created = { noun: "feature", id: "F-9", key: "habits/streaks", ref: "habits/streaks (F-9)", status: "draft", title: "Streaks" };
+    withRouter(
+      <AmendmentBody page={amendmentPage({ amendment: { operations: [addOp({ created, removed: "scope cut" })] } })} />,
+    );
+    expect(screen.getByText("Removed: scope cut")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "habits/streaks (F-9)" })).toBeNull();
+  });
+
+  it("tells the reader the agent is still working on a draft amendment, and not on a proposed one", () => {
+    const { unmount } = withRouter(<AmendmentBody page={amendmentPage({ node: amendmentNode({ status: "draft" }) })} />);
+    expect(screen.getByText("The agent is still working on this amendment.")).toBeInTheDocument();
+    unmount();
+    withRouter(<AmendmentBody page={amendmentPage()} />);
+    expect(screen.queryByText("The agent is still working on this amendment.")).toBeNull();
+  });
+});

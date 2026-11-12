@@ -39,6 +39,7 @@ import { ProseInline } from "./Prose";
 // qualifier rather than a second hand-rolled copy of this one.
 export const KIND_LABEL: Record<string, string> = {
   approve_amendment: "Approve · amendment",
+  withdraw_amendment: "Withdraw · empty amendment",
   approve_epic: "Approve · epic decomposition",
   approve_feature: "Approve · feature plan",
   approve_tasks: "Approve · added tasks",
@@ -211,6 +212,8 @@ export function whyLine(entry: QueueEntry): string {
       return "Task breakdown ready for your approval.";
     case "approve_amendment":
       return "Amendment staged and awaiting your approval. A staged reshape can supersede or cancel what the rest of the queue is asking about.";
+    case "withdraw_amendment":
+      return "Nothing was proposed from this document.";
     case "approve_bug":
     case "approve_chore":
     case "approve_tweak":

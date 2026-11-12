@@ -92,7 +92,7 @@ const summary = {
   whose_move: { human: 0, agent: 0 },
 };
 
-function renderMap(route = "/explore?mode=map", extra?: ReactNode) {
+function renderMap(route = "/explore?mode=map", extra?: ReactNode, view: MapView = mapView) {
   stubFetch({
     "/api/status": summary,
     "/api/tree": { project: "acme", nodes: [] },
@@ -100,7 +100,7 @@ function renderMap(route = "/explore?mode=map", extra?: ReactNode) {
     "/api/ls?noun=bug": { noun: "bug", count: 0, nodes: [] },
     "/api/ls?noun=chore": { noun: "chore", count: 0, nodes: [] },
     "/api/ls?noun=tweak": { noun: "tweak", count: 0, nodes: [] },
-    "/api/map": mapView,
+    "/api/map": view,
   });
   return render(
     <MemoryRouter initialEntries={[route]}>
@@ -207,6 +207,21 @@ describe("Explore: the map mode", () => {
     renderMap("/explore?mode=map&sel=F-2");
     await screen.findByRole("heading", { name: "CI" });
     expect(screen.getAllByRole("link", { name: "Open" }).some((link) => link.getAttribute("href") === "/node/feature/F-2")).toBe(true);
+  });
+
+  it("labels a held draft's card in words", async () => {
+    const held: MapView = {
+      ...mapView,
+      nodes: mapView.nodes.map((n) =>
+        n.id === "F-2"
+          ? { ...n, amendment_hold: { id: "A-9", key: "iphone-only", ref: "iphone-only (A-9)", title: "iPhone only", status: "draft" } }
+          : n,
+      ),
+    };
+    renderMap("/explore?mode=map&sel=F-2", undefined, held);
+    await screen.findByRole("heading", { name: "CI" });
+    const dock = screen.getByRole("complementary", { name: "Selected node" });
+    expect(within(dock).getByText("In amendment")).toHaveAttribute("title", "Held by amendment iPhone only");
   });
 
   it("shows contributors for an ancestor and only scalar ownership for shelf execution", async () => {

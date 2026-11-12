@@ -39,6 +39,7 @@ export interface QueueCardGroup {
 
 const KIND_GRAVITY: Record<string, number> = {
   approve_amendment: 0,
+  withdraw_amendment: 0,
   attest_gate: 1,
   attest_criterion: 2,
   approve_epic: 3,

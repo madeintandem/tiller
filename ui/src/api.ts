@@ -539,6 +539,9 @@ export interface NodeView {
   // doing verbs already refuse under a retired ancestor
   // (mutate.guardParentState); this field says why, before anyone runs one.
   held?: HeldView;
+  // amendment_hold names the open amendment holding this draft, absent when
+  // none does (views.NodeView.AmendmentHold).
+  amendment_hold?: AmendmentHoldView;
   // order is the recorded soft order of this node's own children: an
   // epic's feature sequence or a feature's task sequence (store.Epic.Order,
   // store.Feature.Order). Carriage only, verbatim and possibly partial,
@@ -559,6 +562,19 @@ export interface HeldView {
   id: string;
   ref: string;
   state: string;
+}
+
+// The open amendment holding a draft until it is approved or withdrawn
+// (views.AmendmentHoldView). Absent when no amendment holds the node. It is a
+// different fact from HeldView above: a held draft is a proposal waiting on
+// its amendment, not work under a retired ancestor, so it never borrows the
+// blocked register.
+export interface AmendmentHoldView {
+  id: string;
+  key?: string;
+  ref: string;
+  title: string;
+  status: string;
 }
 
 // A node's prose file (views.ProseRef): the repo-relative path and its content.
@@ -764,7 +780,12 @@ export interface AmendmentOperationPageView {
   source_missing?: boolean;
   shape_error?: string;
   preconditions?: AmendmentPreconditionPageView[];
+  // The node an add operation made: for an open amendment, the held draft,
+  // linkable before approval.
   created?: RelatedNode;
+  // removed is the reason a held draft was removed by hand; the operation
+  // stays on the list and created keeps the draft's id.
+  removed?: string;
   parent?: RelatedNode;
   identity_notes?: string[];
   move?: FeatureMovePageView;
@@ -1030,6 +1051,8 @@ export interface ListRow {
   owner_name?: string;
   contributors?: ContributorInfo[];
   ref: string;
+  // The open amendment holding this draft (views.ListItem.AmendmentHold).
+  amendment_hold?: AmendmentHoldView;
   // An epic or feature row's board column (serve/list.go's listNode,
   // gen.BoardStatus): status, except a ready feature or epic with a task in
   // flight reads "active". Absent for every other noun.
@@ -1139,6 +1162,7 @@ export interface BuildFeature {
   tasks: RelatedNode[];
   blocked?: boolean;
   held?: HeldView;
+  amendment_hold?: AmendmentHoldView;
 }
 
 // One epic panel row (views.BuildEpic): enough identity to link and select
@@ -1214,6 +1238,9 @@ export interface TreeNode {
   owner_name?: string;
   contributors?: ContributorInfo[];
   activity?: string;
+  // The key or id of the open amendment holding this draft (gen.TreeNode.
+  // InAmendment); the tree carries no title.
+  in_amendment?: string;
   path: string;
   files: string[];
   children: TreeNode[];
@@ -1347,6 +1374,7 @@ export interface MapNodeView {
   contributors?: ContributorInfo[];
   parent?: string;
   holds?: number;
+  amendment_hold?: AmendmentHoldView;
 }
 
 export interface MapEdgeView {
@@ -1394,7 +1422,8 @@ export interface EventFeed {
 }
 
 // One thing waiting on the human (views.QueueEntry). Kind names the gate:
-// approve_amendment, approve_epic, approve_feature, approve_tasks,
+// approve_amendment, withdraw_amendment (a proposed amendment with nothing in
+// it, whose command is a withdraw), approve_epic, approve_feature, approve_tasks,
 // answer_question, attest_gate, attest_criterion, feature_check (an active
 // feature with every task done and a required feature-grain gate unrecorded;
 // the rollup is parked until `tiller check feature` runs). There is no
