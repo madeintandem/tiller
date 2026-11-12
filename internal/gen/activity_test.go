@@ -236,3 +236,18 @@ func TestBoardColumnIsTheBoardStatusForEpicsAndFeaturesOnly(t *testing.T) {
 	require.Equal(t, "active", BoardColumn(tree, tree.Epics["E-formen"]))
 	require.Empty(t, BoardColumn(tree, tree.Tasks["T-aaaa01"]))
 }
+
+// TestRollupIgnoresAHeldTask: a held draft changes no rollup, so a held
+// proposed task neither counts toward its feature's completion nor keeps the
+// feature from the awaiting phases or the in-review board column.
+func TestRollupIgnoresAHeldTask(t *testing.T) {
+	held := taskWithStatus("T-2", "proposed")
+	tree, f := featureTree("active", nil, taskWithStatus("T-1", "done"), held)
+	require.Equal(t, "", FeatureActivity(tree, f), "unheld, the proposed task holds the rollup")
+	tree.Amendments = map[string]*store.Amendment{"A-aaaaaa": {ID: "A-aaaaaa", Status: store.AmendmentStatusProposed}}
+	tree.AmendmentHolds = map[string]string{held.ID: "A-aaaaaa"}
+	require.Equal(t, FeatureActivityAwaitingCheck, FeatureActivity(tree, f))
+
+	tree.Tasks["T-1"].Status = ReviewState
+	require.Equal(t, ReviewState, FeatureBoardStatus(tree, f), "the held task does not keep the feature out of review")
+}

@@ -323,10 +323,12 @@ func hasRubricEvidence(evidence []store.Evidence) bool {
 	return false
 }
 
+// featureTasksDone reports whether every live task under f is done. A task
+// an open amendment holds is not live work yet (gen.AmendmentHold).
 func featureTasksDone(t *store.Tree, f *store.Feature) bool {
 	live := 0
 	for _, task := range t.FeatureTasks[f.ID] {
-		if task.Status == "cancelled" {
+		if task.Status == "cancelled" || gen.AmendmentHold(t, task) != nil {
 			continue
 		}
 		live++
@@ -530,6 +532,8 @@ func SharedCloseoutNodes(t *store.Tree, order *gen.Order) []store.Node {
 	return nodes
 }
 
+// EpicLiveFeatures lists the epic's live features in order: not cancelled,
+// not under a retired ancestor, and not a draft an open amendment holds.
 func EpicLiveFeatures(t *store.Tree, order *gen.Order, e *store.Epic) []*store.Feature {
 	if e.Key == nil {
 		return nil
@@ -537,7 +541,7 @@ func EpicLiveFeatures(t *store.Tree, order *gen.Order, e *store.Epic) []*store.F
 	epicKey := *e.Key
 	var out []*store.Feature
 	for _, f := range OrderedFeatures(t, order) {
-		if f.EpicKey != epicKey || f.Status == "cancelled" {
+		if f.EpicKey != epicKey || f.Status == "cancelled" || gen.AmendmentHold(t, f) != nil {
 			continue
 		}
 		if gen.RetiredAncestor(t, f) != nil {
@@ -567,10 +571,13 @@ func OrderedEpics(t *store.Tree, order *gen.Order) []*store.Epic {
 	return append(out, orphans...)
 }
 
+// FeatureTasksReadyToSubmit reports whether every live task under f is in
+// review or done, ready for the coarse review. A held task is not live work
+// yet, so it neither counts nor blocks (gen.AmendmentHold).
 func FeatureTasksReadyToSubmit(t *store.Tree, f *store.Feature) bool {
 	live := 0
 	for _, tk := range t.FeatureTasks[f.ID] {
-		if tk.Status == "cancelled" {
+		if tk.Status == "cancelled" || gen.AmendmentHold(t, tk) != nil {
 			continue
 		}
 		live++

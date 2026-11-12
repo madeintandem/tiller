@@ -719,6 +719,12 @@ func buildStagedOp(tree *store.Tree, deps Deps, doc *store.Amendment, in StageIn
 		if holder := gen.AmendmentHold(tree, feature); holder != nil && holder.ID == doc.ID {
 			return store.AmendmentOp{}, taskUnderHeldFeatureErr(tree, feature)
 		}
+		// An amendment adds tasks only to an approved feature (decision 9):
+		// one past its plan gate. A draft or specced feature's tasks are
+		// specify's, gated by the feature's own approve.
+		if f, ok := feature.(*store.Feature); ok && !approvesTasksOnItsOwn(f.Status) {
+			return store.AmendmentOp{}, featureNotApprovedErr(tree, f)
+		}
 		op.Key = in.Key
 		op.Title = in.Title
 
@@ -931,6 +937,23 @@ func taskUnderHeldFeatureErr(tree *store.Tree, feature store.Node) error {
 		reason: "task_under_held_feature",
 		msg: fmt.Sprintf("feature %s is a draft this amendment adds; its tasks come from specify after the amendment is approved, not from staging",
 			gen.Ref(tree, feature)),
+	}
+}
+
+// approvesTasksOnItsOwn reports whether a feature is past its plan gate, the
+// states an approved task set lives in. done counts: a task added under a
+// done feature reopens it by sync's ordinary rule once it is live.
+func approvesTasksOnItsOwn(status string) bool {
+	return status == "ready" || status == "active" || status == statusDone
+}
+
+// featureNotApprovedErr refuses an add-task under a feature that has not
+// passed its plan gate.
+func featureNotApprovedErr(tree *store.Tree, f *store.Feature) error {
+	return &usageError{
+		reason: "feature_not_approved",
+		msg: fmt.Sprintf("%s is %s; an amendment adds tasks only to an approved feature. Its tasks come from specify",
+			gen.Ref(tree, f), f.Status),
 	}
 }
 

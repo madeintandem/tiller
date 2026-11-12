@@ -23,6 +23,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
@@ -36,9 +37,10 @@ import (
 )
 
 // amendmentFixture lays one epic, one feature (form-engine/schema-engine,
-// freshly added and so status draft), and one proposed amendment staging two
+// set ready on disk, since an amendment adds tasks only to an approved
+// feature), and one proposed amendment staging two
 // operations: a revise on the feature carrying one precondition that holds
-// right now (target_status: draft, VALID) and one that does not
+// right now (target_status: ready, VALID) and one that does not
 // (key_absent: the feature's own key, which the feature itself holds, so
 // STALE), plus an add-task naming a brand-new key with a target_status
 // precondition that cannot compare against anything yet (UNKNOWN, since the
@@ -88,12 +90,16 @@ func amendmentFixture(t *testing.T) (root, amendmentID, featureID string) {
 		featureID = id
 	}
 	require.NotEmpty(t, featureID)
+	featureYML := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "schema-engine", "feature.yml")
+	data, err := os.ReadFile(featureYML)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(featureYML, []byte(strings.Replace(string(data), "status: draft", "status: ready", 1)), 0o644))
 
 	step(func(tree *store.Tree) error {
 		_, err := mutate.StageOperation(tree, deps, tree.Amendments[amendmentID], mutate.StageInput{
 			Op: store.AmendmentOpRevise, Target: featureID,
 			Preconditions: map[string]string{
-				"target_status": "draft",
+				"target_status": "ready",
 				"key_absent":    "form-engine/schema-engine",
 			},
 		})
@@ -235,8 +241,8 @@ func TestNodePageAmendment(t *testing.T) {
 		}
 		byName[pc.Name] = row
 	}
-	require.Equal(t, "valid", byName["target_status"].Status, "the feature really is draft right now")
-	require.Equal(t, "draft", byName["target_status"].Actual)
+	require.Equal(t, "valid", byName["target_status"].Status, "the feature really is ready right now")
+	require.Equal(t, "ready", byName["target_status"].Actual)
 	require.Equal(t, "stale", byName["key_absent"].Status, "the feature itself already holds that key")
 
 	addTask := got.Amendment.Operations[1]

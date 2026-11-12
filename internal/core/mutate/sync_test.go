@@ -3289,3 +3289,65 @@ func TestSyncDoesNotReopenADoneFeatureForAHeldTask(t *testing.T) {
 	require.Equal(t, done.VerifiedAgainst, tree.Features["F-aaaaaa"].VerifiedAgainst)
 	require.Equal(t, "done", tree.Epics["E-aaaaaa"].Status)
 }
+
+// TestSyncCrossesAnEpicToDoneDespiteAHeldFeature: a held draft changes no
+// rollup (the design's anti-goal), so a held feature under an epic whose
+// other features all finish neither counts nor blocks: the epic crosses to
+// done exactly as if the draft were not there.
+func TestSyncCrossesAnEpicToDoneDespiteAHeldFeature(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	deps, amendmentID := openHeldAmendment(t, root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/late-arrival", Title: "Late arrival", ChangeType: "create",
+	})
+
+	_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	tree := load(t, root)
+	require.Equal(t, "done", tree.Features["F-aaaaaa"].Status)
+	require.Equal(t, "done", tree.Epics["E-aaaaaa"].Status, "the held feature does not hold the epic back")
+}
+
+// TestSyncCrossesAFeatureToDoneDespiteAHeldTask is the feature-grain half: a
+// held proposed task neither counts toward nor blocks its feature's rollup.
+func TestSyncCrossesAFeatureToDoneDespiteAHeldTask(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	deps, amendmentID := openHeldAmendment(t, root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/one-more-thing", Title: "One more thing",
+	})
+
+	_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	tree := load(t, root)
+	require.Equal(t, "done", tree.Features["F-aaaaaa"].Status, "the held task does not hold the feature back")
+	require.Equal(t, "done", tree.Epics["E-aaaaaa"].Status)
+}
+
+// TestSyncReopensTheParentOnceTheHoldEnds: when the amendment is approved the
+// hold lifts and the drafts are live work, so the ordinary rule applies: new
+// work beneath a done node reopens it on the next sync.
+func TestSyncReopensTheParentOnceTheHoldEnds(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	deps, amendmentID := openHeldAmendment(t, root)
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/late-arrival", Title: "Late arrival", ChangeType: "create",
+	})
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/one-more-thing", Title: "One more thing",
+	})
+	_, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Equal(t, "done", load(t, root).Epics["E-aaaaaa"].Status)
+
+	setAmendmentStatus(t, root, amendmentID, store.AmendmentStatusApproved)
+	res, err := mutate.Sync(load(t, root), syncDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Len(t, res.Reopened, 2, "the feature and the epic reopen")
+	tree := load(t, root)
+	require.Equal(t, "active", tree.Features["F-aaaaaa"].Status)
+	require.Equal(t, "ready", tree.Epics["E-aaaaaa"].Status)
+}

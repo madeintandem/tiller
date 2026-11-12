@@ -114,11 +114,12 @@ func FeatureBoardStatus(t *store.Tree, f *store.Feature) string {
 // feature is in review or done, with at least one task still in review or the
 // feature's own PR or review ref recorded. All tasks done with no feature
 // review recorded is the rollup's awaiting_check or awaiting_sync phase, agent
-// work that stays active.
+// work that stays active. A held task is left out, as FeatureActivity leaves
+// it out.
 func featureAwaitsReview(t *store.Tree, f *store.Feature) bool {
 	tasks, inReview := 0, false
 	for _, tk := range t.Tasks {
-		if tk.FeatureID != f.ID || tk.Status == "cancelled" {
+		if tk.FeatureID != f.ID || tk.Status == "cancelled" || AmendmentHold(t, tk) != nil {
 			continue
 		}
 		switch tk.Status {
@@ -193,14 +194,16 @@ const (
 // the rollup fires on (mutate.featureRollupReady delegates here, so what the
 // console shows as awaiting sync is precisely what the next sync will cross);
 // "" otherwise. Presence is the bar, not green: a recorded fail or stale
-// result still counts as checked, matching advisory enforcement.
+// result still counts as checked, matching advisory enforcement. A task an
+// open amendment holds is left out like a cancelled one: a held draft changes
+// no rollup (AmendmentHold).
 func FeatureActivity(t *store.Tree, f *store.Feature) string {
 	if f.Status != "active" {
 		return ""
 	}
 	nonCancelled, done := 0, 0
 	for _, tk := range t.Tasks {
-		if tk.FeatureID != f.ID || tk.Status == "cancelled" {
+		if tk.FeatureID != f.ID || tk.Status == "cancelled" || AmendmentHold(t, tk) != nil {
 			continue
 		}
 		nonCancelled++

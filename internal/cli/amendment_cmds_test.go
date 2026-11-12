@@ -44,6 +44,18 @@ func layAmendmentTree(t *testing.T) {
 	require.Equal(t, 0, code)
 }
 
+// approveFixtureFeatureOnDisk sets the fixture feature ready on disk: an
+// amendment adds tasks only to an approved feature (decision 9).
+func approveFixtureFeatureOnDisk(t *testing.T) {
+	t.Helper()
+	path := filepath.Join(featureDir(t), "feature.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	out := strings.Replace(string(data), "status: draft", "status: ready", 1)
+	require.NotEqual(t, string(data), out, "the replace must land or the fixture lies")
+	require.NoError(t, os.WriteFile(path, []byte(out), 0o644))
+}
+
 // openAmendmentCLI opens an amendment through the CLI, then proposes it, and returns its
 // minted A-id, read back off disk (the same way soleFeatureID reads a minted
 // F-id) so a test can address it without parsing the id out of stdout.
@@ -651,6 +663,7 @@ func TestAmendStagesAddFeatureAndAddTask(t *testing.T) {
 	require.Equal(t, "form-engine/table-backed-forms", op0["key"])
 	require.Equal(t, "replace", op0["change_type"])
 
+	approveFixtureFeatureOnDisk(t)
 	out, _, code = execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)
@@ -1164,6 +1177,7 @@ func TestShowAmendmentRendersUnknownForAStagedKey(t *testing.T) {
 	layAmendmentTree(t)
 	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
 
+	approveFixtureFeatureOnDisk(t)
 	_, _, code := execCLI(t, "amend", aid, "--add-task", "form-engine/certification-form-loading/iphone-acceptance",
 		"--title", "iPhone-only acceptance", "--precondition", "target_status=done", "--contributor", "jc")
 	require.Equal(t, 0, code)
@@ -1676,6 +1690,7 @@ func TestApproveAmendmentPinsConflictingLineageReason(t *testing.T) {
 
 	replacement := "form-engine/certification-form-loading/replacement-schema"
 	second := openAmendmentCLI(t, "conflicting-lineage", "Reject a conflicting replacement")
+	approveFixtureFeatureOnDisk(t)
 	_, _, code = execCLI(t, "amend", second, "--add-task", replacement, "--title", "Replacement schema work", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	_, _, code = execCLI(t, "amend", second, "--supersede", task1, "--by", replacement, "--contributor", "jc")

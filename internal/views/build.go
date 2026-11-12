@@ -190,10 +190,11 @@ func buildFeatureOf(t *store.Tree, order *gen.Order, f *store.Feature) BuildFeat
 	// the total would make the board's rollup disagree with the "awaiting
 	// check" phase Home already renders for the very same feature. The
 	// Tasks list above stays unfiltered: it is the full in-place expand,
-	// not a rollup.
+	// not a rollup. A held task is dropped for the same reason
+	// gen.FeatureActivity drops it: a held draft changes no rollup.
 	var done, total int
 	for _, tk := range tasks {
-		if tk.Status == "cancelled" {
+		if tk.Status == "cancelled" || gen.AmendmentHold(t, t.Tasks[tk.ID]) != nil {
 			continue
 		}
 		total++

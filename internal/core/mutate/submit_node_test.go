@@ -1066,3 +1066,52 @@ func rgReadEpicYAML(t *testing.T, root, epicKey string) *store.Epic {
 	require.NoError(t, yaml.Unmarshal(data, &epic))
 	return &epic
 }
+
+// openHeldAmendmentWith opens an amendment with deps sharing mint's sequence.
+func openHeldAmendmentWith(t *testing.T, root string, deps mutate.Deps) (mutate.Deps, string) {
+	t.Helper()
+	d := gitDeps(root)
+	d.Mint = deps.Mint
+	a, err := mutate.AddAmendment(load(t, root), d, mutate.AmendmentInput{Key: "late-work", Title: "Late work"})
+	require.NoError(t, err)
+	return d, a.ID
+}
+
+// TestSubmitFeatureIgnoresAHeldTask: a held task is not there for the coarse
+// review either, so a feature whose live tasks are all in review submits
+// while a proposal for one more task waits on its amendment.
+func TestSubmitFeatureIgnoresAHeldTask(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root := rgLayFeature(t, deps, "pay", "checkout", "alfa")
+	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
+		Noun: store.NounFeature, Key: "pay/checkout", ReviewGrain: "feature"})
+	require.NoError(t, err)
+	rgDriveTaskToInReview(t, root, deps, "pay", "checkout", "alfa", 101)
+	rgCheckFeatureGreen(t, root, deps, "pay", "checkout")
+	ad, amendmentID := openHeldAmendmentWith(t, root, deps)
+	stageHeld(t, root, ad, amendmentID, mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "pay/checkout/bravo", Title: "Bravo"})
+
+	_, err = mutate.SubmitNode(load(t, root), deps, mutate.SubmitNodeInput{
+		Noun: store.NounFeature, Key: "pay/checkout", PR: intPtr(7)})
+	require.NoError(t, err)
+}
+
+// TestSubmitEpicIgnoresAHeldFeature is the epic-grain half: a held draft
+// feature under an epic-grain epic does not hold the epic's submit back.
+func TestSubmitEpicIgnoresAHeldFeature(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root := rgLayEpicWithTwoFeatures(t, deps, "pay")
+	rgDriveTaskToInReview(t, root, deps, "pay", "alpha", "only-task", 201)
+	rgDriveTaskToInReview(t, root, deps, "pay", "beta", "only-task", 202)
+	rgCheckFeatureGreen(t, root, deps, "pay", "alpha")
+	rgCheckFeatureGreen(t, root, deps, "pay", "beta")
+	ad, amendmentID := openHeldAmendmentWith(t, root, deps)
+	stageHeld(t, root, ad, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "pay/gamma", Title: "Gamma", ChangeType: "create"})
+
+	_, err := mutate.SubmitNode(load(t, root), deps, mutate.SubmitNodeInput{
+		Noun: store.NounEpic, Key: "pay", PR: intPtr(50)})
+	require.NoError(t, err)
+}

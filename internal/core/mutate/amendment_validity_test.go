@@ -85,6 +85,8 @@ func TestEvaluateAmendmentPreconditionsReportsValidAndStale(t *testing.T) {
 func TestEvaluateAmendmentPreconditionsReportsUnknownForAStagedKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
+	// An amendment adds tasks only to an approved feature.
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "ready")
 	deps := heldDeps(root)
 
 	const newKey = "form-engine/certification-form-loading/extra-task"

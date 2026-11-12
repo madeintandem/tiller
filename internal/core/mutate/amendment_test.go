@@ -487,6 +487,8 @@ func TestStageOperationSupersedeByStagedAddFeatureKey(t *testing.T) {
 func TestStageOperationCancelHappyPathWithSupersededByStagedAddTaskKey(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
+	// An amendment adds tasks only to an approved feature.
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "ready")
 	tree := load(t, root)
 	taskID := tree.Tasks["T-aaaaaa"].ID
 
@@ -564,6 +566,8 @@ func TestStageOperationAddEpicWithBlankKeyIsCaughtByValidateAmendment(t *testing
 func TestStageOperationAddTaskHappyPath(t *testing.T) {
 	t.Parallel()
 	root, amendmentID := stageFixture(t)
+	// An amendment adds tasks only to an approved feature.
+	setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", "ready")
 	res, err := mutate.StageOperation(load(t, root), seqDeps(), loadAmendment(t, root, amendmentID), mutate.StageInput{
 		Op:    store.AmendmentOpAddTask,
 		Key:   "form-engine/certification-form-loading/iphone-acceptance",
@@ -1670,4 +1674,36 @@ func TestAddTaskUnderAHeldFeatureIsRefused(t *testing.T) {
 	}
 	require.Len(t, load(t, root).Tasks, tasksBefore, "a refused add writes nothing")
 	require.NoDirExists(t, filepath.Join(root, ".tiller", "epics", "form-engine", "features", "table-backed-forms", "tasks"))
+}
+
+// TestStageAddTaskRefusesAnUnapprovedFeature: an amendment adds tasks only to
+// an approved feature (decision 9); a draft or specced feature's tasks come
+// from specify and its own plan gate. Staging refuses, nothing written, and
+// the same add stages once the feature is approved.
+func TestStageAddTaskRefusesAnUnapprovedFeature(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	setEpicStatus(t, root, "form-engine", "draft", "ready")
+	in := mutate.StageInput{Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/iphone-acceptance", Title: "iPhone-only acceptance"}
+	taskDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "tasks", "iphone-acceptance")
+
+	for _, status := range []string{"draft", "specced"} {
+		if status != "draft" {
+			setFeatureStatusOnDisk(t, root, "form-engine", "certification-form-loading", status)
+		}
+		_, err := mutate.StageOperation(load(t, root), heldDeps(root), loadAmendment(t, root, amendmentID), in)
+		var r interface{ Reason() string }
+		require.ErrorAs(t, err, &r, status)
+		require.Equal(t, "feature_not_approved", r.Reason(), status)
+		require.ErrorContains(t, err, "form-engine/certification-form-loading (F-aaaaaa) is "+status+
+			"; an amendment adds tasks only to an approved feature. Its tasks come from specify")
+		require.Empty(t, loadAmendment(t, root, amendmentID).Operations, "a refused stage must not write")
+		require.NoDirExists(t, taskDir)
+	}
+
+	path := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "certification-form-loading", "feature.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, []byte(strings.Replace(string(data), "status: specced", "status: ready", 1)), 0o644))
+	require.NotEmpty(t, stageHeld(t, root, heldDeps(root), amendmentID, in).Op.Node, "an approved feature takes the staged task")
 }

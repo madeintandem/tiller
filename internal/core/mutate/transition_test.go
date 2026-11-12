@@ -2905,35 +2905,30 @@ func TestHoldLiftsWhenTheAmendmentCloses(t *testing.T) {
 	require.Equal(t, "ready", res.Status)
 }
 
-// TestFeaturePlanGateLeavesAHeldTaskProposed: approving a feature plan flips
-// its initial proposed tasks in the same act, but a held task's approval
-// belongs to its amendment, so the gate leaves it proposed and held.
-func TestFeaturePlanGateLeavesAHeldTaskProposed(t *testing.T) {
+// TestProposedTasksLeavesOutAHeldTask: `approve task --feature` and the plan
+// gate both act on ProposedTasks, but a held task's approval belongs to its
+// amendment, so the set leaves it out while an unheld proposed sibling stays.
+func TestProposedTasksLeavesOutAHeldTask(t *testing.T) {
 	t.Parallel()
 	deps := seqDeps()
 	root := laySpeccedPlan(t, deps, "alfa")
+	driveWith(t, root, deps, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
 	ad := gitDeps(root)
 	ad.Mint = deps.Mint
+	_, err := mutate.AddTask(load(t, root), ad, mutate.TaskInput{Key: "form-engine/certification-form-loading/charlie", Title: "Task charlie"})
+	require.NoError(t, err)
 	a, err := mutate.AddAmendment(load(t, root), ad, mutate.AmendmentInput{Key: "late-task", Title: "One more task"})
 	require.NoError(t, err)
 	held := stageHeld(t, root, ad, a.ID, mutate.StageInput{
 		Op: store.AmendmentOpAddTask, Key: "form-engine/certification-form-loading/bravo", Title: "Task bravo",
 	}).Op.Node
-	writeTaskSpec(t, root, "bravo", "## Approach\n\nThe implementation spec for bravo.")
 
 	tree := load(t, root)
 	feat := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading").(*store.Feature)
-	alfa := resolveNode(t, tree, store.NounTask, "form-engine/certification-form-loading/alfa")
-	require.Equal(t, []string{alfa.NodeID()}, idsOf(mutate.ProposedTasks(tree, feat)),
+	charlie := resolveNode(t, tree, store.NounTask, "form-engine/certification-form-loading/charlie")
+	require.Equal(t, []string{charlie.NodeID()}, idsOf(mutate.ProposedTasks(tree, feat)),
 		"the batch set skips the held task")
-
-	res := driveWith(t, root, ad, store.NounFeature, "form-engine/certification-form-loading", mutate.TransitionInput{Verb: "approve"})
-	require.Len(t, res.Tasks, 1, "only the unheld task moves with the plan")
-
-	after := load(t, root)
-	require.Equal(t, "proposed", after.Tasks[held].Status)
-	require.Nil(t, after.Tasks[held].AcceptedAgainst, "a held task records no basis")
-	require.NotNil(t, gen.AmendmentHold(after, after.Tasks[held]))
+	require.Equal(t, "proposed", tree.Tasks[held].Status)
 }
 
 // idsOf lists task ids in order.

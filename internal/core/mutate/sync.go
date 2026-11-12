@@ -1793,10 +1793,16 @@ func recordEpicVerified(relDir string, e *store.Epic, rev vcs.Revisions, at time
 // epicRollupReady reports whether an epic's features say it is done: at least one
 // non-cancelled feature exists and every one of them is done (artifact-schema.md,
 // Epics States). A cancelled feature neither counts nor blocks, so cancelling
-// work under an epic never wedges it.
+// work under an epic never wedges it. A feature an open amendment holds is
+// skipped the same way: a held draft changes no rollup (decision 7), so the
+// epic crosses as if the draft were not there, and the ordinary reopen rule
+// takes over once the hold lifts.
 func epicRollupReady(tree *store.Tree, epicKey string) bool {
 	nonCancelled := 0
 	for _, f := range tree.Features {
+		if gen.AmendmentHold(tree, f) != nil {
+			continue
+		}
 		if f.EpicKey != epicKey || f.Status == "cancelled" {
 			continue
 		}

@@ -368,7 +368,9 @@ func epicTerminal(status string) bool {
 func featureTasksSubmittable(tree *store.Tree, f *store.Feature) (ok bool, blockerID, blockerKey, blockerStatus string) {
 	live := 0
 	for _, tk := range gen.OrderTasks(tree, tree.FeatureTasks[f.ID], f.Order) {
-		if tk.Status == statusCancelled {
+		// A held task is a proposal, not live work: it neither counts nor
+		// blocks the coarse review (decision 7).
+		if tk.Status == statusCancelled || gen.AmendmentHold(tree, tk) != nil {
 			continue
 		}
 		live++
@@ -472,7 +474,8 @@ func freshEpicSubmitFeatures(tree *store.Tree, epicKey string) (*store.Tree, []*
 	}
 	var live []*store.Feature
 	for _, feature := range sortedFeatures(refreshed) {
-		if feature.EpicKey == epicKey && feature.Status != statusCancelled {
+		// A held draft feature is not live work under the epic yet.
+		if feature.EpicKey == epicKey && feature.Status != statusCancelled && gen.AmendmentHold(refreshed, feature) == nil {
 			live = append(live, feature)
 		}
 	}
