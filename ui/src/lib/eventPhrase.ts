@@ -30,6 +30,7 @@ const PARTICIPLE: Record<string, string> = {
   add: "added",
   answer: "answered",
   approve: "approved",
+  propose: "proposed",
   archive: "archived",
   attest: "attested",
   cancel: "cancelled",
@@ -117,6 +118,7 @@ const FIXED_PHRASE: Record<string, string> = {
   amendment_approved: "amendment approved",
   amendment_proposed: "amendment proposed",
   amendment_withdrawn: "amendment withdrawn",
+  design_intake: "design landed",
   superseded: "superseded",
   "migrate.schema": "schema migrated",
 };

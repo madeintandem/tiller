@@ -51,6 +51,7 @@ var intakeKeySlugRe = regexp.MustCompile(`[^a-z0-9]+`)
 
 func newIntakeCmd() *cobra.Command {
 	var key, title string
+	var noAmendment bool
 	cmd := &cobra.Command{
 		Use:   "intake <file or folder>",
 		Short: "Land an external document or folder and open its amendment.",
@@ -68,16 +69,88 @@ func newIntakeCmd() *cobra.Command {
 			"Re-intake of a changed document is a new intake: a name already\n" +
 			"present under .tiller/design/ is refused rather than overwritten,\n" +
 			"since the old artifact's fingerprint keeps the old amendment's\n" +
-			"citations honest.",
+			"citations honest.\n\n" +
+			"--no-amendment lands the document (or folder) and records that it landed,\n" +
+			"opening nothing: the way a founding design comes into a project with no\n" +
+			"epics, for decompose to turn into a draft tree. It is refused once the\n" +
+			"project has any epic; a later document comes in as an amendment.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if noAmendment {
+				return runIntakeNoAmendment(cmd, args[0], key, title)
+			}
 			return runIntake(cmd, args[0], key, title)
 		},
 	}
 	cmd.Flags().StringVar(&key, "key", "", "the amendment's key (defaults to a slug of the file or folder name)")
 	cmd.Flags().StringVar(&title, "title", "", `the amendment's title (defaults to "Intake: <file or folder name>")`)
+	cmd.Flags().BoolVar(&noAmendment, "no-amendment", false, "land the document as a founding design and open no amendment (only before any epic exists)")
 	addContributorFlag(cmd)
 	return cmd
+}
+
+// runIntakeNoAmendment lands a founding design: the same landing as runIntake,
+// then one design_intake event instead of an amendment. It is refused once any
+// epic exists, held or not, because from then on a document is a proposal
+// against a living tree and belongs in an amendment.
+func runIntakeNoAmendment(cmd *cobra.Command, srcPath, key, title string) error {
+	if strings.TrimSpace(key) != "" || strings.TrimSpace(title) != "" {
+		return emitFailure(cmd, "intake", &usageError{
+			reason: "no_amendment_misuse",
+			msg:    "--key and --title name an amendment; --no-amendment opens none",
+		})
+	}
+	isDir, err := statIntakeSource(srcPath)
+	if err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	tree, err := loadTree(cmd)
+	if err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	d, err := deps(cmd, tree.Root)
+	if err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	if _, err := store.ResolveContributor(tree.Manifest, d.Contributor); err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	if len(tree.Epics) > 0 {
+		return emitFailure(cmd, "intake", &usageError{
+			reason: "amendment_required",
+			msg:    "this project already has epics; a later document comes in as an amendment: tiller intake <path>",
+		})
+	}
+	destRel, err := intakeDestination(tree.Root, srcPath)
+	if err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	source, err := landIntakeSource(tree.Root, srcPath, destRel)
+	if err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	files := 1
+	if isDir {
+		files = len(source.Files)
+	}
+	if err := mutate.RecordDesignIntake(tree, d, destRel, files); err != nil {
+		return emitFailure(cmd, "intake", err)
+	}
+	view := struct {
+		Path  string `json:"path"`
+		Files int    `json:"files"`
+	}{destRel, files}
+	return emitSuccess(cmd, "intake", view, renderIntakeNoAmendmentHuman(destRel, files))
+}
+
+// renderIntakeNoAmendmentHuman confirms the landing and points at decompose.
+func renderIntakeNoAmendmentHuman(destRel string, files int) string {
+	noun := "files"
+	if files == 1 {
+		noun = "file"
+	}
+	return fmt.Sprintf("Landed %s (%d %s) as a founding design; no amendment opened.\n\n**Next**\n  tiller guide    decompose the design into a draft tree",
+		destRel, files, noun)
 }
 
 func runIntake(cmd *cobra.Command, srcPath, key, title string) error {

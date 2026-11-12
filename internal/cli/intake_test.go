@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/stretchr/testify/require"
 )
 
@@ -500,4 +502,92 @@ func TestIntakeRefusesAnEmptyFolder(t *testing.T) {
 	require.Equal(t, 2, code)
 	require.Contains(t, out, `"reason": "invalid_source"`)
 	require.NoDirExists(t, filepath.Join(".tiller", "design", "empty"))
+}
+
+// TestIntakeNoAmendmentLandsAndOpensNothing: decision 2. A founding design lands
+// without an amendment: the folder is on the design shelf, nothing is opened,
+// one design_intake event says what landed, and guide then names decompose.
+func TestIntakeNoAmendmentLandsAndOpensNothing(t *testing.T) {
+	initOwnedRepo(t)
+	src := writeFeedbackFolder(t, "specs")
+
+	out, stderr, code := execCLI(t, "intake", src, "--no-amendment", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, out+stderr)
+
+	require.FileExists(t, filepath.Join(".tiller", "design", "specs", "a.md"))
+	require.FileExists(t, filepath.Join(".tiller", "design", "specs", "sub", "b.md"))
+	require.NoDirExists(t, filepath.Join(".tiller", "amendments"))
+
+	tree := loadCwdTree(t)
+	require.Empty(t, tree.Amendments)
+	all, err := events.List(tree)
+	require.NoError(t, err)
+	var landed []events.Event
+	for _, e := range all {
+		if e.Type == "design_intake" {
+			landed = append(landed, e)
+		}
+	}
+	require.Len(t, landed, 1)
+	require.Equal(t, ".tiller/design/specs", landed[0].After["path"])
+	require.EqualValues(t, 2, landed[0].After["files"])
+	require.Empty(t, landed[0].Files, "the event writes no node file")
+
+	guide, _, code := execCLI(t, "guide", "--json")
+	require.Equal(t, 0, code)
+	require.Equal(t, "decompose", jsonData(t, guide)["skill"])
+	require.Contains(t, guide, "to-be design docs await decomposition")
+}
+
+// TestIntakeNoAmendmentRefusedOnceAnEpicExists: a later document comes in as an
+// amendment, so the flag refuses and writes nothing.
+func TestIntakeNoAmendmentRefusedOnceAnEpicExists(t *testing.T) {
+	initOwnedRepo(t)
+	_, stderr, code := execCLI(t, "add", "epic", "form-engine", "--title", "Form Engine", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	src := writeFeedbackFolder(t, "specs")
+
+	out, _, code := execCLI(t, "intake", src, "--no-amendment", "--contributor", "jc", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "amendment_required"`)
+	var env struct {
+		Error struct{ Message string }
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	require.Equal(t, "this project already has epics; a later document comes in as an amendment: tiller intake <path>", env.Error.Message)
+	require.NoDirExists(t, filepath.Join(".tiller", "design", "specs"))
+	all, err := events.List(loadCwdTree(t))
+	require.NoError(t, err)
+	for _, e := range all {
+		require.NotEqual(t, "design_intake", e.Type)
+	}
+}
+
+// TestIntakeNoAmendmentLeavesTheManifestAlone: the only things written are the
+// landed files and the event.
+func TestIntakeNoAmendmentLeavesTheManifestAlone(t *testing.T) {
+	initOwnedRepo(t)
+	manifest := filepath.Join(".tiller", "tiller.yml")
+	before, err := os.ReadFile(manifest)
+	require.NoError(t, err)
+
+	_, stderr, code := execCLI(t, "intake", writeFeedbackDoc(t, "plan.md", "plan\n"), "--no-amendment", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+
+	after, err := os.ReadFile(manifest)
+	require.NoError(t, err)
+	require.Equal(t, string(before), string(after))
+}
+
+// TestIntakeNoAmendmentRefusesKeyAndTitle: they name an amendment, and this
+// opens none.
+func TestIntakeNoAmendmentRefusesKeyAndTitle(t *testing.T) {
+	for _, flag := range []string{"--key", "--title"} {
+		initOwnedRepo(t)
+		src := writeFeedbackDoc(t, "plan.md", "plan\n")
+		out, _, code := execCLI(t, "intake", src, "--no-amendment", flag, "x", "--contributor", "jc", "--json")
+		require.Equal(t, 2, code, flag)
+		require.Contains(t, out, `"reason": "no_amendment_misuse"`, flag)
+		require.NoFileExists(t, filepath.Join(".tiller", "design", "plan.md"))
+	}
 }

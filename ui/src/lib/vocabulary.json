@@ -171,6 +171,7 @@
     "amendment_approved",
     "amendment_proposed",
     "amendment_withdrawn",
+    "design_intake",
     "superseded",
     "approve.design",
     "link.design",
