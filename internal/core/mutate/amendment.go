@@ -1100,6 +1100,13 @@ type WithdrawResult struct {
 	Key    string
 	Status string
 	Reason string
+	// RemovedIDs is every held draft the withdraw removed: held epics, each
+	// followed by the features under it, then the other held features, then
+	// held tasks, each group in the order the amendment staged them.
+	RemovedIDs []string
+	// Detached is the shelf node ids whose attached_to, resolved_by, or
+	// duplicate_of was cleared because it named a removed draft.
+	Detached []string
 }
 
 // WithdrawAmendment drops an open amendment without applying it: status
@@ -1108,6 +1115,15 @@ type WithdrawResult struct {
 // The reason discipline mirrors cancel's (transition.go's reasonRequired):
 // withdrawing is the amendment's own removal verb, and an unexplained one
 // leaves no record of why the proposal was dropped.
+//
+// Every draft the amendment still holds is removed with it (the design's
+// decision 7), through the same planner a hand removal uses, so questions,
+// orders, and shelf attachments that named a draft are scrubbed. The status
+// write, the removals, and the scrubs commit as one mutation with one
+// amendment_withdrawn event. The operations are left as they are: the
+// withdrawn status already says none of them happened, and an operation a hand
+// removal marked removed holds nothing and is skipped. An amendment that holds
+// nothing, such as one staged before schema 15, only changes status.
 func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, reason string) (WithdrawResult, error) {
 	owner, err := store.ResolveContributor(tree.Manifest, deps.Contributor)
 	if err != nil {
@@ -1124,23 +1140,80 @@ func WithdrawAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment, 
 	if !store.AmendmentOpen(doc) {
 		return WithdrawResult{}, amendmentNotOpenErr(doc)
 	}
-
-	doc.Status = store.AmendmentStatusWithdrawn
-	data, err := yaml.Marshal(doc)
+	held, err := collectHeldNodes(tree, doc)
 	if err != nil {
 		return WithdrawResult{}, err
 	}
 
 	ev := events.NewEvent(deps.clock(), eventAmendmentWithdrawn, owner.ID, "withdraw amendment "+doc.ID, doc.ID)
 	ev.ID = deps.mintRaw("EV")
-	ev.After = map[string]any{"status": store.AmendmentStatusWithdrawn, "reason": reason}
-	ev.Files = []events.FileChange{{Path: relYml}}
+	res := WithdrawResult{ID: doc.ID, Key: deref(doc.Key), Status: store.AmendmentStatusWithdrawn, Reason: reason, RemovedIDs: []string{}}
 
-	if err := commitNodeWrites(tree, "withdraw.amendment", []nodeWrite{
-		{rel: relYml, data: data, before: snapshot, event: ev},
-	}); err != nil {
-		return WithdrawResult{}, err
+	if len(held) == 0 {
+		doc.Status = store.AmendmentStatusWithdrawn
+		data, err := yaml.Marshal(doc)
+		if err != nil {
+			return WithdrawResult{}, err
+		}
+		ev.After = map[string]any{"status": store.AmendmentStatusWithdrawn, "reason": reason, "removed": res.RemovedIDs}
+		ev.Files = []events.FileChange{{Path: relYml}}
+		if err := commitNodeWrites(tree, "withdraw.amendment", []nodeWrite{
+			{rel: relYml, data: data, before: snapshot, event: ev},
+		}); err != nil {
+			return WithdrawResult{}, err
+		}
+		return res, nil
 	}
 
-	return WithdrawResult{ID: doc.ID, Key: deref(doc.Key), Status: doc.Status, Reason: reason}, nil
+	retire := func(a *store.Amendment) {
+		if a.ID == doc.ID {
+			a.Status = store.AmendmentStatusWithdrawn
+		}
+	}
+	plan, err := planRemoval(tree, held, amendmentRemovalEdit{edit: retire, exempt: doc.ID})
+	if err != nil {
+		return WithdrawResult{}, err
+	}
+	ev.After = map[string]any{"status": store.AmendmentStatusWithdrawn, "reason": reason, "removed": plan.removedIDs}
+	for _, path := range plan.changedFiles {
+		ev.Files = append(ev.Files, events.FileChange{Path: filepath.FromSlash(path)})
+	}
+	if err := commitMutation(tree, "withdraw.amendment", plan.writes, []events.Event{ev}); err != nil {
+		return WithdrawResult{}, err
+	}
+	res.RemovedIDs, res.Detached = plan.removedIDs, plan.detached
+	return res, nil
+}
+
+// collectHeldNodes gathers every node a still holds, ready for planRemoval:
+// held epics first, each with the features under it, then the held features
+// and tasks not already gathered, each in the order a staged them. A held
+// epic's features are held by the same amendment (an add under a held parent
+// is refused elsewhere), so each subtree is planned once.
+func collectHeldNodes(tree *store.Tree, a *store.Amendment) ([]removedNode, error) {
+	var out []removedNode
+	gathered := map[string]struct{}{}
+	for _, noun := range []string{store.NounEpic, store.NounFeature, store.NounTask} {
+		for _, op := range a.Operations {
+			if op.Node == "" || tree.AmendmentHolds[op.Node] != a.ID {
+				continue
+			}
+			node := tree.AddedNode(op)
+			if node == nil || node.Noun() != noun {
+				continue
+			}
+			if _, done := gathered[op.Node]; done {
+				continue
+			}
+			items, err := collectRemovedNodes(tree, node)
+			if err != nil {
+				return nil, err
+			}
+			for _, item := range items {
+				gathered[item.id] = struct{}{}
+			}
+			out = append(out, items...)
+		}
+	}
+	return out, nil
 }

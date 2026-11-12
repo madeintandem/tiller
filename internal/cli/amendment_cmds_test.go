@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -1872,6 +1873,66 @@ func TestWithdrawAmendmentHappyPath(t *testing.T) {
 	data := jsonData(t, out)
 	require.Equal(t, "withdrawn", data["status"])
 	require.Equal(t, "decided against it", data["reason"])
+}
+
+// stageHeldEpicCLI stages a held epic with one held feature under it on aid
+// and returns the two node ids, read off amend's own envelopes.
+func stageHeldEpicCLI(t *testing.T, aid string) (epicID, featureID string) {
+	t.Helper()
+	out, stderr, code := execCLI(t, "amend", aid, "--add-epic", "hardening", "--title", "Hardening", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	epicID = heldNodeOf(t, out)
+	out, stderr, code = execCLI(t, "amend", aid, "--add-feature", "hardening/audit-log", "--title", "Audit log",
+		"--change-type", "create", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	featureID = heldNodeOf(t, out)
+	return epicID, featureID
+}
+
+// heldNodeOf is the node id the operation an amend envelope lists last, the
+// add it just staged, holds.
+func heldNodeOf(t *testing.T, out string) string {
+	t.Helper()
+	ops, ok := jsonData(t, out)["operations"].([]any)
+	require.True(t, ok && len(ops) > 0, "amend reports the operations: %s", out)
+	op, ok := ops[len(ops)-1].(map[string]any)
+	require.True(t, ok)
+	node, _ := op["node"].(string)
+	require.NotEmpty(t, node, "the add holds a node: %s", out)
+	return node
+}
+
+// TestWithdrawAmendmentRemovesHeldDrafts: the withdraw payload names the
+// drafts it removed, and they are gone from disk.
+func TestWithdrawAmendmentRemovesHeldDrafts(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
+	epicID, featureID := stageHeldEpicCLI(t, aid)
+
+	out, stderr, code := execCLI(t, "withdraw", "amendment", aid, "--reason", "the iPad stays", "--contributor", "jc", "--json")
+	require.Equal(t, 0, code, stderr)
+	data := jsonData(t, out)
+	require.Equal(t, "withdrawn", data["status"])
+	removed, ok := data["removed_ids"].([]any)
+	require.True(t, ok, "the payload lists the removed drafts: %s", out)
+	require.ElementsMatch(t, []any{epicID, featureID}, removed)
+	require.NoDirExists(t, filepath.Join(".tiller", "epics", "hardening"))
+	tree := loadCwdTree(t)
+	require.NotContains(t, tree.Epics, epicID)
+	require.NotContains(t, tree.Features, featureID)
+}
+
+// TestWithdrawAmendmentHumanLineCountsHeldDrafts pins the human line a
+// withdraw that removed drafts prints.
+func TestWithdrawAmendmentHumanLineCountsHeldDrafts(t *testing.T) {
+	layAmendmentTree(t)
+	aid := openAmendmentCLI(t, "iphone-only", "Remove native iPad support")
+	stageHeldEpicCLI(t, aid)
+	ref := gen.Ref(loadCwdTree(t), loadCwdTree(t).Amendments[aid])
+
+	out, stderr, code := execCLI(t, "withdraw", "amendment", aid, "--reason", "the iPad stays", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "Withdrew "+ref+". Removed 2 draft node(s) it held.")
 }
 
 // TestWithdrawAmendmentRequiresReason mirrors TestCancelRequiresReasonFlag

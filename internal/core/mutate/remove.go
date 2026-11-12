@@ -97,83 +97,11 @@ func RemoveDraft(tree *store.Tree, deps Deps, in RemoveInput) (RemoveResult, err
 	if err != nil {
 		return RemoveResult{}, err
 	}
-	removedIDs := make([]string, 0, len(removed))
-	removedSet := make(map[string]struct{}, len(removed))
-	for _, item := range removed {
-		removedIDs = append(removedIDs, item.id)
-		removedSet[item.id] = struct{}{}
-	}
-	if err := validateRemovedNodeStates(tree, removed); err != nil {
-		return RemoveResult{}, err
-	}
-	stateSnapshots := make(map[string]store.FileSnapshot, len(removed))
-	for _, item := range removed {
-		stateSnapshots[item.statePath] = item.stateSnapshot
-	}
-
-	epicsDir := filepath.Join(tree.Root, ".tiller", "epics")
-	lineage, err := freshRenameLineage(tree, epicsDir)
+	plan, err := planRemoval(tree, removed, amendmentRemovalEdit{edit: markHeldOpsRemoved(tree, removedNodeSet(removed), reason)})
 	if err != nil {
 		return RemoveResult{}, err
 	}
-	writes := []store.PlannedWrite{store.PlanLineageInventoryGuard(epicsDir, lineage)}
-	if store.IsWorkNoun(removed[0].noun) {
-		shelfDir := filepath.Join(tree.Root, ".tiller", store.ShelfDir(removed[0].noun))
-		shelfInventory, err := store.ReadDirectorySnapshot(tree.Root, shelfDir)
-		if err != nil {
-			return RemoveResult{}, err
-		}
-		writes = append(writes, store.PlanDirectoryGuard(shelfDir, shelfInventory))
-	}
-	changed := map[string]struct{}{}
-
-	stateWrites, err := planRemovalStateReferences(tree, removedSet, changed)
-	if err != nil {
-		return RemoveResult{}, err
-	}
-	writes = append(writes, stateWrites...)
-	questionWrite, err := planRemovalQuestions(tree, removedSet, changed)
-	if err != nil {
-		return RemoveResult{}, err
-	}
-	writes = append(writes, questionWrite)
-	orderWrite, err := planRemovalProjectOrder(tree, removedSet, changed)
-	if err != nil {
-		return RemoveResult{}, err
-	}
-	writes = append(writes, orderWrite)
-	shelfWrites, detached, err := planRemovalShelfReferences(tree, removedSet, changed)
-	if err != nil {
-		return RemoveResult{}, err
-	}
-	writes = append(writes, shelfWrites...)
-	for _, noun := range store.ShelfNouns() {
-		shelfOrderWrite, err := planRemovalShelfOrder(tree, noun, removedSet, changed)
-		if err != nil {
-			return RemoveResult{}, err
-		}
-		writes = append(writes, shelfOrderWrite)
-	}
-	amendmentWrites, err := planRemovalAmendments(tree, removedSet, changed, markHeldOpsRemoved(tree, removedSet, reason))
-	if err != nil {
-		return RemoveResult{}, err
-	}
-	writes = append(writes, amendmentWrites...)
-
-	for _, item := range removed {
-		if item.dir == "" {
-			continue
-		}
-		deleteWrites, deleted, err := planRemovalTree(tree.Root, item.dir, stateSnapshots)
-		if err != nil {
-			return RemoveResult{}, err
-		}
-		writes = append(writes, deleteWrites...)
-		for _, path := range deleted {
-			changed[path] = struct{}{}
-		}
-	}
-	changedFiles := sortedSet(changed)
+	removedIDs, writes, changedFiles, detached := plan.removedIDs, plan.writes, plan.changedFiles, plan.detached
 
 	metadata := make([]map[string]string, 0, len(removed))
 	for _, item := range removed {
@@ -210,6 +138,118 @@ func RemoveDraft(tree *store.Tree, deps Deps, in RemoveInput) (RemoveResult, err
 	}
 
 	return result, nil
+}
+
+// removalPlan is everything one removal writes: the guards, the reference
+// scrubs, the amendment edits, and the deletions, plus what the caller reports.
+type removalPlan struct {
+	removedIDs   []string
+	writes       []store.PlannedWrite
+	changedFiles []string
+	detached     []string
+}
+
+// amendmentRemovalEdit is how a removal treats the amendments directory. edit
+// is the change planRemovalAmendments applies to each amendment (nil for
+// none), and exempt names one amendment whose operations do not refuse the
+// removal by referencing a removed node: the amendment a withdraw is retiring,
+// whose staged operations will never run.
+type amendmentRemovalEdit struct {
+	edit   func(*store.Amendment)
+	exempt string
+}
+
+// planRemoval plans the removal of nodes collectRemovedNodes gathered, with
+// every reference to them, as one set of writes for a single journaled
+// mutation. amendments says how the amendments directory takes part:
+// RemoveDraft marks the held operations removed, and WithdrawAmendment
+// retires its own amendment instead.
+func planRemoval(tree *store.Tree, removed []removedNode, amendments amendmentRemovalEdit) (removalPlan, error) {
+	removedIDs := make([]string, 0, len(removed))
+	for _, item := range removed {
+		removedIDs = append(removedIDs, item.id)
+	}
+	removedSet := removedNodeSet(removed)
+	if err := validateRemovedNodeStates(tree, removed); err != nil {
+		return removalPlan{}, err
+	}
+	stateSnapshots := make(map[string]store.FileSnapshot, len(removed))
+	for _, item := range removed {
+		stateSnapshots[item.statePath] = item.stateSnapshot
+	}
+
+	epicsDir := filepath.Join(tree.Root, ".tiller", "epics")
+	lineage, err := freshRenameLineage(tree, epicsDir)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes := []store.PlannedWrite{store.PlanLineageInventoryGuard(epicsDir, lineage)}
+	if store.IsWorkNoun(removed[0].noun) {
+		shelfDir := filepath.Join(tree.Root, ".tiller", store.ShelfDir(removed[0].noun))
+		shelfInventory, err := store.ReadDirectorySnapshot(tree.Root, shelfDir)
+		if err != nil {
+			return removalPlan{}, err
+		}
+		writes = append(writes, store.PlanDirectoryGuard(shelfDir, shelfInventory))
+	}
+	changed := map[string]struct{}{}
+
+	stateWrites, err := planRemovalStateReferences(tree, removedSet, changed)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes = append(writes, stateWrites...)
+	questionWrite, err := planRemovalQuestions(tree, removedSet, changed)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes = append(writes, questionWrite)
+	orderWrite, err := planRemovalProjectOrder(tree, removedSet, changed)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes = append(writes, orderWrite)
+	shelfWrites, detached, err := planRemovalShelfReferences(tree, removedSet, changed)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes = append(writes, shelfWrites...)
+	for _, noun := range store.ShelfNouns() {
+		shelfOrderWrite, err := planRemovalShelfOrder(tree, noun, removedSet, changed)
+		if err != nil {
+			return removalPlan{}, err
+		}
+		writes = append(writes, shelfOrderWrite)
+	}
+	amendmentWrites, err := planRemovalAmendments(tree, removedSet, changed, amendments)
+	if err != nil {
+		return removalPlan{}, err
+	}
+	writes = append(writes, amendmentWrites...)
+
+	for _, item := range removed {
+		if item.dir == "" {
+			continue
+		}
+		deleteWrites, deleted, err := planRemovalTree(tree.Root, item.dir, stateSnapshots)
+		if err != nil {
+			return removalPlan{}, err
+		}
+		writes = append(writes, deleteWrites...)
+		for _, path := range deleted {
+			changed[path] = struct{}{}
+		}
+	}
+	return removalPlan{removedIDs: removedIDs, writes: writes, changedFiles: sortedSet(changed), detached: detached}, nil
+}
+
+// removedNodeSet is the ids of removed as a set.
+func removedNodeSet(removed []removedNode) map[string]struct{} {
+	set := make(map[string]struct{}, len(removed))
+	for _, item := range removed {
+		set[item.id] = struct{}{}
+	}
+	return set
 }
 
 func collectRemovedNodes(tree *store.Tree, node store.Node) ([]removedNode, error) {
@@ -566,12 +606,15 @@ func planRemovalProjectOrder(tree *store.Tree, removed map[string]struct{}, chan
 // operation that created a held draft names it only through Node, which this
 // scan does not read, so removing the draft itself is never refused here.
 //
-// edit, when not nil, may change an amendment as part of the same removal; a
-// file it changes is written against the snapshot read here and recorded in
-// changed, and every other file keeps a read guard. RemoveDraft passes
-// markHeldOpsRemoved; a caller removing held drafts for its own reason can
-// pass a different edit, or none.
-func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, changed map[string]struct{}, edit func(*store.Amendment)) ([]store.PlannedWrite, error) {
+// amendments.edit, when not nil, may change an amendment as part of the same
+// removal; a file it changes is written against the snapshot read here and
+// recorded in changed, and every other file keeps a read guard. RemoveDraft
+// passes markHeldOpsRemoved; WithdrawAmendment passes the status change that
+// retires its own amendment, and exempts that amendment from the reference
+// refusal, since none of its operations will ever run. Every other open
+// amendment's references still refuse.
+func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, changed map[string]struct{}, amendments amendmentRemovalEdit) ([]store.PlannedWrite, error) {
+	edit := amendments.edit
 	dir := filepath.Join(tree.Root, ".tiller", "amendments")
 	inventory, err := store.ReadDirectorySnapshot(tree.Root, dir)
 	if err != nil {
@@ -604,7 +647,7 @@ func planRemovalAmendments(tree *store.Tree, removed map[string]struct{}, change
 			return nil, removalStale(path)
 		}
 		seen[disk.ID] = struct{}{}
-		if store.AmendmentOpen(&disk) {
+		if store.AmendmentOpen(&disk) && disk.ID != amendments.exempt {
 			for _, op := range disk.Operations {
 				refs := append([]string{op.Target, op.By, op.SupersededBy}, op.Blocks...)
 				for _, ref := range refs {

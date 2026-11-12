@@ -1,6 +1,7 @@
 package mutate_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1706,4 +1707,310 @@ func TestStageAddTaskRefusesAnUnapprovedFeature(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(path, []byte(strings.Replace(string(data), "status: specced", "status: ready", 1)), 0o644))
 	require.NotEmpty(t, stageHeld(t, root, heldDeps(root), amendmentID, in).Op.Node, "an approved feature takes the staged task")
+}
+
+// --- WithdrawAmendment: held drafts (decision 7) ---
+
+// withdrawnEvent is the one amendment_withdrawn event in root's log.
+func withdrawnEvent(t *testing.T, root string) events.Event {
+	t.Helper()
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	withdrawn := eventsOfType(evs, "amendment_withdrawn")
+	require.Len(t, withdrawn, 1)
+	return withdrawn[0]
+}
+
+// eventStrings reads a string list off an event payload, which arrives as
+// []any once the event has been written and read back.
+func eventStrings(t *testing.T, raw any) []string {
+	t.Helper()
+	list, ok := raw.([]any)
+	require.True(t, ok, "want a list, got %T", raw)
+	out := make([]string, 0, len(list))
+	for _, v := range list {
+		s, ok := v.(string)
+		require.True(t, ok, "want a string, got %T", v)
+		out = append(out, s)
+	}
+	return out
+}
+
+// eventFilePaths is an event's files as slash paths.
+func eventFilePaths(ev events.Event) []string {
+	out := make([]string, 0, len(ev.Files))
+	for _, f := range ev.Files {
+		out = append(out, filepath.ToSlash(f.Path))
+	}
+	return out
+}
+
+// TestWithdrawRemovesHeldNodes: withdrawing an amendment removes every draft
+// it holds, a held epic with its two held features, a held feature under an
+// approved epic, and a held task under an approved feature, in one mutation
+// with one event. The operations are left exactly as they were: the
+// amendment's withdrawn status already says none of them happened.
+func TestWithdrawRemovesHeldNodes(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+	deps := correctionDeps(root)
+	auditID := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/audit-log", Title: "Audit log", ChangeType: "create",
+	}).Op.Node
+	limitsID := stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpAddFeature, Key: "hardening/rate-limits", Title: "Rate limits", ChangeType: "create",
+	}).Op.Node
+	before := loadAmendment(t, root, amendmentID)
+	epics := filepath.Join(root, ".tiller", "epics")
+	held := map[string]string{
+		"epic":    filepath.Join(epics, "hardening"),
+		"feature": filepath.Join(epics, "form-engine", "features", "table-backed-forms"),
+		"task":    filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", "iphone-acceptance")),
+	}
+	for _, dir := range held {
+		require.DirExists(t, dir)
+	}
+	heldFiles := map[string]bool{}
+	for _, dir := range held {
+		require.NoError(t, filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+			require.NoError(t, err)
+			if !d.IsDir() {
+				rel, err := filepath.Rel(root, path)
+				require.NoError(t, err)
+				heldFiles[filepath.ToSlash(rel)] = true
+			}
+			return nil
+		}))
+	}
+
+	res, err := mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, amendmentID), "the iPad stays")
+	require.NoError(t, err)
+	require.Equal(t, store.AmendmentStatusWithdrawn, res.Status)
+	require.ElementsMatch(t, []string{epicID, auditID, limitsID, featureID, taskID}, res.RemovedIDs)
+
+	for _, dir := range held {
+		require.NoDirExists(t, dir)
+	}
+	require.DirExists(t, filepath.Join(epics, "form-engine", "features", "certification-form-loading"), "approved work stays")
+	require.DirExists(t, filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", "schema-transcription")))
+
+	tree := load(t, root)
+	after := tree.Amendments[amendmentID]
+	require.Equal(t, store.AmendmentStatusWithdrawn, after.Status)
+	require.Equal(t, before.Operations, after.Operations, "withdraw marks no operation removed")
+	require.Empty(t, tree.AmendmentHolds)
+	for _, id := range res.RemovedIDs {
+		require.Nil(t, gen.NodeByID(tree, id), "%s is gone", id)
+	}
+
+	ev := withdrawnEvent(t, root)
+	require.Equal(t, amendmentID, ev.Targets[0])
+	require.Equal(t, "the iPad stays", ev.After["reason"])
+	require.ElementsMatch(t, res.RemovedIDs, eventStrings(t, ev.After["removed"]))
+	files := eventFilePaths(ev)
+	require.Contains(t, files, heldAmendmentPath(t, root, amendmentID))
+	for path := range heldFiles {
+		require.Contains(t, files, path, "the event names every removed file")
+	}
+	require.Empty(t, removalEvents(t, root), "a withdraw records no remove event of its own")
+}
+
+// TestWithdrawDetachesReferences: a withdraw scrubs what pointed at its held
+// drafts, as a hand removal does. A question loses the held feature it
+// blocked, a proposed bug keeps its citation to the document and loses only its
+// attachment, and the root order drops the held epic.
+func TestWithdrawDetachesReferences(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+	tree := load(t, root)
+	existing := resolveNode(t, tree, store.NounFeature, "form-engine/certification-form-loading").NodeID()
+	approvedEpic := resolveNode(t, tree, store.NounEpic, "form-engine").NodeID()
+
+	q, err := mutate.AddQuestion(load(t, root), deps, mutate.QuestionInput{
+		Title: "Table storage", Statement: "Which table store backs the forms?", Blocks: []string{featureID, existing},
+	})
+	require.NoError(t, err)
+	bug, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{
+		Noun: store.NounBug, Key: "table-reload", Title: "Table forms blank on reload",
+		AttachedTo: featureID, Source: "docs/feedback/reload.md#L1-9",
+	})
+	require.NoError(t, err)
+	writeYAMLTest(t, filepath.Join(root, filepath.FromSlash(store.OrderRelPath)), store.ProjectOrder{Epics: []string{approvedEpic, epicID}})
+
+	res, err := mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, amendmentID), "the iPad stays")
+	require.NoError(t, err)
+	require.Equal(t, []string{bug.ID}, res.Detached)
+
+	tree = load(t, root)
+	require.Equal(t, []string{existing}, tree.Questions[q.ID].Blocks)
+	w, ok := tree.WorkNode(bug.ID)
+	require.True(t, ok)
+	require.Empty(t, w.Body().AttachedTo)
+	require.Equal(t, "docs/feedback/reload.md#L1-9", w.Body().Source)
+	require.Equal(t, []string{approvedEpic}, tree.ProjectOrder.Epics)
+
+	files := eventFilePaths(withdrawnEvent(t, root))
+	require.Contains(t, files, ".tiller/decisions/open-questions.yml")
+	require.Contains(t, files, store.OrderRelPath)
+	require.Contains(t, files, ".tiller/bugs/table-reload/bug.yml")
+}
+
+// TestWithdrawIsAtomic: the status write, every removal, and every detached
+// reference are one mutation. A held draft whose file cannot be read stops the
+// whole withdraw, and nothing is removed or rewritten.
+func TestWithdrawIsAtomic(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, _, _ := heldFixture(t)
+	tree := load(t, root)
+	amendmentPath := filepath.Join(root, filepath.FromSlash(heldAmendmentPath(t, root, amendmentID)))
+	beforeYAML, err := os.ReadFile(amendmentPath)
+	require.NoError(t, err)
+
+	featureDir := filepath.Join(root, ".tiller", "epics", "form-engine", "features", "table-backed-forms")
+	locked := filepath.Join(featureDir, "feature.md")
+	require.FileExists(t, locked)
+	require.NoError(t, os.Chmod(locked, 0o000))
+	t.Cleanup(func() { _ = os.Chmod(locked, 0o644) })
+
+	_, err = mutate.WithdrawAmendment(tree, correctionDeps(root), tree.Amendments[amendmentID], "the iPad stays")
+	require.ErrorIs(t, err, fs.ErrPermission, "the unreadable draft file is what stops the withdraw")
+	require.NoError(t, os.Chmod(locked, 0o644))
+
+	afterYAML, err := os.ReadFile(amendmentPath)
+	require.NoError(t, err)
+	require.Equal(t, string(beforeYAML), string(afterYAML), "the amendment is still open")
+	require.DirExists(t, filepath.Join(root, ".tiller", "epics", "hardening"))
+	require.DirExists(t, featureDir)
+	require.DirExists(t, filepath.Join(root, store.TaskRelDir("form-engine", "certification-form-loading", "iphone-acceptance")))
+	evs, err := events.List(load(t, root))
+	require.NoError(t, err)
+	require.Empty(t, eventsOfType(evs, "amendment_withdrawn"))
+	require.Len(t, load(t, root).AmendmentHolds, 3, "every draft is still held")
+}
+
+// TestWithdrawFromDraftAndFromProposed: withdraw is legal from both open
+// states, and from either one it removes what the amendment holds.
+func TestWithdrawFromDraftAndFromProposed(t *testing.T) {
+	t.Parallel()
+	for _, status := range []string{store.AmendmentStatusDraft, store.AmendmentStatusProposed} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+			root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+			if status != store.AmendmentStatusDraft {
+				setAmendmentStatus(t, root, amendmentID, status)
+			}
+			require.Equal(t, status, loadAmendment(t, root, amendmentID).Status)
+
+			res, err := mutate.WithdrawAmendment(load(t, root), correctionDeps(root), loadAmendment(t, root, amendmentID), "changed course")
+			require.NoError(t, err)
+			require.ElementsMatch(t, []string{epicID, featureID, taskID}, res.RemovedIDs)
+			tree := load(t, root)
+			require.Equal(t, store.AmendmentStatusWithdrawn, tree.Amendments[amendmentID].Status)
+			require.Empty(t, tree.AmendmentHolds)
+		})
+	}
+}
+
+// TestWithdrawSkipsOperationsAlreadyRemoved: a held draft removed by hand
+// before the withdraw is already gone, and its operation keeps the reason the
+// hand removal recorded.
+func TestWithdrawSkipsOperationsAlreadyRemoved(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, epicID, featureID, taskID := heldFixture(t)
+	deps := correctionDeps(root)
+	_, err := mutate.RemoveDraft(load(t, root), deps, mutate.RemoveInput{
+		Noun: store.NounFeature, Node: featureID, Reason: "not part of v1",
+	})
+	require.NoError(t, err)
+	before := loadAmendment(t, root, amendmentID)
+
+	res, err := mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, amendmentID), "the iPad stays")
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{epicID, taskID}, res.RemovedIDs)
+	after := loadAmendment(t, root, amendmentID)
+	require.Equal(t, before.Operations, after.Operations)
+	require.Equal(t, "not part of v1", after.Operations[opIndexForNode(t, after, featureID)].Removed)
+}
+
+// TestWithdrawIgnoresItsOwnReferences: the amendment being withdrawn may name
+// its own held draft elsewhere, a cancel naming it as the replacement. That
+// whole amendment is going away, so its references do not refuse the withdraw.
+func TestWithdrawIgnoresItsOwnReferences(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+	existing := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading").NodeID()
+	stageHeld(t, root, deps, amendmentID, mutate.StageInput{
+		Op: store.AmendmentOpCancel, Target: existing, Reason: "replaced by table-backed forms", SupersededBy: featureID,
+	})
+
+	res, err := mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, amendmentID), "the iPad stays")
+	require.NoError(t, err)
+	require.Contains(t, res.RemovedIDs, featureID)
+	require.NotContains(t, load(t, root).Features, featureID)
+	require.Contains(t, load(t, root).Features, existing, "the staged cancel never ran")
+}
+
+// TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft: a different
+// open amendment naming one of the held drafts cannot be edited, so the
+// withdraw is refused as a whole and nothing moves.
+func TestWithdrawRefusesWhileAnotherAmendmentReferencesAHeldDraft(t *testing.T) {
+	t.Parallel()
+	root, amendmentID, _, featureID, _ := heldFixture(t)
+	deps := correctionDeps(root)
+	other, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{Key: "tablet-later", Title: "Tablet later"})
+	require.NoError(t, err)
+	existing := resolveNode(t, load(t, root), store.NounFeature, "form-engine/certification-form-loading").NodeID()
+	stageHeld(t, root, deps, other.ID, mutate.StageInput{
+		Op: store.AmendmentOpCancel, Target: existing, Reason: "replaced by table-backed forms", SupersededBy: featureID,
+	})
+	paths := []string{
+		filepath.Join(root, filepath.FromSlash(heldAmendmentPath(t, root, amendmentID))),
+		filepath.Join(root, filepath.FromSlash(heldAmendmentPath(t, root, other.ID))),
+	}
+	before := map[string]string{}
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		require.NoError(t, err)
+		before[p] = string(data)
+	}
+
+	_, err = mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, amendmentID), "the iPad stays")
+	var blocked *mutate.RemoveBlockedError
+	require.ErrorAs(t, err, &blocked)
+	require.Equal(t, "proposed_amendment_reference", blocked.Reason())
+	require.Equal(t, other.ID, blocked.ID, "the refusal names the amendment that references the draft")
+
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		require.NoError(t, err)
+		require.Equal(t, before[p], string(data))
+	}
+	tree := load(t, root)
+	require.Contains(t, tree.Features, featureID)
+	require.Len(t, tree.AmendmentHolds, 3)
+	evs, err := events.List(tree)
+	require.NoError(t, err)
+	require.Empty(t, eventsOfType(evs, "amendment_withdrawn"))
+}
+
+// TestWithdrawLegacyAmendmentHoldsNothing: an add staged before schema 15
+// carries no node, holds nothing, and withdraw removes nothing for it.
+func TestWithdrawLegacyAmendmentHoldsNothing(t *testing.T) {
+	t.Parallel()
+	root, amendmentID := stageFixture(t)
+	a := loadAmendment(t, root, amendmentID)
+	a.Operations = append(a.Operations, store.AmendmentOp{
+		Op: store.AmendmentOpAddFeature, Key: "form-engine/legacy-forms", Title: "Legacy forms", ChangeType: "create",
+	})
+	writeYAMLTest(t, filepath.Join(root, ".tiller", "amendments", a.ID+"-"+*a.Key+".yml"), a)
+
+	res, err := mutate.WithdrawAmendment(load(t, root), testDeps(), loadAmendment(t, root, amendmentID), "changed course")
+	require.NoError(t, err)
+	require.Empty(t, res.RemovedIDs)
+	after := loadAmendment(t, root, amendmentID)
+	require.Equal(t, store.AmendmentStatusWithdrawn, after.Status)
+	require.Equal(t, a.Operations, after.Operations)
+	require.Empty(t, eventStrings(t, withdrawnEvent(t, root).After["removed"]))
 }

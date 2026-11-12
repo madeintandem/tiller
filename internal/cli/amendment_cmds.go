@@ -1149,8 +1149,8 @@ func newWithdrawCmd() *cobra.Command {
 		Long: "withdraw is the human dropping an open amendment before anything in\n" +
 			"it is ever applied: draft or proposed -> withdrawn. A --reason is required and\n" +
 			"recorded on the event. withdraw is the amendment's own removal verb;\n" +
-			"nothing it staged ever executes, and its key is free to reuse once\n" +
-			"withdrawn.",
+			"nothing it staged ever executes, every draft it still holds is removed\n" +
+			"with it, and its key is free to reuse once withdrawn.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if args[0] != store.NounAmendment {
@@ -1169,11 +1169,15 @@ func newWithdrawCmd() *cobra.Command {
 }
 
 // AmendmentWithdrawView is the --json payload of `withdraw amendment`.
+// RemovedIDs is every held draft the withdraw removed, and Detached the shelf
+// items that lost an attachment to one.
 type AmendmentWithdrawView struct {
-	ID     string `json:"id"`
-	Key    string `json:"key,omitempty"`
-	Status string `json:"status"`
-	Reason string `json:"reason"`
+	ID         string   `json:"id"`
+	Key        string   `json:"key,omitempty"`
+	Status     string   `json:"status"`
+	Reason     string   `json:"reason"`
+	RemovedIDs []string `json:"removed_ids"`
+	Detached   []string `json:"detached,omitempty"`
 }
 
 func runWithdrawAmendment(cmd *cobra.Command, addr, reason string) error {
@@ -1190,8 +1194,12 @@ func runWithdrawAmendment(cmd *cobra.Command, addr, reason string) error {
 	if err != nil {
 		return emitFailure(cmd, "withdraw", err)
 	}
-	view := AmendmentWithdrawView{ID: res.ID, Key: res.Key, Status: res.Status, Reason: res.Reason}
+	view := AmendmentWithdrawView{ID: res.ID, Key: res.Key, Status: res.Status, Reason: res.Reason,
+		RemovedIDs: nonNilStrings(res.RemovedIDs), Detached: res.Detached}
 	human := fmt.Sprintf("Withdrew amendment %s: %s.", ref, res.Reason)
+	if n := len(res.RemovedIDs); n > 0 {
+		human = fmt.Sprintf("Withdrew %s. Removed %d draft node(s) it held.", ref, n)
+	}
 	return emitSuccess(cmd, "withdraw", view, human)
 }
 
