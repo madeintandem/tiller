@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +65,13 @@ func TestStatusMarksAHeldNode(t *testing.T) {
 	require.Equal(t, 0, code, stderr)
 	require.Contains(t, out, "state: draft (in amendment reshape)")
 	require.Contains(t, out, "next:  tiller approve amendment reshape")
-	require.NotContains(t, out, "spec", "no lifecycle verb is offered on a held node")
+	var next string
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "next:") {
+			next = line
+		}
+	}
+	require.Equal(t, "  next:  tiller approve amendment reshape (held draft: the amendment's approval is the only move)", next)
 
 	js, _, code := execCLI(t, "status", "feature", featureID, "--json")
 	require.Equal(t, 0, code)
@@ -186,4 +193,43 @@ func TestApproveAmendmentJSONFlagsPromotedDraftsApartFromCreatedAtApproval(t *te
 	require.Equal(t, true, applied[1].(map[string]any)["held_draft"])
 	_, flagged := applied[2].(map[string]any)["held_draft"]
 	require.False(t, flagged, "an add created at approval is not a promoted draft")
+}
+
+func TestShowAmendmentSaysNothingAlarmingForFinishedAmendments(t *testing.T) {
+	aid, epicID, _ := stageHeldFeature(t)
+	_, stderr, code := execCLI(t, "withdraw", "amendment", aid, "--reason", "not now", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	out, _, code := execCLI(t, "show", "amendment", aid)
+	require.Equal(t, 0, code)
+	require.NotContains(t, out, "missing")
+	require.Contains(t, out, "draft "+epicID+" removed when the amendment was withdrawn")
+
+	// An approved amendment whose promoted task was removed since.
+	approveFixtureFeatureOnDisk(t)
+	aid2 := openAmendmentCLI(t, "second", "Second")
+	_, stderr, code = execCLI(t, "amend", aid2, "--add-task", "form-engine/certification-form-loading/later", "--title", "Later", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	later := loadCwdTree(t).Amendments[aid2].Operations[0].Node
+	out, stderr, code = execCLI(t, "approve", "amendment", aid2, "--contributor", "jc")
+	require.Equal(t, 0, code, out+stderr)
+	out, _, _ = execCLI(t, "show", "amendment", aid2)
+	require.Contains(t, out, "promoted draft form-engine/certification-form-loading/later ("+later+")")
+	_, stderr, code = execCLI(t, "return", "task", later, "--reason", "rework", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	_, stderr, code = execCLI(t, "remove", "task", later, "--reason", "gone", "--contributor", "jc")
+	require.Equal(t, 0, code, stderr)
+	out, _, _ = execCLI(t, "show", "amendment", aid2)
+	require.NotContains(t, out, "missing")
+	require.NotContains(t, out, "held draft ")
+	require.NotContains(t, out, "promoted draft")
+}
+
+func TestTreeKeepsTheAmendmentMarkerWhenTheTitleIsCut(t *testing.T) {
+	m := gen.TreeModel{Project: "p", Nodes: []gen.TreeNode{{
+		Noun: "feature", ID: "F-aaaaaa", Key: "e/f", Status: "draft", InAmendment: "reshape",
+		Title: strings.Repeat("long title ", 10),
+	}}}
+	out := renderTreeHuman(m, treeFlags{}, 50)
+	require.Contains(t, out, "(in amendment reshape)")
+	require.Contains(t, out, "…")
 }

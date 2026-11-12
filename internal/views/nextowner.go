@@ -38,6 +38,23 @@ import (
 // here unchanged. answer and cancel are human-only, so an open question reports "human";
 // an answered or cancelled question is terminal and reports "".
 func NextOwner(n store.Node) string {
+	return nextOwner(n, nil)
+}
+
+// NextOwnerIn is NextOwner for a node that may be held: a held draft's move is
+// its amendment's, the agent's while the amendment is a draft (finish and
+// propose) and the human's once it is proposed (approve the amendment).
+func NextOwnerIn(t *store.Tree, n store.Node) string {
+	return nextOwner(n, gen.AmendmentHold(t, n))
+}
+
+func nextOwner(n store.Node, hold *store.Amendment) string {
+	if hold != nil {
+		if hold.Status == store.AmendmentStatusDraft {
+			return "agent"
+		}
+		return "human"
+	}
 	moves := lifecycle.NextMoves(n)
 	if len(moves) == 0 {
 		return ""
@@ -65,7 +82,7 @@ type WhoseMoveCounts struct {
 func WhoseMoveOf(t *store.Tree) WhoseMoveCounts {
 	var c WhoseMoveCounts
 	tally := func(n store.Node) {
-		switch NextOwner(n) {
+		switch NextOwnerIn(t, n) {
 		case "human":
 			c.Human++
 		case "agent":

@@ -83,3 +83,12 @@ func TestStatusOracleOffersNoLifecycleVerbOnAHeldNode(t *testing.T) {
 	require.Nil(t, free.AmendmentHold)
 	require.NotEmpty(t, free.LegalNext)
 }
+
+func TestNextOwnerFollowsTheHoldingAmendment(t *testing.T) {
+	tree := heldFeatureTree()
+	f := tree.Features["F-2"]
+	require.Equal(t, "agent", views.NextOwnerIn(tree, f), "a draft amendment: finish and propose")
+	tree.Amendments["A-aaaaaa"].Status = store.AmendmentStatusProposed
+	require.Equal(t, "human", views.NextOwnerIn(tree, f), "a proposed amendment: approve it")
+	require.Equal(t, "human", views.Node(tree, f).NextOwner)
+}

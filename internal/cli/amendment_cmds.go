@@ -251,7 +251,7 @@ func loadAmendmentTree(cmd *cobra.Command, command, addr string) (*store.Tree, *
 func amendmentDataView(tree *store.Tree, a *store.Amendment, validity map[preKey]mutate.PreconditionValidity, sourceValidity *mutate.AmendmentSourceValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentData {
 	ops := make([]AmendmentOperationView, len(a.Operations))
 	for i, op := range a.Operations {
-		ops[i] = amendmentOperationView(tree, i, op, validity, opSourceMissing, opShape)
+		ops[i] = amendmentOperationView(tree, a.Status, i, op, validity, opSourceMissing, opShape)
 	}
 	return AmendmentData{
 		ID: a.ID, Key: views.Key(a), Title: a.Title, Status: a.Status,
@@ -278,7 +278,7 @@ func amendmentResultView(r mutate.AmendmentResult) AmendmentData {
 // and replacement refs against the live tree and folding in live precondition
 // validity, op-source validity, and op-shape validity when the caller
 // computed them.
-func amendmentOperationView(tree *store.Tree, index int, op store.AmendmentOp, validity map[preKey]mutate.PreconditionValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentOperationView {
+func amendmentOperationView(tree *store.Tree, status string, index int, op store.AmendmentOp, validity map[preKey]mutate.PreconditionValidity, opSourceMissing map[int]bool, opShape map[int]string) AmendmentOperationView {
 	v := AmendmentOperationView{
 		Index: index, Op: op.Op, Key: op.Key, Title: op.Title, Statement: op.Statement,
 		ChangeType: op.ChangeType, Reason: op.Reason, Source: op.Source,
@@ -292,7 +292,9 @@ func amendmentOperationView(tree *store.Tree, index int, op store.AmendmentOp, v
 	}
 	if n := tree.AddedNode(op); n != nil {
 		v.DraftRef = gen.Ref(tree, n)
-	} else if op.Node != "" && op.Removed == "" {
+	} else if op.Node != "" && op.Removed == "" && store.AmendmentStatusOpen(status) {
+		// Only an open amendment still holds its drafts; a withdrawn one
+		// removed them, and an approved one's may have been removed since.
 		v.DraftMissing = true
 	}
 	if op.Target != "" {
@@ -447,6 +449,10 @@ func renderAmendmentHuman(v AmendmentData, validityErr string) string {
 			fmt.Fprintf(&b, "\n       held draft %s: missing", op.Node)
 		case op.DraftRef != "" && store.AmendmentStatusOpen(v.Status):
 			fmt.Fprintf(&b, "\n       held draft %s", op.DraftRef)
+		case op.DraftRef != "" && v.Status == store.AmendmentStatusApproved:
+			fmt.Fprintf(&b, "\n       promoted draft %s", op.DraftRef)
+		case op.Node != "" && v.Status == store.AmendmentStatusWithdrawn:
+			fmt.Fprintf(&b, "\n       draft %s removed when the amendment was withdrawn", op.Node)
 		}
 		if op.Move != nil {
 			fmt.Fprintf(&b, "\n       reviewed source: %s", op.Move.SourceKey)

@@ -279,9 +279,10 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 			if ambiguous[join] || len(staged[op.Key]) != 1 {
 				note("Conflicting creation evidence for " + op.Key)
 				warn()
-			} else if op.Removed != "" && op.Node != "" {
-				// A removed held draft keeps its historical id; the reason
-				// rides on the operation, so this is no identity defect.
+			} else if op.Node != "" && (op.Removed != "" || a.Status == store.AmendmentStatusWithdrawn && t.AddedNode(a.Operations[i]) == nil) {
+				// A removed held draft, or one a withdrawal removed, keeps
+				// its historical id; the reason rides on the operation or
+				// the withdrawal, so this is no identity defect.
 				identity.Created = &AmendmentEndpoint{ID: op.Node, Raw: op.Node, Unresolved: true}
 			} else if nodeID := created[join]; nodeID != "" || op.Node != "" {
 				if op.Node != "" {

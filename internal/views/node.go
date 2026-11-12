@@ -476,7 +476,7 @@ func Node(tree *store.Tree, n store.Node) NodeView {
 			v.ProposedBy = b.ProposedBy
 		}
 	}
-	v.NextOwner = NextOwner(n)
+	v.NextOwner = NextOwnerIn(tree, n)
 	v.Held = heldViewOf(gen.RetiredAncestor(tree, n))
 	v.AmendmentHold = amendmentHoldViewOf(tree, n)
 	v.OrderRefs = orderRefsOf(tree, v.Order)

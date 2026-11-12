@@ -588,4 +588,6 @@ func TestAmendmentHistoryShowsHandRemovalAndWithdraw(t *testing.T) {
 	require.Contains(t, historyTypes(page), "amendment_withdrawn")
 	require.Equal(t, keptID, page.Amendment.Operations[0].Created.ID, "the withdrawn amendment still names what it held")
 	require.Equal(t, "Not this quarter", page.Amendment.Operations[1].Removed)
+	require.Empty(t, page.Relationships.AmendmentHistoryWarning, "no identity warning for removed drafts")
+	require.Empty(t, page.Amendment.Operations[0].IdentityNotes)
 }

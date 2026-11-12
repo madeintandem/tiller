@@ -205,10 +205,16 @@ func formatTreeLine(left string, n gen.TreeNode, f treeFlags, l treeLayout, widt
 		}
 		title += " [contributors: " + strings.Join(ids, ", ") + "]"
 	}
+	room := width - utf8.RuneCountInString(b.String())
 	if n.InAmendment != "" {
-		title += " (in amendment " + n.InAmendment + ")"
+		// The marker is the only text label for a held node, so it is kept
+		// whole and the title is what gives way at a narrow width.
+		marker := " (in amendment " + n.InAmendment + ")"
+		b.WriteString(truncate(title, room-utf8.RuneCountInString(marker)))
+		b.WriteString(marker)
+		return strings.TrimRight(b.String(), " ")
 	}
-	b.WriteString(truncate(title, width-utf8.RuneCountInString(b.String())))
+	b.WriteString(truncate(title, room))
 	return strings.TrimRight(b.String(), " ")
 }
 
