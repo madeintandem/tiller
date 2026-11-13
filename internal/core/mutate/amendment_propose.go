@@ -3,6 +3,7 @@ package mutate
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/gen"
@@ -96,16 +97,58 @@ func ProposeAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 // human would be reviewing a draft this amendment cannot promote. An operation
 // marked removed is exempt, since its node is gone by design, and an add
 // staged before schema 15 carries no node to check.
+//
+// Holding a node is not enough: the amendment must also have staged it. A
+// hand-edited node: naming a draft nobody holds wins the hold on load, and
+// promoting it would approve work this amendment never proposed, so the event
+// log's record of who staged the node is checked too (stagedNodes).
 func checkHeldNodes(tree *store.Tree, doc *store.Amendment) error {
+	var staged map[string]string
 	for i, op := range doc.Operations {
 		if op.Node == "" || op.Removed != "" {
 			continue
 		}
-		if _, err := heldDraftOf(tree, doc, i, op); err != nil {
+		n, err := heldDraftOf(tree, doc, i, op)
+		if err != nil {
 			return err
+		}
+		if staged == nil {
+			if staged, err = stagedNodes(tree); err != nil {
+				return err
+			}
+		}
+		if staged[op.Node] != doc.ID {
+			return &usageError{
+				reason: "held_node_missing",
+				msg: fmt.Sprintf("operation %d (%s %s) names %s, which this amendment did not stage; withdraw this amendment (the node stays) and stage it again",
+					i, op.Op, op.Key, gen.Ref(tree, n)),
+			}
 		}
 	}
 	return nil
+}
+
+// stagedNodes maps each node an amendment's staging created to that
+// amendment's id, read from the add events staging writes (planStagedAdd puts
+// the node first on Targets and the amendment on After). It is the provenance
+// behind a hold: the hold index is derived from the amendment files, which a
+// hand edit or a merge can point at any node, while the event log records
+// which amendment actually created the draft.
+func stagedNodes(tree *store.Tree) (map[string]string, error) {
+	history, err := events.List(tree)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for _, ev := range history {
+		if !strings.HasPrefix(ev.Type, "add.") || len(ev.Targets) == 0 {
+			continue
+		}
+		if amendmentID, _ := ev.After["amendment"].(string); amendmentID != "" {
+			out[ev.Targets[0]] = amendmentID
+		}
+	}
+	return out, nil
 }
 
 // heldDraftOf is the draft the add operation at index holds for doc, the one

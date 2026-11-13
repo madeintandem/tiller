@@ -1320,12 +1320,26 @@ func withdrawRefusal(tree *store.Tree, doc *store.Amendment, err error) error {
 // refuses a held epic with any other child (parent_held_elsewhere), so the
 // withdraw deletes nothing it does not hold, even on a tree a hand edit or a
 // merge put an unheld feature into. Each subtree is planned once.
+//
+// A node the amendment holds but did not stage (a hand-edited node: adopting
+// a draft that was already there, see stagedNodes) is left out: the withdraw
+// closes the amendment, the hold lifts with it, and the node stays.
 func collectHeldNodes(tree *store.Tree, a *store.Amendment) ([]removedNode, error) {
 	var out []removedNode
 	gathered := map[string]struct{}{}
+	var staged map[string]string
 	for _, noun := range []string{store.NounEpic, store.NounFeature, store.NounTask} {
 		for _, op := range a.Operations {
 			if op.Node == "" || tree.AmendmentHolds[op.Node] != a.ID {
+				continue
+			}
+			if staged == nil {
+				var err error
+				if staged, err = stagedNodes(tree); err != nil {
+					return nil, err
+				}
+			}
+			if staged[op.Node] != a.ID {
 				continue
 			}
 			node := tree.AddedNode(op)

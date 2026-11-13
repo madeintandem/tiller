@@ -90,23 +90,24 @@ func TestApproveRefusesAMoveIntoAnEpicHeldElsewhere(t *testing.T) {
 }
 
 // layUnheldChildUnderHeldEpic builds, by hand, the state the guards above
-// now prevent: an epic and a feature under it made by plain adds, and the
-// first amendment's operations edited to claim only the epic. It returns the
-// epic and feature ids.
+// now prevent: an epic the first amendment staged, with a feature under it
+// that the amendment does not hold. The epic's operation is lifted off the
+// amendment file while a plain add lands the feature, then put back, which is
+// what a hand edit or a merge could leave. It returns the epic and feature
+// ids.
 func layUnheldChildUnderHeldEpic(t *testing.T, root string, deps mutate.Deps, first string) (epicID, featureID string) {
 	t.Helper()
-	epic, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "adopted", Title: "Adopted"})
-	require.NoError(t, err)
+	epicID = stageHeld(t, root, deps, first, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "adopted", Title: "Adopted"}).Op.Node
+	a := loadAmendment(t, root, first)
+	ops := append([]store.AmendmentOp(nil), a.Operations...)
+	writeAmendmentOps(t, root, a, ops[:len(ops)-1])
 	feature, err := mutate.AddFeature(load(t, root), deps, mutate.FeatureInput{Key: "adopted/live", Title: "Live", ChangeType: "create"})
 	require.NoError(t, err)
-	a := loadAmendment(t, root, first)
-	ops := append(append([]store.AmendmentOp(nil), a.Operations...),
-		store.AmendmentOp{Op: store.AmendmentOpAddEpic, Key: "adopted", Title: "Adopted", Node: epic.ID})
-	writeAmendmentOps(t, root, a, ops)
+	writeAmendmentOps(t, root, loadAmendment(t, root, first), ops)
 	tree := load(t, root)
-	require.Equal(t, first, tree.AmendmentHolds[epic.ID])
+	require.Equal(t, first, tree.AmendmentHolds[epicID])
 	require.NotContains(t, tree.AmendmentHolds, feature.ID)
-	return epic.ID, feature.ID
+	return epicID, feature.ID
 }
 
 // TestWithdrawRefusesAnUnheldChildUnderAHeldEpic: withdraw removes only what
@@ -245,6 +246,64 @@ func TestProposeAndApproveRefuseANodeAnotherAmendmentHolds(t *testing.T) {
 	require.ErrorContains(t, err, first)
 	requireNoWrites(t, before, snapshotDir(t, root))
 	require.Equal(t, "draft", load(t, root).Epics[heldEpic].Status)
+}
+
+// TestAnAmendmentCannotAdoptANodeItDidNotStage: a hand-edited node: naming a
+// draft no amendment staged gives that amendment the hold on load, but not the
+// right to promote or delete the node. Hand-over and approval refuse it, and
+// the withdraw closes the amendment and leaves the node where it was.
+func TestAnAmendmentCannotAdoptANodeItDidNotStage(t *testing.T) {
+	t.Parallel()
+	root, deps, _, second, _, oldFeature := doorsFixture(t)
+	writeAmendmentOps(t, root, loadAmendment(t, root, second), []store.AmendmentOp{
+		{Op: store.AmendmentOpAddFeature, Key: "form-engine/old", Title: "Old", ChangeType: "create", Node: oldFeature}})
+	require.Equal(t, second, load(t, root).AmendmentHolds[oldFeature])
+
+	_, err := mutate.ProposeAmendment(load(t, root), deps, loadAmendment(t, root, second))
+	require.Equal(t, "held_node_missing", reasonOf(t, err))
+	require.ErrorContains(t, err, "did not stage")
+
+	setAmendmentStatus(t, root, second, store.AmendmentStatusProposed)
+	before := snapshotDir(t, root)
+	_, err = mutate.ApproveAmendment(load(t, root), deps, loadAmendment(t, root, second))
+	require.Equal(t, "held_node_missing", reasonOf(t, err))
+	require.ErrorContains(t, err, "did not stage")
+	requireNoWrites(t, before, snapshotDir(t, root))
+
+	res, err := mutate.WithdrawAmendment(load(t, root), deps, loadAmendment(t, root, second), "it adopted a node it never staged")
+	require.NoError(t, err)
+	require.Empty(t, res.RemovedIDs)
+	tree := load(t, root)
+	require.Equal(t, store.AmendmentStatusWithdrawn, tree.Amendments[second].Status)
+	require.Contains(t, tree.Features, oldFeature, "the withdraw deletes only drafts the amendment staged")
+	require.NotContains(t, tree.AmendmentHolds, oldFeature)
+}
+
+// --- A held draft carries no shelf work before approval ---
+
+// TestResolveRefusesAHeldDraftAsCarrier: a bug or chore is not marked carried
+// by a draft an open amendment holds, since the draft is a proposal nobody has
+// approved. The carrier is named after the amendment is approved.
+func TestResolveRefusesAHeldDraftAsCarrier(t *testing.T) {
+	t.Parallel()
+	root, deps, first, _, heldEpic, _ := doorsFixture(t)
+	bug, err := mutate.AddWorkItem(load(t, root), deps, mutate.WorkItemInput{Noun: store.NounBug, Key: "leak", Title: "Leak"})
+	require.NoError(t, err)
+	before := snapshotDir(t, root)
+
+	_, err = mutate.Resolve(load(t, root), deps, mutate.ResolveInput{Noun: store.NounBug, Node: "leak", By: "newe"})
+	require.Equal(t, "held_by_amendment", reasonOf(t, err))
+	require.ErrorContains(t, err, first)
+	require.ErrorContains(t, err, "after the amendment is approved")
+	requireNoWrites(t, before, snapshotDir(t, root))
+
+	_, err = mutate.ProposeAmendment(load(t, root), deps, loadAmendment(t, root, first))
+	require.NoError(t, err)
+	_, err = mutate.ApproveAmendment(load(t, root), deps, loadAmendment(t, root, first))
+	require.NoError(t, err)
+	_, err = mutate.Resolve(load(t, root), deps, mutate.ResolveInput{Noun: store.NounBug, Node: "leak", By: "newe"})
+	require.NoError(t, err)
+	require.Equal(t, heldEpic, load(t, root).Bugs[bug.ID].ResolvedBy)
 }
 
 // --- I4: a dependency on a held draft waits for approval ---

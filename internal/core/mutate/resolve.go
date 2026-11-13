@@ -7,6 +7,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/resolve"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"gopkg.in/yaml.v3"
 )
@@ -83,6 +84,16 @@ func Resolve(tree *store.Tree, deps Deps, in ResolveInput) (ResolveResult, error
 		}
 		if state := carrierState(tree, id); state == statusCancelled || state == statusArchived {
 			return ResolveResult{}, &usageError{reason: "carrier_retired", msg: fmt.Sprintf("carrier %s is %s; its merge will never come, so it cannot carry %s", id, state, treeNode.NodeID())}
+		}
+		// A draft an open amendment holds is a proposal nobody has approved, so
+		// it carries nothing yet: the shelf item would leave its queue on the
+		// strength of work that may be withdrawn.
+		if holder := heldElsewhere(tree, nil, gen.NodeByID(tree, id)); holder != nil {
+			return ResolveResult{}, &usageError{
+				reason: "held_by_amendment",
+				msg: fmt.Sprintf("%s is a draft amendment %s holds; name it as the carrier after the amendment is approved",
+					gen.Ref(tree, gen.NodeByID(tree, id)), gen.Ref(tree, holder)),
+			}
 		}
 		carrier = id
 	}
