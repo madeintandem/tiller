@@ -1147,6 +1147,29 @@ func TestQueueOffersWithdrawWhenEveryOperationWasRemoved(t *testing.T) {
 	require.Equal(t, `tiller withdraw amendment all-removed --reason "<why>"`, got[0].Command)
 }
 
+// TestQueueOffersApproveForADesignOnlyAmendment: amends_design entries are
+// content, so a proposed amendment with no operation and a design doc to keep
+// current waits on approval, not on a withdraw.
+func TestQueueOffersApproveForADesignOnlyAmendment(t *testing.T) {
+	key := "design-only"
+	tree := &store.Tree{
+		Manifest: &store.Manifest{},
+		Amendments: map[string]*store.Amendment{
+			"A-dsgn00": {ID: "A-dsgn00", Key: &key, Title: "Design only", Status: store.AmendmentStatusProposed,
+				AmendsDesign: []string{"design/01-overview.md"}},
+		},
+	}
+	var got []views.QueueEntry
+	for _, e := range views.QueueOf(tree).Entries {
+		if e.ID == "A-dsgn00" {
+			got = append(got, e)
+		}
+	}
+	require.Len(t, got, 1)
+	require.Equal(t, "approve_amendment", got[0].Kind)
+	require.Equal(t, "tiller approve amendment design-only", got[0].Command)
+}
+
 func TestQueueOffersApproveForAProposedAmendmentWithOperations(t *testing.T) {
 	var got []views.QueueEntry
 	for _, e := range views.QueueOf(amendmentQueueTree()).Entries {

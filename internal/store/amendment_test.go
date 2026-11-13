@@ -562,4 +562,7 @@ func TestAmendmentEmpty(t *testing.T) {
 	require.True(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{removed, removed}}))
 	require.False(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{removed, live}}))
 	require.False(t, AmendmentEmpty(&Amendment{Operations: []AmendmentOp{live}}))
+	require.False(t, AmendmentEmpty(&Amendment{AmendsDesign: []string{"design/01-overview.md"}}),
+		"an amends_design entry is content: a design-only amendment is approvable")
+	require.False(t, AmendmentEmpty(&Amendment{AmendsDesign: []string{"design/01-overview.md"}, Operations: []AmendmentOp{removed}}))
 }

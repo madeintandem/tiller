@@ -405,10 +405,15 @@ func AddedNodeNoun(op string) string {
 	return ""
 }
 
-// AmendmentEmpty reports whether a proposes nothing: it has no operation, or
-// every operation it has was removed (a held draft removed by hand marks its
-// operation removed and leaves the entry on the list).
+// AmendmentEmpty reports whether a proposes nothing: it names no design doc
+// for its approval to keep current, and it has no operation or every operation
+// it has was removed (a held draft removed by hand marks its operation removed
+// and leaves the entry on the list). An amends_design entry is content, so an
+// amendment that carries only those is approvable.
 func AmendmentEmpty(a *Amendment) bool {
+	if len(a.AmendsDesign) > 0 {
+		return false
+	}
 	for _, op := range a.Operations {
 		if op.Removed == "" {
 			return false

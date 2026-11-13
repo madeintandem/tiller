@@ -154,6 +154,29 @@ func TestProposeAcceptsEmpty(t *testing.T) {
 	}
 }
 
+// TestApproveAcceptsADesignOnlyAmendment: amends_design entries are content, so
+// an amendment that stages no operation and only names the design docs its
+// approval keeps current is proposed non-empty and approved.
+func TestApproveAcceptsADesignOnlyAmendment(t *testing.T) {
+	t.Parallel()
+	root, deps, _, _ := lanternFixture(t)
+	res, err := mutate.AddAmendment(load(t, root), deps, mutate.AmendmentInput{Key: "design-only", Title: "Design only"})
+	require.NoError(t, err)
+	_, err = mutate.StageAmendsDesign(load(t, root), deps, loadAmendment(t, root, res.ID), []string{"design/04-platform-and-constraints.md"})
+	require.NoError(t, err)
+
+	out, err := mutate.ProposeAmendment(load(t, root), deps, loadAmendment(t, root, res.ID))
+	require.NoError(t, err)
+	require.False(t, out.Empty)
+
+	approved := approve(t, root, deps, loadAmendment(t, root, res.ID))
+	require.Equal(t, store.AmendmentStatusApproved, approved.Status)
+	require.Empty(t, approved.Applied)
+	after := load(t, root).Amendments[res.ID]
+	require.Equal(t, store.AmendmentStatusApproved, after.Status)
+	require.Equal(t, []string{"design/04-platform-and-constraints.md"}, after.AmendsDesign)
+}
+
 func TestApproveRefusesEmpty(t *testing.T) {
 	t.Parallel()
 	root, deps, _, _ := lanternFixture(t)
