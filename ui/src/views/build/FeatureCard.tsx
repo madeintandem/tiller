@@ -183,6 +183,7 @@ function CardTaskRow({ task }: { task: RelatedNode }) {
     <>
       {task.status !== "" && <StateGlyph status={task.status} size={12} />}
       <span className="trow-title">{label}</span>
+      <AmendmentHoldFlag hold={task.amendment_hold} />
     </>
   );
   // A dangling edge (RelatedNode's own doc comment: an id the tree no

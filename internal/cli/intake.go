@@ -339,10 +339,17 @@ func intakeName(srcPath string) string {
 }
 
 // intakeDestination is the landing path (repo-relative, slash-separated) for
-// srcPath, refused artifact_exists when that name is already present under
-// .tiller/design/. It writes nothing, so a refusal leaves the tree untouched.
+// srcPath, refusing reserved state names and artifact_exists when that name is
+// already present under .tiller/design/. It writes nothing.
 func intakeDestination(root, srcPath string) (string, error) {
-	destRel := filepath.ToSlash(filepath.Join(intakeLandingDir, intakeName(srcPath)))
+	name := intakeName(srcPath)
+	if strings.EqualFold(name, filepath.Base(store.BaselineRelPath)) {
+		return "", &usageError{
+			reason: "invalid_design",
+			msg:    "baseline.yml is reserved state; rename the document or folder before intake",
+		}
+	}
+	destRel := filepath.ToSlash(filepath.Join(intakeLandingDir, name))
 	present, err := store.PathExistsNoSymlinks(root, filepath.Join(root, filepath.FromSlash(destRel)))
 	if err != nil {
 		return "", err

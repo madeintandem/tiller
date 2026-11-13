@@ -194,7 +194,7 @@ func buildFeatureOf(t *store.Tree, order *gen.Order, f *store.Feature) BuildFeat
 	// gen.FeatureActivity drops it: a held draft changes no rollup.
 	var done, total int
 	for _, tk := range tasks {
-		if tk.Status == "cancelled" || gen.AmendmentHold(t, t.Tasks[tk.ID]) != nil {
+		if tk.Status == "cancelled" || tk.AmendmentHold != nil {
 			continue
 		}
 		total++

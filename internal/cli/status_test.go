@@ -9,8 +9,37 @@ import (
 
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
+
+func TestStatusHeldNodeGuidanceFollowsAmendmentStatus(t *testing.T) {
+	for _, status := range []string{store.AmendmentStatusDraft, store.AmendmentStatusProposed} {
+		t.Run(status, func(t *testing.T) {
+			for _, key := range []string{"extra-scope", ""} {
+				v := NodeStatusView{
+					Noun: "task", Ref: "Extra task (T-held00)", Status: "proposed",
+					AmendmentHold: &views.AmendmentHoldView{
+						ID: "A-held00", Key: key, Ref: "Extra scope (A-held00)", Title: "Extra scope", Status: status,
+					},
+				}
+				addr := key
+				if addr == "" {
+					addr = "A-held00"
+				}
+				out := renderStatusNodeHuman(v, "", nil)
+				if status == store.AmendmentStatusDraft {
+					require.Contains(t, out, "finish the amendment")
+					require.Contains(t, out, "tiller propose amendment "+addr)
+					require.NotContains(t, out, "tiller approve amendment")
+				} else {
+					require.Contains(t, out, "tiller approve amendment "+addr)
+					require.NotContains(t, out, "tiller propose amendment")
+				}
+			}
+		})
+	}
+}
 
 // readyManifest is a complete manifest (contributors and kind set) used to drive the
 // ready path of `check readiness`.

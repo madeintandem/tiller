@@ -373,7 +373,7 @@ func readoutEventsSince(g *vcs.Git, since string) ([]events.Event, error) {
 		}
 		for _, ev := range evs {
 			if events.IsSegmentPath(rel) {
-				present, err := before.has(ev)
+				present, err := before.has(events.Located{Event: ev, Path: rel})
 				if err != nil {
 					return nil, err
 				}
@@ -406,7 +406,7 @@ type streamAtSha struct {
 	since string
 	paths []string
 	loose map[string]bool
-	days  map[string]map[string]bool // day directory -> ids in that day's segments at the sha
+	days  map[string]map[string]events.Located // day directory -> records in that day's segments at the sha
 }
 
 func newStreamAtSha(g *vcs.Git, since string) (*streamAtSha, error) {
@@ -418,29 +418,48 @@ func newStreamAtSha(g *vcs.Git, since string) (*streamAtSha, error) {
 	for _, p := range paths {
 		loose[p] = true
 	}
-	return &streamAtSha{g: g, since: since, paths: paths, loose: loose, days: map[string]map[string]bool{}}, nil
+	return &streamAtSha{g: g, since: since, paths: paths, loose: loose, days: map[string]map[string]events.Located{}}, nil
 }
 
-func (s *streamAtSha) has(ev events.Event) (bool, error) {
-	rel := filepath.ToSlash(events.RelPath(ev))
+func (s *streamAtSha) has(next events.Located) (bool, error) {
+	rel := filepath.ToSlash(events.RelPath(next.Event))
+	present := false
 	if s.loose[rel] {
-		return true, nil
+		raw, err := s.g.FileAt(s.since, rel)
+		if err != nil {
+			return false, eventUnreadable(err)
+		}
+		held, err := events.DecodeLoose(rel, raw)
+		if err != nil {
+			return false, eventUnreadable(err)
+		}
+		if err := events.Conflict(events.Located{Event: held, Path: rel}, next); err != nil {
+			return false, eventUnreadable(err)
+		}
+		present = true
 	}
-	ids, err := s.segmentIDs(path.Dir(path.Dir(rel)), path.Base(path.Dir(rel)))
+	records, err := s.segmentRecords(path.Dir(path.Dir(rel)), path.Base(path.Dir(rel)))
 	if err != nil {
 		return false, err
 	}
-	return ids[ev.ID], nil
+	if held, ok := records[next.Event.ID]; ok {
+		if err := events.Conflict(held, next); err != nil {
+			return false, eventUnreadable(err)
+		}
+		present = true
+	}
+	return present, nil
 }
 
-// segmentIDs reads the ids held by the segments at the sha for one day: the
-// month directory and the day of month name them.
-func (s *streamAtSha) segmentIDs(monthDir, dayText string) (map[string]bool, error) {
+// segmentRecords reads the records held by the segments at the sha for one day:
+// the month directory and the day of month name them. Keep their paths so a
+// conflicting copy names both homes before a historical event is excluded.
+func (s *streamAtSha) segmentRecords(monthDir, dayText string) (map[string]events.Located, error) {
 	key := monthDir + "/" + dayText
-	if ids, ok := s.days[key]; ok {
-		return ids, nil
+	if records, ok := s.days[key]; ok {
+		return records, nil
 	}
-	ids := map[string]bool{}
+	records := map[string]events.Located{}
 	day, _ := strconv.Atoi(dayText)
 	for _, p := range s.paths {
 		if path.Dir(p) != monthDir || !events.IsSegmentPath(p) {
@@ -458,11 +477,17 @@ func (s *streamAtSha) segmentIDs(monthDir, dayText string) (map[string]bool, err
 			return nil, eventUnreadable(err)
 		}
 		for _, h := range held {
-			ids[h.ID] = true
+			next := events.Located{Event: h, Path: p}
+			if prior, ok := records[h.ID]; ok {
+				if err := events.Conflict(prior, next); err != nil {
+					return nil, eventUnreadable(err)
+				}
+			}
+			records[h.ID] = next
 		}
 	}
-	s.days[key] = ids
-	return ids, nil
+	s.days[key] = records
+	return records, nil
 }
 
 func stableReadout(tree *store.Tree, project func() (string, error)) (string, error) {

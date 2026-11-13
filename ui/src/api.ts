@@ -633,6 +633,7 @@ export interface RelatedNode {
   column?: string; // an epic's or a feature's board column (lib/displayStatus)
   title?: string;
   statement?: string;
+  amendment_hold?: AmendmentHoldView;
 }
 
 export interface AmendmentEffect {

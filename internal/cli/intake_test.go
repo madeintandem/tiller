@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -156,6 +157,42 @@ func TestIntakeRefusesBasenameCollision(t *testing.T) {
 	landed, err := os.ReadFile(filepath.Join(".tiller", "design", "review.md"))
 	require.NoError(t, err)
 	require.Equal(t, "first body\n", string(landed))
+}
+
+func TestIntakeRefusesReservedBaselineNameBeforeWriting(t *testing.T) {
+	for _, name := range []string{"baseline.yml", "BASELINE.YML", "Baseline.YmL"} {
+		for _, folder := range []bool{false, true} {
+			for _, noAmendment := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/folder=%t/no-amendment=%t", name, folder, noAmendment), func(t *testing.T) {
+					initOwnedRepo(t)
+					before := loadCwdTree(t)
+					beforeEvents, err := events.List(before)
+					require.NoError(t, err)
+					src := ""
+					if folder {
+						src = writeFeedbackFolder(t, name)
+					} else {
+						src = writeFeedbackDoc(t, name, "not a baseline ledger\n")
+					}
+					args := []string{"intake", src, "--contributor", "jc", "--json"}
+					if noAmendment {
+						args = append(args, "--no-amendment")
+					}
+					out, _, code := execCLI(t, args...)
+					require.Equal(t, 2, code, out)
+					require.Contains(t, out, `"reason": "invalid_design"`)
+					require.Contains(t, out, "baseline.yml is reserved state")
+					_, err = os.Lstat(filepath.Join(".tiller", "design", name))
+					require.True(t, os.IsNotExist(err), "reserved artifact must not land: %v", err)
+					after := loadCwdTree(t)
+					require.Equal(t, before.Amendments, after.Amendments)
+					afterEvents, err := events.List(after)
+					require.NoError(t, err)
+					require.Equal(t, beforeEvents, afterEvents, "refusal must write no event")
+				})
+			}
+		}
+	}
 }
 
 // TestIntakeKeyCollisionLeavesNoArtifactAndNoAmendment is the reviewer's own

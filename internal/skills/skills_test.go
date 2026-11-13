@@ -4,7 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 // emDash is the byte the house style forbids in any authored prose.
@@ -73,6 +75,40 @@ func TestDecomposeDescriptionCarriesBothDoors(t *testing.T) {
 	require.Contains(t, d, "tiller intake")
 	require.Contains(t, d, "draft amendment")
 	require.Contains(t, d, "stops for the human")
+}
+
+func TestSkillFrontmatterAndGeneratedShimsAreValidYAML(t *testing.T) {
+	for _, name := range Names() {
+		t.Run(name, func(t *testing.T) {
+			text, ok := Lookup(name)
+			require.True(t, ok)
+			description, ok := Description(name)
+			require.True(t, ok)
+			require.NotEmpty(t, description)
+			for _, artifact := range []struct {
+				label string
+				text  string
+				name  string
+			}{
+				{"embedded", text, name},
+				{"shim", gen.SkillShim(name, description), gen.SkillShimName(name)},
+			} {
+				t.Run(artifact.label, func(t *testing.T) {
+					body, ok := strings.CutPrefix(artifact.text, "---\n")
+					require.True(t, ok)
+					frontmatter, _, ok := strings.Cut(body, "\n---\n")
+					require.True(t, ok, "frontmatter must close before the body")
+					var metadata struct {
+						Name        string `yaml:"name"`
+						Description string `yaml:"description"`
+					}
+					require.NoError(t, yaml.Unmarshal([]byte(frontmatter), &metadata))
+					require.Equal(t, artifact.name, metadata.Name)
+					require.Equal(t, description, metadata.Description)
+				})
+			}
+		})
+	}
 }
 
 func TestCaptureWritesAProposalAndStopsBeforeTriage(t *testing.T) {

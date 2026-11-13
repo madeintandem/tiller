@@ -89,6 +89,89 @@ func TestApproveRefusesAMoveIntoAnEpicHeldElsewhere(t *testing.T) {
 	require.Equal(t, "form-engine", load(t, root).Features[oldID].EpicKey)
 }
 
+// Legacy additions resolve their parent key again at approval. A rename can
+// free that key for another amendment's held draft after the batch was staged.
+func TestApproveRefusesALegacyAddUnderAReusedHeldParentKey(t *testing.T) {
+	t.Parallel()
+	for _, noun := range []string{store.NounFeature, store.NounTask} {
+		t.Run(noun, func(t *testing.T) {
+			t.Parallel()
+			root, deps, first, second, _, _ := doorsFixture(t)
+			var op store.AmendmentOp
+			if noun == store.NounFeature {
+				_, err := mutate.AddEpic(load(t, root), deps, mutate.EpicInput{Key: "legacy", Title: "Legacy"})
+				require.NoError(t, err)
+				op = store.AmendmentOp{Op: store.AmendmentOpAddFeature, Key: "legacy/new", Title: "New", ChangeType: "create"}
+				writeAmendmentOps(t, root, loadAmendment(t, root, second), []store.AmendmentOp{op})
+				_, err = mutate.RenameKey(load(t, root), deps, mutate.RenameKeyInput{Noun: store.NounEpic, Node: "legacy", Key: "renamed"})
+				require.NoError(t, err)
+				stageHeld(t, root, deps, first, mutate.StageInput{Op: store.AmendmentOpAddEpic, Key: "legacy", Title: "Replacement"})
+			} else {
+				op = store.AmendmentOp{Op: store.AmendmentOpAddTask, Key: "form-engine/old/new", Title: "New"}
+				writeAmendmentOps(t, root, loadAmendment(t, root, second), []store.AmendmentOp{op})
+				_, err := mutate.RenameKey(load(t, root), deps, mutate.RenameKeyInput{Noun: store.NounFeature, Node: "form-engine/old", Key: "form-engine/renamed"})
+				require.NoError(t, err)
+				stageHeld(t, root, deps, first, mutate.StageInput{Op: store.AmendmentOpAddFeature, Key: "form-engine/old", Title: "Replacement", ChangeType: "create"})
+			}
+			setAmendmentStatus(t, root, second, store.AmendmentStatusProposed)
+			before := snapshotDir(t, root)
+
+			_, err := mutate.ApproveAmendment(load(t, root), deps, loadAmendment(t, root, second))
+			require.Equal(t, "parent_held_elsewhere", reasonOf(t, err))
+			require.ErrorContains(t, err, "operation 0")
+			require.ErrorContains(t, err, first)
+			requireNoWrites(t, before, snapshotDir(t, root))
+		})
+	}
+}
+
+func TestApproveRefusesALegacyTaskUnderAHeldAncestorEpic(t *testing.T) {
+	t.Parallel()
+	root, deps, first, second, _, _ := doorsFixture(t)
+	layUnheldChildUnderHeldEpic(t, root, deps, first)
+	writeAmendmentOps(t, root, loadAmendment(t, root, second), []store.AmendmentOp{
+		{Op: store.AmendmentOpAddTask, Key: "adopted/live/new", Title: "New"}})
+	setAmendmentStatus(t, root, second, store.AmendmentStatusProposed)
+	before := snapshotDir(t, root)
+
+	_, err := mutate.ApproveAmendment(load(t, root), deps, loadAmendment(t, root, second))
+	require.Equal(t, "parent_held_elsewhere", reasonOf(t, err))
+	require.ErrorContains(t, err, first)
+	require.ErrorContains(t, err, "adopted")
+	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+func TestApproveLegacyFeatureAllowsItsOwnAmendmentsParent(t *testing.T) {
+	t.Parallel()
+	for _, legacyParent := range []bool{false, true} {
+		name := "held parent"
+		if legacyParent {
+			name = "legacy parent"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			root, deps, first, _, _, _ := doorsFixture(t)
+			a := loadAmendment(t, root, first)
+			if legacyParent {
+				a.Operations = append(a.Operations, store.AmendmentOp{Op: store.AmendmentOpAddEpic, Key: "legacy", Title: "Legacy"})
+			}
+			key := "newe/new"
+			if legacyParent {
+				key = "legacy/new"
+			}
+			a.Operations = append(a.Operations, store.AmendmentOp{Op: store.AmendmentOpAddFeature, Key: key, Title: "New", ChangeType: "create"})
+			writeAmendmentOps(t, root, a, a.Operations)
+			setAmendmentStatus(t, root, first, store.AmendmentStatusProposed)
+
+			result, err := mutate.ApproveAmendment(load(t, root), deps, loadAmendment(t, root, first))
+			require.NoError(t, err)
+			last := result.Applied[len(result.Applied)-1]
+			require.Equal(t, key, last.Key)
+			require.Contains(t, load(t, root).Features, last.NodeID)
+		})
+	}
+}
+
 // layUnheldChildUnderHeldEpic builds, by hand, the state the guards above
 // now prevent: an epic the first amendment staged, with a feature under it
 // that the amendment does not hold. The epic's operation is lifted off the

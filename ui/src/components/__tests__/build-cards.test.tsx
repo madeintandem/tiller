@@ -117,6 +117,35 @@ describe("Build card task progress", () => {
     expect(within(card).getByRole("img", { name: "1 of 2 done, 1 in progress" })).toBeInTheDocument();
   });
 
+  it("keeps held tasks expanded without counting them in progress", async () => {
+    renderBoard([
+      epic("E-1", "form", "Form Engine", [
+        feature({
+          id: "F-1",
+          status: "active",
+          title: "Schema engine",
+          task_done: 1,
+          task_total: 1,
+          tasks: [
+            task("T-1", "done", "Completed scope"),
+            {
+              ...task("T-2", "proposed", "Extra scope"),
+              amendment_hold: { id: "A-9", ref: "Extra scope (A-9)", title: "Extra scope", status: "draft" },
+            },
+          ],
+        }),
+      ]),
+    ]);
+    const card = (await screen.findByText("Schema engine")).closest(".fcard") as HTMLElement;
+    expect(within(card).getByRole("img", { name: "1 of 1 done" })).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: /expand tasks/i }));
+    expect(within(card).getByRole("link", { name: /Completed scope/ })).toBeInTheDocument();
+    const heldRow = within(card).getByRole("link", { name: /Extra scope/ });
+    expect(heldRow).toHaveAttribute("href", "/node/task/T-2");
+    expect(within(heldRow).getByText("In amendment")).toHaveAttribute("title", "Held by amendment Extra scope");
+    expect(within(card).getByRole("img", { name: "1 of 1 done" })).toBeInTheDocument();
+  });
+
   it("keeps the plain words for a feature with no tasks, with no bar", async () => {
     renderBoard([epic("E-1", "form", "Form Engine", [feature({ id: "F-1", status: "draft", title: "Schema engine" })])]);
     const card = (await screen.findByText("Schema engine")).closest(".fcard") as HTMLElement;

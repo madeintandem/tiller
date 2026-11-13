@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/events"
+	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/testgit"
+	"github.com/madeintandem/tiller/internal/vcs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -174,4 +176,75 @@ func TestReadoutSinceRefusesTwoDifferentRecordsOfOneEvent(t *testing.T) {
 	require.Contains(t, errOut, ev.ID+" differs between")
 	require.Contains(t, errOut, added)
 	require.Contains(t, errOut, filepath.ToSlash(segment))
+}
+
+func TestReadoutSinceChecksHistoricalRecordsBeforeExcludingCompactedEvents(t *testing.T) {
+	for _, source := range []string{"loose", "segment"} {
+		for _, conflicting := range []bool{false, true} {
+			name := source + "/equal"
+			if conflicting {
+				name = source + "/conflicting"
+			}
+			t.Run(name, func(t *testing.T) {
+				dir := compactRepo(t)
+				loose := []string{
+					layLooseEvent(t, dir, "EV-aaaaaa", "2026-11-03T10:00:00Z"),
+					layLooseEvent(t, dir, "EV-bbbbbb", "2026-11-03T11:00:00Z"),
+				}
+				var recorded []events.Event
+				historical := relTo(t, dir, loose[0])
+				for i, p := range loose {
+					raw, err := os.ReadFile(p)
+					require.NoError(t, err)
+					ev, err := events.DecodeLoose(relTo(t, dir, p), raw)
+					require.NoError(t, err)
+					recorded = append(recorded, ev)
+					if source == "segment" {
+						data, err := events.EncodeSegment([]events.Event{ev})
+						require.NoError(t, err)
+						rel := events.SegmentRelPath(ev.At, data)
+						require.NoError(t, os.WriteFile(filepath.Join(dir, rel), data, 0o644))
+						require.NoError(t, os.Remove(p))
+						if i == 0 {
+							historical = filepath.ToSlash(rel)
+						}
+					}
+				}
+				commitAll(t, dir, "historical events")
+				since := gitOutput(t, dir, "rev-parse", "--short", "HEAD")
+
+				// A new combined segment overlaps the historical records. Equal
+				// copies are compaction only; changed content must not disappear
+				// merely because its id or loose path existed at the baseline.
+				if conflicting {
+					recorded[0].Command = "tiller add task --title Changed"
+				}
+				data, err := events.EncodeSegment(recorded)
+				require.NoError(t, err)
+				segment := events.SegmentRelPath(recorded[0].At, data)
+				require.NoError(t, os.WriteFile(filepath.Join(dir, segment), data, 0o644))
+				if source == "loose" {
+					for _, p := range loose {
+						require.NoError(t, os.Remove(p))
+					}
+				}
+				commitAll(t, dir, "compact historical events")
+
+				evs, err := readoutEventsSince(vcs.New(dir), since)
+				if conflicting {
+					var env *store.EnvError
+					require.ErrorAs(t, err, &env)
+					require.Equal(t, 3, env.Code)
+					require.Equal(t, "event_unreadable", env.Reason)
+					require.Contains(t, err.Error(), recorded[0].ID+" differs between")
+					require.Contains(t, err.Error(), historical)
+					require.Contains(t, err.Error(), filepath.ToSlash(segment))
+					require.Nil(t, evs)
+				} else {
+					require.NoError(t, err)
+					require.Empty(t, evs, "compaction alone records no change")
+				}
+			})
+		}
+	}
 }

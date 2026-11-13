@@ -211,7 +211,11 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 		fmt.Fprintf(&b, "\n  %s", workflow.MissingReviewNotice)
 	}
 	if v.AmendmentHold != nil {
-		fmt.Fprintf(&b, "\n  next:  tiller approve amendment %s (held draft: the amendment's approval is the only move)", holdAmendmentAddr(*v.AmendmentHold))
+		if v.AmendmentHold.Status == store.AmendmentStatusDraft {
+			fmt.Fprintf(&b, "\n  next:  finish the amendment, then tiller propose amendment %s (held draft: awaiting proposal)", holdAmendmentAddr(*v.AmendmentHold))
+		} else {
+			fmt.Fprintf(&b, "\n  next:  tiller approve amendment %s (held draft: the amendment's approval is the only move)", holdAmendmentAddr(*v.AmendmentHold))
+		}
 	} else if len(v.LegalNext) == 0 {
 		fmt.Fprint(&b, "\n  next:  (none, terminal)")
 	} else {

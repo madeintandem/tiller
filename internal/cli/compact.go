@@ -37,6 +37,7 @@ type CompactView struct {
 	mutate.CompactResult
 	DryRun  bool     `json:"dry_run,omitempty"`
 	Refused []string `json:"refused,omitempty"`
+	Reason  string   `json:"reason,omitempty"`
 }
 
 func newCompactCmd() *cobra.Command {
@@ -73,12 +74,18 @@ func runCompact(cmd *cobra.Command, all, dryRun bool) error {
 			CompactRefusedData{Reason: reasonCompactNotIntegration, Current: current, Integration: integration},
 			fmt.Sprintf("Events are compacted on the integration branch only. You are on %s; check out %s and run this again.", current, integration), 1)
 	}
-	res, err := mutate.Compact(tree.Root, mutate.CompactOptions{Now: compactNow(), All: all, DryRun: dryRun})
+	res, err := compactEvents(tree.Root, mutate.CompactOptions{Now: compactNow(), All: all, DryRun: dryRun})
 	if err != nil {
 		var env *store.EnvError
 		if errors.As(err, &env) && env.Reason == store.ReasonMutationStale {
-			return emitReport(cmd, "compact", false, CompactRefusedData{Reason: store.ReasonMutationStale},
-				"Tiller state changed while events were being compacted. Run tiller compact again.", 1)
+			human := "Tiller state changed while events were being compacted. Run tiller compact again."
+			if len(res.Days) == 0 {
+				return emitReport(cmd, "compact", false, CompactRefusedData{Reason: store.ReasonMutationStale}, human, 1)
+			}
+			res = stageable(tree.Root, res)
+			return emitReport(cmd, "compact", false,
+				CompactView{CompactResult: res, DryRun: dryRun, Refused: refusals(err), Reason: store.ReasonMutationStale},
+				humanCompaction(res, dryRun)+"\n"+human, 1)
 		}
 		if len(res.Days) == 0 {
 			return emitFailure(cmd, "compact", err)

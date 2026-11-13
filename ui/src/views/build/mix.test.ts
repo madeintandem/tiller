@@ -86,6 +86,18 @@ describe("taskMix and taskMixCaption", () => {
     expect(taskMix(tasks).reduce((sum, m) => sum + m.n, 0)).toBe(2);
   });
 
+  it("excludes held tasks from progress until the amendment releases them", () => {
+    const held = {
+      status: "proposed",
+      amendment_hold: { id: "A-9", ref: "Extra scope (A-9)", title: "Extra scope", status: "draft" },
+    };
+    expect(taskMixCaption([t("done"), held])).toBe("1 of 1 done");
+    expect(taskMix([t("done"), held]).filter((m) => m.n > 0)).toEqual([{ state: "done", n: 1 }]);
+    expect(taskMixCaption([held])).toBe("no tasks yet");
+    expect(taskMix([held]).every((m) => m.n === 0)).toBe(true);
+    expect(taskMixCaption([t("done"), { ...held, amendment_hold: undefined }])).toBe("1 of 2 done, 1 proposed");
+  });
+
   it("reads all done and no tasks plainly", () => {
     expect(taskMixCaption([t("done"), t("done")])).toBe("2 of 2 done");
     expect(taskMixCaption([])).toBe("no tasks yet");

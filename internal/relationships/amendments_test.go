@@ -355,3 +355,110 @@ func TestAmendmentIndexRaisesNoDiagnosticForARemovedHeldDraft(t *testing.T) {
 	relationships.AddAmendments(tree, index, evs, "")
 	require.Empty(t, unresolvedEndpointDiagnostics(index))
 }
+
+func TestHeldAddApplicationRequiresApprovalNotJustCreation(t *testing.T) {
+	for _, tc := range []struct {
+		name, status, removed string
+		promotion, legacy     bool
+		missingCreation       bool
+		wantApplied           bool
+	}{
+		{name: "draft", status: store.AmendmentStatusDraft},
+		{name: "proposed", status: store.AmendmentStatusProposed},
+		{name: "withdrawn", status: store.AmendmentStatusWithdrawn},
+		{name: "removed then withdrawn", status: store.AmendmentStatusWithdrawn, removed: "not needed"},
+		{name: "removed then approved", status: store.AmendmentStatusApproved, removed: "not needed"},
+		{name: "approved survivor", status: store.AmendmentStatusApproved, wantApplied: true},
+		{name: "approved without retained application evidence", status: store.AmendmentStatusApproved, missingCreation: true},
+		{name: "interrupted promotion", status: store.AmendmentStatusProposed, promotion: true, wantApplied: true},
+		{name: "legacy interrupted application", status: store.AmendmentStatusProposed, legacy: true, wantApplied: true},
+		{name: "legacy approved", status: store.AmendmentStatusApproved, legacy: true, wantApplied: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tree, evs := heldAddTree(tc.status, tc.removed)
+			a := tree.Amendments["A-333333"]
+			if tc.legacy {
+				a.Operations[0].Node = ""
+			}
+			if tc.missingCreation {
+				evs = evs[:2]
+				evs[1].After["parent"] = "F-222222"
+			}
+			if tc.status == store.AmendmentStatusWithdrawn {
+				tree.Tasks = map[string]*store.Task{}
+				evs = append(evs, amendmentEvent("EV-333333", "amendment_withdrawn", 3, []string{a.ID}, nil))
+			}
+			if tc.status == store.AmendmentStatusApproved {
+				// A removed add can coexist with an approved remainder.
+				a.Operations = append(a.Operations, store.AmendmentOp{Op: store.AmendmentOpRevise, Target: "F-222222"})
+				evs = append(evs,
+					amendmentEvent("EV-333333", "amendment_staged", 3, []string{a.ID}, map[string]any{"index": 1, "op": store.AmendmentOpRevise}),
+					amendmentEvent("EV-444444", "revise.feature", 4, []string{"F-222222"}, map[string]any{"amendment": a.ID, "operation_index": 1}),
+					amendmentEvent("EV-555555", "amendment_approved", 5, []string{a.ID}, nil))
+			}
+			if tc.promotion {
+				tree.Tasks["T-444444"].Status = "ready"
+				evs = append(evs, amendmentEvent("EV-666666", "approve.task", 3, []string{"T-444444", a.ID}, map[string]any{"amendment": a.ID, "operation_index": 0, "status": "ready"}))
+			}
+			index := relationships.BuildStructural(tree)
+			relationships.AddAmendments(tree, index, evs, "")
+			wantState, wantParentScope := "proposed", "direct"
+			if tc.wantApplied {
+				wantState, wantParentScope = "applied", "historical_parent"
+			}
+			var roles []string
+			for _, effect := range index.Amendments.Effects[a.ID] {
+				if effect.OperationIndex == nil || *effect.OperationIndex != 1 {
+					continue
+				}
+				roles = append(roles, effect.Role)
+				require.Equal(t, wantState, effect.State)
+				if !tc.missingCreation {
+					require.Contains(t, effect.Evidence, "EV-222222", "creation provenance survives without becoming proof of approval")
+				}
+				if effect.Role == "addition_parent" {
+					require.Equal(t, wantParentScope, effect.Scope)
+				}
+			}
+			require.ElementsMatch(t, []string{"created", "addition_parent"}, roles)
+			for _, edge := range index.Adjacent(a.ID, "amends") {
+				for _, source := range edge.Sources {
+					if source.Operation == 1 {
+						require.Equal(t, wantState, source.State, "query provenance agrees with the amendment page")
+					}
+				}
+			}
+			if tc.status == store.AmendmentStatusApproved {
+				for _, effect := range index.Amendments.Effects[a.ID] {
+					if effect.OperationIndex != nil && *effect.OperationIndex == 2 {
+						require.Equal(t, "applied", effect.State, "the surviving remainder really applied")
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestApprovedHeldFeatureRetainsAppliedProvenanceWithoutPromotion(t *testing.T) {
+	tree, evs := heldAddTree(store.AmendmentStatusApproved, "")
+	a := tree.Amendments["A-333333"]
+	key := "work/held"
+	a.Operations[0] = store.AmendmentOp{Op: store.AmendmentOpAddFeature, Node: "F-444444", Key: key}
+	tree.Tasks = nil
+	tree.Features["F-444444"] = &store.Feature{ID: "F-444444", Key: &key, EpicKey: "work", Status: "draft"}
+	evs[1].After = map[string]any{"index": 0, "op": store.AmendmentOpAddFeature, "key": key}
+	evs[2].Type = "add.feature"
+	evs[2].Targets = []string{"F-444444"}
+	evs[2].After = map[string]any{"amendment": a.ID, "key": key, "epic": "E-111111"}
+	evs = append(evs, amendmentEvent("EV-333333", "amendment_approved", 3, []string{a.ID}, nil))
+
+	facts := relationships.AmendmentIdentities(tree, evs)
+	require.Equal(t, "F-444444", facts.Operations[a.ID][0].Created.ID)
+	require.Len(t, facts.Effects[a.ID], 2)
+	for _, effect := range facts.Effects[a.ID] {
+		require.Equal(t, "applied", effect.State, "approval releases a feature without changing its draft state")
+		if effect.Role == "addition_parent" {
+			require.Equal(t, "historical_parent", effect.Scope)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
+	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -486,4 +488,85 @@ func compactedDayNames(res mutate.CompactResult) []string {
 func TestRefusalsListsOneMessagePerRefusedDay(t *testing.T) {
 	require.Equal(t, []string{"a", "b"}, refusals(errors.Join(errors.New("a"), errors.New("b"))))
 	require.Equal(t, []string{"plain"}, refusals(errors.New("plain")))
+}
+
+func TestCompactVerbReportsCompletedDaysOnStaleRefusal(t *testing.T) {
+	for _, jsonOutput := range []bool{false, true} {
+		name := "human"
+		if jsonOutput {
+			name = "json"
+		}
+		t.Run(name, func(t *testing.T) {
+			dir := compactRepo(t)
+			compactClock(t, "2026-11-11T12:00:00Z")
+			completed := layLooseEvent(t, dir, "EV-aaaaaa", "2026-11-03T10:00:00Z")
+			pending := layLooseEvent(t, dir, "EV-bbbbbb", "2026-11-04T10:00:00Z")
+			commitAll(t, dir, "two eligible days")
+
+			// Commit the first day for real, then supply the stale refusal a
+			// concurrent writer would cause before the second day can commit.
+			old := compactEvents
+			compactEvents = func(root string, opts mutate.CompactOptions) (mutate.CompactResult, error) {
+				opts.Now = opts.Now.AddDate(0, 0, -1)
+				res, err := mutate.Compact(root, opts)
+				require.NoError(t, err)
+				require.Len(t, res.Days, 1)
+				return res, errors.Join(&store.EnvError{
+					Code: 3, Reason: store.ReasonMutationStale,
+					Msg: "mutate: compact 2026-11-04: state changed",
+				})
+			}
+			t.Cleanup(func() { compactEvents = old })
+
+			args := []string{"compact"}
+			if jsonOutput {
+				args = append(args, "--json")
+			}
+			out, errOut, code := execCLI(t, args...)
+			require.Equal(t, 1, code, out+errOut)
+			require.NoFileExists(t, completed)
+			require.FileExists(t, pending)
+			segments, err := filepath.Glob(filepath.Join(dir, ".tiller", "events", "2026", "11", "*.jsonl"))
+			require.NoError(t, err)
+			require.Len(t, segments, 1)
+			wantStage := []string{".tiller/events/2026/11/03", relTo(t, dir, segments[0])}
+			if jsonOutput {
+				var envelope struct {
+					OK   bool        `json:"ok"`
+					Data CompactView `json:"data"`
+				}
+				require.NoError(t, json.Unmarshal([]byte(out), &envelope))
+				require.False(t, envelope.OK)
+				require.Equal(t, store.ReasonMutationStale, envelope.Data.Reason)
+				require.Equal(t, []string{"2026-11-03"}, compactedDayNames(envelope.Data.CompactResult))
+				require.Equal(t, 1, envelope.Data.Events)
+				require.Equal(t, wantStage, envelope.Data.Stage)
+				require.Equal(t, []string{"mutate: compact 2026-11-04: state changed"}, envelope.Data.Refused)
+			} else {
+				require.Contains(t, errOut, "Compacted 1 day of events (1 event) into 1 file. Stage them with:")
+				require.Equal(t, "git add -A -- "+strings.Join(wantStage, " "), stageLine(t, errOut))
+				require.Contains(t, errOut, "Tiller state changed while events were being compacted. Run tiller compact again.")
+				runStageLine(t, dir, stageLine(t, errOut))
+				require.Contains(t, gitOutput(t, dir, "diff", "--cached", "--name-status"), wantStage[1])
+				require.NotContains(t, gitOutput(t, dir, "diff", "--cached", "--name-status"), "EV-bbbbbb")
+			}
+		})
+	}
+}
+
+func TestCompactVerbStaleBeforeAnyDayKeepsRefusalContract(t *testing.T) {
+	compactRepo(t)
+	old := compactEvents
+	compactEvents = func(string, mutate.CompactOptions) (mutate.CompactResult, error) {
+		return mutate.CompactResult{}, &store.EnvError{Code: 3, Reason: store.ReasonMutationStale, Msg: "state changed"}
+	}
+	t.Cleanup(func() { compactEvents = old })
+
+	out, _, code := execCLI(t, "compact", "--json")
+	require.Equal(t, 1, code, out)
+	require.Equal(t, map[string]any{"reason": store.ReasonMutationStale}, jsonData(t, out))
+	_, errOut, code := execCLI(t, "compact")
+	require.Equal(t, 1, code, errOut)
+	require.NotContains(t, errOut, "git add")
+	require.Contains(t, errOut, "Run tiller compact again.")
 }

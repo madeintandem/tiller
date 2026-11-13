@@ -1,6 +1,6 @@
 ---
 name: decompose
-description: Use when a design document needs turning into work: to-be inputs under .tiller/design/ the tree does not yet reflect, a draft amendment that `tiller intake` opened on a later document, a document written outside the tree that critiques or redirects the work, or when the developer names decompose. Maps the document into a draft tree, or into drafts one amendment holds, and stops for the human's approve.
+description: Use when a design document needs turning into work, with to-be inputs under .tiller/design/ the tree does not yet reflect, a draft amendment that `tiller intake` opened on a later document, a document written outside the tree that critiques or redirects the work, or when the developer names decompose. Maps the document into a draft tree, or into drafts one amendment holds, and stops for the human's approve.
 ---
 
 # decompose

@@ -962,9 +962,10 @@ func parentHeldElsewhereErr(tree *store.Tree, parent store.Node, holder *store.A
 // blocks (held_by_amendment), or a move's destination epic
 // (parent_held_elsewhere). Approving this amendment would act on a draft that
 // is still the other amendment's proposal, and withdrawing that one would
-// then strand this one. An add's own parent is judged where the add is built
-// (buildStagedOp), and the node an add creates is never a reference. Staging
-// and approval both run it, on raw values that are ids or keys.
+// then strand this one. A held add's staged key is historical; a legacy add
+// still resolves its parents from that key at approval, so their current holds
+// must be checked too. Missing parents are left to the add planner, which also
+// knows about earlier same-batch legacy additions.
 func refuseOperationHeldElsewhere(tree *store.Tree, doc *store.Amendment, op store.AmendmentOp) error {
 	refs := append([]string{op.Target, op.By, op.SupersededBy}, op.Blocks...)
 	for _, raw := range refs {
@@ -985,6 +986,30 @@ func refuseOperationHeldElsewhere(tree *store.Tree, doc *store.Amendment, op sto
 			if dest := lookupStageRef(tree, epicKey); dest != nil {
 				if holder := heldElsewhere(tree, doc, dest); holder != nil {
 					return parentHeldElsewhereErr(tree, dest, holder, "stage this move on that amendment")
+				}
+			}
+		}
+	}
+	if op.Node == "" && op.Removed == "" {
+		var parentKeys []string
+		switch op.Op {
+		case store.AmendmentOpAddFeature:
+			epicKey, _, err := splitFeatureKey(op.Key)
+			if err != nil {
+				return err
+			}
+			parentKeys = []string{epicKey}
+		case store.AmendmentOpAddTask:
+			epicKey, featureKey, _, err := splitTaskKey(op.Key)
+			if err != nil {
+				return err
+			}
+			parentKeys = []string{epicKey + "/" + featureKey, epicKey}
+		}
+		for _, key := range parentKeys {
+			if parent := lookupStageRef(tree, key); parent != nil {
+				if err := refuseParentHeldElsewhere(tree, doc, parent); err != nil {
+					return err
 				}
 			}
 		}

@@ -194,6 +194,32 @@ func TestBuildBoardOfTaskRollupExcludesCancelled(t *testing.T) {
 	require.Equal(t, []string{"T-bravo0", "T-charl0", "T-alfa00"}, ids)
 }
 
+func TestBuildBoardHeldTaskKeepsMetadataButNotProgress(t *testing.T) {
+	tree := buildRollupTree()
+	tree.Tasks["T-bravo0"].Status = "proposed"
+	tree.Amendments = map[string]*store.Amendment{
+		"A-held00": {ID: "A-held00", Title: "Extra scope", Status: store.AmendmentStatusDraft},
+	}
+	tree.AmendmentHolds = map[string]string{"T-bravo0": "A-held00"}
+
+	f := BuildBoardOf(tree).Epics[0].Features[0]
+	require.Equal(t, 1, f.TaskDone)
+	require.Equal(t, 1, f.TaskTotal)
+	require.Len(t, f.Tasks, 3)
+	for _, task := range f.Tasks {
+		if task.ID == "T-bravo0" {
+			require.NotNil(t, task.AmendmentHold)
+			require.Equal(t, "A-held00", task.AmendmentHold.ID)
+			require.Equal(t, store.AmendmentStatusDraft, task.AmendmentHold.Status)
+			raw, err := json.Marshal(task)
+			require.NoError(t, err)
+			require.Contains(t, string(raw), `"amendment_hold":`)
+		} else {
+			require.Nil(t, task.AmendmentHold)
+		}
+	}
+}
+
 func buildTreeWithAttachedWork() *store.Tree {
 	epicKey := "build"
 	featureKey := "build/schema-engine"

@@ -266,14 +266,15 @@ type ProseRef struct {
 // always the short scan handle; a question also retains its full Statement for
 // structured clients that need detail without another lookup.
 type RelatedNode struct {
-	Noun      string `json:"noun"`
-	ID        string `json:"id"`
-	Key       string `json:"key,omitempty"`
-	Ref       string `json:"ref"`
-	Status    string `json:"status"`
-	Column    string `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
-	Title     string `json:"title,omitempty"`
-	Statement string `json:"statement,omitempty"`
+	Noun          string             `json:"noun"`
+	ID            string             `json:"id"`
+	Key           string             `json:"key,omitempty"`
+	Ref           string             `json:"ref"`
+	Status        string             `json:"status"`
+	Column        string             `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
+	Title         string             `json:"title,omitempty"`
+	Statement     string             `json:"statement,omitempty"`
+	AmendmentHold *AmendmentHoldView `json:"amendment_hold,omitempty"`
 }
 
 // Relationships is the node page's relationship hub, how the graph is walked
@@ -547,6 +548,7 @@ func relatedOf(t *store.Tree, n store.Node) RelatedNode {
 		Column: gen.BoardColumn(t, n),
 		Title:  handleOf(n),
 	}
+	row.AmendmentHold = amendmentHoldViewOf(t, n)
 	if q, ok := n.(*store.Question); ok {
 		row.Statement = q.Statement
 	}

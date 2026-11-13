@@ -234,10 +234,19 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 		identity := &ops[i]
 		application, stages := applications[i], staging[i]
 		evidence := mergeAmendmentEvidence(amendmentEventEvidence(stages), amendmentEventEvidence(application))
-		// An open amendment's held add wrote its add event at staging: that
-		// event is the draft's creation, not an application of the operation.
-		heldAdd := op.Node != "" && store.AmendmentOpen(a)
+		// A held add's creation event always belongs to staging, even after
+		// withdrawal or removal. Approval applies only surviving operations;
+		// a promotion event also proves an interrupted approval applied one.
+		heldAdd := op.Node != ""
 		applied := len(application) > 0 && !heldAdd
+		if heldAdd && op.Removed == "" {
+			applied = len(application) > 0 && a.Status == store.AmendmentStatusApproved
+			for _, ev := range application {
+				if ev.Type == "approve."+store.AddedNodeNoun(op.Op) {
+					applied = true
+				}
+			}
+		}
 		state := "proposed"
 		if applied {
 			state = "applied"
@@ -430,7 +439,7 @@ func projectAmendmentIdentity(t *store.Tree, a *store.Amendment, evs []events.Ev
 				continue
 			}
 			scope := "direct"
-			if pair.role == "addition_parent" && (identity.Created != nil && !heldAdd || applied || a.Status == store.AmendmentStatusApproved) {
+			if pair.role == "addition_parent" && (identity.Created != nil && !heldAdd || applied || !heldAdd && a.Status == store.AmendmentStatusApproved) {
 				scope = "historical_parent"
 			}
 			addEffect(AmendmentEffect{OperationIndex: &number, Operation: op.Op, Role: pair.role, Scope: scope, Node: pair.node, Reference: op.Key, Note: strings.Join(identity.Notes, "; "), State: state, Evidence: mergeAmendmentEvidence(evidence, creationEvidence[pair.node.ID])})
@@ -504,6 +513,9 @@ func amendmentApplicationMatches(ev events.Event, amendmentID string, index int,
 	case store.AmendmentOpMoveFeature:
 		return ev.Type == "move.feature" && ev.Targets[0] == op.Target && eventString(ev.After, "key") == op.Key
 	case store.AmendmentOpAddEpic, store.AmendmentOpAddFeature, store.AmendmentOpAddTask:
+		if op.Node != "" && ev.Type == "approve."+store.AddedNodeNoun(op.Op) {
+			return ev.Targets[0] == op.Node
+		}
 		return ev.Type == "add."+strings.TrimPrefix(op.Op, "add-") && eventString(ev.After, "key") == op.Key
 	case store.AmendmentOpAddQuestion:
 		_, indexed := eventIndex(ev.After, "operation_index")

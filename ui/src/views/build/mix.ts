@@ -6,7 +6,7 @@
 // hardcoded literal (BUILD_COLUMNS), not a computed one. Every column is
 // emitted, zeros included, since StateBar itself filters n === 0 segments.
 
-import type { NodeStatus } from "../../api";
+import type { AmendmentHoldView, NodeStatus } from "../../api";
 import type { StateMixEntry } from "../../components/StateBar";
 import { foldStatus } from "../../lib/states";
 import { statusLabel } from "../../lib/statusLabel";
@@ -74,17 +74,17 @@ const TASK_ORDER: readonly string[] = ["proposed", "ready", "in_progress", "chec
 // The chart states in lifecycle order, the order the bar paints its segments.
 const BAR_ORDER: readonly NodeStatus[] = ["draft", "specced", "ready", "active", "in_review", "blocked", "done"];
 
-// A cancelled task is retired work, not part of the feature's progress: it
-// leaves both the denominator and the bar, the way task_done/task_total and
-// the Home approve card already leave it out.
-function liveStatuses(tasks: readonly { status: string }[]): string[] {
-  return tasks.map((t) => t.status).filter((s) => s !== "cancelled");
+// Cancelled tasks and amendment-held drafts do not contribute to progress.
+type ProgressTask = { status: string; amendment_hold?: AmendmentHoldView };
+
+function liveStatuses(tasks: readonly ProgressTask[]): string[] {
+  return tasks.filter((t) => t.status !== "cancelled" && t.amendment_hold === undefined).map((t) => t.status);
 }
 
 // taskMix folds a feature's live tasks onto the StateBar's chart states
 // (a task's proposed, in_progress, and check fold through lib/states.ts like
 // every other bar), in lifecycle order, zeros included.
-export function taskMix(tasks: readonly { status: string }[]): StateMixEntry[] {
+export function taskMix(tasks: readonly ProgressTask[]): StateMixEntry[] {
   const live = liveStatuses(tasks);
   return BAR_ORDER.map((state) => ({ state, n: live.filter((s) => foldStatus(s) === state).length }));
 }
@@ -93,7 +93,7 @@ export function taskMix(tasks: readonly { status: string }[]): StateMixEntry[] {
 // "N of M done" first (M counts live tasks only), then each other status
 // with its count in lifecycle order, lower-cased through statusLabel:
 // "0 of 7 done, 7 in review".
-export function taskMixCaption(tasks: readonly { status: string }[]): string {
+export function taskMixCaption(tasks: readonly ProgressTask[]): string {
   const live = liveStatuses(tasks);
   if (live.length === 0) {
     return "no tasks yet";
