@@ -1354,7 +1354,7 @@ func TestDeriveBaselineRecordsForwardWorkAsQuestions(t *testing.T) {
 		"never a captured bug",
 		"Do not run `tiller add bug`, `tiller add chore`, or `tiller add tweak` from this seam.",
 		"**Standalone arm.**",
-		"Nothing in recorded state names this arm; never start it on your own.",
+		"Nothing in recorded state names this arm; start it only when the developer asks.",
 		"Name that next move and stop",
 		"scan existing sources for unbuilt work",
 		// A rerun must see declined and redirected leads, not only open ones.

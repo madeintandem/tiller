@@ -65,9 +65,9 @@ Missing references and inaccessible assets are explicit gaps. Search hits, desig
 
 ### Keep generation read-only
 
-Only context reads and the explicitly requested deliverable write are permitted. Do not change canonical prose, source code, state YAML, the manifest, claims, gates, events, questions, approvals, acceptance criteria, Git history, refs, or index. Do not invoke `join`, `migrate`, `eval`, `check`, `sync`, or other state-writing commands. Do not claim, start, specify, approve, attest, record evidence, or commit anything. Instruction refresh is a separate developer operation, never an export prerequisite to perform here.
+Only context reads and the explicitly requested deliverable write are permitted. Do not change canonical prose, source code, state YAML, the manifest, claims, gates, events, questions, approvals, acceptance criteria, Git history, refs, or index: the request authorizes only the export. Do not invoke `join`, `migrate`, `eval`, `check`, `sync`, or other state-writing commands. Do not claim, start, specify, approve, attest, record evidence, or commit anything. Instruction refresh is a separate developer operation, never an export prerequisite to perform here.
 
-Do not enter `specify`, `mend-drift`, or another lifecycle skill to repair missing or contradictory sources. Read-command recovery is limited to correcting the read invocation or using accessible source files. If the CLI reports an environment, schema, or recovery problem, report the limitation and continue with safely readable sources where useful; do not repair the project to make the export work.
+Do not enter `specify`, `mend-drift`, or another lifecycle skill to repair missing or contradictory sources, because your work here is to expose that uncertainty. Read-command recovery is limited to correcting the read invocation or using accessible source files. If the CLI reports an environment, schema, or recovery problem, report the limitation and continue with safely readable sources where useful; do not repair the project to make the export work.
 
 Inspect accessible implementation, components, design guidance, and assets through filesystem reads. Do not launch application operations, install dependencies, build, run tests, execute acceptance bindings, or run scripts that could change the project merely to gather context. Git inspection must remain local and read-only: no checkout, fetch, stash, index refresh, object writes, or basis refresh. Do not follow a recommended mutation printed by a status command.
 
@@ -160,7 +160,7 @@ List unresolved questions, material source conflicts, missing references, unsupp
 
 ### 4. Review coverage and export safety
 
-Before delivery, check the brief against the gathered scope and sources. Every included feature is accounted for, UI-relevant criteria have reachable scenarios or explicitly named unresolved blockers, preservation rules remain visible, and non-visual criteria are outside proof. Required behavior must not become optional merely because it is inconvenient to prototype. Unsupported layout choices, sample values, and provisional treatments must not read as product requirements.
+Before delivery, check the brief against the gathered scope and sources. Every included feature is accounted for, UI-relevant criteria have reachable scenarios or explicitly named unresolved blockers, preservation rules remain visible, and non-visual criteria are outside proof. Required behavior stays required even when it is inconvenient to prototype. Unsupported layout choices, sample values, and provisional treatments must not read as product requirements.
 
 Review all exported prose, examples, URLs, and asset references for customer data, credentials, and secrets. Use synthetic substitutes while preserving the meaningful behavior distinctions. Do not copy sensitive payloads out of a source just because the source is a requirement. Explain any material redaction without exposing the protected value. Ensure the receiving tool can understand the requirements without opening repository links or unavailable assets.
 
@@ -170,7 +170,7 @@ By default, return the complete Markdown brief in the reply without creating any
 
 A file request does not authorize replacing canonical prose, source requirements, or state. Check the destination before writing, including whether a symlink would redirect the write. Preserve an existing human-edited brief unless the developer explicitly authorizes replacing that output. Regeneration alone is not replacement authorization: use a new explicitly requested snapshot destination or return the new snapshot in the reply and ask for a destination if needed. Never silently overwrite an existing file.
 
-Do not create a mandatory output directory, YAML sidecar, generated index, reference loader, extra asset copy, or automatic refresh mechanism. Do not upload, submit to an external tool, install a design tool, or begin prototype construction. No vendor-specific API, account, installation, or receiving-tool dependency belongs in generation.
+Do not create a mandatory output directory, YAML sidecar, generated index, reference loader, extra asset copy, or automatic refresh mechanism, since the requested deliverable is the only write permitted. Do not upload, submit to an external tool, install a design tool, or begin prototype construction: the developer decides where the brief goes, and the receiving tool owns prototype craft. No vendor-specific API, account, installation, or receiving-tool dependency belongs in generation.
 
 ## Hand-off
 
