@@ -229,3 +229,10 @@ func TestOrientationStatesCurrentBaselineDriftAndShelfClaims(t *testing.T) {
 		require.Contains(t, text, want)
 	}
 }
+
+// TestOrientationDrawsTheChoreTweakLine pins that orientation says a change to
+// code or tests, however small, is a tweak.
+func TestOrientationDrawsTheChoreTweakLine(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "Tweaks are minor adjustments that may change code. A change to code or tests, however small, is a tweak.")
+}

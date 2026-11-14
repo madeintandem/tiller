@@ -7,17 +7,21 @@ description: Use when an investigation or the developer's description identifies
 
 ## Trigger
 
-An investigation has reproduced a defect, or the developer has described a concrete defect or maintenance obligation that should remain visible beyond this conversation. Capture records the finding. It does not triage it. A human answer to a forward-work question that names a defect is that description.
+An investigation has reproduced a defect, or the developer has described a concrete defect, maintenance obligation, or minor adjustment that should remain visible beyond this conversation. Capture records the finding. It does not triage it. A human answer to a forward-work question that names a defect is that description.
 
 ## Reasoning
 
 For authored prose, follow **External references** in `tiller guide orient`.
 
-Choose `bug` when observed behavior violates expected product or system behavior. Choose `chore` for housekeeping without code side effects, such as documentation or operational upkeep. This is classification guidance, not policing or validation of Chores. Choose `tweak` for a minor adjustment that may change code; choose a Task for substantive planned work. Done work stays done: capture forward adjustments as new work rather than reopening completed records. If the work needs its own feature acceptance contract or changes the work tree, route to `decompose`, `specify`, or `amend` instead.
+Choose `bug` when observed behavior violates expected product or system behavior. Choose `chore` for housekeeping without code side effects, such as documentation or operational upkeep. This is classification guidance, not policing or validation of Chores. Choose `tweak` for a minor adjustment that may change code; choose a Task for substantive planned work. A change to code or tests, however small, is a tweak. Done work stays done: capture forward adjustments as new work rather than reopening completed records. If the work needs its own feature acceptance contract or changes the work tree, route to `decompose`, `specify`, or `amend` instead.
 
 Capture is the trigger for a defect found outside any document. A defect, chore, or tweak found while decomposing a document is added the same way, directly to its shelf with `--source` citing the document, and `decompose` carries the mapping rules that decide what in a document is a shelf item and what is a feature, task, or question; load `tiller guide decompose` for them.
 
+Before adding, read the shelves (`tiller ls bugs`, `tiller ls chores`, `tiller ls tweaks`), the open questions, and the proposed amendments. A finding that matches an open item is not added again: name the existing node to the developer. A defect that returns after its bug reached done is a new bug that says `regression of <id>`.
+
 Write one contract per independently triageable outcome. A bug contract records the reproduction, expected behavior, actual behavior, and the observable fixed-when condition. A chore or tweak contract records what must be done, why it matters, and the observable done-when condition. Do not write an implementation plan here.
+
+Reproduction gives the smallest steps from a named starting state, with the commit or version where it was observed. Expected names its source: a criterion, a spec line, or the rule the developer stated. Actual is what was observed, with error text verbatim. Fixed when and Done when are conditions a test or a reader can check, never "the bug is fixed". A reproduction derived by reading rather than run says so.
 
 Grade every bug by impact with `--severity`, on this scale:
 
@@ -28,7 +32,7 @@ Grade every bug by impact with `--severity`, on this scale:
 | Medium | Wrong behavior on an edge case or unusual input, or a fragile construct likely to break under a plausible change. |
 | Minor | A real defect with negligible impact, such as a wrong message, a misleading log line, or an off-by-one in a display-only count. |
 
-Grade by impact, never by the size of the fix. Always pass `--severity` when filing a bug. When its impact can't be known yet, leave the bug unrated and say so in `bug.md`'s Actual section, so the approver investigates before grading; `tiller approve bug` refuses an unrated bug until it is graded. Chores and tweaks carry no severity. Severity never routes: it sorts and filters the console's Fix board, and the shelf's soft order still decides what is next.
+Grade by impact, never by the size of the fix. Pass `--severity` whenever the impact is known. When it cannot be known yet, omit it and say so in `bug.md`'s Actual section, so the approver investigates before grading; `tiller approve bug` refuses an unrated bug until it is graded. Chores and tweaks carry no severity. Severity never routes: it sorts and filters the console's Fix board, and the shelf's soft order still decides what is next.
 
 Use `--attach` only when an epic, feature, or task is the honest place the finding came from. Attachment is provenance and reading context, not parenthood or a gate. Use `--source` when the finding came from an investigation note, review, issue, log, or other durable artifact; cite the narrowest useful path and line range. Record shelf dependencies only when another bug, chore, or tweak must settle first.
 

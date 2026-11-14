@@ -590,7 +590,8 @@ queue does not erase pending baseline review.
 
 Bugs capture defects: observed behavior violates expected behavior. Chores are
 housekeeping without code side effects; this is guidance, not a restriction or
-validation rule. Tweaks are minor adjustments that may change code. Tasks carry
+validation rule. Tweaks are minor adjustments that may change code. A change to
+code or tests, however small, is a tweak. Tasks carry
 substantive planned work. Capture a forward adjustment with ` + "`tiller add tweak <key>`" + `
 and its ` + "`.tiller/tweaks/<key>/tweak.md`" + ` contract, then stop for human triage.
 Done work stays done: never reopen it to accommodate an adjustment. A tweak

@@ -230,7 +230,7 @@ func TestCaptureGradesBugsBySeverity(t *testing.T) {
 		"| Blocker |", "| Important |", "| Medium |", "| Minor |",
 		"Grade by impact, never by the size of the fix.",
 		"--severity",
-		"leave the bug unrated and say so in `bug.md`'s Actual section",
+		"When it cannot be known yet, omit it and say so in `bug.md`'s Actual section",
 		"tiller approve bug <node> --severity <level>",
 		"Severity never routes",
 	} {
@@ -1481,4 +1481,30 @@ func TestSpecifySettlesQuestionsBeforeChoreography(t *testing.T) {
 	require.Less(t, settle, strings.Index(text, "## The contract-grain rule"))
 	require.Less(t, settle, strings.Index(text, "## Choreography"))
 	require.Contains(t, text, "like C5 (in the example below)")
+}
+
+// capture reads the shelves before adding, so one finding is not filed twice.
+func TestCaptureChecksForDuplicates(t *testing.T) {
+	text, ok := Lookup("capture")
+	require.True(t, ok)
+	require.Contains(t, text, "Before adding, read the shelves")
+	require.Contains(t, text, "`regression of <id>`")
+	require.Contains(t, text, "A reproduction derived by reading rather than run says so.")
+}
+
+// capture's severity rule must not tell the agent to always pass the flag and
+// then to leave it off.
+func TestCaptureSeverityRuleDoesNotContradictItself(t *testing.T) {
+	text, ok := Lookup("capture")
+	require.True(t, ok)
+	require.NotContains(t, text, "Always pass `--severity`")
+	require.Contains(t, text, "Pass `--severity` whenever the impact is known.")
+}
+
+// capture draws the chore/tweak line: a change to code or tests is a tweak.
+func TestCaptureDrawsTheChoreTweakLine(t *testing.T) {
+	text, ok := Lookup("capture")
+	require.True(t, ok)
+	require.Contains(t, text, "A change to code or tests, however small, is a tweak.")
+	require.Contains(t, text, "a concrete defect, maintenance obligation, or minor adjustment")
 }
