@@ -41,11 +41,10 @@ func (c claudeReader) Discover(r Roots) ([]LogRef, int) {
 		if !e.IsDir() {
 			continue
 		}
-		folder := filepath.Join(projects, e.Name())
-		if !m.match(e.Name()) && !(m.maybe(e.Name()) && r.beneath(folder)) {
+		if !m.match(e.Name()) {
 			continue
 		}
-		found, bad := folderLogs(claudeHarness, folder, "subagents")
+		found, bad := r.sessionLogs(claudeHarness, filepath.Join(projects, e.Name()), "subagents")
 		refs = append(refs, found...)
 		unreadable += bad
 	}

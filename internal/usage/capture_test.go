@@ -22,11 +22,19 @@ func claudeCall(at time.Time, id, cmd string) string {
 		at.Format(time.RFC3339Nano), id, content)
 }
 
-// claudeSession writes a Claude log for session id under the folder encoded
-// for dir, one call at each time; the first call starts work on T-abc123.
+// claudeCwd is the line a Claude Code log records its working directory on
+// before any call.
+func claudeCwd(dir string) string {
+	return `{"type":"user","cwd":"` + dir + `"}` + "\n"
+}
+
+// claudeSession writes a Claude log for session id, started in dir, under the
+// folder encoded for dir, one call at each time; the first call starts work
+// on T-abc123.
 func claudeSession(t *testing.T, home, dir, id string, times ...time.Time) string {
 	t.Helper()
 	var b strings.Builder
+	b.WriteString(claudeCwd(dir))
 	for i, at := range times {
 		cmd := ""
 		if i == 0 {
@@ -183,15 +191,17 @@ func TestCaptureWritesSettledSessions(t *testing.T) {
 
 func TestCaptureSkipsActiveSession(t *testing.T) {
 	e := newCaptureEnv(t)
-	path := claudeSession(t, e.home, e.root, "s1", captureNow.Add(-time.Hour), captureNow.Add(-10*time.Minute))
+	claudeSession(t, e.home, e.root, "s1", captureNow.Add(-time.Hour), captureNow.Add(-10*time.Minute))
 	sub := filepath.Join(e.home, ".claude", "projects", claudeFolder(e.root), "s1", "subagents", "agent-a.jsonl")
 	mustWrite(t, sub, claudeCall(captureNow.Add(-50*time.Minute), "a-0", ""))
 	touch(t, sub, captureNow.Add(-50*time.Minute))
-	unreadable(t, path, sub)
+	unreadable(t, sub)
 	r := &countingReader{Reader: NewClaudeReader()}
 
-	// A group whose newest log was written within SettleAfter is not opened,
-	// even when an older subagent log sits beside it.
+	// A group whose newest log was written within SettleAfter is not parsed,
+	// even when an older subagent log sits beside it. Discovery reads the
+	// top-level log only as far as its working directory and never opens a
+	// subagent log.
 	res, cur := mustCapture(t, e.options(r))
 	if len(res.Writes) != 0 || r.parses != 0 {
 		t.Fatalf("writes = %d parses = %d, want 0 and 0 for an active session", len(res.Writes), r.parses)
@@ -204,7 +214,6 @@ func TestCaptureSkipsActiveSession(t *testing.T) {
 	if err := cur.Save(e.root); err != nil {
 		t.Fatal(err)
 	}
-	os.Chmod(path, 0o644)
 	os.Chmod(sub, 0o644)
 	later := e.options(r)
 	later.Now = captureNow.Add(time.Hour)
@@ -280,9 +289,10 @@ func TestCaptureKeepsCodexCwdMemo(t *testing.T) {
 	}
 }
 
-// One unreadable log no longer stops the whole capture: its session is
-// skipped and counted, stays out of the cursor, and is captured once it can
-// be read.
+// One unreadable log does not stop the whole capture: it is skipped and
+// counted, stays out of the cursor, and is captured once it can be read. A
+// log that cannot be opened shows no working directory, so until then it is
+// not counted among this project's sessions.
 func TestCaptureSkipsAnUnreadableLogAndCountsIt(t *testing.T) {
 	e := newCaptureEnv(t)
 	bad := claudeSession(t, e.home, e.root, "bad", captureNow.Add(-3*time.Hour), captureNow.Add(-2*time.Hour))
@@ -293,8 +303,8 @@ func TestCaptureSkipsAnUnreadableLogAndCountsIt(t *testing.T) {
 	if len(res.Writes) != 1 || !strings.HasSuffix(res.Writes[0].Path, "good.yml") {
 		t.Fatalf("writes = %+v, want only good", res.Writes)
 	}
-	if h := harnessResult(t, res, "claude-code"); h.Unreadable != 1 || h.Sessions != 2 {
-		t.Errorf("harness = %+v, want 1 unreadable of 2 sessions", h)
+	if h := harnessResult(t, res, "claude-code"); h.Unreadable != 1 || h.Sessions != 1 {
+		t.Errorf("harness = %+v, want 1 unreadable log beside 1 session", h)
 	}
 	if _, ok := cur.Logs[bad]; ok {
 		t.Errorf("the unreadable log entered the cursor")
@@ -350,21 +360,21 @@ func TestCaptureSkipsAnUnreadableFolderAndCountsIt(t *testing.T) {
 }
 
 // A session started in a subdirectory of the checkout is captured, and the
-// cursor keeps its folder's working directory so the folder is read once.
-func TestCaptureFindsSubdirectorySessionAndRemembersItsFolder(t *testing.T) {
+// cursor keeps its log's working directory so the log is read for it once.
+func TestCaptureFindsSubdirectorySessionAndRemembersItsCwd(t *testing.T) {
 	e := newCaptureEnv(t)
 	ui := filepath.Join(e.root, "ui")
 	at := captureNow.Add(-3 * time.Hour)
 	path := filepath.Join(e.home, ".claude", "projects", claudeFolder(ui), "s1.jsonl")
-	mustWrite(t, path, `{"type":"user","cwd":"`+ui+`"}`+"\n"+claudeCall(at, "m1", "tiller start T-abc123"))
+	mustWrite(t, path, claudeCwd(ui)+claudeCall(at, "m1", "tiller start T-abc123"))
 	touch(t, path, at)
 
 	res, cur := mustCapture(t, e.options())
 	if len(res.Writes) != 1 {
 		t.Fatalf("writes = %d, want 1", len(res.Writes))
 	}
-	if got := cur.Cwd[filepath.Dir(path)]; got != ui {
-		t.Errorf("cursor cwd for the folder = %q, want %q (all: %v)", got, ui, cur.Cwd)
+	if got := cur.Cwd[path]; got != ui {
+		t.Errorf("cursor cwd for the log = %q, want %q (all: %v)", got, ui, cur.Cwd)
 	}
 }
 
@@ -560,7 +570,7 @@ func noChangeFixture(tb testing.TB, n int) (captureEnv, *countingReader) {
 	var logs []string
 	for i := range n {
 		path := filepath.Join(dir, fmt.Sprintf("s%03d.jsonl", i))
-		if err := os.WriteFile(path, []byte(claudeCall(captureNow.Add(-3*time.Hour), fmt.Sprintf("m%d", i), "")), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(claudeCwd(e.root)+claudeCall(captureNow.Add(-3*time.Hour), fmt.Sprintf("m%d", i), "")), 0o644); err != nil {
 			tb.Fatal(err)
 		}
 		touch(tb, path, captureNow.Add(-3*time.Hour))

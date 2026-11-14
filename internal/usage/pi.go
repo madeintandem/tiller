@@ -50,32 +50,25 @@ func (pr piReader) Discover(r Roots) (refs []LogRef, unreadable int) {
 	omp := newFolderMatcher(r.Project, func(p string) string { return ompFolder(r.Home, p) })
 	pi := newFolderMatcher(r.Project, piInner)
 	dirs := pr.Dirs(r)
-	// accept takes a folder the matcher accepts by name, or one that only
-	// begins like a path beneath a project path and whose recorded working
-	// directory is beneath one.
-	accept := func(m folderMatcher, name, folder string) bool {
-		return m.match(name) || (m.maybe(name) && r.beneath(folder))
-	}
 	for _, base := range []struct {
 		dir     string
-		matches func(name, folder string) bool
+		matches func(name string) bool
 	}{
-		{dirs[0], func(name, folder string) bool { return accept(omp, name, folder) }},
-		{dirs[1], func(name, folder string) bool {
+		{dirs[0], omp.match},
+		{dirs[1], func(name string) bool {
 			if len(name) <= 4 || !strings.HasPrefix(name, "--") || !strings.HasSuffix(name, "--") {
 				return false
 			}
-			return accept(pi, name[2:len(name)-2], folder)
+			return pi.match(name[2 : len(name)-2])
 		}},
 	} {
 		entries, bad := listHarnessDir(base.dir)
 		unreadable += bad
 		for _, e := range entries {
-			folder := filepath.Join(base.dir, e.Name())
-			if !e.IsDir() || !base.matches(e.Name(), folder) {
+			if !e.IsDir() || !base.matches(e.Name()) {
 				continue
 			}
-			found, bad := folderLogs(piHarness, folder, "")
+			found, bad := r.sessionLogs(piHarness, filepath.Join(base.dir, e.Name()), "")
 			refs = append(refs, found...)
 			unreadable += bad
 		}

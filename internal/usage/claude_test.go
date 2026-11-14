@@ -23,17 +23,21 @@ func fixture(t *testing.T, name string) string {
 	return filepath.Join("testdata", "claude", name)
 }
 
+// TestClaudeDiscoverMatchesRootAndWorktreePrefix pins the folders a project
+// is found in: the root's, a live worktree's, and a removed worktree's under
+// one of the root's dot directories. Each session records the working
+// directory its folder is named for; a subagent log records none of its own.
 func TestClaudeDiscoverMatchesRootAndWorktreePrefix(t *testing.T) {
 	home := t.TempDir()
 	proj := filepath.Join(home, ".claude", "projects")
 	line := `{"type":"assistant"}` + "\n"
-	mustWrite(t, filepath.Join(proj, "-p-app", "s1.jsonl"), line)
+	mustWrite(t, filepath.Join(proj, "-p-app", "s1.jsonl"), cwdLog("/p/app"))
 	mustWrite(t, filepath.Join(proj, "-p-app", "s1", "subagents", "agent-a.jsonl"), line)
-	mustWrite(t, filepath.Join(proj, "-p-app--worktrees-x", "s2.jsonl"), line)
-	mustWrite(t, filepath.Join(proj, "-p-other", "s3.jsonl"), line)
-	mustWrite(t, filepath.Join(proj, "-p-app-two", "s4.jsonl"), line)
-	mustWrite(t, filepath.Join(proj, "-p-app--claude-worktrees-gone", "s5.jsonl"), line)
-	mustWrite(t, filepath.Join(proj, "-p-app-wt", "s6.jsonl"), line)
+	mustWrite(t, filepath.Join(proj, "-p-app--worktrees-x", "s2.jsonl"), cwdLog("/p/app/.worktrees/x"))
+	mustWrite(t, filepath.Join(proj, "-p-other", "s3.jsonl"), cwdLog("/p/other"))
+	mustWrite(t, filepath.Join(proj, "-p-app-two", "s4.jsonl"), cwdLog("/p/app-two"))
+	mustWrite(t, filepath.Join(proj, "-p-app--claude-worktrees-gone", "s5.jsonl"), cwdLog("/p/app/.claude/worktrees/gone"))
+	mustWrite(t, filepath.Join(proj, "-p-app-wt", "s6.jsonl"), cwdLog("/p/app-wt"))
 
 	refs, bad := NewClaudeReader().Discover(Roots{Home: home, Project: []string{"/p/app", "/p/app-wt"}})
 	if bad != 0 {
@@ -83,9 +87,9 @@ func cwdLog(cwd string) string {
 
 // TestClaudeDiscoverFindsSubdirectorySessions pins sessions started in a
 // subdirectory of the checkout: their folder only begins like the root's
-// encoding, so the working directory recorded in the logs decides, by path
+// encoding, so the working directory each log records decides, by path
 // segment. A sibling project whose folder begins the same way is not ours.
-// Each folder's directory is read once; the memo answers after that.
+// Each log is read for it once; the memo answers after that.
 func TestClaudeDiscoverFindsSubdirectorySessions(t *testing.T) {
 	home := t.TempDir()
 	proj := filepath.Join(home, ".claude", "projects")
@@ -113,9 +117,7 @@ func TestClaudeDiscoverFindsSubdirectorySessions(t *testing.T) {
 	if got := sessions(memo); !reflect.DeepEqual(got, []string{"s1"}) {
 		t.Fatalf("sessions = %v, want [s1]", got)
 	}
-	want := map[string]string{
-		filepath.Dir(sub): "/p/app/ui", filepath.Dir(sibling): "/p/app-two", filepath.Dir(siblingSub): "/p/app-two/ui",
-	}
+	want := map[string]string{sub: "/p/app/ui", sibling: "/p/app-two", siblingSub: "/p/app-two/ui"}
 	if !reflect.DeepEqual(memo.seen, want) {
 		t.Fatalf("memo = %v, want %v", memo.seen, want)
 	}
@@ -130,9 +132,8 @@ func TestClaudeDiscoverFindsSubdirectorySessions(t *testing.T) {
 func TestClaudeHonorsConfigDir(t *testing.T) {
 	home := t.TempDir()
 	cfg := t.TempDir()
-	line := `{"type":"assistant"}` + "\n"
-	mustWrite(t, filepath.Join(home, ".claude", "projects", "-p-app", "old.jsonl"), line)
-	mustWrite(t, filepath.Join(cfg, "projects", "-p-app", "new.jsonl"), line)
+	mustWrite(t, filepath.Join(home, ".claude", "projects", "-p-app", "old.jsonl"), cwdLog("/p/app"))
+	mustWrite(t, filepath.Join(cfg, "projects", "-p-app", "new.jsonl"), cwdLog("/p/app"))
 	env := func(k string) string {
 		if k == "CLAUDE_CONFIG_DIR" {
 			return cfg

@@ -25,16 +25,16 @@ type Roots struct {
 	Env     func(string) string
 	Project []string
 	// cwd remembers working directories across captures: each Codex
-	// rollout's first-line one, and the one recorded in each harness folder
-	// that only begins like a project path's encoding. Capture sets it from
-	// the cursor. Nil reads them every time.
+	// rollout's first-line one, and the first one each top-level Claude Code
+	// or Pi log records, for every log in a folder named like a project
+	// path. Capture sets it from the cursor. Nil reads them every time.
 	cwd *cwdMemo
 }
 
 // cwdMemo holds the working directories learned by earlier captures (prev)
-// and those looked up or read in this discovery (seen). A rollout's first
-// line never changes, and a harness folder is named for one working
-// directory, so a known path is never opened again.
+// and those looked up or read in this discovery (seen), keyed by log path. A
+// rollout's first line never changes, and neither does the first working
+// directory a log records, so a known log is never opened again for it.
 type cwdMemo struct {
 	prev, seen map[string]string
 }
@@ -144,47 +144,38 @@ func trimEOL(b []byte) []byte {
 	return b
 }
 
-// folderMatcher accepts a harness folder that equals the encoding of a
-// project path, or the root's encoding plus "--", which is how a path under
-// one of the root's dot directories (a removed worktree) encodes. A sibling
-// project such as /p/app-two never matches /p/app.
+// folderMatcher picks the harness folders worth reading: one whose name is
+// the encoding of a project path, or begins with that encoding plus "-",
+// which is how a path beneath it encodes (/p/app/ui as -p-app-ui, and a
+// removed worktree /p/app/.worktrees/x as -p-app--worktrees-x).
 //
-// A folder that only begins with a project path's encoding plus "-" may hold
-// sessions started in a subdirectory (/p/app/ui encodes as -p-app-ui), or a
-// sibling's (/p/app-ui encodes the same way): maybe reports those, and the
-// working directory recorded in the folder's logs decides (Roots.beneath).
+// A name never proves whose sessions a folder holds. The encoding turns
+// every separator and dot into a dash, so /p/app.ui, /p/app-ui and /p/app/ui
+// share the folder -p-app-ui. A match only nominates the folder; each
+// session in it is judged by its own recorded working directory
+// (Roots.sessionLogs).
 type folderMatcher struct {
-	exact  map[string]bool
-	prefix string
-	under  []string
+	exact map[string]bool
+	under []string
 }
 
-// newFolderMatcher encodes each path with enc; paths[0] is the checkout root.
+// newFolderMatcher encodes each path with enc.
 func newFolderMatcher(paths []string, enc func(string) string) folderMatcher {
 	m := folderMatcher{exact: map[string]bool{}}
-	for i, p := range paths {
+	for _, p := range paths {
 		e := enc(p)
 		if e == "" || e == "-" {
 			continue
 		}
 		m.exact[e] = true
 		m.under = append(m.under, e+"-")
-		if i == 0 {
-			m.prefix = e + "--"
-		}
 	}
 	return m
 }
 
 func (m folderMatcher) match(s string) bool {
-	return m.exact[s] || (m.prefix != "" && strings.HasPrefix(s, m.prefix))
-}
-
-// maybe reports a folder match does not accept whose name still begins like
-// a path beneath a project path.
-func (m folderMatcher) maybe(s string) bool {
-	if m.match(s) {
-		return false
+	if m.exact[s] {
+		return true
 	}
 	for _, u := range m.under {
 		if strings.HasPrefix(s, u) {
@@ -194,34 +185,43 @@ func (m folderMatcher) maybe(s string) bool {
 	return false
 }
 
-// beneath reports whether the sessions in a folder maybe accepted ran at or
-// beneath a project path, by the working directory its logs record. The
-// answer comes from the memo after the folder's first read; a folder with no
-// recorded working directory yet is not ours this time and is read again.
-func (r Roots) beneath(folder string) bool {
-	cwd, err := r.cwd.lookup(folder, folderCwd)
-	return err == nil && underAny(cwd, r.Project)
+// sessionLogs lists the sessions in a matched folder that ran at or beneath
+// a project path. Each top-level log is judged alone, by the first working
+// directory it records, compared by whole path segments; a subagent log goes
+// with the session it sits under and is never judged itself. The answer
+// comes from the memo after a log's first read.
+//
+// A log that records no working directory yet establishes nothing, so its
+// session is left out and the log is read again next time. A log that cannot
+// be opened is left out too and counts as one unreadable.
+func (r Roots) sessionLogs(harness, folder, subagentDir string) (refs []LogRef, unreadable int) {
+	found, unreadable := folderLogs(harness, folder, subagentDir)
+	ours := map[string]bool{}
+	for _, l := range found {
+		if l.Parent != "" {
+			continue
+		}
+		cwd, err := r.cwd.lookup(l.Path, logCwd)
+		switch {
+		case err == nil:
+			ours[l.Session] = underAny(cwd, r.Project)
+		case !errors.Is(err, errNoCwd):
+			unreadable++
+		}
+	}
+	for _, l := range found {
+		session := l.Parent
+		if session == "" {
+			session = l.Session
+		}
+		if ours[session] {
+			refs = append(refs, l)
+		}
+	}
+	return refs, unreadable
 }
 
 var errNoCwd = errors.New("usage: no working directory recorded")
-
-// folderCwd is the working directory recorded in a folder's top-level logs:
-// the first line that carries a top-level cwd, trying the logs in name order.
-func folderCwd(folder string) (string, error) {
-	entries, err := os.ReadDir(folder)
-	if err != nil {
-		return "", err
-	}
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
-			continue
-		}
-		if cwd, err := logCwd(filepath.Join(folder, e.Name())); err == nil {
-			return cwd, nil
-		}
-	}
-	return "", errNoCwd
-}
 
 var cwdMark = []byte(`"cwd"`)
 
@@ -264,7 +264,7 @@ func listHarnessDir(dir string) (entries []os.DirEntry, unreadable int) {
 	return entries, 0
 }
 
-// folderLogs lists a matched folder's top-level *.jsonl logs and, for each
+// folderLogs lists a folder's top-level *.jsonl logs and, for each
 // <stem> subdirectory, the *.jsonl logs in <stem>/<subagentDir> as subagents
 // of that stem. Other files are ignored. A folder that cannot be read counts
 // as one unreadable; so does a session whose subagent folder cannot be read,

@@ -179,7 +179,9 @@ func lockedSession(t *testing.T, home string) {
 }
 
 // An unreadable log is skipped and counted, never fatal: the readable
-// session is still captured, and the count shows in both renderings.
+// session is still captured, and the count shows in both renderings. A log
+// that cannot be opened shows no working directory, so it is not counted
+// among this project's sessions.
 func TestUsageCountsUnreadableLogs(t *testing.T) {
 	dir, home := usageRepo(t)
 	layClaudeSession(t, home)
@@ -194,7 +196,7 @@ func TestUsageCountsUnreadableLogs(t *testing.T) {
 
 	human, _, code := execCLI(t, "usage")
 	require.Equal(t, 0, code)
-	require.Contains(t, human, "Claude Code: 2 sessions found, nothing new to capture, 1 log could not be read")
+	require.Contains(t, human, "Claude Code: 1 session found, nothing new to capture, 1 log could not be read")
 }
 
 func TestSyncNotesUnreadableLogs(t *testing.T) {

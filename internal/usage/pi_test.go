@@ -13,14 +13,15 @@ func TestPiDiscoverBothEncodings(t *testing.T) {
 	omp := filepath.Join(home, ".omp", "agent", "sessions")
 	pi := filepath.Join(home, ".pi", "agent", "sessions")
 	app := filepath.Join(home, "dev", "app")
-	line := `{"type":"message"}` + "\n"
-	mustWrite(t, filepath.Join(omp, "-dev-app", "a.jsonl"), line)
-	mustWrite(t, filepath.Join(pi, "--"+piInner(app)+"--", "b.jsonl"), line)
-	mustWrite(t, filepath.Join(omp, "-dev-application", "c.jsonl"), line)
-	mustWrite(t, filepath.Join(omp, "-dev-app-two", "d.jsonl"), line)
-	mustWrite(t, filepath.Join(omp, "-dev-app--worktrees-gone", "e.jsonl"), line)
-	mustWrite(t, filepath.Join(pi, "--"+piInner(app)+"--worktrees-gone--", "f.jsonl"), line)
-	mustWrite(t, filepath.Join(pi, "--"+piInner(filepath.Join(home, "dev", "app-two"))+"--", "g.jsonl"), line)
+	gone := filepath.Join(app, ".worktrees", "gone")
+	two := filepath.Join(home, "dev", "app-two")
+	mustWrite(t, filepath.Join(omp, "-dev-app", "a.jsonl"), piHeader(app))
+	mustWrite(t, filepath.Join(pi, "--"+piInner(app)+"--", "b.jsonl"), piHeader(app))
+	mustWrite(t, filepath.Join(omp, "-dev-application", "c.jsonl"), piHeader(filepath.Join(home, "dev", "application")))
+	mustWrite(t, filepath.Join(omp, "-dev-app-two", "d.jsonl"), piHeader(two))
+	mustWrite(t, filepath.Join(omp, "-dev-app--worktrees-gone", "e.jsonl"), piHeader(gone))
+	mustWrite(t, filepath.Join(pi, "--"+piInner(gone)+"--", "f.jsonl"), piHeader(gone))
+	mustWrite(t, filepath.Join(pi, "--"+piInner(two)+"--", "g.jsonl"), piHeader(two))
 
 	refs, bad := NewPiReader().Discover(Roots{Home: home, Project: []string{app}})
 	if bad != 0 {
@@ -46,16 +47,14 @@ func TestPiDiscoverBothEncodings(t *testing.T) {
 }
 
 // TestPiDiscoverFindsSubdirectorySessions pins sessions started beneath the
-// checkout under both encodings: the session header's cwd decides, once per
-// folder, and a sibling project is not ours.
+// checkout under both encodings: the session header's cwd decides, read once
+// per log, and a sibling project is not ours.
 func TestPiDiscoverFindsSubdirectorySessions(t *testing.T) {
 	home := t.TempDir()
 	omp := filepath.Join(home, ".omp", "agent", "sessions")
 	pi := filepath.Join(home, ".pi", "agent", "sessions")
 	app := filepath.Join(home, "dev", "app")
-	header := func(cwd string) string {
-		return `{"type":"session","version":3,"id":"x","timestamp":"2026-07-30T20:22:45.196Z","cwd":"` + cwd + `"}` + "\n"
-	}
+	header := piHeader
 	logs := []string{
 		filepath.Join(omp, "-dev-app-ui", "a.jsonl"),
 		filepath.Join(pi, "--"+piInner(filepath.Join(app, "pkg", "x"))+"--", "b.jsonl"),
@@ -85,7 +84,7 @@ func TestPiDiscoverFindsSubdirectorySessions(t *testing.T) {
 		t.Fatalf("sessions = %v, want [a b]", got)
 	}
 	if len(memo.seen) != 4 {
-		t.Fatalf("memo = %v, want the four folders", memo.seen)
+		t.Fatalf("memo = %v, want the four logs", memo.seen)
 	}
 	unreadable(t, logs...)
 	if got := sessions(newCwdMemo(memo.seen)); !reflect.DeepEqual(got, []string{"a", "b"}) {
@@ -134,9 +133,8 @@ func TestPiParseMapsTokensAndMarkers(t *testing.T) {
 func TestPiSubagentFolderIsParentStem(t *testing.T) {
 	home := t.TempDir()
 	folder := filepath.Join(home, ".omp", "agent", "sessions", "-dev-app")
-	line := `{"type":"message"}` + "\n"
-	mustWrite(t, filepath.Join(folder, "2026_parent.jsonl"), line)
-	mustWrite(t, filepath.Join(folder, "2026_parent", "0-Explore.jsonl"), line)
+	mustWrite(t, filepath.Join(folder, "2026_parent.jsonl"), piHeader("/dev/app"))
+	mustWrite(t, filepath.Join(folder, "2026_parent", "0-Explore.jsonl"), `{"type":"message"}`+"\n")
 	mustWrite(t, filepath.Join(folder, "2026_parent", "0-Explore.md"), "x")
 	mustWrite(t, filepath.Join(folder, "2026_parent", "meta.json"), "{}")
 	mustWrite(t, filepath.Join(folder, "2026_parent", "run.log"), "x")
