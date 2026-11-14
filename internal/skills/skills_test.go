@@ -1414,3 +1414,38 @@ func TestDeriveBaselineStatesCurrentDriftAndContributors(t *testing.T) {
 	require.Contains(t, text, "`tiller sync` may print an `as-is docs touched` notice. `mend-drift` owns those.")
 	require.Contains(t, text, "The console has no approval action for baseline docs; confirmation is the `tiller approve design` command above.")
 }
+
+// specify's example rubric states observable pass conditions a second grader
+// can reproduce, not a taste judgment.
+func TestSpecifyRubricStatesPassConditions(t *testing.T) {
+	text, ok := Lookup("specify")
+	require.True(t, ok)
+	require.Contains(t, text, "so two graders reach the same verdict")
+	require.Contains(t, text, "Pass only if all hold:")
+	require.NotContains(t, text, "Grade whether the copy reads naturally for a homeowner.")
+}
+
+// specify plans the task that wires the build and tests gates, and execute
+// treats an unconfigured gate as machine work to repair.
+func TestSpecifyPlansGateWiring(t *testing.T) {
+	spec, ok := Lookup("specify")
+	require.True(t, ok)
+	require.Contains(t, spec, "still a commented template")
+	exec, ok := Lookup("execute")
+	require.True(t, ok)
+	require.Contains(t, exec, "missing machine work to repair, not a human wait")
+	require.Contains(t, exec, "`tiller init` leaves them as commented templates, because no stack exists at scaffold time.")
+}
+
+// specify's final pre-spec pass reads in order: ground the claims, then settle
+// questions, both before the choreography.
+func TestSpecifySettlesQuestionsBeforeChoreography(t *testing.T) {
+	text, ok := Lookup("specify")
+	require.True(t, ok)
+	settle := strings.Index(text, "## Settle questions before approve")
+	require.GreaterOrEqual(t, settle, 0)
+	require.Greater(t, settle, strings.Index(text, "## Grounding claims about code"))
+	require.Less(t, settle, strings.Index(text, "## The contract-grain rule"))
+	require.Less(t, settle, strings.Index(text, "## Choreography"))
+	require.Contains(t, text, "like C5 (in the example below)")
+}
