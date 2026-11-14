@@ -130,19 +130,66 @@ func NewRootCmd() *cobra.Command {
 
 // Run executes the tiller CLI with the given arguments (os.Args[1:]) and
 // returns the process exit code in the Tiller scheme: 0 success, 1 blocked,
-// 2 misuse, 3 environment. A command that already emitted its envelope returns
-// an exitError carrying the mapped code; any other error is a cobra-level parse
-// or usage failure, which is misuse (2).
+// 2 misuse, 3 environment.
 func Run(args []string) int {
-	root := NewRootCmd()
+	return execute(NewRootCmd(), args)
+}
+
+// execute is the one execution and rendering boundary: Run hands it a fresh
+// root, and the tests hand it a root whose writers they captured, so both see
+// the same output and exit codes. A command that already emitted its envelope
+// returns an exitError carrying the mapped code; any other error is one cobra
+// raised before a command ran, which is misuse (2) and is rendered here.
+func execute(root *cobra.Command, args []string) int {
+	// cobra reads a nil slice as "use os.Args", so no arguments stays explicit.
+	if args == nil {
+		args = []string{}
+	}
 	root.SetArgs(args)
-	if err := root.Execute(); err != nil {
-		var ee *exitError
-		if errors.As(err, &ee) {
-			return ee.code
-		}
+	resolved, err := root.ExecuteC()
+	if err == nil {
+		return 0
+	}
+	var ee *exitError
+	if errors.As(err, &ee) {
+		return ee.code
+	}
+	return renderParserFailure(root, resolved, args, err)
+}
+
+// renderParserFailure reports a refusal cobra raised before any command's RunE
+// ran: an unknown command, an unknown flag, a flag value that does not parse,
+// a missing required flag, or a wrong positional count. Human mode keeps its
+// one stderr line. Under --json it writes the same error envelope a command
+// failure does, with discriminators fixed here rather than read out of cobra's
+// wording: reason unknown_command when no command matched and bad_args
+// otherwise, and command the top-level command cobra resolved.
+//
+// The parser may have stopped before it reached --json (an unknown command
+// parses no flags at all), so the request is read from the raw arguments.
+func renderParserFailure(root, resolved *cobra.Command, args []string, err error) int {
+	if !jsonRequested(args) {
 		fmt.Fprintln(root.ErrOrStderr(), "tiller:", err)
 		return 2
 	}
-	return 0
+	reason := reasonBadArgs
+	// Find is the lookup ExecuteC ran, and it fails only for an unmatched
+	// command. Asking it again keeps cobra's prose out of the classification:
+	// a surplus positional on a no-argument command also reads "unknown
+	// command" in cobra's message, and that one is bad_args.
+	if _, _, findErr := root.Find(args); findErr != nil {
+		reason = reasonUnknownCommand
+	}
+	code, _ := WriteError(root.OutOrStdout(), topLevelCommandName(resolved), &usageError{reason: reason, msg: err.Error()})
+	return code
+}
+
+// topLevelCommandName names cmd by its top-level command (`add` for `add
+// epic`), the word that command's own envelopes lead with. The root itself,
+// which is what cobra resolves when no command matched, is `tiller`.
+func topLevelCommandName(cmd *cobra.Command) string {
+	for cmd.HasParent() && cmd.Parent().HasParent() {
+		cmd = cmd.Parent()
+	}
+	return cmd.Name()
 }

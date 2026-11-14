@@ -2,8 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/resolve"
@@ -11,31 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// execCLI builds a fresh root command, runs it with the given args while
-// capturing stdout and stderr, and returns them plus the process exit code in
-// the Tiller scheme. It mirrors Run, the production entrypoint, so the tests
-// exercise the same exit-code mapping.
+// execCLI runs the CLI with the given args through execute, the boundary Run
+// itself calls, on a fresh root whose stdout and stderr it captures. It returns
+// both streams plus the process exit code in the Tiller scheme, so a test sees
+// exactly what a caller of the binary would.
 func execCLI(t *testing.T, args ...string) (stdout, stderr string, code int) {
 	t.Helper()
 	root := NewRootCmd()
 	var out, errb bytes.Buffer
 	root.SetOut(&out)
 	root.SetErr(&errb)
-	root.SetArgs(args)
-
-	if err := root.Execute(); err != nil {
-		var ee *exitError
-		if errors.As(err, &ee) {
-			return out.String(), errb.String(), ee.code
-		}
-		// A raw cobra/pflag error (e.g. a required flag never set) never passes
-		// through the envelope writers, so nothing has reached errb yet. Run
-		// prints it as "tiller: <err>" before returning 2; mirroring that write
-		// here is what makes this helper's own doc comment true.
-		fmt.Fprintln(root.ErrOrStderr(), "tiller:", err)
-		return out.String(), errb.String(), 2
-	}
-	return out.String(), errb.String(), 0
+	code = execute(root, args)
+	return out.String(), errb.String(), code
 }
 
 // TestClassifyMapsTypedErrors pins the error-to-envelope contract that later

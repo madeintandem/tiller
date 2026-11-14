@@ -141,10 +141,14 @@ func TestDesignCommandsRejectMixedAndExplicitEmptyFlagsWithoutWrites(t *testing.
 			require.NotContains(t, out, `"readout"`)
 		})
 	}
-	// Unknown flags are rejected by Cobra before the command envelope exists.
+	// Cobra rejects an unknown flag before approve runs; under --json that
+	// refusal is still the error envelope.
 	out, stderr, code := execCLI(t, "approve", "design", "as-is/one.md", "--all=false", "--contributor", "jc", "--json")
 	require.Equal(t, 2, code, out+stderr)
-	require.Contains(t, stderr, "--all")
+	require.Empty(t, stderr)
+	body := soleEnvelope(t, out)["error"].(map[string]any)
+	require.Equal(t, "bad_args", body["reason"])
+	require.Contains(t, body["message"], "--all")
 	require.Equal(t, before, snapshotTree(t, filepath.Join(root, ".tiller")))
 }
 

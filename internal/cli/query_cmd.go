@@ -58,20 +58,7 @@ func newQueryCmd() *cobra.Command {
 }
 
 func querySyntaxFailure(cmd *cobra.Command, args []string, err error) error {
-	for _, arg := range args {
-		if arg == "--" {
-			break
-		}
-		if arg == "--json" {
-			_ = cmd.Flags().Set("json", "true")
-		} else if raw, ok := strings.CutPrefix(arg, "--json="); ok {
-			value, parseErr := strconv.ParseBool(raw)
-			if parseErr != nil {
-				value = true
-			}
-			_ = cmd.Flags().Set("json", strconv.FormatBool(value))
-		}
-	}
+	_ = cmd.Flags().Set("json", strconv.FormatBool(jsonRequested(args)))
 	return emitFailure(cmd, "query", &usageError{reason: "query_syntax", msg: err.Error()})
 }
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/core/resolve"
@@ -58,6 +60,14 @@ const (
 	reasonAmbiguousKey      = "ambiguous_key"
 	reasonError             = "error"
 	reasonReviewGrainLocked = "review_grain_locked"
+)
+
+// Reason discriminators for a refusal cobra raises before a command runs
+// (renderParserFailure, root.go). bad_args is the reason the commands' own
+// argument and flag checks already use.
+const (
+	reasonBadArgs        = "bad_args"
+	reasonUnknownCommand = "unknown_command"
 )
 
 // WriteSuccess writes a success envelope (OK true) carrying data.
@@ -208,6 +218,28 @@ func (e *exitError) ExitCode() int { return e.code }
 func jsonOut(cmd *cobra.Command) bool {
 	v, _ := cmd.Flags().GetBool("json")
 	return v
+}
+
+// jsonRequested reads the --json request straight from raw arguments, for the
+// failures where flag parsing stopped before it could reach the flag. JSON is
+// requested when --json, or --json=<value> with any value but a false one,
+// stands as its own argument before a bare `--`; the last one wins. A value
+// that is not a boolean still counts: the caller asked for the JSON surface
+// and gets the refusal on it.
+func jsonRequested(args []string) bool {
+	requested := false
+	for _, arg := range args {
+		if arg == "--" {
+			break
+		}
+		if arg == "--json" {
+			requested = true
+		} else if raw, ok := strings.CutPrefix(arg, "--json="); ok {
+			value, err := strconv.ParseBool(raw)
+			requested = err != nil || value
+		}
+	}
+	return requested
 }
 
 // emitSuccess writes a command's success outcome: a success envelope in JSON
