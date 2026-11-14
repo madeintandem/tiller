@@ -1,8 +1,18 @@
 id: TW-wdlmab
 key: tweaks/console-arrival-reread-other-pages
 title: Reread Home, Report, and Explore when the reader arrives again
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/16
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:ab00eb20bb6ca3564de16c6ba200a9ec9592797e
+        path: .tiller/tweaks/console-arrival-reread-other-pages/tweak.md
+        observed_at: 2026-11-14T23:45:10.049567Z
+    commit:
+        kind: git_commit
+        value: git:ed8b7e1
+        observed_at: 2026-11-14T23:45:10.06357Z

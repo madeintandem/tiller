@@ -2,8 +2,18 @@ id: B-oprhtx
 key: bugs/legacy-rubric-evidence-overwritten
 title: Rubric evidence recorded before content-addressed refs can still be overwritten
 severity: important
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/14
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:d64eb5178b1fed89c737bb1c922dbc283e135942
+        path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.md
+        observed_at: 2026-11-14T23:45:09.672715Z
+    commit:
+        kind: git_commit
+        value: git:ed8b7e1
+        observed_at: 2026-11-14T23:45:09.687015Z

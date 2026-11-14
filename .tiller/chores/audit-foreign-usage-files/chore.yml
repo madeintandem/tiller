@@ -1,8 +1,18 @@
 id: CH-shdylf
 key: chores/audit-foreign-usage-files
 title: Audit managed projects for usage files captured from other projects
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/15
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:b98154214a61d7ec85892a7e16979e41d5be2fbd
+        path: .tiller/chores/audit-foreign-usage-files/chore.md
+        observed_at: 2026-11-14T23:45:09.925939Z
+    commit:
+        kind: git_commit
+        value: git:ed8b7e1
+        observed_at: 2026-11-14T23:45:09.940407Z

@@ -1,0 +1,13 @@
+id: EV-fgp66b
+type: approve.bug
+at: 2026-11-14T23:45:09.536586Z
+contributor: jc
+command: approve bug B-ldsix8
+targets:
+    - B-ldsix8
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml

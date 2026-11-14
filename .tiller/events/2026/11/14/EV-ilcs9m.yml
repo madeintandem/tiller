@@ -1,0 +1,13 @@
+id: EV-ilcs9m
+type: approve.bug
+at: 2026-11-14T23:45:09.81386Z
+contributor: jc
+command: approve bug B-k5fzoh
+targets:
+    - B-k5fzoh
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml

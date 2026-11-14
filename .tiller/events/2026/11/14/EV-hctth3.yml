@@ -1,0 +1,13 @@
+id: EV-hctth3
+type: approve.tweak
+at: 2026-11-14T23:45:10.187039Z
+contributor: jc
+command: approve tweak TW-zwxmbu
+targets:
+    - TW-zwxmbu
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml
