@@ -1,0 +1,13 @@
+id: EV-u3if6n
+type: add.question
+at: 2026-11-14T23:10:16.575867Z
+contributor: jc
+command: add question
+targets:
+    - Q-hkixnz
+after:
+    blocks: []
+    status: open
+    title: code-review misses commits made only on an aggregate branch
+files:
+    - path: .tiller/decisions/open-questions.yml

@@ -1,0 +1,13 @@
+id: EV-zz8ed2
+type: add.question
+at: 2026-11-14T23:10:15.724906Z
+contributor: jc
+command: add question
+targets:
+    - Q-szwuyw
+after:
+    blocks: []
+    status: open
+    title: skill_shim_unowned refusal is not documented
+files:
+    - path: .tiller/decisions/open-questions.yml

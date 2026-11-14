@@ -1,0 +1,52 @@
+id: EV-rlduqc
+type: link.design
+at: 2026-11-14T23:09:10.900557Z
+contributor: jc
+command: link design as-is/docs-site.md
+targets:
+    - .tiller/design/as-is/docs-site.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:df7b9d6dadbf1f5e68b003492d6f600820f54072
+          path: site/AGENTS.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:e2de5c0d8217d3d8e4f005cc1a6e7e95711d12c8
+          path: site/README.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:279ae2ea91c9e6c3f453c8ede3fd4ad58f5ab125
+          path: site/screenshots/README.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:8fd35d27ceadcd14109a8415538db856009c85a2
+          path: docs/releasing.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:186ec18548f277aa8c591b25d1924e21c8ef8b1b
+          path: CONTRIBUTING.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:c9973ecf3aee4b5995380b92d541f517730c583e
+          path: docs/spec/distribution.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+        - kind: git_blob
+          value: git:2ec1b4cda5c4068c7c097a848d9ef4026771bc29
+          path: docs/tiller-commands.md
+          observed_at: 2026-11-14T23:09:10.900557Z
+    describes:
+        - site
+    describes_added:
+        - site
+    doc: as-is/docs-site.md
+    from_added:
+        - site/AGENTS.md
+        - site/README.md
+        - site/screenshots/README.md
+        - docs/releasing.md
+        - CONTRIBUTING.md
+        - docs/spec/distribution.md
+        - docs/tiller-commands.md
+files:
+    - path: .tiller/design/baseline.yml

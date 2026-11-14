@@ -1,0 +1,13 @@
+id: EV-dazwpp
+type: add.question
+at: 2026-11-14T23:10:16.321087Z
+contributor: jc
+command: add question
+targets:
+    - Q-i1qx27
+after:
+    blocks: []
+    status: open
+    title: 'Agent-driven acceptance scenarios for instructions: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

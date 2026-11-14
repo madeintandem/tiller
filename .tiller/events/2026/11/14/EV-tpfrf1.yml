@@ -1,0 +1,13 @@
+id: EV-tpfrf1
+type: add.question
+at: 2026-11-14T23:10:15.507093Z
+contributor: jc
+command: add question
+targets:
+    - Q-a6m0t9
+after:
+    blocks: []
+    status: open
+    title: SECURITY.md says remote Markdown images load; the console renders alt text
+files:
+    - path: .tiller/decisions/open-questions.yml

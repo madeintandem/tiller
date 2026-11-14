@@ -1,0 +1,13 @@
+id: EV-qzhp65
+type: add.question
+at: 2026-11-14T23:10:15.901591Z
+contributor: jc
+command: add question
+targets:
+    - Q-tpk7b4
+after:
+    blocks: []
+    status: open
+    title: Stale or incomplete statements in the docs (15 small items)
+files:
+    - path: .tiller/decisions/open-questions.yml

@@ -1,0 +1,151 @@
+questions:
+    - id: Q-hpvzed
+      title: Prose reads accept .MD; the spec says lowercase only
+      statement: 'docs/spec/cli-surface.md says every direct prose read rejects an extension other than lowercase .md. validateProseRef in internal/serve/prose.go compares the extension without regard to case, so a .MD path under .tiller/ passes validation and reaches the disk read. Read from code, not run; no test pins either answer. Decide: tighten the code to the spec, or relax the spec.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#tiller serve
+    - id: Q-a6m0t9
+      title: SECURITY.md says remote Markdown images load; the console renders alt text
+      statement: 'SECURITY.md, Scope notes, says remote Markdown images can cause the browser to contact their hosts. The console renders every Markdown image as its alt text with no image element (ui/src/components/Prose.tsx), and docs/spec/ui-surface.md, Markdown reference safety, agrees with the code. Decide: correct SECURITY.md, or is the alt-text rendering the thing to change.'
+      owner: jc
+      status: open
+      source: SECURITY.md#Scope notes, docs/spec/ui-surface.md#Markdown reference safety
+    - id: Q-s81pdr
+      title: 'JSON envelope actor: documented top-level, written inside data'
+      statement: 'docs/spec/cli-surface.md, The actor model, and docs/tiller-commands.md, Conventions, say the --json envelope carries a top-level actor field that is always present. The code merges actor into data (withActor in internal/cli/envelope.go), tests read data.actor, and exit 2 and 3 envelopes carry no data and so no actor. Decide: move the field to match the documents, or correct the documents to the shipped shape.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#The actor model, docs/tiller-commands.md#Conventions
+    - id: Q-atu1h0
+      title: A malformed usage file exits 2; the spec calls it an environment failure
+      statement: 'docs/spec/cli-surface.md, Capturing agent usage, says a malformed usage file already in the repo is an environment failure (exit 3). internal/usage/capture.go returns a plain wrapped decode error, which classify in internal/cli/envelope.go maps to exit 2 with reason error. Read from code, not run; no test covers it. Decide: give the failure a typed environment error, or change the spec.'
+      owner: jc
+      status: open
+      source: 'docs/spec/cli-surface.md#Capturing agent usage: usage'
+    - id: Q-79zl7y
+      title: 'Usage crediting: a skill load whose argument resolves to nothing clears the node'
+      statement: 'docs/spec/artifact-schema.md, How calls are credited, says a skill load sets the node named, if any, else leaves it unchanged. In internal/usage/replay.go a skill marker with any argument text sets the node to whatever resolves, which is empty when nothing does, so the credited node is cleared. Only Claude Code skill calls pass argument text. Read from code, not run. Decide: keep the prior node when the argument resolves to nothing, or state the clearing rule in the spec.'
+      owner: jc
+      status: open
+      source: docs/spec/artifact-schema.md#How calls are credited
+    - id: Q-szwuyw
+      title: skill_shim_unowned refusal is not documented
+      statement: 'A file at a current skill shim path that Tiller does not recognize as its own makes join, upgrade, and migrate refuse the whole refresh with skill_shim_unowned, exit 3 (planShims in internal/cli/project_refresh.go). docs/spec/distribution.md, orientation.md, mentions only a warning for ambiguous legacy ownership, which in code applies to obsolete shim names, and no document names the refusal. Decide: document the refusal, or change the behavior to the documented warning.'
+      owner: jc
+      status: open
+      source: docs/spec/distribution.md#orientation.md
+    - id: Q-b2oe0c
+      title: No recovery procedure for a leftover mutation lock or journal
+      statement: 'docs/spec/cli-surface.md, Migrating and upgrading, says to recover existing transactions before retry and names no procedure. The mutation lock is an exclusive-create file that is never waited on or expired, a leftover lock or journal refuses every reader and writer, and journal recovery runs only inside the failing process (internal/store/write.go, internal/store/tree.go). A killed process therefore leaves a project that refuses everything with no documented way out. The roadmap lists doctor without saying it covers this. Decide: document a manual recovery, build one, or leave it until doctor.'
+      owner: jc
+      status: open
+      source: 'docs/spec/cli-surface.md#Migrating and upgrading: migrate, upgrade, docs/roadmap.md#Not built yet'
+    - id: Q-72g32v
+      title: Gate commands run with no timeout, undocumented
+      statement: 'A command gate runs through sh -c from the project root with no timeout, and a command that cannot start records fail (RunGate in internal/core/gates/run.go). No source states the shell, the working directory, the missing timeout, or the cannot-start outcome. A hung gate command hangs tiller check. Decide: document the behavior as the contract, or add a timeout.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#Gates, evals, and attestation, docs/spec/artifact-schema.md#Gates
+    - id: Q-tpk7b4
+      title: Stale or incomplete statements in the docs (15 small items)
+      statement: 'The baseline read found small statements that no longer match the code; none changes behavior. (1) cli-surface, Migrating and upgrading, says schema_version is currently 14; it is 15. (2) tiller-commands, Command index, has no row for grade. (3) cli-surface, Grammar, omits usage and compact from the no-node commands and the rooted tree form. (4) Tweaks or amendments are missing from artifact-schema IDs, References and IDs, Lifecycles consolidated, and the removal events list, from cli-surface Who may run what, and the queue-kinds table lacks approve_tweak. (5) artifact-schema, Epics, says blocked is a flag with a reason; state stores a bare boolean. (6) ui-surface says the Report Project tab and its payload are untouched, though /api/report gained agent_use. (7) The artifact-schema usage skill list omits the retired intake skill name that internal/usage/markers.go still credits. (8) distribution says generated artifacts carry a do-not-hand-edit header; skill shims carry only an ownership marker. (9) skill-set, The anatomy of a skill, does not name the Recovery section ten skills carry and miscounts which skills have no Readout. (10) CONTRIBUTING says make lint gates tracked Go files; the Makefile runs gofmt over the working tree. (11) releasing says one grouped Dependabot PR per ecosystem; the config has separate minor-and-patch and major groups. (12) An unprefixed feature commit lands under Other in release notes (.goreleaser.yaml groups on ^[Ff]eat). (13) site/AGENTS.md omits source-quickstart.md from the authored pages. (14) Stale code comments: Homebrew formula in .goreleaser.yaml and release.yml, internal/vcs/git.go claiming to be the only package that shells to git, two comments citing spec headings that do not exist, tools.go. (15) make ui runs npm install while CI and releasing use npm ci. Decide: correct them in one docs pass, or name the ones to leave.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md, docs/spec/artifact-schema.md, docs/spec/ui-surface.md, docs/spec/skill-set.md, docs/spec/distribution.md, docs/tiller-commands.md, docs/releasing.md, CONTRIBUTING.md, site/AGENTS.md
+    - id: Q-wlbe30
+      title: 'Schema fence: unbuilt'
+      statement: 'docs/spec/distribution.md, Migration, describes a schema fence that keeps a branch on an older schema epoch from merging past a Class 3 migration, and labels it unbuilt; docs/spec/artifact-schema.md, The root manifest, describes it in the present tense. The code stores and seeds schema_epoch and never reads it. The roadmap does not list it. Decide: build it, or leave it as history and correct the present-tense wording.'
+      owner: jc
+      status: open
+      source: docs/spec/distribution.md#Migration, docs/spec/artifact-schema.md#The root manifest
+    - id: Q-os8yly
+      title: 'PR coherence warning: unbuilt'
+      statement: 'The manifest example in docs/spec/artifact-schema.md describes git.pr_coherence as warning when a PR crosses unrelated subtrees. The field is decoded and seeded by init, and nothing reads it. The roadmap does not list it. Decide: build the warning, or leave it as history and stop seeding the field.'
+      owner: jc
+      status: open
+      source: docs/spec/artifact-schema.md#The root manifest
+    - id: Q-9mhrll
+      title: 'Console reader for the spec as approved: unbuilt'
+      statement: 'docs/spec/ui-surface.md, Node detail and What''s next, describes a local reader that shows a node''s spec as it was approved, from its pinned blob. The console shows blob pins as short shas with no reader. The roadmap does not list it. Decide: build it, or leave it as history.'
+      owner: jc
+      status: open
+      source: docs/spec/ui-surface.md#Node detail, docs/spec/ui-surface.md#What's next
+    - id: Q-f4hg2l
+      title: '--commit and --dry-run on ordinary mutations: unbuilt'
+      statement: 'docs/spec/cli-surface.md (Grammar, Output and exit codes, Working-tree posture) and docs/tiller-commands.md, Not built, describe standalone --commit and --dry-run flags on ordinary mutations. The code has --dry-run only on compact and migrate, and no --commit. The roadmap lists commit state but not these flags. Decide: build them, or leave them as history.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#Grammar, docs/spec/cli-surface.md#Working-tree posture, docs/tiller-commands.md#Not built
+    - id: Q-uak86b
+      title: 'Design re-import that preserves a hand-edited manifest: unbuilt'
+      statement: 'docs/spec/cli-surface.md, Bootstrapping a project, describes a provenance-recording re-import of design docs that preserves a human-edited manifest. An init rerun imports nothing, and later documents come in through tiller intake. The roadmap does not list it. Decide: build it, or leave it as history now that intake is the one door for documents.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#Bootstrapping a project
+    - id: Q-f3btwf
+      title: 'Suggested skill named in tiller status: unbuilt'
+      statement: 'docs/spec/skill-set.md, Staying in sync with the CLI, calls naming the suggested skill inline in tiller status output the natural next step. tiller status does not mention guide or a skill; bare tiller guide names it. The roadmap does not list it. Decide: build it, or leave it as history.'
+      owner: jc
+      status: open
+      source: docs/spec/skill-set.md#Staying in sync with the CLI
+    - id: Q-i1qx27
+      title: 'Agent-driven acceptance scenarios for instructions: unbuilt'
+      statement: 'docs/spec/distribution.md, orientation.md, says instruction acceptance needs executable scenarios in which a real agent consumes the guide in a disposable project with a temporary bare remote. The repository has text-pin tests and one Git-history test for code-review, and no scenario driver. It may be meant as a manual release practice. The roadmap does not list it. Decide: build a driver, record it as a manual practice, or leave it.'
+      owner: jc
+      status: open
+      source: docs/spec/distribution.md#orientation.md
+    - id: Q-zqnuyc
+      title: 'Drift acknowledgment record: unbuilt'
+      statement: 'docs/spec/skill-set.md, Decisions settled so far, calls a record that lets a human acknowledge a persisting stale_spec candidate a product gap, not built. A done feature whose prose or surface legitimately changed keeps its drift candidate until it re-crosses, with nothing to record that a human has seen it. The roadmap does not list it and no issue is filed. Decide: build it, or leave it as history.'
+      owner: jc
+      status: open
+      source: docs/spec/skill-set.md#Decisions settled so far
+    - id: Q-5q4xv1
+      title: 'Builder script for the Pagefind corresponding-source archive: unbuilt'
+      statement: 'docs/releasing.md, Cutting one, says the Pagefind corresponding-source archive was assembled by hand and that its README and provenance file are the recipe until a builder script replaces them. No such script exists. The roadmap does not list it. Decide: build the script, or leave the hand recipe as the procedure.'
+      owner: jc
+      status: open
+      source: docs/releasing.md#Cutting one
+    - id: Q-ey2hfk
+      title: 'Guard test for new consumers of the hold predicate: unbuilt'
+      statement: 'The one-door design recommended a test that fails when a new consumer of draft status skips the held-draft predicate. It was never a task in the implementation plan and no such test exists; the predicate has about 30 call sites and nothing enforces the next one. The plan was removed as built, so this lead is recorded only here. Decide: build the guard test, or leave it.'
+      owner: jc
+      status: open
+      source: docs/plans/2026-11-12-intake-decompose-design.md at 7c4ca1a#Held drafts in the store
+    - id: Q-hkixnz
+      title: code-review misses commits made only on an aggregate branch
+      statement: 'The shelved execute-with-review design names a gap in the shipped code-review skill that is independent of that design: commits made only on a feature or epic aggregate branch, such as conflict resolutions, are not in any unit''s own diff, and the locator in internal/skills/code-review/SKILL.md uses the aggregate only to decide whether a unit merged. Read from the skill text, not exercised. No issue is filed and the roadmap does not list it. Decide: fix the locator, or leave it.'
+      owner: jc
+      status: open
+      source: .tiller/design/2026-11-09-execute-with-review-design.md
+    - id: Q-7w4czz
+      title: Instruction surfaces the prose rewrite never reviewed
+      statement: 'The 2026-11-13 instruction prose plan listed follow-ups it did not do: CLI help text, readout renderers, and seeded stubs were never reviewed for the same faults the skills and orientation were, including a suggestion that the tiller add feature stub seed the narrative headings. The plan was removed as built, so this lead is recorded only here. Decide: review those surfaces, or leave them.'
+      owner: jc
+      status: open
+      source: docs/plans/2026-11-13-agent-instruction-prose.md at 7c4ca1a#Follow-ups
+    - id: Q-wxucp2
+      title: Console hunt rulings R2 to R13 shipped as assumed
+      statement: 'The console UI improvement hunt asked for owner rulings R1 to R13. R1 is recorded as ruled. R2 to R13 (catch-up as a button, the milestone tier, drift as a Home tab, collapsing empty columns, topbar search, decision card density, Report print, question statements on the ledger, the pinned tab rail, the Up next copy control, drift wording, the shared workflow sentence) were built as assumed and shipped in v0.23.0 with no ruling recorded, and the plan''s step to add them to ui-surface settled decisions was not done. The plan was removed as built. Decide: confirm them as shipped so they can be recorded as settled, or name the ones to change.'
+      owner: jc
+      status: open
+      source: docs/plans/2026-11-09-console-ui-improvement-hunt.md at 7c4ca1a#Rulings assumed, docs/spec/ui-surface.md#Decisions settled so far
+    - id: Q-961a60
+      title: Site console screenshots predate the current console
+      statement: 'The console hunt plan ended with a step to reshoot the site''s console screenshots, and the one-door work added a Draft tab, an In amendment flag, and a withdraw card. site/public/console-*.webp last changed on 2026-11-01, before both. The plans were removed as built, so this lead is recorded only here. Decide: reshoot them, or leave them.'
+      owner: jc
+      status: open
+      source: docs/plans/2026-11-09-console-ui-improvement-implementation.md at 7c4ca1a#After the last batch
+    - id: Q-vqni8o
+      title: 'upgrade skill: no reason given for the private-download rule'
+      statement: 'The 2026-11-14 prohibition rulings added a reason to each kept prohibition. One is still open: the upgrade skill''s rule to never bypass private-download authentication has no stated reason, and docs/spec/skill-set.md records it as still open. Decide: supply the reason, or drop the rule.'
+      owner: jc
+      status: open
+      source: docs/spec/skill-set.md#Decisions settled so far
+    - id: Q-kjumfi
+      title: 'Roadmap ''Not built yet'': keep it in the roadmap, or bring it into Tiller'
+      statement: 'docs/roadmap.md, Not built yet, retains about forty unbuilt capabilities as deferred scope: console writes and live updates, doctor, block and unblock, commit state, add design, add adr and add evidence, the launcher and engine cache, update nudges, more harness adapters, baseline coverage, amendment and intake follow-ups, ranked prose search, more usage readers, hardening questions, compaction follow-ups, and guided discovery. This repository now plans in Tiller. Decide: keep the roadmap as the one list of deferred scope, or bring it into Tiller through tiller intake so the items become planned work or recorded decisions.'
+      owner: jc
+      status: open
+      source: docs/roadmap.md#Not built yet

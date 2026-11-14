@@ -1,0 +1,40 @@
+id: EV-0li3t4
+type: link.design
+at: 2026-11-14T23:09:09.930784Z
+contributor: jc
+command: link design as-is/skills-and-orientation.md
+targets:
+    - .tiller/design/as-is/skills-and-orientation.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:e4e6449ef45d9b6e092ee27d0aae3e66acefc31a
+          path: docs/spec/skill-set.md
+          observed_at: 2026-11-14T23:09:09.930784Z
+        - kind: git_blob
+          value: git:c9973ecf3aee4b5995380b92d541f517730c583e
+          path: docs/spec/distribution.md
+          observed_at: 2026-11-14T23:09:09.930784Z
+        - kind: git_blob
+          value: git:23b9b617bfde8c793d859f869e74b74e54d5c60a
+          path: docs/spec/cli-surface.md
+          observed_at: 2026-11-14T23:09:09.930784Z
+    describes:
+        - internal/skills
+        - internal/gen/orientation.go
+        - internal/gen/orientation_test.go
+        - internal/gen/join.go
+        - internal/gen/join_test.go
+    describes_added:
+        - internal/skills
+        - internal/gen/orientation.go
+        - internal/gen/orientation_test.go
+        - internal/gen/join.go
+        - internal/gen/join_test.go
+    doc: as-is/skills-and-orientation.md
+    from_added:
+        - docs/spec/skill-set.md
+        - docs/spec/distribution.md
+        - docs/spec/cli-surface.md
+files:
+    - path: .tiller/design/baseline.yml

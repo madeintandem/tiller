@@ -1,0 +1,13 @@
+id: EV-glmx2j
+type: add.question
+at: 2026-11-14T23:10:16.702052Z
+contributor: jc
+command: add question
+targets:
+    - Q-wxucp2
+after:
+    blocks: []
+    status: open
+    title: Console hunt rulings R2 to R13 shipped as assumed
+files:
+    - path: .tiller/decisions/open-questions.yml

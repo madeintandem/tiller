@@ -1,0 +1,13 @@
+id: EV-pys5x1
+type: add.question
+at: 2026-11-14T23:10:16.199035Z
+contributor: jc
+command: add question
+targets:
+    - Q-uak86b
+after:
+    blocks: []
+    status: open
+    title: 'Design re-import that preserves a hand-edited manifest: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

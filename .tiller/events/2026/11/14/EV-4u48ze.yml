@@ -1,0 +1,13 @@
+id: EV-4u48ze
+type: add.question
+at: 2026-11-14T23:10:16.386761Z
+contributor: jc
+command: add question
+targets:
+    - Q-zqnuyc
+after:
+    blocks: []
+    status: open
+    title: 'Drift acknowledgment record: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

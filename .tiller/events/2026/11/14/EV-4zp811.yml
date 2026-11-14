@@ -1,0 +1,13 @@
+id: EV-4zp811
+type: add.question
+at: 2026-11-14T23:10:16.449545Z
+contributor: jc
+command: add question
+targets:
+    - Q-5q4xv1
+after:
+    blocks: []
+    status: open
+    title: 'Builder script for the Pagefind corresponding-source archive: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

@@ -1,0 +1,40 @@
+id: EV-ghhapt
+type: link.design
+at: 2026-11-14T23:09:10.574832Z
+contributor: jc
+command: link design as-is/console-server.md
+targets:
+    - .tiller/design/as-is/console-server.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:f39d8f461fc0da62b78f8d98607f9524a8f13f53
+          path: docs/spec/ui-surface.md
+          observed_at: 2026-11-14T23:09:10.574832Z
+        - kind: git_blob
+          value: git:23b9b617bfde8c793d859f869e74b74e54d5c60a
+          path: docs/spec/cli-surface.md
+          observed_at: 2026-11-14T23:09:10.574832Z
+        - kind: git_blob
+          value: git:cdb628184c4e2f982a009057fa91ec1ca61df6bd
+          path: SECURITY.md
+          observed_at: 2026-11-14T23:09:10.574832Z
+    describes:
+        - internal/serve
+        - internal/views
+        - internal/search
+        - internal/relationships
+        - internal/corpus
+    describes_added:
+        - internal/serve
+        - internal/views
+        - internal/search
+        - internal/relationships
+        - internal/corpus
+    doc: as-is/console-server.md
+    from_added:
+        - docs/spec/ui-surface.md
+        - docs/spec/cli-surface.md
+        - SECURITY.md
+files:
+    - path: .tiller/design/baseline.yml

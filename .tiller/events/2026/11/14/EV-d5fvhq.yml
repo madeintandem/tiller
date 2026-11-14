@@ -1,0 +1,13 @@
+id: EV-d5fvhq
+type: add.question
+at: 2026-11-14T23:10:16.885503Z
+contributor: jc
+command: add question
+targets:
+    - Q-kjumfi
+after:
+    blocks: []
+    status: open
+    title: 'Roadmap ''Not built yet'': keep it in the roadmap, or bring it into Tiller'
+files:
+    - path: .tiller/decisions/open-questions.yml

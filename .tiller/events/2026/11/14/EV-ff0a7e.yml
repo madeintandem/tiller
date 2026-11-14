@@ -1,0 +1,13 @@
+id: EV-ff0a7e
+type: add.question
+at: 2026-11-14T23:10:15.560095Z
+contributor: jc
+command: add question
+targets:
+    - Q-s81pdr
+after:
+    blocks: []
+    status: open
+    title: 'JSON envelope actor: documented top-level, written inside data'
+files:
+    - path: .tiller/decisions/open-questions.yml

@@ -1,0 +1,101 @@
+id: EV-lv83ii
+type: link.design
+at: 2026-11-14T23:09:10.133601Z
+contributor: jc
+command: link design as-is/lifecycle-and-gates.md
+targets:
+    - .tiller/design/as-is/lifecycle-and-gates.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:33990063827f398c60add174fdd17efcb7aa0a2c
+          path: docs/spec/artifact-schema.md
+          observed_at: 2026-11-14T23:09:10.133601Z
+        - kind: git_blob
+          value: git:23b9b617bfde8c793d859f869e74b74e54d5c60a
+          path: docs/spec/cli-surface.md
+          observed_at: 2026-11-14T23:09:10.133601Z
+        - kind: git_blob
+          value: git:f39d8f461fc0da62b78f8d98607f9524a8f13f53
+          path: docs/spec/ui-surface.md
+          observed_at: 2026-11-14T23:09:10.133601Z
+        - kind: git_blob
+          value: git:c9973ecf3aee4b5995380b92d541f517730c583e
+          path: docs/spec/distribution.md
+          observed_at: 2026-11-14T23:09:10.133601Z
+    describes:
+        - internal/core/mutate
+        - internal/core/gates
+        - internal/core/lifecycle
+        - internal/core/drift
+        - internal/core/readiness
+        - internal/core/resolve
+        - internal/core/review
+        - internal/workflow
+        - internal/readinput
+        - internal/evalref
+        - internal/gen/activity.go
+        - internal/gen/activity_test.go
+        - internal/gen/amendment_hold.go
+        - internal/gen/amendment_hold_test.go
+        - internal/gen/execution_cycles.go
+        - internal/gen/execution_cycles_test.go
+        - internal/gen/execution_review_cycles_test.go
+        - internal/gen/held.go
+        - internal/gen/held_test.go
+        - internal/gen/label.go
+        - internal/gen/label_test.go
+        - internal/gen/order.go
+        - internal/gen/order_test.go
+        - internal/gen/order_cycles.go
+        - internal/gen/preference.go
+        - internal/gen/prose.go
+        - internal/gen/prose_test.go
+        - internal/gen/question_blockers.go
+        - internal/gen/question_blockers_test.go
+        - internal/gen/tree.go
+        - internal/gen/tree_test.go
+        - internal/gen/workitem.go
+        - internal/gen/workitem_test.go
+    describes_added:
+        - internal/core/mutate
+        - internal/core/gates
+        - internal/core/lifecycle
+        - internal/core/drift
+        - internal/core/readiness
+        - internal/core/resolve
+        - internal/core/review
+        - internal/workflow
+        - internal/readinput
+        - internal/evalref
+        - internal/gen/activity.go
+        - internal/gen/activity_test.go
+        - internal/gen/amendment_hold.go
+        - internal/gen/amendment_hold_test.go
+        - internal/gen/execution_cycles.go
+        - internal/gen/execution_cycles_test.go
+        - internal/gen/execution_review_cycles_test.go
+        - internal/gen/held.go
+        - internal/gen/held_test.go
+        - internal/gen/label.go
+        - internal/gen/label_test.go
+        - internal/gen/order.go
+        - internal/gen/order_test.go
+        - internal/gen/order_cycles.go
+        - internal/gen/preference.go
+        - internal/gen/prose.go
+        - internal/gen/prose_test.go
+        - internal/gen/question_blockers.go
+        - internal/gen/question_blockers_test.go
+        - internal/gen/tree.go
+        - internal/gen/tree_test.go
+        - internal/gen/workitem.go
+        - internal/gen/workitem_test.go
+    doc: as-is/lifecycle-and-gates.md
+    from_added:
+        - docs/spec/artifact-schema.md
+        - docs/spec/cli-surface.md
+        - docs/spec/ui-surface.md
+        - docs/spec/distribution.md
+files:
+    - path: .tiller/design/baseline.yml

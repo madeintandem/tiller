@@ -1,0 +1,13 @@
+id: EV-no2x0h
+type: add.question
+at: 2026-11-14T23:10:16.140639Z
+contributor: jc
+command: add question
+targets:
+    - Q-f4hg2l
+after:
+    blocks: []
+    status: open
+    title: '--commit and --dry-run on ordinary mutations: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

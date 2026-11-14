@@ -1,0 +1,51 @@
+id: EV-7mcbmx
+type: link.design
+at: 2026-11-14T23:09:10.337102Z
+contributor: jc
+command: link design as-is/git-and-execution.md
+targets:
+    - .tiller/design/as-is/git-and-execution.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:23b9b617bfde8c793d859f869e74b74e54d5c60a
+          path: docs/spec/cli-surface.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+        - kind: git_blob
+          value: git:33990063827f398c60add174fdd17efcb7aa0a2c
+          path: docs/spec/artifact-schema.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+        - kind: git_blob
+          value: git:f39d8f461fc0da62b78f8d98607f9524a8f13f53
+          path: docs/spec/ui-surface.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+        - kind: git_blob
+          value: git:cdb628184c4e2f982a009057fa91ec1ca61df6bd
+          path: SECURITY.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+        - kind: git_blob
+          value: git:186ec18548f277aa8c591b25d1924e21c8ef8b1b
+          path: CONTRIBUTING.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+        - kind: git_blob
+          value: git:c0cf21c0d45c429d1526afaf5f18a427ce8ac75b
+          path: docs/roadmap.md
+          observed_at: 2026-11-14T23:09:10.337102Z
+    describes:
+        - internal/vcs
+        - internal/execution
+        - internal/testgit
+    describes_added:
+        - internal/vcs
+        - internal/execution
+        - internal/testgit
+    doc: as-is/git-and-execution.md
+    from_added:
+        - docs/spec/cli-surface.md
+        - docs/spec/artifact-schema.md
+        - docs/spec/ui-surface.md
+        - SECURITY.md
+        - CONTRIBUTING.md
+        - docs/roadmap.md
+files:
+    - path: .tiller/design/baseline.yml

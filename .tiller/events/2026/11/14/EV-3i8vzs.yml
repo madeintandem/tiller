@@ -1,0 +1,13 @@
+id: EV-3i8vzs
+type: add.question
+at: 2026-11-14T23:10:15.961113Z
+contributor: jc
+command: add question
+targets:
+    - Q-wlbe30
+after:
+    blocks: []
+    status: open
+    title: 'Schema fence: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

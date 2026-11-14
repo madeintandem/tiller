@@ -1,0 +1,13 @@
+id: EV-v4oi7z
+type: add.question
+at: 2026-11-14T23:10:16.638938Z
+contributor: jc
+command: add question
+targets:
+    - Q-7w4czz
+after:
+    blocks: []
+    status: open
+    title: Instruction surfaces the prose rewrite never reviewed
+files:
+    - path: .tiller/decisions/open-questions.yml

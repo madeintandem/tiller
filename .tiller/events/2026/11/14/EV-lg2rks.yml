@@ -1,0 +1,13 @@
+id: EV-lg2rks
+type: add.question
+at: 2026-11-14T23:10:15.782474Z
+contributor: jc
+command: add question
+targets:
+    - Q-b2oe0c
+after:
+    blocks: []
+    status: open
+    title: No recovery procedure for a leftover mutation lock or journal
+files:
+    - path: .tiller/decisions/open-questions.yml

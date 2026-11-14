@@ -1,0 +1,13 @@
+id: EV-mxcwbw
+type: add.question
+at: 2026-11-14T23:10:16.022114Z
+contributor: jc
+command: add question
+targets:
+    - Q-os8yly
+after:
+    blocks: []
+    status: open
+    title: 'PR coherence warning: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

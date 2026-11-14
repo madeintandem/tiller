@@ -1,0 +1,13 @@
+id: EV-aa40da
+type: add.question
+at: 2026-11-14T23:10:16.512667Z
+contributor: jc
+command: add question
+targets:
+    - Q-ey2hfk
+after:
+    blocks: []
+    status: open
+    title: 'Guard test for new consumers of the hold predicate: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

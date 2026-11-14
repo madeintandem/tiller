@@ -1,0 +1,13 @@
+id: EV-e3rl6k
+type: add.question
+at: 2026-11-14T23:10:15.613365Z
+contributor: jc
+command: add question
+targets:
+    - Q-atu1h0
+after:
+    blocks: []
+    status: open
+    title: A malformed usage file exits 2; the spec calls it an environment failure
+files:
+    - path: .tiller/decisions/open-questions.yml

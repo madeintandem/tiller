@@ -1,0 +1,13 @@
+id: EV-44uk30
+type: add.question
+at: 2026-11-14T23:10:06.99545Z
+contributor: jc
+command: add question
+targets:
+    - Q-hpvzed
+after:
+    blocks: []
+    status: open
+    title: Prose reads accept .MD; the spec says lowercase only
+files:
+    - path: .tiller/decisions/open-questions.yml

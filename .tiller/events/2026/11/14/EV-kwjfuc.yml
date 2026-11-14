@@ -1,0 +1,13 @@
+id: EV-kwjfuc
+type: add.question
+at: 2026-11-14T23:10:16.0804Z
+contributor: jc
+command: add question
+targets:
+    - Q-9mhrll
+after:
+    blocks: []
+    status: open
+    title: 'Console reader for the spec as approved: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml

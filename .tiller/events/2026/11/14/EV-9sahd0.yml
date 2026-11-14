@@ -1,0 +1,13 @@
+id: EV-9sahd0
+type: add.question
+at: 2026-11-14T23:10:16.825181Z
+contributor: jc
+command: add question
+targets:
+    - Q-vqni8o
+after:
+    blocks: []
+    status: open
+    title: 'upgrade skill: no reason given for the private-download rule'
+files:
+    - path: .tiller/decisions/open-questions.yml

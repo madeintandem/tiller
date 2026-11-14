@@ -1,0 +1,13 @@
+id: EV-ucp08i
+type: add.question
+at: 2026-11-14T23:10:16.764431Z
+contributor: jc
+command: add question
+targets:
+    - Q-961a60
+after:
+    blocks: []
+    status: open
+    title: Site console screenshots predate the current console
+files:
+    - path: .tiller/decisions/open-questions.yml

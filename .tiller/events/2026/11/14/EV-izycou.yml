@@ -1,0 +1,13 @@
+id: EV-izycou
+type: add.question
+at: 2026-11-14T23:10:15.667789Z
+contributor: jc
+command: add question
+targets:
+    - Q-79zl7y
+after:
+    blocks: []
+    status: open
+    title: 'Usage crediting: a skill load whose argument resolves to nothing clears the node'
+files:
+    - path: .tiller/decisions/open-questions.yml

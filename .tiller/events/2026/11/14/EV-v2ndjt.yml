@@ -1,0 +1,42 @@
+id: EV-v2ndjt
+type: link.design
+at: 2026-11-14T23:09:10.673101Z
+contributor: jc
+command: link design as-is/console-ui.md
+targets:
+    - .tiller/design/as-is/console-ui.md
+after:
+    derived_from:
+        - kind: git_blob
+          value: git:f39d8f461fc0da62b78f8d98607f9524a8f13f53
+          path: docs/spec/ui-surface.md
+          observed_at: 2026-11-14T23:09:10.673101Z
+        - kind: git_blob
+          value: git:c9973ecf3aee4b5995380b92d541f517730c583e
+          path: docs/spec/distribution.md
+          observed_at: 2026-11-14T23:09:10.673101Z
+        - kind: git_blob
+          value: git:8fd35d27ceadcd14109a8415538db856009c85a2
+          path: docs/releasing.md
+          observed_at: 2026-11-14T23:09:10.673101Z
+        - kind: git_blob
+          value: git:186ec18548f277aa8c591b25d1924e21c8ef8b1b
+          path: CONTRIBUTING.md
+          observed_at: 2026-11-14T23:09:10.673101Z
+        - kind: git_blob
+          value: git:cdb628184c4e2f982a009057fa91ec1ca61df6bd
+          path: SECURITY.md
+          observed_at: 2026-11-14T23:09:10.673101Z
+    describes:
+        - ui
+    describes_added:
+        - ui
+    doc: as-is/console-ui.md
+    from_added:
+        - docs/spec/ui-surface.md
+        - docs/spec/distribution.md
+        - docs/releasing.md
+        - CONTRIBUTING.md
+        - SECURITY.md
+files:
+    - path: .tiller/design/baseline.yml

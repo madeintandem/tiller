@@ -1,0 +1,13 @@
+id: EV-p3v8mt
+type: add.question
+at: 2026-11-14T23:10:16.259943Z
+contributor: jc
+command: add question
+targets:
+    - Q-f3btwf
+after:
+    blocks: []
+    status: open
+    title: 'Suggested skill named in tiller status: unbuilt'
+files:
+    - path: .tiller/decisions/open-questions.yml
