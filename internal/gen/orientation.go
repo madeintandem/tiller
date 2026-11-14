@@ -228,6 +228,12 @@ unrequested replan.
   surface. The final integration merge is still the human's; committing is not. A diff that
   touches only ` + "`.tiller/`" + ` never needs a pull request: planning state, gate
   records, and events are CLI-written audit records, so commit them directly.
+  Planning state commits on the integration branch, in the checkout that holds
+  it. Never switch a checkout's branch to get there. When this checkout is on
+  another branch, use the worktree that has the integration branch checked out
+  (` + "`git worktree list`" + `), or add one and join inside it. Commit there only
+  when it holds no changes you did not make; otherwise stop and name what is in
+  the way.
   A mid-task delta belongs on its own recorded task branch. A delta while executing a
   started shelf node belongs on that shelf node's branch; pre-start shelf state
   remains under the integration-branch fallback, as does other planning state.

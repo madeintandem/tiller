@@ -73,7 +73,7 @@ External `--design` imports remain source-preserving. Never move or retire files
 
 ### Make provenance recoverable before retirement
 
-Resolve `git.integration_branch` from the manifest and this project's Git conventions; do not assume `main`, `master`, or the current branch. Work directly on that integration branch for the authorized baseline move-and-split, not a feature branch or a merged review branch. Inspect the current branch, index, and working-tree changes before switching or staging. Preserve unrelated staged and unstaged changes, including unrelated `.tiller/` changes. Never stash, reset, discard, or commit someone else's work to make the run look clean. If a safe branch switch or an isolated commit is not possible, report that concrete prerequisite instead of working around it destructively.
+Resolve `git.integration_branch` from the manifest and this project's Git conventions; do not assume `main`, `master`, or the current branch. Work directly on that integration branch for the authorized baseline move-and-split, not a feature branch or a merged review branch. For where the planning commit lands, follow the planning-commit rule in `.tiller/orientation.md`. Preserve unrelated staged and unstaged changes, including unrelated `.tiller/` changes. Never stash, reset, discard, or commit someone else's work to make the run look clean. If that checkout cannot be used or an isolated commit is not possible, report that concrete prerequisite instead of working around it destructively.
 
 `--from` resolves a regular source file at this project's current HEAD. It does not save untracked files, uncommitted edits, an external repository's objects, or a path that only exists in the index. Before translating or retiring a source, compare the bytes you read with its HEAD version. Commit any untracked imports or changed source inputs first, using only those exact source paths and the project's commit conventions. An unborn or non-Git project needs a real project Git HEAD before recoverable provenance and approval; do not manufacture a stamp. Describes-only linking does not require Git, but that is not permission to retire an unrecoverable source.
 
@@ -92,7 +92,7 @@ Read; settle move versus pointer; commit any input bytes that need recovery; obs
 ```
 tiller check readiness
 # Read manifest, ledger, existing design and repo docs, then relevant code.
-# Inspect branch and all staged/unstaged work. Safely select the configured integration branch.
+# Inspect branch and all staged/unstaged work. Use the checkout that holds the configured integration branch.
 # If docs/product/editor.md is new or modified, commit only that input first.
 git rev-parse HEAD
 # Use the observed commit below, not a guessed adoption ref.

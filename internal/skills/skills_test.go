@@ -1250,7 +1250,7 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		"so a new worktree refuses mutations with `contributor_unset` until `tiller join --as <you>` runs inside it",
 		"restore any tracked file it changed with `git restore`",
 		"Run `resume` only inside that worktree, never in the primary checkout",
-		"Integration-branch closeout runs where the integration branch is checked out",
+		"Integration-branch closeout follows the planning-commit rule in `.tiller/orientation.md`",
 		"never force the checkout",
 		"belongs to someone else",
 		"look for the work's canonical branch in `git worktree list`",
@@ -1324,4 +1324,47 @@ func TestMendDriftRecognizesAPersistingCandidate(t *testing.T) {
 	orient, ok := Lookup("orient")
 	require.True(t, ok)
 	require.Contains(t, orient, "persists by design is not a move")
+}
+
+// TestOrientationNeverSwitchesACheckoutForPlanningState pins that the skills
+// defer to the orientation planning-commit rule and none offers a branch switch.
+func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
+	review, ok := Lookup("code-review")
+	require.True(t, ok)
+	require.NotContains(t, review, "switch to the integration branch first")
+	require.Contains(t, review, "follow the planning-commit rule in `.tiller/orientation.md`")
+	derive, ok := Lookup("derive-baseline")
+	require.True(t, ok)
+	require.Contains(t, derive, "follow the planning-commit rule in `.tiller/orientation.md`")
+	require.NotContains(t, derive, "before switching or staging")
+	require.NotContains(t, derive, "safe branch switch")
+	require.NotContains(t, derive, "Safely select the configured integration branch")
+	exec, ok := Lookup("execute")
+	require.True(t, ok)
+	require.Contains(t, exec, "Integration-branch closeout follows the planning-commit rule in `.tiller/orientation.md`: it runs in the checkout that holds the integration branch, never by switching another checkout's branch.")
+}
+
+// TestOrientCommitsTheQuestionItRecords pins that orient's Choreography commits
+// the one question it may record, with exact paths.
+func TestOrientCommitsTheQuestionItRecords(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	i, j := strings.Index(text, "## Choreography"), strings.Index(text, "## Readout")
+	require.True(t, i >= 0 && j > i)
+	choreo := text[i:j]
+	require.Contains(t, choreo, "tiller add question")
+	require.Contains(t, choreo, `git commit --only -m "orient: record <short title>" -- <same-exact-paths>`)
+	require.Less(t, strings.Index(choreo, "tiller add question"), strings.Index(choreo, "tiller readout orient"))
+	require.Contains(t, text, "Reads, plus the one scaffold and any question the briefing defers.")
+	require.Contains(t, text, "orient lays no work down")
+	require.NotContains(t, text, "orient lays nothing down")
+}
+
+// TestExecuteWorkingPlanIsNotThePlanOfRecord pins that a dated working plan is
+// notes, and each task's approved task.md stays the plan of record.
+func TestExecuteWorkingPlanIsNotThePlanOfRecord(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	require.Contains(t, text, "stays the plan of record and wins where they differ")
+	require.NotContains(t, text, "routine single-task work uses its own approved `task.md`")
 }

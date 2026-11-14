@@ -133,7 +133,7 @@ Bugs are defects. Chores are housekeeping without code side effects, as guidance
 
 ## Choreography
 
-Reads, plus the one scaffold. This is the skill whose output is a decision rather than a state change. On a bare repo `tiller init` is orient's to run; the stop lands after it, before the applicable first seam: derive-baseline for an unconfirmed existing-code project, decompose when a to-be design doc exists, and otherwise the no-work-planned end state. A delegated `approve` runs only on an explicit human instruction naming the nodes or design docs, after the stop, never as the next line of an orient.
+Reads, plus the one scaffold and any question the briefing defers. This is the skill whose output is a decision rather than a state change. On a bare repo `tiller init` is orient's to run; the stop lands after it, before the applicable first seam: derive-baseline for an unconfirmed existing-code project, decompose when a to-be design doc exists, and otherwise the no-work-planned end state. A delegated `approve` runs only on an explicit human instruction naming the nodes or design docs, after the stop, never as the next line of an orient.
 
 ```
 # cold start only, on a repo with no .tiller/: the scaffold, then the stop.
@@ -161,6 +161,10 @@ tiller query --from F-79dh3q --follow mentioned_by --json
 tiller query --from path:app/models/calc --follow covered_by --json
 # On an existing-code startup, also inspect the baseline ledger and its docs.
 # If a proposal already awaits confirmation, inspect it rather than derive again.
+# only when the briefing defers a decision: record it, then commit exactly its paths
+tiller add question "<statement>" --title "<short title>" [--blocks <node>]
+git add -- <question-ledger-and-event-paths>
+git commit --only -m "orient: record <short title>" -- <same-exact-paths>
 tiller readout orient                                  # the picture, rendered as the one block every harness renders the same way
 ```
 
@@ -168,7 +172,7 @@ Note: `tiller ls plans` does not exist in this build; do not call it. `ls` takes
 
 ## Readout
 
-orient lays nothing down, so its block is not a report of work done, it is the picture itself: the same
+orient lays no work down, so its block is not a report of work done, it is the picture itself: the same
 survey the Reasoning section above just walked, rendered the one way every harness renders it. Run
 `tiller readout orient` and reproduce its block verbatim as the last thing in your reply.
 
@@ -189,4 +193,4 @@ the developer's next message is the redirect or the go, same as always.
 
 ## Hand-off
 
-Up to the developer, always. Surface the picture and the ranked list, naming any human move that ranks above the top agent move, then end the reply. Their next message redirects you, or starts the top agent move only when it says to, through its seam (`derive-baseline`, `decompose`, `specify`, `execute`, `mend-drift`, or `amend`). The briefing is where they correct your understanding and add project context; conventions worth keeping belong in `AGENTS.md`. A deferred briefing item becomes a recorded question (`tiller add question "<statement>" --title "<short title>"`, with `--blocks` naming held work), not chat history. Some moves are human gates: pending baseline confirmation, a staged amendment, draft epic, feature plan, open question, or final merge wait. Surface the applicable gate and stop. Run `approve` only on explicit human instruction naming nodes or docs; baseline derivation never authorizes its own confirmation. `attest`, `sync --accept-fast-forward`, and final integration merge remain the human's keyboard, not ordinary aggregate assembly.
+Up to the developer, always. Surface the picture and the ranked list, naming any human move that ranks above the top agent move, then end the reply. Their next message redirects you, or starts the top agent move only when it says to, through its seam (`derive-baseline`, `decompose`, `specify`, `execute`, `mend-drift`, or `amend`). The briefing is where they correct your understanding and add project context; conventions worth keeping belong in `AGENTS.md`. A deferred briefing item becomes a recorded question (`tiller add question "<statement>" --title "<short title>"`, with `--blocks` naming held work), committed as the Choreography shows, not chat history. Some moves are human gates: pending baseline confirmation, a staged amendment, draft epic, feature plan, open question, or final merge wait. Surface the applicable gate and stop. Run `approve` only on explicit human instruction naming nodes or docs; baseline derivation never authorizes its own confirmation. `attest`, `sync --accept-fast-forward`, and final integration merge remain the human's keyboard, not ordinary aggregate assembly.

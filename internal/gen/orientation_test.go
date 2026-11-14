@@ -197,3 +197,18 @@ func TestQuestionsAreRecordedNotChatted(t *testing.T) {
 	require.Contains(t, text, "A clarification of the request itself")
 	require.Contains(t, text, "recorded with `tiller add question`")
 }
+
+// TestOrientationNeverSwitchesACheckoutForPlanningState pins the one rule for
+// where .tiller/-only planning commits land when this checkout is on another
+// branch: the checkout that holds the integration branch, never a branch switch.
+func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	for _, want := range []string{
+		"Planning state commits on the integration branch, in the checkout that holds it.",
+		"Never switch a checkout's branch to get there.",
+		"use the worktree that has the integration branch checked out (`git worktree list`), or add one and join inside it",
+		"Commit there only when it holds no changes you did not make; otherwise stop and name what is in the way.",
+	} {
+		require.Contains(t, text, want)
+	}
+}
