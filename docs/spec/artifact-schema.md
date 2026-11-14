@@ -451,14 +451,14 @@ gates:                            # written by `tiller check`; the stored gate r
     criteria:
       C3:
         status: needs_attestation   # pass | fail | pending | needs_attestation | stale
-        evidence: [{ kind: rubric_output, ref: artifacts/tiller/evals/F-79dh3q-C3.json }]
+        evidence: [{ kind: rubric_output, ref: artifacts/tiller/evals/F-79dh3q-C3-out-3203eee9ed79e98d13e6c6b32780a5aba4c5b67fb869a8df1073264640bc73db.json }]
 attestations:                     # human sign-off, one entry per attested target
   - id: AT-4m9x2q
     target: { kind: criterion, id: C3 }
     status: pass
     by: robin
     at: "2026-06-23T00:00:00Z"
-    evidence_ref: artifacts/tiller/evals/F-79dh3q-C3.json
+    evidence_ref: artifacts/tiller/evals/F-79dh3q-C3-out-3203eee9ed79e98d13e6c6b32780a5aba4c5b67fb869a8df1073264640bc73db.json
 policy_violations: []       # red required gates observed after a human merge under advisory enforcement
 ```
 
@@ -769,7 +769,9 @@ The agent grades each criterion and writes one `tiller.rubric_output.v1` documen
 }
 ```
 
-`schema`, `criterion`, and `verdict` (`pass | fail`) are required; `node` is optional but, when present, must match the node being graded; `rationale`, `graded_by`, and `graded_at` are optional. Tiller validates the output against the contract (the `schema` id matches, the named `criterion` is an `eval` binding on this node, the `verdict` is `pass` or `fail`) and rejects a malformed one as misuse the agent fixes by regrading. A `pass` verdict moves the required criterion to `needs_attestation`, never straight to `pass`: the recorded output is stored under the criterion as `{ kind: rubric_output, ref: <output_path> }` evidence, and only a human `tiller attest --criterion` clears it. The recorded rubric output is the only artifact an attestation's `evidence_ref` points at; a `manual` criterion has no graded file, so its attestation carries no `evidence_ref` rather than a path to a file that was never written.
+`schema`, `criterion`, and `verdict` (`pass | fail`) are required; `node` is optional but, when present, must match the node being graded; `rationale`, `graded_by`, and `graded_at` are optional. Tiller validates the output against the contract (the `schema` id matches, the named `criterion` is an `eval` binding on this node, the `verdict` is `pass` or `fail`) and rejects a malformed one as misuse the agent fixes by regrading. A `pass` verdict moves the required criterion to `needs_attestation`, never straight to `pass`: the recorded output is stored under the criterion as `{ kind: rubric_output, ref: <retained evidence> }` evidence, and only a human `tiller attest --criterion` clears it. The recorded rubric output is the only artifact an attestation's `evidence_ref` points at; a `manual` criterion has no graded file, so its attestation carries no `evidence_ref` rather than a path to a file that was never written.
+
+**Retained rubric evidence.** The packet's `output_path` (`artifacts/tiller/evals/<node-id>-<criterion-id>.json`) is a handoff location the agent overwrites on every regrade. It is never an evidence reference. A recording copies the validated bytes to `artifacts/tiller/evals/<node-id>-<criterion-id>-out-<full-output-sha256>.json`, the same shape command evidence takes (The stored gate block, below), and the criterion's `rubric_output` ref and any later attestation's `evidence_ref` name that file. Because the name is the digest of the bytes, a reference keeps naming the grade it named when it was written: a regrade written to `output_path`, a later recording, and a recording refused as `mutation_stale` all leave it alone. As with command evidence, Tiller writes the file before committing the node and event batch, so a recorded ref never names a missing file; a refused recording can leave an unreferenced file behind, and Tiller does not collect those. Each recording replaces the criterion's evidence with the new ref, while attestations, policy violations, and recovered-review observations keep the refs they recorded. A ref recorded before this naming existed is the `output_path` itself, and nothing rewrites it: its bytes are whatever was last written there.
 
 ---
 

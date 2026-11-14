@@ -20,6 +20,8 @@ package gates
 // internal/core/mutate; the CLI shell is internal/cli.
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -44,9 +46,9 @@ const (
 	RubricVerdictFail = "fail"
 )
 
-// evalEvidenceDir is the repo-relative directory rubric output lands in, matching
-// the schema's example evidence ref artifacts/tiller/evals/F-79dh3q-C3.json
-// (artifact-schema.md, "The eval model").
+// evalEvidenceDir is the repo-relative directory rubric output lands in: both
+// the path the packet tells the agent to write and the retained evidence a
+// recording stores (artifact-schema.md, "The rubric handoff").
 const evalEvidenceDir = "artifacts/tiller/evals"
 
 // RubricPacket is the portable handoff `tiller eval --emit-rubrics` writes for the
@@ -65,7 +67,8 @@ type RubricPacket struct {
 // RubricCriterion is one criterion the agent must grade. Rubric carries the
 // grading guidance from the binding (its inline `run` text, or its `ref`),
 // OutputPath is where the agent writes the graded RubricOutput so the record step
-// can find it.
+// can find it. The record step copies it to retained evidence under another
+// name, so the agent may overwrite OutputPath on a regrade.
 type RubricCriterion struct {
 	ID         string `json:"id"`
 	Statement  string `json:"statement,omitempty"`
@@ -89,10 +92,25 @@ type RubricOutput struct {
 	GradedAt  time.Time `json:"graded_at,omitempty"`
 }
 
-// EvidencePath is the repo-relative path a node's rubric output for one criterion
-// is written to: artifacts/tiller/evals/<node-id>-<criterion-id>.json.
-func EvidencePath(nodeID, critID string) string {
+// RubricOutputPath is the repo-relative path the rubric packet tells the agent
+// to write one criterion's graded output to:
+// artifacts/tiller/evals/<node-id>-<criterion-id>.json. It is a handoff
+// location the agent overwrites on every regrade, never an evidence reference:
+// recorded state points at RubricEvidenceRef instead.
+func RubricOutputPath(nodeID, critID string) string {
 	return evalEvidenceDir + "/" + nodeID + "-" + critID + ".json"
+}
+
+// RubricEvidenceRef is the repo-relative path a recorded rubric output is
+// retained under:
+// artifacts/tiller/evals/<node-id>-<criterion-id>-out-<sha256>.json, the same
+// shape a command gate's evidence takes (evidenceRef). The full digest of the
+// recorded bytes makes the file immutable in effect: the same bytes name the
+// same file, and a regrade names a new one, so no recording can change the
+// bytes behind a reference an attestation or an earlier criterion state holds.
+func RubricEvidenceRef(nodeID, critID string, output []byte) string {
+	digest := sha256.Sum256(output)
+	return evalEvidenceDir + "/" + nodeID + "-" + critID + "-out-" + hex.EncodeToString(digest[:]) + ".json"
 }
 
 // BuildPacket assembles the rubric packet for a node from its eval file, emitting
@@ -112,7 +130,7 @@ func BuildPacket(noun, nodeID string, ef *store.EvalFile, at time.Time) RubricPa
 				Polarity:   c.Polarity,
 				Required:   c.Required,
 				Rubric:     rubricText(c.Binding),
-				OutputPath: EvidencePath(nodeID, c.ID),
+				OutputPath: RubricOutputPath(nodeID, c.ID),
 			})
 		}
 	}

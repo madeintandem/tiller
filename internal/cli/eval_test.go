@@ -139,9 +139,14 @@ func TestEvalRecordRubricOutputNeedsAttestation(t *testing.T) {
 	require.NotEqual(t, store.GateStatusPass, feat.GatesBlock.Gates["evals"].Status,
 		"the evals gate is not green on an unattested rubric")
 
-	// The canonical evidence file was persisted under artifacts/tiller/evals/.
-	matches, _ := filepath.Glob(filepath.Join(cwd, "artifacts", "tiller", "evals", "*-C2.json"))
+	// The evidence was retained under artifacts/tiller/evals/, named by the
+	// digest of the recorded bytes, and the criterion points at that file.
+	matches, _ := filepath.Glob(filepath.Join(cwd, "artifacts", "tiller", "evals", "*-C2-out-*.json"))
 	require.Len(t, matches, 1)
+	require.Equal(t, filepath.Join(cwd, filepath.FromSlash(c.Evidence[0].Ref)), matches[0])
+	retained, err := os.ReadFile(matches[0])
+	require.NoError(t, err)
+	require.Equal(t, rubricOutputPass, string(retained))
 }
 
 func TestEvalRecordFailedRubricOutputSucceedsWithoutPassingAcceptance(t *testing.T) {

@@ -55,6 +55,21 @@ func TestBuildPacketEmptyIsArray(t *testing.T) {
 	require.Contains(t, string(b), `"criteria":[]`)
 }
 
+// TestRubricEvidenceRefNamesTheRecordedBytes pins the retained-evidence name:
+// the same bytes name the same file, different bytes name a different one, and
+// no retained name is the packet's writable output path.
+func TestRubricEvidenceRefNamesTheRecordedBytes(t *testing.T) {
+	first := RubricEvidenceRef("F-aaaaaa", "C4", []byte(`{"verdict": "pass"}`))
+	second := RubricEvidenceRef("F-aaaaaa", "C4", []byte(`{"verdict": "fail"}`))
+
+	require.Equal(t,
+		"artifacts/tiller/evals/F-aaaaaa-C4-out-c88cfcda038074fd0e362e4abe445baee0e400f5bd6e0d0fb5ce1aa7db9c522d.json",
+		first)
+	require.NotEqual(t, first, second)
+	require.Equal(t, first, RubricEvidenceRef("F-aaaaaa", "C4", []byte(`{"verdict": "pass"}`)))
+	require.NotEqual(t, RubricOutputPath("F-aaaaaa", "C4"), first)
+}
+
 // TestEvaluateCriteria runs the mechanical bindings and classifies the rest: a
 // command binding runs, a test binding runs via the suite runner, a required manual
 // criterion needs attestation, and an eval criterion is pending until graded.

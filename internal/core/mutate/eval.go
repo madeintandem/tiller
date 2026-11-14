@@ -171,8 +171,15 @@ func runEval(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revis
 }
 
 // recordRubricOutput is the record mode: read and validate the agent's graded
-// output, persist it as the canonical evidence file, and move the criterion to
-// needs_attestation (a pass verdict) or fail. The criterion is never satisfied here.
+// output, retain it as evidence, and move the criterion to needs_attestation (a
+// pass verdict) or fail. The criterion is never satisfied here.
+//
+// The evidence is written before the state commit, as a command gate's is, so a
+// recorded reference never names a missing file. That order is safe only
+// because the retained name is derived from the bytes
+// (gates.RubricEvidenceRef): a recording the store then refuses as stale leaves
+// at most an unreferenced file, never different bytes behind a reference that
+// an attestation or an earlier recording already holds.
 func recordRubricOutput(tree *store.Tree, deps Deps, owner store.Contributor, target *evalTarget, in EvalInput) (EvalResult, error) {
 	data, err := os.ReadFile(in.RecordRubricOutput)
 	if err != nil {
@@ -195,7 +202,7 @@ func recordRubricOutput(tree *store.Tree, deps Deps, owner store.Contributor, ta
 		return EvalResult{}, err
 	}
 
-	evidenceRel := gates.EvidencePath(target.id, out.Criterion)
+	evidenceRel := gates.RubricEvidenceRef(target.id, out.Criterion, data)
 	if err := store.WriteRepositoryFileAtomic(tree.Root, filepath.FromSlash(evidenceRel), data); err != nil {
 		return EvalResult{}, err
 	}
