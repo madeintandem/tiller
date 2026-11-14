@@ -1110,16 +1110,30 @@ func TestOrientRelaysTheRankedList(t *testing.T) {
 		"If any human move ranks above the top agent move, name it first.",
 		"never rewrite the list",
 		"A ranked move is a suggestion, not authorization.",
-		"Start it in your next turn, once the developer's reply does not redirect.",
+		"Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row.",
 		"or the branch to continue on",
 		"the feature touched by your most recent deliberate act that names one",
 		"Within a kind, plan order decides",
 	} {
 		require.Containsf(t, text, want, "orient pins %q", want)
 	}
-	for _, gone := range []string{"take the first match", "`Continuity note`", "`Order note`", "the route suggests waiting"} {
+	for _, gone := range []string{"take the first match", "once the developer's reply does not redirect", "`Continuity note`", "`Order note`", "the route suggests waiting"} {
 		require.NotContainsf(t, text, gone, "orient no longer carries %q", gone)
 	}
+}
+
+// execute defines what a run covers.
+func TestExecuteDefinesTheRun(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"A run is the work the developer's instruction named, and nothing else.",
+		"continuing the unit's eligible work without another go",
+		"outside it, it is not authorization",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+	require.NotContains(t, text, "continuing eligible approved work without another go")
 }
 
 // specify grounds the claims a plan rests on in the code they describe, and

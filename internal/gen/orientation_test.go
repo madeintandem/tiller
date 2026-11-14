@@ -83,13 +83,15 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 		"Within a kind, plan order decides",
 		"the exact command, or the branch to continue on",
 		"A ranked move is a suggestion, not authorization.",
-		"name it first. Then start the top agent move unless the developer redirects. Start it in your next turn, once the developer's reply does not redirect.",
+		"Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row.",
+		"Work already moving inside a seam keeps moving",
 		"never rewrite the list",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
 	for _, gone := range []string{
 		"first match wins",
+		"once the developer's reply does not redirect",
 		"### Recorded-state route",
 		"`Continuity note`",
 		"`Order note`",

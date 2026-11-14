@@ -457,8 +457,8 @@ unrequested replan.
   reply, nothing follows it, and it ends on its ` + "`**Next:**`" + ` ranked list,
   which you reproduce as written. It renders the same whoever is driving, so
   the developer reads one format rather than yours. ` + "`submit`" + ` and a passing
-  ` + "`check`" + ` print the same list under ` + "`**Up next:**`" + ` when they finish; that is
-  for you mid-run, and the closing readout's list is the one you reproduce. The block has two sizes.
+  ` + "`check`" + ` print the same list under ` + "`**Up next:**`" + ` when they finish; that list
+  shows what the tree now allows; inside your run's scope it is your queue, and outside it, it is not authorization. The closing readout's list is the one you reproduce. The block has two sizes.
   A seam exit gets the full ` + "`tiller readout <seam>`" + ` block. A correction or
   other small action inside a gate, a rename, a remove, an added node, a
   link applied while the developer refines a draft, gets
@@ -478,7 +478,7 @@ skill for the moment. With no argument, ` + "`tiller guide`" + ` prints the rank
 and names the skill for its top agent move; with a skill name it prints that
 skill in full. ` + "`tiller next`" + ` prints the list alone. When you are choosing the
 next seam, relay the list to the developer and end the reply; their next message
-redirects you or lets the top agent move start. Work already moving inside a seam keeps moving, including execute's draft
+redirects you, or starts the top agent move only when it says to. Work already moving inside a seam keeps moving, including execute's draft
 preparation, submission-state push, and bounded related merge closeout. Do not
 ask for another go after checks turn green or before ordinary state publication.
 The briefing pause is the developer's moment to correct your picture of the
@@ -795,8 +795,7 @@ never count. Adding work only touches its parent for recency, an added task its
 feature and an added feature its epic, so a decomposition never sets it.
 
 Relay the list as written. If any human move ranks above the top agent move,
-name it first. Then start the top agent move unless the developer redirects.
-Start it in your next turn, once the developer's reply does not redirect.
+name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row. A reply that asks something else is answered, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
 You may say you would take a different item first and why; never rewrite the list.
 A ranked move is a suggestion, not authorization.
 An explicit human instruction naming nodes overrides the list's order for exactly
