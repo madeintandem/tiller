@@ -212,3 +212,20 @@ func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
 		require.Contains(t, text, want)
 	}
 }
+
+// TestOrientationStatesCurrentBaselineDriftAndShelfClaims pins that orientation
+// no longer denies baseline drift markers, names all three shelf claim verbs,
+// and speaks of contributors rather than owners in the manifest entry.
+func TestOrientationStatesCurrentBaselineDriftAndShelfClaims(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.NotContains(t, text, "No automatic baseline drift")
+	require.NotContains(t, text, "the owners, the inputs")
+	for _, want := range []string{
+		"`tiller claim bug <key>`",
+		"`tiller claim chore <key>`",
+		"`tiller claim tweak <key>`",
+		"the contributors, the inputs",
+	} {
+		require.Contains(t, text, want)
+	}
+}

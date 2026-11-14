@@ -1368,3 +1368,18 @@ func TestExecuteWorkingPlanIsNotThePlanOfRecord(t *testing.T) {
 	require.Contains(t, text, "stays the plan of record and wins where they differ")
 	require.NotContains(t, text, "routine single-task work uses its own approved `task.md`")
 }
+
+// TestDeriveBaselineStatesCurrentDriftAndContributors pins that derive-baseline
+// no longer denies the baseline drift markers the code now has, keeps the fact
+// that the console has no baseline approval action, and names the acting
+// contributor rather than owner.
+func TestDeriveBaselineStatesCurrentDriftAndContributors(t *testing.T) {
+	text, ok := Lookup("derive-baseline")
+	require.True(t, ok)
+	require.NotContains(t, text, "There are no automatic baseline drift markers")
+	require.NotContains(t, text, "acting owner")
+	require.Contains(t, text, "the acting contributor")
+	require.Contains(t, text, "`tiller drift` reports `stale_design` when tracked feature work crosses to done on a described path")
+	require.Contains(t, text, "`tiller sync` may print an `as-is docs touched` notice. `mend-drift` owns those.")
+	require.Contains(t, text, "The console has no approval action for baseline docs; confirmation is the `tiller approve design` command above.")
+}

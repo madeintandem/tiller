@@ -586,8 +586,7 @@ docs call for inspection, reconciliation, or a hand-back to review, not another
 derivation. One confirmed doc releases the startup gate; remaining unconfirmed
 docs are not a global blocker. Contributors, reference declarations, modes, missing
 design prose, and other readiness gaps remain independent. An empty work-node
-queue does not erase pending baseline review. No automatic baseline drift or
-touched-doc sync behavior is implied.
+queue does not erase pending baseline review.
 
 Bugs capture defects: observed behavior violates expected behavior. Chores are
 housekeeping without code side effects; this is guidance, not a restriction or
@@ -658,7 +657,7 @@ external failure never rolls back the committed source transaction.
 
 The shelves use the same explicit ownership boundary. The human chooses queue
 work, then you claim the top eligible node in that shelf's soft order with
-` + "`tiller claim bug <key>`" + ` or ` + "`tiller claim chore <key>`" + `. An unclaimed shelf
+` + "`tiller claim bug <key>`" + `, ` + "`tiller claim chore <key>`" + `, or ` + "`tiller claim tweak <key>`" + `. An unclaimed shelf
 node never enters the ranked list. A live ` + "`carried`" + ` node waits on its carrier.
 
 Review does not have to land once per task. ` + "`review_grain`" + ` records where
@@ -1022,7 +1021,7 @@ and gating of the work and silent on the content of the implementation.
 
 Everything Tiller owns is under ` + "`.tiller/`" + ` at the repo root:
 
-- ` + "`tiller.yml`" + ` is the manifest: the project archetype, the owners, the inputs,
+- ` + "`tiller.yml`" + ` is the manifest: the project archetype, the contributors, the inputs,
   and the gates.
 - ` + "`design/`" + ` holds the durable design docs the tree is decomposed from.
 - ` + "`design/baseline.yml`" + ` is the optional machine-owned as-is ledger beside
