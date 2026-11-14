@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/madeintandem/tiller/internal/execution"
@@ -104,16 +105,25 @@ func EvidenceHandler(root string) http.HandlerFunc {
 
 // treeRecordsEvidence reports whether some node in the loaded tree records
 // ref, verbatim, as an evidence pointer: a gate's or a criterion's evidence,
-// a node's own evidence list, an attestation's evidence_ref, or a policy
-// violation's evidence_ref. This is the endpoint's scope. The console only
-// links evidence refs the tree records (GateCard and CriterionRow), so
-// nothing legitimate asks for anything else, while a server reachable over
-// the network must not read arbitrary checkout files such as a gitignored
-// secret. Refusing with 404 rather than 403 answers the same way whether or
+// a node's own evidence list, an attestation's evidence_ref, a policy
+// violation's evidence_ref or historical evidence_refs, or an observation in
+// a feature's or an epic's recovered-review policy snapshots. This is the
+// endpoint's scope. The console only links evidence refs the tree records
+// (GateCard, CriterionRow, IntegrityNotes, and RecoveredReview), so nothing
+// legitimate asks for anything else, while a server reachable over the
+// network must not read arbitrary checkout files such as a gitignored
+// secret. Retained recovery history counts as a record: a recovered snapshot
+// keeps the refs the historical gates carried after the current gates have
+// moved on. Refusing with 404 rather than 403 answers the same way whether or
 // not a file exists at the path, so the refusal reveals nothing about disk.
 func treeRecordsEvidence(t *store.Tree, ref string) bool {
+	for _, e := range t.Epics {
+		if recoveredReviewRecordsEvidence(e.RecoveredReview, ref) {
+			return true
+		}
+	}
 	for _, f := range t.Features {
-		if gatesRecordEvidence(f.GatesBlock, ref) {
+		if gatesRecordEvidence(f.GatesBlock, ref) || recoveredReviewRecordsEvidence(f.RecoveredReview, ref) {
 			return true
 		}
 	}
@@ -125,6 +135,22 @@ func treeRecordsEvidence(t *store.Tree, ref string) bool {
 	for _, noun := range store.ShelfNouns() {
 		for _, n := range t.WorkNodesOf(noun) {
 			if workItemRecordsEvidence(n.Body(), ref) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// recoveredReviewRecordsEvidence reports whether a recovered review's policy
+// snapshots record ref on one of their historical gate observations.
+func recoveredReviewRecordsEvidence(record *store.RecoveredReview, ref string) bool {
+	if record == nil {
+		return false
+	}
+	for _, snapshot := range record.PolicySnapshots {
+		for _, observation := range snapshot.Observations {
+			if slices.Contains(observation.EvidenceRefs, ref) {
 				return true
 			}
 		}
@@ -153,7 +179,7 @@ func gatesRecordEvidence(b store.GatesBlock, ref string) bool {
 		}
 	}
 	for _, v := range b.PolicyViolations {
-		if v.EvidenceRef == ref {
+		if v.EvidenceRef == ref || slices.Contains(v.EvidenceRefs, ref) {
 			return true
 		}
 	}
