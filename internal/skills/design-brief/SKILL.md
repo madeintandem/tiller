@@ -170,7 +170,7 @@ By default, return the complete Markdown brief in the reply without creating any
 
 A file request does not authorize replacing canonical prose, source requirements, or state. Check the destination before writing, including whether a symlink would redirect the write. Preserve an existing human-edited brief unless the developer explicitly authorizes replacing that output. Regeneration alone is not replacement authorization: use a new explicitly requested snapshot destination or return the new snapshot in the reply and ask for a destination if needed. Never silently overwrite an existing file.
 
-Do not create a mandatory output directory, YAML sidecar, generated index, reference loader, extra asset copy, or automatic refresh mechanism, since the requested deliverable is the only write permitted. Do not upload, submit to an external tool, install a design tool, or begin prototype construction: the developer decides where the brief goes, and the receiving tool owns prototype craft. No vendor-specific API, account, installation, or receiving-tool dependency belongs in generation.
+Do not create a mandatory output directory, YAML sidecar, generated index, reference loader, extra asset copy, or automatic refresh mechanism, since the requested deliverable is the only write permitted. Do not upload, submit to an external tool, install a design tool, or begin prototype construction: the developer hands the brief to a designer or design tool, and the receiving tool owns prototype craft. No vendor-specific API, account, installation, or receiving-tool dependency belongs in generation.
 
 ## Hand-off
 
