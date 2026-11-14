@@ -1,4 +1,5 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,6 +145,62 @@ describe("publish", () => {
     api.insertCaption.mockRejectedValueOnce(new Error("boom"));
     await expect(run()).rejects.toThrow(/thumbnail failed: quota; captions failed: boom/);
     expect(JSON.parse(readFileSync(publishedFile(), "utf8"))["v-test"]).toMatchObject({ thumbnail: false, captions: false });
+  });
+
+  describe("resuming after a failed step", () => {
+    const out = (ext: string) => join(root, "out", `v-test.${ext}`);
+    const sha = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
+    const record = () => JSON.parse(readFileSync(publishedFile(), "utf8"))["v-test"];
+    // The first run: the video goes up as YT123, then one later step fails.
+    const uploadThenFail = async (step: "setThumbnail" | "insertCaption") => {
+      api[step].mockRejectedValueOnce(new Error("quota"));
+      await expect(run()).rejects.toThrow(/uploaded as YT123/);
+      for (const call of Object.values(api)) call.mockClear();
+    };
+
+    it("records the digest of every file of the build it uploaded", async () => {
+      await run();
+      expect(record().build).toEqual({ mp4: sha(out("mp4")), srt: sha(out("srt")), jpg: sha(out("jpg")), meta: sha(out("meta.json")) });
+    });
+
+    it("refuses to attach a rebuilt and re-approved script's assets to the earlier upload", async () => {
+      await uploadThenFail("setThumbnail");
+      const saved = readFileSync(publishedFile(), "utf8");
+      // Build B: the script changed, was approved again, and every output was rebuilt.
+      appendFileSync(join(root, "scripts", "v-test.yaml"), "\n# a later edit\n");
+      for (const ext of ["mp4", "srt", "jpg"]) writeFileSync(out(ext), "build B");
+      meta();
+      approve();
+      await refuses(/YT123/);
+      await expect(run()).rejects.toThrow(/v-test\.mp4, v-test\.srt, v-test\.jpg, v-test\.meta\.json/);
+      await expect(run()).rejects.toThrow(/delete that video in YouTube Studio/);
+      expect(readFileSync(publishedFile(), "utf8")).toBe(saved);
+    });
+
+    for (const ext of ["mp4", "srt", "jpg", "meta.json"]) {
+      it(`refuses when ${ext} changed since the upload though the script did not`, async () => {
+        await uploadThenFail("insertCaption");
+        if (ext === "meta.json") meta({ title: "A retitled video" });
+        else writeFileSync(out(ext), "rebuilt");
+        await refuses(new RegExp(`YT123.*v-test\\.${ext.replace(".", "\\.")}`));
+        expect(record()).toMatchObject({ youtubeId: "YT123", thumbnail: true, captions: false });
+      });
+    }
+
+    it("still refuses a completed publication as already published after a rebuild", async () => {
+      await run();
+      for (const call of Object.values(api)) call.mockClear();
+      for (const ext of ["mp4", "srt", "jpg"]) writeFileSync(out(ext), "rebuilt");
+      await refuses(/already published as YouTube video YT123/);
+    });
+
+    it("refuses to resume an unfinished record that names no build, written before builds were recorded", async () => {
+      const legacy = { "v-test": { youtubeId: "OLD99", uploadedAt: "x", privacy: "private", thumbnail: false, captions: true } };
+      writePublished(legacy);
+      await refuses(/OLD99.*does not record which build/);
+      await expect(run()).rejects.toThrow(/YouTube Studio/);
+      expect(JSON.parse(readFileSync(publishedFile(), "utf8"))).toEqual(legacy);
+    });
   });
 
   it("explains an expired or revoked login (invalid_grant)", async () => {

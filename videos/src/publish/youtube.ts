@@ -1,15 +1,19 @@
 import { createReadStream, existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { google, type youtube_v3 } from "googleapis";
 import { layoutFor, type Layout } from "../build/layout.js";
+import { outputPaths } from "../build/outputs.js";
 import { loadConfig, type Config } from "../config.js";
 import { resumableUpload, type Req } from "./resumable.js";
-import { loadPublishable, videoResource } from "./metadata.js";
+import { buildDigests, loadPublishable, videoResource, type BuildDigests } from "./metadata.js";
 
 // `thumbnail` and `captions` record which post-insert steps are done, so a rerun finishes the rest.
-export type Published = Record<string, { youtubeId: string; uploadedAt: string; privacy: string; thumbnail?: boolean; captions?: boolean }>;
+// `build` is the build that was uploaded, so a rerun finishes it only from that same build.
+// An entry written before `build` was recorded has none.
+type Entry = { youtubeId: string; uploadedAt: string; privacy: string; thumbnail?: boolean; captions?: boolean; build?: BuildDigests };
+export type Published = Record<string, Entry>;
 
 // The three YouTube calls publish makes, so tests can stand in for the API.
 export type YouTubeApi = {
@@ -113,10 +117,35 @@ function explainAuth(e: unknown, id: string): Error {
   );
 }
 
+// An unfinished upload is finished only from the build that was uploaded. A rebuild's
+// thumbnail or captions must never be attached to the earlier build's video, and an entry
+// that names no build cannot be matched to the files in out/ at all.
+function refuseAnotherBuild(id: string, prior: Entry, current: BuildDigests, layout: Layout): void {
+  const missing = (["thumbnail", "captions"] as const).filter((step) => !prior[step]).join(" and ");
+  const recovery =
+    `to publish the build now in ${layout.out}, delete that video in YouTube Studio first, then remove its entry from ${layout.published}; ` +
+    `to keep that video, add its ${missing} in YouTube Studio yourself`;
+  const recorded = prior.build;
+  if (!recorded) {
+    throw new Error(
+      `cannot finish publishing ${id}: its entry for YouTube video ${prior.youtubeId} does not record which build was uploaded, ` +
+        `so the files now in ${layout.out} cannot be checked against it; ${recovery}`,
+    );
+  }
+  const files = outputPaths(layout, id);
+  const changed = (["mp4", "srt", "jpg", "meta"] as const).filter((file) => recorded[file] !== current[file]).map((file) => basename(files[file]));
+  if (changed.length) {
+    throw new Error(
+      `cannot finish publishing ${id}: YouTube video ${prior.youtubeId} was uploaded from a different build ` +
+        `(changed since that upload: ${changed.join(", ")}), so its ${missing} cannot come from these files; ${recovery}`,
+    );
+  }
+}
+
 // Upload the built video, its thumbnail, and its captions. Returns the YouTube video ID.
 // Every refusal happens before the first API call. Thumbnail and captions are each
-// attempted and recorded; a rerun performs only the steps not yet done and never uploads
-// the video again.
+// attempted and recorded; a rerun performs only the steps not yet done, only from the
+// build that was uploaded, and never uploads the video again.
 export async function publish(
   id: string,
   opts: { layout?: Layout; api?: YouTubeApi; cfg?: Config } = {},
@@ -134,6 +163,8 @@ export async function publish(
   const cfg = opts.cfg ?? loadConfig(layout.config);
   const { mp4, srt, jpg, meta } = loadPublishable(id, layout, cfg);
   const resource = videoResource(meta, cfg);
+  const build = await buildDigests(id, layout);
+  if (prior) refuseAnotherBuild(id, prior, build, layout);
 
   const save = () => {
     mkdirSync(dirname(publishedFile), { recursive: true });
@@ -146,7 +177,7 @@ export async function publish(
     if (!entry) {
       const youtubeId = await api.insertVideo(resource, mp4);
       // Recorded at once: a later failure must not let a retry upload a second copy.
-      entry = published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy, thumbnail: false, captions: false };
+      entry = published[id] = { youtubeId, uploadedAt: new Date().toISOString(), privacy: cfg.youtube.privacy, thumbnail: false, captions: false, build };
       save();
     }
   } catch (e) {

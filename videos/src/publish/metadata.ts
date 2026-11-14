@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { createReadStream, existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { youtube_v3 } from "googleapis";
 import { DISCLOSURE, youtubeFieldProblems, type Meta } from "../build/meta.js";
@@ -69,4 +70,17 @@ export function loadPublishable(id: string, layout: Layout, cfg: Config): Artifa
     throw new Error(`cannot publish ${id}: script is not approved at its current content in approvals.json (run: npm run approve -- ${id})`);
   }
   return { mp4: files.mp4, srt: files.srt, jpg: files.jpg, meta };
+}
+
+/** The sha256 of each file a build left in out/: what tells one build of a video from another. */
+export type BuildDigests = { mp4: string; srt: string; jpg: string; meta: string };
+
+export async function buildDigests(id: string, layout: Layout): Promise<BuildDigests> {
+  const files = outputPaths(layout, id);
+  const digest = async (path: string) => {
+    const hash = createHash("sha256");
+    for await (const chunk of createReadStream(path)) hash.update(chunk);
+    return hash.digest("hex");
+  };
+  return { mp4: await digest(files.mp4), srt: await digest(files.srt), jpg: await digest(files.jpg), meta: await digest(files.meta) };
 }
