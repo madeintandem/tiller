@@ -262,6 +262,45 @@ func TestOrientationLabelsOwnershipContributorsAndReviewGrain(t *testing.T) {
 	}
 }
 
+// Every skill reads a missing named section as stale orientation, so every
+// passage a skill points at carries its bold lead-in label verbatim. Each label
+// sits before the opening words other pins already hold.
+func TestOrientationLabelsEveryPointerTarget(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"- **Managed-project independence.** Managed projects must never depend on Tiller.",
+		"- **Developer authorship.** The developer owns and is responsible for the work.",
+		"- **External references.** In authored prose",
+		"- **Gates and delegation.** Drive work to the edge of done and stop.",
+		"- **Committing state.** Commit the state Tiller writes.",
+		"- **Worktrees.** Execute each unit of work in its own Git worktree by default",
+		"- **Recovery protocol.** Follow the recovery protocol when a command refuses.",
+		"- **Node references.** Name a node to the human by its key path",
+		"- **Readout.** Report through the readout.",
+		"**Ownership.** Every new task is unclaimed",
+		"**Contributors.** Contributors on a feature or epic",
+		"**Review grain.** Review does not have to land once per task.",
+		"**Review grain changes.** Invalid stored grain values refuse the tree rather than defaulting.",
+		"**Structural-change preflight.** Before negotiating a structural change",
+		"**Correction table.**",
+	} {
+		require.Containsf(t, text, want, "orientation labels %q", want)
+	}
+}
+
+// Closeout is the agent's bounded work; it stops at the human's acceptance
+// rather than listing acceptance among the work it carries.
+func TestOrientationCloseoutStopsAtHumanAcceptance(t *testing.T) {
+	text := normalizedOrientation()
+	require.Contains(t, text, "- **closeout**: the bounded work that carries a reviewed unit to done after its finish line or its reported merge: feature checks, evidence, and review preparation up to the human's acceptance, then submission, sync, and the state commits that record them.")
+	require.NotContains(t, text, "feature checks and evidence, human acceptance, submission")
+}
+
+// The frontier rule lives in orient's frontier bullet.
+func TestOrientationLeavesTheFrontierRuleToOrient(t *testing.T) {
+	require.NotContains(t, normalizedOrientation(), "Never tell the developer the frontier shows only their own work.")
+}
+
 // A done feature's eval bindings are corrected through the amendment's
 // correct-eval operation, never by rewriting its criteria.
 func TestOrientationCorrectsDoneEvalBindingsThroughAmend(t *testing.T) {
@@ -492,11 +531,12 @@ func TestOrientationCarriesTheWholeReadoutRule(t *testing.T) {
 		"with no list of your own after it",
 		"Do not restate the block in prose around it.",
 		"Keep the notes to facts about this run.",
-		"Commentary is yours to add freely, with the notes ahead of the block, never after it; a question for the human is a recorded question.",
+		"Commentary is yours to add freely ahead of the block, never after it; a question for the human is a recorded question.",
 		"inside your run's scope it is your queue, and outside it, it is not authorization",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
+	require.NotContains(t, text, "with the notes ahead of the block, never after it")
 }
 
 // Correction routing is told once: the general rules, the structural-change

@@ -25,7 +25,7 @@ Entering a project, finishing work, or asking what to do next does not trigger t
 
 `tiller migrate` applies this checkout's registered forward schema migrations and refreshes its generated instructions with the running binary; it never changes the installed binary.
 
-One checkout's maintenance never updates other branches, worktrees, or projects. Those stay untouched; teammates incorporate the reviewed migration and maintain their own checkouts. Review and commit the reported project diff.
+One checkout's maintenance never updates other branches, worktrees, or projects. Those stay untouched; teammates incorporate the reviewed migration and maintain their own checkouts. The developer reviews and commits the reported project diff.
 
 ### Identity
 
@@ -61,7 +61,7 @@ Schema 9 renames the project roster to `contributors:` and the checkout's local 
 
 ## Recovery
 
-On a refusal, follow `.tiller/orientation.md`.
+On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`.
 
 Read phase outcomes even on failure: a binary replacement or source migration can have completed before refresh fails. With `--json`, the binary phase and the project's migration and artifacts phases each report their own status, and `complete` covers the whole requested scope. A successful binary update followed by a failed project phase is incomplete. Preserve the completed phases and their state, and review the reported diff; retry `tiller upgrade --project-only` only after the named cause is repaired.
 
@@ -93,7 +93,7 @@ tiller migrate                                           # migrate and refresh t
 tiller upgrade --project-only --contributor <id>         # the migration's actor; checkout identity unchanged
 
 # schema 6 adoption: inspect, the human confirms owners, apply once
-tiller migrate --dry-run --json                          # writes nothing; save the report outside .tiller/
+tiller migrate --dry-run --json                          # writes nothing; save the report outside source state
 tiller migrate --ownership-review <file>                 # apply the human-reviewed mapping
 tiller upgrade --project-only --ownership-review <file>  # the same apply through upgrade
 

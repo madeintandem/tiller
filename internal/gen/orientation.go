@@ -150,7 +150,7 @@ unrequested replan.
 - **riding task**: a task whose review rides its feature's or epic's review; it submits a review ref, not its own PR.
 - **review ref**: the branch and commit a submit records when the node has no PR of its own.
 - **finish line**: at coarse grain, every live riding task ` + "`in_review`" + ` or ` + "`done`" + `, and at epic grain every independent feature or task override already done.
-- **closeout**: the bounded work that carries a reviewed unit to done after its finish line or its reported merge: feature checks and evidence, human acceptance, submission, sync, and the state commits that record them.
+- **closeout**: the bounded work that carries a reviewed unit to done after its finish line or its reported merge: feature checks, evidence, and review preparation up to the human's acceptance, then submission, sync, and the state commits that record them.
 - **rollup**: a feature's or epic's ` + "`done`" + `, recorded by ` + "`tiller sync`" + ` from its children (at least one not cancelled, every live one done, and for a feature its gates checked) and recomputed when new work lands beneath it.
 - **accepted basis**: the spec, contract, or task prose pinned at approval as ` + "`accepted_against`" + `; ` + "`active_basis`" + ` is drift from it.
 - **operative question**: an open question that currently holds a node, directly or through an ancestor; a recorded feature-only assumption lifts its hold on that feature, never on its tasks.
@@ -159,7 +159,7 @@ unrequested replan.
 
 ## The rules you must follow
 
-- Managed projects must never depend on Tiller. Setup, build, tests, CI,
+- **Managed-project independence.** Managed projects must never depend on Tiller. Setup, build, tests, CI,
   packaging, deployment, runtime, and merge eligibility must work without
   Tiller installed, release access, or ` + "`.tiller/`" + ` as an operational input.
   Never add Tiller packages, setup hooks, command wrappers, CI installation
@@ -181,7 +181,7 @@ unrequested replan.
   This rule does not prohibit Tiller's own implementation, tests, release
   automation, or disposable verification from exercising Tiller.
   It is guidance, not a claim that Tiller can prevent arbitrary project edits.
-- The developer owns and is responsible for the work. Never identify yourself,
+- **Developer authorship.** The developer owns and is responsible for the work. Never identify yourself,
   an agent, model, provider, or harness as an author or contributor in any
   output: code, comments, docs, commit messages, PR titles or descriptions,
   issues, reviews, reports, or replies. Never add generated-by notices,
@@ -201,7 +201,7 @@ unrequested replan.
   source is available, write the name as plain text. This house rule applies
   across skills and hand-offs; it does not authorize fetching unrelated sources
   or changing accepted historical prose.
-- Drive work to the edge of done and stop. You may propose, build, attach
+- **Gates and delegation.** Drive work to the edge of done and stop. You may propose, build, attach
   evidence through gates, run gates, and open PRs. A gate is the human's
   decision, not the human's keyboard: on an explicit instruction naming the
   node and target, or the exact design docs, you may run ` + "`approve`" + ` or ` + "`resolve`" + ` yourself, stating exactly
@@ -237,7 +237,7 @@ unrequested replan.
   An explicitly requested ` + "`code-review`" + ` review writes only its review
   file under ` + "`.tiller/reviews/`" + `; its disposition records through
   ` + "`tiller`" + ` commands and one commit, and approves nothing.
-- Commit the state Tiller writes. Every command records into git-tracked files
+- **Committing state.** Commit the state Tiller writes. Every command records into git-tracked files
   under ` + "`.tiller/`" + `, and Tiller never commits them for you. The commit is part
   of the work: commit the state delta with, or right after, the change it
   describes, using plain ` + "`git`" + ` and this project's own commit conventions.
@@ -275,7 +275,7 @@ unrequested replan.
   branches into their recorded aggregate is agent work; the final integration
   merge is the human's. ` + "`tiller guide execute`" + ` carries the branch procedure
   under **Claiming and starting** and **Aggregate assembly**.
-- Execute each unit of work in its own Git worktree by default, leaving the
+- **Worktrees.** Execute each unit of work in its own Git worktree by default, leaving the
   primary checkout where the developer left it. A unit of work is what one
   review covers, so review grain sets it: the task at task grain, the whole
   feature at feature grain, the whole epic at epic grain, and always the bug,
@@ -312,7 +312,7 @@ unrequested replan.
   under **Publication sequence**, from checks and evidence commits through the
   draft review, human acceptance, formal submission, and state publication, with
   merge closeout and missing-review recovery in the sections after it.
-- Follow the recovery protocol when a command refuses. Every skill inherits it
+- **Recovery protocol.** Follow the recovery protocol when a command refuses. Every skill inherits it
   and corrects itself from the CLI's exit codes without a human. Exit ` + "`1`" + ` is a
   business refusal to reason about, usually a red gate or an illegal transition:
   fix the work and try again, do not escalate. Stop and report when the same gate
@@ -328,7 +328,7 @@ unrequested replan.
   During ` + "`design-brief`" + ` or a ` + "`code-review`" + ` review, recover only through corrected reads.
   Missing sources or stale instructions are explicit limitations, not
   permission to repair, refresh instructions, or mutate the project.
-- Name a node to the human by its key path with the id in parentheses, for
+- **Node references.** Name a node to the human by its key path with the id in parentheses, for
   example ` + "`submit-certification/certification-form-loading (F-79dh3q)`" + `. A task's key path
   carries all three segments and reads
   ` + "`submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)`" + `.
@@ -356,7 +356,7 @@ unrequested replan.
   this file, the skills ` + "`tiller guide`" + ` serves, and the command output.
   Never go hunting outside the project directory for Tiller documentation or
   schema shapes. Leave the project only where the developer points you.
-- Report through the readout. At a seam, ` + "`tiller readout <seam>`" + ` prints a
+- **Readout.** Report through the readout. At a seam, ` + "`tiller readout <seam>`" + ` prints a
   block; at a human gate the command prints one itself; either way,
   reproduce it verbatim as the last thing in your reply, with your own
   account under ` + "`Notes from this run`" + ` ahead of it. The block closes the
@@ -366,7 +366,7 @@ unrequested replan.
   whoever is driving, so the developer reads one format rather than yours.
   Do not restate the block in prose around it. The notes carry what the block
   cannot know. Keep the notes to facts about this run. Commentary is yours to
-  add freely, with the notes ahead of the block, never after it; a question for
+  add freely ahead of the block, never after it; a question for
   the human is a recorded question. ` + "`submit`" + ` and a passing
   ` + "`check`" + ` print the same list under ` + "`**Up next:**`" + ` when they finish; that list
   shows what the tree now allows; inside your run's scope it is your queue, and outside it, it is not authorization. The closing readout's list is the one you reproduce. The block has two sizes.
@@ -564,7 +564,7 @@ and grain, through ` + "`tiller configure project`" + `, ` + "`configure epic <k
 ` + "`configure feature <key>`" + `, or the matching ` + "`approve --review-grain`" + ` gate.
 State what you will record and report what you recorded.
 
-Invalid stored grain values refuse the tree rather than defaulting. If
+**Review grain changes.** Invalid stored grain values refuse the tree rather than defaulting. If
 ` + "`configure project`" + ` refuses an unsupported scalar or flow-mapping
 ` + "`execution`" + ` shape, rewrite that human-owned manifest setting as block-form
 YAML and rerun the command; never edit machine-owned node state.
@@ -600,7 +600,7 @@ block you reported, and return to the row's existing approval, refresh,
 reapproval, task-approval, or amendment gate. A seam exit keeps the full
 readout; a correction inside a gate gets that lighter block.
 
-Before negotiating a structural change, load the installed ` + "`tiller guide amend`" + `
+**Structural-change preflight.** Before negotiating a structural change, load the installed ` + "`tiller guide amend`" + `
 and read ` + "`tiller rename --help`" + ` and ` + "`tiller amend --help`" + `. Inspect affected
 features, all descendant tasks, and source/destination epics through
 ` + "`tiller show`" + `, node ` + "`tiller status`" + `, and ` + "`tiller query`" + `. Check current

@@ -25,7 +25,7 @@ Write one contract per independently triageable outcome. A bug contract records 
 
 Reproduction gives the smallest steps from a named starting state, with the commit or version where it was observed. Expected names its source: a criterion, a spec line, or the rule the developer stated. Actual is what was observed, with error text verbatim. Fixed when and Done when are conditions a test or a reader can check, never "the bug is fixed". A reproduction derived by reading rather than run says so.
 
-Grade every bug by impact with `--severity`, on this scale:
+Grade a bug by impact with `--severity`, on this scale:
 
 | Severity | Meaning |
 |---|---|
@@ -42,7 +42,7 @@ The result remains `proposed`. Triage decides whether the contract is a bug, cho
 
 ## Recovery
 
-On a refusal, follow `.tiller/orientation.md`. Fix an invalid local key, unresolved attachment, or invalid shelf dependency and rerun `tiller add`. Re-adding the same key is an idempotent readback, not a second finding.
+On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`. Fix an invalid local key, unresolved attachment, or invalid shelf dependency and rerun `tiller add`. Re-adding the same key is an idempotent readback, not a second finding.
 
 ## Choreography
 

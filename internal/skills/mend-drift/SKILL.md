@@ -43,7 +43,7 @@ When the drift is not one candidate but a cascade from a single upstream change,
 
 ## Recovery
 
-On any refusal, follow the recovery protocol in `.tiller/orientation.md`.
+On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.
 
 ## Choreography
 

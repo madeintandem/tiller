@@ -63,7 +63,7 @@ Features and epics have no owner or claim. Every new task is unclaimed regardles
 
 Lay the tree down in `draft`, commit it, and stop: the draft tree is the proposal, the committed git diff is the review surface, and the human's `approve epic` is the approval. There is no separate proposal artifact, so an uncommitted tree leaves the human nothing to review. Tiller writes the state files and never commits them; committing them is yours, with plain `git`, directly on the integration branch: the tree is `.tiller/`-only state, and a diff that touches only `.tiller/` never needs a pull request.
 
-Write the epic prose while you write the epic. `epic.md` carries the intent, scope, and definition of done, and it is the epic's only authored artifact: an epic has no acceptance contract of its own in this build. Its bar is the sum of its features' contracts, and it reaches `done` when every live feature under it is done, observed by `tiller sync` rather than asserted by anyone. So keep the epic prose at the release grain, saying what the epic is for and when it is finished, and put every criterion that has to be checked into the feature that can satisfy it.
+Write the epic prose while you write the epic. `epic.md` carries the intent, scope, and definition of done, and it is the epic's only authored artifact: an epic has no acceptance contract of its own. Its bar is the sum of its features' contracts, and it reaches `done` when every live feature under it is done, observed by `tiller sync` rather than asserted by anyone. So keep the epic prose at the release grain, saying what the epic is for and when it is finished, and put every criterion that has to be checked into the feature that can satisfy it.
 
 Write each feature's narrative to the same standard. `feature.md` says who gets what outcome when the feature is done, what is in this increment and what is deliberately left to a later one, which existing behavior or code it touches, why each recorded prerequisite is one, and what detail is deferred to `specify`. It is narrative, not a specification: no criteria, no task list, no interface detail.
 
@@ -99,7 +99,7 @@ A later document is recorded as one amendment. `tiller intake <file or folder>` 
 
 ## Recovery
 
-On any refusal, follow the recovery protocol in `.tiller/orientation.md`. On the amendment route the staging surface is `tiller amend`'s own, and `tiller guide amend` reads every staging refusal: a forward reference to a key staged later, a stale precondition, the two ways out of a batch staged against a tree that has since moved. The refusals particular to this route are `artifact_exists` or the `re-intake is a new intake` message for a name already landed, cleared by renaming the document or removing the old artifact and rerunning `tiller intake`; `amendment_required` for `--no-amendment` once an epic exists, cleared by plain `tiller intake`; `source_required` for an op staged with no `--source`, cleared by staging it again with one; `held_by_amendment` for a lifecycle verb on a held draft, cleared by approving the amendment or removing the draft; and `feature_not_approved`, `task_under_held_feature`, and `parent_held_elsewhere` for a task or feature added where the rules above forbid it, each cleared by the placement rules in **What becomes what**. `amendment_empty` is the human's refusal at `approve amendment`, and it names withdraw.
+On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`. On the amendment route the staging surface is `tiller amend`'s own, and `tiller guide amend` reads every staging refusal: a forward reference to a key staged later, a stale precondition, the two ways out of a batch staged against a tree that has since moved. The refusals particular to this route are `artifact_exists` or the `re-intake is a new intake` message for a name already landed, cleared by renaming the document or removing the old artifact and rerunning `tiller intake`; `amendment_required` for `--no-amendment` once an epic exists, cleared by plain `tiller intake`; `source_required` for an op staged with no `--source`, cleared by staging it again with one; `held_by_amendment` for a lifecycle verb on a held draft, cleared by approving the amendment or removing the draft; and `feature_not_approved`, `task_under_held_feature`, and `parent_held_elsewhere` for a task or feature added where the rules above forbid it, each cleared by the placement rules in **What becomes what**. `amendment_empty` is the human's refusal at `approve amendment`, and it names withdraw.
 
 ## Choreography
 
@@ -234,7 +234,7 @@ Record consequential product gaps as questions, not unresolved guesses hidden in
 ## Readout
 
 End by running `tiller readout decompose`.
-Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
+Reproduce the block verbatim and last, per **Readout** in `.tiller/orientation.md`.
 The block has two sizes. A seam exit gets the full block. A correction inside the
 approval gate (the next section) closes its reply with `tiller readout decompose --since <sha>` instead,
 where `<sha>` is the commit the last block you reported named: only what changed since then, still
@@ -252,7 +252,7 @@ Name nodes by key path with the id in parentheses. On the amendment route the no
 
 ## Correcting the draft
 
-For any structural correction, follow the correction table in `.tiller/orientation.md` and the structural-change preflight beside it before discussing detailed placement.
+For any structural correction, follow the **Correction table** in `.tiller/orientation.md` and **Structural-change preflight** beside it before discussing detailed placement.
 
 Features from bounded epics may interleave. `tiller check readiness` reports grouping-only projected epic cycles as nonblocking advisories with implicated features and recorded edges. Genuine prerequisite cycles still block, including explicit epic dependencies and mixed feature/epic completion deadlocks. Do not erase a valid edge or reshape a defensible product boundary merely to make epic grouping sort cleanly.
 

@@ -37,7 +37,7 @@ The unit's head is its recorded branch tip if the ref still exists, else its `re
 
 A target with no started unit gets a one-line reply that there is nothing to review yet, and no file.
 
-The diffs locate what changed. Judge findings against the code as it reads now: the integration branch for merged work, the branch head for in-flight work. A defect one unit introduced and a later unit fixed is not a finding. Read surrounding code for context, but anchor every finding in lines this node's work changed. The exception is required behavior the change never built: cite the criterion or `feature.md` line that requires it, write `Anchors: absent`, and set Found in to the feature. Record the integration commit and each in-flight branch head you read; these pins are what keep the file's line references meaningful after the code moves on.
+The diffs locate what changed. Judge findings against the code as it reads now: the integration branch for merged work, the branch head for in-flight work. A defect one unit introduced and a later unit fixed is not a finding. Read surrounding code for context, but anchor every finding in lines this node's work changed. The exception is required behavior the change never built: cite the criterion or `feature.md` line that requires it, write `Anchors: absent`, and set Found in to the feature, or to the target itself for a bug, chore, or tweak target. Record the integration commit and each in-flight branch head you read; these pins are what keep the file's line references meaningful after the code moves on.
 
 #### What to look for
 
@@ -136,11 +136,11 @@ Requested changes return to the unit's owner and branch. Compare the unit's `own
 
 #### Annotate and commit once
 
-Append each disposition to the end of its row's heading line, so no line moves and every line-range citation stays exact: `→ B-k2x9ab`, `→ amendment <amendment-key>`, `→ requested change on <unit>`, `declined`, `logged as tweak TW-...`, `rechecked at <commit>`. Then make one commit holding the annotated review file, any new shelf nodes, and any feedback copy and amendment state. Stage only the paths this disposition wrote: other reviews and stray state may sit uncommitted beside them, and if `git status --short .tiller` shows any, name them to the developer and leave them out. Commit on the integration branch, as other `.tiller/`-only planning changes are; a `.tiller/`-only diff needs no PR. When this checkout is not on the integration branch, follow the planning-commit rule in `.tiller/orientation.md`; the review file is untracked, so move it to that checkout first. Never push.
+Append each disposition to the end of its row's heading line, so no line moves and every line-range citation stays exact: `→ B-k2x9ab`, `→ amendment <amendment-key>`, `→ requested change on <unit>`, `declined`, `logged as tweak TW-...`, `rechecked at <commit>`. Then make one commit holding the annotated review file, any new shelf nodes, and any feedback copy and amendment state. Stage only the paths this disposition wrote: other reviews and stray state may sit uncommitted beside them, and if `git status --short .tiller` shows any, name them to the developer and leave them out. Commit on the integration branch, as other `.tiller/`-only planning changes are; a `.tiller/`-only diff needs no PR. When this checkout is not on the integration branch, follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`; the review file is untracked, so move it to that checkout first. Never push.
 
 ## Recovery
 
-On a refusal, follow `.tiller/orientation.md`. In the review arm, recovery is limited to corrected reads: a missing branch, an unreadable diff, or stale instructions go under Limitations, never become a reason to repair, fetch, refresh, or mutate anything.
+On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`. In the review arm, recovery is limited to corrected reads: a missing branch, an unreadable diff, or stale instructions go under Limitations, never become a reason to repair, fetch, refresh, or mutate anything.
 
 In the disposition arm, a `tiller add` refusal means fixing the key, attachment, or citation and rerunning; re-adding the same key is an idempotent readback. A refusal from `tiller intake` because the name is already landed means choosing the next suffix for the distillation. Commit nothing until every selected row is recorded.
 
@@ -223,7 +223,7 @@ Contract read: the feature.md, feature.eval.md, and preserve criteria read.
 #### B1 <title, at most 60 characters>
 
 Severity: blocker. Confidence: traced. Found in: <key path> (<id>).
-Anchors: `<path>:<line>`, each with a short excerpt. Violates: <criterion ID>, when one applies.
+Anchors: `<path>:<line>`, each with a short excerpt, or `absent` for required behavior never built. Violates: <criterion ID>, when one applies.
 **Reproduction** <derived by reading, not run: the path, or the believed trigger and the unproven step>
 **Expected** <behavior>
 **Actual** <behavior>

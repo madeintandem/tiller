@@ -9,7 +9,7 @@ This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first
 
 ## Trigger
 
-A `brownfield` or `legacy-migration` project has no confirmed doc in `.tiller/design/baseline.yml`, even if work is already recorded. This seam ranks ahead of decompose. A developer may also explicitly request baseline work. A newly declared uncovered root does not automatically trigger this seam in this build.
+A `brownfield` or `legacy-migration` project has no confirmed doc in `.tiller/design/baseline.yml`, even if work is already recorded. This seam ranks ahead of decompose. A developer may also explicitly request baseline work. A newly declared uncovered root does not automatically trigger this seam.
 
 Read the ledger before deciding that documents must be written. If pending docs already exist, follow **Re-entry and corrections** below: inspect and reconcile those docs or hand the committed proposal back for review. A missing confirmation is not evidence of missing prose. Do not create another set merely because guide still names this seam.
 
@@ -75,7 +75,7 @@ External `--design` imports remain source-preserving. Never move or retire files
 
 ### Make provenance recoverable before retirement
 
-Resolve `git.integration_branch` from the manifest and this project's Git conventions; do not assume `main`, `master`, or the current branch. Work directly on that integration branch for the authorized baseline move-and-split, not a feature branch or a merged review branch. For where the planning commit lands, follow the planning-commit rule in `.tiller/orientation.md`. Preserve unrelated staged and unstaged changes, including unrelated `.tiller/` changes. Never stash, reset, discard, or commit someone else's work to make the run look clean. If that checkout cannot be used or an isolated commit is not possible, report that concrete prerequisite instead of working around it destructively.
+Resolve `git.integration_branch` from the manifest and this project's Git conventions; do not assume `main`, `master`, or the current branch. Work directly on that integration branch for the authorized baseline move-and-split, not a feature branch or a merged review branch. For where the planning commit lands, follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`. Preserve unrelated staged and unstaged changes, including unrelated `.tiller/` changes. Never stash, reset, discard, or commit someone else's work to make the run look clean. If that checkout cannot be used or an isolated commit is not possible, report that concrete prerequisite instead of working around it destructively.
 
 `--from` resolves a regular source file at this project's current HEAD. It does not save untracked files, uncommitted edits, an external repository's objects, or a path that only exists in the index. Before translating or retiring a source, compare the bytes you read with its HEAD version. Commit any untracked imports or changed source inputs first, using only those exact source paths and the project's commit conventions. An unborn or non-Git project needs a real project Git HEAD before recoverable provenance and approval; do not manufacture a stamp. Describes-only linking does not require Git, but that is not permission to retire an unrecoverable source.
 
@@ -85,7 +85,7 @@ A repeat link is safe: existing membership is a no-op. A real `describes` change
 
 ## Recovery
 
-On refusal, follow `.tiller/orientation.md`'s recovery protocol. A failed link leaves source retirement pending, not authorized. Keep the source intact and repair the named path, actor, or provenance problem before continuing. Report a committed-state warning as committed state with a failed derived refresh, not as a rollback. Approval is a human gate, not a command failure to work around.
+On refusal, follow **Recovery protocol** in `.tiller/orientation.md`. A failed link leaves source retirement pending, not authorized. Keep the source intact and repair the named path, actor, or provenance problem before continuing. Report a committed-state warning as committed state with a failed derived refresh, not as a rollback. Approval is a human gate, not a command failure to work around.
 
 ## Choreography
 
@@ -123,7 +123,7 @@ Stage exact paths, not `git add -A` or a blanket `git add .tiller docs`. Inspect
 
 ## Readout
 
-End by running `tiller readout derive-baseline`. Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`. Reproduce all of it: do not shorten its coverage map, collapse the fourth source or doc into an ellipsis, or write your own replacement table. The block exposes every recorded source-revision-to-doc mapping and every ledger doc with described paths and confirmation facts. Different blobs for the same source path are different source revisions. These links are not proof that every input's meaning survived translation.
+End by running `tiller readout derive-baseline`. Reproduce the block verbatim and last, per **Readout** in `.tiller/orientation.md`. Reproduce all of it: do not shorten its coverage map, collapse the fourth source or doc into an ellipsis, or write your own replacement table. The block exposes every recorded source-revision-to-doc mapping and every ledger doc with described paths and confirmation facts. Different blobs for the same source path are different source revisions. These links are not proof that every input's meaning survived translation.
 
 Before the block, add **Notes from this run** for what the ledger cannot know:
 

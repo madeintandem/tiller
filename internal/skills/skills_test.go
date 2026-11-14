@@ -609,7 +609,8 @@ func TestReadoutSectionsPointAtTheOrientationRule(t *testing.T) {
 			readout = readout[:len("## Readout")+j]
 		}
 		require.Containsf(t, readout, "tiller readout "+name, "%s names its readout command", name)
-		require.Containsf(t, readout, "Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.", "%s points at the readout rule", name)
+		require.Containsf(t, readout, "Reproduce the block verbatim and last, per **Readout** in `.tiller/orientation.md`.", "%s points at the readout rule", name)
+		require.NotContainsf(t, readout, "per the readout rule in", "%s names the label, not a description", name)
 		require.Containsf(t, readout, "Notes from this run", "%s keeps its own notes list", name)
 		require.Containsf(t, readout, "Name nodes by key path with the id in parentheses.", "%s keeps the naming line", name)
 		for _, gone := range []string{
@@ -755,13 +756,13 @@ func TestQuestionsAreRecordedNotChatted(t *testing.T) {
 func TestOrientPointsAtOrientationForSharedRules(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
-	require.Contains(t, text, "## Recovery protocol\n\nFollow the recovery protocol in `.tiller/orientation.md`.\n")
+	require.Contains(t, text, "## Recovery protocol\n\nFollow **Recovery protocol** in `.tiller/orientation.md`.\n")
 	require.NotContains(t, text, "Skills correct themselves from the CLI's exit codes")
 	require.NotContains(t, text, "This protocol is inherited by every skill")
 	require.NotContains(t, text, "after two different fixes", "the retry bound leaves with orient's recovery copy")
 	require.NotContains(t, text, "## External references")
 	require.NotContains(t, text, "Never guess a URL")
-	require.Contains(t, text, "## Node references\n\nName and address nodes by the node reference rule in `.tiller/orientation.md`.\n")
+	require.Contains(t, text, "## Node references\n\nName and address nodes by **Node references** in `.tiller/orientation.md`.\n")
 	require.NotContains(t, text, "This convention is inherited by every skill")
 	require.NotContains(t, text, "In command position an existing node takes either form")
 	require.NotContains(t, text, "tiller ls plans")
@@ -802,7 +803,7 @@ func TestSkillsDropNotesTheCommandRuleCovers(t *testing.T) {
 }
 
 // TestDecomposeAsksForNoEpicContract replaces the epic.eval breadcrumb this test
-// used to pin. An epic has no acceptance contract in this build: its bar is the
+// used to pin. An epic has no acceptance contract: its bar is the
 // sum of its features' contracts and it reaches done when they do, observed by
 // sync. decompose telling an agent to author epic.eval.md sent it to write a file
 // nothing reads, and `tiller eval epic` / `check epic` / `attest epic` all exit 2.
@@ -810,7 +811,7 @@ func TestDecomposeAsksForNoEpicContract(t *testing.T) {
 	text, ok := Lookup("decompose")
 	require.True(t, ok)
 	require.NotContains(t, text, "epic.eval", "an epic carries no acceptance contract")
-	require.Contains(t, text, "an epic has no acceptance contract of its own in this build",
+	require.Contains(t, text, "an epic has no acceptance contract of its own.",
 		"decompose says so rather than leaving it unstated")
 	require.Contains(t, text, "epic.md", "the epic's one authored artifact is still named")
 }
@@ -1023,7 +1024,7 @@ func TestSkillsPointAtTheCorrectionTable(t *testing.T) {
 	for _, name := range []string{"orient", "decompose", "specify", "amend", "execute"} {
 		text, ok := Lookup(name)
 		require.True(t, ok)
-		require.Containsf(t, text, "the correction table in `.tiller/orientation.md`", "%s points at the one correction table", name)
+		require.Containsf(t, text, "the **Correction table** in `.tiller/orientation.md`", "%s points at the one correction table", name)
 		require.NotContainsf(t, text, "the correction table in `tiller guide specify`", "%s no longer points at a table in specify", name)
 	}
 	for name, gone := range map[string][]string{
@@ -1587,7 +1588,7 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		"so a new worktree refuses mutations with `contributor_unset` until `tiller join --as <you>` runs inside it",
 		"restore any tracked file it changed with `git restore`",
 		"Run `resume` only inside that worktree, never in the primary checkout",
-		"Integration-branch closeout follows the planning-commit rule in `.tiller/orientation.md`",
+		"Integration-branch closeout follows the planning-commit rule under **Committing state** in `.tiller/orientation.md`",
 		"never force the checkout",
 		"belongs to someone else",
 		"look for the work's canonical branch in `git worktree list`",
@@ -1676,16 +1677,16 @@ func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
 	review, ok := Lookup("code-review")
 	require.True(t, ok)
 	require.NotContains(t, review, "switch to the integration branch first")
-	require.Contains(t, review, "follow the planning-commit rule in `.tiller/orientation.md`")
+	require.Contains(t, review, "follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`")
 	derive, ok := Lookup("derive-baseline")
 	require.True(t, ok)
-	require.Contains(t, derive, "follow the planning-commit rule in `.tiller/orientation.md`")
+	require.Contains(t, derive, "follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`")
 	require.NotContains(t, derive, "before switching or staging")
 	require.NotContains(t, derive, "safe branch switch")
 	require.NotContains(t, derive, "Safely select the configured integration branch")
 	exec, ok := Lookup("execute")
 	require.True(t, ok)
-	require.Contains(t, exec, "Integration-branch closeout follows the planning-commit rule in `.tiller/orientation.md`: it runs in the checkout that holds the integration branch, never by switching another checkout's branch.")
+	require.Contains(t, exec, "Integration-branch closeout follows the planning-commit rule under **Committing state** in `.tiller/orientation.md`: it runs in the checkout that holds the integration branch, never by switching another checkout's branch.")
 }
 
 // TestOrientCommitsTheQuestionItRecords pins that orient's Choreography commits
@@ -1948,7 +1949,7 @@ func TestOrientPointsAtOrientationForOwnershipContributorsAndReviewGrain(t *test
 		"follow **Ownership.** in `.tiller/orientation.md`.",
 		"follows **Contributors.** in `.tiller/orientation.md`.",
 		"Treat review-grain configuration as a gate decision and name its safe timing in the briefing",
-		"follow **Review grain.** in `.tiller/orientation.md`.",
+		"follow **Review grain.** and **Review grain changes.** in `.tiller/orientation.md`.",
 	} {
 		require.Containsf(t, text, want, "orient pins %q", want)
 	}
@@ -1959,4 +1960,148 @@ func TestOrientPointsAtOrientationForOwnershipContributorsAndReviewGrain(t *test
 	} {
 		require.NotContainsf(t, text, gone, "orient no longer restates orientation: %q", gone)
 	}
+}
+
+// pointerPins lists each skill's pointers into orientation. Every skill opens by
+// reading a missing named section as stale orientation, so each pointer names
+// orientation's bold lead-in label or heading exactly
+// (TestOrientationLabelsEveryPointerTarget in package gen).
+var pointerPins = map[string][]string{
+	"orient": {
+		"Apply **Developer authorship** in `.tiller/orientation.md` throughout every seam.",
+		"follow **Ownership.** in `.tiller/orientation.md`.",
+		"follow **Gates and delegation.** in `.tiller/orientation.md`.",
+		"follows **Contributors.** in `.tiller/orientation.md`.",
+		"follow **Review grain.** and **Review grain changes.** in `.tiller/orientation.md`.",
+		"route it by the **Correction table** in `.tiller/orientation.md`.",
+		"Follow **Recovery protocol** in `.tiller/orientation.md`.",
+		"Name and address nodes by **Node references** in `.tiller/orientation.md`.",
+		"per **Readout** in `.tiller/orientation.md`.",
+	},
+	"derive-baseline": {
+		"follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`.",
+		"On refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+		"per **Readout** in `.tiller/orientation.md`.",
+	},
+	"decompose": {
+		"follow **External references** in `.tiller/orientation.md`.",
+		"On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+		"per **Readout** in `.tiller/orientation.md`.",
+		"follow the **Correction table** in `.tiller/orientation.md` and **Structural-change preflight** beside it",
+	},
+	"specify": {
+		"follow **External references** in `.tiller/orientation.md`.",
+		"Apply **Managed-project independence** from `.tiller/orientation.md` while writing the plan",
+		"following the **Correction table** in `.tiller/orientation.md` and `tiller guide amend`.",
+		"On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+		"route a correction by the **Correction table** in `.tiller/orientation.md`.",
+		"per **Readout** in `.tiller/orientation.md`.",
+	},
+	"execute": {
+		"Apply **Managed-project independence** from `.tiller/orientation.md` before changing setup",
+		"Follow **Worktrees** in `.tiller/orientation.md`.",
+		"follows the planning-commit rule under **Committing state** in `.tiller/orientation.md`:",
+		"route its answer through the **Correction table** in `.tiller/orientation.md`.",
+		"takes the **Correction table** in `.tiller/orientation.md`, the route an out-of-bounds departure takes",
+		"Apply **Developer authorship** from `.tiller/orientation.md` to all work",
+		"On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+		"a gate that stays red past the retry bound under **Recovery protocol** in `.tiller/orientation.md`",
+		"per **Readout** in `.tiller/orientation.md`.",
+	},
+	"capture": {
+		"follow **External references** in `.tiller/orientation.md`.",
+		"On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+	},
+	"mend-drift": {
+		"On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+	},
+	"amend": {
+		"follow **External references** in `.tiller/orientation.md`.",
+		"The correction rules under **Correction routing** in `.tiller/orientation.md` distinguish",
+		"use their rows in the **Correction table** in `.tiller/orientation.md`.",
+		"On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`",
+		"per **Readout** in `.tiller/orientation.md`.",
+	},
+	"code-review": {
+		"follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`;",
+		"On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+	},
+	"upgrade": {
+		"On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`.",
+	},
+}
+
+// TestSkillPointersNameOrientationLabels pins each pointer's wording and proves
+// that every pointer into orientation, pinned or not, names a bold label or a
+// heading orientation actually carries.
+func TestSkillPointersNameOrientationLabels(t *testing.T) {
+	orientation := strings.Join(strings.Fields(gen.Orientation()), " ")
+	for name, pins := range pointerPins {
+		text, ok := Lookup(name)
+		require.Truef(t, ok, "%s exists", name)
+		for _, pin := range pins {
+			require.Containsf(t, text, pin, "%s points at orientation with %q", name, pin)
+		}
+	}
+	const target = "`.tiller/orientation.md`"
+	for _, name := range Names() {
+		text, _ := Lookup(name)
+		for _, line := range strings.Split(text, "\n") {
+			for from := 0; ; {
+				at := strings.Index(line[from:], target)
+				if at < 0 {
+					break
+				}
+				at += from
+				from = at + len(target)
+				start := strings.LastIndex(line[:at], ". ") + 1
+				sentence := strings.TrimSpace(line[start:at])
+				if sentence == "This skill assumes" || sentence == "Read" {
+					continue
+				}
+				require.Containsf(t, sentence, "**", "%s points into orientation without a label: %q", name, sentence)
+				parts := strings.Split(sentence, "**")
+				for i := 1; i < len(parts); i += 2 {
+					label := strings.TrimSuffix(parts[i], ".")
+					found := strings.Contains(orientation, "**"+label+".**") || strings.Contains(orientation, "### "+label+" ")
+					require.Truef(t, found, "%s names %q, which orientation does not label", name, label)
+				}
+			}
+		}
+	}
+}
+
+// No instruction text hedges a fact as true only "in this build".
+func TestInstructionTextStatesFactsWithoutBuildHedges(t *testing.T) {
+	for _, name := range Names() {
+		text, _ := Lookup(name)
+		require.NotContainsf(t, text, "in this build", "%s states the fact without the hedge", name)
+	}
+	require.NotContains(t, gen.Orientation(), "in this build")
+}
+
+// The review follow-ups: orient's residue and human-gate wording, upgrade's
+// developer-owned commit, code-review's absent anchors for any target, and
+// capture's severity grading for a bug whose impact is known.
+func TestSkillsCarryTheReviewFollowUps(t *testing.T) {
+	orient, _ := Lookup("orient")
+	require.NotContains(t, orient, "What the old notes described")
+	require.NotContains(t, orient, "The list needs no side notes.")
+	require.Contains(t, orient, "Do not add a note that steers toward or away from a ranked row beyond saying you would take another row first and why.")
+	require.Contains(t, orient, "that is `tiller approve epic <key>`, the human's move, not a seam. Name it and stop.")
+	require.Contains(t, orient, "The list holds only legal moves, so every row can be acted on as printed.")
+
+	upgrade, _ := Lookup("upgrade")
+	require.Contains(t, upgrade, "The developer reviews and commits the reported project diff.")
+	require.NotContains(t, upgrade, "Review and commit the reported project diff.")
+	require.Contains(t, upgrade, "save the report outside source state")
+	require.NotContains(t, upgrade, "outside .tiller/")
+
+	review, _ := Lookup("code-review")
+	require.Contains(t, review, "write `Anchors: absent`, and set Found in to the feature, or to the target itself for a bug, chore, or tweak target.")
+	require.Contains(t, review, "Anchors: `<path>:<line>`, each with a short excerpt, or `absent` for required behavior never built.")
+
+	capture, _ := Lookup("capture")
+	require.Contains(t, capture, "Grade a bug by impact with `--severity`, on this scale:")
+	require.NotContains(t, capture, "Grade every bug by impact")
 }

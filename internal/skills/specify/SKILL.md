@@ -17,7 +17,7 @@ For authored prose, follow **External references** in `.tiller/orientation.md`.
 
 One pass produces the feature's whole plan: the specification, the acceptance contract, and the task explosion. They are one act with one output and one gate, because the task breakdown is the evidence that the specification is right-sized. Do not stop between them.
 
-Apply the managed-project independence rule from `.tiller/orientation.md` while writing the plan and acceptance bindings. Project commands must run without Tiller; local Tiller may invoke them, never the reverse. Do not turn planning-only CI skips into replacement Tiller checks, even optional ones. If an existing or approved plan requires Tiller installation, invocation, or release credentials in the project's operational path, name the conflict and propose ordinary project checks and conservative change classification instead. Correct accepted contracts only through the applicable human review, not by silently changing their bindings.
+Apply **Managed-project independence** from `.tiller/orientation.md` while writing the plan and acceptance bindings. Project commands must run without Tiller; local Tiller may invoke them, never the reverse. Do not turn planning-only CI skips into replacement Tiller checks, even optional ones. If an existing or approved plan requires Tiller installation, invocation, or release credentials in the project's operational path, name the conflict and propose ordinary project checks and conservative change classification instead. Correct accepted contracts only through the applicable human review, not by silently changing their bindings.
 
 An explicit instruction naming several features, or an instruction to specify every feature in a named epic, forms a batch. The named-set form may include only `draft` features; the epic-wide form selects every draft feature in that one named epic. The batch overrides the ranked list's pacing for exactly that named set. Read its features in Tiller's rendered soft order. Complete the full specification, contract, and task explosion for one feature, run `tiller spec feature`, then commit that feature alone. A batch has one `specify:` commit per feature. Continue to the next named feature without stopping on an intermediate wait the ranked list suggests, and do not add unnamed siblings. Specify never runs `approve` inside the batch. Finish the batch with one final `tiller readout specify`.
 
@@ -37,7 +37,7 @@ Decompose remains responsible for auditing and recording every known feature-lev
 
 Do not silently widen the selected feature or named batch, specify future features, reorder an accepted tree, or replan unrelated work. Show consequential outside-scope changes and the applicable route under **Correcting the feature plan**, and obtain developer direction before performing the wider reshape. Extend an existing epic or feature when the work serves the same bounded outcome; propose a new increment for a distinct outcome or delivery phase, even if it touches the same subsystem. Sharing a subsystem name and being marked done are neither sufficient nor disqualifying placement criteria. A done parent can receive new children through existing additions and normal approval; cancelled or archived ancestors are not executable continuation targets. Completed tasks remain completed history. New unfinished children can reopen parent rollups through `tiller sync`, not by rewriting terminal feature/task prose or asserting an immediate parent transition at add time.
 
-Direct hard-edge changes obey the existing noun-specific state and branch checks. A fresh proposed task under an active feature can still receive legal sibling prerequisites; the parent's state does not mean the new task has started. Amendment has no link, unlink, or order operation: `revise` re-pins accepted prose, not dependencies, and cannot unlock unchanged started work. A genuine replacement can use cancellation or supersession and fresh unstarted work with its own legal dependencies; never manufacture replacement merely to evade a lock. Unchanged eligible feature relocation instead uses reviewed `move-feature`, following `.tiller/orientation.md` and `tiller guide amend`. Run amend's read-only structural preflight before promising a parent/key correction or negotiating placement.
+Direct hard-edge changes obey the existing noun-specific state and branch checks. A fresh proposed task under an active feature can still receive legal sibling prerequisites; the parent's state does not mean the new task has started. Amendment has no link, unlink, or order operation: `revise` re-pins accepted prose, not dependencies, and cannot unlock unchanged started work. A genuine replacement can use cancellation or supersession and fresh unstarted work with its own legal dependencies; never manufacture replacement merely to evade a lock. Unchanged eligible feature relocation instead uses reviewed `move-feature`, following the **Correction table** in `.tiller/orientation.md` and `tiller guide amend`. Run amend's read-only structural preflight before promising a parent/key correction or negotiating placement.
 
 `tiller spec feature` is the assertion that the whole stage-2 output exists and is well-formed, and it checks all three parts. A missing or still-stub `feature.md`, `feature.eval.md`, or `task.md` is a blocked answer naming the file (exit `1`); a contract that is written but malformed, no criteria, or a criterion missing its binding or a required field, is misuse naming the offender (exit `2`). It never silently accepts a thin plan, so author the shapes exactly. After editing a specced feature's output, run it again: it re-validates, answering "already specced (no change)" only when the edited output still passes, and the plan gate applies the same checks before approving.
 
@@ -183,7 +183,7 @@ Bad: an app-scaffold feature carrying "deployed to staging with Sentry capturing
 
 ## Recovery
 
-On any refusal, follow the recovery protocol in `.tiller/orientation.md`.
+On any refusal, follow **Recovery protocol** in `.tiller/orientation.md`.
 
 ## Choreography
 
@@ -234,12 +234,12 @@ tiller readout specify   # the one final block that closes your reply, reproduce
 
 Human feedback on a specced but unapproved feature's prose stays at the same feature approval gate, not in an amendment. Revise the human-owned `feature.md`, `feature.eval.md`, or any proposed `task.md` directly. Use `tiller rename <noun> <node> --title "<display title>"` for display metadata, `tiller order` for preference, `tiller link` and `tiller unlink` for required sequence, and `tiller remove` for an unwanted proposed task. A specced feature is outside the draft, task-free key window: for an unchanged feature's key or parent correction, run the structural preflight from `tiller guide amend`, then stage an eligible `--move-feature` and stop at amendment approval. Do not cancel and redecompose merely to change its address. A genuinely abandoned or replaced plan still uses the human cancellation or reviewed replacement route. `tiller return` only replays a ready plan's approval and does not reopen feature key rename. Machine state changes only through the CLI, never through a hand edit to node YAML. Read the corrected plan with `tiller show` and `tiller tree`, commit the `.tiller/` diff, rerun `tiller readout specify --since <sha>` naming the commit the last block you reported, and stop at the applicable human gate. After a move a specced feature still needs `tiller approve feature <node>`; amendment approval is not feature-plan approval.
 
-After approval, route a correction by the correction table in `.tiller/orientation.md`.
+After approval, route a correction by the **Correction table** in `.tiller/orientation.md`.
 
 ## Readout
 
 End by running `tiller readout specify`.
-Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
+Reproduce the block verbatim and last, per **Readout** in `.tiller/orientation.md`.
 Do not restate the criteria and their binding types: the block already names them on its own authority.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: an interpretation call
