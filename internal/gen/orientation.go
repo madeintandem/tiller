@@ -836,26 +836,7 @@ one row per node. Bare ` + "`tiller guide`" + ` and the readout's ` + "`**Next:*
 same list, and ` + "`submit`" + ` and a passing ` + "`check`" + ` append it as ` + "`**Up next:**`" + `, so
 the CLI never disagrees with itself. Each row leads with its actor, ` + "`You`" + ` for a
 human decision or ` + "`Agent`" + ` for work, then the action, the reason, and the exact
-command, or the branch to continue on. Tiller ranks by a fixed rule and never calls a model. ` + "`tiller next --all`" + `
-lists every legal move, ` + "`--json`" + ` prints the payload, and ` + "`--contributor`" + ` ranks
-for another contributor. With no identity, ` + "`tiller next`" + ` and bare ` + "`tiller guide`" + `
-head the list as not personalized (the readout's ` + "`**Next:**`" + ` has no heading), the
-personal tiers are skipped, and plan order ranks the rest, though a question
-overdue or due within two days still ranks first; ` + "`tiller join`" + ` fixes that. When nothing is legal it
-prints ` + "`Caught up: nothing is legal to do right now.`" + `
-
-The rule has five tiers, in this order, with the kind of move and then plan order breaking ties inside each.
-Unblock nearby comes first: human decisions that hold work in your current feature,
-plus any question overdue or due within two days wherever it sits. Continue is your
-own unfinished work, and your top Continue move is always kept in the five. Nearby
-is the other moves in the current feature, then in its epic. Recently touched is the
-features and epics you acted on within the last fourteen days, most recent day first.
-Everything else follows in plan order. Your current feature is the feature touched
-by your most recent deliberate act that names one: a claim, start, submit, check,
-spec, approval, answer, attest, link, reassign, or release. Acts on an epic
-alone and amendment steps never set it, and sync, migrate, join, and other upkeep
-never count. Adding work only touches its parent for recency, an added task its
-feature and an added feature its epic, so a decomposition never sets it.
+command, or the branch to continue on. ` + "`tiller guide orient`" + ` explains how the list is ranked and what each move leads to.
 
 Relay the list as written. If any human move ranks above the top agent move,
 name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row. A reply that asks something else is answered, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
@@ -864,135 +845,9 @@ A ranked move is a suggestion, not authorization.
 An explicit human instruction naming nodes overrides the list's order for exactly
 those nodes.
 
-The list holds only legal moves, so every row can be acted on as printed. A task
-held by an operative open question is not a row; the holding question is, as a
-human answer. Work in flight on another contributor's branch, work blocked by an
-unmet dependency, and an unclaimed shelf node are not rows. The standing queue
-line is always present: ` + "`queue: N bugs, M chores, K tweaks ready`" + `. It reports
-ready, non-carried shelf work, which a human chooses before any claim. An
-unclaimed task matches no personal assignment until its claim succeeds.
-
-The moves, and the seam each leads to:
-
-- Brownfield or legacy-migration with no confirmed baseline doc: the seam is
-  ` + "`derive-baseline`" + `. Read pending docs first; a complete proposal awaits human
-  named-doc confirmation, not automatic regeneration. One confirmed doc releases
-  this move.
-- A task you hold in ` + "`check`" + `, ` + "`ready`" + `, or ` + "`in_progress`" + ` with no operative open
-  question against it or an ancestor: the seam is ` + "`execute`" + `, and the list files
-  it under Continue. Re-enter ` + "`check`" + ` on the recorded branch without ` + "`start`" + ` or
-  ` + "`resume`" + ` and finish outstanding checks and publication/submission. Owned
-  checked shelf work is the same move on its shelf, and a live ` + "`carried`" + ` node
-  waits on its carrier. ` + "`carrier_cancelled`" + ` means owned work has returned to its
-  shelf, and remains a human needs-attention row with ` + "`resolve --clear`" + ` or
-  ` + "`resolve --by`" + `.
-- Shared closeout, once per reviewed unit, never per contributor or last task owner.
-  A coarse finish line arrives when every live riding task is ` + "`in_review`" + ` or
-  ` + "`done`" + `; at epic grain every independent override is already done. A task-grain
-  feature whose live tasks are all done needs feature acceptance and ordinary sync
-  on integration. A ranked closeout move can offer related closeout but does not
-  authorize it. Inspect current required gates, recorded evidence, and the
-  authored feature contract. Missing/unconfigured, failed, or stale machine work
-  remains agent checks/repair; ungraded or stale rubrics need grading/recording,
-  not repeated default eval. Only complete machine/rubric work can leave human
-  acceptance alone. Optional criteria do not block; unavailable or invalid
-  contracts are uncertainty to repair, not a pass. At epic grain name both the
-  reviewed epic and the feature contract needing work. Run ` + "`tiller check feature`" + `,
-  commit actual evidence even on exit ` + "`1`" + `, and follow execute's draft preparation
-  before human acceptance, then its rechecks, same-PR ready/formal submit, and
-  state publication/readback. Submit the epic, not its riding features. No epic
-  eval/check exists. Terminal done work retains acceptance warnings and historical
-  violations without starving live work. Workflow advice does not replace
-  lifecycle legal-next moves. Ordering is not full mutation-guard parity: respect
-  basis, questions, dependency, ownership, and retired-node diagnostics; do not
-  advertise a known-refusing operation. Never tell the developer the frontier
-  shows only their own work.
-- A ` + "`draft`" + ` amendment is the agent's. With a source document, the seam is
-  ` + "`decompose`" + `; opened by hand with no source, the seam is ` + "`amend`" + `. Either ends
-  at ` + "`tiller propose amendment`" + `, which hands it to the human.
-- A ` + "`proposed`" + ` amendment awaiting approval: a human move, not a seam. Name
-  ` + "`tiller approve amendment`" + ` as the developer's move and stop. Several amendments
-  can be open at once, each its own row. One with nothing staged reads as
-  nothing proposed from its document and carries the withdraw command instead.
-- An unclaimed eligible ` + "`ready`" + ` task under an approved ready or active feature and
-  an epic past decomposition, with no unmet recorded dependency or operative
-  question hold. The seam is ` + "`execute`" + `, and the row names
-  ` + "`tiller claim task <key>`" + ` for that individual unit. Approval itself neither
-  claims nor starts work, and a ranked claim is not authorization.
-- A feature in ` + "`specced`" + ` awaiting its plan gate with no open question holding its
-  plan: a human move, not a seam. Name ` + "`tiller approve feature`" + ` as the developer's
-  move and stop. A plan an open question holds (on the feature, its epic, or any
-  live task under it) is not that move; the question is, as a human answer. Name
-  ` + "`tiller answer question <Q-id> --answer \"...\"`" + `, after which specify folds the
-  answer into the plan before the approve.
-  An open question leaves hold in one of two ways: an answer, which
-  records a decision, or ` + "`tiller cancel question <Q-id> --reason \"...\"`" + `, which
-  records that none is needed.
-  Cancel and ` + "`tiller unlink question <Q-id> --blocks <node>`" + ` are human moves: run
-  them only on the human's instruction, otherwise name the exact command in Notes.
-  You may ` + "`tiller link question <Q-id> --blocks <node>`" + ` to widen a question that
-  reaches further than recorded, and say so in Notes.
-- An epic still in ` + "`draft`" + ` with live features awaiting its decomposition gate: a
-  human move, not a seam. Name ` + "`tiller approve epic <key>`" + ` and stop. Several epics
-  list in recorded soft order, the order ` + "`tiller queue --kind approve_epic`" + ` shows.
-  Explicitly named drafts remain legal to specify; ordering alone is not a
-  mutation guard.
-- The frontier: a live feature still in ` + "`draft`" + `, whose recorded ` + "`depends_on`" + `
-  targets are all settled (done, or cancelled), and whose own epic's recorded
-  dependencies are settled the same way; an epic-grain edge gates the epic's
-  features exactly as a feature-grain edge gates the feature. The seam is
-  ` + "`specify`" + `, and the feature is the project's, not any one owner's. A draft
-  still waiting on unfinished work is not a row. Among the eligible, the recorded
-  soft order chooses first, the owning epic's place in it and then the feature's
-  own. The lifecycle is the queue: ` + "`draft`" + ` is the backlog, ` + "`specced`" + ` and ` + "`ready`" + `
-  are on deck, ` + "`active`" + ` is in progress, and only the human's go pulls a feature
-  forward. Specifying one feature just in time remains the default. An explicit
-  instruction naming several draft features, or every draft feature in one named
-  epic, creates the one exception: specify exactly that batch in rendered soft
-  order, commit each feature separately, run one final readout, and never approve.
-  True prerequisites live in ` + "`depends_on`" + `; preferred sibling sequence lives in
-  soft order. Task assignments identify execution responsibility. Soft order
-  arranges the render and the list among peers the graph leaves unordered; it
-  never gates. Independent chains permit parallel work without a separate
-  planning layer.
-- A task, bug, chore, or tweak in ` + "`in_review`" + ` is a human merge wait rather than a
-  seam. A live carried shelf node still waits on its carrier instead. Surface the
-  wait and stop once submission state is published when remote-backed. Requested
-  changes on a task, bug, chore, or tweak re-enter ` + "`execute`" + ` through that noun's
-  ` + "`resume <noun> <node> --reason \"...\"`" + ` and reuse its open PR. A retained PR on
-  resumed or checked work does not mean the changes were resubmitted. Under a
-  coarse review grain a riding task's ref proves neither feature acceptance nor
-  formal review; the feature contract and required gates derive the remaining
-  work or human acceptance. The list is pure and may name that decision while
-  publication is unknown; authorized execute prepares the draft/offline surface
-  before handing it over. Once formal review is recorded, name only its recorded
-  identity, never infer its current host state.
-- Drafts exist but every one waits on unfinished dependencies: a draft behind an
-  unmet dependency is no move, so it is never a row. The tree is not empty for
-  that: dependency diagnostics (Home, ` + "`tiller check readiness`" + `) and the
-  caught-up hint explain the held work. Otherwise, with no epics recorded,
-  decompose is due only when a to-be design doc exists: a file under
-  ` + "`.tiller/design/`" + `, dotfiles excepted, that ` + "`baseline.yml`" + ` neither registers
-  as an as-is doc nor cites as a source. Then the seam is ` + "`decompose`" + `. With none, no work is planned yet: a human wait, not a seam. Name
-  the open-question count and the ways work enters (` + "`tiller intake`" + ` a document
-  that makes a case for change, capture a bug, chore, or tweak, or add a to-be design), and
-  stop. Never turn as-is docs or old specs into epics nobody asked for. On a tree
-  with no epics, owned shelf work, a proposed amendment, and a shelf merge wait
-  are still real work or a real wait.
-- Nothing legal remains: this is the true caught-up terminal, and the list says
-  so. A diagnostic may still count unfinished unclaimed tasks that are proposed,
-  held, or otherwise ineligible and explain the first in dependency order. This
-  is not the eligible ready-task pool, makes no ownership claim, and is omitted
-  when no unfinished unclaimed task remains.
-
-Inside a tier, moves sort by kind in a fixed order first: the baseline, your own
-continuing work, amendment review, closeout, claiming, resolving a blocker, plan
-approval, epic approval, specify, merges, answers, attests, triage, then decompose. Within a kind, plan order
-decides: epic order, feature order within an epic, then task order within a feature.
-Tier 1 sorts by due date first, overdue first. A task's local
-ordinal does not compare across unrelated features. Completed prerequisite depth
-does not outrank a live preference, and historical tree order and dependency edges
-are unchanged.
+The list holds only legal moves, so every row can be acted on as printed. The
+standing queue line is always present: ` + "`queue: N bugs, M chores, K tweaks ready`" + `. It
+reports ready, non-carried shelf work, which a human chooses before any claim.
 
 ` + "`tiller guide`" + ` serves ten skills:
 

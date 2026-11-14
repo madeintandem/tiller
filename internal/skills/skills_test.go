@@ -1222,7 +1222,8 @@ func TestEmptyTreeSkillsNeedToBeInputs(t *testing.T) {
 }
 
 // orient relays the ranked list as written, names a human move that outranks
-// the top agent move, and starts the top agent move unless redirected.
+// the top agent move, ends the reply, and starts the top agent move only on the
+// developer's go.
 func TestOrientRelaysTheRankedList(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
@@ -1241,6 +1242,68 @@ func TestOrientRelaysTheRankedList(t *testing.T) {
 	}
 	for _, gone := range []string{"take the first match", "once the developer's reply does not redirect", "`Continuity note`", "`Order note`", "the route suggests waiting"} {
 		require.NotContainsf(t, text, gone, "orient no longer carries %q", gone)
+	}
+}
+
+// orient is the one home for how the ranked list is ranked and for the
+// catalogue of moves and the seam each leads to; orientation says what the
+// list is and how to relay it, and points here (TestOrientationDescribesRankedNext
+// in package gen). Each move keeps the union of the clauses both copies carried.
+func TestOrientDescribesRankedNext(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	for _, want := range []string{
+		// the five tiers
+		"Tiller ranks the moves by a fixed rule and never calls a model.",
+		"The rule has five tiers, in this order, with the kind of move and then plan order breaking ties inside each.",
+		"Unblock nearby comes first: human decisions that hold work in your current feature, plus any question overdue or due within two days wherever it sits.",
+		"Continue is your own unfinished work, and your top Continue move is always kept in the five.",
+		"Nearby is the rest of the current feature, then its epic.",
+		"Recently touched is the features and epics you acted on within the last fourteen days, most recent day first.",
+		"Everything else follows in plan order.",
+		// the current feature
+		"the feature touched by your most recent deliberate act that names one: a claim, start, submit, check, spec, approval, answer, attest, link, reassign, or release.",
+		"Acts on an epic alone and amendment steps never set it, and sync, migrate, join, and other upkeep never count.",
+		"Adding work only touches its parent for recency, an added task its feature and an added feature its epic, so a decomposition never sets it.",
+		// flags and no identity
+		"`tiller next --all` lists every legal move, `--json` prints the payload, and `--contributor` ranks for someone else.",
+		"head the list as not personalized (the readout's **Next:** has no heading), the personal tiers are skipped, and plan order ranks the rest, though a question overdue or due within two days still ranks first",
+		"When nothing is legal it prints `Caught up: nothing is legal to do right now.`",
+		// what is not a row
+		"Work in flight on another contributor's branch, work blocked by an unmet dependency, and an unclaimed shelf node are not rows.",
+		"An unclaimed task matches no personal assignment until its claim succeeds.",
+		// sort inside a tier
+		"Inside a tier, moves sort by kind in a fixed order first: the baseline, your own continuing work, amendment review, closeout, claiming, resolving a blocker, plan approval, epic approval, specify, merges, answers, attests, triage, then decompose.",
+		"Within a kind, plan order decides: epic order, feature order within an epic, and task order within a feature.",
+		"Tier 1 sorts by due date first, overdue first.",
+		// the moves, with the clauses only orientation's copy carried
+		"and finish its outstanding checks and publication or submission",
+		"`carrier_cancelled` means owned work has returned to its shelf; it remains a human needs-attention row with `resolve --clear` or `resolve --by`.",
+		"Either way it ends at `tiller propose amendment`, which hands it to the human",
+		"Shared feature/epic closeout appears once per reviewed unit, never per contributor.",
+		"A coarse finish line arrives when every live riding task is `in_review` or `done`; at epic grain every independent override is already done.",
+		"once authorized, `execute` derives the checks, rubric work, human acceptance, and submission from the feature contracts and required gates",
+		"Terminal done work keeps its acceptance warnings and historical violations without starving live work.",
+		"under an approved ready or active feature and an epic past decomposition, with no unmet recorded dependency or operative question hold",
+		"naming `tiller claim task <key>` for that individual unit",
+		"An open question leaves hold in one of two ways: an answer, which records a decision, or `tiller cancel question <Q-id> --reason \"...\"`, which records that none is needed.",
+		"run them only on the human's instruction, otherwise name the exact command in Notes.",
+		"You may `tiller link question <Q-id> --blocks <node>` to widen a question that reaches further than recorded, and say so in Notes.",
+		"Several epics list in recorded soft order, the order `tiller queue --kind approve_epic` shows.",
+		"ordering alone is not a mutation guard",
+		"an epic-grain edge gates the epic's features exactly as a feature-grain edge gates the feature",
+		"Among the eligible, recorded soft order chooses first: the owning epic's place in it, then the feature's own.",
+		"Features and epics have no owner, so never present the frontier as one person's reserved work.",
+		"re-enters through that noun's `resume <noun> <node> --reason \"...\"`",
+		"Surface the wait and stop once submission state is published when remote-backed.",
+		"(`tiller intake` a document that makes a case for change, capture a bug, chore, or tweak, or add a to-be design)",
+		"without proposing epics from as-is docs or old specs",
+		"The diagnostic makes no ownership claim and is omitted when no unfinished unclaimed task remains.",
+		"A candidate mend-drift already answered that persists by design is not a move.",
+		"Soft order arranges the render and the list among peers the graph leaves unordered and never gates execution.",
+		"Independent chains permit parallel work",
+	} {
+		require.Containsf(t, text, want, "orient pins %q", want)
 	}
 }
 

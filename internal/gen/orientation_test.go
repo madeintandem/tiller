@@ -61,34 +61,29 @@ func TestOrientationRoutesExplicitCodeReviewsOutsideTheWalk(t *testing.T) {
 	}
 }
 
-// The next move is a ranked list of every legal move, not a first-match walk:
-// the five tiers, the fourteen-day recency window, and the relay rule are
-// stated, and the walk's wording is gone.
+// The next move is a ranked list of every legal move, not a first-match walk.
+// Orientation says what the list is, how a row reads, and how to relay it, and
+// points at the orient skill for how it is ranked; the walk's wording is gone.
 func TestOrientationDescribesRankedNext(t *testing.T) {
 	text := strings.Join(strings.Fields(Orientation()), " ") // the file hard-wraps prose
 	for _, want := range []string{
 		"### Ranked next",
 		"`tiller next`",
-		"Unblock nearby comes first: human decisions that hold work in your current feature, plus any question overdue or due within two days wherever it sits.",
-		"Continue is your own unfinished work, and your top Continue move is always kept in the five.",
-		"Nearby is the other moves in the current feature, then in its epic.",
-		"Recently touched is the features and epics you acted on within the last fourteen days, most recent day first.",
-		"Adding work only touches its parent for recency, an added task its feature and an added feature its epic, so a decomposition never sets it.",
-		"Everything else follows in plan order.",
-		"the feature touched by your most recent deliberate act that names one",
-		"Acts on an epic alone and amendment steps never set it",
-		"`tiller next` and bare `tiller guide` head the list as not personalized (the readout's `**Next:**` has no heading)",
-		"a question overdue or due within two days still ranks first",
-		"Inside a tier, moves sort by kind in a fixed order first",
-		"Within a kind, plan order decides",
+		"Bare `tiller guide` and the readout's `**Next:**` print the same list, and `submit` and a passing `check` append it as `**Up next:**`",
 		"the exact command, or the branch to continue on",
 		"A ranked move is a suggestion, not authorization.",
 		"Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row.",
 		"Work already moving inside a seam keeps moving",
 		"never rewrite the list",
+		"The list holds only legal moves, so every row can be acted on as printed.",
+		"`queue: N bugs, M chores, K tweaks ready`",
+		"`tiller guide orient` explains how the list is ranked and what each move leads to.",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
+	// How the list is ranked and what each move leads to live in the orient
+	// skill (TestOrientDescribesRankedNext in package skills); one phrase per
+	// passage that moved there.
 	for _, gone := range []string{
 		"first match wins",
 		"once the developer's reply does not redirect",
@@ -96,6 +91,23 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 		"`Continuity note`",
 		"`Order note`",
 		"the route suggests waiting",
+		"head the list as not personalized",
+		"Unblock nearby comes first",
+		"Work in flight on another contributor's branch",
+		"The moves, and the seam each leads to:",
+		"Brownfield or legacy-migration with no confirmed baseline doc",
+		"`carrier_cancelled` means owned work has returned to its",
+		"Shared closeout, once per reviewed unit",
+		"A `draft` amendment is the agent's.",
+		"A `proposed` amendment awaiting approval",
+		"under an approved ready or active feature and an epic past decomposition",
+		"An open question leaves hold in one of two ways",
+		"An epic still in `draft` with live features awaiting its decomposition gate",
+		"an epic-grain edge gates the epic's features exactly as a feature-grain edge gates the feature",
+		"is a human merge wait rather than a seam",
+		"Drafts exist but every one waits on unfinished dependencies",
+		"this is the true caught-up terminal",
+		"Inside a tier, moves sort by kind in a fixed order first",
 	} {
 		require.NotContainsf(t, text, gone, "orientation no longer carries %q", gone)
 	}
