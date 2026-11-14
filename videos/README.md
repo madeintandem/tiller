@@ -2,7 +2,7 @@
 
 A standalone Node/TypeScript pipeline that turns a reviewed script into a how-to video about Tiller: narration in JC's voice, on-screen terminal and console footage from a real run of the pinned Tiller version, rendered with Remotion and uploaded to YouTube. It runs on JC's Mac only; there is no CI job.
 
-Design spec: `docs/plans/2026-11-06-how-to-video-series-design.md`. The spec and the implementation plan live in `docs/plans/`; JC commits them separately from this pipeline.
+Design spec: `docs/2026-11-06-how-to-video-series-design.md`. The spec and the implementation plan live in `videos/docs/`, beside this pipeline. Work on the videos is not tracked in Tiller.
 
 ## The human track
 

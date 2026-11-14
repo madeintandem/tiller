@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript run with `tsx`, Remotion 4 (`remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts`), React 19, `yaml`, Playwright (Chromium), ffmpeg/ffprobe from Homebrew, ElevenLabs REST API over `fetch`, `googleapis`, vitest. Fixture scripts in bash, following `site/screenshots/lib.sh`.
 
-**Spec:** `docs/plans/2026-11-06-how-to-video-series-design.md`
+**Spec:** `videos/docs/2026-11-06-how-to-video-series-design.md`
 
 ## Global Constraints
 
