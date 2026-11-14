@@ -34,7 +34,7 @@ Grade a bug by impact with `--severity`, on this scale:
 | Medium | Wrong behavior on an edge case or unusual input, or a fragile construct likely to break under a plausible change. |
 | Minor | A real defect with negligible impact, such as a wrong message, a misleading log line, or an off-by-one in a display-only count. |
 
-Grade by impact, never by the size of the fix. Pass `--severity` whenever the impact is known. When it cannot be known yet, omit it and say so in `bug.md`'s Actual section, so the approver investigates before grading; `tiller approve bug` refuses an unrated bug until it is graded. Chores and tweaks carry no severity. Severity never routes: it sorts and filters the console's Fix board, and the shelf's soft order still decides what is next.
+Grade by impact, never by the size of the fix. Pass `--severity` whenever the impact is known. When it cannot be known yet, omit it and say so in `bug.md`'s Actual section, so the approver investigates before grading; `tiller approve bug` refuses an unrated bug until it is graded. Chores and tweaks carry no severity. Whatever the severity, the shelf's soft order decides what is next.
 
 Use `--attach` only when an epic, feature, or task is the honest place the finding came from. Attachment is provenance and reading context, not parenthood or a gate. Use `--source` when the finding came from an investigation note, review, issue, log, or other durable artifact; cite the narrowest useful path and line range. Record shelf dependencies only when another bug, chore, or tweak must settle first.
 
@@ -46,7 +46,7 @@ On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`. Fix an i
 
 ## Choreography
 
-Before changing files, inspect the existing index with `git diff --cached --name-status` and the working tree. Preserve unrelated staged and unstaged work, including other `.tiller/` proposals. Review this run's exact authored contract, command-written state, and event paths before staging. The path lists below must name only those reviewed files, never a directory. Use a path-limited commit to exclude unrelated staged files. If a named file contains someone else's edits too, isolate the authorized hunks with a reviewed index or stop; `--only` includes the whole named working-tree file.
+Before changing files, inspect the existing index with `git diff --cached --name-status` and the working tree. Preserve unrelated staged and unstaged work, including other `.tiller/` proposals. Review this run's exact authored contract, command-written state, and event paths before staging. The path lists below must name only those reviewed files. Use a path-limited commit to exclude unrelated staged files. If a named file contains someone else's edits too, isolate the authorized hunks with a reviewed index or stop; `--only` includes the whole named working-tree file.
 
 ```text
 tiller add bug blank-on-reload --title "Form is blank after reload" --severity important \

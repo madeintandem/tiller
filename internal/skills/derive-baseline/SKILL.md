@@ -43,7 +43,7 @@ Use this house format for each `.tiller/design/as-is/<module>.md`:
 - **Edges:** dependencies, callers, external services, interfaces, and the contracts across those boundaries.
 - **Described paths:** the exact files or directories supporting this account, in the same coordinates registered with `--describes`.
 
-These are human-owned Markdown headings, not frontmatter that the CLI interprets. Only a ledger entry makes the doc an as-is doc to Tiller. `describes` paths must exist at linking and lie at or beneath a declared code root. Reference roots are valid for this descriptive relation, unlike a feature's writable `--surface`. Use project-relative, forward-slash paths; an external reference may use `../legacy/...` only through its declared root. Do not broaden a path to a parent that contains but is outside the declared root. Do not traverse symlinks or special files to evade path safety.
+These are human-owned Markdown headings, not frontmatter that the CLI interprets. Only a ledger entry makes the doc an as-is doc to Tiller. `describes` paths must exist at linking and lie at or beneath a declared code root. Reference roots are valid for this descriptive relation, unlike a feature's writable `--surface`. Use project-relative, forward-slash paths; an external reference may use `../legacy/...` only through its declared root. Do not traverse symlinks or special files to evade path safety.
 
 ### Record forward work
 
@@ -57,7 +57,7 @@ tiller add question "<what the sources describe, what the code has, and the deci
 
 Repeat `<path>#<section>` inside the one `--source` value, comma-separated, when several sources describe the same capability.
 
-A defect-shaped finding is a question too, never a captured bug. This seam reads code and docs; it does not reproduce anything, and a source/code disagreement may be a deliberate change. Deciding that current behavior is wrong is the human's call. Do not run `tiller add bug`, `tiller add chore`, or `tiller add tweak` from this seam.
+A defect-shaped finding is a question too. This seam reads code and docs; it does not reproduce anything, and a source/code disagreement may be a deliberate change. Deciding that current behavior is wrong is the human's call. Do not run `tiller add bug`, `tiller add chore`, or `tiller add tweak` from this seam.
 
 The human's answer is the recorded decision. When the human answers in conversation, record it with `tiller answer question <Q-id> --answer "<text>"` on their instruction, so the ledger and later scans see it. "Build it" leads to `tiller intake` on the cited source, or to a to-be design under `.tiller/design/`, which makes decompose due; intake needs the file on disk, so recover a retired source with `git show <blob-object-id>` before intake, using the blob the ledger recorded for it. "It's a bug" leads to `capture`. "Leave it" closes the lead. Name that next move and stop for the human's go; this seam runs neither intake nor capture.
 
@@ -71,7 +71,7 @@ In the move arm, prepare the destination prose first so it exists for linking, r
 
 In the pointer arm, write short module-grain pages under `.tiller/design/as-is/` that name the authoritative source and its exact sections, map those sections to the house-format concerns, and state the described paths. Keep the body only in the authoritative source. Record discrepancies and missing sections explicitly; a pointer does not certify an inaccurate source. Reconcile the authoritative prose in place only within the human's authorization; otherwise leave the uncertainty visible for review.
 
-External `--design` imports remain source-preserving. Never move or retire files outside this project. Translate and, for a move within the project, retire the imported project-local input, not its external original. Record provenance from the committed local import. If an external source remains authoritative, use the pointer arm and avoid retaining a second live local spec. A source outside this project's HEAD cannot be passed as `--from`: first obtain a project-local import under the agreed ownership choice and commit those exact input bytes for recoverability. Do not invent an external blob ref or a working-tree hash when that prerequisite is unavailable; name the missing recoverable input and stop before retirement.
+External `--design` imports remain source-preserving. Never move or retire files outside this project: they are outside this repository's history, so the change cannot be reviewed or undone, and someone else may own them. Translate and, for a move within the project, retire the imported project-local input, not its external original. Record provenance from the committed local import. If an external source remains authoritative, use the pointer arm and avoid retaining a second live local spec. A source outside this project's HEAD cannot be passed as `--from`: first obtain a project-local import under the agreed ownership choice and commit those exact input bytes for recoverability. Do not invent an external blob ref or a working-tree hash when that prerequisite is unavailable; name the missing recoverable input and stop before retirement.
 
 ### Make provenance recoverable before retirement
 
@@ -81,7 +81,7 @@ Resolve `git.integration_branch` from the manifest and this project's Git conven
 
 Observe HEAD explicitly after the input commit, verify each source exists there with `git show <head>:<source-path>`, and then record `tiller link design <doc> --describes <path>` and `tiller link design <doc> --from <source-path>` for every translated destination and each input it uses. Repeat the flags for multiple literal paths. A source split into several docs appears on each destination. A merged doc names every input. Verify the ledger's source paths and blob refs are the ones you read; `git show <blob-object-id>` recovers the original bytes even after retirement. Strip the `git:` display prefix before passing the object id to Git. Do not retire an input until all its destination refs are recorded and recoverable.
 
-A repeat link is safe: existing membership is a no-op. A real `describes` change clears the doc's confirmation; a provenance-only update does not. Recording a new HEAD blob for the same source path updates that provenance, so do not blindly relink old retired inputs during re-entry. Never hand-edit `baseline.yml` or a confirmation block; every change to state lands through a command, so the gate records stay honest.
+A repeat link is safe: existing membership is a no-op. A real `describes` change clears the doc's confirmation; a provenance-only update does not. Recording a new HEAD blob for the same source path updates that provenance, so do not blindly relink old retired inputs during re-entry.
 
 ## Recovery
 
@@ -107,7 +107,7 @@ tiller link design as-is/editor.md --from docs/product/editor.md
 tiller add question "<specific source/code disagreement or uncertainty>" --title "<short title>"
 # One question per unbuilt capability, citing every source that describes it:
 tiller add question "<what the sources describe, what the code has, and the decision: build it, or leave it as history>" --title "<capability>: unbuilt" --source "<path>#<section>"
-# Move arm only, after every destination has its source ref. Never use force.
+# Move arm only, after every destination has its source ref. Never use force: it discards uncommitted edits.
 git rm -- docs/product/editor.md
 # Fix only links that named that source. Pointer arm leaves the source in place.
 # Commit the exact translated docs, retired paths, ledger, event/question files,
@@ -115,11 +115,11 @@ git rm -- docs/product/editor.md
 tiller readout derive-baseline
 ```
 
-For a derive-only module, write the same house format and link `--describes`; omit `--from` because there is no source document. Do not create a fictitious source ref for code. For a pointer, retain the local authoritative source and replace the retirement step with the short pointer page and its section mapping. For an imported source, use its committed `.tiller/design/...` path in `--from`, never the external original.
+For a derive-only module, write the same house format and link `--describes`; omit `--from` because there is no source document. Do not create a fictitious source ref for code. For a pointer, retain the local authoritative source and replace the retirement step with the short pointer page and its section mapping. For an imported source, use its committed `.tiller/design/...` path in `--from`.
 
 The standalone forward-work arm runs only the question step: read the as-is docs, their sources, the question ledger, proposed amendments, and the shelves; add the missing questions; commit exactly the question and event files; and end with `tiller readout derive-baseline`.
 
-Stage exact paths, not `git add -A` or a blanket `git add .tiller docs`. Inspect the intended patch and account for every file in it. Where unrelated work is already staged, a path-limited `git commit --only -- <exact-paths>` can keep it out of this commit; if an affected file also contains unrelated edits, isolate only the authorized hunks or stop for the conflicting work rather than include them. Do not run an unrestricted commit against an index you have not scoped. Commit the move/split, ledger, questions, emitted events, and necessary pointer repairs together so the review has the complete source-to-doc transition. Record the resulting commit for a later correction readout. Tiller writes state and never commits it for you.
+Stage exact paths, not `git add -A` or a blanket `git add .tiller docs`. Inspect the intended patch and account for every file in it. Where unrelated work is already staged, a path-limited `git commit --only -- <exact-paths>` can keep it out of this commit; if an affected file also contains unrelated edits, isolate only the authorized hunks or stop for the conflicting work rather than include them. Commit the move/split, ledger, questions, emitted events, and necessary pointer repairs together so the review has the complete source-to-doc transition. Record the resulting commit for a later correction readout.
 
 ## Readout
 

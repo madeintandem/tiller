@@ -9,7 +9,7 @@ This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first
 
 ## Trigger
 
-The developer explicitly asks to upgrade Tiller, migrate this checkout's schema, or refresh its generated guidance. Maintenance is separate from choosing lifecycle work. The request sits outside the ranked next list and authorizes only the maintenance it names: never claiming, starting, specifying, approving, or the next queued work.
+The developer explicitly asks to upgrade Tiller, migrate this checkout's schema, or refresh its generated guidance. Maintenance is separate from choosing lifecycle work. The request sits outside the ranked next list and authorizes only the maintenance it names.
 
 Entering a project, finishing work, or asking what to do next does not trigger this skill. A stale-guidance notice from another skill is a reason to tell the developer the project needs `tiller upgrade --project-only`, not to run maintenance unasked.
 
@@ -39,7 +39,7 @@ Verified Homebrew installations keep brew as their installation owner. `tiller u
 
 ### Team adoption
 
-Adoption is coordinated Git work, not independent migrations in stale clones. Do not migrate stale branches independently.
+Adoption is coordinated Git work, not independent migrations in stale clones.
 
 First retain a compatible executable and a recoverable committed baseline. Pause team state mutations. Reconcile state and active owners on the designated integration branch. Inspect, review, and apply one migration once, in one designated checkout, then commit and publish it through normal Git.
 
@@ -67,7 +67,7 @@ Read phase outcomes even on failure: a binary replacement or source migration ca
 
 A phase reported `recovery_required` carries `mutation_recovery_needed`: preserve the transaction journal and recover the transaction first, never delete the cache or journal. Unknown durability is not proof of no writes.
 
-Never downgrade the schema or newer generated guidance, erase caches to bypass a refusal, or infer unchanged files from a lost child result.
+Never downgrade the schema or newer generated guidance, or erase caches to bypass a refusal: older binaries cannot read migrated state, and the cache holds the rollback record. Never infer unchanged files from a lost child result.
 
 Disk refresh does not reload running processes: restart existing serve processes and reload harness instructions as needed.
 

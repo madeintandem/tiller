@@ -69,7 +69,6 @@ func TestUpgradeSkillCarriesMaintenance(t *testing.T) {
 		"report that boundary rather than promising a global rollback",
 		// Team adoption.
 		"Adoption is coordinated Git work, not independent migrations in stale clones.",
-		"Do not migrate stale branches independently.",
 		"retain a compatible executable and a recoverable committed baseline",
 		"Pause team state mutations.",
 		"Reconcile state and active owners on the designated integration branch.",
@@ -119,7 +118,8 @@ func TestUpgradeSkillCarriesMaintenance(t *testing.T) {
 		"`mutation_recovery_needed`",
 		"preserve the transaction journal and recover the transaction first",
 		"Unknown durability is not proof of no writes.",
-		"Never downgrade the schema or newer generated guidance, erase caches to bypass a refusal, or infer unchanged files from a lost child result.",
+		"Never downgrade the schema or newer generated guidance, or erase caches to bypass a refusal: older binaries cannot read migrated state, and the cache holds the rollback record.",
+		"Never infer unchanged files from a lost child result.",
 		"restart existing serve processes and reload harness instructions as needed",
 		"does not acquire this upgrade logic mid-process",
 		"Retain a compatible old executable before the first new install",
@@ -129,6 +129,8 @@ func TestUpgradeSkillCarriesMaintenance(t *testing.T) {
 		require.Containsf(t, text, want, "upgrade pins %q", want)
 	}
 	require.NotContains(t, text, "## Readout", "maintenance is not a lifecycle seam")
+	// The stale-branch sentence repeated the adoption sentence pinned above.
+	require.NotContains(t, text, "Do not migrate stale branches independently.")
 }
 
 // TestOrientRoutesExplicitMaintenance pins that orient's maintenance copy left
@@ -293,7 +295,7 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 	for _, want := range []string{
 		"name: code-review",
 		"epic, feature, task, bug, chore, or tweak",
-		"A review is never a suggested next move",
+		"or asking what to do next triggers neither arm",
 		".tiller/reviews/<YYYY-MM-DD>-<node-id>.md",
 		"never overwrite a review",
 		"env GIT_OPTIONAL_LOCKS=0 tiller",
@@ -306,8 +308,8 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 		"Traced", "Suspected",
 		"Found in",
 		"Already tracked", "Previously declined",
-		"regression of <id>",
-		"Never reopen done work",
+		"A defect that returns after its bug reached done is a new finding marked `regression of <id>`.",
+		"The only write is the one new review file.",
 		"Never sample, never cap",
 		"--gate <gate-key>",
 		"Never add a gate",
@@ -320,6 +322,12 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "code-review pins %q", want)
 	}
+	// The never-a-next-move and never-reopen sentences repeated the trigger
+	// sentence and the regression rule pinned above; orientation keeps "Done
+	// work stays done".
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "Done work stays done: never reopen it to accommodate an adjustment.")
+	require.NotContains(t, text, "A review is never a suggested next move")
+	require.NotContains(t, text, "Never reopen done work")
 	require.NotContains(t, text, "merge-base <integration> <review-head>",
 		"a merged head diffed from its own merge-base is empty")
 	require.NotContains(t, text, "--ancestry-path",
@@ -344,6 +352,8 @@ func TestOrientRoutesExplicitCodeReviews(t *testing.T) {
 // Capture owns the one severity table and grades every bug it files: it always
 // passes --severity, or leaves the bug unrated and says why in bug.md's Actual
 // section, and hands an unrated bug to triage with the grade the approve needs.
+// That severity never routes is orientation's rule
+// (TestOrientationCarriesTheWholeSeverityRule in package gen), not capture's.
 func TestCaptureGradesBugsBySeverity(t *testing.T) {
 	text, ok := Lookup("capture")
 	require.True(t, ok)
@@ -354,18 +364,23 @@ func TestCaptureGradesBugsBySeverity(t *testing.T) {
 		"--severity",
 		"When it cannot be known yet, omit it and say so in `bug.md`'s Actual section",
 		"tiller approve bug <node> --severity <level>",
-		"Severity never routes",
+		"Whatever the severity, the shelf's soft order decides what is next.",
 	} {
 		require.Containsf(t, text, want, "capture pins %q", want)
 	}
+	require.NotContains(t, text, "Severity never routes", "orientation states the routing rule")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "Severity never routes: it sorts and filters the console's Fix board")
 }
 
 // Code review grades with capture's table rather than its own copy, and a
-// logged bug carries the review's severity as its field, never as prose.
+// logged bug carries the review's severity as its field, never as prose. That
+// severity never routes is orientation's rule, so code-review no longer says it.
 func TestCodeReviewSeverityBecomesTheBugsField(t *testing.T) {
 	text, ok := Lookup("code-review")
 	require.True(t, ok)
-	require.Contains(t, text, "Severity becomes the bug's `severity` field when captured; it never becomes a queue position.")
+	require.Contains(t, text, "Severity becomes the bug's `severity` field when captured.")
+	require.NotContains(t, text, "it never becomes a queue position")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "Severity never routes")
 	require.Contains(t, text, "the severity table in `tiller guide capture`")
 	require.Contains(t, text, "Pass the row's severity as `--severity`")
 	require.Contains(t, text, "Keep the review's confidence as the opening line of `bug.md`")
@@ -587,11 +602,12 @@ func TestOrientNamesCountsOnlyNeedsAttentionAndQueueDrillDown(t *testing.T) {
 	for _, want := range []string{
 		"It is counts-only",
 		"inline `tiller queue` drill-down",
-		"Do not expand it into concrete node rows, question",
 		"The queue command is the one place to enumerate a count",
 	} {
 		require.Containsf(t, text, want, "orient pins %q", want)
 	}
+	require.NotContains(t, text, "Do not expand it into concrete node rows",
+		"counts-only and the queue sentence already bar inline rows")
 	require.NotContains(t, text, "needs-you headers",
 		"orient no longer describes per-kind inline mutation sections")
 }
@@ -731,7 +747,8 @@ func TestHandoffsDisambiguateApproveAccept(t *testing.T) {
 		require.Containsf(t, text, "There is no `accept`", "%s says the accept verb is gone", name)
 		require.Containsf(t, text, "when the human merges and `tiller sync` observes it",
 			"%s names what actually crosses completed work", name)
-		require.Containsf(t, text, "never guess", "%s translates by state, never guesses", name)
+		require.Containsf(t, text, "translate by the node's state", "%s translates by state", name)
+		require.NotContainsf(t, text, "never guess", "%s says what to do, so the never-guess clause is gone", name)
 		require.Containsf(t, text, "`attest` records the human's acceptance", "%s names attest as the second gate verb", name)
 		require.NotContainsf(t, text, "the only gate verb", "%s no longer calls approve the only gate verb", name)
 	}
@@ -792,10 +809,15 @@ func TestEverySkillAssumesOrientation(t *testing.T) {
 
 // The general command rule in orientation replaces notes that only said a
 // command or flag does not exist; notes that state a fact keep the fact.
+// amend's own no-probe sentence went the same way: amend keeps its read-only
+// route, and orientation's preflight states the trial-mutation boundary.
 func TestSkillsDropNotesTheCommandRuleCovers(t *testing.T) {
 	amend, ok := Lookup("amend")
 	require.True(t, ok)
-	require.Contains(t, amend, "Do not probe with a mutation.")
+	require.Contains(t, amend, "Use read-only Git inspection where history needs clarification.")
+	require.NotContains(t, amend, "Do not probe with a mutation.")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "),
+		"Use read-only history inspection as needed, never a trial mutation: every mutation appends events that stay in the record.")
 	require.NotContains(t, amend, "invent a `--dry-run` flag")
 	execute, ok := Lookup("execute")
 	require.True(t, ok)
@@ -1352,7 +1374,7 @@ func TestDeriveBaselineRecordsForwardWorkAsQuestions(t *testing.T) {
 		`--title "<capability>: unbuilt" --source "<path>#<section>"`,
 		"A code comment or TODO counts only when a document corroborates it",
 		"Read the question ledger, proposed amendments, and the shelves first",
-		"never a captured bug",
+		"A defect-shaped finding is a question too.",
 		"Do not run `tiller add bug`, `tiller add chore`, or `tiller add tweak` from this seam.",
 		"**Standalone arm.**",
 		"Nothing in recorded state names this arm; start it only when the developer asks.",
@@ -1371,6 +1393,7 @@ func TestDeriveBaselineRecordsForwardWorkAsQuestions(t *testing.T) {
 	}
 	require.NotContains(t, text, "an empty tree ordinarily reaches decompose",
 		"an empty tree reaches decompose only when a to-be design doc exists")
+	require.NotContains(t, text, "never a captured bug", "the no-add-bug sentence carries that rule")
 }
 
 // TestEmptyTreeSkillsNeedToBeInputs pins the brownfield zero-day route in the
@@ -1396,25 +1419,37 @@ func TestEmptyTreeSkillsNeedToBeInputs(t *testing.T) {
 	require.Contains(t, capture, "A human answer to a forward-work question that names a defect is that description.")
 }
 
-// orient relays the ranked list as written, names a human move that outranks
-// the top agent move, ends the reply, and starts the top agent move only on the
-// developer's go.
+// orient runs `tiller next` and relays the list as **Ranked next** in
+// orientation says: the relay rules (relay as written, name a human move that
+// outranks the top agent move, end the reply, start the top agent move only on
+// the developer's go, never rewrite the list) live there alone, and orient's
+// word-for-word copy is gone.
 func TestOrientRelaysTheRankedList(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
 	for _, want := range []string{
 		"Run `tiller next`",
-		"Relay the list as written.",
-		"If any human move ranks above the top agent move, name it first.",
-		"never rewrite the list",
-		"A ranked move is a suggestion, not authorization.",
-		"Any other reply is answered or acknowledged, and the list still waits for its go.",
-		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
+		"Relay it as **Ranked next** in `.tiller/orientation.md` says.",
+		"Read the lay of the land, then relay the ranked list to the developer and end the reply.",
+		"Their next message redirects you, or starts the top agent move only when it agrees to it, through its seam",
 		"or the branch to continue on",
 		"the feature touched by your most recent deliberate act that names one",
 		"Within a kind, plan order decides",
 	} {
 		require.Containsf(t, text, want, "orient pins %q", want)
+	}
+	orientation := strings.Join(strings.Fields(gen.Orientation()), " ")
+	relay := []string{
+		"Relay the list as written.",
+		"If any human move ranks above the top agent move, name it first.",
+		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
+		"Any other reply is answered or acknowledged, and the list still waits for its go.",
+		"You may say you would take a different item first and why; never rewrite the list.",
+		"A ranked move is a suggestion, not authorization.",
+	}
+	for _, sentence := range relay {
+		require.Containsf(t, orientation, sentence, "orientation's Ranked next carries %q", sentence)
+		require.NotContainsf(t, text, sentence, "orient leaves %q to orientation", sentence)
 	}
 	for _, gone := range []string{"take the first match", "once the developer's reply does not redirect", "`Continuity note`", "`Order note`", "the route suggests waiting"} {
 		require.NotContainsf(t, text, gone, "orient no longer carries %q", gone)
@@ -1469,7 +1504,7 @@ func TestOrientDescribesRankedNext(t *testing.T) {
 		"ordering alone is not a mutation guard",
 		"an epic-grain edge gates the epic's features exactly as a feature-grain edge gates the feature",
 		"Among the eligible, recorded soft order chooses first: the owning epic's place in it, then the feature's own.",
-		"Features and epics have no owner, so never present the frontier as one person's reserved work.",
+		"The frontier is the project's live draft features",
 		"re-enters through that noun's `resume <noun> <node> --reason \"...\"`",
 		"Surface the wait and stop once submission state is published when remote-backed.",
 		"(`tiller intake` a document that makes a case for change, capture a bug, chore, or tweak, or add a to-be design)",
@@ -1481,6 +1516,11 @@ func TestOrientDescribesRankedNext(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "orient pins %q", want)
 	}
+	// The frontier residue ("never present the frontier as one person's
+	// reserved work") is gone; orientation's Ownership paragraph says features
+	// and epics have no owner.
+	require.NotContains(t, text, "never present the frontier as one person's reserved work")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "Features and epics have no owner or claim, and claim changes never cascade.")
 }
 
 // execute defines what a run covers.
@@ -1527,16 +1567,16 @@ func TestExecuteMergeCloseoutNeverSwitchesACheckout(t *testing.T) {
 // Final review fixes outside execute: orient's go wording and the mend-drift
 // answer test, decompose's recorded questions, code-review's checkout before a
 // disposition, capture's dedupe reads, upgrade's checkout, and capture's
-// reproduction rule.
+// reproduction rule. orient's Reasoning copy of the go wording and decompose's
+// duplicate focused-question sentence are gone; the Hand-off copy and the
+// question-only sentence stay.
 func TestFinalReviewFixesOutsideExecute(t *testing.T) {
 	pins := map[string][]string{
 		"orient": {
-			"which redirects you, or starts the top agent move only when it agrees to it.",
 			"Their next message redirects you, or starts the top agent move only when it agrees to it, through its seam",
 			"A candidate mend-drift already answered that persists by design is not a move. `tiller guide mend-drift` carries the test: a `mend-drift:` commit on the candidate's files newer than its `since`.",
 		},
 		"decompose": {
-			"Record a focused question when missing product information would materially change boundaries or order",
 			"Record a question only for missing product information that would materially change the boundaries or sequence.",
 		},
 		"code-review": {
@@ -1559,7 +1599,9 @@ func TestFinalReviewFixesOutsideExecute(t *testing.T) {
 	}
 	orient, _ := Lookup("orient")
 	require.NotContains(t, orient, "only when it says to")
+	require.NotContains(t, orient, "which redirects you, or starts the top agent move only when it agrees to it.")
 	decompose, _ := Lookup("decompose")
+	require.NotContains(t, decompose, "Record a focused question when missing product information would materially change boundaries or order")
 	require.NotContains(t, decompose, "Ask focused questions when")
 	require.NotContains(t, decompose, "Ask only for missing product information")
 }
@@ -1722,7 +1764,6 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		"One worktree carries the whole unit.",
 		"Commit before every switch",
 		"give each parallel task a temporary worktree of its own",
-		"Never let two builders share a worktree.",
 		`git switch --detach "$start_base"`,
 		"Aggregate assembly runs in the unit's worktree",
 		"A unit's worktree outlives its tasks",
@@ -1750,6 +1791,8 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
+	require.NotContains(t, text, "Never let two builders share a worktree.",
+		"a temporary worktree of its own per parallel task already says it")
 	// In both entry blocks the worktree is added and joined before the claim
 	// writes state, and claim/start state is committed only on the new branch.
 	order := func(earlier, later string) {
@@ -1972,23 +2015,29 @@ func TestExecuteSectionsAreInOrder(t *testing.T) {
 }
 
 // Execute is the one home for the branch procedure orientation used to repeat:
-// start's recorded names, bases, assembly, and legacy-ref collisions.
+// start's recorded names, bases, assembly, and legacy-ref collisions. That
+// Tiller never creates, switches, or merges refs is orientation's statement
+// (TestOrientationKeepsTheBranchBoundary in package gen), and the guessed-branch
+// rule is the recorded-results sentence here.
 func TestExecuteOwnsTheBranchProcedure(t *testing.T) {
 	text, ok := Lookup("execute")
 	require.True(t, ok)
 	for _, want := range []string{
 		"There is no separate feature start.",
-		"Tiller records and verifies branch structure and never creates, switches, or merges refs: use ordinary Git",
+		"Use ordinary Git to create independent task branches from configured integration, preserving unrelated work.",
 		"Read back task start's `branch` and `base_branch`",
-		"Never infer the next round's branch from an old PR.",
+		"not a guessed name",
 		"Task-grain dependencies wait for integration, never stacked task PRs.",
 		"Never cherry-pick, squash, or copy task code into an aggregate.",
 		"Tiller verifies both the recorded heads and current task tips are ancestors when submitting the aggregate.",
 		"The aggregate is not a task workbench: build each task on its own branch and merge it in, and an intermediate merge into the aggregate is not a done crossing.",
-		"Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches.",
+		"Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches: `sync` matches merges against the recorded branches, and rewritten history discards commits other people hold.",
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
+	require.NotContains(t, text, "Tiller records and verifies branch structure and never creates, switches, or merges refs")
+	require.NotContains(t, text, "Never infer the next round's branch from an old PR.")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "Tiller records and verifies branch structure; it does not create, switch, or merge refs.")
 }
 
 // Execute is the one home for the publication sequence; these pins followed
@@ -2054,14 +2103,17 @@ func TestExecuteOwnsTheTransferProcedure(t *testing.T) {
 }
 
 // Orient keeps what a briefing needs to say about execution and points at
-// execute for the procedure.
+// execute for the procedure. That a pure orient opens no review, and that
+// no-publish instructions control, is orientation's statement alone.
 func TestOrientPointsAtExecuteForExecutionDetail(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
+	require.NotContains(t, text, "Pure orient never opens a review")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "),
+		"A pure orient request still briefs and stops. Explicit developer no-publish or earlier-stop instructions control.")
 	for _, want := range []string{
 		"That stop is the briefing before a seam is authorized.",
 		"`tiller guide execute` carries that sequence.",
-		"Pure orient never opens a review",
 		"under **Aggregate assembly** and **Review grain and coarse submit guards** in `tiller guide execute`",
 		"Every task owns its recorded working branch, even when it rides a coarse review.",
 		"Workflow advice is separate from the node's lifecycle `next` moves.",
@@ -2113,6 +2165,7 @@ func TestOrientPointsAtOrientationForOwnershipContributorsAndReviewGrain(t *test
 var pointerPins = map[string][]string{
 	"orient": {
 		"Apply **Developer authorship** in `.tiller/orientation.md` throughout every seam.",
+		"Relay it as **Ranked next** in `.tiller/orientation.md` says.",
 		"follow **Ownership.** in `.tiller/orientation.md`.",
 		"follow **Gates and delegation.** in `.tiller/orientation.md`.",
 		"follows **Contributors.** in `.tiller/orientation.md`.",
@@ -2226,12 +2279,15 @@ func TestInstructionTextStatesFactsWithoutBuildHedges(t *testing.T) {
 
 // The review follow-ups: orient's residue and human-gate wording, upgrade's
 // developer-owned commit, code-review's absent anchors for any target, and
-// capture's severity grading for a bug whose impact is known.
+// capture's severity grading for a bug whose impact is known. orient's
+// steering-note sentence is gone as residue; orientation's "say you would take
+// a different item first and why" carries the limit.
 func TestSkillsCarryTheReviewFollowUps(t *testing.T) {
 	orient, _ := Lookup("orient")
 	require.NotContains(t, orient, "What the old notes described")
 	require.NotContains(t, orient, "The list needs no side notes.")
-	require.Contains(t, orient, "Do not add a note that steers toward or away from a ranked row beyond saying you would take another row first and why.")
+	require.NotContains(t, orient, "Do not add a note that steers toward or away from a ranked row")
+	require.Contains(t, strings.Join(strings.Fields(gen.Orientation()), " "), "You may say you would take a different item first and why; never rewrite the list.")
 	require.Contains(t, orient, "that is `tiller approve epic <key>`, the human's move, not a seam. Name it and stop.")
 	require.Contains(t, orient, "The list holds only legal moves, so every row can be acted on as printed.")
 
@@ -2248,4 +2304,294 @@ func TestSkillsCarryTheReviewFollowUps(t *testing.T) {
 	capture, _ := Lookup("capture")
 	require.Contains(t, capture, "Grade a bug by impact with `--severity`, on this scale:")
 	require.NotContains(t, capture, "Grade every bug by impact")
+}
+
+// ruledDeletions names, per skill, every sentence or clause the prohibition
+// review removed under ruling 1 (a repeat of an orientation boundary where the
+// skill is not where the action happens) and ruling 2 (duplicates and
+// residue), in docs/plans/2026-11-13-prohibition-review.md. Each phrase is one
+// no surviving text in that skill carries, so a returning copy fails here.
+var ruledDeletions = map[string][]string{
+	"amend": {
+		"Current ready status alone does not prove that work never started",
+		"Do not probe with a mutation",
+		"never use a prose correction to rewrite terminal history",
+		"A task's parent must already be materialized",
+		"Never manufacture replacement identities for an unchanged relocation",
+		"Do not remove valid prerequisites just to make the grouped map sort cleanly",
+		"Do not stage `.tiller/` or a whole node directory",
+		"Do not restate the staged operation count",
+	},
+	"capture": {
+		"Severity never routes",
+		"files, never a directory",
+	},
+	"code-review": {
+		"never approving anything",
+		"A review is never a suggested next move",
+		"Style and naming are never bugs",
+		"it never becomes a queue position",
+		"Never reopen done work",
+		"change prose, source code, state, the manifest",
+		"never become a reason to repair, fetch, refresh, or mutate anything",
+		"Never cap the table",
+	},
+	"decompose": {
+		"Do not use decompose to bypass that readiness gap",
+		"do not impose an all-doc confirmation requirement",
+		"Do not turn every unspecified detail into a blocking question",
+		"silently fall back to subsystem-first planning",
+		"do not drop later requirements",
+		"Never rewrite terminal feature or task prose",
+		"Record dependencies between features as state, never only as prose",
+		"so never hand-edit that file",
+		"never as exclusive claimants",
+		"Tiller writes the state files and never commits them",
+		"Do not stage `.tiller/` or a whole directory",
+		"erase a valid edge",
+		"Never hand-edit the node YAML to make a correction",
+		"Do not ask whether to open an amendment when this list already maps the feedback",
+		"never guess",
+		"never the whole draft tree by default",
+		"Shelf items you filed wait for their own triage",
+		"never a bare id",
+	},
+	"derive-baseline": {
+		"Do not broaden a path to a parent that contains but is outside the declared root",
+		"never a captured bug",
+		"Never hand-edit `baseline.yml` or a confirmation block",
+		"never the external original",
+		"Do not run an unrestricted commit against an index you have not scoped",
+		"Tiller writes state and never commits it for you",
+	},
+	"design-brief": {
+		"Never silently sample a subset",
+		"Do not change canonical prose, source code, state YAML",
+		"Do not claim, start, specify, approve, attest, record evidence, or commit anything",
+		"Instruction refresh is a separate developer operation",
+		"do not repair the project to make the export work",
+		"Recorded path coverage does not verify implementation",
+		"do not establish effective inherited holds",
+	},
+	"execute": {
+		"never carry uncommitted work from one branch to another",
+		"Never let two builders share a worktree",
+		"Do not release completed work or change ownership",
+		"Creation and approval never assign tasks",
+		"Features and epics have no exclusive owner, and claims never cascade",
+		"Tiller records and verifies branch structure and never creates, switches, or merges refs",
+		"Never infer the next round's branch from an old PR",
+		"do not claim or start an attached feature",
+		"Never ask the question only in chat",
+		"never an entire `.tiller/` directory",
+		"do not start unrelated work",
+		"Never hand-edit state to evade the refusal",
+		"never adds commits to a branch after its final merge",
+		"Green task gates, a riding ref, or an unpublished state commit never proves",
+	},
+	"mend-drift": {
+		"never a ledger hand edit",
+	},
+	"orient": {
+		"never approval, claiming, or starting",
+		"never lifecycle work",
+		"Never identify yourself, your agent, model, provider, or harness",
+		"No generated-by notices, agent signatures",
+		"Describe the work and observed verification, not the tool that produced it",
+		"You are not doing the work at the seam in this reply",
+		"Pure orient never opens a review",
+		"Unknown references do not become current nodes",
+		"These reads require no identity and write no files",
+		"Relay the list as written",
+		"If any human move ranks above the top agent move",
+		"Start the top agent move in your next turn",
+		"Any other reply is answered or acknowledged",
+		"never rewrite the list",
+		"A ranked move is a suggestion, not authorization",
+		"do not hand it to the developer",
+		"never blindly regenerate duplicates",
+		"Ownership is per unit, never inherited from a feature",
+		"Do not assign this work to the last finisher",
+		"never present the frontier as one person's reserved work",
+		"A draft waiting on unfinished work is no move",
+		"do not infer its current host state",
+		"unclaimed shelf work never does",
+		"Do not add a note that steers toward or away from a ranked row",
+		"do not repair sources, refresh instructions, record questions, or enter another skill",
+		"never as the next line of an orient",
+		"Do not expand it into concrete node rows",
+	},
+	"specify": {
+		"Do not stop between them",
+		"local Tiller may invoke them, never the reverse",
+		"Do not turn planning-only CI skips into replacement Tiller checks",
+		"never manufacture replacement merely to evade a lock",
+		"do not annotate every name it mentions",
+		"Do not cancel and redecompose merely to change its address",
+		"never through a hand edit to node YAML",
+		"Do not restate the criteria and their binding types",
+		"never guess",
+	},
+	"upgrade": {
+		"never claiming, starting, specifying, approving, or the next queued work",
+		"Do not migrate stale branches independently",
+	},
+}
+
+// TestSkillsDropTheRuledDeletions guards every ruling 1 and ruling 2 removal.
+// It matches after whitespace normalization, so a copy that returns wrapped
+// across lines still fails.
+func TestSkillsDropTheRuledDeletions(t *testing.T) {
+	for name, gone := range ruledDeletions {
+		raw, ok := Lookup(name)
+		require.Truef(t, ok, "%s exists", name)
+		text := strings.Join(strings.Fields(raw), " ")
+		for _, phrase := range gone {
+			require.NotContainsf(t, text, phrase, "%s no longer carries %q", name, phrase)
+		}
+	}
+	// The coverage sentence went to orientation, which does not name assumption
+	// waivers, so design-brief keeps that half.
+	brief, _ := Lookup("design-brief")
+	require.Contains(t, brief, "Question targets do not establish assumption waivers.")
+}
+
+// TestSkillsKeepTheRuledOrientationRepeats pins both sides of each boundary
+// ruling 1 kept in a skill: the action is irreversible, destructive to someone
+// else's work, a human-only gate, or outward-facing, and the skill is where it
+// happens. Each row pairs the skill's sentence, as it now reads, with the
+// orientation sentence that states the same boundary, so neither copy can
+// leave or drift unnoticed.
+func TestSkillsKeepTheRuledOrientationRepeats(t *testing.T) {
+	orientation := strings.Join(strings.Fields(gen.Orientation()), " ")
+	for _, row := range []struct{ skill, sentence, orientation string }{
+		{"design-brief", "Never silently overwrite an existing file.",
+			"preserve existing output unless replacement is explicitly authorized"},
+		{"derive-baseline", "Never edit reference code or relabel it as surface to get a command through.",
+			"legacy-migration understands reference code without editing it"},
+		{"derive-baseline", "Never move or retire files outside this project: they are outside this repository's history",
+			"External imports preserve their external originals."},
+		{"derive-baseline", "Do not retire an input until all its destination refs are recorded and recoverable.",
+			"record recoverable `link design --from` provenance for every destination"},
+		{"derive-baseline", "Never stash, reset, discard, or commit someone else's work to make the run look clean.",
+			"is someone else's: never remove, reset, clean, stash, commit into, or check out over it."},
+		{"derive-baseline", "Do not self-approve or derive duplicates to escape the baseline move the ranked list names: approval is a human gate.",
+			"never self-approve without explicit instruction naming those docs"},
+		{"amend", "Do not install or upgrade without direction.",
+			"disclose the limitation rather than promise accepted relocation or upgrade without direction"},
+		{"code-review", "The request authorizes only the review or the named disposition: never approve, claim, start, attest, resolve, or cancel anything.",
+			"It authorizes only the read-only review or the named disposition; never approve, claim, or start anything."},
+		{"code-review", "Leave the status to the human and never run it.",
+			"are never yours to run, even on instruction"},
+		{"execute", "it runs in the checkout that holds the integration branch, never by switching another checkout's branch.",
+			"Never switch a checkout's branch to get there."},
+		{"execute", "belongs to someone else: never remove, reset, clean, stash, commit into, or check out over it.",
+			"is someone else's: never remove, reset, clean, stash, commit into, or check out over it."},
+		{"execute", "Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches: `sync` matches merges against the recorded branches",
+			"never delete, rename, or rewrite local or remote history to make a branch fit: `tiller sync` matches merges against the recorded branches"},
+		{"execute", "Never identify yourself, a model, provider, or harness as an author or contributor.",
+			"Never identify yourself, an agent, model, provider, or harness as an author or contributor in any output"},
+		{"execute", "Use the developer's configured Git identity, never an agent author or committer identity or an invented human identity.",
+			"Use the developer's configured Git identity, never an agent author or committer identity, and never invent a human identity."},
+		{"execute", "Never attest or restore a human gate yourself",
+			"Never attest, never assert a fast-forward, and never perform the final integration merge."},
+		{"execute", "Never commit to that branch after its final merge",
+			"or commit to a review branch after its final integration merge: a force-push rewrites history"},
+		{"execute", "Never commit to the merged review branch.",
+			"or commit to a review branch after its final integration merge: a force-push rewrites history"},
+		{"execute", "Never run the assertion yourself.",
+			"`sync --accept-fast-forward`, and the final merge into the configured integration branch are never yours to run, even on instruction"},
+		{"execute", "A fast-forward assertion remains the human's command, never the agent's.",
+			"never assert a fast-forward"},
+		{"execute", "never --accept-fast-forward",
+			"never assert a fast-forward"},
+		{"execute", "Never infer this authority from a general execute instruction or another developer's availability.",
+			"only an explicit human instruction naming the work and recipient authorizes `tiller transfer"},
+		{"execute", "Do not bypass required gates or developer no-publish limits.",
+			"Explicit developer no-publish or earlier-stop instructions control."},
+		{"mend-drift", "Never infer approval from permission to investigate, draft, commit, or mend",
+			"Only explicit human instruction naming design-relative docs authorizes `tiller approve design <doc>...`"},
+		{"orient", "Run `approve` only on explicit human instruction naming nodes or docs; baseline derivation never authorizes its own confirmation.",
+			"on an explicit instruction naming the node and target, or the exact design docs, you may run `approve`"},
+	} {
+		text, ok := Lookup(row.skill)
+		require.Truef(t, ok, "%s exists", row.skill)
+		require.Containsf(t, text, row.sentence, "%s keeps its repeat %q", row.skill, row.sentence)
+		require.Containsf(t, orientation, row.orientation, "orientation states the boundary %s repeats: %q", row.skill, row.orientation)
+	}
+}
+
+// TestSkillsStateRuledReasonsAndPositiveForms pins what the prohibition review
+// added to the skills: the reason each boundary in ruling 3 gained, and the
+// positive form ruling 4 gave each exactly restatable prohibition.
+func TestSkillsStateRuledReasonsAndPositiveForms(t *testing.T) {
+	for name, wants := range map[string][]string{
+		"design-brief": {
+			// Ruling 3. Both sensitive-data sentences carry the reason, because
+			// they sit in different sections.
+			"Never export real customer records, credentials, secrets, or private production payloads to make examples realistic: the brief is shared outside the repository, beyond the project's access controls.",
+			"Do not copy sensitive payloads out of a source just because the source is a requirement: the brief leaves the project's access controls.",
+			// Kept because orientation's recorded-claims sentence does not name waivers.
+			"Question targets do not establish assumption waivers.",
+		},
+		"derive-baseline": {
+			// Ruling 3.
+			"Never move or retire files outside this project: they are outside this repository's history, so the change cannot be reviewed or undone, and someone else may own them.",
+			"Never use force: it discards uncommitted edits.",
+		},
+		"code-review": {
+			// Ruling 3.
+			"Never push: the commit holds proposed rows the developer has not seen, so publishing it is theirs.",
+			// Ruling 4.
+			"Recheck selected rows only.",
+			"a later request opens its own amendment.",
+		},
+		"execute": {
+			// Ruling 3.
+			"or rewrite recorded task branches: `sync` matches merges against the recorded branches, and rewritten history discards commits other people hold.",
+			"never commit the deletions without the new segment files, or the old events would be lost",
+			"Never commit the deletions without the new segment files, or the old events are lost.",
+			// Ruling 4.
+			"Those files are reading context; the shelf node's own contract and gates are the ones that apply.",
+			"A run keeps going after it records a question: stop only when",
+			"Run check and each evidence commit as separate commands, so a failing check still commits its evidence.",
+			"Run the other checks and commit their state even while a manual criterion is pending.",
+			"At epic grain, submit the epic, not its riding features.",
+			"Substitute real values for every placeholder before running a command.",
+		},
+		"upgrade": {
+			// Ruling 3.
+			"or erase caches to bypass a refusal: older binaries cannot read migrated state, and the cache holds the rollback record.",
+		},
+		"specify": {
+			// Ruling 4.
+			"and keep the batch to the named features.",
+			"Every criterion binds to a check: a `test`",
+			"Use ordinary sibling `tiller order` for preference, and a hard edge only for a true prerequisite.",
+		},
+		"decompose": {
+			// Ruling 4.
+			"Record every known cross-epic edge in this sweep yourself, as state.",
+			// Kept: nothing else bars inventing future work.
+			"do not invent speculative future work.",
+		},
+		"orient": {
+			// Kept: orientation bars the edit, not proposing it in a briefing.
+			"Do not propose a state-file edit as recovery.",
+			"When every draft waits on unfinished work,",
+		},
+		"capture": {
+			"Whatever the severity, the shelf's soft order decides what is next.",
+		},
+		"mend-drift": {
+			// Ruling 4.
+			"Leave that mend standing.",
+		},
+	} {
+		text, ok := Lookup(name)
+		require.Truef(t, ok, "%s exists", name)
+		for _, want := range wants {
+			require.Containsf(t, text, want, "%s states %q", name, want)
+		}
+	}
 }

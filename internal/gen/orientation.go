@@ -163,7 +163,7 @@ unrequested replan.
 
 ## The rules you must follow
 
-- **Managed-project independence.** Managed projects must never depend on Tiller. Setup, build, tests, CI,
+- **Managed-project independence.** Managed projects must never depend on Tiller: each must build, test, and ship for people and machines without Tiller, and be able to drop it. Setup, build, tests, CI,
   packaging, deployment, runtime, and merge eligibility must work without
   Tiller installed, release access, or ` + "`.tiller/`" + ` as an operational input.
   Never add Tiller packages, setup hooks, command wrappers, CI installation
@@ -216,11 +216,11 @@ unrequested replan.
   to the human rather than run it, even on instruction. ` + "`cancel question`" + `, ` + "`unlink question`" + `, and ` + "`withdraw amendment`" + `
   are the human's decisions that you may record on an explicit instruction naming the target, as with ` + "`approve`" + `. ` + "`attest`" + `, ` + "`sync --accept-fast-forward`" + `, and the final merge
   into the configured integration branch are never yours to run, even on instruction;
-  hand the human the exact command. Merging task branches into their recorded
+  hand the human the exact command. ` + "`attest`" + ` and ` + "`sync --accept-fast-forward`" + ` each record the human's own verdict or testimony, and the CLI cannot tell your keystroke from the human's, so this rule is all that keeps the record true. Merging task branches into their recorded
   feature or epic aggregate is authorized execution, not a done crossing.
 - A product decision only the human can make (behavior, acceptance, scope, or
-  order) is recorded with ` + "`tiller add question`" + `, never asked only in chat, where
-  no gate and no later session can see it. A clarification of the request itself
+  order) is recorded with ` + "`tiller add question`" + `, where a gate and later sessions
+  can see it, even when it is also discussed in chat. A clarification of the request itself
   (which node, which document, which of two readings) is asked in chat.
 - Mutate state only through ` + "`tiller`" + `. The state files are machine-owned: never
   hand-edit ` + "`epic.yml`" + `, ` + "`feature.yml`" + `, ` + "`task.yml`" + `, ` + "`bug.yml`" + `,
@@ -281,7 +281,7 @@ unrequested replan.
 - Every started task has its own recorded branch, unchanged on resume. Tiller
   records and verifies branch structure; it does not create, switch, or merge
   refs. Read the recorded names rather than inventing them, and never delete,
-  rename, or rewrite local or remote history to make a branch fit. Merging task
+  rename, or rewrite local or remote history to make a branch fit: ` + "`tiller sync`" + ` matches merges against the recorded branches, and rewritten history discards commits other people hold. Merging task
   branches into their recorded aggregate is agent work; the final integration
   merge is the human's. ` + "`tiller guide execute`" + ` carries the branch procedure
   under **Claiming and starting** and **Aggregate assembly**.
@@ -314,7 +314,7 @@ unrequested replan.
   and stops. Explicit developer no-publish or earlier-stop instructions control.
   Tiller does not push or create PRs: use ordinary Git and the project's host tools.
   Never attest, never assert a fast-forward, and never perform the final
-  integration merge. Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge.
+  integration merge. Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge: a force-push rewrites history and discards commits other people hold, and a commit after that merge is in no review and never reaches integration.
   Pure reads verify neither host state nor pushes. If an aggregate finally
   merged before its Tiller review was recorded, a merge report alone does not
   authorize recording it: recording the missing historical review needs explicit
@@ -325,7 +325,7 @@ unrequested replan.
 - **Recovery protocol.** Follow the recovery protocol when a command refuses. Every skill inherits it
   and corrects itself from the CLI's exit codes without a human. Exit ` + "`1`" + ` is a
   business refusal to reason about, usually a red gate or an illegal transition:
-  fix the work and try again, do not escalate. Stop and report when the same gate
+  fix the work and try again; escalate only under the stop rule that follows. Stop and report when the same gate
   fails the same way after two different fixes, or when a failure does not
   reproduce when you run the gate's own command directly: name the gate, the
   failure, what you tried, and the evidence commits. Exit ` + "`2`" + ` or ` + "`3`" + ` means
@@ -349,8 +349,8 @@ unrequested replan.
   A question is never keyed: name it by its id and short title. Use the full
   statement when the question itself is the subject.
   The rule covers every surface you author, readout notes, hand-offs,
-  summaries, and lists alike: an epic, feature, or task id never appears
-  without its key path, because a bare id sends the developer off to look up
+  summaries, and lists alike: every epic, feature, or task id appears
+  with its key path, because a bare id sends the developer off to look up
   what it points at. Bare ids belong inside commands. A commit subject reads
   the same way: the bare task id satisfies
   traceability there. A pull request title carries the reviewed node's full key
@@ -368,8 +368,8 @@ unrequested replan.
   actually leaks.
 - Work inside this repository. Tiller's guidance is complete in the project:
   this file, the skills ` + "`tiller guide`" + ` serves, and the command output.
-  Never go hunting outside the project directory for Tiller documentation or
-  schema shapes. Leave the project only where the developer points you.
+  Look for Tiller documentation and schema shapes only inside the project.
+  Leave the project only where the developer points you.
 - **Readout.** Report through the readout. At a seam, ` + "`tiller readout <seam>`" + ` prints a
   block; at a human gate the command prints one itself; either way,
   reproduce it verbatim as the last thing in your reply, with your own
@@ -380,7 +380,7 @@ unrequested replan.
   whoever is driving, so the developer reads one format rather than yours.
   Do not restate the block in prose around it. The notes carry what the block
   cannot know. Keep the notes to facts about this run. Commentary is yours to
-  add freely ahead of the block, never after it; a question for
+  add freely ahead of the block; a question for
   the human is a recorded question. ` + "`submit`" + ` and a passing
   ` + "`check`" + ` print the same list under ` + "`**Up next:**`" + ` when they finish; that list
   shows what the tree now allows; inside your run's scope it is your queue, and outside it, it is not authorization. The closing readout's list is the one you reproduce. The block has two sizes.
@@ -427,8 +427,9 @@ Read diagnostics and ` + "`complete`" + ` before treating a result as exhaustive
 missing eval/history facets or ambiguous historical identity are incomplete;
 unsafe corpus or unstable-generation reads fail. Unknown references stay
 unresolved. A current file is not the historical contents of a pinned revision.
-Each query rebuilds from local files without identity, writes, or a persistent
-cache; it never runs bindings, refreshes instructions, or authorizes a mutation.
+Each search or query rebuilds from local files without identity, writes, or a
+persistent cache; it never runs bindings, refreshes instructions, or authorizes
+a mutation.
 To adopt changed guidance with the intended binary, explicitly maintain this
 checkout with ` + "`tiller upgrade --project-only`" + ` and review the diff.
 
@@ -451,8 +452,9 @@ anything. A normal next-work request or completed step does not trigger it.
 
 An explicit request to upgrade Tiller, migrate this checkout's schema, or refresh
 its generated guidance goes directly to ` + "`tiller guide upgrade`" + `, outside the
-ranked list. It authorizes only the maintenance named. Entering a project, a
-normal next-work request, or a completed step does not trigger it.
+ranked list. It authorizes only the maintenance named; never claim, start,
+specify, or approve anything. Entering a project, a normal next-work request, or
+a completed step does not trigger it.
 
 Onboarding starts at the scaffold, and it is three commands, not two. A bare
 repo becomes a Tiller project with
@@ -470,8 +472,8 @@ whichever of ` + "`--as`" + `, ` + "`TILLER_CONTRIBUTOR`" + `, or the checkout's
 Missing identity still calls for ` + "`tiller join --as <you>`" + ` after human
 registration. The
 roster is not add-only: ` + "`tiller remove contributor <id>`" + ` retires someone later, the
-same human-gated act, refusing while they still hold live work. Do not
-skip either step: without them there is no acting contributor here, so the first
+same human-gated act, refusing while they still hold live work. Take both
+steps: without them there is no acting contributor here, so the first
 ` + "`tiller add`" + ` exits ` + "`3`" + `, ` + "`check readiness`" + ` reports the empty roster as a gap,
 and the ranked list below cannot rank your own work. Then
 ` + "`tiller check readiness`" + ` names any missing inputs or manifest gaps.
@@ -604,8 +606,8 @@ assumption. Task start must satisfy its own operative question holds.
 Correction feedback follows classes, not blanket ceremony. An explicit human
 correction that maps to a class authorizes the mapped action except ` + "`cancel`" + ` on a work node.
 For any such cancellation, hand the exact ` + "`cancel`" + ` command to the human rather
-than run it. For other mapped actions, do not ask which mutation path to use.
-The correction is already the developer's go for that action: carry it out
+than run it.
+The correction is already the developer's go for any other mapped action: carry it out
 without asking the human to translate their correction into Tiller vocabulary.
 Change machine state only through ` + "`tiller`" + `, never hand-edit machine state or
 node YAML, and edit only human-owned Markdown. Then read the result back, commit
@@ -621,9 +623,9 @@ features, all descendant tasks, and source/destination epics through
 states and prior starts, branches/reviews, accepted bases, dependencies,
 effective question holds, and inherited review settings. Current ready state
 does not erase execution history. Use read-only history inspection as needed,
-never a trial mutation. Explain the recommended
+never a trial mutation: every mutation appends events that stay in the record. Explain the recommended
 product outcome, installed capability, and smallest safe alternative separately
-before asking product questions. Do not ask for facts the repository can answer.
+before asking product questions. Answer repository facts yourself by reading the repository.
 If installed help lacks a move operation, disclose the limitation rather than
 promise accepted relocation or upgrade without direction.
 
@@ -631,7 +633,7 @@ Approval does not freeze display titles, epic prose, additive child work, soft
 order, or same-scope prose on a non-terminal feature or task. Accepted prose on
 a done or cancelled feature or task is historical and is not revised in place.
 Accepted basis, terminal history, and active structural work still have teeth.
-Do not invent an amendment for work that only extends the accepted plan.
+Work that only extends the accepted plan proceeds without an amendment.
 
 **Correction table.**
 

@@ -188,7 +188,7 @@ func TestOrientationKeepsTheBranchBoundary(t *testing.T) {
 	for _, want := range []string{
 		"Every started task has its own recorded branch, unchanged on resume.",
 		"Tiller records and verifies branch structure; it does not create, switch, or merge refs.",
-		"Read the recorded names rather than inventing them, and never delete, rename, or rewrite local or remote history to make a branch fit.",
+		"Read the recorded names rather than inventing them, and never delete, rename, or rewrite local or remote history to make a branch fit: `tiller sync` matches merges against the recorded branches, and rewritten history discards commits other people hold.",
 		"Merging task branches into their recorded aggregate is agent work; the final integration merge is the human's.",
 		"`tiller guide execute` carries the branch procedure under **Claiming and starting** and **Aggregate assembly**.",
 	} {
@@ -214,7 +214,7 @@ func TestOrientationPointsAtExecuteForPublication(t *testing.T) {
 		"Explicit developer no-publish or earlier-stop instructions control.",
 		"Tiller does not push or create PRs",
 		"Never attest, never assert a fast-forward, and never perform the final integration merge.",
-		"Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge.",
+		"Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge: a force-push rewrites history and discards commits other people hold, and a commit after that merge is in no review and never reaches integration.",
 		"Pure reads verify neither host state nor pushes.",
 		"recording the missing historical review needs explicit authorization naming it",
 		"`tiller guide execute` carries the sequence under **Publication sequence**",
@@ -272,7 +272,7 @@ func TestOrientationLabelsOwnershipContributorsAndReviewGrain(t *testing.T) {
 func TestOrientationLabelsEveryPointerTarget(t *testing.T) {
 	text := normalizedOrientation()
 	for _, want := range []string{
-		"- **Managed-project independence.** Managed projects must never depend on Tiller.",
+		"- **Managed-project independence.** Managed projects must never depend on Tiller:",
 		"- **Developer authorship.** The developer owns and is responsible for the work.",
 		"- **External references.** In authored prose",
 		"- **Gates and delegation.** Drive work to the edge of done and stop.",
@@ -434,6 +434,61 @@ func TestOrientationDrawsTheChoreTweakLine(t *testing.T) {
 	require.Contains(t, text, "Tweaks are minor adjustments that may change code. A change to code or tests, however small, is a tweak.")
 }
 
+// The prohibition review's duplicates ruling (ruling 2 in
+// docs/plans/2026-11-13-prohibition-review.md) removed two sentences from
+// orientation, each repeating the sentence beside it. Each row names one by a
+// phrase no surviving text carries, so neither creeps back.
+func TestOrientationDropsTheRuledDuplicates(t *testing.T) {
+	text := normalizedOrientation()
+	for _, row := range []struct{ gone, home string }{
+		{"ahead of the block, never after it", "The block closes the reply, nothing follows it"},
+		{"For other mapped actions, do not ask which mutation path to use.", "The correction is already the developer's go for any other mapped action"},
+	} {
+		require.NotContainsf(t, text, row.gone, "orientation no longer carries %q", row.gone)
+		require.Containsf(t, text, row.home, "orientation keeps the rule in %q", row.home)
+	}
+}
+
+// The prohibition review's reasons ruling (ruling 3) gave each orientation
+// boundary that had none its reason, and its positive-forms ruling (ruling 4)
+// restated seven prohibitions positively. Each row pins a phrase of the new
+// text; the old negative forms are gone.
+func TestOrientationStatesRuledReasonsAndPositiveForms(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		// Ruling 3: reasons.
+		"`attest` and `sync --accept-fast-forward` each record the human's own verdict or testimony, and the CLI cannot tell your keystroke from the human's, so this rule is all that keeps the record true.",
+		"Managed projects must never depend on Tiller: each must build, test, and ship for people and machines without Tiller, and be able to drop it.",
+		"to make a branch fit: `tiller sync` matches merges against the recorded branches, and rewritten history discards commits other people hold.",
+		"after its final integration merge: a force-push rewrites history and discards commits other people hold, and a commit after that merge is in no review and never reaches integration.",
+		"never a trial mutation: every mutation appends events that stay in the record.",
+		// Strengthened so the skills' copies could leave without loss.
+		"It authorizes only the maintenance named; never claim, start, specify, or approve anything.",
+		"Each search or query rebuilds from local files without identity, writes, or a persistent cache",
+		// Ruling 4: positive forms.
+		"is recorded with `tiller add question`, where a gate and later sessions can see it, even when it is also discussed in chat.",
+		"fix the work and try again; escalate only under the stop rule that follows.",
+		"every epic, feature, or task id appears with its key path, because a bare id sends the developer off to look up what it points at.",
+		"Look for Tiller documentation and schema shapes only inside the project.",
+		"Take both steps: without them there is no acting contributor here",
+		"Answer repository facts yourself by reading the repository.",
+		"Work that only extends the accepted plan proceeds without an amendment.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"never asked only in chat",
+		"try again, do not escalate",
+		"id never appears without its key path",
+		"Never go hunting outside the project directory",
+		"Do not skip either step",
+		"Do not ask for facts the repository can answer.",
+		"Do not invent an amendment for work that only extends the accepted plan.",
+	} {
+		require.NotContainsf(t, text, gone, "orientation states %q positively now", gone)
+	}
+}
+
 // normalizedOrientation is the orientation text with its hard wraps collapsed.
 func normalizedOrientation() string {
 	return strings.Join(strings.Fields(Orientation()), " ")
@@ -480,7 +535,7 @@ func TestOrientationConfirmsUnfamiliarCommands(t *testing.T) {
 	text := normalizedOrientation()
 	require.Contains(t, text, "Confirm an unfamiliar command or flag with `tiller <command> --help` before running it. Never guess one.")
 	require.Less(t, strings.Index(text, "- Mutate state only through"), strings.Index(text, "- Confirm an unfamiliar command or flag"))
-	require.Contains(t, text, "never a trial mutation.")
+	require.Contains(t, text, "never a trial mutation: every mutation appends events that stay in the record.")
 	require.NotContains(t, text, "invented dry-run flag")
 }
 
@@ -490,7 +545,7 @@ func TestOrientationCarriesTheRecoveryProtocol(t *testing.T) {
 	for _, want := range []string{
 		"Follow the recovery protocol when a command refuses.",
 		"Every skill inherits it and corrects itself from the CLI's exit codes without a human.",
-		"fix the work and try again, do not escalate",
+		"fix the work and try again; escalate only under the stop rule that follows.",
 		"Stop and report when the same gate fails the same way after two different fixes",
 		"Exit `2` or `3` means correct the call or environment.",
 		"Never get past a refusal by deleting `.tiller/.cache`, a lock, or the mutation journal, by downgrading the schema or the generated guidance, or by running an older binary on migrated state.",
@@ -555,12 +610,14 @@ func TestOrientationCarriesTheWholeReadoutRule(t *testing.T) {
 		"with no list of your own after it",
 		"Do not restate the block in prose around it.",
 		"Keep the notes to facts about this run.",
-		"Commentary is yours to add freely ahead of the block, never after it; a question for the human is a recorded question.",
+		"Commentary is yours to add freely ahead of the block; a question for the human is a recorded question.",
 		"inside your run's scope it is your queue, and outside it, it is not authorization",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
 	require.NotContains(t, text, "with the notes ahead of the block, never after it")
+	// "never after it" repeated "nothing follows it", pinned above.
+	require.NotContains(t, text, "ahead of the block, never after it")
 }
 
 // Correction routing is told once: the general rules, the structural-change
@@ -572,8 +629,7 @@ func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
 		// General rules.
 		"An explicit human correction that maps to a class authorizes the mapped action except `cancel` on a work node.",
 		"hand the exact `cancel` command to the human rather than run it",
-		"For other mapped actions, do not ask which mutation path to use.",
-		"The correction is already the developer's go for that action: carry it out without asking the human to translate their correction into Tiller vocabulary.",
+		"The correction is already the developer's go for any other mapped action: carry it out without asking the human to translate their correction into Tiller vocabulary.",
 		"Change machine state only through `tiller`, never hand-edit machine state or node YAML, and edit only human-owned Markdown.",
 		"Then read the result back, commit it, rerun the current readout with `--since <sha>` naming the commit the last block you reported, and return to the row's existing approval, refresh, reapproval, task-approval, or amendment gate.",
 		"A seam exit keeps the full readout; a correction inside a gate gets that lighter block.",
@@ -586,7 +642,7 @@ func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
 		"Approval does not freeze display titles, epic prose, additive child work, soft order, or same-scope prose on a non-terminal feature or task.",
 		"Accepted prose on a done or cancelled feature or task is historical and is not revised in place.",
 		"Accepted basis, terminal history, and active structural work still have teeth.",
-		"Do not invent an amendment for work that only extends the accepted plan.",
+		"Work that only extends the accepted plan proceeds without an amendment.",
 		// The table and its rows.
 		"**Correction table.**",
 		"| Correction | Route |",
@@ -624,6 +680,8 @@ func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
 	for _, gone := range []string{
+		// The next sentence's "already the developer's go" covers it.
+		"For other mapped actions, do not ask which mutation path to use.",
 		"sink epic",
 		"- **Reviewed unstarted feature move:**",
 		"- **Accepted, lightweight correction:**",

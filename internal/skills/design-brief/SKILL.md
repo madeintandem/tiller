@@ -27,7 +27,7 @@ Ancestry supplies intent and applicable constraints, not permission to expand th
 
 | Target | Required inspection and prototype scope |
 |---|---|
-| Epic | Enumerate every included feature, with its state, specification maturity, and retirement or replacement context. Read each feature's narrative and contract where present, plus relevant task detail. Describe the coherent experience, navigation, and cross-feature journeys. Never silently sample a subset. |
+| Epic | Enumerate every included feature, with its state, specification maturity, and retirement or replacement context. Read each feature's narrative and contract where present, plus relevant task detail. Describe the coherent experience, navigation, and cross-feature journeys. |
 | Feature | Read the feature narrative, full acceptance contract where present, epic context, and relevant task specifications. Cover the complete feature experience, not unrelated sibling screens. |
 | Task | Read its implementation spec and state, parent feature narrative and contract, and epic context. Map the task to relevant parent criteria. Include only the surrounding UI needed to demonstrate its specific change, not the whole feature as implementation scope. |
 
@@ -65,9 +65,9 @@ Missing references and inaccessible assets are explicit gaps. Search hits, desig
 
 ### Keep generation read-only
 
-Only context reads and the explicitly requested deliverable write are permitted. Do not change canonical prose, source code, state YAML, the manifest, claims, gates, events, questions, approvals, acceptance criteria, Git history, refs, or index: the request authorizes only the export. Do not invoke `join`, `migrate`, `eval`, `check`, `sync`, or other state-writing commands. Do not claim, start, specify, approve, attest, record evidence, or commit anything. Instruction refresh is a separate developer operation, never an export prerequisite to perform here.
+Only context reads and the explicitly requested deliverable write are permitted: the request authorizes only the export. Do not invoke `join`, `migrate`, `eval`, `check`, `sync`, or other state-writing commands.
 
-Do not enter `specify`, `mend-drift`, or another lifecycle skill to repair missing or contradictory sources, because your work here is to expose that uncertainty. Read-command recovery is limited to correcting the read invocation or using accessible source files. If the CLI reports an environment, schema, or recovery problem, report the limitation and continue with safely readable sources where useful; do not repair the project to make the export work.
+Do not enter `specify`, `mend-drift`, or another lifecycle skill to repair missing or contradictory sources, because your work here is to expose that uncertainty. Read-command recovery is limited to correcting the read invocation or using accessible source files. If the CLI reports an environment, schema, or recovery problem, report the limitation and continue with safely readable sources where useful.
 
 Inspect accessible implementation, components, design guidance, and assets through filesystem reads. Do not launch application operations, install dependencies, build, run tests, execute acceptance bindings, or run scripts that could change the project merely to gather context. Git inspection must remain local and read-only: no checkout, fetch, stash, index refresh, object writes, or basis refresh. Do not follow a recommended mutation printed by a status command.
 
@@ -96,7 +96,7 @@ Run only the applicable forms; `tree` roots at an epic or feature, not a task. T
 
 Read `.tiller/tiller.yml` for project identity, inputs, and relevant conventions. Use the node file paths from the tree and read the target prose, state, ancestor prose, and feature acceptance contract. A draft feature may legitimately have no `feature.eval.md` or task subtree. Read applicable `.tiller/design/` documents and their prose references, recorded decisions and questions, relevant assumptions and dependencies, recorded surface paths, and accessible current UI, components, design-system rules, and assets. Respect declared external reference roots as read-only context.
 
-Relationship queries are discovery, not a replacement for reading sources. Follow names form a union at every hop; filters select after traversal. Inspect source file/line, owning work, generated-document labels, and the response's diagnostics and `complete` before treating a reference inventory as exhaustive. Recorded path coverage does not verify implementation, and question targets do not establish effective inherited holds or assumption waivers. Unknown targets and ambiguous historical identities remain unresolved; opening a current file does not retrieve its pinned historical bytes. Report incomplete facets as brief limitations without repairing state, refreshing guidance, or executing bindings.
+Relationship queries are discovery, not a replacement for reading sources. Follow names form a union at every hop; filters select after traversal. Inspect source file/line, owning work, generated-document labels, and the response's diagnostics and `complete` before treating a reference inventory as exhaustive. Question targets do not establish assumption waivers. Unknown targets and ambiguous historical identities remain unresolved; opening a current file does not retrieve its pinned historical bytes. Report incomplete facets as brief limitations without repairing state, refreshing guidance, or executing bindings.
 
 ### 2. Inventory scope and compare authority
 
@@ -146,7 +146,7 @@ Default to strict behavior and scope with freedom in visual composition unless t
 
 #### 6. Prototype instructions and sample data
 
-Define what must be clickable, which state transitions must be simulated, and how a reviewer reaches each significant scenario. Provide coherent synthetic data that exercises the required distinctions and edge cases. Label sample values and unspecified treatments as Suggested for the prototype. Never export real customer records, credentials, secrets, or private production payloads to make examples realistic.
+Define what must be clickable, which state transitions must be simulated, and how a reviewer reaches each significant scenario. Provide coherent synthetic data that exercises the required distinctions and edge cases. Label sample values and unspecified treatments as Suggested for the prototype. Never export real customer records, credentials, secrets, or private production payloads to make examples realistic: the brief is shared outside the repository, beyond the project's access controls.
 
 The deliverable requested from the receiving tool is a non-production prototype. Local interactions and simulated state are allowed. It must not require a production backend, real authentication, live integrations, or production writes. Represent roles with simulated contexts rather than actual login. Distinguish a displayed or simulated success from actual completion of a domain operation. Include only the simulation needed for the required experience, not a production implementation plan.
 
@@ -162,7 +162,7 @@ List unresolved questions, material source conflicts, missing references, unsupp
 
 Before delivery, check the brief against the gathered scope and sources. Every included feature is accounted for, UI-relevant criteria have reachable scenarios or explicitly named unresolved blockers, preservation rules remain visible, and non-visual criteria are outside proof. Required behavior stays required even when it is inconvenient to prototype. Unsupported layout choices, sample values, and provisional treatments must not read as product requirements.
 
-Review all exported prose, examples, URLs, and asset references for customer data, credentials, and secrets. Use synthetic substitutes while preserving the meaningful behavior distinctions. Do not copy sensitive payloads out of a source just because the source is a requirement. Explain any material redaction without exposing the protected value. Ensure the receiving tool can understand the requirements without opening repository links or unavailable assets.
+Review all exported prose, examples, URLs, and asset references for customer data, credentials, and secrets. Use synthetic substitutes while preserving the meaningful behavior distinctions. Do not copy sensitive payloads out of a source just because the source is a requirement: the brief leaves the project's access controls. Explain any material redaction without exposing the protected value. Ensure the receiving tool can understand the requirements without opening repository links or unavailable assets.
 
 ### 5. Deliver and stop
 

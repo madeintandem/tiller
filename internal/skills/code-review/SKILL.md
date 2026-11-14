@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use only when the developer explicitly asks for a code review of one Tiller epic, feature, task, bug, chore, or tweak, or names rows of an existing review to log, fix on their branch, drop, or commit. Reviews the node's net change read-only, writes one review file under .tiller/reviews/, and replies with a summary table. A later disposition logs the selected rows as proposed bugs, tweaks, chores, or one proposed amendment and commits once, never approving anything.
+description: Use only when the developer explicitly asks for a code review of one Tiller epic, feature, task, bug, chore, or tweak, or names rows of an existing review to log, fix on their branch, drop, or commit. Reviews the node's net change read-only, writes one review file under .tiller/reviews/, and replies with a summary table. A later disposition logs the selected rows as proposed bugs, tweaks, chores, or one proposed amendment and commits once.
 ---
 
 # code-review
@@ -15,7 +15,7 @@ The review arm runs when the developer asks for a code review of one Tiller node
 
 The disposition arm runs when the developer names rows of an existing review file: "log B1, B3, and TW1-3", "log all blockers", "log B6 as a tweak", "fix B2 on its branch", "drop CH1", "log the rest", or "commit the review".
 
-Entering a project, finishing work, reaching a gate, or asking what to do next triggers neither arm. A review is never a suggested next move. The request authorizes only the review or the named disposition: never approve, claim, start, attest, resolve, or cancel anything.
+Entering a project, finishing work, reaching a gate, or asking what to do next triggers neither arm. The request authorizes only the review or the named disposition: never approve, claim, start, attest, resolve, or cancel anything.
 
 ## Reasoning
 
@@ -61,7 +61,7 @@ Use capture's kinds exactly. A bug is behavior that violates expected product or
 
 Grade each bug Blocker, Important, Medium, or Minor from the severity table in `tiller guide capture`, the one definition of the scale. A violation of an approved acceptance criterion or `preserve` criterion of the reviewed node is a Blocker.
 
-Grade by impact, never by the size of the fix. Style and naming are never bugs. Severity becomes the bug's `severity` field when captured; it never becomes a queue position.
+Grade by impact, never by the size of the fix. Severity becomes the bug's `severity` field when captured.
 
 Label every bug's confidence. Traced means you followed the failing path through the code and can name each step. Suspected means the pattern is wrong but the path is unproven. Either way the Reproduction is derived by reading, not run. For a Traced bug it is the path through the code, step by step. For a Suspected bug it is the trigger you believe and the step you could not prove. Proof by execution comes later, when the fix's regression test is written.
 
@@ -75,13 +75,13 @@ Before writing, read the bugs, chores, and tweaks that are neither done nor canc
 
 - A finding that matches an open bug, chore, or tweak, or a staged plan change, goes in Already tracked, unnumbered, citing that node.
 - A finding the developer declined in an earlier review that still holds goes in Previously declined, unnumbered, citing that review.
-- A defect that returns after its bug reached done is a new finding marked `regression of <id>`. Never reopen done work.
+- A defect that returns after its bug reached done is a new finding marked `regression of <id>`.
 
 Matching is your judgment, so always cite what you matched against; the developer may overrule it.
 
 #### Keep the review read-only
 
-The only write is the one new review file. Do not change prose, source code, state, the manifest, claims, gates, events, questions, Git history, refs, or the index. Do not run `check`, `eval`, `sync`, `attest`, `claim`, `join`, `migrate`, or any other state-writing command. Do not fetch, check out, stash, or build, and do not run the project's tests or scripts. Read branches with `git show` and `git diff`. Prefix every Tiller invocation with `env GIT_OPTIONAL_LOCKS=0`, use `git --no-optional-locks` for direct Git reads, and pass `--no-ext-diff --no-textconv` to every diff. A branch absent locally and from remote-tracking refs goes under Limitations with the exact `git fetch` to run, so the developer can fetch and ask again.
+The only write is the one new review file. Do not run `check`, `eval`, `sync`, `attest`, `claim`, `join`, `migrate`, or any other state-writing command. Do not fetch, check out, stash, or build, and do not run the project's tests or scripts. Read branches with `git show` and `git diff`. Prefix every Tiller invocation with `env GIT_OPTIONAL_LOCKS=0`, use `git --no-optional-locks` for direct Git reads, and pass `--no-ext-diff --no-textconv` to every diff. A branch absent locally and from remote-tracking refs goes under Limitations with the exact `git fetch` to run, so the developer can fetch and ask again.
 
 #### Cover everything or say what you missed
 
@@ -120,7 +120,7 @@ Compare the file's pins with the current heads. If nothing in scope moved, proce
 - The finding holds but its lines moved: proceed with corrected anchors, and correct the row in the same commit.
 - The finding is gone: stop the whole batch, report "<row> no longer reproduces at <commit>", and wait for "drop it" or "log anyway".
 
-Never recheck an unselected row. A fix always rechecks, because execute is about to work from it.
+Recheck selected rows only. A fix always rechecks, because execute is about to work from it.
 
 #### Log bugs, tweaks, and chores through capture's shapes
 
@@ -128,7 +128,7 @@ Follow `tiller guide capture` for keys, contracts, and its stopping point, excep
 
 #### Log plan changes through decompose's amendment shapes
 
-Follow `Recording an amendment` in `tiller guide decompose` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation in a temporary directory outside the repository, so the project's only copy is the one `tiller intake` lands, and delete the temporary file after intake. Name it `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/design/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/design/`, then hand the amendment over with `tiller propose amendment`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request never stages onto an earlier review's amendment.
+Follow `Recording an amendment` in `tiller guide decompose` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation in a temporary directory outside the repository, so the project's only copy is the one `tiller intake` lands, and delete the temporary file after intake. Name it `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/design/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/design/`, then hand the amendment over with `tiller propose amendment`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request opens its own amendment.
 
 #### Fix on its branch
 
@@ -136,11 +136,11 @@ Requested changes return to the unit's owner and branch. Compare the unit's `own
 
 #### Annotate and commit once
 
-Append each disposition to the end of its row's heading line, so no line moves and every line-range citation stays exact: `→ B-k2x9ab`, `→ amendment <amendment-key>`, `→ requested change on <unit>`, `declined`, `logged as tweak TW-...`, `rechecked at <commit>`. Then make one commit holding the annotated review file, any new shelf nodes, and any feedback copy and amendment state. Stage only the paths this disposition wrote: other reviews and stray state may sit uncommitted beside them, and if `git status --short .tiller` shows any, name them to the developer and leave them out. Commit on the integration branch, as other `.tiller/`-only planning changes are; a `.tiller/`-only diff needs no PR. When this checkout is not on the integration branch, follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`; the review file is untracked, so move it to that checkout first. Never push.
+Append each disposition to the end of its row's heading line, so no line moves and every line-range citation stays exact: `→ B-k2x9ab`, `→ amendment <amendment-key>`, `→ requested change on <unit>`, `declined`, `logged as tweak TW-...`, `rechecked at <commit>`. Then make one commit holding the annotated review file, any new shelf nodes, and any feedback copy and amendment state. Stage only the paths this disposition wrote: other reviews and stray state may sit uncommitted beside them, and if `git status --short .tiller` shows any, name them to the developer and leave them out. Commit on the integration branch, as other `.tiller/`-only planning changes are; a `.tiller/`-only diff needs no PR. When this checkout is not on the integration branch, follow the planning-commit rule under **Committing state** in `.tiller/orientation.md`; the review file is untracked, so move it to that checkout first. Never push: the commit holds proposed rows the developer has not seen, so publishing it is theirs.
 
 ## Recovery
 
-On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`. In the review arm, recovery is limited to corrected reads: a missing branch, an unreadable diff, or stale instructions go under Limitations, never become a reason to repair, fetch, refresh, or mutate anything.
+On a refusal, follow **Recovery protocol** in `.tiller/orientation.md`. In the review arm, recovery is limited to corrected reads: a missing branch, an unreadable diff, or stale instructions go under Limitations.
 
 In the disposition arm, a `tiller add` refusal means fixing the key, attachment, or citation and rerunning; re-adding the same key is an idempotent readback. A refusal from `tiller intake` because the name is already landed means choosing the next suffix for the distillation. Commit nothing until every selected row is recorded.
 
@@ -268,7 +268,7 @@ Number per section with prefixes: B, TW, CH, P. Bug numbers run straight through
 
 #### 5. Reply and stop
 
-Reply with the target, the review path, and one table holding every numbered row, then the counts. Never cap the table. For example:
+Reply with the target, the review path, and one table holding every numbered row, then the counts. For example:
 
 ```text
 Code review: feature submit-certification/form-reload (F-rnte2m), 4 tasks, 2 in flight

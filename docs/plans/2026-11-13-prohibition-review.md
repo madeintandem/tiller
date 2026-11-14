@@ -1,6 +1,6 @@
 # Prohibition review of the agent-facing instruction prose
 
-Scope: the eleven embedded skills (`internal/skills/<skill>/SKILL.md`) and the generated orientation text (the `orientationBody` constant in `internal/gen/orientation.go`). Status: inventory complete; rewrites applied in `design-brief` and `derive-baseline` only; every duplicate and residue row below waits on the project owner's ruling.
+Scope: the eleven embedded skills (`internal/skills/<skill>/SKILL.md`) and the generated orientation text (the `orientationBody` constant in `internal/gen/orientation.go`). Status: the owner ruled on every class on 2026-11-14 and the rulings are applied; see **Rulings**. The inventory sections below it describe the text as it stood before the rulings and are kept as the record of what was decided. One boundary still lacks a reason.
 
 ## What this is
 
@@ -59,6 +59,145 @@ Nothing else changed. No duplicate or residue sentence was edited or removed any
 Counts are as of the inventory. The final fix wave on 2026-11-13 (commit 6166510) later added one orientation boundary under **Recovery protocol.** ("Never get past a refusal by deleting ..."), one execute boundary and one choreography comment that repeat **Committing state.** ("never switch a checkout's branch to get there"), and the words "never a pass" to execute's sentence about optional criteria; the upgrade skill's boundary about downgrading and erasing caches now also repeats orientation. None of these is in the tables below.
 
 Word counts are whole-file counts as of this review, before this pass's edits; orientation counts the `orientationBody` text. Sentences are counted once each, however many prohibition words they hold. Of the 54 restatable sentences not applied, 29 have an exact positive form and 25 do not; 11 of the 25 are in the two edited files.
+
+## Rulings
+
+### 1. Repeats of an orientation boundary (ruled 2026-11-14)
+
+Ruling: a skill keeps its repeat of an orientation boundary only where the action is irreversible, destructive to someone else's work, a human-only gate, or outward-facing, and the skill is where that action happens. Every other repeat goes, and orientation stays the rule's home. This is a stated exception to "one home per rule" in `docs/spec/skill-set.md`.
+
+The sort below applies that ruling to the 58 rows under **Boundaries that repeat orientation**: 21 keep, 37 delete. The sort is the build's reading of the ruling and is not applied yet; the owner may flip any row. The ruling changes no recommendation in the Duplicates tables.
+
+| Skill | Sentence | Call | Why |
+|---|---|---|---|
+| design-brief | "Do not change canonical prose, source code, state YAML, ..." | Delete | Read-only limit. The section opens "Only context reads and the explicitly requested deliverable write are permitted"; the reason clause "the request authorizes only the export" moves to that opener. |
+| design-brief | "Do not claim, start, specify, approve, attest, record evidence, or commit anything." | Delete | The same opener covers it. |
+| design-brief | "Instruction refresh is a separate developer operation, never an export prerequisite to perform here." | Delete | Scope limit; **Recovery protocol.** states it. |
+| design-brief | "...; do not repair the project to make the export work." | Delete the clause | Same. |
+| design-brief | "Never silently overwrite an existing file." | Keep | Destroys a developer's edited brief, at the skill's one write. |
+| derive-baseline | "Never edit reference code or relabel it as surface to get a command through." | Keep | Reference roots can sit outside the project, beyond this repository's history; orientation lacks the relabel half. |
+| derive-baseline | "Never move or retire files outside this project." | Keep | Destructive, and outside the repository. |
+| derive-baseline | "Do not retire an input until all its destination refs are recorded and recoverable." | Keep | Retirement deletes the source. |
+| derive-baseline | "Never stash, reset, discard, or commit someone else's work to make the run look clean." | Keep | Someone else's work. |
+| derive-baseline | "Never hand-edit `baseline.yml` or a confirmation block" | Delete | Hand-edit rule; orientation's rule "Mutate state only through `tiller`" states it. Its reason clause moves to orientation if orientation gives none. |
+| derive-baseline | "Do not run an unrestricted commit against an index you have not scoped." | Delete | Commit hygiene; the sentences before it give the path-limited commit. |
+| derive-baseline | "Do not self-approve or derive duplicates to escape the baseline move" | Keep | Human gate. |
+| amend | "Do not probe with a mutation." | Delete | **Structural-change preflight.** states it; the sentence before gives the read-only route. |
+| amend | "Do not install or upgrade without direction." | Keep | A schema upgrade cannot be undone and reaches beyond the task; orientation's wording here is weaker. |
+| amend | "...; never use a prose correction to rewrite terminal history." | Delete the clause | Integrity rule; **Correction table.** states it. |
+| amend | "Never manufacture replacement identities for an unchanged relocation." | Delete | **Correction table.** states it. |
+| amend | "Do not remove valid prerequisites just to make the grouped map sort cleanly." | Delete | Orientation states it nearly word for word. |
+| amend | "Do not stage `.tiller/` or a whole node directory." | Delete | The sentence before says "Stage only exact reviewed paths". |
+| capture | "...must name only those reviewed files, never a directory." | Delete the clause | "only those reviewed files" already says it. |
+| code-review | "...commits once, never approving anything." (description) | Delete the clause | The description already says the rows are logged as proposed. |
+| code-review | "The request authorizes only the review or the named disposition: never approve, claim, start, attest, resolve, or cancel anything." | Keep | Human gates, in the arm that writes state. |
+| code-review | "Never reopen done work." | Delete | The sentence before says a returning defect is a new finding. |
+| code-review | "Do not change prose, source code, state, the manifest, ..." | Delete | Read-only limit. The section opens "The only write is the one new review file". |
+| code-review | "...never become a reason to repair, fetch, refresh, or mutate anything." | Delete the clause | "recovery is limited to corrected reads" stays, with where the limitations go. |
+| code-review | "Leave the status to the human and never run it." (attest) | Keep | `attest` is human-only, and the skill prints the command. |
+| decompose | "Do not use decompose to bypass that readiness gap." | Delete | Routing; the sentences before it name the preceding seam. |
+| decompose | "Never rewrite terminal feature or task prose to make new behavior read as already shipped" | Delete the clause | Integrity rule; the pointer to amend's replacement rules stays. |
+| decompose | "...so never hand-edit that file." | Delete the clause | Hand-edit rule. |
+| decompose | "Do not stage `.tiller/` or a whole directory." | Delete | As in amend. |
+| decompose | "Do not erase a valid edge or reshape a defensible product boundary merely to make epic grouping sort cleanly." | Delete the repeated half | "reshape a defensible product boundary" is not in orientation and stays. |
+| decompose | "Never hand-edit the node YAML to make a correction." | Delete | Hand-edit rule; the sentence before says state changes only through these commands. |
+| execute | "...never by switching another checkout's branch." | Keep | Switching a checkout's branch lands on someone else's work. |
+| execute | "...never remove, reset, clean, stash, commit into, or check out over it." | Keep | Someone else's work. |
+| execute | "Do not release completed work or change ownership on resume, checks, review, or cancellation" | Delete | Ownership fact; **Ownership.** states it. |
+| execute | "Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches." | Keep | Destructive and outward-facing. |
+| execute | "Never identify yourself, a model, provider, or harness as an author or contributor." | Keep | Outward-facing, at the commit and the PR. |
+| execute | "Use the developer's configured Git identity, never an agent author or committer identity or an invented human identity." | Keep | Same. |
+| execute | "...never an entire `.tiller/` directory." | Delete the clause | "Stage exact reviewed ... files this run wrote" already says it. |
+| execute | "Never attest or restore a human gate yourself" | Keep | Human gate. |
+| execute | "Never commit to that branch after its final merge" and "Never commit to the merged review branch." | Keep | Outward-facing: the commit never reaches the merge. |
+| execute | "Never run the assertion yourself." and its siblings | Keep | Human gate. Thinning the copies within the file belongs to ruling 2. |
+| execute | "Never hand-edit state to evade the refusal or reinterpret historical task branches as an aggregate." | Delete the repeated half | "reinterpret historical task branches as an aggregate" is not in orientation and stays. |
+| execute | "Never infer this authority from a general execute instruction or another developer's availability." | Keep | Moves another developer's started work. |
+| execute | "Do not bypass required gates or developer no-publish limits." | Keep | Human gate and outward-facing. |
+| mend-drift | "...never a ledger hand edit." | Delete the clause | Hand-edit rule. |
+| mend-drift | "Never infer approval from permission to investigate, draft, commit, or mend; ..." | Keep | Human gate, where the approval would be run. |
+| orient | "...never approval, claiming, or starting." (code-review route) | Delete the clause | Orient only routes; code-review keeps the rule. |
+| orient | "...never lifecycle work." (upgrade route) | Delete the clause | Orient only routes; upgrade keeps the rule. |
+| orient | "Never identify yourself, your agent, model, provider, or harness as an author or contributor ..." | Delete | Orient makes no commit or PR. Its pointer to **Developer authorship.** stays, and execute keeps the text. |
+| orient | "Do not propose a state-file edit as recovery." | Delete | Hand-edit rule. |
+| orient | "...and do not infer its current host state." | Delete the clause | "name only that recorded identity" already says it. |
+| orient | "...; do not repair sources, refresh instructions, record questions, or enter another skill to fill the gaps." | Delete the clause | design-brief and **Recovery protocol.** state it. |
+| orient | "A delegated `approve` runs only on an explicit human instruction ..., never as the next line of an orient." | Delete | The same file states the gate rule again, more fully, in the row below. |
+| orient | "Run `approve` only on explicit human instruction naming nodes or docs; baseline derivation never authorizes its own confirmation." | Keep | Human gate, where orient stops at one. |
+| specify | "...; never manufacture replacement merely to evade a lock." | Delete the clause | **Correction table.** states it. |
+| specify | "Do not cancel and redecompose merely to change its address." | Delete | **Correction table.** states it. |
+| specify | "...never through a hand edit to node YAML." | Delete the clause | Hand-edit rule. |
+| upgrade | "...: never claiming, starting, specifying, approving, or the next queued work." | Delete the clause | "authorizes only the maintenance it names" stays. The Hand-off sentence "Do not continue into the next queued work." (a Duplicates row whose Delete leaned on this clause) then stays. |
+
+When this is applied:
+
+- Before each deletion, orientation's wording is checked to be at least as strong as the sentence leaving; where it is weaker, orientation is strengthened first.
+- A trimmed sentence keeps any part orientation does not state.
+- A reason clause on a deleted sentence moves to orientation when orientation gives none.
+- A pin moves with its sentence, and a `NotContains` guard goes where the copy left.
+- Each kept pair is pinned on both sides, so the two copies cannot drift apart unnoticed.
+
+### 2. Duplicates and residue (ruled 2026-11-14)
+
+Ruling: every recommendation in the **Duplicates** and **Residue** tables below stands as written, with one change that follows from ruling 1: upgrade's "Do not continue into the next queued work." is kept, because the trigger clause its Delete leaned on is leaving. That makes 51 duplicate deletions, 29 keeps, and 6 residue deletions. Fifteen of the deletions move a test pin; each row names the test. Not applied yet.
+
+### 3. Reasons for the boundaries that had none (ruled 2026-11-14)
+
+Ruling: each boundary listed under **Boundaries with no reason found** gains its reason as a short clause beside it. The owner confirmed these reasons. Where ruling 1 deletes a skill's copy, the reason goes on the copy that stays. Not applied yet.
+
+| Boundary | Where | Reason |
+|---|---|---|
+| `attest` and `sync --accept-fast-forward` are never the agent's to run, even on instruction | orientation, **Gates and delegation.** | Each records the human's own verdict or testimony, and the CLI cannot tell the agent's keystroke from the human's, so this rule is all that keeps the record true. |
+| Managed projects must never depend on Tiller | orientation, **Managed-project independence.** | The project must build, test, and ship for people and machines without Tiller, and be able to drop it. |
+| Never delete, rename, or rewrite local or remote history; never force-push | orientation (two rules bullets); execute | `sync` matches merges against the recorded branches, and rewritten history discards commits other people hold. |
+| Never commit to a review branch after its final integration merge | orientation | That commit is in no review and never reaches integration. |
+| Never a trial mutation; "Do not probe with a mutation." | orientation, **Structural-change preflight.**; amend | Every mutation appends events that stay in the record. |
+| Never downgrade the schema or newer generated guidance, or erase caches to bypass a refusal | upgrade | Older binaries cannot read migrated state, and the cache holds the rollback record. |
+| Never commit the event deletions without the new segment files | execute (merge closeout and two Choreography comments) | The old events would be lost. |
+| "Never use force." on `git rm` | derive-baseline | A forced removal discards uncommitted edits. |
+| Never move or retire files outside this project | derive-baseline | They are outside this repository's history, so the change cannot be reviewed or undone, and someone else may own them. |
+| Never export real customer records, credentials, secrets, or private production payloads; do not copy sensitive payloads out of a source | design-brief | The brief is shared outside the repository, beyond the project's access controls. |
+| "Never push." after a disposition commit | code-review | The commit holds proposed rows the developer has not seen, so publishing it is theirs. |
+
+Still open: upgrade's "never bypass private-download authentication, including after a failure" has no reason yet.
+
+### 4. Restatable sentences with an exact positive form (ruled 2026-11-14)
+
+Ruling: every row in the **Restatable, not yet applied** tables below takes its proposed positive form, except these nine, which stay as they are because the negative names the tempting mistake or the swap is like for like:
+
+- code-review: "An empty located diff means the change was not located, never that the unit changed nothing"
+- code-review: "Existing numbers never change."
+- decompose: "**An ordering claim is never a node.**"
+- decompose: "..., both as state, never as prose alone."
+- execute: "A shelf PR names its own shelf reference ..., never substitutes the attached feature as the reviewed node."
+- execute: "Do not advance to submit with outstanding required work."
+- specify: "...; a narrower first implementation must not silently weaken its promised acceptance."
+- amend: "Do not mix a move with cancellation, supersession, or revision of its subtree."
+- capture: "Do not write an implementation plan here."
+
+That applies 20 rows: 7 in orientation, 6 in execute, 3 in specify, 2 in code-review, 1 in decompose, 1 in mend-drift.
+
+### 5. Restatable sentences with no exact positive form (ruled 2026-11-14)
+
+Ruling: every row in the **Restatable, not exact** tables stays as it is. Each rewrite would drop a qualifier or a named mistake.
+
+### Applied (2026-11-14)
+
+Rulings 1 to 4 are applied to the eleven skills and to orientation. An independent audit then read every removal against the place its rule survives. Where the audit or the editing found that a ruled change would lose meaning, the text departs from the ruling as listed here:
+
+- **orient, ruling 1.** "Do not propose a state-file edit as recovery." stays. Orientation bars the edit itself, not proposing it to the developer in a briefing.
+- **decompose, ruling 2.** "do not invent speculative future work" stays, attached to the sentence that leaves detail just in time. Nothing else states it. The other half of that clause, about dropping later requirements, is removed as ruled.
+- **design-brief, ruling 2.** "Question targets do not establish assumption waivers." stays. Orientation's recorded-claims sentence names holds, not waivers.
+- **orient, ruling 2.** The amend bullet's sentence "Nothing in state names this one, so it is reached by judgment ..." stays. It carries the instruction to let the developer confirm before anything is staged.
+- **execute, ruling 4.** Publication step 6 reads "At epic grain, submit the epic, not its riding features." The listed form, "submit the epic alone", could be read to bar the riding tasks' own ref submissions.
+- **design-brief, ruling 3.** Both sensitive-data sentences carry the reason, because they sit in different sections.
+- **upgrade, ruling 3.** The sentence is split in two so the reason sits with the two items it explains; "Never infer unchanged files from a lost child result." keeps its reason in the paragraph before it.
+
+Orientation was strengthened in two places so a skill's copy could leave without loss: the upgrade paragraph now says "never claim, start, specify, or approve anything", and "Each query rebuilds ..." became "Each search or query rebuilds ...". The bullet "Mutate state only through `tiller`" already gave the reason derive-baseline's deleted sentence carried.
+
+Three sentences were reworded only to read correctly after a neighbor left: orient gained "Relay it as **Ranked next** in `.tiller/orientation.md` says." where its copy of the relay paragraph was; capture's remaining severity sentence reads "Whatever the severity, the shelf's soft order decides what is next."; orientation's correction sentence says "for any other mapped action".
+
+Tests: `TestSkillsDropTheRuledDeletions` and `TestOrientationDropsTheRuledDuplicates` assert each removed phrase is gone; `TestSkillsKeepTheRuledOrientationRepeats` pins both copies of each kept pair; `TestSkillsStateRuledReasonsAndPositiveForms` and `TestOrientationStatesRuledReasonsAndPositiveForms` pin the reasons and positive forms.
 
 ## design-brief
 
