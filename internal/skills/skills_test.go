@@ -871,6 +871,9 @@ func TestEmbeddedHandoffsUseRunnableCommands(t *testing.T) {
 // the --since form at the sentence that used to say "rerun the readout",
 // and decompose's Readout section states the split itself, since that is
 // the seam where the full block was re-emitted four times in one review.
+// The general "rerun the current readout with --since" rule that specify and
+// orient each restated now lives with the correction table in orientation,
+// pinned by TestOrientationCarriesTheCorrectionTable.
 func TestCorrectionsRerunTheReadoutWithSince(t *testing.T) {
 	for skill, want := range map[string][]string{
 		"decompose": {
@@ -880,10 +883,6 @@ func TestCorrectionsRerunTheReadoutWithSince(t *testing.T) {
 		},
 		"specify": {
 			"rerun `tiller readout specify --since <sha>`",
-			"rerun the current readout with `--since <sha>`",
-		},
-		"orient": {
-			"rerun the current readout with `--since <sha>`",
 		},
 	} {
 		text, ok := Lookup(skill)
@@ -893,6 +892,59 @@ func TestCorrectionsRerunTheReadoutWithSince(t *testing.T) {
 		}
 		require.NotContainsf(t, text, "rerun the current readout,", "%s no longer tells a correction to rerun the full block", skill)
 	}
+}
+
+// TestSkillsPointAtTheCorrectionTable pins that correction routing is told
+// once, in orientation's correction table, and that each skill which used to
+// restate it keeps only a pointer. Each removed copy is named by one of its
+// distinctive phrases so it cannot creep back.
+func TestSkillsPointAtTheCorrectionTable(t *testing.T) {
+	for _, name := range []string{"orient", "decompose", "specify", "amend", "execute"} {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		require.Containsf(t, text, "the correction table in `.tiller/orientation.md`", "%s points at the one correction table", name)
+		require.NotContainsf(t, text, "the correction table in `tiller guide specify`", "%s no longer points at a table in specify", name)
+	}
+	for name, gone := range map[string][]string{
+		"specify": {
+			"| Correction | Route |",
+			"Approval does not freeze cosmetic titles",
+			"An explicit human correction that matches this table",
+		},
+		"orient": {
+			"not a trial mutation or an invented dry-run",
+			"- **Pending baseline proposal:**",
+			"Bounded epic features may interleave.",
+			"is already the developer's go for that action",
+		},
+		"decompose": {
+			"An eligible unchanged feature outside that window uses the reviewed `move-feature` amendment route",
+		},
+		"amend": {
+			"sink epic",
+		},
+	} {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		for _, phrase := range gone {
+			require.NotContainsf(t, text, phrase, "%s no longer restates the correction routing: %q", name, phrase)
+		}
+	}
+	specify, ok := Lookup("specify")
+	require.True(t, ok)
+	require.Contains(t, specify, "## Correcting the feature plan")
+	require.Contains(t, specify, "Human feedback on a specced but unapproved feature's prose stays at the same feature approval gate")
+	orient, ok := Lookup("orient")
+	require.True(t, ok)
+	require.Contains(t, orient, "Classify explicit human feedback before choosing a seam")
+	decompose, ok := Lookup("decompose")
+	require.True(t, ok)
+	require.Contains(t, decompose, "Features from bounded epics may interleave.")
+	require.Contains(t, decompose, "A canonical key changes with `tiller rename <noun> <node> --key <canonical-key>` only inside its proposal window.")
+	amend, ok := Lookup("amend")
+	require.True(t, ok)
+	require.Contains(t, amend, "**Move unchanged work without replacing it.**")
+	require.Contains(t, amend, "Approval rechecks the captured subtree and inherited settings atomically")
 }
 
 // TestAmendNamesTheShippedAmendmentSurface is the fidelity rule at this seam,
@@ -1333,7 +1385,6 @@ func TestSpecifyGroundsClaimsAboutCodeItDoesNotOwn(t *testing.T) {
 		"Never write a provisional answer marked as assumed",
 		"re-read each cited claim against its source",
 		"the open facts this plan leaves for execution to determine",
-		"A wrong factual claim found while executing a task is an execute departure",
 	} {
 		require.Containsf(t, text, want, "specify pins %q", want)
 	}
@@ -1367,9 +1418,8 @@ func TestReviewAndAmendHonorExecutionDepartures(t *testing.T) {
 	amend, ok := Lookup("amend")
 	require.True(t, ok)
 	require.Contains(t, amend, "is an execute departure, not a prose correction")
-	orient, ok := Lookup("orient")
-	require.True(t, ok)
-	require.Contains(t, orient, "a wrong fact found while executing a task is an execute departure")
+	// Orient's and specify's copies of the departure carve-out moved to the
+	// correction table in orientation (TestOrientationCarriesTheCorrectionTable).
 }
 
 // TestSkillsRepairAMovedSurfaceThroughUnlink pins the moved-surface route: a

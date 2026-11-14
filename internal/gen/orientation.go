@@ -747,7 +747,14 @@ Correction feedback follows classes, not blanket ceremony. An explicit human
 correction that maps to a class authorizes the mapped action except ` + "`cancel`" + ` on a work node.
 For any such cancellation, hand the exact ` + "`cancel`" + ` command to the human rather
 than run it. For other mapped actions, do not ask which mutation path to use.
-Change machine state only through ` + "`tiller`" + ` and edit only human-owned Markdown.
+The correction is already the developer's go for that action: carry it out
+without asking the human to translate their correction into Tiller vocabulary.
+Change machine state only through ` + "`tiller`" + `, never hand-edit machine state or
+node YAML, and edit only human-owned Markdown. Then read the result back, commit
+it, rerun the current readout with ` + "`--since <sha>`" + ` naming the commit the last
+block you reported, and return to the row's existing approval, refresh,
+reapproval, task-approval, or amendment gate. A seam exit keeps the full
+readout; a correction inside a gate gets that lighter block.
 
 Before negotiating a structural change, load the installed ` + "`tiller guide amend`" + `
 and read ` + "`tiller rename --help`" + ` and ` + "`tiller amend --help`" + `. Inspect affected
@@ -757,77 +764,48 @@ states and prior starts, branches/reviews, accepted bases, dependencies,
 effective question holds, and inherited review settings. Current ready state
 does not erase execution history. Use read-only history inspection as needed,
 never a trial mutation. Explain the recommended
-product outcome, installed capability, and smallest safe alternative before
-asking product questions. Do not ask for facts the repository can answer.
+product outcome, installed capability, and smallest safe alternative separately
+before asking product questions. Do not ask for facts the repository can answer.
 If installed help lacks a move operation, disclose the limitation rather than
 promise accepted relocation or upgrade without direction.
 
-- **Pending baseline proposal:** Re-enter ` + "`derive-baseline`" + `, correct the
-  named docs and relationships in place, reconcile current code, commit only
-  that correction, and reproduce its ` + "`--since <sha>`" + ` readout. Return to the
-  same named-doc confirmation gate; do not regenerate duplicates or open a
-  work-node amendment for that correction.
+Approval does not freeze display titles, epic prose, additive child work, soft
+order, or same-scope prose on a non-terminal feature or task. Accepted prose on
+a done or cancelled feature or task is historical and is not revised in place.
+Accepted basis, terminal history, and active structural work still have teeth.
+Do not invent an amendment for work that only extends the accepted plan.
 
-- **Unapproved proposal or pre-work prose plan:** Re-enter ` + "`decompose`" + ` for a
-  draft tree or ` + "`specify`" + ` for a feature plan, apply the correction, commit
-  it, rerun that seam's readout with ` + "`--since <sha>`" + `, naming the commit the
-  last block reported, and return to the same approval gate. Display titles
-  use ` + "`rename --title`" + ` at any state.
-- **Feature address correction:** Direct ` + "`rename feature <ref> --key <epic>/<key>`" + `
-  requires a draft, task-free feature; changing parents additionally requires
-  both source and destination epics to be draft.
-  Epic key rename requires a draft epic with only draft, task-free features;
-  task key rename requires a proposed task staying under its current feature.
-  A proposed bug, chore, or tweak takes one local key segment. These commands never
-  rename branches or rewrite review history.
-- **Reviewed unstarted feature move:** Outside that direct feature window,
-  stage ` + "`tiller amend <A-id> --move-feature <feature-ref> --to <epic>/<key> --reason \"<why>\"`" + `
-  and inspect ` + "`tiller show amendment <A-id>`" + `. Draft, specced, and ready features
-  with proposed/ready tasks may move only when the feature and descendants
-  have never started or accumulated execution/review history. Claims survive.
-  Both parents must be draft or ready; the destination may be staged earlier
-  in the same amendment. Done siblings alone do not prevent the move.
-  An affected open coarse review or changed effective inherited prerequisite
-  or question hold refuses. Effective review grain is preserved, materializing
-  an override when needed. Inspect surfaced authored path citations and bindings
-  separately; do not rewrite historical revision paths or accepted prose.
-  Commit the proposal and stop for human ` + "`tiller approve amendment <A-id>`" + `.
-  Approval rechecks stale subtree/parent settings and collisions atomically.
-  IDs, status, owners, content, and original acceptance provenance survive;
-  a moved specced plan or draft destination still needs its own ordinary gate.
-  Cross-parent moves append to destination order in staged order; same-parent
-  key changes keep their sibling position. Do not combine a move with revise,
-  cancellation, or supersession of that subtree. Started descendants require
-  a precise refusal, not replacement identities, state edits, or weakened edges.
-- **Accepted, lightweight correction:** Approval does not freeze display titles,
-  epic prose, non-terminal feature or task prose at the same scope, an additive
-  task with its own approval, or soft order. Follow the current skill's mapped
-  direct command, clear pinned-prose ` + "`active_basis`" + ` through a human basis
-  refresh, or use ` + "`return`" + ` and reapproval when the ready plan's approval
-  should replay.
-- **Genuine structural reshape:** Use ` + "`amend`" + ` for genuinely abandoned or
-  replaced scope: cancel unfinished work with a reason, or supersede done work
-  with forward replacement. Do not cancel and redecompose unchanged work merely
-  to relocate it, including a specced but unapproved plan. Amendment has no link,
-  unlink, or order operation; revise only re-pins prose. An in-place hard-edge
-  change on unchanged started work remains unsupported. Do not manufacture
-  replacement to evade that lock. Fresh unstarted work can receive legal
-  prerequisites, even under an active parent. A done feature's eval bindings,
-  never its criteria statements, are corrected through ` + "`amend --correct-eval`" + `.
-  Preserve terminal feature/task prose and completed descendants. Same-outcome
-  additions may continue under done parents; ordinary sync reopens rollups,
-  not the completed tasks. Cancelled or archived ancestors are not continuation
-  targets. Distinct outcomes belong in new increments. After materialization,
-  proposed placement needs explicit ` + "`tiller order`" + `; hard links remain
-  subject to the dependent node's state and branch checks.
+**Correction table.**
+
+| Correction | Route |
+|---|---|
+| Pending baseline proposal | Re-enter ` + "`derive-baseline`" + `, correct the named docs and relationships in place, reconcile the current code they describe, commit only that correction, and reproduce its ` + "`--since <sha>`" + ` readout. Return to the same named-doc human confirmation gate. Do not regenerate duplicate docs or open a work-node amendment for that correction. |
+| Unapproved proposal (draft tree) | Re-enter ` + "`decompose`" + `, apply its draft correction from the command list in ` + "`tiller guide decompose`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same epic approval gate, not ` + "`amend`" + `. |
+| Specced but unapproved feature plan (pre-work prose plan) | Re-enter ` + "`specify`" + `, apply the unapproved-plan route in ` + "`tiller guide specify`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same feature approval gate. |
+| Epic, feature, or task display title, at any state | Run ` + "`tiller rename <noun> <node> --title \"<display title>\"`" + `; no amendment. |
+| Approved epic narrative wording | Edit ` + "`epic.md`" + ` and commit it; Git is the audit record because epic approval pins decomposition shape, not an epic prose basis; no amendment. |
+| Approved non-terminal feature or task prose, same scope | A wrong factual claim found while executing a task is an execute departure, recorded with the work (its implementation commit message, and its PR when one exists), not an edit here. Otherwise edit the pinned Markdown and commit it, read ` + "`active_basis`" + ` with ` + "`tiller status <noun> <node>`" + `, then stop for the human to run ` + "`tiller approve <noun> <node> --refresh-basis`" + `. |
+| Done or cancelled feature or task historical prose | Do not edit the accepted Markdown in place or prescribe ` + "`--refresh-basis`" + `. Route the correction into forward additive or replacement work; use ` + "`amend`" + ` and supersession as appropriate so accepted history stays intact. |
+| Ready feature or task plan whose approval should replay | Run ` + "`tiller return <noun> <node> --reason \"<why the plan is being revised>\"`" + `, revise it, and stop for the human to approve again before work starts. |
+| Approved feature needs one more task | Run ` + "`tiller add task <epic-key>/<feature-key>/<task-key> --title \"<what it accomplishes>\"`" + `, write the proposed ` + "`task.md`" + `, and stop for the human to run ` + "`tiller approve task <node>`" + `; the additive task has its own approval and needs no amendment. |
+| Preferred sequence | Run ` + "`tiller order <noun> <node> [<node> ...]`" + `, where noun is epic, feature, or task; soft order never gates. |
+| Required sequence before affected work starts | Add the hard edge with ` + "`tiller link <noun> <node> --depends-on <target>`" + `; remove a mistaken edge with ` + "`tiller unlink <noun> <node> --depends-on <target>`" + `. |
+| Dependency change after affected work starts | Explain that an in-place edge edit is unsupported. Amendment does not unlock it or stage links/unlinks; only a genuine replacement can use fresh eligible work with new edges. Never manufacture replacement to evade the lock. |
+| Genuine structural reshape (scope genuinely abandoned or replaced, including after accepted work starts) | Route the structural reshape to ` + "`amend`" + `, in the requested scope, using its cancel or supersede operation and fresh work as appropriate, preserving accepted history: cancel unfinished work with a reason, or supersede done work with forward replacement. Do not cancel and redecompose unchanged work merely to relocate it, including a specced but unapproved plan. Amendment has no link, unlink, or order operation; revise only re-pins prose. An in-place hard-edge change on unchanged started work remains unsupported. Do not manufacture replacement to evade that lock. Fresh unstarted work can receive legal prerequisites, even under an active parent. A done feature's eval bindings, never its criteria statements, are corrected through ` + "`amend --correct-eval`" + `. Preserve terminal feature/task prose and completed descendants. Same-outcome additions may continue under done parents; ordinary sync reopens rollups, not the completed tasks. Cancelled or archived ancestors are not continuation targets. Distinct outcomes belong in new increments. After materialization, proposed placement needs explicit ` + "`tiller order`" + `; hard links remain subject to the dependent node's state and branch checks. Propose wider replanning for developer direction. |
+| Feature key or parent, draft and task-free feature | Run ` + "`tiller rename feature <ref> --key <epic>/<key>`" + `; changing parents additionally requires both source and destination epics to be draft. |
+| Epic key | Run ` + "`tiller rename epic <ref> --key <canonical-key>`" + ` only on a draft epic with only draft, task-free features. |
+| Task key | Run ` + "`tiller rename task <ref> --key <canonical-key>`" + ` only on a proposed task staying under its current feature. |
+| Proposed bug, chore, or tweak key | Run ` + "`tiller rename bug <ref> --key <canonical-key>`" + `, or the same for a chore or tweak, using one local key segment. |
+| Unchanged feature key or parent correction outside the draft, task-free window (reviewed unstarted feature move) | Run amend's preflight; eligible draft, specced, or ready features with never-started proposed/ready descendants use reviewed ` + "`move-feature`" + `, preserving identity and stopping at amendment approval: stage ` + "`tiller amend <A-id> --move-feature <feature-ref> --to <epic>/<key> --reason \"<why>\"`" + `, inspect ` + "`tiller show amendment <A-id>`" + `, commit the proposal, and stop for the human's ` + "`tiller approve amendment <A-id>`" + `. A started descendant refuses precisely: name it and its history as the refusal; do not manufacture replacement or edit state around the restriction. The eligibility detail, what survives a move, what refuses, and ordering, is in ` + "`tiller guide amend`" + `. |
+
+A key rename never renames a branch or rewrites review history.
 
 Bounded epic features may interleave. A projected epic ordering cycle is a
-nonblocking advisory about grouped rendering; inspect its features and recorded
-edges. Actual prerequisite cycles, including explicit epic dependencies and mixed
-feature/epic completion deadlocks, still block readiness and execution. Never
-delete a valid prerequisite merely to make the epic map sort cleanly. Workflow
-administration versus oversight is a planning distinction, not a universal
-permanent sink epic.
+nonblocking advisory about grouped rendering, not an execution deadlock; inspect
+its implicated features and recorded edges and explain them. Actual prerequisite
+cycles, including explicit epic dependencies and mixed feature/epic completion
+deadlocks, still block readiness and execution. Never delete a valid
+prerequisite, or tell the developer to, merely to make the epic map sort cleanly.
 
 ### Ranked next
 

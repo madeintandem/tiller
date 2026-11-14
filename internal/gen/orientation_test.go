@@ -374,3 +374,71 @@ func TestOrientationCarriesTheWholeReadoutRule(t *testing.T) {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
 }
+
+// Correction routing is told once: the general rules, the structural-change
+// preflight, and one correction table the skills point at. The rows carry what
+// specify's table, orient's classes, and orientation's own bullets each said.
+func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		// General rules.
+		"An explicit human correction that maps to a class authorizes the mapped action except `cancel` on a work node.",
+		"hand the exact `cancel` command to the human rather than run it",
+		"For other mapped actions, do not ask which mutation path to use.",
+		"The correction is already the developer's go for that action: carry it out without asking the human to translate their correction into Tiller vocabulary.",
+		"Change machine state only through `tiller`, never hand-edit machine state or node YAML, and edit only human-owned Markdown.",
+		"Then read the result back, commit it, rerun the current readout with `--since <sha>` naming the commit the last block you reported, and return to the row's existing approval, refresh, reapproval, task-approval, or amendment gate.",
+		"A seam exit keeps the full readout; a correction inside a gate gets that lighter block.",
+		// The structural-change preflight.
+		"Before negotiating a structural change, load the installed `tiller guide amend`",
+		"Current ready state does not erase execution history.",
+		"smallest safe alternative separately before asking product questions",
+		"If installed help lacks a move operation, disclose the limitation",
+		// What approval does not freeze.
+		"Approval does not freeze display titles, epic prose, additive child work, soft order, or same-scope prose on a non-terminal feature or task.",
+		"Accepted prose on a done or cancelled feature or task is historical and is not revised in place.",
+		"Accepted basis, terminal history, and active structural work still have teeth.",
+		"Do not invent an amendment for work that only extends the accepted plan.",
+		// The table and its rows.
+		"**Correction table.**",
+		"| Correction | Route |",
+		"| Pending baseline proposal | Re-enter `derive-baseline`",
+		"Do not regenerate duplicate docs or open a work-node amendment for that correction. |",
+		"| Unapproved proposal (draft tree) | Re-enter `decompose`",
+		"and return to the same epic approval gate, not `amend`. |",
+		"| Specced but unapproved feature plan (pre-work prose plan) | Re-enter `specify`",
+		"| Epic, feature, or task display title, at any state | Run `tiller rename <noun> <node> --title \"<display title>\"`; no amendment. |",
+		"| Approved epic narrative wording | Edit `epic.md` and commit it",
+		"| Approved non-terminal feature or task prose, same scope | A wrong factual claim found while executing a task is an execute departure",
+		"| Done or cancelled feature or task historical prose | Do not edit the accepted Markdown in place",
+		"| Ready feature or task plan whose approval should replay | Run `tiller return <noun> <node>",
+		"stop for the human to approve again before work starts. |",
+		"| Approved feature needs one more task | Run `tiller add task <epic-key>/<feature-key>/<task-key>",
+		"| Preferred sequence | Run `tiller order <noun> <node> [<node> ...]`",
+		"| Required sequence before affected work starts | Add the hard edge with `tiller link <noun> <node> --depends-on <target>`",
+		"| Dependency change after affected work starts | Explain that an in-place edge edit is unsupported.",
+		"| Genuine structural reshape (scope genuinely abandoned or replaced, including after accepted work starts) | Route the structural reshape to `amend`",
+		"Propose wider replanning for developer direction. |",
+		"| Feature key or parent, draft and task-free feature | Run `tiller rename feature <ref> --key <epic>/<key>`; changing parents additionally requires both source and destination epics to be draft. |",
+		"| Epic key | Run `tiller rename epic <ref> --key <canonical-key>` only on a draft epic with only draft, task-free features. |",
+		"| Task key | Run `tiller rename task <ref> --key <canonical-key>` only on a proposed task staying under its current feature. |",
+		"| Proposed bug, chore, or tweak key | Run `tiller rename bug <ref> --key <canonical-key>`, or the same for a chore or tweak, using one local key segment. |",
+		"A key rename never renames a branch or rewrites review history.",
+		"| Unchanged feature key or parent correction outside the draft, task-free window (reviewed unstarted feature move) | Run amend's preflight;",
+		"name it and its history as the refusal; do not manufacture replacement or edit state around the restriction",
+		"The eligibility detail, what survives a move, what refuses, and ordering, is in `tiller guide amend`. |",
+		// Interleaving, with orient's clauses folded in.
+		"A projected epic ordering cycle is a nonblocking advisory about grouped rendering, not an execution deadlock;",
+		"Never delete a valid prerequisite, or tell the developer to, merely to make the epic map sort cleanly.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"sink epic",
+		"- **Reviewed unstarted feature move:**",
+		"- **Accepted, lightweight correction:**",
+		"- **Genuine structural reshape:**",
+	} {
+		require.NotContainsf(t, text, gone, "orientation no longer carries %q", gone)
+	}
+}

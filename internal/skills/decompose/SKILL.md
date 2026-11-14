@@ -252,14 +252,14 @@ Name nodes by key path with the id in parentheses. On the amendment route the no
 
 ## Correcting the draft
 
-For any structural correction, reuse the correction rules in `.tiller/orientation.md` and the read-only feasibility preflight in `tiller guide amend` before discussing detailed placement. Check installed help and affected history, not just current status. Direct feature key changes require a draft, task-free feature; changing parents additionally requires draft source and destination epics. An eligible unchanged feature outside that window uses the reviewed `move-feature` amendment route; started descendants refuse rather than becoming replacement work. Cancellation/supersession remains for genuine scope replacement.
+For any structural correction, follow the correction table in `.tiller/orientation.md` and the structural-change preflight beside it before discussing detailed placement.
 
 Features from bounded epics may interleave. `tiller check readiness` reports grouping-only projected epic cycles as nonblocking advisories with implicated features and recorded edges. Genuine prerequisite cycles still block, including explicit epic dependencies and mixed feature/epic completion deadlocks. Do not erase a valid edge or reshape a defensible product boundary merely to make epic grouping sort cleanly.
 
 Human feedback that fits a direct proposal correction stays inside decompose and returns to the same approval gate. It is an ordinary correction to an unapproved proposal, not an amendment. Treat explicit feedback that maps to one of these classes as authorization to apply that correction:
 
 - A display title changes with `tiller rename <noun> <node> --title "<display title>"`.
-- A canonical key changes with `tiller rename <noun> <node> --key <canonical-key>` only inside its proposal window. A feature must be draft and task-free; changing parents additionally requires both epics to be draft. Other eligible unstarted feature moves use the reviewed route above.
+- A canonical key changes with `tiller rename <noun> <node> --key <canonical-key>` only inside its proposal window. A feature must be draft and task-free; changing parents additionally requires both epics to be draft. Other eligible unstarted feature moves use the reviewed `move-feature` route in the correction table.
 - Epic or feature narrative changes in the human-owned `epic.md` or `feature.md`.
 - A preferred sequence changes with `tiller order <epic|feature> <node> [<node> ...]`.
 - A required dependency is added with `tiller link <noun> <node> --depends-on <target>` and a mistaken edge is removed with `tiller unlink <noun> <node> --depends-on <target>`.
