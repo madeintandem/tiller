@@ -770,13 +770,13 @@ func TestApproveAmendmentRefusesAClaimFromANodeAddedAfterTreeLoadWithNoWrites(t 
 
 	late := *stale.Features[replacement.ID]
 	late.ID = "F-999999"
-	lateKey := "late-claimant"
+	lateKey := "app-experience/late-claimant"
 	late.Key = &lateKey
 	late.Supersedes = []string{featureID}
 	late.SupersededBy = nil
 	lateData, err := yaml.Marshal(&late)
 	require.NoError(t, err)
-	latePath := filepath.Join(root, ".tiller", "epics", "app-experience", "features", lateKey, "feature.yml")
+	latePath := filepath.Join(root, ".tiller", "epics", "app-experience", "features", "late-claimant", "feature.yml")
 	require.NoError(t, os.MkdirAll(filepath.Dir(latePath), 0o755))
 	require.NoError(t, os.WriteFile(latePath, lateData, 0o644))
 

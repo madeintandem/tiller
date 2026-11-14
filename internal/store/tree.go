@@ -313,7 +313,7 @@ func (t *Tree) loadEpics(ids *nodeIDRegistry) error {
 		if err := ids.claim(NounEpic, epic.ID, epicYML); err != nil {
 			return err
 		}
-		if err := checkKeyNamesItsFolder(epicYML, epicKey, epic.Key); err != nil {
+		if err := checkKeySpellsItsFolders(epicYML, epicKey, epic.Key); err != nil {
 			return err
 		}
 		t.Epics[epic.ID] = &epic
@@ -356,14 +356,15 @@ func (t *Tree) loadFeatures(epicsDir, epicKey string, ids *nodeIDRegistry) error
 		if err := ids.claim(NounFeature, feat.ID, featureYML); err != nil {
 			return err
 		}
-		if err := checkKeyNamesItsFolder(featureYML, featureKey, feat.Key); err != nil {
+		canonical := epicKey + "/" + featureKey
+		if err := checkKeySpellsItsFolders(featureYML, canonical, feat.Key); err != nil {
 			return err
 		}
 		feat.EpicKey = epicKey
 		feat.HasEval = t.stateFileExists(filepath.Join(featureDir, "feature.eval.md"))
 		t.Features[feat.ID] = &feat
 
-		if err := t.loadTasks(featureDir, &feat, ids); err != nil {
+		if err := t.loadTasks(featureDir, canonical, &feat, ids); err != nil {
 			return err
 		}
 	}
@@ -379,7 +380,10 @@ func (t *Tree) loadFeatures(epicsDir, epicKey string, ids *nodeIDRegistry) error
 // for a folder with no epic.yml or feature.yml. Skipping it instead would drop
 // the node from every surface with nothing to say it had been dropped. task.md
 // is not read: the loader reads state, and no grain's prose file is loaded here.
-func (t *Tree) loadTasks(featureDir string, feat *Feature, ids *nodeIDRegistry) error {
+//
+// featureCanonical is the canonical key the feature's folders spell, which a
+// task's key is checked against even when the feature itself records no key.
+func (t *Tree) loadTasks(featureDir, featureCanonical string, feat *Feature, ids *nodeIDRegistry) error {
 	tasksDir := filepath.Join(featureDir, TaskDirName)
 	entries, err := t.stateDirectory(tasksDir)
 	if err != nil {
@@ -404,7 +408,7 @@ func (t *Tree) loadTasks(featureDir string, feat *Feature, ids *nodeIDRegistry) 
 		if err := ids.claim(NounTask, task.ID, taskYML); err != nil {
 			return err
 		}
-		if err := checkKeyNamesItsFolder(taskYML, e.Name(), task.Key); err != nil {
+		if err := checkKeySpellsItsFolders(taskYML, featureCanonical+"/"+e.Name(), task.Key); err != nil {
 			return err
 		}
 		if err := validateStoredStartedGrain(taskYML, task.StartedGrain); err != nil {
@@ -538,20 +542,36 @@ func (t *Tree) AddedNode(op AmendmentOp) Node {
 	return nil
 }
 
-// checkKeyNamesItsFolder refuses a folder-backed node whose stored key does not
-// end in the folder the loader found it in (artifact-schema.md, Keys and paths:
-// the directory segment is the LOCAL key, and the canonical key ends in it).
+// checkKeySpellsItsFolders refuses an epic, feature, or task whose stored key
+// is not exactly the canonical key its folders spell (artifact-schema.md, Keys
+// and paths): the epic folder, then the feature folder, then the task folder,
+// joined by slashes.
 //
-// The loader identifies a node by its folder. Every path derived for that node
-// afterwards runs off its key instead: gen.ProsePath and the tree map's file
-// footprint, search's state path, and mutate's write paths all rebuild the
-// folder from the key. A disagreement is therefore not cosmetic, it points the
-// reads and the writes at two different files, and neither side can notice
-// alone. Refusing the load names both halves at the one place that can see both.
+// The loader hangs a node on its parent by the folder it found it in, while
+// resolution, references, branch names, and new children's keys all run off
+// the stored key. A key that ends in the right folder but names another parent,
+// the shape a feature folder hand-moved under another epic leaves, therefore
+// gives one node two identities: it lists under one epic and answers to the
+// other's name, and neither side can notice alone. Comparing the whole key also
+// refuses a key with too few or too many segments, or one that climbs with
+// `..`, since no folder spells those. Refusing the load names the state file
+// and both keys at the one place that can see both, and changes nothing: which
+// of the folder and the key is wrong is the human's call.
 //
 // A node with no key at all is a different fact, not a disagreement: it simply
 // does not resolve by key, and nothing derives a path for it (see
 // gen.ProsePath's ok result). It loads.
+func checkKeySpellsItsFolders(path, canonical string, key *string) error {
+	if key == nil || *key == canonical {
+		return nil
+	}
+	return fmt.Errorf("parse %s: recorded key %q is not the key its folders spell, %q", path, *key, canonical)
+}
+
+// checkKeyNamesItsFolder refuses a shelf node whose stored key does not end in
+// the folder the loader found it in. The shelf loader pairs it with its own
+// canonical-key check; the tree nouns are held to the whole key by
+// checkKeySpellsItsFolders.
 func checkKeyNamesItsFolder(path, folder string, key *string) error {
 	if key == nil {
 		return nil
