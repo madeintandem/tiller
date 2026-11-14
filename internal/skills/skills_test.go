@@ -1660,3 +1660,40 @@ func TestCaptureDrawsTheChoreTweakLine(t *testing.T) {
 	require.Contains(t, text, "A change to code or tests, however small, is a tweak.")
 	require.Contains(t, text, "a concrete defect, maintenance obligation, or minor adjustment")
 }
+
+// execute's Reasoning reads in the order an agent needs it, ending with the
+// Recovery section after the transfer notes.
+func TestExecuteSectionsAreInOrder(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	require.NotContains(t, text, "This skill is the thin one")
+	headings := []string{
+		"## Trigger",
+		"## Reasoning",
+		"### Worktrees and other agents",
+		"### Claiming and starting",
+		"### Shelf work",
+		"### Working from the plan",
+		"### Gate commands",
+		"### Departures",
+		"### Questions found while building",
+		"### The loop around the building",
+		"### Aggregate assembly",
+		"### Publication sequence",
+		"### Feature acceptance and merge closeout",
+		"### Review grain and coarse submit guards",
+		"### Missing aggregate review after merge",
+		"### Exceptional human-directed transfer",
+		"## Recovery",
+		"## Choreography",
+		"## Readout",
+		"## Hand-off",
+	}
+	last := -1
+	for _, h := range headings {
+		i := strings.Index(text, "\n"+h+"\n")
+		require.GreaterOrEqualf(t, i, 0, "execute has heading %q", h)
+		require.Greaterf(t, i, last, "heading %q follows the previous one", h)
+		last = i
+	}
+}
