@@ -965,8 +965,11 @@ it again. It records no event and no person, so it needs no joined identity.
 
 It reads, read-only, Claude Code's `~/.claude/projects` (honoring `CLAUDE_CONFIG_DIR`), Codex's
 `~/.codex/sessions` (honoring `CODEX_HOME`), and Pi's and OhMyPi's `~/.pi/agent/sessions` and
-`~/.omp/agent/sessions`, and only the sessions that ran in this checkout, one of its worktrees, or
-a path beneath them. Sessions active in the last 30 minutes and sessions older than the project's
+`~/.omp/agent/sessions`, and captures only the sessions that ran in this project's directory, that
+same directory in one of the checkout's worktrees, or a path beneath them. Each session is judged by
+the working directory its own log records, never by the name of the folder the harness keeps it in.
+A project nested in a larger repository leaves out sessions run at the repository root or in a
+sibling project. Sessions active in the last 30 minutes and sessions older than the project's
 first event are skipped, and a project with no event yet captures nothing. A log or folder that
 cannot be read is skipped and counted (`1 log could not be read`, JSON `unreadable`), then tried
 again next run. A file is never deleted or shrunk, so a harness that cleaned up its logs

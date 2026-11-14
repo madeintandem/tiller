@@ -18,8 +18,9 @@ type LogRef struct {
 	Harness, Path, Session, Parent string
 }
 
-// Roots says where to look. Project is the checkout root (Project[0]) plus
-// live worktree paths, absolute and cleaned. Env reads an environment variable and may be nil.
+// Roots says where to look. Project is the project's directory (Project[0])
+// plus that same directory in each live worktree, absolute and cleaned. Env
+// reads an environment variable and may be nil.
 type Roots struct {
 	Home    string
 	Env     func(string) string

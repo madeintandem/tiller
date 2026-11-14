@@ -59,10 +59,10 @@ func newUsageCmd() *cobra.Command {
 		Use:   "usage",
 		Short: "Capture agent token usage from local harness logs.",
 		Long: "usage reads this machine's Claude Code, Codex and Pi session logs for sessions that\n" +
-			"ran in this checkout or one of its worktrees, and writes one file per session under\n" +
-			".tiller/usage/. It records no event and no person, and needs no joined identity.\n" +
-			"Capture is off unless .tiller/tiller.yml has usage.capture: true, and it writes\n" +
-			"only on the integration branch.",
+			"ran in this project's directory, here or in one of the checkout's worktrees, and\n" +
+			"writes one file per session under .tiller/usage/. It records no event and no person,\n" +
+			"and needs no joined identity. Capture is off unless .tiller/tiller.yml has\n" +
+			"usage.capture: true, and it writes only on the integration branch.",
 		Args: cobra.NoArgs,
 		RunE: runUsage,
 	}
@@ -113,10 +113,11 @@ func captureUsage(tree *store.Tree, now time.Time, budget time.Duration, reload 
 	if err != nil {
 		return usage.Result{}, err
 	}
+	// The project's own directory in each worktree, never a worktree's root:
+	// for a project nested in a repository the root also holds its siblings.
 	project := []string{tree.Root}
-	if paths, err := vcs.New(tree.Root).WorktreePaths(); err == nil {
+	if paths, err := vcs.New(tree.Root).ProjectWorktreePaths(); err == nil {
 		for _, p := range paths {
-			p = filepath.Clean(p)
 			if !samePath(p, tree.Root) {
 				project = append(project, p)
 			}
