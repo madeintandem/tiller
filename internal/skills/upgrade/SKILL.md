@@ -47,7 +47,7 @@ Upgrade every participant, and merge the migrated state into each continuing wor
 
 Adoption is not authorization or an evidence waiver: it is not permission to skip verification or to migrate a project.
 
-A schema fence is local, not a distributed lock: it does not stop stale unmigrated clones, and old binaries in unmigrated clones can still conflict. Never mutate migrated state with an older binary. After adoption, recovery must preserve new work rather than blindly restore old schema files.
+A schema fence is local, not a distributed lock: it does not stop stale unmigrated clones, and old binaries in unmigrated clones can still conflict. Never use or mutate migrated state with an older binary. After adoption, recovery must preserve new work rather than blindly restore old schema files.
 
 ### Schema notes
 

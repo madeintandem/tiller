@@ -79,7 +79,7 @@ func TestUpgradeSkillCarriesMaintenance(t *testing.T) {
 		"not permission to skip verification or to migrate a project",
 		"A schema fence is local, not a distributed lock",
 		"old binaries in unmigrated clones can still conflict",
-		"Never mutate migrated state with an older binary.",
+		"Never use or mutate migrated state with an older binary.",
 		"preserve new work rather than blindly restore old schema files",
 		// Schema 6.
 		"Schema 6 freezes execution ownership, not a feature-wide claim.",
