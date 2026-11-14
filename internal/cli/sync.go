@@ -143,10 +143,13 @@ type SkippedView struct {
 }
 
 // ReopenedView is one rollup-backed node this sync returned to work because new
-// work landed beneath it: a done feature that gained a task still to do goes back
-// to active, a done epic that gained a feature still to do goes back to ready
-// (artifact-schema.md, "History is append-only"). There is no basis field: a
-// reverse rests on the tree's own shape rather than on a git observation.
+// work landed beneath it: a done feature that gained a task goes back to
+// active, a done epic that gained a feature goes back to ready
+// (artifact-schema.md, "History is append-only"). The new child counts whether
+// it is still to do or was merged before this sync first saw it. There is no
+// basis field: a reverse rests on the tree's own shape rather than on a git
+// observation. status is the state the node went back to; an epic whose late
+// feature already finished also appears in crossings, done again in this run.
 type ReopenedView struct {
 	Noun   string `json:"noun"`
 	ID     string `json:"id"`
@@ -916,13 +919,26 @@ func humanSyncChecksDue(tree *store.Tree, res mutate.SyncResult) string {
 // sync, which is why the block appears at all only when something moved back:
 // this is the one thing a sync does that the developer did not ask for and would
 // otherwise discover by reading the file.
+//
+// One node can be in both directions in a single run: an epic whose late
+// feature finished before any sync saw it reopens and crosses again at once.
+// Its line says so, since the status a reopening carries is where the node
+// went back to, not where the run left it.
 func humanSyncReopened(tree *store.Tree, res mutate.SyncResult) string {
 	if len(res.Reopened) == 0 {
 		return ""
 	}
+	crossed := map[string]bool{}
+	for _, c := range res.Crossings {
+		crossed[c.ID] = true
+	}
 	lines := []string{fmt.Sprintf("Reopened by work that landed beneath them (%d):", len(res.Reopened))}
 	for _, r := range res.Reopened {
-		lines = append(lines, fmt.Sprintf("  - %s %s -> %s", r.Noun, gen.RefByID(tree, r.ID), r.Status))
+		line := fmt.Sprintf("  - %s %s -> %s", r.Noun, gen.RefByID(tree, r.ID), r.Status)
+		if crossed[r.ID] {
+			line += ", then done again in this run"
+		}
+		lines = append(lines, line)
 	}
 	lines = append(lines, "  A feature's and an epic's done is a rollup over their children, so it"+
 		" recomputes: new work beneath one returns it to work rather than needing an amendment to reopen it.")

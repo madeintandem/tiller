@@ -178,8 +178,11 @@ type SyncResult struct {
 }
 
 // Reopening is one rollup-backed node sync returned to work: a done feature that
-// gained a task still to do, or a done epic that gained a feature still to do.
-// Status is the state it went back to (a feature to active, an epic to ready).
+// gained a task since it rolled up, or a done epic that gained a feature. The
+// new child counts whether it is still to do or was merged before this run
+// first saw it. Status is the state it went back to (a feature to active, an
+// epic to ready). An epic whose late feature already finished is crossed again
+// in the same run, so it can appear here and in Crossings.
 // There is no basis: a reverse rests on the tree's own shape, never on a git
 // observation (artifact-schema.md, "History is append-only": rollup-backed done
 // recomputes).
@@ -327,10 +330,17 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 		return SyncResult{}, err
 	}
 
+	// Both reopen questions are asked before anything crosses, because the
+	// crossings below can hide the answer. Work added beneath a done rollup and
+	// merged before any sync saw it reads as "every child done" once this run has
+	// crossed it, and a done that predates that work would stand unexamined.
+	lateUnderEpic := doneEpicsWithWorkLanded(tree)
+
 	for _, f := range sortedFeatures(tree) {
 		if f.Key == nil {
 			continue
 		}
+		lateUnderFeature := f.Status == statusDone && workLandedUnderFeature(tree, f)
 
 		aggregateID, aggregate, recorded := reviewedAggregate(tree, f)
 		mo := mergeObs{}
@@ -440,8 +450,12 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 
 		// The reverse of that rollup: work landed under a feature that had already
 		// rolled up, so the computed done no longer holds and the feature returns
-		// to active.
-		if f.Status == "done" && workLandedUnderFeature(tree, f) {
+		// to active. The answer is the one read before the task loop, so a late
+		// task this run just crossed still counts as work that landed. The arm
+		// sits after the rollup on purpose: a feature reopened here is not crossed
+		// again in this run on the gates the reopen just staled. The next sync
+		// records that crossing, after a feature check if one is run.
+		if lateUnderFeature {
 			r, rerr := reopenFeature(tree, deps, owner, f)
 			if rerr != nil {
 				return SyncResult{}, rerr
@@ -454,7 +468,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	// feature statuses this same run just wrote rather than the ones it started
 	// with: the last feature crossing and the epic crossing it earns land in one
 	// sync, and so do a feature reopening and the epic reopening behind it.
-	epicCrossings, epicReopened, epicSkipped, err := syncEpics(tree, deps, owner, rev, tip)
+	epicCrossings, epicReopened, epicSkipped, err := syncEpics(tree, deps, owner, rev, tip, lateUnderEpic)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -1549,8 +1563,17 @@ func surfaceFingerprint(rev vcs.Revisions, commit, p string, at time.Time) (stor
 // (artifact-schema.md, Epics States); recomputing an archived epic back to ready
 // because someone added a feature under it would silently overturn that decision,
 // which no rollup gets to do. A cancelled epic is terminal for the same reason.
+//
+// The reopen arm runs first and the crossing arm reads the status it leaves.
+// lateUnderEpic names the done epics that had a feature still to do before
+// this run crossed anything. When that feature finished in this same run, the
+// epic's done predates it, so the epic reopens and, with every feature now
+// done, crosses again at once against the commit that holds the new work. An
+// epic has no gates for a reopen to stale, so there is nothing to wait for,
+// and a ready epic with every feature done has no surface that would name the
+// second sync it was waiting on.
 func syncEpics(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revisions,
-	tip integrationTip) ([]Crossing, []Reopening, []Skipped, error) {
+	tip integrationTip, lateUnderEpic map[string]bool) ([]Crossing, []Reopening, []Skipped, error) {
 
 	var crossings []Crossing
 	var reopened []Reopening
@@ -1561,8 +1584,14 @@ func syncEpics(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Rev
 			continue
 		}
 		key := *e.Key
-		switch {
-		case e.Status == "ready" && epicRollupReady(tree, key):
+		if e.Status == statusDone && (lateUnderEpic[e.ID] || workLandedUnderEpic(tree, key)) {
+			r, err := reopenEpic(tree, deps, owner, e)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			reopened = append(reopened, r)
+		}
+		if e.Status == "ready" && epicRollupReady(tree, key) {
 			c, err := crossEpicDone(tree, deps, owner, rev, e, tip)
 			if err != nil {
 				sk, ok := skipUnrecordable(err, store.NounEpic, e.ID, key, e.Surface.Paths)
@@ -1573,15 +1602,22 @@ func syncEpics(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Rev
 				continue
 			}
 			crossings = append(crossings, c)
-		case e.Status == "done" && workLandedUnderEpic(tree, key):
-			r, err := reopenEpic(tree, deps, owner, e)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-			reopened = append(reopened, r)
 		}
 	}
 	return crossings, reopened, skipped, nil
+}
+
+// doneEpicsWithWorkLanded names, by id, the done epics that have a feature
+// still to do right now. Sync asks before its walk, while a late feature the
+// walk is about to roll up still reads as unfinished.
+func doneEpicsWithWorkLanded(tree *store.Tree) map[string]bool {
+	late := map[string]bool{}
+	for _, e := range tree.Epics {
+		if e.Key != nil && e.Status == statusDone && workLandedUnderEpic(tree, *e.Key) {
+			late[e.ID] = true
+		}
+	}
+	return late
 }
 
 // crossEpicDone records an epic's rollup crossing onto epic.yml: status done,
