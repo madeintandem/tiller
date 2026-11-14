@@ -4,7 +4,7 @@ description: Complete a scratch project with the v0.23.0 release.
 ---
 
 This walkthrough is for **v0.23.0**. It uses schema **15**, orientation generation
-**61**, and **ten skills**. Tasks are claimed and started one at a time, each on
+**62**, and **eleven skills**. Tasks are claimed and started one at a time, each on
 its own branch, and maintenance runs through `tiller upgrade`. The longer
 [source walkthrough](/tiller/source-quickstart/) covers the same contract in more
 detail, including existing code, review grain, bugs, and ownership transfer.
@@ -43,7 +43,7 @@ tiller guide
 ```
 
 Use your own contributor ID and full name. Registration is committed; `join` selects
-that identity for this checkout and installs ten gitignored skill shims for
+that identity for this checkout and installs eleven gitignored skill shims for
 Claude Code. `tiller intake --no-amendment` lands the design (a file or a folder) under
 `.tiller/design/` as the founding design and opens no amendment. A greenfield project with a
 landed design and a contributor starts at decomposition, so `tiller guide` names the `decompose` skill. For an existing

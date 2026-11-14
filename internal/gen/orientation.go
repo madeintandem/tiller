@@ -45,7 +45,11 @@ import (
 // Generation 59 records bug severity: capture grades, approve bug requires one, and grade changes it; severity never routes.
 // Generation 60 names compacted events as the one exception to exact-path staging: stage exactly the paths sync, compact, migrate, or upgrade print.
 // Generation 61 retires the intake skill: decompose carries both ways a document becomes work, a draft tree for the founding design and drafts held by one amendment for a later document.
-const orientationSchemaGen = 61
+// Generation 62 gives each shared rule one home: orientation defines its terms
+// and carries the cross-skill rules, each seam's procedures live in its skill, a
+// run and the go that starts it are defined, and maintenance moves to the
+// upgrade skill.
+const orientationSchemaGen = 62
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical

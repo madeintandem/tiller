@@ -11,9 +11,9 @@ tiller guide            # the same list, then the skill for the top agent move
 tiller guide execute    # prints that skill in full
 ```
 
-This build, stamped v0.23.0, carries ten skills. Eight of them are the workflow seams:
+This build, stamped v0.23.0, carries eleven skills. Eight of them are the workflow seams:
 
-- `orient` reads state, names the next move, and stops.
+- `orient` reads state, relays the ranked next moves, and stops for your go.
 - `derive-baseline` derives or translates as-is docs and stops at human per-doc confirmation.
 - `decompose` turns a document into work: a draft epic and feature tree for a founding design, or the drafts one amendment holds for a document that arrives later through `tiller intake`. It stops for the human's approve.
 - `specify` writes one feature's specification, acceptance contract, and tasks, then runs `tiller spec feature`.
@@ -22,11 +22,11 @@ This build, stamped v0.23.0, carries ten skills. Eight of them are the workflow 
 - `mend-drift` reads a drift candidate and drafts the smallest honest fix.
 - `amend` stages a reshape for human approval.
 
-The other two run only when you ask for them: `design-brief` exports a brief for a design tool, and `code-review` reviews what a node delivered. Both are described below.
+The other three run only when you ask for them: `design-brief` exports a brief for a design tool, `code-review` reviews what a node delivered, and `upgrade` updates Tiller, migrates the checkout's schema, or refreshes its generated guidance. All three are described below.
 
-This page covers what each skill does. [Concepts](/tiller/concepts/) owns the model they work in: the tree, the gates, review grain, ownership, and the shelves.
+This page covers what each skill does. [Concepts](/tiller/concepts/) owns the model they work in: the tree, the gates, review grain, ownership, and the shelves. Rules that every skill shares, such as the recovery protocol, the correction table, and how to name a node, live once in the generated `.tiller/orientation.md`, which every skill reads first.
 
-`orient` relays the ranked next list: every legal move for your checkout, human decisions included, ranked by where you have been working, at most five. It names any of your decisions that rank above the top agent move, ends its reply on the list, and starts that agent move once your reply does not redirect. Tiller ranks by a fixed rule and never calls a model; the agent may say it would take a different row first, but it reproduces the list as printed.
+`orient` relays the ranked next list: every legal move for your checkout, human decisions included, ranked by where you have been working, at most five. It names any of your decisions that rank above the top agent move and ends its reply on the list. The agent starts the top agent move only when your reply says to: a go, a yes, or an instruction naming that row. A reply that asks something else gets an answer, and the list still waits for your go. Tiller ranks by a fixed rule and never calls a model; the agent may say it would take a different row first, but it reproduces the list as printed.
 
 `capture` grades every bug it files by impact, never by the size of the fix, and the grade lands on the record as the bug's severity: `blocker` (data loss, a broken security boundary, a crash on a main path, or a violated acceptance criterion), `important` (wrong behavior on a realistic path), `medium` (an edge case, or a construct likely to break), or `minor` (a real defect with negligible impact). When the impact can't be known yet, it leaves the bug unrated and says why in the contract, so you grade it at triage. Chores and tweaks carry no severity. Severity sorts and filters the console's Fix lens and never changes what ranks next. `tiller guide capture` holds the full scale.
 
@@ -139,6 +139,8 @@ From configured integration with relevant source inputs committed, run `tiller s
 
 ## Maintain guidance
 
+Ask the agent to upgrade Tiller, migrate the checkout, or refresh its guidance, and it loads the `upgrade` skill (`tiller guide upgrade`). That request authorizes only the maintenance you named; the agent reports each phase's outcome and stops for you to review and commit the diff, with no readout or next-work list. Entering a project or asking what to do next never triggers it.
+
 `tiller upgrade` updates the binary and the current checkout's supported schema, orientation,
 discovery shims, harness wiring, and required ignore entries. `tiller upgrade --project-only`
 does the checkout work offline with the running binary, including after a separate install or in
@@ -173,7 +175,7 @@ Structural requests begin with feasibility, before placement questions. The agen
 |---|---|---|
 | Draft epic or feature proposal | Re-enter `decompose`; direct feature key rename requires a draft, task-free feature, and changing parents requires both epics to be draft. Other proposal corrections use eligible link/unlink/remove commands. | Return to the same epic approval. |
 | Specced but unapproved feature prose plan | Re-enter `specify`; edit human-owned spec, contract, and proposed task prose. An unchanged key/parent correction uses the reviewed move row instead of cancel-and-redecompose. | Return to the same feature approval; moving does not approve that plan. |
-| Accepted lightweight correction | Stay with `specify`'s correction map: direct title, epic prose, additive task, and soft-order changes; use `approve --refresh-basis` for same-scope non-terminal feature or task prose, or `return` when a ready plan's approval should replay. | None, basis refresh, task approval, or reapproval, according to the class. |
+| Accepted lightweight correction | Follow the correction table in `.tiller/orientation.md`: direct title, epic prose, additive task, and soft-order changes; use `approve --refresh-basis` for same-scope non-terminal feature or task prose, or `return` when a ready plan's approval should replay. | None, basis refresh, task approval, or reapproval, according to the class. |
 | Wrong factual claim in an approved `task.md`, found while executing | Stay in `execute`: build against the actual code, leave `task.md` unedited, and record the departure in the task's implementation commit message, its PR body when one exists, and run notes; coarse reviews gather riding tasks' departures from those commits. A departure that would change feature behavior, acceptance, task scope, a dependency, or a planned test is not one; use the rows above. | None; the reviewer checks the departure in the diff. |
 | Genuine active structural replacement or cancellation | Enter `amend`, with preconditions and preserved terminal history. Use fresh forward work and supersession where appropriate. | One amendment approval. |
 | Unchanged unstarted feature key or parent correction outside direct rename | Use `amend --move-feature` for eligible draft, specced, or ready features with never-started proposed/ready descendants, preserving IDs, claims, status, content, and acceptance history. | Stage, inspect, commit, and stop at human amendment approval. |

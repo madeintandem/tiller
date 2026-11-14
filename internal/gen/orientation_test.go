@@ -330,18 +330,22 @@ func TestOrientationGeneration59RecordsBugSeverity(t *testing.T) {
 // Generation 61 keeps the one directory exception to exact-path staging: the
 // paths sync, compact, migrate, or upgrade print for compacted events.
 func TestOrientationNamesTheCompactionStagingException(t *testing.T) {
-	require.Equal(t, 61, OrientationGeneration())
+	require.GreaterOrEqual(t, OrientationGeneration(), 61)
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "The one exception is compacted events: when `tiller sync`, `tiller compact`, `tiller migrate`, or `tiller upgrade` names paths to stage, stage exactly those, directories included.")
 }
 
-// Generation 61 retires the intake skill: decompose carries both routes for a
+// Generation 61 retired the intake skill: decompose carries both routes for a
 // document, and the orientation text says so without naming an intake skill.
-func TestOrientationGeneration61(t *testing.T) {
+// Generation 62 gives each shared rule one home: orientation defines its terms
+// under ## Terms, and maintenance guidance moves to the upgrade skill.
+func TestOrientationGeneration62(t *testing.T) {
 	got, ok := OrientationStampGeneration([]byte(Orientation()))
 	require.True(t, ok)
-	require.Equal(t, 61, got)
+	require.Equal(t, 62, got)
 	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "## Terms")
+	require.Contains(t, text, "`tiller guide upgrade`")
 	require.NotContains(t, text, "- `intake`:", "intake is a command, not a skill")
 	require.NotContains(t, text, "Use intake when")
 	require.NotContains(t, text, "capture and intake shapes")

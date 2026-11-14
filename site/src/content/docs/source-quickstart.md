@@ -6,7 +6,7 @@ description: Run the current source build through project setup, human gates, ta
 From a repository to a tree you can see. The walkthrough uses a greenfield scratch project called Acme, with an existing-code path below; ids and commit hashes are illustrative.
 
 This page documents version **0.23.0**, schema **15**, orientation generation
-**61**, and **ten embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
+**62**, and **eleven embedded skills**. The shorter [Quickstart](/tiller/quickstart/)
 installs the v0.23.0 release instead of building from source.
 
 ## Build the matching source
@@ -187,7 +187,7 @@ Project files kept current: orientation.md (generation 57).
   tiller guide      lists your ranked next moves and the skill that fits
 ```
 
-`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the ten current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
+`join` writes a small managed block into `AGENTS.md` (plus a redirect in `CLAUDE.md`, which Claude Code auto-loads) and installs the eleven current discovery shims. It also writes a gitignored `.tiller/identity.yml` selecting who you are in this checkout; a teammate who clones the repo runs their own `join`. Routine maintenance uses upgrade, not another join.
 
 Init seeds `.gitignore` only if it is missing. Join adds missing Tiller-owned ignore groups,
 including the local identity, the optional `.tiller/local.yml` preferences file, cache, skill shims, `/.bin/`, and `/artifacts/tiller/`, while leaving
