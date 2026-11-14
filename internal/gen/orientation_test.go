@@ -224,6 +224,7 @@ func TestOrientationLabelsOwnershipContributorsAndReviewGrain(t *testing.T) {
 	text := normalizedOrientation()
 	for _, want := range []string{
 		"**Ownership.** Every new task is unclaimed",
+		"Never take another contributor's reservation by changing `--contributor`, or your acting identity, to theirs.",
 		"**Contributors.** Contributors on a feature or epic",
 		"**Review grain.** Review does not have to land once per task.",
 	} {

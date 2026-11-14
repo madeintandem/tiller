@@ -565,7 +565,8 @@ Before start, ` + "`release`" + ` returns your reservation to the pool and
 ` + "`reassign task|bug|chore|tweak <key> --to <contributor-id> --reason <text>`" + ` records a
 human-directed handoff. Taking another reservation with ` + "`claim --from <id>`" + `
 requires an explicit human handoff naming the work and actual holder; knowing
-an owner flag is not permission. The first successful start permanently fixes
+an owner flag is not permission. Never take another contributor's reservation
+by changing ` + "`--contributor`" + `, or your acting identity, to theirs. The first successful start permanently fixes
 that unit's owner. Resume, checks, review, cancellation, and completion never
 reset it; all terminal ownership is immutable, even cancelled-before-start work.
 Start, resume, and execution submission require the unit's own claim.
