@@ -174,20 +174,20 @@ On any refusal, follow the recovery protocol in `.tiller/orientation.md`.
 One feature, one pass, one gate remains the default. Do not hand a feature over between the contract and the tasks; the human reviews all three together. This two-feature example applies only when the human explicitly names both features as one batch.
 
 ```
-# first named feature, form-engine/certification-form-loading (F-79dh3q): extend the specification at:
-#   .tiller/epics/form-engine/features/certification-form-loading/feature.md
+# first named feature, submit-certification/certification-form-loading (F-79dh3q): extend the specification at:
+#   .tiller/epics/submit-certification/features/certification-form-loading/feature.md
 # write its acceptance contract (criteria, polarity, bindings) at:
-#   .tiller/epics/form-engine/features/certification-form-loading/feature.eval.md
-tiller add task form-engine/certification-form-loading/schema-transcription \
+#   .tiller/epics/submit-certification/features/certification-form-loading/feature.eval.md
+tiller add task submit-certification/certification-form-loading/schema-transcription \
   --title "Transcribe FORM-A-100 (2025) into JSON Schema"
-tiller add task form-engine/certification-form-loading/computed-field-bindings \
+tiller add task submit-certification/certification-form-loading/computed-field-bindings \
   --title "Bind the computed fields" \
-  --depends-on form-engine/certification-form-loading/schema-transcription
+  --depends-on submit-certification/certification-form-loading/schema-transcription
 # write each task's implementation spec over its task.md stub
 # final pass (Settle questions before approve): record each decision only the human can make
 tiller add question "<statement>" --title "<short title>" \
-  --blocks form-engine/certification-form-loading/computed-field-bindings
-tiller spec feature form-engine/certification-form-loading
+  --blocks submit-certification/certification-form-loading/computed-field-bindings
+tiller spec feature submit-certification/certification-form-loading
 # Inspect existing index entries and preserve unrelated staged/unstaged work.
 # Review exact plan, question-ledger, state, and event files, not directories.
 # If a shared file also contains unrelated edits, stop rather than include them.
@@ -197,12 +197,12 @@ git diff --cached -- <same-exact-paths>
 git commit --only -m "specify: certification-form-loading" -- <same-exact-paths>
 
 # the ranked list suggests waiting; the explicit batch instruction already selected the next feature
-# second named feature, form-engine/pdf-assembly (F-p4d8x2): extend feature.md and write feature.eval.md at:
-#   .tiller/epics/form-engine/features/pdf-assembly/
-tiller add task form-engine/pdf-assembly/continuous-page-numbering \
+# second named feature, submit-certification/pdf-assembly (F-p4d8x2): extend feature.md and write feature.eval.md at:
+#   .tiller/epics/submit-certification/features/pdf-assembly/
+tiller add task submit-certification/pdf-assembly/continuous-page-numbering \
   --title "Render continuous page numbers across assembled forms"
 # write the task's implementation spec over its task.md stub
-tiller spec feature form-engine/pdf-assembly
+tiller spec feature submit-certification/pdf-assembly
 # Review and commit only exact files written for this second feature:
 git add -- <each-reviewed-second-feature-plan-and-output-path>
 git diff --cached -- <same-exact-paths>
@@ -212,7 +212,7 @@ git commit --only -m "specify: pdf-assembly" -- <same-exact-paths>
 tiller readout specify   # the one final block that closes your reply, reproduced verbatim
 ```
 
-`approve` remains outside the specify batch. After the stop, run `tiller approve feature form-engine/certification-form-loading` only on an explicit instruction naming the node; otherwise hand that exact command to the human. While a recorded question holds a plan, its answer comes first (**Settle questions before approve**).
+`approve` remains outside the specify batch. After the stop, run `tiller approve feature submit-certification/certification-form-loading` only on an explicit instruction naming the node; otherwise hand that exact command to the human. While a recorded question holds a plan, its answer comes first (**Settle questions before approve**).
 
 ## Correcting the feature plan
 

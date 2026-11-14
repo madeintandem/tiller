@@ -158,21 +158,21 @@ tiller intake docs/feedback/opus-review.md --contributor robin
 
 # a bounded secure-release increment the review names: stage the epic FIRST,
 # so its features can name it as their parent in this very same amendment
-tiller amend opus-review --add-epic hardening --title "Secure form release" \
+tiller amend opus-review --add-epic secure-form-release --title "Secure form release" \
   --source .tiller/design/opus-review.md#L1-9
-tiller amend opus-review --add-feature hardening/csp-headers \
+tiller amend opus-review --add-feature secure-form-release/csp-headers \
   --change-type create --title "CSP headers" \
   --source .tiller/design/opus-review.md#L10-15
 
-# a statable contract serving the EXISTING form-engine epic's bounded outcome
-tiller amend opus-review --add-feature form-engine/csrf-token-rotation \
+# a statable contract serving the EXISTING submit-certification epic's bounded outcome
+tiller amend opus-review --add-feature submit-certification/csrf-token-rotation \
   --change-type create --title "CSRF token rotation" \
   --source .tiller/design/opus-review.md#L16-21
 
 # a correction inside the scope of an APPROVED feature: a task, held as proposed.
 # Under csp-headers above it would refuse (task_under_held_feature); its tasks
 # come from specify after approval.
-tiller amend opus-review --add-task form-engine/certification-form-loading/csp-regression-test \
+tiller amend opus-review --add-task submit-certification/certification-form-loading/csp-regression-test \
   --title "Add a CSP regression test" \
   --source .tiller/design/opus-review.md#L34-36
 
@@ -180,7 +180,7 @@ tiller amend opus-review --add-task form-engine/certification-form-loading/csp-r
 # approval, not a decision you invent. --blocks may name a held draft
 tiller amend opus-review --add-question "Keep or trim the legacy image parsers?" \
   --title "Legacy image parsers" \
-  --blocks hardening/csp-headers \
+  --blocks secure-form-release/csp-headers \
   --source .tiller/design/opus-review.md#L48-52
 
 # a concrete defect the review reports goes straight onto its shelf, never staged
@@ -189,10 +189,10 @@ tiller add bug blank-on-reload --title "Form is blank after reload" --severity i
 # replace .tiller/bugs/blank-on-reload/bug.md with the complete contract
 
 # the held drafts are real nodes: write each epic.md and feature.md, then link
-tiller link feature hardening/csp-headers --surface src/server/headers.ts
-tiller link feature hardening/csp-headers --depends-on form-engine/csrf-token-rotation
+tiller link feature secure-form-release/csp-headers --surface src/server/headers.ts
+tiller link feature secure-form-release/csp-headers --depends-on submit-certification/csrf-token-rotation
 # correct in place, or drop a draft the review does not support:
-tiller rename feature hardening/csp-headers --title "Content security policy headers"
+tiller rename feature secure-form-release/csp-headers --title "Content security policy headers"
 tiller remove feature <epic>/<feature> --reason "<why this draft is not proposed>"
 # write the distilled narrative over the stub at:
 #   .tiller/amendments/<A-id>-opus-review.md

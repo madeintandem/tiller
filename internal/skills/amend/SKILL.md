@@ -101,7 +101,7 @@ First run the structural preflight above, before choosing placement or opening a
 # corrections only: no amendment, no staging, no ceremony
 # edit only same-scope, non-terminal feature.md, feature.eval.md, or task.md, then hand the human
 # (or run on their explicit instruction naming the node):
-tiller approve feature form-engine/certification-form-loading --refresh-basis
+tiller approve feature submit-certification/certification-form-loading --refresh-basis
 tiller approve task T-k3p9w6 --refresh-basis
 ```
 
@@ -109,7 +109,7 @@ The second is the structural reshape: open it, stage it, show it, and stop.
 
 ```
 tiller drift                                               # when a cascade brought you here, read it first
-tiller show feature form-engine/certification-form-loading --json   # the surface and the basis that bound the reading
+tiller show feature submit-certification/certification-form-loading --json   # the surface and the basis that bound the reading
 tiller add amendment form-engine-rework \
   --title "Restructure form engine from embedded JSON to discrete tables" \
   --triggered-by design/solution-design/04-form-engine.md
@@ -127,14 +127,14 @@ tiller amend form-engine-rework --add-feature print-layouts/pdf-export \
   --change-type create --title "PDF export" \
   --precondition key_absent=print-layouts/pdf-export
 
-# a statable contract under the EXISTING form-engine epic: resolved the
+# a statable contract under the EXISTING submit-certification epic: resolved the
 # ordinary way, against the live tree, not against anything staged above
-tiller amend form-engine-rework --add-feature form-engine/table-backed-forms \
+tiller amend form-engine-rework --add-feature submit-certification/table-backed-forms \
   --change-type replace --title "Table backed forms" \
-  --precondition key_absent=form-engine/table-backed-forms
-tiller amend form-engine-rework --add-task form-engine/rendering-modes/table-aware-rendering \
+  --precondition key_absent=submit-certification/table-backed-forms
+tiller amend form-engine-rework --add-task submit-certification/rendering-modes/table-aware-rendering \
   --title "Render from the table model" \
-  --precondition key_absent=form-engine/rendering-modes/table-aware-rendering
+  --precondition key_absent=submit-certification/rendering-modes/table-aware-rendering
 
 # a judgment call the reshape raises but does not settle: a question, not a
 # decision invented here. --blocks reaches furthest of any field in this op
@@ -144,19 +144,19 @@ tiller amend form-engine-rework --add-question "Keep the legacy embedded-JSON fa
   --title "Legacy offline fallback" \
   --blocks print-layouts/pdf-export
 
-tiller amend form-engine-rework --supersede form-engine/certification-form-loading \
-  --by form-engine/table-backed-forms \
+tiller amend form-engine-rework --supersede submit-certification/certification-form-loading \
+  --by submit-certification/table-backed-forms \
   --precondition target_status=done --precondition target_revision=git:7bc1a20
-tiller amend form-engine-rework --cancel form-engine/rendering-modes/embedded-json-fallback \
+tiller amend form-engine-rework --cancel submit-certification/rendering-modes/embedded-json-fallback \
   --reason "subsumed by the table model" \
-  --superseded-by form-engine/rendering-modes/table-aware-rendering \
+  --superseded-by submit-certification/rendering-modes/table-aware-rendering \
   --precondition target_status=ready
 # a revise of non-terminal work: edit feature.md and feature.eval.md first, then pin what you edited
-#   git hash-object .tiller/epics/form-engine/features/rendering-modes/feature.md
-tiller amend form-engine-rework --revise form-engine/rendering-modes \
+#   git hash-object .tiller/epics/submit-certification/features/rendering-modes/feature.md
+tiller amend form-engine-rework --revise submit-certification/rendering-modes \
   --precondition spec_revision=git:3e9293c9d2b5686c3f12421e797ace6d8acabee5
 # a correct-eval of a done feature: edit only the bindings in feature.eval.md first
-tiller amend form-engine-rework --correct-eval form-engine/certification-form-loading \
+tiller amend form-engine-rework --correct-eval submit-certification/certification-form-loading \
   --reason "loader tests moved into two files" --retire C-4
 tiller amend form-engine-rework --amends-design design/solution-design/01-overview.md
 tiller show amendment form-engine-rework                   # the batch, each precondition's live validity

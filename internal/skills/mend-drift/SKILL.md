@@ -52,22 +52,22 @@ tiller drift                                              # read marker, node or
 tiller drift --json                                       # design candidates also carry features and an upper anchor
 # uncovered: name the failed comparison and its recovery prerequisite, not a guessed fix
 
-# draft the fix for one candidate, active_basis on form-engine/certification-form-loading (F-79dh3q):
+# draft the fix for one candidate, active_basis on submit-certification/certification-form-loading (F-79dh3q):
 #   read its files and since, then edit feature.md, task.md, or feature.eval.md
 #   toward what the human actually wants, with the reasoning shown beside the diff
 # stop. the human reviews the diff and the reasoning. on their explicit
 # instruction naming the node you may run the clearing act yourself, stating
 # what you are about to record; otherwise hand them the exact command. run the
 # one that matches the candidate's own marker:
-tiller approve feature form-engine/certification-form-loading --refresh-basis                     # active_basis
-tiller approve feature form-engine/certification-form-loading --reviewed-assumption Q-h2n7m5      # answered_question
-tiller link feature form-engine/rendering-modes --surface app/models/form_definition.rb  # missing_surface
-tiller unlink feature form-engine/rendering-modes --surface app/models/form.rb           # missing_surface, after linking where the code moved
+tiller approve feature submit-certification/certification-form-loading --refresh-basis                     # active_basis
+tiller approve feature submit-certification/certification-form-loading --reviewed-assumption Q-h2n7m5      # answered_question
+tiller link feature submit-certification/rendering-modes --surface app/models/form_definition.rb  # missing_surface
+tiller unlink feature submit-certification/rendering-modes --surface app/models/form.rb           # missing_surface, after linking where the code moved
 # orphan_eval on a non-done node clears by the eval edit alone, no further command.
 # stale_spec or orphan_eval on a done feature's eval bindings: edit feature.eval.md,
 # then stage the reviewed correction and stop for the human's approve:
 tiller add amendment eval-fix --title "Correct the loader eval bindings"                  # then write its narrative
-tiller amend eval-fix --correct-eval form-engine/certification-form-loading \
+tiller amend eval-fix --correct-eval submit-certification/certification-form-loading \
   --reason "loader tests moved into two files" --retire C-4                              # --retire only for a check removed on purpose
 #   the human runs: tiller approve amendment eval-fix   (re-pins verified_against.eval)
 # stale_spec on the spec leg or the surface leg: the edit is still the right fix to
@@ -79,7 +79,7 @@ tiller amend eval-fix --correct-eval form-engine/certification-form-loading \
 git diff --cached --name-status
 git add -- <each-reviewed-prose-and-output-path>
 git diff --cached -- <same-exact-paths>
-git commit --only -m "mend-drift: reconcile form-engine/certification-form-loading" -- <same-exact-paths>
+git commit --only -m "mend-drift: reconcile submit-certification/certification-form-loading" -- <same-exact-paths>
 # a mend that touches only .tiller/ commits directly on the integration branch, no PR
 tiller drift                                              # once the fix lands, confirm the candidate cleared
 ```

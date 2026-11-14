@@ -447,9 +447,9 @@ unrequested replan.
   Missing sources or stale instructions are explicit limitations, not
   permission to repair, refresh instructions, or mutate the project.
 - Name a node to the human by its key path with the id in parentheses, for
-  example ` + "`form-engine/certification-form-loading (F-79dh3q)`" + `. A task's key path
+  example ` + "`submit-certification/certification-form-loading (F-79dh3q)`" + `. A task's key path
   carries all three segments and reads
-  ` + "`form-engine/certification-form-loading/schema-transcription (T-k3p9w6)`" + `.
+  ` + "`submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)`" + `.
   A question is never keyed: name it by its id and short title. Use the full
   statement when the question itself is the subject.
   The rule covers every surface you author, readout notes, hand-offs,

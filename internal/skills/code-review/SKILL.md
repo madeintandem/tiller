@@ -65,7 +65,7 @@ Label every bug's confidence. Traced means you followed the failing path through
 
 #### Attach each finding where it was found
 
-Each finding records Found in, and Found in names each node by key path with its ID, as every reply to the developer does: the unit whose diff introduced its anchored lines, the feature when it spans that feature's tasks, or the epic when it spans features. For a bug, chore, or tweak target, Found in is the target itself. `--attach` accepts only an epic, feature, or task, so a finding logged from a bug, chore, or tweak target attaches where that target was found, its own `attached_to`, or omit `--attach` when it has none; name the reviewed node in the contract's prose instead. When the code is unmerged, Found in carries the unit's status, for example `form-engine/form-reload/save-retry (T-d4e5f6), in_review, unmerged`.
+Each finding records Found in, and Found in names each node by key path with its ID, as every reply to the developer does: the unit whose diff introduced its anchored lines, the feature when it spans that feature's tasks, or the epic when it spans features. For a bug, chore, or tweak target, Found in is the target itself. `--attach` accepts only an epic, feature, or task, so a finding logged from a bug, chore, or tweak target attaches where that target was found, its own `attached_to`, or omit `--attach` when it has none; name the reviewed node in the contract's prose instead. When the code is unmerged, Found in carries the unit's status, for example `submit-certification/form-reload/save-retry (T-d4e5f6), in_review, unmerged`.
 
 #### Respect what Tiller already knows
 
@@ -269,20 +269,20 @@ Number per section with prefixes: B, TW, CH, P. Bug numbers run straight through
 Reply with the target, the review path, and one table holding every numbered row, then the counts. Never cap the table. For example:
 
 ```text
-Code review: feature form-engine/form-reload (F-rnte2m), 4 tasks, 2 in flight
+Code review: feature submit-certification/form-reload (F-rnte2m), 4 tasks, 2 in flight
 Full review: .tiller/reviews/2026-10-08-F-rnte2m.md
 
 | #   | Severity  | Finding                            | Found in             | Where            |
 |-----|-----------|------------------------------------|----------------------|------------------|
-| B1  | blocker   | Draft lost on reload (violates C3) | form-engine/form-reload/load-draft (T-a1b2c3) | form/load.go:88  |
-| B2  | important | Retry swallows 409                 | form-engine/form-reload/save-retry (T-d4e5f6), unmerged | form/save.go:141 |
-| TW1 | tweak     | "Save" to "Save changes"           | form-engine/form-reload/load-draft (T-a1b2c3) | ui/Form.tsx:52   |
-| CH1 | chore     | Stale doc comment on loadDraft     | form-engine/form-reload/load-draft (T-a1b2c3) | form/load.go:70  |
-| P1  | plan      | New task: offline draft cache      | form-engine/form-reload (F-rnte2m) | -                |
+| B1  | blocker   | Draft lost on reload (violates C3) | submit-certification/form-reload/load-draft (T-a1b2c3) | form/load.go:88  |
+| B2  | important | Retry swallows 409                 | submit-certification/form-reload/save-retry (T-d4e5f6), unmerged | form/save.go:141 |
+| TW1 | tweak     | "Save" to "Save changes"           | submit-certification/form-reload/load-draft (T-a1b2c3) | ui/Form.tsx:52   |
+| CH1 | chore     | Stale doc comment on loadDraft     | submit-certification/form-reload/load-draft (T-a1b2c3) | form/load.go:70  |
+| P1  | plan      | New task: offline draft cache      | submit-certification/form-reload (F-rnte2m) | -                |
 
 2 bugs (1 blocker, 1 important), 1 tweak, 1 chore, 1 plan change
 Also: 2 already tracked, 1 previously declined (details in the file)
-Unmerged: "fix B2 on its branch" sends it back to form-engine/form-reload/save-retry (T-d4e5f6)
+Unmerged: "fix B2 on its branch" sends it back to submit-certification/form-reload/save-retry (T-d4e5f6)
 Log with, for example: "log B1, TW1, P1", "fix B2 on its branch", "drop CH1"
 ```
 

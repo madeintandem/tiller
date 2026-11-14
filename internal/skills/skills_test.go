@@ -581,8 +581,8 @@ func TestOrientCarriesNodeReferenceConvention(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
 	require.Contains(t, text, "## Node references", "orient states the convention once")
-	require.Contains(t, text, "form-engine/certification-form-loading (F-79dh3q)", "the key path carries the id in parentheses")
-	require.Contains(t, text, "form-engine/certification-form-loading/schema-transcription (T-k3p9w6)",
+	require.Contains(t, text, "submit-certification/certification-form-loading (F-79dh3q)", "the key path carries the id in parentheses")
+	require.Contains(t, text, "submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)",
 		"a task carries its own three-segment key path")
 	require.Contains(t, text, "This convention is inherited by every skill", "the other skills only point back to it")
 }
@@ -745,7 +745,7 @@ func TestEmbeddedHandoffsUseRunnableCommands(t *testing.T) {
 	for _, command := range []string{
 		"tiller add task <epic>/<feature>/<task-key> --title",
 		"tiller link task <key> --depends-on <sibling>",
-		"tiller spec feature form-engine/certification-form-loading",
+		"tiller spec feature submit-certification/certification-form-loading",
 	} {
 		require.Containsf(t, specify, command, "specify carries runnable command %q", command)
 	}
@@ -803,14 +803,14 @@ func TestAmendNamesTheShippedAmendmentSurface(t *testing.T) {
 	require.True(t, ok)
 	for _, want := range []string{
 		"tiller add amendment form-engine-rework",
-		"--add-feature form-engine/table-backed-forms",
+		"--add-feature submit-certification/table-backed-forms",
 		"--change-type replace",
-		"--add-task form-engine/rendering-modes/table-aware-rendering",
-		"--supersede form-engine/certification-form-loading",
-		"--by form-engine/table-backed-forms",
-		"--cancel form-engine/rendering-modes/embedded-json-fallback",
-		"--superseded-by form-engine/rendering-modes/table-aware-rendering",
-		"--revise form-engine/rendering-modes",
+		"--add-task submit-certification/rendering-modes/table-aware-rendering",
+		"--supersede submit-certification/certification-form-loading",
+		"--by submit-certification/table-backed-forms",
+		"--cancel submit-certification/rendering-modes/embedded-json-fallback",
+		"--superseded-by submit-certification/rendering-modes/table-aware-rendering",
+		"--revise submit-certification/rendering-modes",
 		"--amends-design design/solution-design/01-overview.md",
 		"--triggered-by design/solution-design/04-form-engine.md",
 		"tiller show amendment form-engine-rework",
@@ -1222,7 +1222,7 @@ func TestSkillsRepairAMovedSurfaceThroughUnlink(t *testing.T) {
 	mend, ok := Lookup("mend-drift")
 	require.True(t, ok)
 	require.Contains(t, mend, "dropped through `tiller unlink --surface` once the current location is linked")
-	require.Contains(t, mend, "tiller unlink feature form-engine/rendering-modes --surface")
+	require.Contains(t, mend, "tiller unlink feature submit-certification/rendering-modes --surface")
 }
 
 // execute works each unit of work, scoped by review grain, in its own
@@ -1270,9 +1270,9 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		require.NotEqualf(t, -1, j, "missing %q", later)
 		require.Lessf(t, i, j, "%q must precede %q", earlier, later)
 	}
-	order(`git worktree add --detach "$worktree" "$start_base"`, "tiller claim task form-engine/certification-form-loading/schema-transcription")
+	order(`git worktree add --detach "$worktree" "$start_base"`, "tiller claim task submit-certification/certification-form-loading/schema-transcription")
 	order(`cd "$worktree" && tiller join --as <you>                   # a new worktree has no identity; restore any refresh it reports
-tiller claim task`, "tiller claim task form-engine/certification-form-loading/schema-transcription")
+tiller claim task`, "tiller claim task submit-certification/certification-form-loading/schema-transcription")
 	order(`git worktree add --detach "$worktree" "$base"`, "tiller claim bug bugs/blank-on-reload")
 	order(`cd "$worktree" && tiller join --as <you>                   # a new worktree has no identity; restore any refresh it reports
 tiller claim bug`, "tiller claim bug bugs/blank-on-reload")
@@ -1291,7 +1291,7 @@ func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 		"Add `--retire <criterion-id>` for each check you deliberately removed",
 		"re-pins `verified_against.eval`",
 		"The spec leg and the surface leg of `stale_spec` have no such command",
-		"tiller amend eval-fix --correct-eval form-engine/certification-form-loading",
+		"tiller amend eval-fix --correct-eval submit-certification/certification-form-loading",
 	} {
 		require.Containsf(t, mend, want, "mend-drift pins %q", want)
 	}
@@ -1307,7 +1307,7 @@ func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 		"`correct_eval_changes_contract`",
 		"`correct_eval_not_feature`",
 		"`retire_misplaced`",
-		"tiller amend form-engine-rework --correct-eval form-engine/certification-form-loading",
+		"tiller amend form-engine-rework --correct-eval submit-certification/certification-form-loading",
 	} {
 		require.Containsf(t, amend, want, "amend pins %q", want)
 	}
