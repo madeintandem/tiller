@@ -1294,3 +1294,16 @@ func TestSkillsCorrectADoneFeatureEvalThroughAmend(t *testing.T) {
 		require.Containsf(t, amend, want, "amend pins %q", want)
 	}
 }
+
+// A stale_spec candidate on the spec or surface leg persists by design once
+// mended; mend-drift checks for a prior mend commit and orient does not route
+// it again.
+func TestMendDriftRecognizesAPersistingCandidate(t *testing.T) {
+	mend, ok := Lookup("mend-drift")
+	require.True(t, ok)
+	require.Contains(t, mend, "persists by design")
+	require.Contains(t, mend, "git log --oneline --grep='^mend-drift:'")
+	orient, ok := Lookup("orient")
+	require.True(t, ok)
+	require.Contains(t, orient, "persists by design is not a move")
+}

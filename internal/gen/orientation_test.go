@@ -175,3 +175,8 @@ func TestOrientationGeneration61(t *testing.T) {
 	require.Contains(t, text, "draft amendment")
 	require.Contains(t, text, "`tiller propose amendment`")
 }
+
+func TestOrientationBoundsRetries(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "after two different fixes")
+}

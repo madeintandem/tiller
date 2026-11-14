@@ -422,7 +422,10 @@ unrequested replan.
   conflict, or human-decision blocker that cannot be resolved safely.
 - Follow the recovery protocol when a command refuses. Exit ` + "`1`" + ` is a
   business refusal to reason about, usually a red gate or an illegal transition:
-  fix the work and try again, do not escalate. Exit ` + "`2`" + ` or ` + "`3`" + ` means
+  fix the work and try again, do not escalate. Stop and report when the same gate
+  fails the same way after two different fixes, or when a failure does not
+  reproduce when you run the gate's own command directly: name the gate, the
+  failure, what you tried, and the evidence commits. Exit ` + "`2`" + ` or ` + "`3`" + ` means
   correct the call or environment. The ranked list is guidance, not a command result.
   When state leaves a gate or merge outstanding, say ` + "`the ranked list suggests waiting`" + `;
   never say Tiller requires another node to wait unless a command exited ` + "`1`" + `.
