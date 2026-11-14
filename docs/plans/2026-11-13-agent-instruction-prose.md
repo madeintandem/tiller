@@ -10,7 +10,7 @@
 
 **Spec:** The Findings section of this document. The analysis it records exists nowhere else, so executors read it in full. Finding IDs (Q, S, C, I) are cited by every task.
 
-**Status.** Written 2026-11-13 from a full read of the ten skills and the orientation generator at commit `ecccd4a`. Not started. CLI help text, readout renderers, and seeded stubs were not reviewed and are out of scope.
+**Status.** Written 2026-11-13 from a full read of the ten skills and the orientation generator at commit `ecccd4a`. Built 2026-11-13 on branch `instruction-prose`, awaiting the owner's review and fast-forward. The decisions below are recorded in `docs/spec/skill-set.md`. Deleting duplicate and residue prohibitions waits on the owner's rulings in `docs/plans/2026-11-13-prohibition-review.md`. This plan is kept until that review; Task 18 Step 4 (deleting it) was deliberately not carried out. CLI help text, readout renderers, and seeded stubs were not reviewed and are out of scope.
 
 ## Global Constraints
 

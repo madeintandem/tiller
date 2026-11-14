@@ -56,6 +56,8 @@ Nothing else changed. No duplicate or residue sentence was edited or removed any
 | orientation | 7,778 | 75 | 41 | 10 | 5 | 0 | 19 |
 | **Total** | **55,074** | **397** | **195** | **58 (4 applied)** | **80** | **6** | **58** |
 
+Counts are as of the inventory. The final fix wave on 2026-11-13 (commit 6166510) later added one orientation boundary under **Recovery protocol.** ("Never get past a refusal by deleting ..."), one execute boundary and one choreography comment that repeat **Committing state.** ("never switch a checkout's branch to get there"), and the words "never a pass" to execute's sentence about optional criteria; the upgrade skill's boundary about downgrading and erasing caches now also repeats orientation. None of these is in the tables below.
+
 Word counts are whole-file counts as of this review, before this pass's edits; orientation counts the `orientationBody` text. Sentences are counted once each, however many prohibition words they hold. Of the 54 restatable sentences not applied, 29 have an exact positive form and 25 do not; 11 of the 25 are in the two edited files.
 
 ## design-brief
@@ -620,7 +622,7 @@ Boundary: 41. Restatable: 10. Duplicate: 5. Not a prohibition: 19.
 | Sentence | Also stated | Recommendation |
 |---|---|---|
 | "Commentary is yours to add freely ahead of the block, never after it" | Same bullet: "The block closes the reply, nothing follows it" | Delete "never after it". Pinned by `TestOrientationCarriesTheWholeReadoutRule`. |
-| "Do not ask for another go after checks turn green or before ordinary state publication." | Preceding sentence: "Work already moving inside a seam keeps moving, including execute's draft preparation, submission-state push ..."; the execute-instruction bullet | Keep. It guards against the stall the plan's Review Focus 5 names: an agent re-briefing a developer who said to keep going inside a seam. |
+| "Do not ask for another go after checks turn green or before ordinary state publication." | Preceding sentence: "Work already moving inside a seam keeps moving, including execute's draft preparation, submission-state push ..."; the execute-instruction bullet | Keep. It guards against the stall Review Focus 5 of `docs/plans/2026-11-13-agent-instruction-prose.md` names: an agent re-briefing a developer who said to keep going inside a seam. |
 | "For other mapped actions, do not ask which mutation path to use." | Next sentence: "The correction is already the developer's go for that action: carry it out without asking" | Delete. Pinned by `TestOrientationCarriesTheCorrectionTable`. |
 | "Do not regenerate duplicate docs or open a work-node amendment for that correction." (Correction table, pending baseline row) | Baseline paragraph: "not another derivation" | Keep. Table rows are read alone. |
 | "You may say you would take a different item first and why; never rewrite the list." | Same paragraph: "Relay the list as written." | Keep. It pairs the permission with its limit. |

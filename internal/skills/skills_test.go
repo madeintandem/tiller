@@ -1607,7 +1607,7 @@ func TestGuidePointersNameExistingHeadings(t *testing.T) {
 				continue
 			}
 			for _, loc := range group.FindAllStringSubmatchIndex(sentence, -1) {
-				if strings.HasPrefix(sentence[loc[1]:], "in `.tiller/orientation.md`") {
+				if strings.HasPrefix(strings.TrimLeft(sentence[loc[1]:], " "), "in `.tiller/orientation.md`") {
 					continue
 				}
 				pointer := sentence[loc[0]:loc[1]]
