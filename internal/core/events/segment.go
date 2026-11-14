@@ -207,7 +207,8 @@ func sameMap(a, b map[string]any) bool {
 }
 
 // DecodeLooseStrict decodes a loose event file like DecodeLoose, and also refuses
-// any key the event shape does not define and a second YAML document.
+// any key the event shape does not define, a second YAML document, and a whole
+// number in the before or after map too wide for 64 bits (refuseWideIntegers).
 func DecodeLooseStrict(relative string, raw []byte) (Event, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(raw))
 	var doc yaml.Node
@@ -223,7 +224,58 @@ func DecodeLooseStrict(relative string, raw []byte) (Event, error) {
 			return Event{}, fmt.Errorf("events: parse %s: %w", relative, err)
 		}
 	}
-	return DecodeLoose(relative, raw)
+	e, err := DecodeLoose(relative, raw)
+	if err != nil {
+		return Event{}, err
+	}
+	if len(doc.Content) == 1 {
+		if err := refuseWideIntegers(doc.Content[0]); err != nil {
+			return Event{}, fmt.Errorf("events: parse %s: %w", relative, err)
+		}
+	}
+	return e, nil
+}
+
+// refuseWideIntegers refuses a whole number in the before or after map that
+// does not fit in 64 bits. YAML can only read one as a float, which rounds it,
+// so both sides of a segment round trip would agree on the rounded value and
+// the exact digits would go with the loose file. It runs after the decode
+// succeeded, which has already refused an anchor that contains itself, so
+// following an alias always ends.
+func refuseWideIntegers(event *yaml.Node) error {
+	if event.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(event.Content); i += 2 {
+		key := event.Content[i].Value
+		if key != "before" && key != "after" {
+			continue
+		}
+		if err := refuseWideInteger(event.Content[i+1]); err != nil {
+			return fmt.Errorf("%s: %w", key, err)
+		}
+	}
+	return nil
+}
+
+// refuseWideInteger walks one value. A scalar YAML resolved as a float whose
+// text has no fraction or exponent is a whole number no 64-bit integer holds.
+func refuseWideInteger(node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.AliasNode:
+		return refuseWideInteger(node.Alias)
+	case yaml.ScalarNode:
+		if node.ShortTag() == "!!float" && !strings.ContainsAny(node.Value, ".eE") {
+			return fmt.Errorf("whole number %s does not fit in 64 bits", node.Value)
+		}
+		return nil
+	}
+	for _, child := range node.Content {
+		if err := refuseWideInteger(child); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 var (
@@ -320,7 +372,8 @@ func fromWireRevision(r wireRevision) store.RevisionRef {
 
 // normalize puts an event into the one shape both the YAML and the segment
 // decoders agree on: UTC times, and Before and After values reduced to
-// strings, int, float64, bool, nil, []any, and map[string]any.
+// strings, int, float64, bool, nil, []any, and map[string]any, plus uint64 for
+// a whole number past int64, which no other of those types holds exactly.
 func normalize(e *Event) {
 	e.At = e.At.UTC()
 	for i := range e.Files {
@@ -391,6 +444,9 @@ func normalizeValue(v any) any {
 		if i, err := x.Int64(); err == nil {
 			return int(i)
 		}
+		if u, err := strconv.ParseUint(x.String(), 10, 64); err == nil {
+			return u
+		}
 		f, err := x.Float64()
 		if err != nil {
 			return x.String()
@@ -424,18 +480,29 @@ func normalizeValue(v any) any {
 	return v
 }
 
+// normalizeUnsigned keeps a whole number past int64 as the uint64 it is.
+// Turning it into a float64 would round it, and the round-trip proof would
+// then compare two copies of the rounded value.
 func normalizeUnsigned(u uint64) any {
 	if u <= math.MaxInt64 {
 		return int(u)
 	}
-	return float64(u)
+	return u
 }
 
-// normalizeFloat turns a whole number that fits int64 into an int, so 2 and
-// 2.0 read the same from either encoding.
+// normalizeFloat turns a whole number that fits int64 into an int, and one
+// past int64 that fits uint64 into a uint64, so 2 and 2.0 read the same from
+// either encoding. A whole float converts exactly; JSON spells it as the same
+// digits an integer has, so a segment could not tell the two apart anyway.
 func normalizeFloat(f float64) any {
-	if f == math.Trunc(f) && f >= -(1<<63) && f < 1<<63 {
+	if f != math.Trunc(f) {
+		return f
+	}
+	if f >= -(1<<63) && f < 1<<63 {
 		return int(f)
+	}
+	if f >= 1<<63 && f < 1<<64 {
+		return uint64(f)
 	}
 	return f
 }
