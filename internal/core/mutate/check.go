@@ -288,7 +288,8 @@ func gateAgainst(rev vcs.Revisions) (store.RevisionRef, error) {
 // carried forward unchanged, and it is recorded pending only when no
 // compatible verdict exists.
 //
-// The evals gate is special and is NOT run as a bare command: its recorded result
+// The evals gate, the gate declared under the manifest key `evals`
+// (isEvalRecursion), is special and is NOT run as a bare command: its recorded result
 // is the per-criterion `criteria` map plus a status DERIVED from the criteria,
 // evaluated exactly as `tiller eval` does, preserving any human-settled criterion
 // status carried in prior. This is what keeps `tiller check` from clobbering an
@@ -543,7 +544,7 @@ func scopedEvalFile(tree *store.Tree, noun, relPath string) (*store.EvalFile, er
 // It is the single home of the shelf-node eval exclusion. A bug or chore runs
 // the task-grade gates, so gateNoun reads it as a task and the manifest's
 // task-scoped evals gate matches, but a shelf node has no feature.eval.md and
-// the `tiller eval` recursion gate is never run on one. Deciding that here
+// the evals gate is never run on one. Deciding that here
 // rather than at each call site is what keeps `check` and `sync` from
 // disagreeing: check would report every required gate green while the same
 // run's sync recorded a pending evals policy_violation on the node it just
@@ -621,10 +622,15 @@ func gateNoun(noun string) string {
 	return noun
 }
 
-// isEvalRecursion reports whether a gate shells `tiller eval`, the recursion point
-// the eval handoff (T13) fills in. Until then such a gate is recorded pending.
+// isEvalRecursion reports whether a gate is the derived evals gate, the one
+// check must never shell because running it would recurse into `tiller eval`
+// and mutate the node check is about to write. The gate is identified by its
+// manifest key, `evals`, the same identity attest, eval, submit, and the
+// readout use; its `run` text is never read to decide this, so any spelling of
+// the command under that key is derived, and a gate under another key is an
+// ordinary command even when its text mentions `tiller eval`.
 func isEvalRecursion(c gates.GateConfig) bool {
-	return strings.Contains(c.Run, "tiller eval")
+	return c.Name == "evals"
 }
 
 // interpolateNode substitutes the node placeholders the manifest gate commands use
