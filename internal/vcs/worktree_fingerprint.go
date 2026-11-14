@@ -31,6 +31,11 @@ const (
 	directoryIdentity = "tree"
 )
 
+// worktreeFingerprintDomain versions the fingerprint's framing. It is hashed
+// first, so a value recorded under an earlier framing (v1 had no domain line
+// and no entry modes) never equals one computed now, even for the same tree.
+const worktreeFingerprintDomain = "tiller-worktree-fingerprint-v2\x00"
+
 // WorktreeFingerprint returns a deterministic sha256 RevisionRef over the current
 // working-tree state, the honest provenance for a gate that ran over a dirty tree
 // (where HEAD does not contain the tested code).
@@ -48,10 +53,16 @@ const (
 //
 // A file's identity is its Git blob id computed in-process (nothing is written
 // to the object store), a symlink's is the blob id of its target, as Git stores
-// it. A path that no longer exists, or that now sits beyond a symlink or a file
-// where a directory was, is recorded with the deletion sentinel. A path that
-// exists but cannot be read is a worktree_unreadable error, never a deletion.
-// No index, object, stash, or ref is written.
+// it. Each identity is hashed beside the entry's Git mode (worktreeMode), so
+// the same bytes made executable, or a symlink standing where a regular file
+// held the link's target text, are a different tree. A path that no longer
+// exists, or that now sits beyond a symlink or a file where a directory was, is
+// recorded with the deletion sentinel and no mode. A path that exists but
+// cannot be read is a worktree_unreadable error, never a deletion. No index,
+// object, stash, or ref is written.
+//
+// The value is provenance, recorded and shown, and nothing compares a recorded
+// fingerprint with a fresh one: CodeIdentity is what gate reuse compares.
 func (g *Git) WorktreeFingerprint() (store.RevisionRef, error) {
 	top, err := g.runRaw("rev-parse", "--show-toplevel")
 	if err != nil {
@@ -101,13 +112,22 @@ func (g *Git) WorktreeFingerprint() (store.RevisionRef, error) {
 	defer root.Close()
 
 	h := sha256.New()
+	h.Write([]byte(worktreeFingerprintDomain))
 	fmt.Fprintf(h, "head\x00%s\n", head)
 	for _, p := range sorted {
 		identity, err := worktreeIdentity(root, p)
 		if err != nil {
 			return store.RevisionRef{}, unreadable(p, err)
 		}
-		fmt.Fprintf(h, "%s\x00%s\n", p, identity)
+		if identity == deletedIdentity {
+			fmt.Fprintf(h, "%s\x00%s\n", p, identity)
+			continue
+		}
+		mode, err := worktreeMode(root, p)
+		if err != nil {
+			return store.RevisionRef{}, unreadable(p, err)
+		}
+		fmt.Fprintf(h, "%s\x00%s %s\n", p, mode, identity)
 	}
 
 	return store.RevisionRef{

@@ -1,9 +1,13 @@
 package vcs
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
@@ -240,4 +244,85 @@ func TestWorktreeFingerprint_UnbornIndexedFilesUseWorkingBytes(t *testing.T) {
 	require.Equal(t, second, fingerprint(t, g), "staging unchanged bytes must preserve the observed tree")
 	require.NoError(t, os.Remove(filepath.Join(dir, name)))
 	require.NotEqual(t, second, fingerprint(t, g), "an indexed path missing from the working tree is distinct")
+}
+
+// The fingerprint names the exact tree, and a tree entry is its mode as well
+// as its bytes. A script that is already dirty stays in the changed-path list
+// when its executable bit flips, so only the entry's mode can tell the two
+// trees apart. Tracked and untracked scripts are checked alone.
+func TestWorktreeFingerprint_ExecutableBitOfADirtyFileChangesIdentity(t *testing.T) {
+	for _, state := range []string{"tracked", "untracked"} {
+		t.Run(state, func(t *testing.T) {
+			dir, g := newRepo(t)
+			script := filepath.Join(dir, "run.sh")
+			if state == "tracked" {
+				require.NoError(t, os.WriteFile(script, []byte("echo committed\n"), 0o644))
+				run(t, dir, "add", "-A")
+				run(t, dir, "commit", "-m", "script")
+			}
+			require.NoError(t, os.WriteFile(script, []byte("echo edited\n"), 0o644))
+			plain := fingerprint(t, g)
+			assert.Equal(t, plain, fingerprint(t, g), "an unchanged observation is stable")
+
+			require.NoError(t, os.Chmod(script, 0o755))
+			executable := fingerprint(t, g)
+			assert.NotEqual(t, plain, executable, "the same bytes made executable are a different tree")
+			assert.Equal(t, executable, fingerprint(t, g))
+
+			require.NoError(t, os.Chmod(script, 0o644))
+			assert.Equal(t, plain, fingerprint(t, g), "the original mode restores the original fingerprint")
+		})
+	}
+}
+
+// A symlink and a regular file holding the link's target text store the same
+// blob. The entry mode is what keeps them distinct.
+func TestWorktreeFingerprint_SymlinkIsNotARegularFileWithTheSamePayload(t *testing.T) {
+	for _, state := range []string{"tracked", "untracked"} {
+		t.Run(state, func(t *testing.T) {
+			dir, g := newRepo(t)
+			entry := filepath.Join(dir, "entry")
+			if state == "tracked" {
+				require.NoError(t, os.WriteFile(entry, []byte("committed\n"), 0o644))
+				run(t, dir, "add", "-A")
+				run(t, dir, "commit", "-m", "entry")
+			}
+			require.NoError(t, os.WriteFile(entry, []byte("README.md"), 0o644))
+			regular := fingerprint(t, g)
+
+			require.NoError(t, os.Remove(entry))
+			require.NoError(t, os.Symlink("README.md", entry))
+			assert.NotEqual(t, regular, fingerprint(t, g), "a symlink to README.md is not a file containing README.md")
+		})
+	}
+}
+
+// legacyFingerprint is the framing used before entry modes were hashed: the
+// HEAD line, then one "path NUL blob" line per changed path.
+func legacyFingerprint(head string, entries map[string]string) string {
+	paths := make([]string, 0, len(entries))
+	for p := range entries {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+	h := sha256.New()
+	fmt.Fprintf(h, "head\x00%s\n", head)
+	for _, p := range paths {
+		fmt.Fprintf(h, "%s\x00%s\n", p, entries[p])
+	}
+	return "sha256:" + hex.EncodeToString(h.Sum(nil))
+}
+
+// A fingerprint recorded under the earlier framing never equals one computed
+// now, even for a tree whose entries the earlier framing described in full, so
+// an old record reads as a different tree and never as a match.
+func TestWorktreeFingerprint_FramingIsVersioned(t *testing.T) {
+	dir, g := newRepo(t)
+	require.NoError(t, writeRepoFile(dir, "README.md", "edited\n"))
+	require.NoError(t, writeRepoFile(dir, "new.txt", "untracked\n"))
+	legacy := legacyFingerprint(run(t, dir, "rev-parse", "HEAD"), map[string]string{
+		"README.md": run(t, dir, "hash-object", "README.md"),
+		"new.txt":   run(t, dir, "hash-object", "new.txt"),
+	})
+	assert.NotEqual(t, legacy, fingerprint(t, g))
 }
