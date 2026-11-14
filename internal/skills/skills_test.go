@@ -601,6 +601,37 @@ func TestDecomposeAsksForNoEpicContract(t *testing.T) {
 	require.Contains(t, text, "epic.md", "the epic's one authored artifact is still named")
 }
 
+// TestDecomposeSaysWhatAFeatureNarrativeCarries pins the bar for feature.md prose.
+func TestDecomposeSaysWhatAFeatureNarrativeCarries(t *testing.T) {
+	text, ok := Lookup("decompose")
+	require.True(t, ok)
+	require.Contains(t, text, "It is narrative, not a specification",
+		"decompose says what a feature narrative is and is not")
+}
+
+// TestDecomposeCitesFoundingSources pins source citation on the founding adds
+// and the coverage map in the readout notes.
+func TestDecomposeCitesFoundingSources(t *testing.T) {
+	text, ok := Lookup("decompose")
+	require.True(t, ok)
+	start := strings.Index(text, "### A founding design")
+	end := strings.Index(text, "### A later document")
+	require.True(t, start >= 0 && end > start)
+	require.Contains(t, text[start:end], "--source",
+		"the founding choreography cites a source on its adds")
+	require.Contains(t, text, "coverage map", "the readout notes carry a coverage map")
+}
+
+// TestDecomposeRoutesACorrectionInsideAnUnapprovedFeature pins the route for a
+// correction that has no task home, and that the recovery line points at the
+// placement rules rather than a vague instruction.
+func TestDecomposeRoutesACorrectionInsideAnUnapprovedFeature(t *testing.T) {
+	text, ok := Lookup("decompose")
+	require.True(t, ok)
+	require.Contains(t, text, "When the feature is still `draft`")
+	require.NotContains(t, text, "moving the add to where it belongs")
+}
+
 // retiredModel is the vocabulary the single-tree refactor removed. A skill that
 // still names any of it does not merely read stale: `--intent` exits 2, `tiller
 // schedule` and `tiller accept` are not commands, `epic.eval.md` is a file
