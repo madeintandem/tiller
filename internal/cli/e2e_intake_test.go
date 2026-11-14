@@ -547,8 +547,8 @@ func amendmentEventsByType(t *testing.T, tree *store.Tree, amendmentID, typ stri
 	return found
 }
 
-// The arcs below are the one-door verification list (docs/plans/
-// 2026-11-12-intake-decompose-design.md, "Verification"), driven through the
+// The arcs below are the one-door verification list (artifact-schema.md,
+// settled decisions for one door for documents), driven through the
 // real CLI the way the decompose skill teaches the choreography. They follow
 // the file's rule: every fact an assertion reads is written by a command.
 

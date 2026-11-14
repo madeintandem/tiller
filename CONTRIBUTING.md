@@ -69,11 +69,12 @@ copy. `cd site && npm ci && npm run dev` serves it at
   describes it changes in the same batch, and a spec that no longer matches
   what ships is a defect in the doc. Where the specs run ahead of the code,
   the [roadmap](./docs/roadmap.md) says which is which.
-- **Plans track active work.** Dated implementation plans live in `docs/plans/`
-  while they are active and are deleted when built. Before deleting one, move
-  its durable decisions into the owning spec's settled decisions and any
-  unfinished scope into the spec or the [roadmap](./docs/roadmap.md). Git keeps
-  the full record; the working tree should not carry competing accounts of what is next.
+- **Planned work lives in Tiller.** This repository is managed with Tiller itself, so
+  design documents, the work tree, amendments, and open questions live under
+  `.tiller/`, and there is no `docs/plans/` directory. When work is built, its
+  durable decisions move into the owning spec's settled decisions, and unfinished
+  scope stays in Tiller or the [roadmap](./docs/roadmap.md). The working tree
+  should not carry competing accounts of what is next.
 - **Fast tests.** New tests run in parallel where they can, with `t.Parallel()` as the
   first statement (`internal/core/mutate` and `internal/testgit` do). A test
   that cannot (it calls `t.Setenv` or `t.Chdir`, or touches package-level

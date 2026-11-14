@@ -652,9 +652,10 @@ func TestApproveAmendmentReportsARemovedDraftApart(t *testing.T) {
 	require.Contains(t, out, "Operations applied: 1")
 }
 
-// The arcs below drive the held-draft model through the real CLI (docs/plans/
-// 2026-11-12-intake-decompose-design.md, "Verification"). Each is one test, named
-// for what it proves.
+// The arcs below drive the held-draft model through the real CLI: the
+// verification list of the one-door design (artifact-schema.md, settled
+// decisions for one door for documents). Each is one test, named for what it
+// proves.
 
 // e2eRefusal reads a blocked or misuse answer's reason: the envelope puts it in
 // error.reason for misuse (exit 2) and in data.reason for a blocked answer

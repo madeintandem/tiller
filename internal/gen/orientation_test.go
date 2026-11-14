@@ -434,8 +434,8 @@ func TestOrientationDrawsTheChoreTweakLine(t *testing.T) {
 	require.Contains(t, text, "Tweaks are minor adjustments that may change code. A change to code or tests, however small, is a tweak.")
 }
 
-// The prohibition review's duplicates ruling (ruling 2 in
-// docs/plans/2026-11-13-prohibition-review.md) removed two sentences from
+// The prohibition review's duplicates ruling (ruling 2 of the 2026-11-14
+// rulings recorded in skill-set.md, "Decisions settled so far") removed two sentences from
 // orientation, each repeating the sentence beside it. Each row names one by a
 // phrase no surviving text carries, so neither creeps back.
 func TestOrientationDropsTheRuledDuplicates(t *testing.T) {

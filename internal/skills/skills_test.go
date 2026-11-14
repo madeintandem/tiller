@@ -2296,7 +2296,7 @@ func TestSkillsCarryTheReviewFollowUps(t *testing.T) {
 // ruledDeletions names, per skill, every sentence or clause the prohibition
 // review removed under ruling 1 (a repeat of an orientation boundary where the
 // skill is not where the action happens) and ruling 2 (duplicates and
-// residue), in docs/plans/2026-11-13-prohibition-review.md. Each phrase is one
+// residue), recorded in skill-set.md, "Decisions settled so far". Each phrase is one
 // no surviving text in that skill carries, so a returning copy fails here.
 var ruledDeletions = map[string][]string{
 	"amend": {

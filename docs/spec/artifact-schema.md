@@ -1183,7 +1183,7 @@ For event compaction, settled 2026-11-11 (rationale in [event compaction, immuta
 - Schema 14 marks the change, so an older binary refuses a compacted tree, and the upgrade compacts under the ordinary rules. (JC)
 - A day holding only events a segment cannot carry stays loose and is read again on every compaction pass. That cost is accepted: nothing records that a day was examined, on disk or in a per-checkout cache. (JC, 2026-11-14)
 
-For one door for documents, settled 2026-11-11 to 2026-11-12 (the design is [one door for documents](../plans/2026-11-12-intake-decompose-design.md)):
+For one door for documents, settled 2026-11-11 to 2026-11-12:
 
 - The door picks the route. A document that arrives through `tiller intake` is decomposed into an amendment by default, on every project kind, whether or not it turns out to contain work; the founding design arrives with `init --design` or `intake --no-amendment` and becomes a draft tree. (JC)
 - `--no-amendment` is the founding design, and only while the project has no epics; it records one `design_intake` event and leaves the manifest alone. (JC)
