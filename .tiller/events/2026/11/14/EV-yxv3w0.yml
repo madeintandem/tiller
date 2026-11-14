@@ -1,0 +1,11 @@
+id: EV-yxv3w0
+type: contributor.add
+at: 2026-11-14T21:54:22.782491Z
+contributor: allen
+command: add contributor allen
+targets:
+    - allen
+after:
+    name: Allen Dayag
+files:
+    - path: .tiller/tiller.yml

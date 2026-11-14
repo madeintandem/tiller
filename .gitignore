@@ -74,3 +74,14 @@ CLAUDE.local.md
 /videos/out/
 # videos/src/build is the build command's source, not build output (same name collision as ui/src/views/build).
 !/videos/src/build/
+
+# Tiller-generated, not source. Safe to delete; Tiller re-runs the gates and
+# regenerates the cache. Keep these out of your code diff.
+/artifacts/tiller/
+/.bin/
+# Per-checkout identity (who you are here), written by `tiller join`; never commit it.
+/.tiller/identity.yml
+# Per-checkout settings (console preferences and the like), hand-edited; never commit it.
+/.tiller/local.yml
+# Tiller skill shims (installed per machine by `tiller join`; not source).
+/.claude/skills/tiller-*/

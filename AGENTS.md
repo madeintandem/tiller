@@ -1,3 +1,15 @@
+<!-- tiller:begin (managed by `tiller join`; edits inside are overwritten) -->
+## Tiller
+
+This project uses Tiller to run its SDLC workflow. Specs, decomposition, planning, and acceptance gates live in `.tiller/`, under git, beside the code they describe.
+
+One hard rule: drive work to the edge of done and stop. You may propose, build, attach evidence, run gates, and open PRs. Authorized execution includes creating task branches and merging them into the recorded feature or epic aggregate, never into the configured integration branch. A gate is the human's decision, not the human's keyboard: run `approve` only on an explicit human instruction naming the nodes. You never attest a human gate and never cross work to done, even on instruction; the final integration merge is the human's, and Tiller records the crossing from it.
+
+PRs are for code: a change that touches only `.tiller/` commits directly, with no pull request.
+
+Read `.tiller/orientation.md` for the full rules and how to work. Run `tiller status` before each session to see where things stand.
+<!-- tiller:end -->
+
 # AGENTS.md
 
 Orientation for any coding agent or contributor working in this repo. Read this first. `CLAUDE.md` points here, and so should any future harness-specific file. As real codebases land under this repo, they get their own sub-`AGENTS.md` with the specifics. This root file stays about Tiller as a whole.

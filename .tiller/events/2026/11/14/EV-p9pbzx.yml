@@ -1,0 +1,11 @@
+id: EV-p9pbzx
+type: contributor.add
+at: 2026-11-14T21:54:07.826343Z
+contributor: jc
+command: add contributor jc
+targets:
+    - jc
+after:
+    name: JC Grubbs
+files:
+    - path: .tiller/tiller.yml
