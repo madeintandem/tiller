@@ -5,6 +5,8 @@ description: Use when you enter a Tiller repo or need to choose unrelated next w
 
 # orient
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 You begin work in a Tiller repo, or you just finished a step and need to choose the next unrelated work. This is the broadest moment in the set and the only one not tied to a single node's state. When in doubt about what to do, start here. A developer reporting a merge or acceptance decision for already-authorized work instead re-enters `execute` for that work's bounded closeout; it is not permission to start unrelated work.
@@ -115,21 +117,15 @@ An explicit human correction that maps to a class authorizes the selected action
 
 ## Recovery protocol
 
-Skills correct themselves from the CLI's exit codes without a human. A `1` is a business answer to reason about, usually a red gate or an illegal transition; fix the work and try again, do not escalate. Stop and report when the same gate fails the same way after two different fixes, or when a failure does not reproduce when you run the gate's own command directly: name the gate, the failure, what you tried, and the evidence commits. A `2` or a `3` is a mistake in how the command was called or in the environment; fix the call. When you are unsure what is legal from here, `tiller status <noun> <node>` names the next moves with nothing executed. This protocol is inherited by every skill, so the others only point back to it.
+Follow the recovery protocol in `.tiller/orientation.md`.
 
 For `design-brief`, recovery is limited to corrected reads. Report missing sources, drift, and unavailable instructions as limitations; do not repair sources, refresh instructions, record questions, or enter another skill to fill the gaps.
 
 For a `code-review` review, recovery is limited to corrected reads. A disposition records through `tiller` commands and recovers by the ordinary protocol above.
 
-## External references
-
-In authored prose, link the first mention of an external library, framework, service, standard, tool, or other reference to its canonical home or the specific page relevant to the claim, using an HTTPS Markdown link. Use a URL only when it is present in the inputs or was fetched live in this session and returned a page identifying the intended reference. A failed fetch or a search snippet is not verification. Never guess a URL, even for a familiar name or a seemingly obvious homepage or domain. If neither source is available, write the name as plain text. This house rule applies across skills and hand-offs; it does not authorize fetching unrelated sources or changing accepted historical prose.
-
 ## Node references
 
-When you talk to the human about a node, name it by its key path with the id in parentheses: `submit-certification/certification-form-loading (F-79dh3q)`. A task carries its own three-segment key path, `submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)`. A question is never keyed; name it by its id plus its short title, and use the full statement when the question itself is the subject. In command position an existing node takes either form: a bare id is always valid, and a keyed noun also takes its key path. The `add` verbs are the exception, because they name a node that does not exist yet by the key path it will have, so every segment there must be a key: `tiller add feature <epic-key>/<feature-key>` and `tiller add task <epic-key>/<feature-key>/<task-key>` refuse a parent addressed by id with exit `2`. A question is id-only in command position, since it is never keyed. This convention is inherited by every skill, and each one repeats the output half at its own reporting moment, because that is where a bare id actually leaks and a bare id is exactly the thing the developer cannot read without looking it up.
-
-Bugs are defects. Chores are housekeeping without code side effects, as guidance rather than validation. Tweaks are minor adjustments that may change code; Tasks are substantive planned work. Capture forward adjustments with a new Tweak contract and human triage, never by reopening done work. A bug carries a severity, `blocker`, `important`, `medium`, or `minor`, which capture grades by impact. `tiller approve bug` refuses an unrated bug, so hand the human `tiller approve bug <node> --severity <level>` for one. Like `rename` and `link`, `tiller grade bug <node> <level>` is a direct command: any contributor may set or change a bug's severity from proposed through in_review, and a done or cancelled bug keeps its grade. Severity never routes: it sorts and filters the console's Fix board, while `tiller next`, the readout, and the queue keep the shelf's soft order.
+Name and address nodes by the node reference rule in `.tiller/orientation.md`.
 
 ## Choreography
 
@@ -168,28 +164,25 @@ git commit --only -m "orient: record <short title>" -- <same-exact-paths>
 tiller readout orient                                  # the picture, rendered as the one block every harness renders the same way
 ```
 
-Note: `tiller ls plans` does not exist in this build; do not call it. `ls` takes epics, features, tasks, bugs, chores, tweaks, questions, and amendments.
+`tiller ls` takes epics, features, tasks, bugs, chores, tweaks, questions, and amendments.
 
 ## Readout
 
 orient lays no work down, so its block is not a report of work done, it is the picture itself: the same
 survey the Reasoning section above just walked, rendered the one way every harness renders it. Run
-`tiller readout orient` and reproduce its block verbatim as the last thing in your reply.
+`tiller readout orient`.
+Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
 
 The block carries one singular `Needs attention` list. It is counts-only: each bullet states an exact
 Queue count and an inline `tiller queue` drill-down. Do not expand it into concrete node rows, question
 rows, gates, criteria, or mutation commands. The queue command is the one place to enumerate a count.
-Do not narrate the picture again in prose around the block or summarize the ranked list in your own words.
 Baseline docs awaiting confirmation have their own review presentation, not a fabricated `approve_design` queue kind. Keep the rendered baseline review and human next action intact; an empty work-node queue does not mean those docs need no human.
-The block closes the reply and ends on its **Next:** ranked list, the one place the developer looks to learn what happens next. Reproduce the list as written; your own pick, if it differs, goes in the notes ahead of the block.
+Your own pick, if it differs from the ranked list, goes in the notes ahead of the block.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: context from earlier
 in this conversation that changes the read, a correction the developer should make to the picture, or a
-question worth recording rather than assuming an answer to. Keep it to facts about this run. In the
-notes and in everything else you write to the developer, name every epic, feature, and task the way the
-block itself does, key path with the id in parentheses, never a bare id: an id alone sends the developer
-off to look up what it points at. After the block, stop;
-the developer's next message is the redirect or the go, same as always.
+question worth recording rather than assuming an answer to.
+Name nodes by key path with the id in parentheses.
 
 ## Hand-off
 

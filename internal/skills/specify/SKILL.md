@@ -5,13 +5,15 @@ description: Use when the human pulls a draft feature forward from the frontier.
 
 # specify
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 The human has named a `draft` feature from the frontier. This is the second decompose stage, run one feature at a time, just in time, against only the feature they named, unless the human explicitly names a batch of draft features.
 
 ## Reasoning
 
-For authored prose, follow **External references** in `tiller guide orient`.
+For authored prose, follow **External references** in `.tiller/orientation.md`.
 
 One pass produces the feature's whole plan: the specification, the acceptance contract, and the task explosion. They are one act with one output and one gate, because the task breakdown is the evidence that the specification is right-sized. Do not stop between them.
 
@@ -252,23 +254,16 @@ An explicit human correction that matches this table authorizes the direct comma
 
 ## Readout
 
-End by running `tiller readout specify` and reproducing its block verbatim as the last thing in your
-reply to the developer. The block is Tiller's, not yours: it renders the same whoever is driving, which
-is what lets a developer learn to read it once instead of learning your habits. Do not restate it in
-prose around it, the criteria and their binding types included: the block already names them on its own
-authority. The block closes the reply: nothing follows it. It ends on its **Next:** ranked list, the
-one place the developer looks to learn what happens next, so reproduce the list as written and never
-add a list of your own after it.
+End by running `tiller readout specify`.
+Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
+Do not restate the criteria and their binding types: the block already names them on its own authority.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: an interpretation call
 behind a criterion's binding, which criteria are satisfiable by this feature and why, how tasks stay within
 this increment, material boundary or prerequisite-versus-soft-order decisions, the open facts this plan leaves for execution to determine, each question this run recorded by id and title with what its answer would change, which answer changed which file once answers are folded in, and how each `spec feature` warning was resolved (a targeted check, a dropped criterion, or why the criterion stays), so the human weighs them at approval. While a recorded question is open, the block's **Next:** list names its answer, not the approve, since the queue hides an approve an open question holds. Name later discoveries,
 their affected work, and proposed correction routes without silently expanding the batch. Flag anywhere
-`feature.md` still wants the human's own words. Keep it to facts about this run. In the notes and in everything else you write to the
-developer, name every epic, feature, and task the way the block itself does, key path with the id in
-parentheses, never a bare id: an id alone sends the developer off to look up what it points at.
-Commentary is yours to add freely, with the notes ahead of the block, never after it;
-a question for the human is a recorded question.
+`feature.md` still wants the human's own words.
+Name nodes by key path with the id in parentheses.
 
 ## Hand-off
 

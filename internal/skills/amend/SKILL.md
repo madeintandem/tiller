@@ -5,6 +5,8 @@ description: Use when the developer names a change large enough to reshape the p
 
 # amend
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 The developer judges a change large enough to reshape the plan rather than extend it. Or `tiller drift` reports a cascade out of one upstream change, a renamed column that stale-specs a dozen done features, too large to mend marker by marker. Or the code has shifted under planned but unbuilt work in ways no marker can see, and the developer knows roughly what moved and roughly which part of the tree it touches. This is the deliberate counterpart to `decompose`: decompose builds the tree from inputs, and amend reshapes a tree that already exists with work hanging off it.
@@ -13,13 +15,13 @@ Nothing in recorded state says a reshape is due, so this seam is never a move th
 
 ## Reasoning
 
-For authored prose, follow **External references** in `tiller guide orient`.
+For authored prose, follow **External references** in `.tiller/orientation.md`.
 
 **The blast radius.** Read it first. Frame the change as brownfield against the team's own recent code, and work out which features, contracts, and epics it actually touches before you decide anything. Recorded state makes that a query rather than a memory exercise. `tiller show feature <key> --json` names the feature's `surface`, the existing code it touches, and the revisions its plan was accepted against; a done feature carries `verified_against` with the surfaces its completion recorded. Each node's own commit anchor bounds the reading: diff that node's surface from its anchor to HEAD and judge what changed there, instead of reading the whole codebase against the whole tree. When `tiller drift` is what brought you here, its candidates are input too: read each one's `files` and `since` and note which nodes the cascade names.
 
 Use `tiller query --from path:<repo-relative-path> --follow covered_by --json` to discover recorded exact and enclosing-scope claims, then inspect each source: work surface, baseline description, and acceptance binding mean different things and none proves implementation coverage. `--from <work-id> --follow depended_on_by,amended_by,mentioned_by --json` finds recorded neighbors and document citations; raise depth deliberately, since follow names are a union at every hop rather than ordered stages. Read diagnostics and `complete` before treating the radius as exhaustive. Generated mentions are labeled, unknown references stay unresolved, and proposed amendment effects are not applied lineage. Historical key reuse must never connect an old operation to today's holder. Current-file navigation does not recover a pinned historical revision; use the recorded evidence and report unavailable history. Querying is read-only and changes no lifecycle gate.
 
-**Structural feasibility before placement.** Load the installed `tiller guide amend` and inspect `tiller rename --help` and `tiller amend --help` before promising a move, naming replacement work, or negotiating detailed placement. Read `tiller show <noun> <ref> --json`, `tiller status <noun> <ref> --json`, and `tiller query` for the affected feature, every descendant task, and both current and proposed parents. Inspect lifecycle and prior starts, recorded branches and reviews, accepted bases, dependencies, effective direct/inherited question holds, and inherited review grain. Use read-only Git inspection where history needs clarification. Current ready status alone does not prove that work never started. Do not probe with a mutation or invent a `--dry-run` flag.
+**Structural feasibility before placement.** Load the installed `tiller guide amend` and inspect `tiller rename --help` and `tiller amend --help` before promising a move, naming replacement work, or negotiating detailed placement. Read `tiller show <noun> <ref> --json`, `tiller status <noun> <ref> --json`, and `tiller query` for the affected feature, every descendant task, and both current and proposed parents. Inspect lifecycle and prior starts, recorded branches and reviews, accepted bases, dependencies, effective direct/inherited question holds, and inherited review grain. Use read-only Git inspection where history needs clarification. Current ready status alone does not prove that work never started. Do not probe with a mutation.
 
 Before product questions, state separately the recommended outcome, what this installed version can apply, and the smallest safe alternative. Resolve repository facts yourself; record a focused question only about unresolved product tradeoffs. The correction rules in `.tiller/orientation.md` distinguish direct proposal rename, reviewed unstarted feature moves, and genuine scope replacement. If the installed help lacks the reviewed move operation, disclose that accepted unstarted relocation is unsupported in that version rather than promising it. Do not install or upgrade without direction.
 
@@ -177,13 +179,9 @@ tiller readout amend                                       # the block that clos
 
 ## Readout
 
-End by running `tiller readout amend` and reproducing its block verbatim as the last thing in your
-reply to the developer. The block is Tiller's, not yours: it renders the same whoever is driving, which
-is what lets a developer learn to read it once instead of learning your habits. Do not restate it in
-prose around it, the staged operation count and the precondition tally included; the block already
-names them on its own authority. The block closes the reply: nothing follows it. It ends on its
-**Next:** ranked list, the one place the developer looks to learn what happens next, so reproduce the
-list as written and never add a list of your own after it.
+End by running `tiller readout amend`.
+Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
+Do not restate the staged operation count or the precondition tally: the block already names them on its own authority.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: the blast radius you
 read and what you deliberately left standing, which nodes you sorted as corrections rather than
@@ -191,12 +189,8 @@ casualties and the refresh-basis command each of those needs, the reasoning behi
 operation in a line, why additions extend an existing bounded outcome or form a distinct increment,
 the true prerequisites versus proposed soft order and legal `tiller link` and `tiller order` actions, the behavior
 a replacement feature has to preserve, the design docs this reshape obliges, and any stale precondition
-or unsupported active edge/move request the human must settle. Keep it to facts about this run.
-In the notes and in everything else you write to the developer,
-name every epic, feature, and task the way the block itself does, key path with the id in parentheses,
-never a bare id: an id alone sends the developer off to look up what it points at.
-Commentary is yours to add freely, with the notes ahead of the block, never after it;
-a question for the human is a recorded question.
+or unsupported active edge/move request the human must settle.
+Name nodes by key path with the id in parentheses.
 
 ## Hand-off
 

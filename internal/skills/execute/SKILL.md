@@ -5,6 +5,8 @@ description: Use for authorized ready, in_progress, or checked work, requested c
 
 # execute
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 A task, bug, chore, or tweak is `ready`, `in_progress`, or `check` and owned by you; reviewed work has requested changes; a human acceptance decision resumes the same review; a coarse review has reached its finish line; or the developer reports a merge of the related authorized work. Checked work re-enters without `start` or `resume`: complete outstanding checks and submission on its recorded branch. A reported merge authorizes bounded closeout of that work, not a new feature or unrelated planning. Inspect state and the merge, then continue on the integration branch through applicable feature acceptance, ordinary sync, state publication, and readback. A pure orient request still briefs and stops.
@@ -146,7 +148,7 @@ Before `tiller check` can run the build and tests gates, their `run` commands mu
 
 The loop is re-enterable. When a PR review requests changes, run `tiller resume task <id> --reason "<what changed>"` to move the task from `in_review` back to `in_progress` and pick the loop up where you left off. The recorded PR stays, and prior gate results may now be `stale`, so re-run `tiller check` before resubmitting. Reuse the existing open PR and complete both pushes and the submission-state readback; an old PR number on resumed or checked work does not mean the new changes were submitted. At a coarser grain, continue the branch loop until the feature or epic review surface is ready, then update that same review. Work already in `check` skips `resume` as well as `start`.
 
-Claim only the task, bug, chore, or tweak you will execute. `tiller claim task <key>` takes an unclaimed task; another holder requires `--from <id>` restating the actual holder and an explicit human handoff instruction. Before start, `tiller release task <key>` returns your reservation to the pool; `tiller reassign task <key> --to <contributor-id> --reason <text>` is a human-directed handoff. The same commands support `bug`, `chore`, and `tweak`. First successful start permanently fixes ownership. Do not release completed work or change ownership on resume, checks, review, or cancellation; even cancelled-before-start ownership is terminal history. Creation and approval never assign tasks. Features and epics have no exclusive owner, and claims never cascade. Judgment verbs remain available to registered contributors under their existing actor and human-gate rules. There is no `tiller add evidence`; evidence is recorded by `tiller check` and `tiller eval`.
+Claim only the task, bug, chore, or tweak you will execute. `tiller claim task <key>` takes an unclaimed task; another holder requires `--from <id>` restating the actual holder and an explicit human handoff instruction. Before start, `tiller release task <key>` returns your reservation to the pool; `tiller reassign task <key> --to <contributor-id> --reason <text>` is a human-directed handoff. The same commands support `bug`, `chore`, and `tweak`. First successful start permanently fixes ownership. Do not release completed work or change ownership on resume, checks, review, or cancellation; even cancelled-before-start ownership is terminal history. Creation and approval never assign tasks. Features and epics have no exclusive owner, and claims never cascade. Judgment verbs remain available to registered contributors under their existing actor and human-gate rules. Evidence is recorded by `tiller check` and `tiller eval`.
 
 ### Exceptional human-directed transfer
 
@@ -380,14 +382,8 @@ The graded rubric output file you write for each `eval`-kind criterion has a fix
 
 ## Readout
 
-End by running `tiller readout execute` and reproducing its block verbatim as the last thing in your
-reply to the developer. The block is Tiller's, not yours: it renders the same whoever is driving, which
-is what lets a developer learn to read it once instead of learning your habits. Do not restate it in
-prose around it. The block closes the reply: nothing follows it. It ends on its **Next:** ranked list,
-the one place the developer looks to learn what happens next, so keep reproducing the list as written
-and never add a list of your own after it. `tiller submit` and a passing `tiller check` print an
-**Up next:** list when they finish; that list shows what the tree now allows; inside your run's scope it is your queue, and outside it, it is not authorization. The closing readout's list is the
-one you reproduce.
+End by running `tiller readout execute`.
+Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: what you changed
 outside `.tiller/`, file by file where that helps a reviewer, what you deliberately left out of this
@@ -396,11 +392,8 @@ recorded and every open question still holding the run's work (each with its id 
 holds, what the answer would change, and the branch and worktree that carry it, where the human answers
 it), and any caveat about the
 branch or the merge basis the human should carry into the merge (the ordering rules above name the shapes
-that can silently strand a node, and the block cannot see which one you are walking into). Keep it to
-facts about this run. In the notes and in everything else you write to the developer, name every epic,
-feature, and task the way the block itself does, key path with the id in parentheses, never a bare id:
-an id alone sends the developer off to look up what it points at. Commentary is yours to add freely,
-with the notes ahead of the block, never after it; a question for the human is a recorded question.
+that can silently strand a node, and the block cannot see which one you are walking into).
+Name nodes by key path with the id in parentheses.
 
 Always include the observed review URL, host open/draft state, repository/base/head, and publication tip evidence when handing over a remote review. Before acceptance, explicitly say formal submission is not yet recorded and name each exact human decision. For offline work name the local branch and committed tip. For a failed/no-publish run say which local commits exist, what is and is not published, the exact blocked step, and the remaining acceptance or submission work. Tiller's pure readout cannot verify these external facts.
 

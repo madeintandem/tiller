@@ -5,13 +5,15 @@ description: Use when an investigation or the developer's description identifies
 
 # capture
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 An investigation has reproduced a defect, or the developer has described a concrete defect, maintenance obligation, or minor adjustment that should remain visible beyond this conversation. Capture records the finding. It does not triage it. A human answer to a forward-work question that names a defect is that description.
 
 ## Reasoning
 
-For authored prose, follow **External references** in `tiller guide orient`.
+For authored prose, follow **External references** in `.tiller/orientation.md`.
 
 Choose `bug` when observed behavior violates expected product or system behavior. Choose `chore` for housekeeping without code side effects, such as documentation or operational upkeep. This is classification guidance, not policing or validation of Chores. Choose `tweak` for a minor adjustment that may change code; choose a Task for substantive planned work. A change to code or tests, however small, is a tweak. Done work stays done: capture forward adjustments as new work rather than reopening completed records. If the work needs its own feature acceptance contract or changes the work tree, route to `decompose`, `specify`, or `amend` instead.
 

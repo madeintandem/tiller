@@ -5,6 +5,8 @@ description: Use when a brownfield or legacy-migration project has no confirmed 
 
 # derive-baseline
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 A `brownfield` or `legacy-migration` project has no confirmed doc in `.tiller/design/baseline.yml`, even if work is already recorded. This seam ranks ahead of decompose. A developer may also explicitly request baseline work. A newly declared uncovered root does not automatically trigger this seam in this build.
@@ -121,7 +123,7 @@ Stage exact paths, not `git add -A` or a blanket `git add .tiller docs`. Inspect
 
 ## Readout
 
-End by running `tiller readout derive-baseline` and reproducing its entire block verbatim as the last thing in your reply. Do not shorten its coverage map, collapse the fourth source or doc into an ellipsis, or write your own replacement table. The block exposes every recorded source-revision-to-doc mapping and every ledger doc with described paths and confirmation facts. Different blobs for the same source path are different source revisions. These links are not proof that every input's meaning survived translation. The block ends on its **Next:** ranked list; reproduce the list as written and never add a list of your own after it.
+End by running `tiller readout derive-baseline`. Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`. Reproduce all of it: do not shorten its coverage map, collapse the fourth source or doc into an ellipsis, or write your own replacement table. The block exposes every recorded source-revision-to-doc mapping and every ledger doc with described paths and confirmation facts. Different blobs for the same source path are different source revisions. These links are not proof that every input's meaning survived translation.
 
 Before the block, add **Notes from this run** for what the ledger cannot know:
 
@@ -131,7 +133,7 @@ Before the block, add **Notes from this run** for what the ledger cannot know:
 - Questions actually opened during this run, by short title and Q-id, and any unresolved uncertainty not recorded as a question. List forward-work questions separately, each with its capability and cited sources. The readout's **Open questions** is the current ledger count, not a count opened by this run.
 - Any exact source or code prerequisite that prevented completion, without claiming a successful complete translation.
 
-Keep notes factual, not boilerplate claims that everything was preserved. When naming work nodes, use key path with id in parentheses, never a bare id; baseline docs have path identities, not invented node ids. Nothing follows the readout, not a second Next line or an agent-authored approval summary.
+Keep notes factual, not boilerplate claims that everything was preserved. Name nodes by key path with the id in parentheses. Baseline docs have path identities, not invented node ids. Nothing follows the block, not even an agent-authored approval summary.
 
 ## Re-entry and corrections
 

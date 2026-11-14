@@ -137,6 +137,26 @@ that materially changes boundaries or order needs a focused question, not an
 invented journey. Propose wider changes for developer direction, not as an
 unrequested replan.
 
+## Terms
+
+- **seam**: a point in the lifecycle where one skill's work begins and ends.
+- **live**: neither cancelled nor archived.
+- **shelf**: the standing list of bugs, chores, or tweaks; each noun has its own shelf, kept in soft order.
+- **frontier**: the live draft features whose own and owning epic's recorded dependencies are settled (` + "`done`" + ` or ` + "`cancelled`" + `), excluding drafts an open amendment holds.
+- **review grain**, **coarse**: where review lands (` + "`task`" + `, ` + "`feature`" + `, or ` + "`epic`" + `); coarse means feature or epic.
+- **unit of work**: what one review covers.
+- **run**: the work the developer's instruction named, and nothing else.
+- **aggregate**: the feature or epic review branch that submitted task branches merge into at coarse grain.
+- **riding task**: a task whose review rides its feature's or epic's review; it submits a review ref, not its own PR.
+- **review ref**: the branch and commit a submit records when the node has no PR of its own.
+- **finish line**: at coarse grain, every live riding task ` + "`in_review`" + ` or ` + "`done`" + `, and at epic grain every independent feature or task override already done.
+- **closeout**: the bounded work that carries a reviewed unit to done after its finish line or its reported merge: feature checks and evidence, human acceptance, submission, sync, and the state commits that record them.
+- **rollup**: a feature's or epic's ` + "`done`" + `, recorded by ` + "`tiller sync`" + ` from its children (at least one not cancelled, every live one done, and for a feature its gates checked) and recomputed when new work lands beneath it.
+- **accepted basis**: the spec, contract, or task prose pinned at approval as ` + "`accepted_against`" + `; ` + "`active_basis`" + ` is drift from it.
+- **operative question**: an open question that currently holds a node, directly or through an ancestor; a recorded feature-only assumption lifts its hold on that feature, never on its tasks.
+- **held draft**: a node an open amendment created and holds inert until approval promotes it or withdrawal removes it.
+- **carrier**, **carried**: a shelf node is carried while a live epic, feature, or task, its carrier, is recorded through ` + "`tiller resolve`" + ` as the work whose merge fixes it.
+
 ## The rules you must follow
 
 - Managed projects must never depend on Tiller. Setup, build, tests, CI,
@@ -171,9 +191,16 @@ unrequested replan.
   reasoning, and observed verification, not the tool that produced it. This
   rule applies across every skill and hand-off. It does not remove necessary
   technical references, real human credits, or required third-party notices.
-- For authored prose, follow the External references section in
-  ` + "`tiller guide orient`" + `. It is the shared writing rule across skills
-  and hand-offs.
+- **External references.** In authored prose, link the first mention of an
+  external library, framework, service, standard, tool, or other reference to
+  its canonical home or the specific page relevant to the claim, using an HTTPS
+  Markdown link. Use a URL only when it is present in the inputs or was fetched
+  live in this session and returned a page identifying the intended reference.
+  A failed fetch or a search snippet is not verification. Never guess a URL,
+  even for a familiar name or a seemingly obvious homepage or domain. If neither
+  source is available, write the name as plain text. This house rule applies
+  across skills and hand-offs; it does not authorize fetching unrelated sources
+  or changing accepted historical prose.
 - Drive work to the edge of done and stop. You may propose, build, attach
   evidence through gates, run gates, and open PRs. A gate is the human's
   decision, not the human's keyboard: on an explicit instruction naming the
@@ -198,6 +225,8 @@ unrequested replan.
   and the gate records stay honest. The one ` + "`.yml`" + ` you own is the manifest,
   ` + "`.tiller/tiller.yml`" + `: its configuration (gates, contributors, inputs) is
   human-owned, so edit freely.
+- Confirm an unfamiliar command or flag with ` + "`tiller <command> --help`" + ` before
+  running it. Never guess one.
 - End lifecycle reasoning by recording it through a command. The reasoning
   is yours; the recording is the CLI's. The explicitly requested
   ` + "`design-brief`" + ` export is the exception: return a derived Markdown
@@ -431,7 +460,8 @@ unrequested replan.
   Never disguise host failure as offline work, invent rollback, or claim completion.
   Follow recovery first; stop for a genuine credential, host-tool, protection,
   conflict, or human-decision blocker that cannot be resolved safely.
-- Follow the recovery protocol when a command refuses. Exit ` + "`1`" + ` is a
+- Follow the recovery protocol when a command refuses. Every skill inherits it
+  and corrects itself from the CLI's exit codes without a human. Exit ` + "`1`" + ` is a
   business refusal to reason about, usually a red gate or an illegal transition:
   fix the work and try again, do not escalate. Stop and report when the same gate
   fails the same way after two different fixes, or when a failure does not
@@ -455,11 +485,21 @@ unrequested replan.
   The rule covers every surface you author, readout notes, hand-offs,
   summaries, and lists alike: an epic, feature, or task id never appears
   without its key path, because a bare id sends the developer off to look up
-  what it points at. Bare ids belong inside commands, where they are always
-  valid. A commit subject reads the same way: the bare task id satisfies
+  what it points at. Bare ids belong inside commands. A commit subject reads
+  the same way: the bare task id satisfies
   traceability there. A pull request title carries the reviewed node's full key
   path with its id. Its body names the work riding that review, the task's
   parent feature at task grain, or the tasks and features at a coarser grain.
+  In command position an existing node takes either form: a bare id is always
+  valid, and a keyed noun also takes its key path. The ` + "`add`" + ` verbs are the
+  exception, because they name a node that does not exist yet by the key path
+  it will have, so every segment there must be a key:
+  ` + "`tiller add feature <epic-key>/<feature-key>`" + ` and
+  ` + "`tiller add task <epic-key>/<feature-key>/<task-key>`" + ` refuse a parent
+  addressed by id with exit ` + "`2`" + `. A question is id-only in command position,
+  since it is never keyed. This convention is inherited by every skill, and each
+  one repeats the naming half at its own reporting moment, where a bare id
+  actually leaks.
 - Work inside this repository. Tiller's guidance is complete in the project:
   this file, the skills ` + "`tiller guide`" + ` serves, and the command output.
   Never go hunting outside the project directory for Tiller documentation or
@@ -469,8 +509,13 @@ unrequested replan.
   reproduce it verbatim as the last thing in your reply, with your own
   account under ` + "`Notes from this run`" + ` ahead of it. The block closes the
   reply, nothing follows it, and it ends on its ` + "`**Next:**`" + ` ranked list,
-  which you reproduce as written. It renders the same whoever is driving, so
-  the developer reads one format rather than yours. ` + "`submit`" + ` and a passing
+  the one place the developer looks to learn what happens next, which you
+  reproduce as written, with no list of your own after it. It renders the same
+  whoever is driving, so the developer reads one format rather than yours.
+  Do not restate the block in prose around it. The notes carry what the block
+  cannot know. Keep the notes to facts about this run. Commentary is yours to
+  add freely, with the notes ahead of the block, never after it; a question for
+  the human is a recorded question. ` + "`submit`" + ` and a passing
   ` + "`check`" + ` print the same list under ` + "`**Up next:**`" + ` when they finish; that list
   shows what the tree now allows; inside your run's scope it is your queue, and outside it, it is not authorization. The closing readout's list is the one you reproduce. The block has two sizes.
   A seam exit gets the full ` + "`tiller readout <seam>`" + ` block. A correction or
@@ -601,10 +646,14 @@ A bug carries a severity graded by impact: ` + "`blocker`" + `, ` + "`important`
 or ` + "`minor`" + `. Capture files it with ` + "`tiller add bug <key> --severity <level>`" + `, or
 leaves it unrated and says why in the contract when impact is not yet known.
 ` + "`tiller approve bug`" + ` refuses an unrated bug (` + "`severity_required`" + `) until
-` + "`--severity <level>`" + ` grades it. Any contributor may set or change a
-non-terminal bug's severity with ` + "`tiller grade bug <key> <level>`" + `; a done or
-cancelled bug keeps its grade. Chores and tweaks carry none. Severity never routes:
-the next list, readouts, and the queue keep the shelf's soft order.
+` + "`--severity <level>`" + ` grades it, so hand the human
+` + "`tiller approve bug <key> --severity <level>`" + ` for one. Like ` + "`rename`" + ` and
+` + "`link`" + `, ` + "`tiller grade bug <key> <level>`" + ` is a direct command: any
+contributor may set or change a non-terminal bug's severity with it, from
+` + "`proposed`" + ` through ` + "`in_review`" + `; a done or cancelled bug keeps its grade.
+Chores and tweaks carry none. Severity never routes: it sorts and filters the
+console's Fix board, while the next list, readouts, and the queue keep the
+shelf's soft order.
 
 Every new task is unclaimed, regardless of who created or approved it. Claim
 only the execution unit: ` + "`tiller claim task <key>`" + ` (or ` + "`bug`" + ` / ` + "`chore`" + ` / ` + "`tweak`" + `).
@@ -707,7 +756,7 @@ features, all descendant tasks, and source/destination epics through
 states and prior starts, branches/reviews, accepted bases, dependencies,
 effective question holds, and inherited review settings. Current ready state
 does not erase execution history. Use read-only history inspection as needed,
-never a trial mutation or an invented dry-run flag. Explain the recommended
+never a trial mutation. Explain the recommended
 product outcome, installed capability, and smallest safe alternative before
 asking product questions. Do not ask for facts the repository can answer.
 If installed help lacks a move operation, disclose the limitation rather than

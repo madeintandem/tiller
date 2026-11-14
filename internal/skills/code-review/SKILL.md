@@ -5,6 +5,8 @@ description: Use only when the developer explicitly asks for a code review of on
 
 # code-review
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 This skill has two arms, and each needs its own explicit request.

@@ -5,6 +5,8 @@ description: Use only when the developer explicitly requests a UI/UX design brie
 
 # design-brief
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 The developer explicitly asks for a UI/UX design brief or prototype handoff for an epic, feature, or task. Accept a canonical key or ID. Resolve conversational references such as "this task" only when the conversation identifies one target unambiguously. Otherwise ask which target they mean, using available node reads to name the candidates rather than guessing.

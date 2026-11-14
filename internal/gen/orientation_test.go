@@ -196,6 +196,9 @@ func TestQuestionsAreRecordedNotChatted(t *testing.T) {
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "A clarification of the request itself")
 	require.Contains(t, text, "recorded with `tiller add question`")
+	// The readout seams' shared notes rule moved here from the skills.
+	require.Contains(t, text, "Commentary is yours to add freely")
+	require.Contains(t, text, "a question for the human is a recorded question")
 }
 
 // TestOrientationNeverSwitchesACheckoutForPlanningState pins the one rule for
@@ -235,4 +238,127 @@ func TestOrientationStatesCurrentBaselineDriftAndShelfClaims(t *testing.T) {
 func TestOrientationDrawsTheChoreTweakLine(t *testing.T) {
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "Tweaks are minor adjustments that may change code. A change to code or tests, however small, is a tweak.")
+}
+
+// normalizedOrientation is the orientation text with its hard wraps collapsed.
+func normalizedOrientation() string {
+	return strings.Join(strings.Fields(Orientation()), " ")
+}
+
+// Orientation defines the terms the skills use, in one section between what
+// Tiller is and the rules.
+func TestOrientationDefinesItsTerms(t *testing.T) {
+	text := normalizedOrientation()
+	terms := strings.Index(text, "## Terms")
+	require.GreaterOrEqual(t, terms, 0)
+	require.Greater(t, terms, strings.Index(text, "## What Tiller is"))
+	require.Less(t, terms, strings.Index(text, "## The rules you must follow"))
+	for _, term := range []string{
+		"seam", "live", "shelf", "frontier", "review grain", "coarse", "unit of work",
+		"run", "aggregate", "riding task", "review ref", "finish line", "closeout",
+		"rollup", "accepted basis", "operative question", "held draft", "carrier", "carried",
+	} {
+		require.Containsf(t, text, "**"+term+"**", "orientation defines %q", term)
+	}
+	require.Contains(t, text, "- **run**: the work the developer's instruction named, and nothing else.")
+}
+
+// The external references writing rule lives in orientation, not in orient.
+func TestOrientationCarriesTheExternalReferencesRule(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"**External references.** In authored prose, link the first mention of an external library, framework, service, standard, tool, or other reference",
+		"Use a URL only when it is present in the inputs or was fetched live in this session and returned a page identifying the intended reference.",
+		"A failed fetch or a search snippet is not verification.",
+		"Never guess a URL",
+		"If neither source is available, write the name as plain text.",
+		"This house rule applies across skills and hand-offs; it does not authorize fetching unrelated sources or changing accepted historical prose.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	require.NotContains(t, text, "follow the External references section in")
+}
+
+// One general rule replaces the per-skill notes about commands that do not exist.
+func TestOrientationConfirmsUnfamiliarCommands(t *testing.T) {
+	text := normalizedOrientation()
+	require.Contains(t, text, "Confirm an unfamiliar command or flag with `tiller <command> --help` before running it. Never guess one.")
+	require.Less(t, strings.Index(text, "- Mutate state only through"), strings.Index(text, "- Confirm an unfamiliar command or flag"))
+	require.Contains(t, text, "never a trial mutation.")
+	require.NotContains(t, text, "invented dry-run flag")
+}
+
+// The recovery protocol lives once, in orientation, and every skill inherits it.
+func TestOrientationCarriesTheRecoveryProtocol(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"Follow the recovery protocol when a command refuses.",
+		"Every skill inherits it and corrects itself from the CLI's exit codes without a human.",
+		"fix the work and try again, do not escalate",
+		"Stop and report when the same gate fails the same way after two different fixes",
+		"Exit `2` or `3` means correct the call or environment.",
+		"names the legal next moves with nothing executed",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+}
+
+// The node reference convention, naming and command-position addressing, is
+// stated once in orientation and inherited by every skill.
+func TestOrientationCarriesNodeReferenceConvention(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"`submit-certification/certification-form-loading (F-79dh3q)`",
+		"`submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)`",
+		"This convention is inherited by every skill",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+}
+
+// In command position an existing node takes either form, and the add verbs
+// refuse a parent addressed by id.
+func TestOrientationStatesTheAddressingRuleTheCLIActuallyHas(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"In command position an existing node takes either form: a bare id is always valid, and a keyed noun also takes its key path.",
+		"The `add` verbs are the exception",
+		"refuse a parent addressed by id with exit `2`",
+		"A question is id-only in command position, since it is never keyed.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	require.NotContains(t, text, "In command position bare ids are always valid")
+	require.NotContains(t, text, "Bare ids belong inside commands, where they are always valid.")
+}
+
+// Orientation carries what orient's copy of the shelf paragraph said and its
+// own did not.
+func TestOrientationCarriesTheWholeSeverityRule(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"so hand the human `tiller approve bug <key> --severity <level>` for one",
+		"Like `rename` and `link`, `tiller grade bug <key> <level>` is a direct command",
+		"from `proposed` through `in_review`",
+		"Severity never routes: it sorts and filters the console's Fix board",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+}
+
+// The readout rule states every clause the six readout skills used to repeat.
+func TestOrientationCarriesTheWholeReadoutRule(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"reproduce it verbatim as the last thing in your reply",
+		"The block closes the reply, nothing follows it, and it ends on its `**Next:**` ranked list",
+		"the one place the developer looks to learn what happens next",
+		"with no list of your own after it",
+		"Do not restate the block in prose around it.",
+		"Keep the notes to facts about this run.",
+		"Commentary is yours to add freely, with the notes ahead of the block, never after it; a question for the human is a recorded question.",
+		"inside your run's scope it is your queue, and outside it, it is not authorization",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
 }

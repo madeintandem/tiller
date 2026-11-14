@@ -5,6 +5,8 @@ description: Use when a design document needs turning into work, with to-be inpu
 
 # decompose
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 Two doors lead here, and the door decides how the result is recorded.
@@ -17,7 +19,7 @@ On brownfield or legacy-migration, first inspect `.tiller/design/baseline.yml`. 
 
 ## Reasoning
 
-For authored prose, follow **External references** in `tiller guide orient`.
+For authored prose, follow **External references** in `.tiller/orientation.md`.
 
 Read the inputs first, and read each document whole before mapping a single line of it: a judgment call on line 40 can narrow what line 200 reads as in isolation, and a mapping made line by line never gets the benefit of that context. A folder is read as one body, since its files are related and one amendment covers them all. Read the design docs, the current-state layer, and the code roots named in `.tiller/tiller.yml`. Brownfield surface roots name writable code to understand before changing it. Legacy-migration reference roots name the old, read-only system whose behavior informs the new system, not code to extend. Every declared root needs an explicit `mode: surface` or `mode: reference`. Assess readiness, reason about delivery progression, then choose the tree and its prerequisites.
 
@@ -231,28 +233,22 @@ Record consequential product gaps as questions, not unresolved guesses hidden in
 
 ## Readout
 
-End by running `tiller readout decompose` and reproducing its block verbatim as the last thing in your
-reply to the developer. The block has two sizes. A seam exit gets the full block. A correction inside the
+End by running `tiller readout decompose`.
+Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.
+The block has two sizes. A seam exit gets the full block. A correction inside the
 approval gate (the next section) closes its reply with `tiller readout decompose --since <sha>` instead,
 where `<sha>` is the commit the last block you reported named: only what changed since then, still
-Tiller's rendering, still reproduced verbatim and last. The block is Tiller's, not yours: it renders the
-same whoever is driving, which
-is what lets a developer learn to read it once instead of learning your habits. Do not restate it in
-prose around it, the completeness bar this skill spends a whole section on included: the edge count and
-the cross-epic count are the block's to report, not yours to narrate again. The block closes the reply:
-nothing follows it. It ends on its **Next:** ranked list, the one place the developer looks to learn
-what happens next, so reproduce the list as written and never add a list of your own after it.
+Tiller's rendering, still reproduced verbatim and last. The completeness bar this skill spends a whole
+section on is the block's too: the edge count and the cross-epic count are the block's to report, not
+yours to narrate again.
 
 On the amendment route the closing command is `tiller readout amend`, with the same rules: reproduce its block verbatim and last, and keep your own account in the **Notes from this run** list ahead of it.
 
 Before the block, add a short **Notes from this run** list for what it cannot know: the recommended
 product progression, material boundary or platform tradeoffs, how later known scope remains covered, a coverage map (each requirement-bearing section of the inputs and the features that carry it, and anything left unmapped with the reason),
 a richness gap judged not worth a recorded question, and, on a scoped lane, exactly which cross-epic
-edges you could not record yet and who inherits the rest of the sweep. Keep it to facts about this run. In the notes and in everything else you
-write to the developer, name every epic, feature, and task the way the block itself does, key path with
-the id in parentheses, never a bare id: an id alone sends the developer off to look up what it points
-at. Commentary is yours to add freely,
-with the notes ahead of the block, never after it; a question for the human is a recorded question. On the amendment route the notes also say what each held draft extends or why it forms a distinct increment, which shelf items you filed from the document and which finding each came from, and when the amendment is empty, that nothing in the document became work and why.
+edges you could not record yet and who inherits the rest of the sweep.
+Name nodes by key path with the id in parentheses. On the amendment route the notes also say what each held draft extends or why it forms a distinct increment, which shelf items you filed from the document and which finding each came from, and when the amendment is empty, that nothing in the document became work and why.
 
 ## Correcting the draft
 

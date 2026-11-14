@@ -257,13 +257,13 @@ func TestCodeReviewSeverityBecomesTheBugsField(t *testing.T) {
 	}
 }
 
-// Orient names grade beside rename and link, and the severity approve bug needs.
-func TestOrientNamesGradeAndTheApproveBugSeverity(t *testing.T) {
+// Orient's copy of the shelf and severity paragraph is gone; orientation
+// carries it (TestOrientationCarriesTheWholeSeverityRule in package gen).
+func TestOrientLeavesTheSeverityRuleToOrientation(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
-	require.Contains(t, text, "tiller grade bug <node> <level>")
-	require.Contains(t, text, "`tiller approve bug` refuses an unrated bug")
-	require.Contains(t, text, "Severity never routes")
+	require.NotContains(t, text, "Bugs are defects. Chores are housekeeping")
+	require.NotContains(t, text, "Like `rename` and `link`, `tiller grade bug <node> <level>` is a direct command")
 }
 
 // Merged-ness is a Git fact, not a status: the merge that brought a head in is
@@ -474,16 +474,41 @@ func TestOrientNamesCountsOnlyNeedsAttentionAndQueueDrillDown(t *testing.T) {
 		"orient no longer describes per-kind inline mutation sections")
 }
 
-// The block now ends on the ranked list, so the skills that say what the
-// developer reads last name the list, not a single Next line, and still have
-// the agent reproduce it verbatim.
-func TestReadoutSkillsEndOnTheRankedList(t *testing.T) {
-	for _, name := range []string{"orient", "derive-baseline", "decompose", "specify", "execute", "amend"} {
+// The six readout sections point at the one readout rule in orientation
+// (TestOrientationCarriesTheWholeReadoutRule in package gen) and keep only what
+// is particular to their seam: the command, their notes, and the naming line.
+func TestReadoutSectionsPointAtTheOrientationRule(t *testing.T) {
+	for _, name := range readoutSeams {
 		raw, _ := Lookup(name)
 		text := strings.Join(strings.Fields(raw), " ") // skills hard-wrap prose
-		require.Containsf(t, text, "ends on its **Next:** ranked list", "%s names the list as the block's end", name)
-		require.NotContainsf(t, text, "always the block's **Next:** line", "%s no longer names a single Next line", name)
+		i := strings.Index(text, "## Readout")
+		require.GreaterOrEqualf(t, i, 0, "%s has a Readout section", name)
+		readout := text[i:]
+		if j := strings.Index(readout[len("## Readout"):], "## "); j >= 0 {
+			readout = readout[:len("## Readout")+j]
+		}
+		require.Containsf(t, readout, "tiller readout "+name, "%s names its readout command", name)
+		require.Containsf(t, readout, "Reproduce the block verbatim and last, per the readout rule in `.tiller/orientation.md`.", "%s points at the readout rule", name)
+		require.Containsf(t, readout, "Notes from this run", "%s keeps its own notes list", name)
+		require.Containsf(t, readout, "Name nodes by key path with the id in parentheses.", "%s keeps the naming line", name)
+		for _, gone := range []string{
+			"The block is Tiller's, not yours",
+			"an id alone sends the developer off",
+			"ends on its **Next:** ranked list",
+			"never add a list of your own after it",
+			"Keep it to facts about this run.",
+			"always the block's **Next:** line",
+		} {
+			require.NotContainsf(t, text, gone, "%s leaves %q to orientation", name, gone)
+		}
 	}
+	orient, _ := Lookup("orient")
+	require.NotContains(t, orient, "Do not narrate the picture again in prose around the block")
+	derive, _ := Lookup("derive-baseline")
+	require.NotContains(t, derive, "Nothing follows the readout, not a second Next line")
+	execute, _ := Lookup("execute")
+	require.NotContains(t, execute, "print an\n**Up next:** list when they finish")
+	require.NotContains(t, execute, "inside your run's scope it is your queue")
 }
 
 // TestMendDriftHasNoReadoutSection locks in the deliberate exception to the
@@ -589,35 +614,70 @@ func TestHandoffsDisambiguateApproveAccept(t *testing.T) {
 	}
 }
 
-// TestQuestionsAreRecordedNotChatted pins that a question for the human is a
-// recorded question, never a line of chat, in the four seams that add notes.
+// TestQuestionsAreRecordedNotChatted pins that the four seams that add notes
+// neither invite chat questions nor carry their own copy of the notes rule,
+// which orientation now states (TestQuestionsAreRecordedNotChatted in package gen).
 func TestQuestionsAreRecordedNotChatted(t *testing.T) {
-	for _, name := range []string{"decompose", "amend"} {
-		text, ok := Lookup(name)
-		require.True(t, ok)
-		require.NotContainsf(t, text, "Questions and commentary are yours to add freely", "%s does not invite chat questions", name)
-	}
 	for _, name := range []string{"decompose", "amend", "specify", "execute"} {
 		text, ok := Lookup(name)
 		require.True(t, ok)
-		require.Containsf(t, text, "Commentary is yours to add freely", "%s keeps commentary free", name)
-		require.Containsf(t, text, "a question for the human is a recorded question", "%s records questions", name)
+		require.NotContainsf(t, text, "Questions and commentary are yours to add freely", "%s does not invite chat questions", name)
+		require.NotContainsf(t, text, "Commentary is yours to add freely", "%s leaves the notes rule to orientation", name)
 	}
 }
 
-// TestOrientCarriesNodeReferenceConvention pins the reference convention (issue
-// #10) as a stated-once rule in orient: human-facing prose names a node by its
-// key path with the id in parentheses, a task carries its own three-segment key
-// path (folder-backed tasks are keyed in their own right now), and the other
-// skills inherit the convention rather than restating it.
-func TestOrientCarriesNodeReferenceConvention(t *testing.T) {
+// TestOrientPointsAtOrientationForSharedRules pins that orient's recovery,
+// external references, and node reference copies are gone and its sections
+// point at orientation, which states each rule once
+// (TestOrientationCarriesTheRecoveryProtocol, TestOrientationCarriesTheExternalReferencesRule,
+// TestOrientationCarriesNodeReferenceConvention in package gen).
+func TestOrientPointsAtOrientationForSharedRules(t *testing.T) {
 	text, ok := Lookup("orient")
 	require.True(t, ok)
-	require.Contains(t, text, "## Node references", "orient states the convention once")
-	require.Contains(t, text, "submit-certification/certification-form-loading (F-79dh3q)", "the key path carries the id in parentheses")
-	require.Contains(t, text, "submit-certification/certification-form-loading/schema-transcription (T-k3p9w6)",
-		"a task carries its own three-segment key path")
-	require.Contains(t, text, "This convention is inherited by every skill", "the other skills only point back to it")
+	require.Contains(t, text, "## Recovery protocol\n\nFollow the recovery protocol in `.tiller/orientation.md`.\n")
+	require.NotContains(t, text, "Skills correct themselves from the CLI's exit codes")
+	require.NotContains(t, text, "This protocol is inherited by every skill")
+	require.NotContains(t, text, "after two different fixes", "the retry bound leaves with orient's recovery copy")
+	require.NotContains(t, text, "## External references")
+	require.NotContains(t, text, "Never guess a URL")
+	require.Contains(t, text, "## Node references\n\nName and address nodes by the node reference rule in `.tiller/orientation.md`.\n")
+	require.NotContains(t, text, "This convention is inherited by every skill")
+	require.NotContains(t, text, "In command position an existing node takes either form")
+	require.NotContains(t, text, "tiller ls plans")
+	require.Contains(t, text, "`tiller ls` takes epics, features, tasks, bugs, chores, tweaks, questions, and amendments.")
+}
+
+// The skills that name the external references rule point at orientation.
+func TestSkillsPointAtOrientationForExternalReferences(t *testing.T) {
+	for _, name := range []string{"decompose", "specify", "amend", "capture"} {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		require.Containsf(t, text, "follow **External references** in `.tiller/orientation.md`.", "%s points at orientation", name)
+		require.NotContainsf(t, text, "in `tiller guide orient`", "%s no longer points at orient", name)
+	}
+}
+
+// Every skill opens by assuming orientation and naming the remedy when it is stale.
+func TestEverySkillAssumesOrientation(t *testing.T) {
+	for _, name := range Names() {
+		text, _ := Lookup(name)
+		require.Containsf(t, text, "Read `.tiller/orientation.md` first if it is not in context", "%s assumes orientation", name)
+		require.Containsf(t, text, "`tiller upgrade --project-only`", "%s names the stale-orientation remedy", name)
+		require.Containsf(t, text, "# "+name+"\n\nThis skill assumes `.tiller/orientation.md`.", "%s opens with the line under its title", name)
+	}
+}
+
+// The general command rule in orientation replaces notes that only said a
+// command or flag does not exist; notes that state a fact keep the fact.
+func TestSkillsDropNotesTheCommandRuleCovers(t *testing.T) {
+	amend, ok := Lookup("amend")
+	require.True(t, ok)
+	require.Contains(t, amend, "Do not probe with a mutation.")
+	require.NotContains(t, amend, "invent a `--dry-run` flag")
+	execute, ok := Lookup("execute")
+	require.True(t, ok)
+	require.Contains(t, execute, "Evidence is recorded by `tiller check` and `tiller eval`.")
+	require.NotContains(t, execute, "There is no `tiller add evidence`")
 }
 
 // TestDecomposeAsksForNoEpicContract replaces the epic.eval breadcrumb this test
@@ -752,26 +812,6 @@ func TestExecuteGradesTheContractsEvalCriterion(t *testing.T) {
 	// cannot run.
 	require.NotContains(t, ex, "--criterion C3", "the manual criterion is never graded")
 	require.NotContains(t, ex, `"criterion": "C3"`, "nor recorded as rubric output")
-}
-
-// TestOrientStatesTheAddressingRuleTheCLIActuallyHas replaces a convention that
-// was stated as absolute and is not. "In command position bare ids are always
-// valid" holds for every verb that addresses an EXISTING node, and fails for the
-// add verbs, which parse their argument as the key path the new node will have:
-// `tiller add feature <E-id>/two` exits 2 with `feature key "E-id/two" must be
-// <epic-key>/<feature-key>`. That is exactly where an agent would reach for an
-// id, having just read the parent's id off the confirmation line.
-func TestOrientStatesTheAddressingRuleTheCLIActuallyHas(t *testing.T) {
-	o, ok := Lookup("orient")
-	require.True(t, ok)
-	require.Contains(t, o, "In command position an existing node takes either form",
-		"the rule is scoped to existing nodes")
-	require.Contains(t, o, "The `add` verbs are the exception",
-		"and the exception is named")
-	require.Contains(t, o, "refuse a parent addressed by id with exit `2`",
-		"with the observed behavior, not a hedge")
-	require.NotContains(t, o, "In command position bare ids are always valid",
-		"the absolute claim is retired")
 }
 
 // TestSkillsStayInsideTheProject is the #17 sweep at the skill surface: no skill
@@ -1211,7 +1251,6 @@ func TestExecuteDefinesTheRun(t *testing.T) {
 	for _, want := range []string{
 		"A run is the work the developer's instruction named, and nothing else.",
 		"continuing the unit's eligible work without another go",
-		"outside it, it is not authorization",
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}

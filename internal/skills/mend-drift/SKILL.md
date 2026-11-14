@@ -5,6 +5,8 @@ description: Use when tiller drift reports a stale_spec, active_basis, answered_
 
 # mend-drift
 
+This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first if it is not in context. If it lacks a section this skill names, it is stale: tell the developer the project needs `tiller upgrade --project-only`.
+
 ## Trigger
 
 `tiller drift` reports a `stale_spec`, `active_basis`, `answered_question`, `missing_surface`, `orphan_eval`, `stale_design`, or `shifted_design` candidate. Detection is `tiller drift`'s; drafting the fix from here is yours. A sync `as-is docs touched` notice is only a prompt to run drift, not a candidate or permission to approve a doc.
