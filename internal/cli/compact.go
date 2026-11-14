@@ -95,6 +95,11 @@ func runCompact(cmd *cobra.Command, all, dryRun bool) error {
 		res = stageable(tree.Root, res)
 		refused := refusals(err)
 		human := humanCompaction(res, dryRun) + "\nSome days were not compacted: " + strings.Join(refused, "; ")
+		// The nonzero exit must not read as "nothing happened": what folded is
+		// in the working tree and still waits on the command printed above.
+		if !dryRun && len(res.Stage) > 0 {
+			human += "\nThe days that compacted still need staging with the command above."
+		}
 		return emitReport(cmd, "compact", false, CompactView{CompactResult: res, DryRun: dryRun, Refused: refused}, human, classify(err).Code)
 	}
 	res = stageable(tree.Root, res)

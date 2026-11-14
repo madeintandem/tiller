@@ -1020,12 +1020,16 @@ Each day is its own transaction, oldest first. A day that refuses, because two c
 differ or something unread sits at the new segment's path, is left as it was and the newer days
 still compact; the command then prints what it folded, adds `Some days were not compacted: <reason>`
 with one reason per refused day joined by `; `, and exits nonzero (`refused` in JSON, one entry per
-day). An event whose id is not a valid `EV-` token is never compacted and never named in the command.
+day). The nonzero exit marks the refused day; the days that folded are in the working tree and still
+need staging, and a last line says so. An event whose id is not a valid `EV-` token is never compacted and never named in the command.
 
 It writes only on `git.integration_branch` (anywhere when none is configured) and otherwise
 refuses `not_integration_branch` (exit `1`), naming both branches. A refusal `mutation_stale` means
-another Tiller write landed meanwhile and stops the run; run it again. It records no event and no person, so it needs
-no joined identity.
+another Tiller write landed meanwhile and stops the run; run it again. Days compacted before the stop
+stay in the working tree: the command prints their report and the `git add` command that stages
+them, then the stale message, and exits `1` (JSON carries the same `days`, `events`, and `stage`
+beside `reason: mutation_stale`, with the stopped day in `refused`). It records no event and no
+person, so it needs no joined identity.
 
 ## Migrate
 

@@ -157,6 +157,12 @@ func (b *batch) judgeEvalCorrections(tree *store.Tree, rev vcs.Revisions, doc *s
 				"operation %d already corrects it; one amendment corrects a feature's contract once", first)
 		}
 		corrected[r.target.NodeID()] = r.index
+		// A correction an interrupted approval already applied is not judged
+		// again: its completion record now pins the corrected contract, so
+		// there is no longer an older verified contract to compare it with.
+		if b.landed[r.index] {
+			continue
+		}
 
 		judged, err := b.judgeEvalCorrection(tree, rev, doc.ID, r)
 		if err != nil {
@@ -322,6 +328,14 @@ func (b *batch) correctEval(tree *store.Tree, deps Deps, owner store.Contributor
 
 	for _, r := range plan {
 		if r.op.Op != store.AmendmentOpCorrectEval {
+			continue
+		}
+		if b.landed[r.index] {
+			e, err := b.editFor(tree, r.target)
+			if err != nil {
+				return err
+			}
+			applied[r.index] = alreadyApplied(r, e.doc)
 			continue
 		}
 		judged, ok := b.evalCorrections[r.index]

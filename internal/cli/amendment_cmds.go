@@ -1348,7 +1348,9 @@ type AmendmentApproveView struct {
 // (mutate.AppliedOperation's own doc comment), and so is Note apart from an
 // applied correct-eval's commit hint: on add-question they distinguish a
 // genuine no-op from real work, so a caller reading this payload alone — not
-// just the human confirmation line — can tell the two apart.
+// just the human confirmation line — can tell the two apart. Outcome has one
+// other value, already_applied, on a cancel, a correct-eval, or a move an
+// interrupted approval of this amendment landed before this run.
 type AmendmentAppliedView struct {
 	Index       int                             `json:"index"`
 	Op          string                          `json:"op"`
@@ -1509,10 +1511,14 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 	mintedQuestions := 0
 	pooledFeatures := 0
 	removed := 0
+	already := 0
 	for _, op := range res.Applied {
 		if op.Status == mutate.OperationRemoved {
 			removed++
 			continue
+		}
+		if op.Outcome == mutate.AppliedAlready {
+			already++
 		}
 		byID[op.NodeID] = op
 		switch op.Op {
@@ -1530,7 +1536,10 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 		}
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "Approved amendment %s: %d operation(s) applied", ref, len(res.Applied)-removed)
+	fmt.Fprintf(&b, "Approved amendment %s: %d operation(s) applied", ref, len(res.Applied)-removed-already)
+	if already > 0 {
+		fmt.Fprintf(&b, ", %d already applied by an earlier interrupted approval", already)
+	}
 	if removed > 0 {
 		fmt.Fprintf(&b, ", %d removed", removed)
 	}
@@ -1564,6 +1573,11 @@ func humanApproveAmendment(tree *store.Tree, ref string, res mutate.ApproveResul
 		// line's plain confirmation of real work done.
 		if op.Outcome == mutate.AppliedNoChange {
 			line += " (no change)"
+		}
+		// A cancel, a correct-eval, or a move an interrupted approval of this
+		// amendment landed: this run verified it and wrote nothing for it.
+		if op.Outcome == mutate.AppliedAlready {
+			line += " (already applied)"
 		}
 		if op.Note != "" {
 			line += fmt.Sprintf("\n    %s", op.Note)

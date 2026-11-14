@@ -53,7 +53,7 @@ func checkFeatureMoves(tree *store.Tree, b *batch, doc *store.Amendment) error {
 	var stale []StalePrecondition
 	candidate := fresh
 	for index, op := range doc.Operations {
-		if op.Op != store.AmendmentOpMoveFeature {
+		if op.Op != store.AmendmentOpMoveFeature || b.landed[index] {
 			continue
 		}
 		if err := evaluateFeatureMove(fresh, doc, index); err != nil {
@@ -96,8 +96,8 @@ func (b *batch) moveFeatures(tree *store.Tree, deps Deps, owner store.Contributo
 		return err
 	}
 	refs := map[string]string{}
-	for _, op := range doc.Operations {
-		if op.Op == store.AmendmentOpMoveFeature {
+	for index, op := range doc.Operations {
+		if op.Op == store.AmendmentOpMoveFeature && !b.landed[index] {
 			for key, id := range moveIdentityLocators(tree, tree.Features[op.Target]) {
 				refs[key] = id
 			}
@@ -109,6 +109,11 @@ func (b *batch) moveFeatures(tree *store.Tree, deps Deps, owner store.Contributo
 		}
 		op := r.op
 		f := tree.Features[op.Target]
+		if b.landed[r.index] {
+			applied[r.index] = alreadyApplied(r, f)
+			applied[r.index].Move = op.Move
+			continue
+		}
 		source, err := resolveEpicForRename(tree, f.EpicKey)
 		if err != nil {
 			return err
@@ -197,7 +202,7 @@ func (b *batch) moveFeatures(tree *store.Tree, deps Deps, owner store.Contributo
 		if err := b.remapMoveQuestions(tree, op.Move.SourceKey, op.Key); err != nil {
 			return err
 		}
-		ev := amendmentOpEvent(deps, owner, doc, "move.feature", []string{f.ID, source.ID, destination.ID}, moved...)
+		ev := amendmentOpEvent(deps, owner, doc, eventMoveFeature, []string{f.ID, source.ID, destination.ID}, moved...)
 		ev.Before = map[string]any{"key": op.Move.SourceKey, "epic": source.ID}
 		ev.After["key"] = op.Key
 		ev.After["epic"] = destination.ID

@@ -41,8 +41,12 @@ package mutate
 // files and after the event files (applyAmendment does that explicitly rather
 // than leaving the events to commitMutation's append). So the one half-state a
 // kill can leave is operations landed under an amendment still proposed, and the
-// recovery contract for it is: re-approve. The gate runs again, and every
-// operation that already landed refuses loudly rather than double-applying.
+// recovery contract for it is: re-approve. The gate runs again, and an
+// operation that already landed is either safe to repeat, skipped as already
+// applied, or refused loudly; it is never double-applied or reported as work
+// this run did. A cancel, a correct-eval, and a move-feature are the skipped
+// kinds: each is recognised by its landed state plus the event the interrupted
+// run recorded for it, and reports AppliedAlready (amendment_landed.go).
 // A held draft is the exception by design: its promotion is idempotent, so a
 // draft already at its promoted status is accepted as done and the re-approve
 // finishes the rest. A legacy add (no node) whose node now exists refuses
@@ -54,13 +58,14 @@ package mutate
 // recorded reports AppliedOperation.Outcome as AppliedNoChange (or
 // AppliedUpdated, when blocks this run staged were genuinely new) rather
 // than either a refusal or a silent claim of work that never happened; a
-// cancel of an already-cancelled node refuses already_cancelled (the
+// cancel of a node something else cancelled refuses already_cancelled (the
 // lifecycle engine would read a second cancel as an idempotent no-op, which
 // is right for a human typing the verb twice and wrong for a batch that must
 // never report work it did not do); a supersession and a basis re-pin are
 // genuinely idempotent and simply land the same values again. Preconditions
 // the first pass consumed (a target_status that has since moved) refuse in
-// phase 1 before any of that.
+// phase 1 before any of that, except on an operation recognised as already
+// applied, whose guards are not judged a second time.
 
 import (
 	"errors"
@@ -92,6 +97,7 @@ const (
 	eventRevisePrefix      = "revise."
 	eventCancelPrefix      = "cancel."
 	eventCorrectEvalPrefix = "correct-eval."
+	eventMoveFeature       = "move.feature"
 )
 
 // ReasonAmendmentPreconditionsStale is the reason token the CLI renders on the
@@ -129,8 +135,10 @@ type ApproveResult struct {
 // set on a supersede and on a cancel that carried a superseded_by, and carries
 // the resolved node id even where the amendment staged a key.
 //
-// Outcome exists for add-question alone, and so does Note apart from
-// correct-eval's commit hint (below); both are blank for the other kinds. A
+// Outcome exists for add-question, and for a cancel, a correct-eval, or a
+// move-feature an interrupted approval already landed (AppliedAlready); Note
+// is add-question's apart from correct-eval's commit hint (below). Both are
+// blank otherwise. A
 // legacy add refuses key_exists before materialize ever populates this struct
 // for it (an add whose node already exists never reaches here), a held
 // draft's promotion reports the status it left the draft at, and
@@ -190,6 +198,11 @@ const (
 	AppliedUpdated  = "updated"
 	AppliedNoChange = "no_change"
 )
+
+// AppliedAlready is the Outcome of a cancel, a correct-eval, or a move-feature
+// that an earlier, interrupted approval of this same amendment landed. This
+// run verified it and wrote nothing for it (amendment_landed.go).
+const AppliedAlready = "already_applied"
 
 // StalePrecondition is one staged operation's precondition that no longer holds
 // against the live tree. Target names the operation's target where it has one
@@ -317,6 +330,12 @@ func ApproveAmendment(tree *store.Tree, deps Deps, amendment *store.Amendment) (
 		return ApproveResult{}, err
 	}
 	b := newBatch()
+	// An operation an interrupted approval already applied is recognised
+	// before any gate judges it: the guards it staged were consumed by the run
+	// that applied it, so every later step skips it (amendment_landed.go).
+	if err := b.findLanded(tree, doc, plan); err != nil {
+		return ApproveResult{}, err
+	}
 	// checkSource sits beside checkPreconditions, and runs first: see
 	// ApproveAmendment's own "Order of judgment" paragraph above for why.
 	if err := checkSource(tree, rev, doc); err != nil {
@@ -1144,7 +1163,7 @@ func checkPreconditions(tree *store.Tree, b *batch, rev vcs.Revisions, doc *stor
 	for _, r := range plan {
 		// A removed operation applies nothing, so nothing it guarded can be
 		// stale.
-		if r.op.Removed != "" {
+		if r.op.Removed != "" || b.landed[r.index] {
 			continue
 		}
 		for _, name := range preconditionNames {
@@ -1566,6 +1585,12 @@ type batch struct {
 	questionsDirty  bool
 
 	evalCorrections map[int]evalCorrection // phase 1's correct-eval verdicts, by operation index
+
+	// landed is the operations an interrupted approval of this amendment
+	// already applied, by operation index, and approvalRecorded whether that
+	// approval also recorded its amendment_approved event (amendment_landed.go).
+	landed           map[int]bool
+	approvalRecorded bool
 }
 
 // loadQuestions reads the shared decisions ledger fresh off disk exactly once
@@ -1853,11 +1878,15 @@ func applyAmendment(tree *store.Tree, deps Deps, owner store.Contributor, rev vc
 		return ApproveResult{}, err
 	}
 
-	ev := amendmentOpEvent(deps, owner, doc, eventAmendmentApproved, nil, relYml)
-	ev.Before = map[string]any{"status": before}
-	ev.After["status"] = store.AmendmentStatusApproved
-	ev.After["operations"] = len(plan)
-	b.events = append(b.events, ev)
+	// An interrupted approval that got as far as recording this event is not
+	// recorded a second time: the re-approve only finishes the status write.
+	if !b.approvalRecorded {
+		ev := amendmentOpEvent(deps, owner, doc, eventAmendmentApproved, nil, relYml)
+		ev.Before = map[string]any{"status": before}
+		ev.After["status"] = store.AmendmentStatusApproved
+		ev.After["operations"] = len(plan)
+		b.events = append(b.events, ev)
+	}
 
 	// The event files are placed here rather than left to commitMutation's own
 	// append, so the amendment's status write is last in the TRANSACTION and not
@@ -2356,7 +2385,9 @@ func (b *batch) supersede(tree *store.Tree, deps Deps, owner store.Contributor,
 // the human-only cancel verb enforces. Only the actor differs, and that
 // difference is the CLI's to enforce, so nothing here relaxes a state rule.
 //
-// An already-cancelled target refuses ahead of the legality check on purpose.
+// A target this amendment's own interrupted approval cancelled is skipped and
+// reported as already applied (amendment_landed.go). Any other
+// already-cancelled target refuses ahead of the legality check on purpose.
 // The lifecycle engine reads a second cancel as an idempotent no-op (its own
 // safe-retry rule), which is right for a human running the verb twice and wrong
 // for a batch: a re-approve after a partial apply would silently report a
@@ -2366,6 +2397,17 @@ func (b *batch) cancel(tree *store.Tree, deps Deps, owner store.Contributor,
 
 	for _, r := range plan {
 		if r.op.Op != store.AmendmentOpCancel {
+			continue
+		}
+		if b.landed[r.index] {
+			e, err := b.editFor(tree, r.target)
+			if err != nil {
+				return err
+			}
+			applied[r.index] = alreadyApplied(r, e.doc)
+			if r.op.SupersededBy != "" {
+				_, applied[r.index].Replacement = supersessionLinks(e.doc)
+			}
 			continue
 		}
 		e, err := b.writeFor(tree, r.target)

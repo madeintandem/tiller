@@ -304,6 +304,7 @@ func TestCompactVerbReportsTheDaysItFoldedBesideARefusedDay(t *testing.T) {
 	require.Contains(t, errOut, "Compacted 1 day of events (1 event) into 1 file. Stage them with:")
 	require.Contains(t, stageLine(t, errOut), "02-")
 	require.Contains(t, errOut, "Some days were not compacted: mutate: compact 2026-11-01:")
+	require.Contains(t, errOut, "The days that compacted still need staging with the command above.")
 	require.FileExists(t, bad)
 	require.NoDirExists(t, filepath.Join(dir, ".tiller", "events", "2026", "11", "02"))
 
@@ -545,7 +546,9 @@ func TestCompactVerbReportsCompletedDaysOnStaleRefusal(t *testing.T) {
 			} else {
 				require.Contains(t, errOut, "Compacted 1 day of events (1 event) into 1 file. Stage them with:")
 				require.Equal(t, "git add -A -- "+strings.Join(wantStage, " "), stageLine(t, errOut))
-				require.Contains(t, errOut, "Tiller state changed while events were being compacted. Run tiller compact again.")
+				stale := "Tiller state changed while events were being compacted. Run tiller compact again."
+				require.Contains(t, errOut, stale)
+				require.Less(t, strings.Index(errOut, "git add -A -- "), strings.Index(errOut, stale), "the stale message follows the report")
 				runStageLine(t, dir, stageLine(t, errOut))
 				require.Contains(t, gitOutput(t, dir, "diff", "--cached", "--name-status"), wantStage[1])
 				require.NotContains(t, gitOutput(t, dir, "diff", "--cached", "--name-status"), "EV-bbbbbb")

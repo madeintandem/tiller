@@ -90,8 +90,8 @@ func moveNodes(tree *store.Tree) []store.Node {
 func (b *batch) remapMoveLocators(tree *store.Tree, doc *store.Amendment) error {
 	refs := map[string]string{}
 	moved := map[string]bool{}
-	for _, op := range doc.Operations {
-		if op.Op != store.AmendmentOpMoveFeature {
+	for index, op := range doc.Operations {
+		if op.Op != store.AmendmentOpMoveFeature || b.landed[index] {
 			continue
 		}
 		f := tree.Features[op.Target]
