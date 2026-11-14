@@ -151,7 +151,7 @@ func TestIntakeRefusesBasenameCollision(t *testing.T) {
 	out, _, code := execCLI(t, "intake", second, "--contributor", "jc", "--json")
 	require.Equal(t, 2, code)
 	require.Contains(t, out, `"reason": "artifact_exists"`)
-	require.Contains(t, out, "re-intake is a new intake: rename the document or remove the old artifact")
+	require.Contains(t, out, "re-intake is a new intake: rename the document")
 
 	// The refused second call must not have clobbered the first artifact.
 	landed, err := os.ReadFile(filepath.Join(".tiller", "design", "review.md"))

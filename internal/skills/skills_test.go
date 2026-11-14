@@ -1299,7 +1299,7 @@ func TestDecomposeNamesTheIntakeRefusals(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, text, "intake amendments trace every operation: pass --source citing the feedback document",
 		"the source_required refusal, quoted verbatim")
-	require.Contains(t, text, "re-intake is a new intake: rename the document or remove the old artifact", "a landed name is refused, quoted verbatim")
+	require.Contains(t, text, "re-intake is a new intake: rename the document", "a landed name is refused, quoted verbatim")
 	require.Contains(t, text, "tiller guide amend",
 		"staging refusals otherwise point at amend's own guide rather than restating it")
 }

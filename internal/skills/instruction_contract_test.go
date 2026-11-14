@@ -61,12 +61,12 @@ func TestDecomposeCollisionRecoveryKeepsTheLandedSource(t *testing.T) {
 	require.Contains(t, recovery, "`source_changed`")
 	require.Contains(t, recovery, "`source_vanished`")
 
-	// The CLI's own refusal is quoted so the agent recognizes it, and it still
-	// offers removal. Outside that quote, no clause about a landed or old
-	// artifact tells the agent to remove it.
-	const cliMessage = "re-intake is a new intake: rename the document or remove the old artifact"
+	// The CLI's own refusal is quoted so the agent recognizes it, and it names
+	// the rename alone. No clause about a landed or old artifact tells the
+	// agent to remove it.
+	require.Contains(t, text, "`re-intake is a new intake: rename the document`")
 	for _, phrase := range []string{"old artifact", "landed artifact"} {
-		for _, clause := range clausesNaming(strings.ReplaceAll(text, cliMessage, ""), phrase) {
+		for _, clause := range clausesNaming(text, phrase) {
 			for _, removal := range []string{"remov", "delet"} {
 				require.NotContainsf(t, clause, removal,
 					"decompose never clears a collision by removing a landed source: %q", clause)

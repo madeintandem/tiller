@@ -197,9 +197,9 @@ func runIntake(cmd *cobra.Command, srcPath, key, title string) error {
 	// checks below: for the straightforward re-intake of the same document
 	// (same basename, so the same default key too), BOTH this check and
 	// PrecheckAddAmendment right after it would fire, and the basename
-	// message ("rename the document or remove the old artifact") is the
-	// more specific, actionable answer for that exact case — the brief's own
-	// acceptance pins this message for basename collision specifically.
+	// message ("rename the document") is the more specific, actionable answer
+	// for that exact case. It names the rename alone: removing the landed
+	// artifact would break every amendment that fingerprints it.
 	// Order between the two does not affect the no-partial-write invariant
 	// (either one refuses before the copy below runs); it only decides which
 	// message a caller sees when both happen to be true at once.
@@ -431,7 +431,7 @@ func intakeSlug(name string) string {
 func intakeArtifactExistsErr() error {
 	return &usageError{
 		reason: "artifact_exists",
-		msg:    "re-intake is a new intake: rename the document or remove the old artifact",
+		msg:    "re-intake is a new intake: rename the document",
 	}
 }
 
