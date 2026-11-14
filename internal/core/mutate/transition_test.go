@@ -2502,7 +2502,7 @@ func statusByKey(t *testing.T, tree *store.Tree) map[string]string {
 // done, which does not reverse.
 //
 // The disagreement is staged in memory because store.Load now refuses it on disk
-// (checkKeyNamesItsFolder), which is the point: this pins that the write site
+// (checkKeySpellsItsFolders), which is the point: this pins that the write site
 // refuses on its own, without the loader having caught it first.
 func TestATaskWriteCannotLandOnAnotherTask(t *testing.T) {
 	t.Parallel()

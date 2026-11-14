@@ -1874,7 +1874,7 @@ func BasisDrift(tree *store.Tree, n store.Node, rev vcs.Revisions) error {
 	switch node := n.(type) {
 	case *store.Feature:
 		// A store.Load-accepted tree can carry a feature with no key at all
-		// (checkKeyNamesItsFolder loads it: a missing key is "a different
+		// (checkKeySpellsItsFolders loads it: a missing key is "a different
 		// fact, not a disagreement," per that function's own doc comment).
 		// featureRelDir dereferences *f.Key unconditionally, so reaching it
 		// here would panic rather than answer; guarded the same way the task
@@ -1900,7 +1900,7 @@ func BasisDrift(tree *store.Tree, n store.Node, rev vcs.Revisions) error {
 // BasisPathError reports that BasisDrift could not even locate the working-
 // tree file to compare a node's basis against, because the node itself
 // carries no key (a feature.yml that lost
-// its key: line still loads, per checkKeyNamesItsFolder's own reading, but
+// its key: line still loads, per checkKeySpellsItsFolders's own reading, but
 // featureRelDir cannot build a path from a nil key). It is deliberately not
 // an ActiveBasisError: there is nothing to compare, a different fact from
 // "compared and found different," so every caller that already reads "a

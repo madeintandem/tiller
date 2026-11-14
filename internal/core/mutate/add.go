@@ -784,7 +784,7 @@ func heading(title, key string) string {
 // rewritten", so its result is checked against the addressed id rather than
 // trusted: a rewrite that lands on a sibling's file cancels or crosses to done
 // a node nobody named, and the done crossing does not reverse. store.Load
-// refuses a tree whose folders and keys disagree (checkKeyNamesItsFolder),
+// refuses a tree whose folders and keys disagree (checkKeySpellsItsFolders),
 // which is what makes the derivation sound; this check is the local half, and
 // it also catches a wrong path the loader cannot see, one this package computed.
 func loadTaskFile(tree *store.Tree, feat *store.Feature, tk *store.Task) (*store.Task, string, store.FileSnapshot, error) {
