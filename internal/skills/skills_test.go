@@ -180,7 +180,7 @@ func TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile(t *testing.T) {
 		"--grep=<unit-id>",
 		"under Limitations",
 		"Judge findings against the code as it reads now",
-		"Bug, always a blocker",
+		"a violated approved criterion or `preserve` criterion is a blocker, anything else grades by impact",
 		"Traced", "Suspected",
 		"Found in",
 		"Already tracked", "Previously declined",
@@ -359,6 +359,39 @@ func TestCodeReviewBorrowsShapesNotCommits(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, text, "except their commits")
 	require.Contains(t, text, "Commit on the integration branch")
+}
+
+// A review reports required behavior the change never built, anchored to the
+// requirement rather than to changed lines.
+func TestCodeReviewFindsWhatWasNeverBuilt(t *testing.T) {
+	text, ok := Lookup("code-review")
+	require.True(t, ok)
+	require.Contains(t, text, "Anchors: absent")
+}
+
+// Reproductions are read off the code, never run, and the skill says so.
+func TestCodeReviewReproductionsAreDerivedByReading(t *testing.T) {
+	text, ok := Lookup("code-review")
+	require.True(t, ok)
+	require.Contains(t, text, "derived by reading, not run")
+}
+
+// Missing coverage is a tweak, not a chore.
+func TestCodeReviewClassifiesCoverageAsATweak(t *testing.T) {
+	text, ok := Lookup("code-review")
+	require.True(t, ok)
+	require.Contains(t, text, "tweak for missing coverage")
+	require.NotContains(t, text, "chore for missing coverage")
+}
+
+// The disposition is not a lifecycle seam. The review arm already says there is
+// no code-review readout, so look only inside the disposition Hand-off.
+func TestCodeReviewDispositionHasNoReadout(t *testing.T) {
+	text, ok := Lookup("code-review")
+	require.True(t, ok)
+	i := strings.LastIndex(text, "### Disposition arm")
+	require.GreaterOrEqual(t, i, 0)
+	require.Contains(t, text[i:], "no `tiller readout amend` follows")
 }
 
 // TestLookupReturnsEachSkill confirms every named skill is embedded and non-empty,

@@ -35,17 +35,17 @@ The unit's head is its recorded branch tip if the ref still exists, else its `re
 
 A target with no started unit gets a one-line reply that there is nothing to review yet, and no file.
 
-The diffs locate what changed. Judge findings against the code as it reads now: the integration branch for merged work, the branch head for in-flight work. A defect one unit introduced and a later unit fixed is not a finding. Read surrounding code for context, but anchor every finding in lines this node's work changed. Record the integration commit and each in-flight branch head you read; these pins are what keep the file's line references meaningful after the code moves on.
+The diffs locate what changed. Judge findings against the code as it reads now: the integration branch for merged work, the branch head for in-flight work. A defect one unit introduced and a later unit fixed is not a finding. Read surrounding code for context, but anchor every finding in lines this node's work changed. The exception is required behavior the change never built: cite the criterion or `feature.md` line that requires it, write `Anchors: absent`, and set Found in to the feature. Record the integration commit and each in-flight branch head you read; these pins are what keep the file's line references meaningful after the code moves on.
 
 #### What to look for
 
 | Lens | Lands as |
 |---|---|
 | Correctness | Bug |
-| Acceptance contract: `feature.md`, the `feature.eval.md` criteria, and `preserve` criteria | Bug, always a blocker |
+| Acceptance contract: `feature.md`, the `feature.eval.md` criteria, and `preserve` criteria | Bug; a violated approved criterion or `preserve` criterion is a blocker, anything else grades by impact |
 | Security and permission boundaries | Bug |
-| Test trustworthiness | Important bug for a test that proves nothing; chore for missing coverage of a risky path |
-| Maintainability: duplication, unclear names, dead code | Tweak or chore |
+| Test trustworthiness | Important bug for a test that proves nothing; tweak for missing coverage of a risky path |
+| Maintainability: duplication, unclear names, dead code | Tweak; chore when only comments or docs change |
 | Design: a wrong boundary, an abstraction that does not earn its keep, a shape that will not scale | Plan change |
 | Performance, only where the cost is evident in the code | Bug or plan change |
 
@@ -61,7 +61,7 @@ Grade each bug Blocker, Important, Medium, or Minor from the severity table in `
 
 Grade by impact, never by the size of the fix. Style and naming are never bugs. Severity becomes the bug's `severity` field when captured; it never becomes a queue position.
 
-Label every bug's confidence. Traced means you followed the failing path through the code and can name each step. Suspected means the pattern is wrong but the path is unproven. Proof by execution comes later, when the fix's regression test is written.
+Label every bug's confidence. Traced means you followed the failing path through the code and can name each step. Suspected means the pattern is wrong but the path is unproven. Either way the Reproduction is derived by reading, not run. For a Traced bug it is the path through the code, step by step. For a Suspected bug it is the trigger you believe and the step you could not prove. Proof by execution comes later, when the fix's regression test is written.
 
 #### Attach each finding where it was found
 
@@ -126,7 +126,7 @@ Follow `tiller guide capture` for keys, contracts, and its stopping point, excep
 
 #### Log plan changes through decompose's amendment shapes
 
-Follow `Recording an amendment` in `tiller guide decompose` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation outside the repository named `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/design/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/design/`, then hand the amendment over with `tiller propose amendment`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request never stages onto an earlier review's amendment.
+Follow `Recording an amendment` in `tiller guide decompose` for staging and the amendment narrative, except their commits, which this disposition replaces with its one commit. Write a distillation in a temporary directory outside the repository, so the project's only copy is the one `tiller intake` lands, and delete the temporary file after intake. Name it `<YYYY-MM-DD>-<node-id>-plan-changes.md` (add `-2`, `-3`, and so on when `.tiller/design/` already holds that name). It holds only the selected plan changes, each as its own block with its problem and proposed outcome, under a header naming the review file and the row numbers it came from. Land it with `tiller intake`, then stage one operation per plan change, each citing its own block in the landed copy under `.tiller/design/`, then hand the amendment over with `tiller propose amendment`. A revision targets only a non-terminal feature or task: write the drafted prose edit to the target's spec or contract before staging `--revise`, because the revise records that edit for approval. A change to done work stages forward work instead. Each request that logs plan changes is one distillation, one intake, one amendment; a later request never stages onto an earlier review's amendment.
 
 #### Fix on its branch
 
@@ -222,7 +222,7 @@ Contract read: the feature.md, feature.eval.md, and preserve criteria read.
 
 Severity: blocker. Confidence: traced. Found in: <key path> (<id>).
 Anchors: `<path>:<line>`, each with a short excerpt. Violates: <criterion ID>, when one applies.
-**Reproduction** <steps>
+**Reproduction** <derived by reading, not run: the path, or the believed trigger and the unproven step>
 **Expected** <behavior>
 **Actual** <behavior>
 **Fixed when** <observable condition>
@@ -360,4 +360,4 @@ The review is not a lifecycle seam. There is no `tiller readout code-review`, an
 
 ### Disposition arm
 
-Stop after the commit. Name each new bug, chore, or tweak by key path with its ID, with the source and attachment recorded and the exact `tiller approve bug|chore|tweak <node>` command for triage. Name the amendment with its exact `tiller approve amendment <amendment-key>` command. Run none of them. Repeat any unmerged-code warning. A fix hands over to execute, or to the owner named on the row.
+Stop after the commit. Name each new bug, chore, or tweak by key path with its ID, with the source and attachment recorded and the exact `tiller approve bug|chore|tweak <node>` command for triage. Name the amendment with its exact `tiller approve amendment <amendment-key>` command. Run none of them. Repeat any unmerged-code warning. A fix hands over to execute, or to the owner named on the row. A disposition is not a lifecycle seam: no `tiller readout amend` follows a logged plan change, though decompose's own route ends in one.
