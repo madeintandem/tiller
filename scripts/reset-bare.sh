@@ -9,9 +9,17 @@ set -euo pipefail
 # elsewhere (DESIGN_SRC) and are brought in during the walkthrough, not by this
 # script.
 #
-# Safety: it refuses a run path that resolves to the
-# tiller source, the design-input source, $HOME, or the filesystem root, and never
-# deletes a directory it did not create (a .tiller-test-run sentinel proves it).
+# Safety: before anything is built, installed, or deleted, it refuses a run path
+# that is, or contains, the tiller source, the design-input source, or $HOME
+# (which covers the filesystem root), and a run path inside the tiller source or
+# the design-input source. Paths are compared in their resolved form, so a
+# symlink to any of those is refused the same way. No sentinel and no
+# TILLER_FORCE=1 lifts these refusals.
+#
+# Separately, it only deletes a run repo it can call its own: one carrying the
+# .tiller-test-run sentinel it writes, or one holding nothing but harness
+# artifacts. TILLER_FORCE=1 skips that ownership check and nothing else.
+#
 # It builds the binary before any destructive step, so a build failure leaves the
 # existing repo untouched.
 #
@@ -28,26 +36,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 TILLER_SRC="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 SENTINEL=".tiller-test-run"
 
-# canon resolves a path to an absolute, symlink-free form, canonicalizing the
-# existing parent and re-appending the leaf when the leaf does not exist yet.
-canon() {
-  local p="$1" dir base
-  if [ -d "$p" ]; then ( cd "$p" && pwd -P ); return; fi
-  dir="$(dirname "$p")"; base="$(basename "$p")"
-  if [ -d "$dir" ]; then printf '%s/%s\n' "$(cd "$dir" && pwd -P)" "$base"; else printf '%s\n' "$p"; fi
-}
+# shellcheck source=scripts/path-guards.sh
+. "$SCRIPT_DIR/path-guards.sh"
 
-# guard_run_repo refuses a run-repo path that would put a destructive operation
-# onto a protected directory.
+# guard_run_repo refuses a run-repo path whose deletion would take a protected
+# directory, or part of one, with it. It runs before the ownership check and
+# neither the sentinel nor TILLER_FORCE=1 reaches it.
 guard_run_repo() {
-  local run="$1" c_run forbidden
-  c_run="$(canon "$run")"
-  if [ -z "$c_run" ] || [ "$c_run" = "/" ]; then
-    echo "refusing: run repo path is empty or the filesystem root ($c_run)" >&2; exit 1
+  local run="$1" c_run name c_protected
+  c_run="$(canonical_path "$run")" || {
+    echo "refusing: cannot resolve the run repo path ($run)" >&2; exit 1
+  }
+  if [ "$c_run" = "/" ]; then
+    echo "refusing: run repo path is the filesystem root" >&2; exit 1
   fi
-  for forbidden in "$(canon "$TILLER_SRC")" "$(canon "$DESIGN_SRC")" "$(canon "$HOME")"; do
-    if [ "$c_run" = "$forbidden" ]; then
-      echo "refusing: run repo path ($c_run) resolves to a protected directory ($forbidden)" >&2; exit 1
+  for name in TILLER_SRC DESIGN_SRC HOME; do
+    c_protected="$(canonical_path "${!name}")" || {
+      echo "refusing: cannot resolve the protected directory $name (${!name})" >&2; exit 1
+    }
+    if path_within "$c_protected" "$c_run"; then
+      echo "refusing: run repo path ($c_run) is or contains a protected directory ($name: $c_protected)" >&2; exit 1
+    fi
+    # The default run repo lives under $HOME, so only the two source trees
+    # refuse a run path inside them.
+    if [ "$name" != HOME ] && path_within "$c_run" "$c_protected"; then
+      echo "refusing: run repo path ($c_run) is inside a protected directory ($name: $c_protected)" >&2; exit 1
     fi
   done
 }
@@ -57,8 +70,9 @@ guard_run_repo "$RUN"
 # Refuse to delete a directory that holds content this script did not create.
 # Reset is allowed when the run repo carries our sentinel, OR it contains only
 # disposable harness artifacts (a stale .git/.tiller/.bin and nothing precious,
-# which covers a lost sentinel), OR TILLER_FORCE=1 is set. The path guards above
-# always apply regardless, so $HOME, /, and the source repos are never at risk.
+# which covers a lost sentinel), OR TILLER_FORCE=1 is set. TILLER_FORCE=1 skips
+# only this ownership check: guard_run_repo above has already refused any path
+# that would reach $HOME, /, the tiller source, or the design inputs.
 if [ -e "$RUN" ]; then
   [ -d "$RUN" ] || { echo "refusing: $RUN exists and is not a directory" >&2; exit 1; }
   if [ -f "$RUN/$SENTINEL" ]; then
@@ -70,7 +84,7 @@ if [ -e "$RUN" ]; then
     if [ -n "$unexpected" ]; then
       echo "refusing: $RUN has no $SENTINEL sentinel and holds content this script did not create:" >&2
       echo "$unexpected" | sed 's/^/    /' >&2
-      echo "  remove it manually, or re-run with TILLER_FORCE=1 (the path guards still protect \$HOME, /, and the source repos)" >&2
+      echo "  remove it manually, or re-run with TILLER_FORCE=1 to reset it anyway" >&2
       exit 1
     fi
   fi

@@ -8,19 +8,47 @@
 #   A  compacted: loose files older than the delay are gone, segments exist
 #   B  loose: the upgraded tree rebuilt with no segments at all
 #   C  both: segments restored beside the loose files
-# Any difference is a failure. The work directory defaults to a mktemp -d
-# and must never sit inside either repository.
+# Any difference is a failure.
+#
+# Every file of a run, the clone included, goes in a new directory the script
+# creates for that run under work-dir (default: $TMPDIR, or /tmp), and the
+# script prints where. It deletes nothing: whatever work-dir already holds
+# stays as it is, and so does the run's own directory, kept for reading. A
+# work-dir that is, contains, or sits inside the source repository is refused
+# before anything is created, and so is a default temp directory inside the
+# source. Paths are compared in their resolved form, so reaching either one
+# through a symlink changes nothing.
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
   echo "usage: $0 <tiller-binary> <source-repo> [work-dir]" >&2
   exit 2
 fi
+# shellcheck source=scripts/path-guards.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/path-guards.sh"
+
 bin=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
-src=$(cd "$2" && pwd)
-work=${3:-$(mktemp -d)}
-mkdir -p "$work"
-work=$(cd "$work" && pwd)
+src=$(cd "$2" && pwd -P)
+named_work=${3:-}
+work_parent=${named_work:-${TMPDIR:-/tmp}}
+work_parent=$(canonical_path "$work_parent") || {
+  echo "refusing: cannot resolve the work directory (${named_work:-${TMPDIR:-/tmp}})" >&2
+  exit 1
+}
+if path_within "$work_parent" "$src"; then
+  echo "refusing: the work directory ($work_parent) is or sits inside the source repository ($src)" >&2
+  exit 1
+fi
+# A work directory the caller named is theirs to throw away afterwards, so it
+# must not hold the source either. The shared temp directory is not: a source
+# under /tmp is fine when the run gets its own directory there.
+if [ -n "$named_work" ] && path_within "$src" "$work_parent"; then
+  echo "refusing: the work directory ($work_parent) contains the source repository ($src)" >&2
+  exit 1
+fi
+mkdir -p "$work_parent"
+work=$(mktemp -d "$work_parent/compaction-acceptance.XXXXXX")
+echo "work directory: $work"
 contributor=${CONTRIBUTOR:-jc}
 clone="$work/clone"
 serve_pid=""
@@ -46,7 +74,6 @@ normalize_route() {
 # commit, so the hash is the one harness-induced difference there.
 normalize_readout() { sed '1s/committed at `[0-9a-f]*`/committed at `HASH`/'; }
 
-rm -rf "$clone"
 git clone --quiet --no-hardlinks "$src" "$clone"
 cd "$clone"
 for r in $(git remote); do git remote remove "$r"; done
@@ -116,7 +143,6 @@ capture() {
   [ -z "$empty" ] || fail "empty capture files: $empty"
 }
 
-rm -rf "$work/A" "$work/B" "$work/C"
 capture "$work/A"
 
 # B: the loose form of the upgraded tree, with no segment anywhere.
