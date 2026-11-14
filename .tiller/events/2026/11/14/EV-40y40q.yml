@@ -1,0 +1,14 @@
+id: EV-40y40q
+type: amendment_opened
+at: 2026-11-14T23:08:56.427553Z
+contributor: jc
+command: add amendment 2026-11-09-execute-with-review-design
+targets:
+    - A-r4dkba
+after:
+    key: 2026-11-09-execute-with-review-design
+    source: .tiller/design/2026-11-09-execute-with-review-design.md
+    status: draft
+files:
+    - path: .tiller/amendments/A-r4dkba-2026-11-09-execute-with-review-design.md
+    - path: .tiller/amendments/A-r4dkba-2026-11-09-execute-with-review-design.yml

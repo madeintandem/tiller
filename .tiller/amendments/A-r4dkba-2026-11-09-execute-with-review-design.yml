@@ -1,0 +1,10 @@
+id: A-r4dkba
+key: 2026-11-09-execute-with-review-design
+title: 'Intake: 2026-11-09-execute-with-review-design.md'
+status: draft
+triggered_by:
+    - .tiller/design/2026-11-09-execute-with-review-design.md
+base_revision: git:fec5917
+source:
+    path: .tiller/design/2026-11-09-execute-with-review-design.md
+    revision: git:1ee315bf70c7402ea6ed1d942303609143dd01c2
