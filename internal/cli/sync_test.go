@@ -653,7 +653,10 @@ func TestSyncAcceptFastForwardRecoveryRendersBranchDashFArmCLI(t *testing.T) {
 // TestSyncAcceptFastForwardRecoveryRendersWorktreeArmCLI is the other arm: a
 // worktree holds the orphaned branch checked out, the shape that would make
 // `git branch -f` itself refuse, so the recovery names
-// `git -C <worktree> reset --hard` instead and says why, on both surfaces.
+// `git -C <worktree> reset --keep` instead and says why, on both surfaces.
+// The form is --keep because that worktree may hold uncommitted work the
+// rescue branch does not record; what the command then does to each worktree
+// state is TestSyncRecoveryRealignNeverDiscardsUncommittedWorkCLI's subject.
 func TestSyncAcceptFastForwardRecoveryRendersWorktreeArmCLI(t *testing.T) {
 	dir := initGatedGitRepo(t, "true")
 	branch := layOrphanedStateCommitCLI(t, dir)
@@ -665,12 +668,16 @@ func TestSyncAcceptFastForwardRecoveryRendersWorktreeArmCLI(t *testing.T) {
 	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--accept-fast-forward", soleTaskID(t), "--json")
 	require.Equal(t, 1, code, out)
 	require.Contains(t, out, "\"worktree\": \""+wantWorktree+"\"")
-	require.Contains(t, out, "git -C "+wantWorktree+" reset --hard origin/"+branch)
+	require.Contains(t, out, "git -C "+wantWorktree+" reset --keep origin/"+branch)
+	require.NotContains(t, out, "reset --hard", "no recovery step may discard uncommitted work")
 
 	_, errOut, code := execCLI(t, "sync", "--contributor", "jc", "--accept-fast-forward", soleTaskID(t))
 	require.Equal(t, 1, code)
-	require.Contains(t, errOut, "2. realign the branch: git -C "+wantWorktree+" reset --hard origin/"+branch)
+	require.Contains(t, errOut, "2. realign the branch: git -C "+wantWorktree+" reset --keep origin/"+branch)
+	require.NotContains(t, errOut, "reset --hard")
 	require.Contains(t, errOut, "(the branch is checked out in that worktree; git branch -f would refuse)")
+	require.Contains(t, errOut, "(reset --keep stops instead of overwriting uncommitted changes; if it stops,"+
+		" stash them in that worktree, then run this step again)")
 }
 
 func TestSyncFastForwardAssertionNamesTaskNotParentCLI(t *testing.T) {

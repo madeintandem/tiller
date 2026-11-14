@@ -612,29 +612,58 @@ func attestReasonPhrase(reason, into string) string {
 // when nothing holds the branch checked out, and there `git branch -f` is the
 // honest command; when a worktree holds it, `git branch -f` refuses outright
 // (git will not move a branch checked out anywhere), so the step names
-// `git -C <worktree> reset --hard <upstream>` instead, which realigns the
+// `git -C <worktree> reset --keep <upstream>` instead, which realigns the
 // same ref through the checkout that owns it. That worktree fact is also on
 // the JSON object's own worktree field, so a machine caller can tell the two
 // forms apart without parsing this text.
+//
+// The worktree form is `reset --keep`, never `reset --hard`. The rescue
+// branch from step 1 preserves commits only, and the worktree being realigned
+// may hold staged or unstaged edits no branch records. `--keep` carries an
+// edit across when the realignment does not touch its file, and stops without
+// moving anything when it would overwrite one, so the step cannot discard
+// uncommitted work whichever state the worktree is in.
+//
+// Every interpolated value goes through shellArg: these lines are printed for
+// a person to copy, and a worktree path with a space, an apostrophe, or a
+// shell metacharacter must reach git as that one literal path.
 func recoverySteps(n mutate.AttestNotEligible) []string {
 	r := n.Recovery
-	step2 := fmt.Sprintf("realign the branch: git branch -f %s %s", n.Branch, r.Upstream)
+	step2 := fmt.Sprintf("realign the branch: git branch -f %s %s", shellArg(n.Branch), shellArg(r.Upstream))
 	if r.Worktree != "" {
-		step2 = fmt.Sprintf("realign the branch: git -C %s reset --hard %s", r.Worktree, r.Upstream)
+		step2 = fmt.Sprintf("realign the branch: git -C %s reset --keep %s", shellArg(r.Worktree), shellArg(r.Upstream))
 	}
 	return []string{
-		fmt.Sprintf("preserve the local tip: git branch recovery/%s-in-review %s", n.Key, r.LocalTip),
+		fmt.Sprintf("preserve the local tip: git branch %s %s", shellArg("recovery/"+n.Key+"-in-review"), shellArg(r.LocalTip)),
 		step2,
-		fmt.Sprintf("rerun: tiller sync --accept-fast-forward %s", n.Key),
+		fmt.Sprintf("rerun: tiller sync --accept-fast-forward %s", shellArg(n.Key)),
 	}
+}
+
+// shellArg renders one argument of a displayed command so a POSIX shell reads
+// it back as that one literal word. A value made only of characters no shell
+// treats specially stays bare, so an ordinary branch name or path reads as it
+// always did; anything else is single-quoted by quoteShellArg.
+func shellArg(arg string) string {
+	special := func(r rune) bool {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			return false
+		}
+		return !strings.ContainsRune("_@%+=:,./-", r)
+	}
+	if arg == "" || strings.IndexFunc(arg, special) >= 0 {
+		return quoteShellArg(arg)
+	}
+	return arg
 }
 
 // recoveryHumanLines renders one not_contained node's remediation block,
 // appended directly beneath its refusal line: what the merged remote tip and
 // the local tip actually are, then steps numbered 1 through 3. The worktree
-// caveat rides as its own indented line under step 2 rather than folded into
-// the step text steps already carries, so the JSON steps array (read by a
-// machine that already has the worktree field to explain itself) never
+// caveats ride as their own indented lines under step 2 rather than folded
+// into the step text steps already carries, so the JSON steps array (read by
+// a machine that already has the worktree field to explain itself) never
 // repeats the same sentence twice.
 func recoveryHumanLines(tree *store.Tree, into string, n mutate.AttestNotEligible, steps []string) []string {
 	r := n.Recovery
@@ -646,7 +675,13 @@ func recoveryHumanLines(tree *store.Tree, into string, n mutate.AttestNotEligibl
 	for i, s := range steps {
 		lines = append(lines, fmt.Sprintf("    %d. %s", i+1, s))
 		if i == 1 && r.Worktree != "" {
-			lines = append(lines, "       (the branch is checked out in that worktree; git branch -f would refuse)")
+			lines = append(lines,
+				"       (the branch is checked out in that worktree; git branch -f would refuse)",
+				// Stash, not commit: a new commit would sit past the rescue
+				// branch step 1 made, and the realignment would leave it
+				// behind.
+				"       (reset --keep stops instead of overwriting uncommitted changes; if it stops,"+
+					" stash them in that worktree, then run this step again)")
 		}
 	}
 	return lines
