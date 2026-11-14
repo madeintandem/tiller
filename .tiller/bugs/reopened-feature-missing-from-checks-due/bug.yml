@@ -1,0 +1,9 @@
+id: B-k5fzoh
+key: bugs/reopened-feature-missing-from-checks-due
+title: A reopened feature with stale gates is missing from checks_due
+severity: medium
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
+source: https://github.com/madeintandem/tiller/issues/19

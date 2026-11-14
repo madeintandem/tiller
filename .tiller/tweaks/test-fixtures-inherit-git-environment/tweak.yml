@@ -1,0 +1,8 @@
+id: TW-zwxmbu
+key: tweaks/test-fixtures-inherit-git-environment
+title: Test fixtures outside internal/vcs spawn git with the inherited environment
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
+source: https://github.com/madeintandem/tiller/issues/18

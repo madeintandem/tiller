@@ -1,0 +1,9 @@
+id: B-ldsix8
+key: bugs/unknown-subcommand-exits-zero
+title: An unknown word under a command group prints help and exits 0
+severity: important
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
+source: https://github.com/madeintandem/tiller/issues/17

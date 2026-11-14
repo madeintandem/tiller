@@ -1,0 +1,13 @@
+id: EV-gg45tu
+type: add.tweak
+at: 2026-11-14T23:38:37.619563Z
+contributor: jc
+command: add tweak test-fixtures-inherit-git-environment
+targets:
+    - TW-zwxmbu
+after:
+    key: tweaks/test-fixtures-inherit-git-environment
+    status: proposed
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.md
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml

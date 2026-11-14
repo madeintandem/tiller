@@ -1,0 +1,13 @@
+id: EV-rcq573
+type: add.chore
+at: 2026-11-14T23:38:37.46916Z
+contributor: jc
+command: add chore audit-foreign-usage-files
+targets:
+    - CH-shdylf
+after:
+    key: chores/audit-foreign-usage-files
+    status: proposed
+files:
+    - path: .tiller/chores/audit-foreign-usage-files/chore.md
+    - path: .tiller/chores/audit-foreign-usage-files/chore.yml

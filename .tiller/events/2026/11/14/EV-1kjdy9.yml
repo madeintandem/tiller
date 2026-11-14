@@ -1,0 +1,13 @@
+id: EV-1kjdy9
+type: add.tweak
+at: 2026-11-14T23:38:37.543703Z
+contributor: jc
+command: add tweak console-arrival-reread-other-pages
+targets:
+    - TW-wdlmab
+after:
+    key: tweaks/console-arrival-reread-other-pages
+    status: proposed
+files:
+    - path: .tiller/tweaks/console-arrival-reread-other-pages/tweak.md
+    - path: .tiller/tweaks/console-arrival-reread-other-pages/tweak.yml

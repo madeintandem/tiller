@@ -1,0 +1,14 @@
+id: EV-xghlts
+type: add.bug
+at: 2026-11-14T23:38:37.324016Z
+contributor: jc
+command: add bug legacy-rubric-evidence-overwritten
+targets:
+    - B-oprhtx
+after:
+    key: bugs/legacy-rubric-evidence-overwritten
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.md
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.yml

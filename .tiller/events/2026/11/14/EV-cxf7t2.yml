@@ -1,0 +1,14 @@
+id: EV-cxf7t2
+type: add.bug
+at: 2026-11-14T23:38:37.397475Z
+contributor: jc
+command: add bug reopened-feature-missing-from-checks-due
+targets:
+    - B-k5fzoh
+after:
+    key: bugs/reopened-feature-missing-from-checks-due
+    severity: medium
+    status: proposed
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.md
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml

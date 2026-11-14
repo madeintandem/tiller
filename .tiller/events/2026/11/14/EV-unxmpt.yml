@@ -1,0 +1,14 @@
+id: EV-unxmpt
+type: add.bug
+at: 2026-11-14T23:38:29.279749Z
+contributor: jc
+command: add bug unknown-subcommand-exits-zero
+targets:
+    - B-ldsix8
+after:
+    key: bugs/unknown-subcommand-exits-zero
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.md
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml
