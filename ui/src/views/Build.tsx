@@ -55,6 +55,7 @@ import StateBar from "../components/StateBar";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
 import { useBoardScrollMode } from "../lib/boardScroll";
 import { statusColor, statusTextColor } from "../lib/states";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../lib/useArrivalKey";
 import { BUILD_COLUMNS, columnCards, renderedFeatureCount, showEpicEyebrow, visibleCards } from "./build/columns";
 import type { BoardCard, BuildColumnDef } from "./build/columns";
 import FeatureCard from "./build/FeatureCard";
@@ -85,10 +86,16 @@ export default function Build() {
   // outcome would read as "nothing is asking, nothing has drifted" when the
   // truth is "the console could not check," so the board bar carries a
   // one-line notice for either overlay's own error.
-  const board = useFetch<BuildBoard>(buildPath);
-  const summary = useFetch<ProjectSummary>(statusPath);
-  const queue = useFetch<Queue>(queuePath);
-  const drift = useFetch<DriftReportView>(driftPath);
+  //
+  // Arriving at Build again while it is showing (the topbar link, browser
+  // back and forward) rereads all four, keeping what is on screen until the
+  // answers land (lib/useArrivalKey.ts). The page's own URL rewrites below
+  // carry IN_PAGE_CHANGE so they read nothing.
+  const arrival = { refreshKey: useArrivalKey(), retainData: true };
+  const board = useFetch<BuildBoard>(buildPath, arrival);
+  const summary = useFetch<ProjectSummary>(statusPath, arrival);
+  const queue = useFetch<Queue>(queuePath, arrival);
+  const drift = useFetch<DriftReportView>(driftPath, arrival);
 
   const [params, setParams] = useSearchParams();
   const location = useLocation();
@@ -139,7 +146,7 @@ export default function Build() {
     }
     const nextParams = new URLSearchParams(params);
     nextParams.set("epics", epicsParamValue(stored));
-    setParams(nextParams, { replace: true });
+    setParams(nextParams, { replace: true, state: IN_PAGE_CHANGE });
   }, [location.key, rawEpics, projectKey]);
 
   // Persist, every time the URL names an explicit selection (present,
@@ -201,7 +208,7 @@ export default function Build() {
     // A selection click is not its own history entry, the same judgment
     // call the node tabs' `?tab=` switch made (NodeDetail.tsx): replace,
     // not push, so the back button leaves the board the way it found it.
-    setParams(nextParams, { replace: true });
+    setParams(nextParams, { replace: true, state: IN_PAGE_CHANGE });
   }
 
   function togglePanel() {

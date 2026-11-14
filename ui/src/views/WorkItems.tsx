@@ -21,6 +21,7 @@ import { formatAbsolute } from "../lib/time";
 import { resolutionLabel } from "../lib/fieldWords";
 import { has } from "../lib/has";
 import { statusLabel } from "../lib/statusLabel";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../lib/useArrivalKey";
 import { PersonName } from "../people";
 import {
   readWorkItemFilters,
@@ -44,7 +45,8 @@ import "./workitems.css";
 
 const FIX_PANEL_STORAGE_KEY = "tiller-fix-panel";
 // Router state every filter control navigates with (see fromFilterControl).
-const FILTER_NAVIGATION = { fixFilters: true };
+// A filter change is the page's own URL change, never an arrival.
+const FILTER_NAVIGATION = { ...IN_PAGE_CHANGE, fixFilters: true };
 
 // These params with a stored filter query laid over them, or null when
 // nothing non-default is stored.
@@ -57,11 +59,16 @@ function restoredParams(params: URLSearchParams, stored: string | null): URLSear
 
 export default function WorkItems() {
   useDocumentTitle(titleOf("Fix"));
-  const board = useFetch<WorkItemsBoard>(workItemsPath);
+  // Arriving at Fix again while it is showing (the topbar link, browser back
+  // and forward) rereads the page's reads and keeps the board on screen until
+  // the answer lands (lib/useArrivalKey.ts). Filter changes and the restore's
+  // URL rewrite are marked as the page's own and read nothing.
+  const arrival = { refreshKey: useArrivalKey(), retainData: true };
+  const board = useFetch<WorkItemsBoard>(workItemsPath, arrival);
   const [params, setParams] = useSearchParams();
   const [scrollMode, changeScrollMode] = useBoardScrollMode();
   const [panelOpen, setPanelOpen] = useState(() => readPanelState(FIX_PANEL_STORAGE_KEY) === "open");
-  const summary = useFetch<ProjectSummary>(statusPath);
+  const summary = useFetch<ProjectSummary>(statusPath, arrival);
   const projectKey = summary.data?.project.key;
   const location = useLocation();
   const namesFilters = hasFilterParams(params);
@@ -96,7 +103,7 @@ export default function WorkItems() {
     if (!skipsRestore && !fromFilterControl && projectKey === undefined && summary.error === null) return;
     handledArrivalRef.current = location.key;
     pendingRestoreRef.current = restoring;
-    if (restoring !== null) setParams(restoring, { replace: true });
+    if (restoring !== null) setParams(restoring, { replace: true, state: IN_PAGE_CHANGE });
   }, [location.key, projectKey, summary.error]);
 
   // Persist every filter the URL names, and an All a filter control chose; a
