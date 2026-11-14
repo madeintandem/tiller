@@ -24,16 +24,137 @@ var harnessTools = []string{
 // TestNamesAreTheShippedSkills keeps the discoverable catalog in lifecycle order.
 func TestNamesAreTheShippedSkills(t *testing.T) {
 	require.Equal(t, []string{
-		"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "design-brief", "code-review",
+		"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "design-brief", "code-review", "upgrade",
 	}, Names())
 	require.False(t, Has("break-down"), "break-down is retired into specify")
+}
+
+// TestUpgradeSkillCarriesMaintenance pins the maintenance rules that moved out
+// of orientation and orient into the on-demand upgrade skill: the scopes, the
+// identity boundary, Homebrew ownership, team adoption, the schema 6, 8, and 9
+// notes, and phase-outcome recovery. Maintenance is not a lifecycle seam, so
+// the skill carries no Readout section.
+func TestUpgradeSkillCarriesMaintenance(t *testing.T) {
+	text, ok := Lookup("upgrade")
+	require.True(t, ok)
+	for _, want := range []string{
+		// Trigger.
+		"explicitly asks to upgrade Tiller, migrate this checkout's schema, or refresh its generated guidance",
+		"Maintenance is separate from choosing lifecycle work.",
+		"authorizes only the maintenance it names",
+		"is a reason to tell the developer the project needs `tiller upgrade --project-only`, not to run maintenance unasked",
+		// Scopes.
+		"`tiller upgrade` updates the installed binary through its installation owner",
+		"supported schema migrations and generated instructions",
+		"`tiller upgrade --project-only` maintains this checkout with the running binary, offline, with no network or package-manager calls and without Homebrew",
+		"stale generated guidance, other checkouts, and a second checkout after a machine update",
+		"deliberately excludes project maintenance",
+		"`--binary-only` cannot combine with `--project-only`, and `--project-only` cannot select a version with `--version`",
+		"One checkout's maintenance never updates other branches, worktrees, or projects.",
+		"teammates incorporate the reviewed migration and maintain their own checkouts",
+		// Identity.
+		"Maintenance never selects a different checkout identity.",
+		"never the routine refresh remedy",
+		"Missing identity still calls for `tiller join --as <you>` after human registration.",
+		"Artifact-only refresh needs no identity.",
+		"through `--contributor`, then `TILLER_CONTRIBUTOR`, then local identity",
+		// Homebrew ownership.
+		"Verified Homebrew installations keep brew as their installation owner.",
+		"delegates only the matching Tiller package to its owning brew, suppressing implicit dependent upgrades and cleanup",
+		"genuine dependencies and metadata refresh remain brew's responsibility",
+		"Exact version pins refuse there.",
+		"Never overwrite Cellar/Caskroom files",
+		"never bypass private-download authentication, including after a failure",
+		"report that boundary rather than promising a global rollback",
+		// Team adoption.
+		"Adoption is coordinated Git work, not independent migrations in stale clones.",
+		"Do not migrate stale branches independently.",
+		"retain a compatible executable and a recoverable committed baseline",
+		"Pause team state mutations.",
+		"Reconcile state and active owners on the designated integration branch.",
+		"Inspect, review, and apply one migration once, in one designated checkout, then commit and publish it through normal Git.",
+		"merge the migrated state into each continuing work branch without discarding its task-specific state",
+		"refresh each checkout, restart consoles, reload agent instructions, and check schema, identity, task owner, branch, and legal next action",
+		"Adoption is not authorization or an evidence waiver",
+		"not permission to skip verification or to migrate a project",
+		"A schema fence is local, not a distributed lock",
+		"old binaries in unmigrated clones can still conflict",
+		"Never mutate migrated state with an older binary.",
+		"preserve new work rather than blindly restore old schema files",
+		// Schema 6.
+		"Schema 6 freezes execution ownership, not a feature-wide claim.",
+		"`tiller migrate --dry-run --json`",
+		"it writes nothing",
+		"Save the whole report or its `data.ownership_review` outside source state.",
+		"fill every initially empty `confirmed_owner`",
+		"leaving all other snapshot fields unchanged",
+		"`tiller migrate --ownership-review <file>`",
+		"`tiller upgrade --project-only --ownership-review <file>`",
+		"a stale or incomplete review refuses",
+		"Schema-5 active work and open reviews keep their branches, PRs, statuses, and evidence.",
+		"Only migrations crossing schemas 2 to 4 into schema 5 require draining old shared-branch work first",
+		"including the human's final merges and sync",
+		"Keep that binary's directory on PATH for the temporary drain session only, then leave the session.",
+		// Schema 8.
+		"Schema 8 adds the Tweak shelf.",
+		"changes only the manifest version",
+		"existing Bug and Chore records remain unchanged, and no work drain is required",
+		"Older binaries refuse schema 8; upgrade every participant before resuming state mutations.",
+		// Schema 9.
+		"Schema 9 renames",
+		"`contributors:`",
+		"`contributor:`",
+		"preserving the selected ID while renaming its field",
+		"`tiller add contributor <id> --name \"<name>\"`",
+		"`tiller remove contributor <id>`",
+		"Task, Bug, Chore, and Tweak claims remain `owner`; ownership filters remain `--owner`.",
+		"preserves IDs, claims, active work, and history without a work drain or ownership review",
+		"Legacy command, flag, and environment names are not aliases.",
+		// Recovery.
+		"Read phase outcomes even on failure",
+		"a binary replacement or source migration can have completed before refresh fails",
+		"A successful binary update followed by a failed project phase is incomplete.",
+		"retry `tiller upgrade --project-only` only after the named cause is repaired",
+		"`mutation_recovery_needed`",
+		"preserve the transaction journal and recover the transaction first",
+		"Unknown durability is not proof of no writes.",
+		"Never downgrade the schema or newer generated guidance, erase caches to bypass a refusal, or infer unchanged files from a lost child result.",
+		"restart existing serve processes and reload harness instructions as needed",
+		"does not acquire this upgrade logic mid-process",
+		"Retain a compatible old executable before the first new install",
+		// Hand-off.
+		"There is no `tiller readout upgrade`",
+	} {
+		require.Containsf(t, text, want, "upgrade pins %q", want)
+	}
+	require.NotContains(t, text, "## Readout", "maintenance is not a lifecycle seam")
+}
+
+// TestOrientRoutesExplicitMaintenance pins that orient's maintenance copy left
+// for the upgrade skill and one routing paragraph took its place.
+func TestOrientRoutesExplicitMaintenance(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	require.Contains(t, text, "loads `tiller guide upgrade` directly")
+	require.Contains(t, text, "authorizes only the maintenance it names")
+	for _, gone := range []string{
+		"Maintenance is separate from choosing lifecycle work.",
+		"Verified Homebrew installations keep brew",
+		"For schema-6 adoption",
+		"Schema 8 adds Tweaks.",
+		"Schema 9 renames the project roster",
+		"Adoption is coordinated Git work",
+		"Read phase outcomes even on failure",
+	} {
+		require.NotContainsf(t, text, gone, "orient leaves %q to the upgrade skill", gone)
+	}
 }
 
 // TestSkillNamesDropIntake pins the unification: intake is only a command now,
 // and decompose carries the rules the retired skill held.
 func TestSkillNamesDropIntake(t *testing.T) {
 	names := Names()
-	require.Len(t, names, 10)
+	require.Len(t, names, 11)
 	require.NotContains(t, names, "intake")
 	require.False(t, Has("intake"))
 	_, ok := Lookup("intake")

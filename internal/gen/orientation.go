@@ -293,62 +293,10 @@ unrequested replan.
   choosing a winner. Remove only worktrees you created, and only after their
   work is committed and, when remote-backed, pushed. ` + "`tiller guide execute`" + `
   carries the worktree procedure under **Worktrees and other agents**.
-- Schema 6 freezes execution ownership, not a feature-wide claim. Inspect an old
-  checkout with ` + "`tiller migrate --dry-run --json`" + `; it writes nothing.
-  Save the full report or its ` + "`data.ownership_review`" + ` outside source state.
-  Have the human fill every initially empty ` + "`confirmed_owner`" + ` for started
-  unfinished tasks, bugs, and chores, leaving all other snapshot fields unchanged.
-  Apply with
-  ` + "`tiller migrate --ownership-review <file>`" + ` or
-  ` + "`tiller upgrade --project-only --ownership-review <file>`" + `.
-  A stale or incomplete review refuses. Schema-5 active work and open reviews
-  keep their branches, PRs, statuses, and evidence. Only migrations crossing
-  schemas 2–4 into schema 5 require draining shared-branch work with a verified
-  compatible old binary first, including final merges and sync.
-  Retain a compatible executable and recoverable committed baseline. Pause
-  team mutations, reconcile state and active owners on the designated integration
-  branch, inspect/review/apply once in a designated checkout, then commit and
-  publish through normal Git. Upgrade all participants and merge that migrated
-  state into each continuing work branch without discarding task-specific state.
-  Do not migrate stale branches independently. Refresh each checkout, restart
-  consoles, reload agent instructions, and check schema, identity, task owner,
-  branch, and legal next action before resuming. Adoption is not
-  permission to skip verification or migrate a project.
-  A schema fence is local, not a distributed lock; old binaries in unmigrated
-  clones can still conflict. Never use one on migrated state. After adoption,
-  recovery must preserve new work rather than blindly restore old schema files.
-- Schema 8 adds the Tweak shelf. Migration from schema 7 changes only the
-  manifest version, preserves existing Bug and Chore records, and requires no
-  work drain. Old binaries refuse schema 8; upgrade every participant before
-  resuming state mutations.
-- ` + "`tiller upgrade`" + ` updates the installed binary and the current checkout,
-  including supported schema migrations and generated instructions.
-  ` + "`tiller upgrade --project-only`" + ` uses the running binary without network
-  or package-manager calls; use it for stale instructions and other checkouts.
-  ` + "`--binary-only`" + ` deliberately excludes project maintenance.
-  These scopes are mutually exclusive; project-only cannot select a version.
-  Maintenance never selects a different checkout identity: ` + "`tiller join --as <you>`" + `
-  is onboarding or deliberate identity selection. A real migration needs a
-  registered actor through ` + "`--contributor`" + `, ` + "`TILLER_CONTRIBUTOR`" + `, or local identity;
-  artifact-only refresh does not. Review and commit the reported project diff.
-  Schema 9 renames the roster to ` + "`contributors:`" + ` and local identity to
-  ` + "`contributor:`" + `, preserving the selected ID. The 8-to-9 migration preserves
-  claims, active work, and history without a drain or ownership review.
-  One checkout's maintenance never updates other branches, worktrees, or projects.
-  Verified Homebrew installs delegate only the installed Tiller package to its
-  owning brew, without broad dependent upgrades or cleanup; genuine dependencies
-  and metadata refresh remain brew's boundary. Never overwrite its managed
-  directories or bypass private-download authentication. Exact pins are unsupported
-  there, and brew may change the machine before target compatibility is known.
-  A successful binary update followed by a failed project phase is incomplete.
-  Preserve completed phases; resolve the named failure before project-only retry.
-  If recovery is required, preserve the transaction journal and recover first.
-  Never downgrade schema or newer generated guidance, erase caches to bypass a
-  refusal, or infer unchanged files from a lost child result.
-  Restart existing serve processes and reload harness instructions when needed;
-  disk refresh does not reload them. Older binaries do not acquire this upgrade
-  logic mid-process: keep a compatible old executable before the first new install,
-  then invoke the new binary's project-only maintenance explicitly.
+- Maintenance is an explicit request. ` + "`tiller upgrade`" + ` updates the binary and this
+  checkout; ` + "`tiller upgrade --project-only`" + ` refreshes this checkout with the running
+  binary; ` + "`tiller join`" + ` selects identity and is never the refresh remedy. For
+  anything more, load ` + "`tiller guide upgrade`" + `.
 - An instruction to execute includes ordinary implementation and state commits,
   pushes, PR creation or reuse, and submission for the authorized work. A reported
   merge or acceptance decision re-enters that work's bounded execute closeout;
@@ -433,6 +381,8 @@ unrequested replan.
   action. Do not invent a ` + "`tiller readout design-brief`" + ` command.
   ` + "`code-review`" + ` is not a lifecycle seam either: its reply ends with its
   summary table and review path. Do not invent a ` + "`tiller readout code-review`" + ` command.
+  ` + "`upgrade`" + ` is not a lifecycle seam either: its reply ends with its phase
+  report. Do not invent a ` + "`tiller readout upgrade`" + ` command.
 
 ## How to work
 
@@ -485,6 +435,11 @@ tweak, or a request naming rows of an existing review, goes directly to
 the read-only review or the named disposition; never approve, claim, or start
 anything. A normal next-work request or completed step does not trigger it.
 
+An explicit request to upgrade Tiller, migrate this checkout's schema, or refresh
+its generated guidance goes directly to ` + "`tiller guide upgrade`" + `, outside the
+ranked list. It authorizes only the maintenance named. Entering a project, a
+normal next-work request, or a completed step does not trigger it.
+
 Onboarding starts at the scaffold, and it is three commands, not two. A bare
 repo becomes a Tiller project with
 ` + "`tiller init --key <key> --kind <archetype> --name \"<project name>\"`" + ` (add
@@ -497,7 +452,9 @@ and the name, and only then
 does ` + "`tiller join --as <you>`" + ` select that registered id as who is working
 this checkout. join can register no one: an id absent from the roster,
 whichever of ` + "`--as`" + `, ` + "`TILLER_CONTRIBUTOR`" + `, or the checkout's own
-` + "`.tiller/identity.yml`" + ` supplied it, is refused rather than added. The
+` + "`.tiller/identity.yml`" + ` supplied it, is refused rather than added.
+Missing identity still calls for ` + "`tiller join --as <you>`" + ` after human
+registration. The
 roster is not add-only: ` + "`tiller remove contributor <id>`" + ` retires someone later, the
 same human-gated act, refusing while they still hold live work. Do not
 skip either step: without them there is no acting contributor here, so the first
@@ -714,7 +671,7 @@ The list holds only legal moves, so every row can be acted on as printed. The
 standing queue line is always present: ` + "`queue: N bugs, M chores, K tweaks ready`" + `. It
 reports ready, non-carried shelf work, which a human chooses before any claim.
 
-` + "`tiller guide`" + ` serves ten skills:
+` + "`tiller guide`" + ` serves eleven skills:
 
 - ` + "`orient`" + `: you need the next move. Read state, relay the ranked list above to
   the developer, and end the reply.
@@ -753,6 +710,9 @@ reports ready, non-carried shelf work, which a human chooses before any claim.
   one file under ` + "`.tiller/reviews/`" + ` and reply with a summary table; on a
   later disposition, log the named rows through capture and decompose shapes and
   commit once, leaving every approval to the human.
+- ` + "`upgrade`" + `: the developer explicitly asks to upgrade Tiller, migrate this
+  checkout's schema, or refresh its generated guidance. Run the maintenance named,
+  report each phase's outcome, and stop for the developer to review and commit the diff.
 
 After a successful feature done crossing, sync may name as-is docs touched;
 that notice only asks you to run ` + "`tiller drift`" + ` and never changes the ledger.

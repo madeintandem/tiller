@@ -4,8 +4,8 @@
 // canonical, harness-agnostic artifact; a harness adapter or `tiller guide`
 // surfaces them without any of them naming a harness-specific tool.
 //
-// This build ships ten skills: orient, derive-baseline, decompose, specify,
-// execute, capture, mend-drift, amend, design-brief, and code-review.
+// This build ships eleven skills: orient, derive-baseline, decompose, specify,
+// execute, capture, mend-drift, amend, design-brief, code-review, and upgrade.
 // derive-baseline establishes the current-state design layer before
 // decomposition on existing-code projects.
 // decompose turns a design document into a draft tree (the founding design) or
@@ -15,6 +15,8 @@
 // design-brief exports a derived UI/UX handoff without changing project state.
 // code-review reviews one node's net change read-only into .tiller/reviews/ and
 // logs only the findings the developer names, through capture and decompose shapes.
+// upgrade runs the binary, schema, and generated-guidance maintenance the
+// developer explicitly asks for, outside the ranked list.
 //
 // mend-drift still ends its cascade arm by surfacing the cluster to the
 // developer as one finding rather than naming amend, and that is now a pacing
@@ -34,13 +36,13 @@ import (
 	"strings"
 )
 
-//go:embed orient/SKILL.md derive-baseline/SKILL.md decompose/SKILL.md specify/SKILL.md execute/SKILL.md capture/SKILL.md mend-drift/SKILL.md amend/SKILL.md design-brief/SKILL.md code-review/SKILL.md
+//go:embed orient/SKILL.md derive-baseline/SKILL.md decompose/SKILL.md specify/SKILL.md execute/SKILL.md capture/SKILL.md mend-drift/SKILL.md amend/SKILL.md design-brief/SKILL.md code-review/SKILL.md upgrade/SKILL.md
 var files embed.FS
 
 // order is the canonical lifecycle order: the dispatcher, the existing-code
 // baseline, the delivery seams, capture, drift and plan-change seams, then the
-// explicitly requested export and review.
-var order = []string{"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "design-brief", "code-review"}
+// explicitly requested export, review, and maintenance.
+var order = []string{"orient", "derive-baseline", "decompose", "specify", "execute", "capture", "mend-drift", "amend", "design-brief", "code-review", "upgrade"}
 
 // Names returns the embedded skill names in canonical lifecycle order. The slice
 // is a copy, so a caller cannot mutate the registry.

@@ -51,13 +51,43 @@ func TestOrientationRoutesExplicitCodeReviewsOutsideTheWalk(t *testing.T) {
 	text := Orientation()
 	for _, want := range []string{
 		"`tiller guide code-review`",
-		"`tiller guide` serves ten skills:",
+		"`tiller guide` serves eleven skills:",
 		"- `code-review`: the developer explicitly asks",
 		"`.tiller/reviews/`",
 		"Do not invent a `tiller readout code-review` command.",
 		"During `design-brief` or a `code-review` review, recover only through corrected reads.",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+}
+
+// Orientation keeps only the maintenance boundary: the three scopes in one
+// bullet, an explicit request routed to the upgrade skill outside the ranked
+// list, and the identity rules an agent needs without loading that skill. The
+// schema notes, Homebrew ownership, adoption, and phase recovery moved to
+// `tiller guide upgrade` (TestUpgradeSkillCarriesMaintenance in package skills).
+func TestOrientationKeepsOnlyTheMaintenanceBoundary(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ") // the file hard-wraps prose
+	for _, want := range []string{
+		"Maintenance is an explicit request. `tiller upgrade` updates the binary and this checkout; `tiller upgrade --project-only` refreshes this checkout with the running binary; `tiller join` selects identity and is never the refresh remedy. For anything more, load `tiller guide upgrade`.",
+		"`tiller guide` serves eleven skills:",
+		"- `upgrade`: the developer explicitly asks to upgrade Tiller",
+		"goes directly to `tiller guide upgrade`, outside the ranked list.",
+		"`upgrade` is not a lifecycle seam either",
+		"Do not invent a `tiller readout upgrade` command.",
+		"Missing identity still calls for `tiller join --as <you>` after human registration.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"Schema 6 freezes execution ownership",
+		"Schema 8 adds the Tweak shelf",
+		"`--binary-only` deliberately excludes project maintenance",
+		"Verified Homebrew installs delegate",
+		"A schema fence is local",
+		"Schema 9 renames",
+	} {
+		require.NotContainsf(t, text, gone, "orientation leaves %q to the upgrade skill", gone)
 	}
 }
 
