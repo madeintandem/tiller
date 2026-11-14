@@ -258,7 +258,8 @@ unrequested replan.
   touches only ` + "`.tiller/`" + ` never needs a pull request: planning state, gate
   records, and events are CLI-written audit records, so commit them directly.
   Planning state commits on the integration branch, in the checkout that holds
-  it. Never switch a checkout's branch to get there. When this checkout is on
+  it. That checkout is usually the primary checkout, since Git checks out a
+  branch in only one worktree. Never switch a checkout's branch to get there. When this checkout is on
   another branch, use the worktree that has the integration branch checked out
   (` + "`git worktree list`" + `), or add one and join inside it. Commit there only
   when it holds no changes you did not make; otherwise stop and name what is in
@@ -267,69 +268,31 @@ unrequested replan.
   started shelf node belongs on that shelf node's branch; pre-start shelf state
   remains under the integration-branch fallback, as does other planning state.
   The PR ceremony is for code.
-- Every started task has its own recorded branch, unchanged on resume. Claim the
-  task, then ` + "`tiller start task`" + ` atomically fixes its owner, records its branch,
-  and activates a ready parent feature. There is no separate feature start.
-  At task grain the feature has no branch. At feature grain the aggregate
-  uses ` + "`reviews/features/<epic>/<feature>`" + ` in the configured branch pattern;
-  at epic grain it uses ` + "`reviews/epics/<epic>`" + `. Task branches use the full
-  canonical task key. Read the recorded names rather than inventing them.
-  Read back start's ` + "`branch`" + ` and ` + "`base_branch`" + ` before creating refs.
-  Task start can record a missing aggregate after a grain change; a reopened
-  coarse round records a new aggregate suffixed with the new task id, preserving
-  merged refs. Never infer the next round's branch from an old PR.
-  Create new independent task branches from the configured integration branch.
-  Task-PR dependencies wait for integration; never invent stacked task PRs.
-  A coarse dependent task may start from its aggregate once submitted prerequisites,
-  including their submission-state commits, have been merged into it.
-  Use ordinary Git to create these branches and to merge each submitted task's
-  current tip into the aggregate. No cherry-pick or squash assembly: both the
-  recorded review head and current task tip must remain ancestors of the aggregate.
-  Assemble all riding task tips before feature checks, draft publication, or coarse
-  submit. Resolve mechanical conflicts; stop for semantic conflicts needing a human
-  decision. Resume requested changes on that task's existing branch, check and
-  resubmit there, merge its new tip into the aggregate, rerun affected gates, and
-  update the same aggregate PR. Do not ask the developer to do routine branch work.
-  Preserve nonoverlapping task records, evidence, and events during Git assembly.
-  Never resolve conflicting real decisions by hand-editing state YAML.
-  Tiller records and verifies structure; it does not create, switch, or merge refs.
-  Preserve unrelated work during switches. A retained legacy feature-prefix ref
-  may block a new task ref: report both names and preserve history. Use a
-  non-conflicting configured branch pattern for unstarted work, or ask the human
-  to archive/rename the colliding ref deliberately; never auto-delete or rename
-  local or remote history to make branch creation succeed.
+- Every started task has its own recorded branch, unchanged on resume. Tiller
+  records and verifies branch structure; it does not create, switch, or merge
+  refs. Read the recorded names rather than inventing them, and never delete,
+  rename, or rewrite local or remote history to make a branch fit. Merging task
+  branches into their recorded aggregate is agent work; the final integration
+  merge is the human's. ` + "`tiller guide execute`" + ` carries the branch procedure
+  under **Claiming and starting** and **Aggregate assembly**.
 - Execute each unit of work in its own Git worktree by default, leaving the
   primary checkout where the developer left it. A unit of work is what one
   review covers, so review grain sets it: the task at task grain, the whole
   feature at feature grain, the whole epic at epic grain, and always the bug,
   chore, or tweak itself. The developer's or project's own
   instructions about checkouts and worktrees take precedence over this default;
-  follow them when they differ. Add the worktree detached at the updated start
-  base (the configured integration branch, or a coarse dependent task's
-  aggregate), then run ` + "`tiller join --as <you>`" + ` inside it: ` + "`.tiller/identity.yml`" + `
-  is per checkout and gitignored, so a new worktree has no identity. Restore any
-  tracked file join's guidance refresh changed rather than committing it with the
-  work, and tell the developer the project needs ` + "`tiller upgrade --project-only`" + `.
-  Claim, start, and create the recorded branch inside that worktree, so start's
-  state follows onto the branch. At feature or epic grain the unit's one
-  worktree holds each riding task branch and the aggregate in turn: a later task
-  detaches it at its start base, commit before every switch, and assembly,
-  checks, and submission run there too. Tasks built in parallel within a unit,
-  by subagents or otherwise, each get a temporary worktree of their own, removed
-  once merged into the aggregate. Re-enter through the unit's worktree holding
-  the recorded branch, or add and join one for it, and run ` + "`resume`" + ` there.
-  Integration-branch closeout runs where that branch is checked out, usually the
-  primary checkout, and only when it holds no changes you did not make.
+  follow them when they differ. ` + "`.tiller/identity.yml`" + ` is per checkout and
+  gitignored, so a new worktree has no identity until you run
+  ` + "`tiller join --as <you>`" + ` inside it.
   Assume other agents and developers may be working this repository at the same
   time in their own worktrees. A worktree, branch, or uncommitted change you did
   not create for this work is someone else's: never remove, reset, clean, stash,
-  commit into, or check out over it, and never force a checkout of a branch Git
-  reports is checked out elsewhere. Another agent's claim lands on its task
-  branch, so Tiller's own state may not show it: before claiming, look for the
-  work's canonical branch in local worktrees, branches, and the remote. When one
-  exists or Git surfaces a conflicting claim or start, stop for the human rather
-  than choosing a winner. Remove only worktrees you created, and only after their
-  work is committed and, when remote-backed, pushed.
+  commit into, or check out over it. Before claiming, look for the work's
+  canonical branch in local worktrees, branches, and the remote; when one exists
+  or Git surfaces a conflicting claim or start, stop for the human rather than
+  choosing a winner. Remove only worktrees you created, and only after their
+  work is committed and, when remote-backed, pushed. ` + "`tiller guide execute`" + `
+  carries the worktree procedure under **Worktrees and other agents**.
 - Schema 6 freezes execution ownership, not a feature-wide claim. Inspect an old
   checkout with ` + "`tiller migrate --dry-run --json`" + `; it writes nothing.
   Save the full report or its ` + "`data.ownership_review`" + ` outside source state.
@@ -392,74 +355,15 @@ unrequested replan.
   it does not authorize unrelated execution. A pure orient request still briefs
   and stops. Explicit developer no-publish or earlier-stop instructions control.
   Tiller does not push or create PRs: use ordinary Git and the project's host tools.
-  Commit implementation and riding task refs, then run the applicable guarded
-  ` + "`tiller check`" + `. Feature check runs the contract and the other feature gates;
-  do not prescribe redundant default eval followed by check. Run the project's
-  suite through ` + "`tiller check`" + ` rather than by hand and then again through check:
-  a gate already passed on unchanged code is reused, which is normal and needs no
-  ` + "`--rerun`" + ` to be sure. Use ` + "`--rerun`" + ` only for a suspected flake or environment
-  change, and ` + "`--gate <name>`" + ` to iterate on one failing gate; a gate left out
-  whose pass is not current is marked stale, and the node advances only on a
-  full green set. Inspect all results
-  and commit every actual evidence/state delta even on exit ` + "`1`" + `, never putting
-  that work behind ` + "`&&`" + ` or a fail-fast shell exit. Pending manual acceptance
-  must not skip machine checks or evidence commits. Repair required machine work;
-  emit, grade, and record required ungraded or stale rubrics separately.
-  Standalone eval does not apply check's basis/question/parent guards. Criterion
-  attestation does not enforce every intended rubric prerequisite; prepare the
-  grade before the human decision rather than claim those guards exist.
-  Before an acceptance-only handoff, push and create/reuse the exact matching
-  draft PR. Verify repository, integration base, recorded head, open/draft state,
-  and published tip through host tools. Put its verified URL and tip evidence in
-  ` + "`Notes from this run`" + `, distinguish it from formal submission, and stop for
-  each named human decision: ` + "`tiller attest feature <feature> --criterion <id> --status pass`" + `
-  if accepted, or ` + "`--status fail`" + ` if rejected; use ` + "`--gate <gate>`" + ` for a
-  required attestation-backed gate. Never run attestation yourself. At feature
-  or epic grain the human runs it on the recorded aggregate branch, in the
-  worktree that holds it, and commits it there before submit; tiller refuses
-  the attest anywhere else, so name that branch in the handoff.
-  After the human records acceptance, commit its actual delta, complete required
-  rechecks and evidence commits, push, reuse the same PR, make it ready if draft,
-  verify it, and formally submit its actual number. Commit actual submission
-  state and push again, then read back the record and verify the published tip.
-  Skip empty state commits and redundant pushes on unchanged success.
-  Recheck only when current work or failures require it. Check retains applicable
-  same-kind settled gate attestations, including their human attribution.
-  Inspect returned statuses: only required pending, failing, or stale acceptance
-  needs another human decision. Resume can stale acceptance. Never attest yourself.
-  Green task gates and riding refs do not prove feature acceptance or submission;
-  absence of a formal record does not prove no draft exists. Pure reads verify
-  neither host state nor pushes. Requested changes reuse the established review.
-  Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge.
-  Keep its local ref until ordinary sync observes the merge. Task-grain last-task
-  closeout belongs on the integration branch: finish feature checks and evidence,
-  prepare human acceptance if needed, then ordinary sync, actual state commit,
-  push and readback. No new PR for state-only closeout and no coarse submit.
-  Sync may already record done with violations; retain that history, never resume
-  terminal work or claim done is blocked. The human alone asserts fast-forwards.
-  If an aggregate finally merged before its Tiller review was recorded, a merge
-  report alone does not authorize creating the missing historical binding.
-  Collect evidence and obtain explicit authorization to recover that named review.
-  Verify the host repository, PR number, merged state, integration base, head
-  repository/branch, historical head OID, and result commit with existing host tools.
-  Tiller verifies local Git evidence only; its PR association is caller-supplied.
-  From configured integration with relevant source inputs committed, run
-  ` + "`tiller submit feature|epic <node> --recover-merged --head <historical-oid> --merge-commit <result-oid> --reason <explanation> [--pr <actual-number>]`" + `.
-  A remote requires the real positive PR number; offline recovery retains a review ref.
-  Commit the actual recovery delta on integration, then run ordinary sync,
-  inspect crossings/current acceptance/historical warnings, commit actual sync state,
-  publish integration state when authorized and remote-backed, and read back status.
-  Recovery neither runs checks nor approves acceptance or moves lifecycle state.
-  A contained result has no observed merge witness; hand its fast-forward assertion
-  to the human. Never reset refs, commit to the merged branch, or invent historical identity.
-  Without a remote, prepare the committed local branch/tip review surface before
-  acceptance, and record the permitted branch-and-commit review ref afterward.
-  Omit host operations and pushes, not actual state commits or readback.
-  A draft with acceptance outstanding, a refused formal submit, and an unpublished
-  submission-state commit are distinct facts. Report actual local/published state.
-  Never disguise host failure as offline work, invent rollback, or claim completion.
-  Follow recovery first; stop for a genuine credential, host-tool, protection,
-  conflict, or human-decision blocker that cannot be resolved safely.
+  Never attest, never assert a fast-forward, and never perform the final
+  integration merge. Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge.
+  Pure reads verify neither host state nor pushes. If an aggregate finally
+  merged before its Tiller review was recorded, a merge report alone does not
+  authorize recording it: recording the missing historical review needs explicit
+  authorization naming it. ` + "`tiller guide execute`" + ` carries the sequence
+  under **Publication sequence**, from checks and evidence commits through the
+  draft review, human acceptance, formal submission, and state publication, with
+  merge closeout and missing-review recovery in the sections after it.
 - Follow the recovery protocol when a command refuses. Every skill inherits it
   and corrects itself from the CLI's exit codes without a human. Exit ` + "`1`" + ` is a
   business refusal to reason about, usually a red gate or an illegal transition:
@@ -655,7 +559,7 @@ Chores and tweaks carry none. Severity never routes: it sorts and filters the
 console's Fix board, while the next list, readouts, and the queue keep the
 shelf's soft order.
 
-Every new task is unclaimed, regardless of who created or approved it. Claim
+**Ownership.** Every new task is unclaimed, regardless of who created or approved it. Claim
 only the execution unit: ` + "`tiller claim task <key>`" + ` (or ` + "`bug`" + ` / ` + "`chore`" + ` / ` + "`tweak`" + `).
 Before start, ` + "`release`" + ` returns your reservation to the pool and
 ` + "`reassign task|bug|chore|tweak <key> --to <contributor-id> --reason <text>`" + ` records a
@@ -671,7 +575,7 @@ The judgment verbs, ` + "`approve`" + `, ` + "`attest`" + `, ` + "`answer`" + `,
 with the same actor attribution and human-gate rules. This is recorded-identity
 workflow discipline, not authentication.
 
-Contributors on a feature or epic are the distinct owners of descendant tasks
+**Contributors.** Contributors on a feature or epic are the distinct owners of descendant tasks
 that have started, including done and cancelled tasks. Ready reservations,
 review/assembly actors, ancestor creators, and attached shelf work do not count.
 Current work means unfinished task/bug/chore/tweak assignments, including proposed,
@@ -679,38 +583,20 @@ blocked, checked, and in-review work; a historical contribution assigns nothing.
 Use ` + "`tiller ls features --contributor <id>`" + ` for contribution history and
 ` + "`tiller ls tasks --owner <id>`" + ` for scalar assignments.
 
+Before start, a reservation changes hands through ` + "`reassign`" + `.
 For already-started unfinished work, only an explicit human instruction naming
 the work and recipient authorizes
 ` + "`tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>`" + `.
-Transfer cancels the original with its owner, prose, branch, review, and evidence
-intact, and creates a same-noun, approved ready replacement with a new ID/key,
-recipient claim, fresh accepted basis, and reciprocal replacement links.
-It is not started and inherits no branch, review, checks, attestations, or evidence.
-Unchanged approved scope is required; specification changes use existing human
-review/amendment paths, not a transfer flag. Same-owner or terminal transfer refuses.
-Unstarted dependents follow the replacement; a started unfinished dependent
-refuses the whole transfer. Questions, pauses, shelf attachments, and carrier
-relationships must remain operative; no assumption or automatic unblocking is granted.
-Use the returned replacement reference for its recipient's start, never guess it.
-At task/bug/chore/tweak PR grain close the old PR without merging and open a new one.
-At feature/epic grain keep the unmerged aggregate PR, assemble replacement work,
-and rerun affected checks and acceptance. Old commits and host approvals do not
-disappear automatically. Tiller changes records, not Git or host state: report
-unfinished external follow-through separately. If already merged, sync first and
-use forward work, not transfer.
-For recorded review history, ` + "`transfer_review_unobservable`" + ` refuses when
-neither the local branch nor a usable submitted head establishes merge state.
-Restore/fetch review history, sync, and inspect; missing history is not unmerged.
-Observed merges or squash matches refuse as ` + "`transfer_review_merged`" + `.
-Use the exact returned ` + "`start_command`" + ` and ` + "`follow_through`" + `;
-external failure never rolls back the committed source transaction.
+` + "`tiller guide execute`" + ` carries what transfer preserves, creates, and
+refuses, and the Git and host follow-through it leaves, under
+**Exceptional human-directed transfer**.
 
 The shelves use the same explicit ownership boundary. The human chooses queue
 work, then you claim the top eligible node in that shelf's soft order with
 ` + "`tiller claim bug <key>`" + `, ` + "`tiller claim chore <key>`" + `, or ` + "`tiller claim tweak <key>`" + `. An unclaimed shelf
 node never enters the ranked list. A live ` + "`carried`" + ` node waits on its carrier.
 
-Review does not have to land once per task. ` + "`review_grain`" + ` records where
+**Review grain.** Review does not have to land once per task. ` + "`review_grain`" + ` records where
 it lands instead: ` + "`task`" + ` by default, ` + "`feature`" + `, or ` + "`epic`" + `. It lives in the
 project's ` + "`tiller.yml`" + `, an epic's ` + "`epic.yml`" + `, and a feature's ` + "`feature.yml`" + `,
 absence inheriting downward and the most specific explicit setting winning.

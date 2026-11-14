@@ -1471,6 +1471,13 @@ func TestExecuteWorksInAWorktreeBesideOtherAgents(t *testing.T) {
 		"belongs to someone else",
 		"look for the work's canonical branch in `git worktree list`",
 		"Remove only worktrees you created",
+		// Procedure pins that followed their sentences out of orientation.
+		"For a unit's first task, add a detached worktree at it and join inside",
+		"Another agent's claim and start state lands on its task branch",
+		"When Git reports the branch is checked out elsewhere, someone is using it: never force the checkout",
+		"Feature checks, the draft PR, coarse submit, and requested changes run in the same worktree.",
+		"Remove each one once its branch is committed, pushed when remote-backed, and merged into the aggregate.",
+		"usually the primary checkout",
 		"Set `worktree` to a new path outside the repository",
 		`git worktree add --detach "$worktree" "$start_base"`,
 		`git worktree add --detach "$worktree" "$base"`,
@@ -1695,5 +1702,140 @@ func TestExecuteSectionsAreInOrder(t *testing.T) {
 		require.GreaterOrEqualf(t, i, 0, "execute has heading %q", h)
 		require.Greaterf(t, i, last, "heading %q follows the previous one", h)
 		last = i
+	}
+}
+
+// Execute is the one home for the branch procedure orientation used to repeat:
+// start's recorded names, bases, assembly, and legacy-ref collisions.
+func TestExecuteOwnsTheBranchProcedure(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"There is no separate feature start.",
+		"Tiller records and verifies branch structure and never creates, switches, or merges refs: use ordinary Git",
+		"Read back task start's `branch` and `base_branch`",
+		"Never infer the next round's branch from an old PR.",
+		"Task-grain dependencies wait for integration, never stacked task PRs.",
+		"Never cherry-pick, squash, or copy task code into an aggregate.",
+		"Tiller verifies both the recorded heads and current task tips are ancestors when submitting the aggregate.",
+		"The aggregate is not a task workbench: build each task on its own branch and merge it in, and an intermediate merge into the aggregate is not a done crossing.",
+		"Never automatically delete or rename local or remote refs, force-push, or rewrite recorded task branches.",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+}
+
+// Execute is the one home for the publication sequence; these pins followed
+// their sentences out of orientation's execution bullet.
+func TestExecuteOwnsThePublicationSequence(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"A gate already passed on unchanged code is reused, which is normal and needs no `--rerun` to be sure; use `--rerun` only for a suspected flake or environment change.",
+		"a gate left out whose pass is not current is marked stale, and the node advances only on a full green set",
+		"At feature or epic grain the human runs the attest on the recorded aggregate branch, in the worktree that holds it, and commits it there before submit; tiller refuses it elsewhere, so name that branch in the handoff.",
+		"A draft with acceptance outstanding, a refused formal submit, and an unpublished submission-state commit are distinct facts",
+		"With a remote, recovery requires the real positive PR number; offline recovery omits `--pr` and retains a review ref.",
+		"This is state-only closeout: no new PR and no coarse submit.",
+		"Sync is advisory after a human merge and may already have recorded the feature `done` with violations.",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+}
+
+// Re-entry after requested changes lives in one paragraph, and it still says
+// prior gates may be stale and check runs again before resubmitting.
+func TestExecuteReentryRechecksStaleGates(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	require.NotContains(t, text, "The loop is re-enterable.")
+	for _, want := range []string{
+		"`tiller resume task <id> --reason \"<what changed>\"` moves the task back to `in_progress` on the same task branch and keeps the existing review.",
+		"Prior gate results may now be `stale`, so re-run `tiller check` before resubmitting, then complete both pushes and the submission-state readback; an old PR number on resumed or checked work does not mean the new changes were submitted.",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+}
+
+// Execute is the one home for transfer; orient and amend keep their framing
+// and point at its section.
+func TestExecuteOwnsTheTransferProcedure(t *testing.T) {
+	exec, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"Transfer is not an ownership override.",
+		"a new same-noun, approved ready replacement with a distinct ID/key, recipient claim, new accepted basis path, and reciprocal lineage",
+		"Transfer approval grants no assumption, reviewed answer, or automatic unblocking.",
+		"`transfer_review_unobservable`",
+		"Follow the response's exact `start_command` and `follow_through` list",
+	} {
+		require.Containsf(t, exec, want, "execute pins %q", want)
+	}
+	pointer := "**Exceptional human-directed transfer** in `tiller guide execute`"
+	orient, ok := Lookup("orient")
+	require.True(t, ok)
+	require.Contains(t, orient, "Started unfinished work changes hands only through `tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>`, explicitly authorized by a human naming the work and recipient.")
+	require.Contains(t, orient, pointer)
+	require.NotContains(t, orient, "use execute's continuation protocol")
+	require.NotContains(t, orient, "Closing an old PR, starting the replacement")
+	amend, ok := Lookup("amend")
+	require.True(t, ok)
+	require.Contains(t, amend, "**Ownership-only continuation is not a scope amendment.**")
+	require.Contains(t, amend, "A scope change still uses the existing review/amendment paths")
+	require.Contains(t, amend, pointer)
+	require.NotContains(t, amend, "while creating an approved, unstarted replacement with fresh identity")
+	require.NotContains(t, amend, "The original remains historical, not relabeled.")
+}
+
+// Orient keeps what a briefing needs to say about execution and points at
+// execute for the procedure.
+func TestOrientPointsAtExecuteForExecutionDetail(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	for _, want := range []string{
+		"That stop is the briefing before a seam is authorized.",
+		"`tiller guide execute` carries that sequence.",
+		"Pure orient never opens a review",
+		"under **Aggregate assembly** and **Review grain and coarse submit guards** in `tiller guide execute`",
+		"Every task owns its recorded working branch, even when it rides a coarse review.",
+		"Workflow advice is separate from the node's lifecycle `next` moves.",
+		"under **Publication sequence** and **Feature acceptance and merge closeout** in `tiller guide execute`",
+		"The ranked list is pure: it cannot verify drafts, host state, or pushes.",
+		"Recommendation order is not full mutation-guard parity",
+	} {
+		require.Containsf(t, text, want, "orient pins %q", want)
+	}
+	for _, gone := range []string{
+		"Once the developer has instructed execute, continue related checks, evidence commits even on check exit `1`",
+		"A coarse finish line still checks retired ancestors",
+		"Feature/epic branches are aggregates, not task workbenches.",
+		"Inspect authored contract bindings and the current applicable required gates alongside recorded results",
+		"Unreadable or invalid contracts are uncertainty, never inferred acceptance.",
+		"A riding task ref is not feature acceptance or formal coarse submission.",
+	} {
+		require.NotContainsf(t, text, gone, "orient no longer repeats execute: %q", gone)
+	}
+}
+
+// Orient points at orientation's labeled ownership, contributors, and
+// review-grain paragraphs rather than restating them.
+func TestOrientPointsAtOrientationForOwnershipContributorsAndReviewGrain(t *testing.T) {
+	text, ok := Lookup("orient")
+	require.True(t, ok)
+	for _, want := range []string{
+		"Ownership gates execution, not judgment.",
+		"follow **Ownership.** in `.tiller/orientation.md`.",
+		"follows **Contributors.** in `.tiller/orientation.md`.",
+		"Treat review-grain configuration as a gate decision and name its safe timing in the briefing",
+		"follow **Review grain.** in `.tiller/orientation.md`.",
+	} {
+		require.Containsf(t, text, want, "orient pins %q", want)
+	}
+	for _, gone := range []string{
+		"with unchanged delegation boundaries",
+		"Reservations, review actors, creators, and attached shelf owners do not count.",
+		"an affected feature review, an affected task in `in_progress`, `check`, or `in_review`, or an affected branch",
+	} {
+		require.NotContainsf(t, text, gone, "orient no longer restates orientation: %q", gone)
 	}
 }

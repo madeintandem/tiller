@@ -114,26 +114,118 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 }
 
 // Each unit of work, scoped by review grain, runs in its own worktree by
-// default, parallel tasks within a unit get their own, the developer's
-// checkout instructions win, and other agents may share the repository.
+// default, the developer's checkout instructions win, and other agents may
+// share the repository. The worktree procedure lives in execute.
 func TestOrientationExecutesInAWorktreeByDefault(t *testing.T) {
-	text := Orientation()
+	text := normalizedOrientation()
 	for _, want := range []string{
 		"Execute each unit of work in its own Git worktree by default",
-		"A unit of work is what one\n  review covers, so review grain sets it",
-		"the whole\n  feature at feature grain, the whole epic at epic grain",
-		"the unit's one\n  worktree holds each riding task branch and the aggregate in turn",
-		"Tasks built in parallel within a unit,\n  by subagents or otherwise, each get a temporary worktree of their own",
+		"A unit of work is what one review covers, so review grain sets it",
+		"the whole feature at feature grain, the whole epic at epic grain",
 		"instructions about checkouts and worktrees take precedence over this default",
-		"so a new worktree has no identity",
+		"`.tiller/identity.yml` is per checkout and gitignored, so a new worktree has no identity until you run `tiller join --as <you>` inside it.",
+		"other agents and developers may be working this repository at the same",
+		"not create for this work is someone else's",
+		"never remove, reset, clean, stash, commit into, or check out over it.",
+		"look for the work's canonical branch in local worktrees, branches, and the remote",
+		"than choosing a winner",
+		"work is committed and, when remote-backed, pushed",
+		"`tiller guide execute` carries the worktree procedure under **Worktrees and other agents**.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"the unit's one worktree holds each riding task branch and the aggregate in turn",
+		"Tasks built in parallel within a unit, by subagents or otherwise",
 		"tracked file join's guidance refresh changed rather than committing it",
 		"the recorded branch, or add and join one for it, and run `resume` there",
 		"Integration-branch closeout runs where that branch is checked out",
-		"other agents and developers may be working this repository at the same",
-		"not create for this work is someone else's",
-		"Another agent's claim lands on its task",
-		"than choosing a winner",
-		"work is committed and, when remote-backed, pushed",
+		"Another agent's claim lands on its task branch",
+		"never force a checkout of a branch Git reports is checked out elsewhere",
+	} {
+		require.NotContainsf(t, text, gone, "the worktree procedure left orientation for execute: %q", gone)
+	}
+}
+
+// Orientation keeps the branch boundary and points at execute for the branch
+// procedure: naming, bases, assembly, and legacy-ref collisions.
+func TestOrientationKeepsTheBranchBoundary(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"Every started task has its own recorded branch, unchanged on resume.",
+		"Tiller records and verifies branch structure; it does not create, switch, or merge refs.",
+		"Read the recorded names rather than inventing them, and never delete, rename, or rewrite local or remote history to make a branch fit.",
+		"Merging task branches into their recorded aggregate is agent work; the final integration merge is the human's.",
+		"`tiller guide execute` carries the branch procedure under **Claiming and starting** and **Aggregate assembly**.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"Never infer the next round's branch from an old PR.",
+		"No cherry-pick or squash assembly",
+		"Read back start's `branch` and `base_branch` before creating refs.",
+		"A retained legacy feature-prefix ref may block a new task ref",
+	} {
+		require.NotContainsf(t, text, gone, "the branch procedure left orientation for execute: %q", gone)
+	}
+}
+
+// Orientation keeps what an instruction to execute authorizes and what stays
+// the human's, and points at execute for the publication sequence.
+func TestOrientationPointsAtExecuteForPublication(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"An instruction to execute includes ordinary implementation and state commits, pushes, PR creation or reuse, and submission for the authorized work.",
+		"it does not authorize unrelated execution. A pure orient request still briefs and stops.",
+		"Explicit developer no-publish or earlier-stop instructions control.",
+		"Tiller does not push or create PRs",
+		"Never attest, never assert a fast-forward, and never perform the final integration merge.",
+		"Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge.",
+		"Pure reads verify neither host state nor pushes.",
+		"recording the missing historical review needs explicit authorization naming it",
+		"`tiller guide execute` carries the sequence under **Publication sequence**",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"a gate already passed on unchanged code is reused",
+		"At feature or epic grain the human runs it on the recorded aggregate branch",
+		"--recover-merged",
+		"A draft with acceptance outstanding, a refused formal submit, and an unpublished submission-state commit are distinct facts.",
+		"Task-grain last-task closeout belongs on the integration branch",
+	} {
+		require.NotContainsf(t, text, gone, "the publication sequence left orientation for execute: %q", gone)
+	}
+}
+
+// Orientation keeps who may authorize a transfer and points at execute for
+// what transfer does.
+func TestOrientationKeepsTheTransferBoundary(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"Before start, a reservation changes hands through `reassign`.",
+		"For already-started unfinished work, only an explicit human instruction naming the work and recipient authorizes `tiller transfer task|bug|chore|tweak <ref> --to <contributor-id> --reason <text>`.",
+		"under **Exceptional human-directed transfer**.",
+	} {
+		require.Containsf(t, text, want, "orientation pins %q", want)
+	}
+	for _, gone := range []string{
+		"Transfer cancels the original with its owner",
+		"`transfer_review_unobservable`",
+		"At task/bug/chore/tweak PR grain close the old PR without merging",
+	} {
+		require.NotContainsf(t, text, gone, "the transfer procedure left orientation for execute: %q", gone)
+	}
+}
+
+// Skills point into orientation's ownership, contributors, and review-grain
+// paragraphs by bold label, so each label must exist verbatim.
+func TestOrientationLabelsOwnershipContributorsAndReviewGrain(t *testing.T) {
+	text := normalizedOrientation()
+	for _, want := range []string{
+		"**Ownership.** Every new task is unclaimed",
+		"**Contributors.** Contributors on a feature or epic",
+		"**Review grain.** Review does not have to land once per task.",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
@@ -223,6 +315,7 @@ func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
 		"Never switch a checkout's branch to get there.",
 		"use the worktree that has the integration branch checked out (`git worktree list`), or add one and join inside it",
 		"Commit there only when it holds no changes you did not make; otherwise stop and name what is in the way.",
+		"That checkout is usually the primary checkout, since Git checks out a branch in only one worktree.",
 	} {
 		require.Contains(t, text, want)
 	}
