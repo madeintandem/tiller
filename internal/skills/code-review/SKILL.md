@@ -29,11 +29,15 @@ Locate each unit's change with local, read-only Git:
 
 | Unit | Where its change is |
 |---|---|
-| In flight: its head is not yet an ancestor of integration | The recorded branch head against its merge-base with the integration branch. Use the local branch, or its remote-tracking ref when only that exists. When the local branch and its remote-tracking ref differ, review the local branch and say so under Limitations. |
-| Merged: done, or merged but not yet synced (its head is already an ancestor of integration while its status still reads in flight) | Diff from the first parent of the merge that brought the head in: the first merge on integration's first-parent line that contains the head while its own first parent does not. A fast-forward, squash, or rebase leaves no such merge; then use the integration-branch commits whose messages carry the unit's ID, which every execution commit does. |
+| Merged by ancestry: its head is an ancestor of integration, whatever its status reads | Diff from the first parent of the merge that brought the head in: the first merge on integration's first-parent line that contains the head while its own first parent does not. A fast-forward leaves no such merge; then use the integration-branch commits whose messages carry the unit's ID, which every execution commit does. |
+| Merged without ancestry: a squash or rebase put the work on integration and left the head outside it | The integration commits that carry the work: those since the merge-base whose messages carry the unit's ID, or the one commit that is the branch's whole change. When only the recorded `done` shows the crossing, the head's diff against its merge-base still locates the lines. |
+| In flight: nothing on integration carries the work, and its branch still exists | The recorded branch head against its merge-base with the integration branch. Use the local branch, or its remote-tracking ref when only that exists. When the local branch and its remote-tracking ref differ, review the local branch and say so under Limitations. |
+| Crossing not established: nothing on integration carries the work, and its branch is gone | Not reviewed. It goes under Limitations with the checks that came back empty. |
 | Not started, or no locatable change | Not reviewed. It goes under Limitations with the reason. |
 
-The unit's head is its recorded branch tip if the ref still exists, else its `review_ref.head` if that commit is present. Decide merged or in flight from Git, never from status: a branch whose PR the human merged reads in flight until someone runs `tiller sync`. An empty located diff means the change was not located, never that the unit changed nothing; it goes under Limitations.
+The unit's head is its recorded branch tip if the ref still exists, else its `review_ref.head` if that commit is present. A head that is an ancestor of integration is merged, whatever the status says: a branch whose PR the human merged reads in flight until someone runs `tiller sync`. A head that is not an ancestor settles nothing. A squash or a rebase puts the work on integration under new commits and leaves the head outside integration's history, where it stays after the branch is deleted. So before calling a unit in flight, look for its work on integration. Any one of these means merged: the unit's status is `done`, which records a crossing `tiller sync` observed or the human asserted; commits since the merge-base carry the unit's ID and change code; or one commit since the merge-base is the branch's whole change. A riding task crosses with its aggregate, so when its own checks come back empty and its head is an ancestor of the aggregate's head, run the same checks for the aggregate with the reviewed feature's or epic's `status`, `branch`, `review_ref`, and ID.
+
+With no such evidence and the branch still present, the unit is in flight. With no such evidence and the branch gone, the crossing is not established: the recorded head may be work that reached integration in a form these checks do not recognize, or work that was abandoned. Leave it unreviewed, and say under Limitations which checks came back empty and that a `git fetch` or the developer's `tiller sync` may settle it. An empty located diff means the change was not located, never that the unit changed nothing; it goes under Limitations.
 
 A target with no started unit gets a one-line reply that there is nothing to review yet, and no file.
 
@@ -132,7 +136,7 @@ Follow `Recording an amendment` in `tiller guide decompose` for staging and the 
 
 #### Fix on its branch
 
-Requested changes return to the unit's owner and branch. Compare the unit's `owner` against the checkout's identity (`.tiller/identity.yml`). When the acting developer does not own the unit, annotate the row `requested change on <unit>` and hand it to the owner without executing anything. Otherwise annotate, commit, and follow `tiller guide execute` for that unit: the requested-changes re-entry for in-review work, or the ordinary loop for work still in progress.
+Requested changes return to the unit's owner and branch. First run the review arm's merged-or-in-flight checks for the unit again. If its work has reached integration since the review, its branch takes no more commits: stop, report that the unit has merged, and wait for the developer to log the row as forward work instead. Compare the unit's `owner` against the checkout's identity (`.tiller/identity.yml`). When the acting developer does not own the unit, annotate the row `requested change on <unit>` and hand it to the owner without executing anything. Otherwise annotate, commit, and follow `tiller guide execute` for that unit: the requested-changes re-entry for in-review work, or the ordinary loop for work still in progress.
 
 #### Annotate and commit once
 
@@ -166,18 +170,38 @@ Run only the forms that apply. Read each unit's state file for `branch`, `pr`, a
 # (its value reads git:<sha>; drop the `git:` prefix)
 git --no-optional-locks cat-file -e <head>^{commit}
 git --no-optional-locks merge-base --is-ancestor <head> <integration>
-# exit 1: in flight. Diff the branch against its merge-base with integration
-git --no-optional-locks merge-base <integration> <head>
-git --no-optional-locks diff --no-ext-diff --no-textconv <merge-base> <head> -- . ':(exclude).tiller'
 
-# exit 0: merged. Walk integration's first-parent merges, oldest first
+# exit 0: merged by ancestry. Walk integration's first-parent merges, oldest first
 git --no-optional-locks rev-list --first-parent --merges --reverse <integration>
 # <merge> is the first one where both of these hold:
 git --no-optional-locks merge-base --is-ancestor <head> <merge>
 ! git --no-optional-locks merge-base --is-ancestor <head> <merge>^1
 git --no-optional-locks diff --no-ext-diff --no-textconv <merge>^1...<head> -- . ':(exclude).tiller'
 
-# no head, or no such merge (fast-forward, squash, rebase): commits carrying the unit's ID
+# exit 1: inconclusive, never in flight by itself. A squash or rebase leaves the
+# head outside integration. Look for the work on integration before choosing:
+git --no-optional-locks merge-base <integration> <head>
+# 1. the unit's recorded status is done
+# 2. commits since the merge-base carry the unit's ID and change code
+git --no-optional-locks log --format=%H --grep=<unit-id> <merge-base>..<integration> -- . ':(exclude).tiller'
+# 3. one commit since the merge-base is the branch's whole change, a squash: the
+#    patch ID the first command prints is the first column of a line the second
+#    prints, and that line's second column is the commit
+git --no-optional-locks diff --no-ext-diff --no-textconv <merge-base> <head> -- . ':(exclude).tiller' | git patch-id --stable
+git --no-optional-locks log --first-parent --no-merges -p --no-ext-diff --no-textconv <merge-base>..<integration> -- . ':(exclude).tiller' | git patch-id --stable
+# a riding task with none of the three: when this exits 0, run the same checks
+# for its aggregate, with the reviewed feature's or epic's ID
+git --no-optional-locks merge-base --is-ancestor <head> <aggregate-head>
+
+# any of them: merged. Judge integration; the commits found locate the change
+git --no-optional-locks show --no-ext-diff --no-textconv <commit> -- . ':(exclude).tiller'
+# none, and the branch still exists: in flight. Diff it against its merge-base.
+# The same diff locates the lines when only a recorded done shows the crossing
+git --no-optional-locks diff --no-ext-diff --no-textconv <merge-base> <head> -- . ':(exclude).tiller'
+# none, and the branch is gone: the crossing is not established. Limitations
+
+# no head, or merged by ancestry with no such merge (a fast-forward): commits
+# carrying the unit's ID
 git --no-optional-locks log --format=%H --grep=<unit-id> <integration>
 git --no-optional-locks show --no-ext-diff --no-textconv <commit> -- . ':(exclude).tiller'
 # Skip `code-review:` disposition commits and commits that touch only .tiller/

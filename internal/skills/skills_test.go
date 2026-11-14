@@ -403,22 +403,9 @@ func TestOrientLeavesTheSeverityRuleToOrientation(t *testing.T) {
 	require.NotContains(t, text, "Like `rename` and `link`, `tiller grade bug <node> <level>` is a direct command")
 }
 
-// Merged-ness is a Git fact, not a status: the merge that brought a head in is
-// the first first-parent integration merge containing it whose first parent
-// does not, and an empty located diff is never "no change".
-func TestCodeReviewLocatesMergedWorkByFirstParentMerge(t *testing.T) {
-	text, ok := Lookup("code-review")
-	require.True(t, ok)
-	for _, want := range []string{
-		"git --no-optional-locks merge-base --is-ancestor <head> <integration>",
-		"rev-list --first-parent --merges --reverse <integration>",
-		"merge-base --is-ancestor <head> <merge>^1",
-		"merged but not yet synced",
-		"An empty located diff means the change was not located",
-	} {
-		require.Containsf(t, text, want, "code-review pins %q", want)
-	}
-}
+// How code-review decides merged or in flight, and which snapshot it judges, is
+// exercised against real Git histories in code_review_selection_test.go, which
+// runs the skill's documented commands rather than pinning their text.
 
 // --attach takes only an epic, feature, or task, so a shelf target's findings
 // attach where that shelf node was found, or nowhere.
