@@ -400,8 +400,7 @@ that can silently strand a node, and the block cannot see which one you are walk
 facts about this run. In the notes and in everything else you write to the developer, name every epic,
 feature, and task the way the block itself does, key path with the id in parentheses, never a bare id:
 an id alone sends the developer off to look up what it points at. Commentary is yours to add freely,
-with the notes ahead of the block, never after it; a question for the human is a recorded question,
-never a line of chat.
+with the notes ahead of the block, never after it; a question for the human is a recorded question.
 
 Always include the observed review URL, host open/draft state, repository/base/head, and publication tip evidence when handing over a remote review. Before acceptance, explicitly say formal submission is not yet recorded and name each exact human decision. For offline work name the local branch and committed tip. For a failed/no-publish run say which local commits exist, what is and is not published, the exact blocked step, and the remaining acceptance or submission work. Tiller's pure readout cannot verify these external facts.
 

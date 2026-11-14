@@ -181,11 +181,16 @@ unrequested replan.
   what you are about to record and reporting what you recorded. A declarative
   past-tense claim ("they're all approved") is authorization to record only
   when the set is unambiguous: verify the recorded state first, then record,
-  then report the delta. ` + "`cancel`" + ` is human-only: hand the exact ` + "`cancel`" + ` command
-  to the human rather than run it. ` + "`attest`" + `, ` + "`sync --accept-fast-forward`" + `, and the final merge
+  then report the delta. ` + "`cancel`" + ` on a work node is human-only: hand the exact ` + "`cancel`" + ` command
+  to the human rather than run it, even on instruction. ` + "`cancel question`" + `, ` + "`unlink question`" + `, and ` + "`withdraw amendment`" + `
+  are the human's decisions that you may record on an explicit instruction naming the target, as with ` + "`approve`" + `. ` + "`attest`" + `, ` + "`sync --accept-fast-forward`" + `, and the final merge
   into the configured integration branch are never yours to run, even on instruction;
   hand the human the exact command. Merging task branches into their recorded
   feature or epic aggregate is authorized execution, not a done crossing.
+- A product decision only the human can make (behavior, acceptance, scope, or
+  order) is recorded with ` + "`tiller add question`" + `, never asked only in chat, where
+  no gate and no later session can see it. A clarification of the request itself
+  (which node, which document, which of two readings) is asked in chat.
 - Mutate state only through ` + "`tiller`" + `. The state files are machine-owned: never
   hand-edit ` + "`epic.yml`" + `, ` + "`feature.yml`" + `, ` + "`task.yml`" + `, ` + "`bug.yml`" + `,
   ` + "`chore.yml`" + `, ` + "`tweak.yml`" + `, ` + "`design/baseline.yml`" + `, or the event stream, and never
@@ -684,8 +689,8 @@ assumption. Task start must satisfy its own operative question holds.
 ### Correction routing
 
 Correction feedback follows classes, not blanket ceremony. An explicit human
-correction that maps to a class authorizes the mapped action except ` + "`cancel`" + `.
-For any cancellation, hand the exact ` + "`cancel`" + ` command to the human rather
+correction that maps to a class authorizes the mapped action except ` + "`cancel`" + ` on a work node.
+For any such cancellation, hand the exact ` + "`cancel`" + ` command to the human rather
 than run it. For other mapped actions, do not ask which mutation path to use.
 Change machine state only through ` + "`tiller`" + ` and edit only human-owned Markdown.
 

@@ -126,7 +126,7 @@ func TestCaptureWritesAProposalAndStopsBeforeTriage(t *testing.T) {
 		"## Done when",
 		"never approve",
 		"status remains `proposed`",
-		"`cancel` remains human-only",
+		"`cancel` on a work node remains human-only",
 		"`resolve` is delegable only on an explicit human instruction naming the shelf node and either `--clear` or the replacement carrier target",
 	} {
 		require.Containsf(t, text, want, "capture pins %q", want)
@@ -551,6 +551,24 @@ func TestHandoffsDisambiguateApproveAccept(t *testing.T) {
 		require.Containsf(t, text, "when the human merges and `tiller sync` observes it",
 			"%s names what actually crosses completed work", name)
 		require.Containsf(t, text, "never guess", "%s translates by state, never guesses", name)
+		require.Containsf(t, text, "`attest` records the human's acceptance", "%s names attest as the second gate verb", name)
+		require.NotContainsf(t, text, "the only gate verb", "%s no longer calls approve the only gate verb", name)
+	}
+}
+
+// TestQuestionsAreRecordedNotChatted pins that a question for the human is a
+// recorded question, never a line of chat, in the four seams that add notes.
+func TestQuestionsAreRecordedNotChatted(t *testing.T) {
+	for _, name := range []string{"decompose", "amend"} {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		require.NotContainsf(t, text, "Questions and commentary are yours to add freely", "%s does not invite chat questions", name)
+	}
+	for _, name := range []string{"decompose", "amend", "specify", "execute"} {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		require.Containsf(t, text, "Commentary is yours to add freely", "%s keeps commentary free", name)
+		require.Containsf(t, text, "a question for the human is a recorded question", "%s records questions", name)
 	}
 }
 

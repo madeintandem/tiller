@@ -74,4 +74,4 @@ git commit --only -m "capture: blank-on-reload" -- <same-exact-paths>
 
 ## Hand-off
 
-Up to the human for triage. Hand them the full shelf reference, the source and attachment you recorded, and the exact `tiller approve bug|chore|tweak <node>` command without running it. For a bug left unrated, that command is `tiller approve bug <node> --severity <level>`, since approve refuses an ungraded bug. If they reject or redirect the finding, `cancel` remains human-only. `resolve` is delegable only on an explicit human instruction naming the shelf node and either `--clear` or the replacement carrier target.
+Up to the human for triage. Hand them the full shelf reference, the source and attachment you recorded, and the exact `tiller approve bug|chore|tweak <node>` command without running it. For a bug left unrated, that command is `tiller approve bug <node> --severity <level>`, since approve refuses an ungraded bug. If they reject or redirect the finding, `cancel` on a work node remains human-only. `resolve` is delegable only on an explicit human instruction naming the shelf node and either `--clear` or the replacement carrier target.

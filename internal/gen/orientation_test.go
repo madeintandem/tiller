@@ -180,3 +180,20 @@ func TestOrientationBoundsRetries(t *testing.T) {
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "after two different fixes")
 }
+
+// TestOrientationSeparatesCancelWorkFromCancelQuestion pins that only cancelling a
+// work node is human-only, while the question-side decisions may be recorded on
+// an explicit instruction.
+func TestOrientationSeparatesCancelWorkFromCancelQuestion(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "`cancel` on a work node is human-only")
+	require.Contains(t, text, "`cancel question`, `unlink question`, and `withdraw amendment`")
+}
+
+// TestQuestionsAreRecordedNotChatted pins the question rule: a product decision is
+// recorded, a clarification of the request itself is asked in chat.
+func TestQuestionsAreRecordedNotChatted(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	require.Contains(t, text, "A clarification of the request itself")
+	require.Contains(t, text, "recorded with `tiller add question`")
+}
