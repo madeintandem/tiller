@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func gitIn(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=T", "GIT_AUTHOR_EMAIL=t@example.com", "GIT_COMMITTER_NAME=T", "GIT_COMMITTER_EMAIL=t@example.com")
+	cmd.Env = append(testgit.Env(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=T", "GIT_AUTHOR_EMAIL=t@example.com", "GIT_COMMITTER_NAME=T", "GIT_COMMITTER_EMAIL=t@example.com")
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err, "%s", out)
 	return strings.TrimSpace(string(out))
@@ -101,7 +102,9 @@ func TestWorktreeBlobHashAgreesWithGitHashObjectOnRealContent(t *testing.T) {
 	body := "---\nnode: F-abc123\n---\n\n# Spec\n\nSome prose with unicode: naïve café.\n"
 	path := filepath.Join(dir, "feature.md")
 	require.NoError(t, os.WriteFile(path, []byte(body), 0o644))
-	out, err := exec.Command("git", "hash-object", "--", path).Output()
+	hashObject := exec.Command("git", "hash-object", "--", path)
+	hashObject.Env = testgit.Env()
+	out, err := hashObject.Output()
 	require.NoError(t, err)
 	g := &Git{Dir: dir}
 	got, err := g.WorktreeBlobHash("feature.md")

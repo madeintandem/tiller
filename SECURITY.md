@@ -40,6 +40,15 @@ reading input. The selected checkout root and its ancestors are trusted.
 Descriptor-relative confinement does not prevent hard-link aliases, mount
 changes, or someone moving an already-open directory outside the checkout.
 
+Git observations keep the same boundary. Tiller reads the repository Git
+discovers from the selected checkout. An inherited `GIT_DIR`, `GIT_WORK_TREE`,
+`GIT_COMMON_DIR`, `GIT_INDEX_FILE`, or `GIT_OBJECT_DIRECTORY` that names a
+different repository, work tree, index, or object store refuses with
+`git_routing_conflict` instead of recording another repository's revision or
+code identity against gates that ran here. This needs no hostile repository,
+only an environment exported for another checkout. The
+[CLI contract](docs/spec/cli-surface.md#output-and-exit-codes) has the rule.
+
 Installation and maintenance intentionally operate outside the repository:
 the installer places the executable on PATH, and self-upgrade downloads
 checksum-verified GitHub release assets and retains verified previous binaries

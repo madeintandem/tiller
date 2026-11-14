@@ -195,7 +195,7 @@ func TestWorktreeSurfaceRefusesGitEnvironmentFailureInExternalTree(t *testing.T)
 	_, err := WorktreeSurface(dir, ".", ".", clockAt)
 	var env *store.EnvError
 	require.ErrorAs(t, err, &env)
-	require.Equal(t, ReasonGitUnavailable, env.Reason)
+	require.Equal(t, ReasonGitRoutingConflict, env.Reason)
 }
 
 func TestWorktreeSurfacePrunesMetadataCaseAliasesNotDistinctCode(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,6 +42,7 @@ func TestHistoricalResolveCommitRejectsAmbiguousObjects(t *testing.T) {
 		}
 		cmd := exec.Command("git", "hash-object", "-w", "--stdin")
 		cmd.Dir = dir
+		cmd.Env = testgit.Env()
 		cmd.Stdin = strings.NewReader(content)
 		out, err := cmd.CombinedOutput()
 		require.NoError(t, err, "%s", out)

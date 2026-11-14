@@ -144,9 +144,11 @@ type Clock interface {
 }
 
 // Git is the concrete, git-shelling Revisions implementation. It runs every git
-// command in Dir (any path inside the repository).
+// command in Dir (any path inside the repository), and observes the checkout
+// Git discovers from Dir: an inherited GIT_DIR or other repository override is
+// checked against that checkout and never replaces it (routing.go).
 type Git struct {
-	// Dir is the working directory git commands run in; any path within the
+	// Dir is the selected directory git commands run in; any path within the
 	// repository works.
 	Dir string
 	// Clock is the injected time source for CurrentCommit's ObservedAt. When
@@ -230,15 +232,14 @@ func (g *Git) runOutput(stdout io.Writer, args ...string) error {
 	return g.runCmd(nil, stdout, args...)
 }
 
-// runCmd is runOutput with an optional stdin.
+// runCmd is runOutput with an optional stdin. An inherited repository override
+// that contradicts g.Dir refuses before git runs (routing.go).
 func (g *Git) runCmd(stdin io.Reader, stdout io.Writer, args ...string) error {
-	cmd := exec.Command("git", args...)
-	cmd.Dir = g.Dir
+	if err := g.checkRouting(); err != nil {
+		return err
+	}
+	cmd := g.command(args...)
 	cmd.Stdin = stdin
-	// Diagnostics use a stable locale. Every observation reads the actual local
-	// objects: replacement refs cannot rewrite evidence, and missing promisor
-	// objects must not trigger fetching or writes as a side effect of a read.
-	cmd.Env = append(cmd.Environ(), "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1", "GIT_NO_LAZY_FETCH=1")
 	var stderr bytes.Buffer
 	cmd.Stdout = stdout
 	cmd.Stderr = &stderr
@@ -1096,11 +1097,12 @@ func (g *Git) FirstParentPatchIDs(ref string, limit int) ([]CommitPatch, error) 
 // patch-id instead of being buffered whole in this process. The consumer is
 // waited on first: waiting on the producer closes the read end, which would
 // truncate a consumer still reading. A non-zero exit from either side is
-// classified exactly as run does.
+// classified exactly as run does. Both ends run under the one routing policy.
 func (g *Git) runPipe(first, second []string) (string, error) {
-	producer := exec.Command("git", first...)
-	producer.Dir = g.Dir
-	producer.Env = append(producer.Environ(), "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1", "GIT_NO_LAZY_FETCH=1")
+	if err := g.checkRouting(); err != nil {
+		return "", err
+	}
+	producer := g.command(first...)
 	var prodErr bytes.Buffer
 	producer.Stderr = &prodErr
 
@@ -1109,9 +1111,7 @@ func (g *Git) runPipe(first, second []string) (string, error) {
 		return "", g.unavailable(err.Error())
 	}
 
-	consumer := exec.Command("git", second...)
-	consumer.Dir = g.Dir
-	consumer.Env = append(consumer.Environ(), "LC_ALL=C", "GIT_NO_REPLACE_OBJECTS=1", "GIT_NO_LAZY_FETCH=1")
+	consumer := g.command(second...)
 	consumer.Stdin = pipe
 	var out, consErr bytes.Buffer
 	consumer.Stdout = &out

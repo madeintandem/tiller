@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -46,12 +47,38 @@ func Init(t testing.TB, dir string) {
 	}
 }
 
+// RoutingVariables are the environment variables that tell Git which
+// repository, work tree, index, or object store to use instead of discovering
+// them from its working directory. Git sets some of them for its own children:
+// a hook, or anything run inside a linked worktree. internal/vcs holds the
+// same list for the processes Tiller starts.
+func RoutingVariables() []string {
+	return []string{"GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+}
+
+// Env is the test process's environment without the routing variables. A
+// fixture's git commands run under it, so a suite started from a Git hook or
+// `git rebase --exec` builds its repositories in the directories it names and
+// never in the developer's checkout.
+func Env() []string {
+	routing := RoutingVariables()
+	var env []string
+	for _, setting := range os.Environ() {
+		if name, _, _ := strings.Cut(setting, "="); !slices.Contains(routing, name) {
+			env = append(env, setting)
+		}
+	}
+	return env
+}
+
 // Run runs one git command in dir and fails the test with its combined output
-// on error. It returns the output with surrounding whitespace trimmed.
+// on error. It returns the output with surrounding whitespace trimmed. The
+// command runs under Env, so it always acts on the repository at dir.
 func Run(t testing.TB, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	cmd.Env = Env()
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, out)
