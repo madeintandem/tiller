@@ -1407,6 +1407,7 @@ func TestOrientRelaysTheRankedList(t *testing.T) {
 		"If any human move ranks above the top agent move, name it first.",
 		"never rewrite the list",
 		"A ranked move is a suggestion, not authorization.",
+		"Any other reply is answered or acknowledged, and the list still waits for its go.",
 		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
 		"or the branch to continue on",
 		"the feature touched by your most recent deliberate act that names one",
@@ -1487,7 +1488,7 @@ func TestExecuteDefinesTheRun(t *testing.T) {
 	require.True(t, ok)
 	for _, want := range []string{
 		"A run is the work the developer's instruction named, and nothing else.",
-		"the other tasks in its feature or epic are outside the run",
+		"the other tasks in its feature or epic, and the unit's shared closeout, are outside the run",
 		"When the run covers the whole unit, continue with the unit's other eligible work without another go.",
 		"Under coarse review, each checked task submits its riding ref on its own branch, commits state, and is merged into the aggregate.",
 		"keep the run moving",

@@ -102,6 +102,7 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 		"Bare `tiller guide` and the readout's `**Next:**` print the same list, and `submit` and a passing `check` append it as `**Up next:**`",
 		"the exact command, or the branch to continue on",
 		"A ranked move is a suggestion, not authorization.",
+		"Any other reply is answered or acknowledged, and the list still waits for its go.",
 		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
 		"Work already moving inside a seam keeps moving",
 		"never rewrite the list",

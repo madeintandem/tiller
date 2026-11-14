@@ -669,7 +669,7 @@ human decision or ` + "`Agent`" + ` for work, then the action, the reason, and t
 command, or the branch to continue on. ` + "`tiller guide orient`" + ` explains how the list is ranked and what each move leads to.
 
 Relay the list as written. If any human move ranks above the top agent move,
-name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as "sounds good", or an instruction naming that row. A reply that asks something else is answered, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
+name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as "sounds good", or an instruction naming that row. Any other reply is answered or acknowledged, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
 You may say you would take a different item first and why; never rewrite the list.
 A ranked move is a suggestion, not authorization.
 An explicit human instruction naming nodes overrides the list's order for exactly
