@@ -942,6 +942,49 @@ func TestLinkTaskRefusesEdgeToInReviewTargetWhileInProgress(t *testing.T) {
 	require.Equal(t, mutate.ReasonDependencyChangeLocked, locked.Reason)
 }
 
+// A started task's one open arm takes only targets whose status is exactly
+// done. Cancelled is not done, an unfinished target is not done, and one
+// unfinished target refuses the whole list, done targets included, writing
+// nothing. The orientation correction table states this exception, so the
+// outcomes it names are pinned here.
+func TestLinkStartedTaskAddsOnlyDoneTargets(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name          string
+		third, fourth string
+		open          bool
+	}{
+		{"every target done", "done", "done", true},
+		{"one target cancelled", "done", "cancelled", false},
+		{"one target ready", "done", "ready", false},
+		{"one target in progress", "in_progress", "done", false},
+		{"every target cancelled", "cancelled", "cancelled", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			root, node, _, third := dependencyChangeFixture(t, store.NounTask)
+			addSiblingTaskWithDependencyMint(t, root, "fourth", "eeeeee")
+			fourth := "form-engine/schema-engine/fourth"
+			setDependencyNodeState(t, root, store.NounTask, node, "in_progress", "")
+			setDependencyNodeState(t, root, store.NounTask, third, tt.third, "")
+			setDependencyNodeState(t, root, store.NounTask, fourth, tt.fourth, "")
+			before := snapshotDir(t, root)
+
+			res, err := mutate.Link(load(t, root), testDeps(), mutate.LinkInput{
+				Noun: store.NounTask, Node: node, DependsOn: []string{third, fourth},
+			})
+			if tt.open {
+				require.NoError(t, err)
+				require.True(t, res.DependenciesChanged)
+				return
+			}
+			var locked *mutate.DependencyChangeLockedError
+			require.ErrorAs(t, err, &locked)
+			require.Equal(t, mutate.ReasonDependencyChangeLocked, locked.Reason)
+			requireNoWrites(t, before, snapshotDir(t, root))
+		})
+	}
+}
+
 func TestUnlinkTaskStillLockedWhileInProgress(t *testing.T) {
 	t.Parallel()
 	root, node, existing, _ := dependencyChangeFixture(t, store.NounTask)

@@ -620,6 +620,48 @@ func TestOrientationCarriesTheWholeReadoutRule(t *testing.T) {
 	require.NotContains(t, text, "ahead of the block, never after it")
 }
 
+// correctionRow returns the correction table row whose first cell is label.
+func correctionRow(t *testing.T, label string) string {
+	t.Helper()
+	for _, line := range strings.Split(Orientation(), "\n") {
+		if strings.HasPrefix(line, "| "+label+" |") {
+			return line
+		}
+	}
+	t.Fatalf("the correction table has no %q row", label)
+	return ""
+}
+
+// The dependency guard leaves one edit open after a task starts: adding an edge
+// whose every target is a done task (mutate's
+// TestLinkStartedTaskAddsOnlyDoneTargets pins the guard). The table states that
+// exception and its limits, and no line calls every in-place edge edit on
+// started work unsupported without it.
+func TestOrientationStatesTheStartedTaskDependencyException(t *testing.T) {
+	row := correctionRow(t, "Dependency change after affected work starts")
+	for _, want := range []string{
+		"a started task may add an edge",
+		"`tiller link task <node> --depends-on <target>`",
+		"when every target it adds is a task whose status is `done`",
+		"A cancelled or unfinished target",
+		"any removal",
+		"`dependency_change_locked`",
+		"Never manufacture replacement to evade the lock.",
+	} {
+		require.Containsf(t, row, want, "the dependency row states %q", want)
+	}
+	for _, line := range strings.Split(Orientation(), "\n") {
+		if !strings.Contains(line, "unsupported") {
+			continue
+		}
+		if !strings.Contains(line, "edge") && !strings.Contains(line, "dependency") {
+			continue
+		}
+		require.Containsf(t, line, "done task",
+			"a line that calls an in-place edge edit unsupported names the done-task exception: %q", line)
+	}
+}
+
 // Correction routing is told once: the general rules, the structural-change
 // preflight, and one correction table the skills point at. The rows carry what
 // specify's table, orient's classes, and orientation's own bullets each said.
@@ -662,7 +704,7 @@ func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
 		"| Approved feature needs one more task | Run `tiller add task <epic-key>/<feature-key>/<task-key>",
 		"| Preferred sequence | Run `tiller order <noun> <node> [<node> ...]`",
 		"| Required sequence before affected work starts | Add the hard edge with `tiller link <noun> <node> --depends-on <target>`",
-		"| Dependency change after affected work starts | Explain that an in-place edge edit is unsupported.",
+		"| Dependency change after affected work starts | One edit stays direct:",
 		"| Genuine structural reshape (scope genuinely abandoned or replaced, including after accepted work starts) | Route the structural reshape to `amend`",
 		"Propose wider replanning for developer direction. |",
 		"| Feature key or parent, draft and task-free feature | Run `tiller rename feature <ref> --key <epic>/<key>`; changing parents additionally requires both source and destination epics to be draft. |",
