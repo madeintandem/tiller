@@ -95,7 +95,7 @@ Use the review from this conversation. In a new session, the candidates are the 
 
 #### Resolve the whole selection before writing anything
 
-Plain numbers resolve through the noun the developer used: "bugs 1, 3" is B1 and B3, "tweaks 1-3" is TW1 through TW3, "plan change 2" is P2. Lists, ranges, and "all" work ("all blockers", "all tweaks"). "the rest" means every numbered row with no disposition yet. A row whose heading carries a disposition annotation is closed. A row annotated `requested change on <unit>` stays open to "fix" by that unit's owner, so a hand-off never ends in a refusal. If any named row does not exist, is closed, or is ambiguous, write nothing: name every problem at once and wait for the developer.
+A disposition writes planning state where its commands run. Before logging anything, be in the checkout that holds the integration branch; **Annotate and commit once** below says how. Plain numbers resolve through the noun the developer used: "bugs 1, 3" is B1 and B3, "tweaks 1-3" is TW1 through TW3, "plan change 2" is P2. Lists, ranges, and "all" work ("all blockers", "all tweaks"). "the rest" means every numbered row with no disposition yet. A row whose heading carries a disposition annotation is closed. A row annotated `requested change on <unit>` stays open to "fix" by that unit's owner, so a hand-off never ends in a refusal. If any named row does not exist, is closed, or is ambiguous, write nothing: name every problem at once and wait for the developer.
 
 #### The verbs
 

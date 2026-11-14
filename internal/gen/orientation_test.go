@@ -105,6 +105,8 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 		"Any other reply is answered or acknowledged, and the list still waits for its go.",
 		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
 		"Work already moving inside a seam keeps moving",
+		"starts the top agent move only when it agrees to it.",
+		"A reply naming a different row or other work redirects you to that.",
 		"never rewrite the list",
 		"The list holds only legal moves, so every row can be acted on as printed.",
 		"`queue: N bugs, M chores, K tweaks ready`",
@@ -112,6 +114,7 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
 	}
+	require.NotContains(t, text, "only when it says to")
 	// How the list is ranked and what each move leads to live in the orient
 	// skill (TestOrientDescribesRankedNext in package skills); one phrase per
 	// passage that moved there.
@@ -369,6 +372,14 @@ func TestOrientationSeparatesCancelWorkFromCancelQuestion(t *testing.T) {
 	require.Contains(t, text, "`cancel question`, `unlink question`, and `withdraw amendment`")
 }
 
+// Where things live says plans/ holds optional working plans, not execution
+// plans.
+func TestOrientationNamesPlansAsOptionalWorkingPlans(t *testing.T) {
+	text := normalizedOrientation()
+	require.Contains(t, text, "hold optional working plans, decision records")
+	require.NotContains(t, text, "hold execution plans")
+}
+
 // TestQuestionsAreRecordedNotChatted pins the question rule: a product decision is
 // recorded, a clarification of the request itself is asked in chat.
 func TestQuestionsAreRecordedNotChatted(t *testing.T) {
@@ -390,11 +401,13 @@ func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
 		"Run the planning command itself in that checkout",
 		"Never switch a checkout's branch to get there.",
 		"use the worktree that has the integration branch checked out (`git worktree list`), or add one and join inside it",
-		"Commit there only when it holds no changes you did not make; otherwise stop and name what is in the way.",
+		"In a checkout you moved to for this, commit only when it holds no changes you did not make; otherwise stop and name what is in the way.",
+		"and questions recorded while orienting. Claiming and starting a unit is execution, not planning: that state follows the unit onto its recorded branch.",
 		"That checkout is usually the primary checkout, since Git checks out a branch in only one worktree.",
 	} {
 		require.Contains(t, text, want)
 	}
+	require.NotContains(t, text, "Commit there only when it holds no changes you did not make")
 }
 
 // TestOrientationStatesCurrentBaselineDriftAndShelfClaims pins that orientation
@@ -480,6 +493,9 @@ func TestOrientationCarriesTheRecoveryProtocol(t *testing.T) {
 		"fix the work and try again, do not escalate",
 		"Stop and report when the same gate fails the same way after two different fixes",
 		"Exit `2` or `3` means correct the call or environment.",
+		"Never get past a refusal by deleting `.tiller/.cache`, a lock, or the mutation journal, by downgrading the schema or the generated guidance, or by running an older binary on migrated state.",
+		"A refusal naming `mutation_recovery_needed` means an unfinished mutation left its journal: keep it and stop for the developer.",
+		"when a failure does not reproduce when you run the gate's own command directly",
 		"names the legal next moves with nothing executed",
 	} {
 		require.Containsf(t, text, want, "orientation pins %q", want)
@@ -577,8 +593,10 @@ func TestOrientationCarriesTheCorrectionTable(t *testing.T) {
 		"| Pending baseline proposal | Re-enter `derive-baseline`",
 		"Do not regenerate duplicate docs or open a work-node amendment for that correction. |",
 		"| Unapproved proposal (draft tree) | Re-enter `decompose`",
+		"apply its draft correction from the command list under **Correcting the draft** in `tiller guide decompose`",
 		"and return to the same epic approval gate, not `amend`. |",
 		"| Specced but unapproved feature plan (pre-work prose plan) | Re-enter `specify`",
+		"apply the unapproved-plan route under **Correcting the feature plan** in `tiller guide specify`",
 		"| Epic, feature, or task display title, at any state | Run `tiller rename <noun> <node> --title \"<display title>\"`; no amendment. |",
 		"| Approved epic narrative wording | Edit `epic.md` and commit it",
 		"| Approved non-terminal feature or task prose, same scope | A wrong factual claim found while executing a task is an execute departure",

@@ -264,14 +264,16 @@ unrequested replan.
   Planning state commits on the integration branch, in the checkout that holds
   it. Planning state is what a command writes outside the execution of a started
   task or shelf node: decomposition, specification, capture, amendments, baseline
-  docs, review dispositions, and questions recorded while orienting. Run the
+  docs, review dispositions, and questions recorded while orienting. Claiming
+  and starting a unit is execution, not planning: that state follows the unit
+  onto its recorded branch. Run the
   planning command itself in that checkout, so the state it writes lands there.
   That checkout is usually the primary checkout, since Git checks out a
   branch in only one worktree. Never switch a checkout's branch to get there. When this checkout is on
   another branch, use the worktree that has the integration branch checked out
-  (` + "`git worktree list`" + `), or add one and join inside it. Commit there only
-  when it holds no changes you did not make; otherwise stop and name what is in
-  the way.
+  (` + "`git worktree list`" + `), or add one and join inside it. In a checkout you
+  moved to for this, commit only when it holds no changes you did not make;
+  otherwise stop and name what is in the way.
   A mid-task delta belongs on its own recorded task branch. A delta while executing a
   started shelf node belongs on that shelf node's branch; pre-start shelf state
   remains under the integration-branch fallback, as does other planning state.
@@ -327,7 +329,11 @@ unrequested replan.
   fails the same way after two different fixes, or when a failure does not
   reproduce when you run the gate's own command directly: name the gate, the
   failure, what you tried, and the evidence commits. Exit ` + "`2`" + ` or ` + "`3`" + ` means
-  correct the call or environment. The ranked list is guidance, not a command result.
+  correct the call or environment. Never get past a refusal by deleting
+  ` + "`.tiller/.cache`" + `, a lock, or the mutation journal, by downgrading the schema or
+  the generated guidance, or by running an older binary on migrated state. A
+  refusal naming ` + "`mutation_recovery_needed`" + ` means an unfinished mutation left
+  its journal: keep it and stop for the developer. The ranked list is guidance, not a command result.
   When state leaves a gate or merge outstanding, say ` + "`the ranked list suggests waiting`" + `;
   never say Tiller requires another node to wait unless a command exited ` + "`1`" + `.
   When you are unsure what is legal from here, ` + "`tiller status <noun> <node>`" + `
@@ -399,7 +405,7 @@ skill for the moment. With no argument, ` + "`tiller guide`" + ` prints the rank
 and names the skill for its top agent move; with a skill name it prints that
 skill in full. ` + "`tiller next`" + ` prints the list alone. When you are choosing the
 next seam, relay the list to the developer and end the reply; their next message
-redirects you, or starts the top agent move only when it says to. Work already moving inside a seam keeps moving, including execute's draft
+redirects you, or starts the top agent move only when it agrees to it. Work already moving inside a seam keeps moving, including execute's draft
 preparation, submission-state push, and bounded related merge closeout. Do not
 ask for another go after checks turn green or before ordinary state publication.
 The briefing pause is the developer's moment to correct your picture of the
@@ -632,8 +638,8 @@ Do not invent an amendment for work that only extends the accepted plan.
 | Correction | Route |
 |---|---|
 | Pending baseline proposal | Re-enter ` + "`derive-baseline`" + `, correct the named docs and relationships in place, reconcile the current code they describe, commit only that correction, and reproduce its ` + "`--since <sha>`" + ` readout. Return to the same named-doc human confirmation gate. Do not regenerate duplicate docs or open a work-node amendment for that correction. |
-| Unapproved proposal (draft tree) | Re-enter ` + "`decompose`" + `, apply its draft correction from the command list in ` + "`tiller guide decompose`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same epic approval gate, not ` + "`amend`" + `. |
-| Specced but unapproved feature plan (pre-work prose plan) | Re-enter ` + "`specify`" + `, apply the unapproved-plan route in ` + "`tiller guide specify`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same feature approval gate. |
+| Unapproved proposal (draft tree) | Re-enter ` + "`decompose`" + `, apply its draft correction from the command list under **Correcting the draft** in ` + "`tiller guide decompose`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same epic approval gate, not ` + "`amend`" + `. |
+| Specced but unapproved feature plan (pre-work prose plan) | Re-enter ` + "`specify`" + `, apply the unapproved-plan route under **Correcting the feature plan** in ` + "`tiller guide specify`" + `, commit it, rerun its readout with ` + "`--since <sha>`" + `, and return to the same feature approval gate. |
 | Epic, feature, or task display title, at any state | Run ` + "`tiller rename <noun> <node> --title \"<display title>\"`" + `; no amendment. |
 | Approved epic narrative wording | Edit ` + "`epic.md`" + ` and commit it; Git is the audit record because epic approval pins decomposition shape, not an epic prose basis; no amendment. |
 | Approved non-terminal feature or task prose, same scope | A wrong factual claim found while executing a task is an execute departure, recorded with the work (its implementation commit message, and its PR when one exists), not an edit here. Otherwise edit the pinned Markdown and commit it, read ` + "`active_basis`" + ` with ` + "`tiller status <noun> <node>`" + `, then stop for the human to run ` + "`tiller approve <noun> <node> --refresh-basis`" + `. |
@@ -774,7 +780,7 @@ Everything Tiller owns is under ` + "`.tiller/`" + ` at the repo root:
   beside machine-owned ` + "`chore.yml`" + ` state; ` + "`chores/order.yml`" + ` records shelf order.
 - ` + "`tweaks/<tweak-key>/`" + ` holds a tweak's human-owned ` + "`tweak.md`" + ` contract
   beside machine-owned ` + "`tweak.yml`" + ` state; ` + "`tweaks/order.yml`" + ` records shelf order.
-- ` + "`plans/`" + `, ` + "`decisions/`" + `, and ` + "`events/`" + ` hold execution plans, decision records
+- ` + "`plans/`" + `, ` + "`decisions/`" + `, and ` + "`events/`" + ` hold optional working plans, decision records
   and open questions, and the append-only event stream.
 
 For anything live, who holds what and what is where, read ` + "`tiller status`" + ` rather

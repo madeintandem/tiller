@@ -175,7 +175,7 @@ Roster (1 contributor): robin (Robin Hale)
 
 ```
 Joined as robin (Robin Hale). Identity recorded; roster now 1 contributor.
-Project files kept current: orientation.md (generation 57).
+Project files kept current: orientation.md (generation 62).
 
 **Wired the Claude Code harness**
   agent skills    .claude/skills/tiller-*    11 shims, gitignored

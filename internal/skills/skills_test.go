@@ -1,6 +1,7 @@
 package skills
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -1488,8 +1489,12 @@ func TestExecuteDefinesTheRun(t *testing.T) {
 	require.True(t, ok)
 	for _, want := range []string{
 		"A run is the work the developer's instruction named, and nothing else.",
-		"the other tasks in its feature or epic, and the unit's shared closeout, are outside the run",
-		"When the run covers the whole unit, continue with the unit's other eligible work without another go.",
+		"the other tasks in its feature or epic, and a coarse unit's shared closeout, are outside the run.",
+		"At task grain, the reported merge of a feature's last task still carries its closeout through feature acceptance, under **Feature acceptance and merge closeout**.",
+		"Naming a feature or epic that reviews at feature or epic grain scopes the run to that whole unit",
+		"A go on a ranked row scopes the run to that row's node.",
+		"When the run's work is done or held, stop with the readout.",
+		"When the run covers the whole unit, continue with the unit's other eligible work and its finish line without another go; a run that named one task stops once that task is merged into the aggregate.",
 		"Under coarse review, each checked task submits its riding ref on its own branch, commits state, and is merged into the aggregate.",
 		"keep the run moving",
 		"**Publication sequence** names the merge shapes",
@@ -1500,6 +1505,137 @@ func TestExecuteDefinesTheRun(t *testing.T) {
 	require.NotContains(t, text, "continuing eligible approved work without another go")
 	require.NotContains(t, text, "before continuing the unit's eligible work without another go")
 	require.NotContains(t, text, "the ordering rules above name the shapes")
+	require.NotContains(t, text, "and the unit's shared closeout, are outside the run")
+	require.NotContains(t, text, "continue with the unit's other eligible work without another go")
+}
+
+// Merge closeout works in the checkout that already holds the integration
+// branch and never switches a checkout's branch to get there.
+func TestExecuteMergeCloseoutNeverSwitchesACheckout(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"Work in the checkout that holds the configured integration branch, usually the primary checkout, under the worktree closeout rule above: update it safely, preserving unrelated changes, and never switch a checkout's branch to get there.",
+		`# run in the checkout that already holds "$base" (git worktree list), usually the primary checkout; never switch a checkout's branch to get there`,
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+	require.NotContains(t, text, "check out the configured integration branch")
+	require.NotContains(t, text, `git checkout "$base"`)
+}
+
+// Final review fixes outside execute: orient's go wording and the mend-drift
+// answer test, decompose's recorded questions, code-review's checkout before a
+// disposition, capture's dedupe reads, upgrade's checkout, and capture's
+// reproduction rule.
+func TestFinalReviewFixesOutsideExecute(t *testing.T) {
+	pins := map[string][]string{
+		"orient": {
+			"which redirects you, or starts the top agent move only when it agrees to it.",
+			"Their next message redirects you, or starts the top agent move only when it agrees to it, through its seam",
+			"A candidate mend-drift already answered that persists by design is not a move. `tiller guide mend-drift` carries the test: a `mend-drift:` commit on the candidate's files newer than its `since`.",
+		},
+		"decompose": {
+			"Record a focused question when missing product information would materially change boundaries or order",
+			"Record a question only for missing product information that would materially change the boundaries or sequence.",
+		},
+		"code-review": {
+			"#### Resolve the whole selection before writing anything\n\nA disposition writes planning state where its commands run. Before logging anything, be in the checkout that holds the integration branch; **Annotate and commit once** below says how.",
+		},
+		"capture": {
+			"the open questions (`tiller ls questions`), and the proposed amendments (`tiller ls amendments --status proposed`)",
+			"Reproduction gives the smallest steps from a named starting state",
+		},
+		"upgrade": {
+			"Maintain the checkout that holds the integration branch, so the refresh reaches every branch cut from it; in a task worktree, say so before running.",
+		},
+	}
+	for name, wants := range pins {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		for _, want := range wants {
+			require.Containsf(t, text, want, "%s pins %q", name, want)
+		}
+	}
+	orient, _ := Lookup("orient")
+	require.NotContains(t, orient, "only when it says to")
+	decompose, _ := Lookup("decompose")
+	require.NotContains(t, decompose, "Ask focused questions when")
+	require.NotContains(t, decompose, "Ask only for missing product information")
+}
+
+// Every `under **X**` that sits beside `tiller guide <skill>`, in orientation
+// and in the skills, names a heading that skill has. A pointer group followed
+// by "in `.tiller/orientation.md`" points into orientation and is checked by
+// the orientation pointer tests instead.
+func TestGuidePointersNameExistingHeadings(t *testing.T) {
+	headings := map[string]map[string]bool{}
+	for _, name := range Names() {
+		text, ok := Lookup(name)
+		require.True(t, ok)
+		headings[name] = map[string]bool{}
+		fenced := false
+		for _, line := range strings.Split(text, "\n") {
+			if strings.HasPrefix(line, "```") {
+				fenced = !fenced
+				continue
+			}
+			if fenced || !strings.HasPrefix(line, "#") {
+				continue
+			}
+			headings[name][strings.TrimSpace(strings.TrimLeft(line, "#"))] = true
+		}
+	}
+
+	sources := map[string]string{"orientation": gen.Orientation()}
+	for _, name := range Names() {
+		sources[name], _ = Lookup(name)
+	}
+	sentenceEnd := regexp.MustCompile(`\.\s+`)
+	group := regexp.MustCompile(`under ((?:\*\*[^*]+\*\*(?:, and |, | and )?)+)`)
+	bold := regexp.MustCompile(`\*\*([^*]+)\*\*`)
+	guide := regexp.MustCompile("`tiller guide ([a-z-]+)`")
+
+	found := map[string]int{}
+	for source, text := range sources {
+		for _, sentence := range sentenceEnd.Split(strings.Join(strings.Fields(text), " "), -1) {
+			targets := map[string]bool{}
+			for _, m := range guide.FindAllStringSubmatch(sentence, -1) {
+				targets[m[1]] = true
+			}
+			if len(targets) == 0 {
+				continue
+			}
+			for _, loc := range group.FindAllStringSubmatchIndex(sentence, -1) {
+				if strings.HasPrefix(sentence[loc[1]:], "in `.tiller/orientation.md`") {
+					continue
+				}
+				pointer := sentence[loc[0]:loc[1]]
+				require.Lenf(t, targets, 1, "%s: %q sits beside more than one `tiller guide` target", source, pointer)
+				var skill string
+				for s := range targets {
+					skill = s
+				}
+				require.Containsf(t, headings, skill, "%s: %q points into unknown skill %q", source, pointer, skill)
+				for _, b := range bold.FindAllStringSubmatch(sentence[loc[2]:loc[3]], -1) {
+					require.Truef(t, headings[skill][b[1]], "%s: %q names **%s**, which `tiller guide %s` has no heading for", source, pointer, b[1], skill)
+					found[source]++
+				}
+			}
+		}
+	}
+	t.Logf("guide pointer headings checked, by source: %v", found)
+	require.NotZero(t, found["orientation"], "orientation carries guide pointers")
+	require.NotZero(t, found["orient"], "orient carries guide pointers")
+}
+
+// Execute's framing and its contract-repair rule.
+func TestExecuteFramesItsContentAndContractRepair(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	require.Contains(t, text, "This skill's Tiller-specific content is the discipline of the loop, not the building.")
+	require.Contains(t, text, "an unreadable or invalid contract is uncertainty to repair, never a pass and not a human-only wait.")
+	require.NotContains(t, text, "\nIts Tiller-specific content is")
 }
 
 // specify grounds the claims a plan rests on in the code they describe, and

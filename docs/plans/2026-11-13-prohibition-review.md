@@ -20,7 +20,9 @@ Restatable sentences fall into two tables:
 - **Restatable, not yet applied**: the proposed positive form is an exact equivalent, and could be applied as written.
 - **Restatable, not exact**: the negative names a specific tempting mistake, or carries a qualifier such as "silently", that the positive form would drop. Each row says what would be lost. These need the owner's judgment before any rewrite.
 
-Two more conventions:
+Three more conventions:
+
+- A **Delete** recommendation whose sentence a test pins ends "Pinned by" and names the test. Deleting that sentence means removing or moving its pin in the same change.
 
 - **Not a prohibition** counts sentences where the word states a fact about the system ("Tiller never commits them for you", "the CLI never disagrees with itself") and the sentence repeats nothing. Each file's section lists them, one line each, so the owner can check that no rule is hiding among them. A statement of fact that repeats orientation or its own file is listed as a duplicate instead.
 - A boundary **states its reason** when the sentence, or the paragraph, table cell, or list item it sits in, says why. An integrity rule that names the invention or false claim it forbids carries its own reason. The **Boundaries with no reason found** lists name only the sentences whose reason is stated nowhere in the skill or in orientation.
@@ -227,7 +229,7 @@ Boundary: 3. Restatable: 3. Duplicate: 1.
 
 | Sentence | Also stated | Recommendation |
 |---|---|---|
-| "Severity never routes: it sorts and filters the console's Fix board" | Orientation, bug severity paragraph, nearly word for word | Delete here. |
+| "Severity never routes: it sorts and filters the console's Fix board" | Orientation, bug severity paragraph, nearly word for word | Delete here. Pinned by `TestCaptureGradesBugsBySeverity`. |
 
 ### Restatable, not yet applied
 
@@ -258,9 +260,9 @@ Boundary: 12. Restatable: 8. Duplicate: 4. Not a prohibition: 3.
 
 | Sentence | Also stated | Recommendation |
 |---|---|---|
-| "A review is never a suggested next move." | Preceding sentence: "... or asking what to do next triggers neither arm"; orientation: code review goes "outside the ranked list" | Delete. |
+| "A review is never a suggested next move." | Preceding sentence: "... or asking what to do next triggers neither arm"; orientation: code review goes "outside the ranked list" | Delete. Pinned by `TestCodeReviewArmIsReadOnlyAndWritesOneReviewFile`. |
 | "Style and naming are never bugs." | The lens table (unclear names land as Tweak) and "Leave out formatter or linter style" | Delete. |
-| "...; it never becomes a queue position." (severity) | Orientation: "Severity never routes" | Delete the clause. |
+| "...; it never becomes a queue position." (severity) | Orientation: "Severity never routes" | Delete the clause. Pinned by `TestCodeReviewSeverityBecomesTheBugsField`. |
 | "Never cap the table." | Preceding sentence: "one table holding every numbered row" | Delete. |
 
 ### Restatable, not yet applied
@@ -322,7 +324,7 @@ Boundary: 12. Restatable: 3. Duplicate: 15. Not a prohibition: 6.
 | "# a concrete defect the review reports goes straight onto its shelf, never staged" (comment) | "Shelf items are never staged on an amendment" | Keep. A comment at the command. |
 | "Do not ask whether to open an amendment when this list already maps the feedback." | Same section: "Treat explicit feedback that maps to one of these classes as authorization"; orientation, Correction routing | Delete. |
 | "A correction to a staged change on existing work is never one of them; that is withdraw and restage." | Cite every operation: "cannot be edited once staged: fixing one means withdrawing the amendment and restaging it" | Keep. The correction section is where the reader lands. |
-| "..., never guess." ("accept this") | Same sentence: "translate by the node's state" | Delete "never guess". |
+| "..., never guess." ("accept this") | Same sentence: "translate by the node's state" | Delete "never guess". Pinned by `TestHandoffsDisambiguateApproveAccept`. |
 | "..., never the whole draft tree by default." | Same sentence: "only that feature or an explicitly named batch" | Delete the clause. |
 | "..., never a bare id, ..." (Hand-off naming line) | Orientation, **Node references.**, which asks each skill to repeat the naming half | Keep the sentence; the "never a bare id" clause can go. |
 
@@ -366,12 +368,12 @@ Boundary: 39. Restatable: 10. Duplicate: 14. Residue: 1. Not a prohibition: 5.
 |---|---|---|
 | "...; run local `tiller check` around those commands to record evidence, never from inside them." | Orientation, **Managed-project independence.**: "that command must never call Tiller back" | Keep. Its first half is execute's own step. |
 | "...; never carry uncommitted work from one branch to another." | Same sentence: "Commit before every switch" | Delete the clause. |
-| "Never let two builders share a worktree." | Preceding sentence: "give each parallel task a temporary worktree of its own" | Delete. |
+| "Never let two builders share a worktree." | Preceding sentence: "give each parallel task a temporary worktree of its own" | Delete. Pinned by `TestExecuteWorksInAWorktreeBesideOtherAgents`. |
 | "Run `resume` only inside that worktree, never in the primary checkout, ..." | Same sentence: "only inside that worktree" | Keep. It names the likely wrong place. |
 | "Creation and approval never assign tasks." | Orientation, **Ownership.**: "Every new task is unclaimed, regardless of who created or approved it." | Delete. |
 | "Features and epics have no exclusive owner, and claims never cascade." | Orientation, **Ownership.** | Delete. |
 | "Tiller records and verifies branch structure and never creates, switches, or merges refs: use ordinary Git ..." | Orientation, rules bullet "Every started task has its own recorded branch", nearly word for word | Keep the "use ordinary Git" instruction; drop the repeated first clause. |
-| "Never infer the next round's branch from an old PR." | Same section: "use those recorded results, not a guessed name" | Delete. |
+| "Never infer the next round's branch from an old PR." | Same section: "use those recorded results, not a guessed name" | Delete. Pinned by `TestExecuteOwnsTheBranchProcedure`. |
 | "Never ask the question only in chat, where no gate or later session can see it." | Orientation, rules bullet "A product decision only the human can make" | Delete. |
 | "Pure reads, riding task refs, and the absence of a warning do not establish host state." | Orientation: "Pure reads verify neither host state nor pushes." | Keep. It adds riding refs and a missing warning. |
 | "...; do not start unrelated work." (reported merge) | Same sentence: "close out only the reported merge"; orientation: "it does not authorize unrelated execution" | Delete the clause. |
@@ -470,10 +472,10 @@ Boundary: 9. Restatable: 1. Duplicate: 14. Residue: 3. Not a prohibition: 7.
 | Sentence | Also stated | Recommendation |
 |---|---|---|
 | "You are not doing the work at the seam in this reply, and you do not cross into it either" | Same paragraph: "relay the ranked list to the developer and end the reply"; orientation, Ranked next | Delete. |
-| "Pure orient never opens a review, and explicit no-publish or earlier-stop instructions control." | Orientation, rules bullet "An instruction to execute includes", nearly word for word | Delete. |
+| "Pure orient never opens a review, and explicit no-publish or earlier-stop instructions control." | Orientation, rules bullet "An instruction to execute includes", nearly word for word | Delete. Pinned by `TestOrientPointsAtExecuteForExecutionDetail`. |
 | "Unknown references do not become current nodes, and opening a current file does not retrieve pinned historical bytes." | Orientation, How to work: "Unknown references stay unresolved. A current file is not the historical contents of a pinned revision." | Delete. |
 | "These reads require no identity and write no files, events, or persistent cache; they never run bindings or refresh guidance." | Orientation, How to work: "Each query rebuilds from local files without identity, writes, or a persistent cache" | Delete. |
-| "You may say you would take a different item first and why; never rewrite the list." | Orientation, Ranked next: the whole paragraph from "Relay the list as written" to "not authorization" repeats it word for word | Delete the repeated paragraph here. |
+| "You may say you would take a different item first and why; never rewrite the list." | Orientation, Ranked next: the whole paragraph from "Relay the list as written" to "not authorization" repeats it word for word | Delete the repeated paragraph here. Pinned by `TestOrientRelaysTheRankedList`. |
 | "The `mend-drift` seam is this skill's own addition: ... which the list never makes on its own" | Orientation: "`tiller drift` is a check the ranked list does not run on its own" | Keep here, where the list is explained; weigh the orientation copy. |
 | "The `amend` seam is another such addition ...: ... never by a field in the tree." | Orientation: "no field in the tree says a reshape is due"; this file's amend bullet: "Nothing in state names this one" | Keep here; the amend bullet's copy can go. |
 | "...; do not hand it to the developer." (aggregate assembly) | Same sentence: "Authorized execute does the routine branch work and aggregate assembly itself" | Delete the clause. |
@@ -482,15 +484,15 @@ Boundary: 9. Restatable: 1. Duplicate: 14. Residue: 3. Not a prohibition: 7.
 | "A draft waiting on unfinished work is no move and never a row." | This file: "work blocked by an unmet dependency ... are not rows" | Delete. |
 | "...; unclaimed shelf work never does." (no-epics bullet) | This file: "an unclaimed shelf node are not rows"; orientation: "An unclaimed shelf node never enters the ranked list." | Delete the clause. |
 | "Soft order arranges the render and the list ... and never gates execution." | Orientation, **Correction table.**: "soft order never gates" | Keep. The planning paragraph reads incomplete without it. |
-| "Do not expand it into concrete node rows, question rows, gates, criteria, or mutation commands." | Same paragraph: "It is counts-only" and "The queue command is the one place to enumerate a count." | Delete. |
+| "Do not expand it into concrete node rows, question rows, gates, criteria, or mutation commands." | Same paragraph: "It is counts-only" and "The queue command is the one place to enumerate a count." | Delete. Pinned by `TestOrientNamesCountsOnlyNeedsAttentionAndQueueDrillDown`. |
 
 ### Residue
 
 | Sentence | General rule | Recommendation |
 |---|---|---|
 | "Do not assign this work to the last finisher or historical contributors." | Orientation: "Any registered developer may assemble, check, and submit an eligible aggregate; there is no coordinator claim"; "a historical contribution assigns nothing" | Delete. |
-| "Features and epics have no owner, so never present the frontier as one person's reserved work." | Same bullet: "The frontier is the project's live draft features"; orientation, **Ownership.** | Delete. Its orientation sibling has already been removed as residue. |
-| "Do not add a note that steers toward or away from a ranked row beyond saying you would take another row first and why." | "You may say you would take a different item first and why; never rewrite the list." | Delete. |
+| "Features and epics have no owner, so never present the frontier as one person's reserved work." | Same bullet: "The frontier is the project's live draft features"; orientation, **Ownership.** | Delete. Its orientation sibling has already been removed as residue. Pinned by `TestOrientDescribesRankedNext`. |
+| "Do not add a note that steers toward or away from a ranked row beyond saying you would take another row first and why." | "You may say you would take a different item first and why; never rewrite the list." | Delete. Pinned by `TestSkillsCarryTheReviewFollowUps`. |
 
 ### Restatable, not exact
 
@@ -538,7 +540,7 @@ Boundary: 7. Restatable: 6. Duplicate: 8. Residue: 1. Not a prohibition: 6.
 | "Never record a list of paths there: ..." (preserve artifact) | Preceding sentence: "its `artifact` names ONE repo-relative file" | Keep. It says where the paths go instead. |
 | "...; do not annotate every name it mentions." | Same sentence: "Cite only the claims the plan depends on" | Delete the clause. |
 | "Do not hand a feature over between the contract and the tasks; the human reviews all three together." | Reasoning: "Do not stop between them" and "one act with one output and one gate" | Keep. It carries the reason. |
-| "..., never guess." ("accept this") | Same sentence: "translate by the node's state" | Delete "never guess". |
+| "..., never guess." ("accept this") | Same sentence: "translate by the node's state" | Delete "never guess". Pinned by `TestHandoffsDisambiguateApproveAccept`. |
 
 ### Residue
 
@@ -590,7 +592,7 @@ Boundary: 7. Duplicate: 4. Not a prohibition: 1.
 | Sentence | Also stated | Recommendation |
 |---|---|---|
 | "`tiller join --as <you>` remains onboarding or deliberate identity selection, never the routine refresh remedy." | Orientation, rules bullet "Maintenance is an explicit request": "`tiller join` selects identity and is never the refresh remedy." | Keep here, the home of maintenance; the orientation line is its pointer. |
-| "Do not migrate stale branches independently." | Preceding sentence: "Adoption is coordinated Git work, not independent migrations in stale clones." | Delete. |
+| "Do not migrate stale branches independently." | Preceding sentence: "Adoption is coordinated Git work, not independent migrations in stale clones." | Delete. Pinned by `TestUpgradeSkillCarriesMaintenance`. |
 | "# migrate and refresh this checkout; never touches the binary" (comment) | Scopes: "it never changes the installed binary" | Keep. A comment at the command. |
 | "Do not continue into the next queued work." | Trigger: "never claiming, starting, specifying, approving, or the next queued work"; Hand-off: "Then stop for the developer to review and commit" | Delete. |
 
@@ -617,9 +619,9 @@ Boundary: 41. Restatable: 10. Duplicate: 5. Not a prohibition: 19.
 
 | Sentence | Also stated | Recommendation |
 |---|---|---|
-| "Commentary is yours to add freely ahead of the block, never after it" | Same bullet: "The block closes the reply, nothing follows it" | Delete "never after it". |
-| "Do not ask for another go after checks turn green or before ordinary state publication." | Preceding sentence: "Work already moving inside a seam keeps moving, including execute's draft preparation, submission-state push ..."; the execute-instruction bullet | Delete. |
-| "For other mapped actions, do not ask which mutation path to use." | Next sentence: "The correction is already the developer's go for that action: carry it out without asking" | Delete. |
+| "Commentary is yours to add freely ahead of the block, never after it" | Same bullet: "The block closes the reply, nothing follows it" | Delete "never after it". Pinned by `TestOrientationCarriesTheWholeReadoutRule`. |
+| "Do not ask for another go after checks turn green or before ordinary state publication." | Preceding sentence: "Work already moving inside a seam keeps moving, including execute's draft preparation, submission-state push ..."; the execute-instruction bullet | Keep. It guards against the stall the plan's Review Focus 5 names: an agent re-briefing a developer who said to keep going inside a seam. |
+| "For other mapped actions, do not ask which mutation path to use." | Next sentence: "The correction is already the developer's go for that action: carry it out without asking" | Delete. Pinned by `TestOrientationCarriesTheCorrectionTable`. |
 | "Do not regenerate duplicate docs or open a work-node amendment for that correction." (Correction table, pending baseline row) | Baseline paragraph: "not another derivation" | Keep. Table rows are read alone. |
 | "You may say you would take a different item first and why; never rewrite the list." | Same paragraph: "Relay the list as written." | Keep. It pairs the permission with its limit. |
 

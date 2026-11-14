@@ -25,7 +25,7 @@ Entering a project, finishing work, or asking what to do next does not trigger t
 
 `tiller migrate` applies this checkout's registered forward schema migrations and refreshes its generated instructions with the running binary; it never changes the installed binary.
 
-One checkout's maintenance never updates other branches, worktrees, or projects. Those stay untouched; teammates incorporate the reviewed migration and maintain their own checkouts. The developer reviews and commits the reported project diff.
+One checkout's maintenance never updates other branches, worktrees, or projects. Those stay untouched; teammates incorporate the reviewed migration and maintain their own checkouts. Maintain the checkout that holds the integration branch, so the refresh reaches every branch cut from it; in a task worktree, say so before running. The developer reviews and commits the reported project diff.
 
 ### Identity
 

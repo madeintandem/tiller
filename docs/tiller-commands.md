@@ -143,7 +143,7 @@ tiller next --all                  # every legal move, ranked
 tiller guide                       # the ranked list, then the skill for the top agent move
 tiller guide <skill>               # orient | derive-baseline | decompose | specify | execute |
                                    # capture | mend-drift | amend | design-brief |
-                                   # code-review
+                                   # code-review | upgrade
 tiller readout <seam>              # orient | derive-baseline | decompose | specify | execute | amend
 tiller readout <seam> --since <sha> # the lighter correction block instead: what the event stream
                                    # recorded since that commit, the one the last block reported
@@ -199,6 +199,11 @@ tweaks, and chores land `proposed` through `tiller add`, and plan changes land a
 through `tiller intake`. "fix B2 on its branch", "drop CH1", and "commit the review" are
 the other verbs. Every disposition is one commit; approval stays with you. There is no review
 command or `code-review` readout seam.
+
+`tiller guide upgrade` delivers the upgrade skill and takes no target. Ask the agent explicitly, for
+example "upgrade Tiller" or "refresh this checkout's guidance". The request authorizes only the
+maintenance it names. The agent's reply ends with a phase report, not a readout; there is no
+`upgrade` readout seam.
 
 Brownfield and legacy-migration with no confirmed ledger doc list only the baseline moves, even when
 work already exists: `derive-baseline` when no doc is registered, otherwise the human's confirmation
