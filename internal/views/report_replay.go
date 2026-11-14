@@ -24,11 +24,13 @@ type statusChange struct {
 // disagrees with the tree gets a closing change to the current status at now,
 // so a replayed final state always matches the tree. A reconciled change
 // carries an empty Type, which is how the metric builders tell it from a real
-// event. It also holds every feature's parent timeline (report_parentage.go),
-// closed against the tree the same way.
+// event. It also holds every feature's parent timeline (report_parentage.go)
+// and amendment-hold timeline (report_holds.go), closed against the tree the
+// same way.
 type replay struct {
 	timelines map[string][]statusChange
 	parents   map[string][]parentChange
+	holds     map[string][]holdChange
 }
 
 // newReplay walks the event stream once, oldest first, and records each
@@ -46,6 +48,7 @@ func newReplay(t *store.Tree, evs []events.Event, weeks []time.Time, now time.Ti
 		timelines: make(map[string][]statusChange, len(current)),
 		parents:   make(map[string][]parentChange, len(t.Features)),
 	}
+	holds := newHoldLedger()
 	if !isSorted(evs) {
 		evs = append([]events.Event(nil), evs...)
 		events.Sort(evs)
@@ -66,6 +69,7 @@ func newReplay(t *store.Tree, evs []events.Event, weeks []time.Time, now time.Ti
 			unexplainedAt, seen = weeks[weekIndex(weeks, at)], true
 		}
 		r.recordMove(ev, at, current)
+		holds.record(ev, at, current)
 		verb := ev.Type
 		noun := verb[strings.LastIndex(verb, ".")+1:]
 		prefix, err := id.PrefixFor(noun)
@@ -101,6 +105,7 @@ func newReplay(t *store.Tree, evs []events.Event, weeks []time.Time, now time.Ti
 		}
 	}
 	r.reconcileParents(t, now)
+	r.holds = holds.timelines(t, now)
 	return r
 }
 

@@ -41,11 +41,14 @@ func observedOr(observed, t *store.Tree) *store.Tree {
 // approvedProgress buckets an approved epic's features by their board column,
 // the column Build draws: the start that activates a feature is recorded on
 // its task's branch, so a ready feature with a task in flight is in progress,
-// and a feature waiting on review is still in progress until it merges.
+// and a feature waiting on review is still in progress until it merges. A
+// draft an open amendment holds is a proposal that changes no rollup, so it
+// takes no segment until the amendment is approved; a finished epic stays
+// finished while a proposal sits under it.
 func approvedProgress(t *store.Tree, epic *store.Epic) ReportEpic {
 	re := ReportEpic{Title: epic.Title}
 	for _, f := range t.Features {
-		if f.EpicKey != *epic.Key {
+		if f.EpicKey != *epic.Key || gen.AmendmentHold(t, f) != nil {
 			continue
 		}
 		switch gen.FeatureBoardStatus(t, f) {
@@ -60,8 +63,9 @@ func approvedProgress(t *store.Tree, epic *store.Epic) ReportEpic {
 	return re
 }
 
-// plannedFeatures counts a draft epic's non-cancelled features. A keyless
-// epic has none.
+// plannedFeatures counts a draft epic's non-cancelled features, held drafts
+// included: a proposal stays visible in the draft totals. A keyless epic has
+// none.
 func plannedFeatures(t *store.Tree, epic *store.Epic) int {
 	if epic.Key == nil {
 		return 0

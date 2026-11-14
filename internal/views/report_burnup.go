@@ -12,14 +12,16 @@ import (
 // A feature is in scope when it exists, is not cancelled, and the epic it sat
 // under at that week's end was approved then (ready, done, or archived). The
 // parent is replayed with the status, so a later move between epics never
-// rewrites an earlier week. It is done when in scope and done.
+// rewrites an earlier week. A draft an open amendment held at that week's end
+// was a proposal then, not scope: it enters at the amendment's approval. A
+// feature is done when in scope and done.
 func burnUp(t *store.Tree, r *replay, weeks []time.Time, now time.Time) []ReportBurnUpWeek {
 	out := make([]ReportBurnUpWeek, len(weeks))
 	for i := range weeks {
 		end := weekEnd(weeks, i, now)
 		for fid := range t.Features {
 			status := r.statusAt(fid, end)
-			if status == "" || status == "cancelled" {
+			if status == "" || status == "cancelled" || r.heldAt(fid, end) {
 				continue
 			}
 			switch r.statusAt(r.parentAt(fid, end), end) {
