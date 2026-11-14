@@ -102,7 +102,7 @@ func TestOrientationDescribesRankedNext(t *testing.T) {
 		"Bare `tiller guide` and the readout's `**Next:**` print the same list, and `submit` and a passing `check` append it as `**Up next:**`",
 		"the exact command, or the branch to continue on",
 		"A ranked move is a suggestion, not authorization.",
-		"Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row.",
+		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
 		"Work already moving inside a seam keeps moving",
 		"never rewrite the list",
 		"The list holds only legal moves, so every row can be acted on as printed.",
@@ -386,6 +386,7 @@ func TestOrientationNeverSwitchesACheckoutForPlanningState(t *testing.T) {
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	for _, want := range []string{
 		"Planning state commits on the integration branch, in the checkout that holds it.",
+		"Run the planning command itself in that checkout",
 		"Never switch a checkout's branch to get there.",
 		"use the worktree that has the integration branch checked out (`git worktree list`), or add one and join inside it",
 		"Commit there only when it holds no changes you did not make; otherwise stop and name what is in the way.",
@@ -440,6 +441,8 @@ func TestOrientationDefinesItsTerms(t *testing.T) {
 		require.Containsf(t, text, "**"+term+"**", "orientation defines %q", term)
 	}
 	require.Contains(t, text, "- **run**: the work the developer's instruction named, and nothing else.")
+	require.Contains(t, text, "A riding task's review ref is also called its riding ref.")
+	require.Contains(t, text, "explains what Tiller is, its terms, the rules you must follow, how to work, and where things live")
 }
 
 // The external references writing rule lives in orientation, not in orient.

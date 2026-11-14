@@ -1407,7 +1407,7 @@ func TestOrientRelaysTheRankedList(t *testing.T) {
 		"If any human move ranks above the top agent move, name it first.",
 		"never rewrite the list",
 		"A ranked move is a suggestion, not authorization.",
-		"Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row.",
+		"Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as \"sounds good\", or an instruction naming that row.",
 		"or the branch to continue on",
 		"the feature touched by your most recent deliberate act that names one",
 		"Within a kind, plan order decides",
@@ -1487,11 +1487,18 @@ func TestExecuteDefinesTheRun(t *testing.T) {
 	require.True(t, ok)
 	for _, want := range []string{
 		"A run is the work the developer's instruction named, and nothing else.",
-		"continuing the unit's eligible work without another go",
+		"the other tasks in its feature or epic are outside the run",
+		"When the run covers the whole unit, continue with the unit's other eligible work without another go.",
+		"Under coarse review, each checked task submits its riding ref on its own branch, commits state, and is merged into the aggregate.",
+		"keep the run moving",
+		"**Publication sequence** names the merge shapes",
+		"A stop at a blocker still ends with the readout, with the blocker named in the notes.",
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
 	require.NotContains(t, text, "continuing eligible approved work without another go")
+	require.NotContains(t, text, "before continuing the unit's eligible work without another go")
+	require.NotContains(t, text, "the ordering rules above name the shapes")
 }
 
 // specify grounds the claims a plan rests on in the code they describe, and

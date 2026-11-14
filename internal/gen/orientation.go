@@ -3,7 +3,7 @@
 // so the same inputs always yield the same output.
 package gen
 
-// This file generates .tiller/orientation.md from distribution.md's four-part
+// This file generates .tiller/orientation.md from distribution.md's five-part
 // outline. The file is generated, committed, and keyed to the schema generation
 // rather than the binary version, so every binary in a schema line emits the
 // SAME bytes and re-running init is a no-op diff. The content is therefore a
@@ -116,7 +116,7 @@ deferred to ` + "`tiller status`" + ` so this file stays stable. -->
 
 This project uses Tiller to run its SDLC workflow. Specs, decomposition,
 planning, and acceptance gates live in ` + "`.tiller/`" + `, under git, beside the code
-they describe. This file is your front door: it explains what Tiller is, the
+they describe. This file is your front door: it explains what Tiller is, its terms, the
 rules you must follow, how to work, and where things live. It depends on nothing
 but a filesystem, a shell, and the ` + "`tiller`" + ` CLI.
 
@@ -152,7 +152,7 @@ unrequested replan.
 - **run**: the work the developer's instruction named, and nothing else.
 - **aggregate**: the feature or epic review branch that submitted task branches merge into at coarse grain.
 - **riding task**: a task whose review rides its feature's or epic's review; it submits a review ref, not its own PR.
-- **review ref**: the branch and commit a submit records when the node has no PR of its own.
+- **review ref**: the branch and commit a submit records when the node has no PR of its own. A riding task's review ref is also called its riding ref.
 - **finish line**: at coarse grain, every live riding task ` + "`in_review`" + ` or ` + "`done`" + `, and at epic grain every independent feature or task override already done.
 - **closeout**: the bounded work that carries a reviewed unit to done after its finish line or its reported merge: feature checks, evidence, and review preparation up to the human's acceptance, then submission, sync, and the state commits that record them.
 - **rollup**: a feature's or epic's ` + "`done`" + `, recorded by ` + "`tiller sync`" + ` from its children (at least one not cancelled, every live one done, and for a feature its gates checked) and recomputed when new work lands beneath it.
@@ -262,7 +262,11 @@ unrequested replan.
   touches only ` + "`.tiller/`" + ` never needs a pull request: planning state, gate
   records, and events are CLI-written audit records, so commit them directly.
   Planning state commits on the integration branch, in the checkout that holds
-  it. That checkout is usually the primary checkout, since Git checks out a
+  it. Planning state is what a command writes outside the execution of a started
+  task or shelf node: decomposition, specification, capture, amendments, baseline
+  docs, review dispositions, and questions recorded while orienting. Run the
+  planning command itself in that checkout, so the state it writes lands there.
+  That checkout is usually the primary checkout, since Git checks out a
   branch in only one worktree. Never switch a checkout's branch to get there. When this checkout is on
   another branch, use the worktree that has the integration branch checked out
   (` + "`git worktree list`" + `), or add one and join inside it. Commit there only
@@ -665,7 +669,7 @@ human decision or ` + "`Agent`" + ` for work, then the action, the reason, and t
 command, or the branch to continue on. ` + "`tiller guide orient`" + ` explains how the list is ranked and what each move leads to.
 
 Relay the list as written. If any human move ranks above the top agent move,
-name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply says to: a go, a yes, or an instruction naming that row. A reply that asks something else is answered, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
+name it first. Then end the reply. Start the top agent move in your next turn only when the developer's reply agrees to it: a go, a yes, any plain assent such as "sounds good", or an instruction naming that row. A reply that asks something else is answered, and the list still waits for its go. A reply naming a different row or other work redirects you to that.
 You may say you would take a different item first and why; never rewrite the list.
 A ranked move is a suggestion, not authorization.
 An explicit human instruction naming nodes overrides the list's order for exactly
