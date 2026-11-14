@@ -246,9 +246,10 @@ func TestMaintenanceDecoderPreservesPartialMigrationAndRejectsLies(t *testing.T)
 	require.Error(t, err)
 }
 
-func TestUpgradeRealTargetMigratesBeforeRefreshing(t *testing.T) {
-	// A real compiled candidate, not a shim echoing expected fields, proves that
-	// the selected process performs schema migration and generated refresh.
+// buildTillerCandidate compiles the tiller binary from this source tree and
+// returns its bytes, for the tests that need a real release candidate.
+func buildTillerCandidate(t *testing.T) string {
+	t.Helper()
 	_, source, _, ok := runtime.Caller(0)
 	require.True(t, ok)
 	repo := filepath.Clean(filepath.Join(filepath.Dir(source), "..", ".."))
@@ -259,6 +260,13 @@ func TestUpgradeRealTargetMigratesBeforeRefreshing(t *testing.T) {
 	require.NoError(t, err, string(output))
 	body, err := os.ReadFile(binary)
 	require.NoError(t, err)
+	return string(body)
+}
+
+func TestUpgradeRealTargetMigratesBeforeRefreshing(t *testing.T) {
+	// A real compiled candidate, not a shim echoing expected fields, proves that
+	// the selected process performs schema migration and generated refresh.
+	body := buildTillerCandidate(t)
 	root := maintenanceFixture(t)
 	path := filepath.Join(root, ".tiller", "tiller.yml")
 	manifest, err := os.ReadFile(path)
@@ -270,7 +278,7 @@ func TestUpgradeRealTargetMigratesBeforeRefreshing(t *testing.T) {
 	gitRun(t, root, "commit", "-qm", "legacy schema")
 	require.NoError(t, os.WriteFile(filepath.Join(root, "unrelated.txt"), []byte("human edit"), 0644))
 	target := upgradeTarget(t, t.TempDir())
-	server, _ := newUpgradeServer(t, "/repos/madeintandem/tiller/releases/tags/v"+version, "v"+version, string(body), false)
+	server, _ := newUpgradeServer(t, "/repos/madeintandem/tiller/releases/tags/v"+version, "v"+version, body, false)
 	setUpgradeSeams(t, server, target)
 	out, _, code := execCLI(t, "upgrade", "--version", version, "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out)

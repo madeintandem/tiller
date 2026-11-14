@@ -975,7 +975,7 @@ The shared maintenance payload has the following fields:
 | `project.planned_shims_added`, `project.planned_shims_removed` | Planned discovery changes; unlike the actual shim fields, these may survive a refused or failed apply |
 | `project.blockers`, `project.warnings`, `project.notes` | Structured migration drain blockers, separate non-blocking execution/ownership warnings, and migration notes |
 | `project.shims_added`, `project.shims_removed` | Committed catalog shim changes only |
-| `project.actor` | Resolved real-migration `{id, source}` only |
+| `project.actor` | `{id, source}` of the contributor a real migration validated against the roster, and the source that resolved it. A refusal after that validation, such as dirty migration input or a missing ownership review, keeps it. Omitted when no contributor was validated: unset, unknown, or not needed |
 | `failure` | Overall typed `{code, reason, message}` failure, also carried by the failed phase where known |
 
 Optional facts are omitted rather than invented. In particular, `recovery_required` and `unknown` phases must not be represented by an empty changed-file list that claims durable unchanged state.

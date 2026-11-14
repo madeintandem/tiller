@@ -117,7 +117,7 @@ func localMaintenance(cmd *cobra.Command, root, command string, inspect bool, ex
 	r.Project.SchemaBefore = schema
 	r.Project.SchemaAfter = schema
 	var d mutate.Deps
-	var a actor
+	var actorSource string
 	if schema < store.CurrentSchemaVersion && schema >= store.MinMigratableSchemaVersion {
 		id, source, resolveErr := maintenanceActor(cmd, root)
 		if resolveErr != nil {
@@ -125,7 +125,7 @@ func localMaintenance(cmd *cobra.Command, root, command string, inspect bool, ex
 			return r, resolveErr
 		}
 		d.Contributor = id
-		a = actor{ID: id, Source: source}
+		actorSource = source
 	}
 	review, err := migrationReview(cmd)
 	if err != nil {
@@ -136,6 +136,13 @@ func localMaintenance(cmd *cobra.Command, root, command string, inspect bool, ex
 	r.Project.PlannedSourceFiles = migration.Files
 	r.Project.Notes = migration.Notes
 	r.Project.Blockers = migration.Blockers
+	// Inspection names a contributor only after checking it against the roster,
+	// and it runs that check before its later guards, so a refusal past that
+	// point (dirty inputs, a missing ownership review) still knows who acted.
+	// A contributor it never validated stays out of the result.
+	if migration.Contributor != "" {
+		r.Project.Actor = &actor{ID: migration.Contributor, Source: actorSource}
+	}
 	if err != nil {
 		phaseFailure(&r.Project.Migration, err)
 		return r, err
@@ -149,7 +156,6 @@ func localMaintenance(cmd *cobra.Command, root, command string, inspect bool, ex
 		return r, err
 	}
 	if schema < store.CurrentSchemaVersion {
-		r.Project.Actor = &a
 		r.Project.Migration.Status = "planned"
 	} else {
 		r.Project.Migration.Status = "current"
