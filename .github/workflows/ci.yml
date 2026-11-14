@@ -30,6 +30,8 @@ jobs:
       - run: scripts/check-doc-versions_test.sh
       - run: scripts/check-doc-versions.sh
       - run: scripts/install_test.sh
+      - run: scripts/reset-bare_test.sh
+      - run: scripts/compaction-acceptance_test.sh
       - run: site/screenshots/acme_test.sh
       - run: make build
       - run: make lint
