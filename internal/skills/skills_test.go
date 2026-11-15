@@ -1939,11 +1939,15 @@ func TestSpecifySettlesQuestionsBeforeChoreography(t *testing.T) {
 	require.Contains(t, text, "like C5 (in the example below)")
 }
 
-// capture reads the shelves before adding, so one finding is not filed twice.
+// capture looks for the finding before adding, so one finding is not filed
+// twice, and it names the one search before listing every shelf.
 func TestCaptureChecksForDuplicates(t *testing.T) {
 	text, ok := Lookup("capture")
 	require.True(t, ok)
-	require.Contains(t, text, "Before adding, read the shelves")
+	search := strings.Index(text, "Before adding, search for the finding: `tiller search <keyword>`")
+	require.NotEqual(t, -1, search, "the duplicate check opens with the search")
+	listing := strings.Index(text, "read the shelves (`tiller ls bugs`")
+	require.Greater(t, listing, search, "listing the shelves is the fallback, after the search")
 	require.Contains(t, text, "`regression of <id>`")
 	require.Contains(t, text, "A reproduction derived by reading rather than run says so.")
 }
@@ -2581,5 +2585,16 @@ func TestSkillsStateRuledReasonsAndPositiveForms(t *testing.T) {
 		for _, want := range wants {
 			require.Containsf(t, text, want, "%s states %q", name, want)
 		}
+	}
+}
+
+// The duplicate check before a forward-work question or a shelf item found in
+// a document names the search, the way capture's does: an agent runs the
+// command a skill names.
+func TestDuplicateChecksNameTheSearch(t *testing.T) {
+	for _, skill := range []string{"capture", "derive-baseline", "decompose"} {
+		text, ok := Lookup(skill)
+		require.True(t, ok)
+		require.Containsf(t, text, "`tiller search <keyword>`", "%s names the search in its duplicate check", skill)
 	}
 }
