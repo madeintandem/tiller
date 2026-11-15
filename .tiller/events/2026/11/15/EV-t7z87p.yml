@@ -1,0 +1,13 @@
+id: EV-t7z87p
+type: add.tweak
+at: 2026-11-15T18:38:45.921107Z
+contributor: jc
+command: add tweak search-caps-long-match-lines
+targets:
+    - TW-d4xb1o
+after:
+    key: tweaks/search-caps-long-match-lines
+    status: proposed
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.md
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml

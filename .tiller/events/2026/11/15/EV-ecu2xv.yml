@@ -1,0 +1,13 @@
+id: EV-ecu2xv
+type: add.tweak
+at: 2026-11-15T18:38:45.982272Z
+contributor: jc
+command: add tweak search-status-filter
+targets:
+    - TW-kybzhj
+after:
+    key: tweaks/search-status-filter
+    status: proposed
+files:
+    - path: .tiller/tweaks/search-status-filter/tweak.md
+    - path: .tiller/tweaks/search-status-filter/tweak.yml

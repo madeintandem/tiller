@@ -1,0 +1,13 @@
+id: EV-iaud8u
+type: add.tweak
+at: 2026-11-15T18:38:45.860184Z
+contributor: jc
+command: add tweak search-reads-pointer-sources
+targets:
+    - TW-jr15wo
+after:
+    key: tweaks/search-reads-pointer-sources
+    status: proposed
+files:
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.md
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.yml
