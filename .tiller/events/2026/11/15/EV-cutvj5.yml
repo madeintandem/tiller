@@ -1,0 +1,13 @@
+id: EV-cutvj5
+type: start.tweak
+at: 2026-11-15T18:43:22.743835Z
+contributor: jc
+command: start tweak TW-0w7qc8
+targets:
+    - TW-0w7qc8
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml
