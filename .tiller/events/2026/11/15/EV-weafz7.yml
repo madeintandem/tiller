@@ -1,0 +1,14 @@
+id: EV-weafz7
+type: submit.tweak
+at: 2026-11-15T18:47:45.595438Z
+contributor: jc
+command: submit tweak TW-0w7qc8
+targets:
+    - TW-0w7qc8
+before:
+    status: check
+after:
+    pr: 21
+    status: in_review
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml

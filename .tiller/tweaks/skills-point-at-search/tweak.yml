@@ -1,7 +1,7 @@
 id: TW-0w7qc8
 key: tweaks/skills-point-at-search
 title: Skills tell the agent to read the shelves where one search would do
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -17,6 +17,7 @@ accepted_against:
         value: git:c47515b
         observed_at: 2026-11-15T18:43:22.087937Z
 branch: tiller/tweaks/skills-point-at-search
+pr: 21
 gates:
     build:
         required: true
