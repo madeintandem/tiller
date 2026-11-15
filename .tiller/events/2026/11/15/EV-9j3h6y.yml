@@ -1,0 +1,13 @@
+id: EV-9j3h6y
+type: check.bug
+at: 2026-11-15T01:07:13.940807Z
+contributor: jc
+command: check bug B-ldsix8
+targets:
+    - B-ldsix8
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml
