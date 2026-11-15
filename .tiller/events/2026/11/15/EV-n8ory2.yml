@@ -1,0 +1,14 @@
+id: EV-n8ory2
+type: sync.tweak
+at: 2026-11-15T18:51:24.607482Z
+contributor: jc
+command: sync tweak TW-0w7qc8
+targets:
+    - TW-0w7qc8
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml
