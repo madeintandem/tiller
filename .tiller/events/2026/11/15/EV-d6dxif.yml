@@ -1,0 +1,13 @@
+id: EV-d6dxif
+type: add.tweak
+at: 2026-11-15T18:30:48.244181Z
+contributor: jc
+command: add tweak flaky-reread-report-file-scroll-assertion
+targets:
+    - TW-jg1dr5
+after:
+    key: tweaks/flaky-reread-report-file-scroll-assertion
+    status: proposed
+files:
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.md
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.yml
