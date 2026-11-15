@@ -46,10 +46,18 @@ const (
 	RubricVerdictFail = "fail"
 )
 
-// evalEvidenceDir is the repo-relative directory rubric output lands in: both
-// the path the packet tells the agent to write and the retained evidence a
-// recording stores (artifact-schema.md, "The rubric handoff").
+// evalEvidenceDir is the repo-relative directory a recording retains rubric
+// evidence in (artifact-schema.md, "Retained rubric evidence"). Before v0.24.0
+// the packet's output path was a file directly in it, and attestations
+// recorded then still name those files.
 const evalEvidenceDir = "artifacts/tiller/evals"
+
+// rubricHandoffDir is the repo-relative directory the packet tells the agent
+// to write graded output into (artifact-schema.md, "The rubric handoff"). It
+// holds handoff files only: no evidence reference, of any age, names a path
+// inside it, so the agent can overwrite a file there without changing recorded
+// evidence.
+const rubricHandoffDir = evalEvidenceDir + "/handoff"
 
 // RubricPacket is the portable handoff `tiller eval --emit-rubrics` writes for the
 // agent to grade with its harness model. It names the node, the time it was
@@ -94,11 +102,12 @@ type RubricOutput struct {
 
 // RubricOutputPath is the repo-relative path the rubric packet tells the agent
 // to write one criterion's graded output to:
-// artifacts/tiller/evals/<node-id>-<criterion-id>.json. It is a handoff
+// artifacts/tiller/evals/handoff/<node-id>-<criterion-id>.json. It is a handoff
 // location the agent overwrites on every regrade, never an evidence reference:
-// recorded state points at RubricEvidenceRef instead.
+// recorded state points at RubricEvidenceRef instead, and a reference recorded
+// before v0.24.0 points at the same file name one directory up.
 func RubricOutputPath(nodeID, critID string) string {
-	return evalEvidenceDir + "/" + nodeID + "-" + critID + ".json"
+	return rubricHandoffDir + "/" + nodeID + "-" + critID + ".json"
 }
 
 // RubricEvidenceRef is the repo-relative path a recorded rubric output is

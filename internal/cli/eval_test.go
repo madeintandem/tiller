@@ -83,7 +83,7 @@ func TestEvalEmitRubrics(t *testing.T) {
 	require.Contains(t, out, "\"schema\": \"tiller.rubric_packet.v1\"")
 	require.Contains(t, out, "\"id\": \"C2\"")
 	require.NotContains(t, out, "\"id\": \"C1\"", "only eval bindings are in the packet")
-	require.Contains(t, out, "artifacts/tiller/evals/")
+	require.Contains(t, out, "artifacts/tiller/evals/handoff/")
 	require.Contains(t, out, "-C2.json")
 }
 
@@ -97,7 +97,7 @@ func TestEvalEmitRubricsHumanSurfacesOutputPath(t *testing.T) {
 	out, _, code := execCLI(t, "eval", "feature", key, "--emit-rubrics", "--contributor", "jc")
 	require.Equal(t, 0, code)
 	require.Contains(t, out, "C2", "the human emit names the eval criterion")
-	require.Contains(t, out, "artifacts/tiller/evals/", "the human emit surfaces the output path")
+	require.Contains(t, out, "artifacts/tiller/evals/handoff/", "the human emit surfaces the output path")
 	require.Contains(t, out, "-C2.json", "the path is the criterion's rubric-output file")
 	require.Contains(t, out, "Grade whether the copy reads naturally", "the human emit surfaces the rubric")
 	require.NotContains(t, out, "C1", "only eval-binding criteria are in the packet")
