@@ -1,0 +1,11 @@
+id: EV-c7g36h
+type: claim.bug
+at: 2026-11-15T00:54:02.033562Z
+contributor: jc
+command: claim bug bugs/legacy-rubric-evidence-overwritten
+targets:
+    - B-oprhtx
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.yml

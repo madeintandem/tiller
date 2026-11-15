@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/events"
@@ -143,6 +144,60 @@ func TestRubricRegradeKeepsAttestedEvidence(t *testing.T) {
 				"the attestation still names the grade the human reviewed")
 		})
 	}
+}
+
+// useLegacyEvidenceRef rewrites the task's recorded rubric evidence into the
+// shape a binary older than v0.24.0 wrote: the recorded output lives at
+// artifacts/tiller/evals/<node>-<criterion>.json, the path that binary's rubric
+// packet named as output_path, and the criterion and its attestation point
+// there. It returns the legacy reference.
+func (f rubricFixture) useLegacyEvidenceRef(t *testing.T, retained string) string {
+	t.Helper()
+	legacy := "artifacts/tiller/evals/" + f.task + "-C2.json"
+	require.NoError(t, os.Rename(
+		filepath.Join(f.root, filepath.FromSlash(retained)),
+		filepath.Join(f.root, filepath.FromSlash(legacy))))
+	state := f.taskBytes(t, f.task)
+	require.Contains(t, string(state), retained)
+	require.NoError(t, os.WriteFile(f.taskYML(t, f.task),
+		[]byte(strings.ReplaceAll(string(state), retained, legacy)), 0o644))
+	return legacy
+}
+
+// An attestation recorded before v0.24.0 names the rubric packet's old
+// output_path as its evidence. Grading the criterion again must leave those
+// bytes alone: the packet hands the agent a path no recorded reference uses,
+// so neither the write to output_path nor the recording that follows changes
+// what the older attestation points at, and nothing rewrites its evidence_ref.
+func TestRegradeKeepsEvidenceRecordedBeforeRetainedRefs(t *testing.T) {
+	t.Parallel()
+	f := layRubricTask(t)
+	first := rubricJSON("pass", "Reads naturally.")
+	second := rubricJSON("fail", "Reads stiffly after the rewrite.")
+
+	f.recordBytes(t, first)
+	legacy := f.useLegacyEvidenceRef(t, f.attestRubric(t).EvidenceRef)
+	attested := load(t, f.root).Tasks[f.task].Attestations
+	require.Equal(t, legacy, attested[len(attested)-1].EvidenceRef)
+	require.Equal(t, string(first), f.evidence(t, legacy))
+
+	path := f.outputPath(t)
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+	require.NoError(t, os.WriteFile(path, second, 0o644))
+	require.Equal(t, string(first), f.evidence(t, legacy),
+		"writing a new grade to the packet's output_path must not change evidence an older attestation names")
+	require.NoError(t, f.record(load(t, f.root), path))
+
+	regraded := f.rubricCriterion(t)
+	require.Equal(t, store.CriterionStatusFail, regraded.Status)
+	require.Len(t, regraded.Evidence, 1)
+	require.NotEqual(t, legacy, regraded.Evidence[0].Ref, "the regrade is a new artifact")
+	require.Equal(t, string(second), f.evidence(t, regraded.Evidence[0].Ref))
+
+	history := load(t, f.root).Tasks[f.task].Attestations
+	require.Equal(t, attested, history, "no recording rewrites an attestation's evidence_ref")
+	require.Equal(t, string(first), f.evidence(t, legacy),
+		"the older attestation still names the grade the human reviewed")
 }
 
 // Two recordings of one criterion overlap: both load the tree, one commits, and
