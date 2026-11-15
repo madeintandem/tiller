@@ -23,7 +23,7 @@ that reproduces the problem all help.
 
 ## Supported versions
 
-Tiller is pre-1.0, so only the latest release gets security fixes. Upgrade with
+Only the latest release gets security fixes. Upgrade with
 your package manager or by re-running the installer.
 
 ## Scope notes

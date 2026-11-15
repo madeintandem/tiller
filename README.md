@@ -26,7 +26,7 @@ the calls.
 
 ## Install
 
-The current release is **v0.24.1**, for macOS and Linux on amd64 and arm64.
+The current release is **v1.0.0**, for macOS and Linux on amd64 and arm64.
 
 ```sh
 # macOS, with Homebrew
@@ -42,7 +42,7 @@ a regular user, it installs to `~/.local/bin`, so add that to your `PATH` if
 it isn't there already. Go 1.27 users can also run
 `go install github.com/madeintandem/tiller/cmd/tiller@latest`, and checksummed
 archives are on the [releases page](https://github.com/madeintandem/tiller/releases).
-Check that `tiller --version` reports 0.24.1.
+Check that `tiller --version` reports 1.0.0.
 
 ## Start on the repo you already have
 
@@ -150,10 +150,11 @@ to be on it.
 
 ## Status
 
-Tiller is pre-1.0 and in active use on real projects. It covers the
-stretch from "we have specs and a plan" through "it's merged and done." The
-schema may change between minor versions until 1.0, and a binary that meets a
-tree it can't safely write stops and says so instead of guessing. The
+Tiller is in active use on real projects. It covers the stretch from "we
+have specs and a plan" through "it's merged and done." A release that changes
+the on-disk schema ships the migration with it, `tiller upgrade` runs it, and a
+binary that meets a tree it can't safely write stops and says so instead of
+guessing. The
 [roadmap](./docs/roadmap.md) says what's built and what isn't.
 
 ## Learn more
