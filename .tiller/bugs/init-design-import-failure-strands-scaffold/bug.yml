@@ -1,0 +1,8 @@
+id: B-9k2p9d
+key: bugs/init-design-import-failure-strands-scaffold
+title: A failed --design import leaves a half-built scaffold that a rerun cannot finish
+severity: important
+status: proposed
+blocked: false
+started: false
+proposed_by: jc

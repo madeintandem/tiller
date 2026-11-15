@@ -1,0 +1,14 @@
+id: EV-cqk2o6
+type: add.bug
+at: 2026-11-15T23:54:59.475656Z
+contributor: jc
+command: add bug init-design-import-failure-strands-scaffold
+targets:
+    - B-9k2p9d
+after:
+    key: bugs/init-design-import-failure-strands-scaffold
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.md
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml
