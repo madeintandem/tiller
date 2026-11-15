@@ -1,0 +1,13 @@
+id: EV-akjj4g
+type: approve.tweak
+at: 2026-11-15T18:43:22.088004Z
+contributor: jc
+command: approve tweak TW-0w7qc8
+targets:
+    - TW-0w7qc8
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml

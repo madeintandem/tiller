@@ -1,7 +1,17 @@
 id: TW-0w7qc8
 key: tweaks/skills-point-at-search
 title: Skills tell the agent to read the shelves where one search would do
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:4c5f645456a90ac5ebf5436b226045163793826e
+        path: .tiller/tweaks/skills-point-at-search/tweak.md
+        observed_at: 2026-11-15T18:43:22.070203Z
+    commit:
+        kind: git_commit
+        value: git:c47515b
+        observed_at: 2026-11-15T18:43:22.087937Z
