@@ -2,7 +2,7 @@ id: B-ldsix8
 key: bugs/unknown-subcommand-exits-zero
 title: An unknown word under a command group prints help and exits 0
 severity: important
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -19,6 +19,7 @@ accepted_against:
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:09.536427Z
 branch: tiller/bugs/unknown-subcommand-exits-zero
+pr: 20
 gates:
     build:
         required: true
