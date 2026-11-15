@@ -1,0 +1,11 @@
+id: EV-runakp
+type: claim.bug
+at: 2026-11-15T00:54:02.607592Z
+contributor: jc
+command: claim bug bugs/reopened-feature-missing-from-checks-due
+targets:
+    - B-k5fzoh
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml
