@@ -1,0 +1,13 @@
+id: EV-kkjuiy
+type: check.bug
+at: 2026-11-15T01:11:00.427213Z
+contributor: jc
+command: check bug B-k5fzoh
+targets:
+    - B-k5fzoh
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml
