@@ -3,6 +3,7 @@ package gates
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -53,6 +54,20 @@ func TestBuildPacketEmptyIsArray(t *testing.T) {
 	b, err := json.Marshal(packet)
 	require.NoError(t, err)
 	require.Contains(t, string(b), `"criteria":[]`)
+}
+
+// TestRubricOutputPathIsNoEvidenceReference pins the handoff location: the
+// packet's writable output path sits in a directory of its own, so it is
+// neither the retained-evidence name nor the path a binary older than v0.24.0
+// recorded as an evidence reference (artifacts/tiller/evals/<node>-<criterion>.json).
+func TestRubricOutputPathIsNoEvidenceReference(t *testing.T) {
+	handoff := RubricOutputPath("F-aaaaaa", "C4")
+
+	require.Equal(t, "artifacts/tiller/evals/handoff/F-aaaaaa-C4.json", handoff)
+	require.NotEqual(t, "artifacts/tiller/evals/F-aaaaaa-C4.json", handoff,
+		"a reference recorded before v0.24.0 names this path")
+	require.NotEqual(t, path.Dir(RubricEvidenceRef("F-aaaaaa", "C4", []byte(`{"verdict": "pass"}`))), path.Dir(handoff),
+		"retained evidence and handoff files do not share a directory")
 }
 
 // TestRubricEvidenceRefNamesTheRecordedBytes pins the retained-evidence name:

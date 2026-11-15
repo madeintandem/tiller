@@ -225,6 +225,34 @@ func FeatureActivity(t *store.Tree, f *store.Feature) string {
 	return FeatureActivityAwaitingSync
 }
 
+// FeatureCheckDue reports whether `tiller check feature` is owed: the feature
+// is in a rollup phase (active, every live task done) and a required
+// feature-grain gate has no recorded result, or a stale one that a check
+// would rerun. An unrecorded gate is the awaiting_check phase, where the
+// rollup is parked. A stale gate leaves the phase at awaiting_sync, because
+// presence is the rollup's bar, but the result no longer describes the work:
+// sync stales every gate when it reopens a done feature, and the next sync
+// crosses it with policy violations unless the check runs first. A recorded
+// fail or pending result is a current answer and is not listed. Neither is a
+// stale attestation gate, which check carries forward untouched: that one is
+// the human's to attest again.
+func FeatureCheckDue(t *store.Tree, f *store.Feature) bool {
+	switch FeatureActivity(t, f) {
+	case FeatureActivityAwaitingCheck:
+		return true
+	case FeatureActivityAwaitingSync:
+		for name, spec := range t.Manifest.Gates.Required {
+			if !spec.On.Includes(store.NounFeature) || spec.Kind == store.GateKindAttestation {
+				continue
+			}
+			if f.GatesBlock.Gates[name].Status == store.GateStatusStale {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // FeatureDisplay is a feature's after-the-colon status for the human lenses
 // that already render the epic's derived status this way ("ready, active"):
 // the stored status with the derived phase appended, "active, awaiting check"

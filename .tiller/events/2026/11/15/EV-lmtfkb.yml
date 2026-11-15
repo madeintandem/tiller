@@ -1,0 +1,14 @@
+id: EV-lmtfkb
+type: submit.bug
+at: 2026-11-15T01:15:49.250563Z
+contributor: jc
+command: submit bug B-oprhtx
+targets:
+    - B-oprhtx
+before:
+    status: check
+after:
+    pr: 20
+    status: in_review
+files:
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.yml

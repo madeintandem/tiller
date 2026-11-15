@@ -1,0 +1,14 @@
+id: EV-i8njoj
+type: submit.bug
+at: 2026-11-15T01:15:51.466844Z
+contributor: jc
+command: submit bug B-k5fzoh
+targets:
+    - B-k5fzoh
+before:
+    status: check
+after:
+    pr: 20
+    status: in_review
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml

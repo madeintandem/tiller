@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/core/gates"
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -934,8 +935,8 @@ func TestExecuteGradesTheContractsEvalCriterion(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, ex, "--criterion "+want,
 		"execute grades the criterion specify's contract actually binds to eval")
-	require.Contains(t, ex, "artifacts/tiller/evals/F-79dh3q-"+want+".json",
-		"and the output path follows the criterion")
+	require.Contains(t, ex, "--record-rubric-output "+gates.RubricOutputPath("F-79dh3q", want),
+		"and the recorded file is the output path the packet reports for that criterion")
 	require.Contains(t, ex, `"criterion": "`+want+`"`,
 		"as does the rubric_output document it shows")
 

@@ -1,0 +1,13 @@
+id: EV-qpacsr
+type: start.bug
+at: 2026-11-15T00:54:02.678173Z
+contributor: jc
+command: start bug B-k5fzoh
+targets:
+    - B-k5fzoh
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml

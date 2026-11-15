@@ -383,11 +383,11 @@ For each required ungraded or stale eval-kind criterion, use the authored contra
 tiller eval feature F-79dh3q --emit-rubrics
 # Grade each packet against the implementation and write its reported output_path.
 tiller eval feature F-79dh3q --criterion C4 \
-  --record-rubric-output artifacts/tiller/evals/F-79dh3q-C4.json
+  --record-rubric-output artifacts/tiller/evals/handoff/F-79dh3q-C4.json
 # Commit actual rubric-recording state. This is evidence, not human acceptance.
 ```
 
-The graded rubric output file you write for each `eval`-kind criterion has a fixed shape. `--emit-rubrics` tells you the `output_path` to write each one to; write that path a single JSON document shaped `tiller.rubric_output.v1`:
+The graded rubric output file you write for each `eval`-kind criterion has a fixed shape. `--emit-rubrics` tells you the `output_path` to write each one to, a handoff file under `artifacts/tiller/evals/handoff/`; create that directory when it is missing, and write that path a single JSON document shaped `tiller.rubric_output.v1`:
 
 ```json
 {

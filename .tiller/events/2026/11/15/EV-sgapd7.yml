@@ -1,0 +1,13 @@
+id: EV-sgapd7
+type: start.bug
+at: 2026-11-15T00:54:02.111698Z
+contributor: jc
+command: start bug B-oprhtx
+targets:
+    - B-oprhtx
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.yml

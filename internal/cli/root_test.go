@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
@@ -100,9 +101,9 @@ type parserFailure struct {
 
 // parserFailures covers each parser-stage refusal (a missing or surplus
 // positional, a command's own argument validator, a missing required flag, an
-// unknown flag, an invalid flag value, an unknown command) with --json in each
-// position a caller can put it: before the command, after it, and after the
-// token that failed.
+// unknown flag, an invalid flag value, an unknown command, an unknown
+// subcommand under a command group) with --json in each position a caller can
+// put it: before the command, after it, and after the token that failed.
 var parserFailures = []parserFailure{
 	{"missing node, json before the command", []string{"--json", "show"}, "show", "bad_args", "accepts 2 arg(s), received 0"},
 	{"missing node, json after the command", []string{"show", "--json"}, "show", "bad_args", "accepts 2 arg(s), received 0"},
@@ -124,6 +125,10 @@ var parserFailures = []parserFailure{
 	{"unknown command, json last", []string{"bogus", "--json"}, "tiller", "unknown_command", `unknown command "bogus" for "tiller"`},
 	{"unknown command with stray flags", []string{"bogus", "task", "T-k3p9w6", "--bogusflag", "y", "--json"}, "tiller", "unknown_command", `unknown command "bogus" for "tiller"`},
 	{"last json value wins when it turns json on", []string{"--json=false", "show", "--json"}, "show", "bad_args", "accepts 2 arg(s), received 0"},
+	{"unknown subcommand, json first", []string{"--json", "add", "bogus"}, "add", "bad_args", `unknown command "bogus" for "tiller add"`},
+	{"unknown subcommand, json last", []string{"add", "bogus", "--json"}, "add", "bad_args", `unknown command "bogus" for "tiller add"`},
+	{"unknown subcommand with a node", []string{"claim", "bogus", "X", "--json"}, "claim", "bad_args", `unknown command "bogus" for "tiller claim"`},
+	{"unknown subcommand under a generated group", []string{"completion", "bogus", "--json"}, "completion", "bad_args", `unknown command "bogus" for "tiller completion"`},
 }
 
 // soleEnvelope decodes stdout as exactly one JSON envelope: a second document,
@@ -187,6 +192,9 @@ func TestParserStageFailuresStayHumanWithoutJSON(t *testing.T) {
 		{"missing required flag", []string{"add", "bug", "broken-save", "--contributor", "jc"}, "tiller: required flag(s) \"title\" not set\n"},
 		{"unknown flag", []string{"ls", "features", "--bogusflag"}, "tiller: unknown flag: --bogusflag\n"},
 		{"unknown command", []string{"bogus"}, "tiller: unknown command \"bogus\" for \"tiller\"\n"},
+		{"unknown subcommand", []string{"add", "bogus"}, "tiller: unknown command \"bogus\" for \"tiller add\"\n"},
+		{"unknown subcommand with a node", []string{"claim", "bogus", "X"}, "tiller: unknown command \"bogus\" for \"tiller claim\"\n"},
+		{"unknown subcommand under a generated group", []string{"completion", "bogus"}, "tiller: unknown command \"bogus\" for \"tiller completion\"\n"},
 		{"json after the terminator is a positional", []string{"ls", "features", "--bogusflag", "--", "--json"}, "tiller: unknown flag: --bogusflag\n"},
 		{"json explicitly off", []string{"show", "--json=false"}, "tiller: accepts 2 arg(s), received 0\n"},
 		{"last json value wins when it turns json off", []string{"--json", "show", "--json=false"}, "tiller: accepts 2 arg(s), received 0\n"},
@@ -218,6 +226,108 @@ func TestHelpIgnoresJSON(t *testing.T) {
 			require.Empty(t, stderr)
 			require.Contains(t, stdout, "Usage:")
 			require.False(t, json.Valid([]byte(stdout)), "help is prose, not an envelope")
+		})
+	}
+}
+
+// commandGroups lists, as argument paths, every command below the root that
+// has subcommands.
+func commandGroups(cmd *cobra.Command) [][]string {
+	var groups [][]string
+	for _, sub := range cmd.Commands() {
+		if sub.HasSubCommands() {
+			groups = append(groups, strings.Fields(sub.CommandPath())[1:])
+		}
+		groups = append(groups, commandGroups(sub)...)
+	}
+	return groups
+}
+
+// TestEveryCommandGroupRefusesAnUnknownWord walks the whole command tree, so a
+// group added later is held to the same rule: a word that names none of a
+// group's subcommands is misuse (exit 2), never the help page with exit 0. It
+// covers the groups that only dispatch (add, claim) and the ones that also
+// take positionals of their own (check, remove).
+func TestEveryCommandGroupRefusesAnUnknownWord(t *testing.T) {
+	groups := commandGroups(NewRootCmd())
+	require.Contains(t, groups, []string{"add"})
+	require.Contains(t, groups, []string{"completion"})
+
+	for _, group := range groups {
+		args := append(append([]string{}, group...), "no-such-subcommand")
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			initOwnedRepo(t)
+
+			stdout, stderr, code := execCLI(t, args...)
+
+			require.Equal(t, 2, code, "stdout=%q stderr=%q", stdout, stderr)
+			require.Empty(t, stdout)
+			require.True(t, strings.HasPrefix(stderr, "tiller: "), stderr)
+			require.Equal(t, 1, strings.Count(stderr, "\n"), "one stderr line: %q", stderr)
+			require.Empty(t, gitStatus(t), "a refused invocation writes nothing")
+		})
+		t.Run(strings.Join(args, " ")+" --json", func(t *testing.T) {
+			initOwnedRepo(t)
+
+			stdout, stderr, code := execCLI(t, append(args, "--json")...)
+
+			require.Equal(t, 2, code, "stdout=%q stderr=%q", stdout, stderr)
+			require.Empty(t, stderr, "a JSON failure writes the envelope alone")
+			env := soleEnvelope(t, stdout)
+			require.Equal(t, false, env["ok"])
+			require.Equal(t, group[0], env["command"])
+			body, ok := env["error"].(map[string]any)
+			require.True(t, ok, "envelope carries an error block: %s", stdout)
+			require.EqualValues(t, 2, body["code"])
+			require.Equal(t, "bad_args", body["reason"])
+			require.Empty(t, gitStatus(t), "a refused invocation writes nothing")
+		})
+	}
+}
+
+// TestCommandGroupHelpStaysExitZero pins what the unknown-word refusal must
+// not take away: a group named with no subcommand, and any group under
+// --help, still print the help page and exit 0, with or without --json.
+func TestCommandGroupHelpStaysExitZero(t *testing.T) {
+	invocations := [][]string{{"add"}, {"claim"}, {"release"}, {"reassign"}, {"check"}, {"completion"}}
+	for _, group := range commandGroups(NewRootCmd()) {
+		invocations = append(invocations,
+			append(append([]string{}, group...), "--help"),
+			append(append([]string{}, group...), "no-such-subcommand", "--help"),
+		)
+	}
+	for _, args := range invocations {
+		for _, args := range [][]string{args, append(append([]string{}, args...), "--json")} {
+			t.Run(strings.Join(args, " "), func(t *testing.T) {
+				stdout, stderr, code := execCLI(t, args...)
+				require.Equal(t, 0, code, "stdout=%q stderr=%q", stdout, stderr)
+				require.Empty(t, stderr)
+				require.Contains(t, stdout, "Usage:")
+				require.Contains(t, stdout, "Available Commands:")
+				require.False(t, json.Valid([]byte(stdout)), "help is prose, not an envelope")
+			})
+		}
+	}
+}
+
+// TestHelpCommandStillReachesGroups confirms the refusal leaves Cobra's own
+// help command working: `help` still reaches a group and its subcommand. The
+// completion scripts are checked through the built binary (internal/e2e),
+// since Cobra binds their writer before a test can capture it.
+func TestHelpCommandStillReachesGroups(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"help", "completion"}, "tiller completion [command]"},
+		{[]string{"help", "add"}, "tiller add [command]"},
+		{[]string{"help", "add", "epic"}, "tiller add epic"},
+	} {
+		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
+			stdout, stderr, code := execCLI(t, tc.args...)
+			require.Equal(t, 0, code, "stdout=%q stderr=%q", stdout, stderr)
+			require.Empty(t, stderr)
+			require.Contains(t, stdout, tc.want)
 		})
 	}
 }

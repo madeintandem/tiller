@@ -124,6 +124,39 @@ func TestSyncReopensADoneFeatureWhoseLateTaskMergedBeforeTheNextSync(t *testing.
 	require.Empty(t, res.Crossings)
 }
 
+// TestSyncNamesAReopenedFeatureWithStaleGatesInChecksDue: the run that reopens
+// a feature leaves it with every task done and every required gate stale. That
+// feature is due a feature check exactly as one whose gates never ran is, so
+// ChecksDue names it. Without the entry a caller reading ChecksDue alone sees
+// nothing to do, and the next sync records the crossing with violations.
+func TestSyncNamesAReopenedFeatureWithStaleGatesInChecksDue(t *testing.T) {
+	t.Parallel()
+	root := layEpicRollupGit(t)
+	first := syncOnce(t, root)
+	require.Empty(t, first.ChecksDue, "a feature that crossed to done is never due a check")
+
+	approveAndStartLateTask(t, root)
+	mergeLateBranch(t, root, "T-bbbbbb", "tiller/late-work", "late.txt")
+
+	res := syncOnce(t, root)
+	require.Contains(t, reopenedIDs(res), "F-aaaaaa")
+	require.Equal(t, []mutate.CheckDue{{
+		Noun: store.NounFeature, ID: "F-aaaaaa", Key: "form-engine/certification-form-loading",
+	}}, res.ChecksDue, "the reopened feature's gates are stale, so its check is due")
+
+	// The entry names work that is still there to do: the crossing has not
+	// been recorded, and the gates the check would rerun are the stale ones.
+	f := load(t, root).Features["F-aaaaaa"]
+	require.Equal(t, "active", f.Status)
+	require.Equal(t, store.GateStatusStale, f.Gates["build"].Status)
+
+	// With no check run, the next sync still records the crossing, with
+	// violations, and a done feature drops out of ChecksDue.
+	res = syncOnce(t, root)
+	require.Len(t, crossingsOf(res, store.NounFeature), 1)
+	require.Empty(t, res.ChecksDue)
+}
+
 // TestSyncReopensWhenOneLateTaskMergedAndAnotherIsStillOpen: the unfinished
 // sibling already reopened the feature before this fix. The merged one must not
 // change that answer.
@@ -139,6 +172,7 @@ func TestSyncReopensWhenOneLateTaskMergedAndAnotherIsStillOpen(t *testing.T) {
 	require.Len(t, crossingsOf(res, store.NounTask), 1)
 	require.ElementsMatch(t, []string{"F-aaaaaa", "E-aaaaaa"}, reopenedIDs(res))
 	require.Equal(t, "active", load(t, root).Features["F-aaaaaa"].Status)
+	require.Empty(t, res.ChecksDue, "stale gates with a task still open are not a check due yet")
 
 	res = syncOnce(t, root)
 	require.Empty(t, res.Reopened, "a reopened feature with work still open is not reopened twice")

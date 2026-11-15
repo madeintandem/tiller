@@ -1,0 +1,13 @@
+id: EV-5mgoye
+type: check.bug
+at: 2026-11-15T01:05:37.68471Z
+contributor: jc
+command: check bug B-oprhtx
+targets:
+    - B-oprhtx
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/legacy-rubric-evidence-overwritten/bug.yml

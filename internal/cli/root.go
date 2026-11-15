@@ -125,7 +125,35 @@ func NewRootCmd() *cobra.Command {
 			c.Short = "Help about any command."
 		}
 	}
+	refuseUnknownSubcommands(root)
 	return root
+}
+
+// refuseUnknownSubcommands makes a word that names none of a command group's
+// subcommands a misuse, across the whole tree below cmd. Cobra checks that
+// only at the root: below it, a group with no argument validator accepts any
+// positionals, and a group with no run function answers everything with its
+// help page, so `tiller add bogus` printed help and exited 0.
+//
+// A command that has subcommands and declares no Args of its own takes no
+// positionals (cobra.NoArgs, whose refusal names the unknown word). One that
+// cannot run, which is cobra's generated completion command, prints its help
+// when named alone, so cobra reaches the validator instead of stopping at
+// help. A group that takes positionals of its own (check, remove) declares its
+// Args and is left as it is.
+func refuseUnknownSubcommands(cmd *cobra.Command) {
+	for _, sub := range cmd.Commands() {
+		refuseUnknownSubcommands(sub)
+		if !sub.HasSubCommands() {
+			continue
+		}
+		if sub.Args == nil {
+			sub.Args = cobra.NoArgs
+		}
+		if !sub.Runnable() {
+			sub.RunE = func(group *cobra.Command, _ []string) error { return group.Help() }
+		}
+	}
 }
 
 // Run executes the tiller CLI with the given arguments (os.Args[1:]) and

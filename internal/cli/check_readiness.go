@@ -30,7 +30,10 @@ func newCheckCmd() *cobra.Command {
 			"--gate <name> (repeatable) runs only the named gates. With no\n" +
 			"node it hosts the readiness gate (`tiller check readiness`).",
 		// The node-grain form runs through this RunE: `check readiness` matches the
-		// subcommand, while `check feature <node>` falls through to here.
+		// subcommand, while `check feature <node>` falls through to here. Declaring
+		// Args keeps those positionals: a group that declares none takes none
+		// (refuseUnknownSubcommands, root.go).
+		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return cmd.Help()

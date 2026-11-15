@@ -90,9 +90,11 @@ const awaitingHumanLimit = 5
 // nothing.
 // skipped is the third outcome, present only when a node earned its rollup and
 // sync could not record it.
-// checks_due carries the features whose rollup is parked on an unchecked
-// feature gate; the run names them so crossing a feature's last task never
-// reads as finished while the feature strands.
+// checks_due carries the features owed a feature check: every task done and
+// a required feature gate never run or stale. The run names them so crossing
+// a feature's last task never reads as finished while the feature strands,
+// and so a feature this run reopened is not left for the next sync to cross
+// on stale results.
 type SyncView struct {
 	Crossings  []CrossingView `json:"crossings"`
 	Reopened   []ReopenedView `json:"reopened,omitempty"`
@@ -928,11 +930,12 @@ func shellWord(path string) string {
 }
 
 // humanSyncChecksDue names the features this run leaves awaiting their feature
-// check: every task done, a required feature-grain gate with no recorded
-// result, the rollup parked until `tiller check feature` runs. It renders on
-// every outcome, because the run that crosses a feature's last task is exactly
-// the one that used to read as finished while the feature stranded silently
-// (docs/spec/cli-surface.md).
+// check: every task done and a required feature-grain gate with no recorded
+// result, where the rollup is parked until `tiller check feature` runs, or
+// with a stale one, where the next sync crosses on it unless the check runs
+// first. It renders on every outcome, because the run that crosses a
+// feature's last task is exactly the one that used to read as finished while
+// the feature stranded silently (docs/spec/cli-surface.md).
 // The id is used in the command rather than the key: check addresses features
 // by either, and the id is what every other queue command carries.
 func humanSyncChecksDue(tree *store.Tree, res mutate.SyncResult) string {
@@ -940,7 +943,7 @@ func humanSyncChecksDue(tree *store.Tree, res mutate.SyncResult) string {
 		return ""
 	}
 	lines := []string{fmt.Sprintf(
-		"Awaiting feature check: %d feature(s) with every task done and required gates unrecorded:",
+		"Awaiting feature check: %d feature(s) with every task done and required gates unrecorded or stale:",
 		len(res.ChecksDue))}
 	for _, c := range res.ChecksDue {
 		lines = append(lines, fmt.Sprintf("  - feature %s; run: tiller check feature %s",

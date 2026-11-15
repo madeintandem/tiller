@@ -1,0 +1,13 @@
+id: EV-ug8t1u
+type: start.bug
+at: 2026-11-15T00:53:52.519892Z
+contributor: jc
+command: start bug B-ldsix8
+targets:
+    - B-ldsix8
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml

@@ -2,9 +2,10 @@ id: B-oprhtx
 key: bugs/legacy-rubric-evidence-overwritten
 title: Rubric evidence recorded before content-addressed refs can still be overwritten
 severity: important
-status: ready
+status: in_review
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/14
 accepted_against:
@@ -17,3 +18,51 @@ accepted_against:
         kind: git_commit
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:09.687015Z
+branch: tiller/bugs/legacy-rubric-evidence-overwritten
+pr: 20
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:01:47.24974Z
+        against:
+            kind: git_commit
+            value: git:27dc5d5
+            observed_at: 2026-11-15T01:01:47.15781Z
+        code: sha256:51057be2cdad4280f4faccf78d52e143b4b26d5d3f356235a90ebf615280ec77
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-27dc5d5-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:01:47.24974Z
+        against:
+            kind: git_commit
+            value: git:27dc5d5
+            observed_at: 2026-11-15T01:01:47.15781Z
+        code: sha256:51057be2cdad4280f4faccf78d52e143b4b26d5d3f356235a90ebf615280ec77
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-27dc5d5-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:01:47.24974Z
+        against:
+            kind: git_commit
+            value: git:27dc5d5
+            observed_at: 2026-11-15T01:01:47.15781Z
+        code: sha256:51057be2cdad4280f4faccf78d52e143b4b26d5d3f356235a90ebf615280ec77
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-27dc5d5-out-302f563180f580d5e9cb9184adaeaed5f796f9ab4537afba94142a59681bdd4b.txt

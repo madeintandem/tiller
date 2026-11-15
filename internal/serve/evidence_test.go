@@ -30,6 +30,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/madeintandem/tiller/internal/core/gates"
 	"github.com/madeintandem/tiller/internal/serve"
 	"github.com/stretchr/testify/require"
 )
@@ -480,6 +481,45 @@ func TestEvidenceEndpointServesEveryRecordedEvidenceField(t *testing.T) {
 			require.Equal(t, tc.name+"\n", string(body))
 		})
 	}
+}
+
+// TestEvidenceEndpointKeepsLegacyRubricEvidenceThroughARegrade covers evidence
+// recorded before v0.24.0, when an attestation's evidence_ref was the rubric
+// packet's own output_path, artifacts/tiller/evals/<node>-<criterion>.json.
+// The agent writes a new grade where the packet now says, and the older
+// reference still serves the bytes the human attested. The handoff file itself
+// is not evidence: no record names it, so the endpoint does not serve it.
+func TestEvidenceEndpointKeepsLegacyRubricEvidenceThroughARegrade(t *testing.T) {
+	const legacyRef = "artifacts/tiller/evals/T-aaaaaa-C2.json"
+	const attested = `{"schema": "tiller.rubric_output.v1", "criterion": "C2", "verdict": "pass"}`
+	const regrade = `{"schema": "tiller.rubric_output.v1", "criterion": "C2", "verdict": "fail"}`
+	srv, root := evidenceFixture(t)
+	writeLedgerChore(t, root, `gates:
+  evals:
+    required: true
+    status: pass
+    criteria:
+      C2: { status: pass, evidence: [{ kind: rubric_output, ref: `+legacyRef+` }] }
+attestations:
+  - { id: AT-aaaaaa, target: { kind: criterion, id: C2 }, status: pass, by: jc, evidence_ref: `+legacyRef+` }
+`)
+	writeFixtureFile(t, root, legacyRef, []byte(attested))
+
+	handoff := gates.RubricOutputPath("T-aaaaaa", "C2")
+	writeFixtureFile(t, root, handoff, []byte(regrade))
+
+	resp, err := srv.Client().Get(evidenceURL(srv, legacyRef))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, attested, string(body), "the older attestation still reads the grade it named")
+
+	unrecorded, err := srv.Client().Get(evidenceURL(srv, handoff))
+	require.NoError(t, err)
+	defer unrecorded.Body.Close()
+	require.Equal(t, http.StatusNotFound, unrecorded.StatusCode, "a handoff file no record names is not served")
 }
 
 // TestEvidenceEndpointRefusesOversizedFile pins the read cap: a recorded

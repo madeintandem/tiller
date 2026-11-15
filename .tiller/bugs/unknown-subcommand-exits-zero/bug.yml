@@ -2,9 +2,10 @@ id: B-ldsix8
 key: bugs/unknown-subcommand-exits-zero
 title: An unknown word under a command group prints help and exits 0
 severity: important
-status: ready
+status: in_review
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/17
 accepted_against:
@@ -17,3 +18,51 @@ accepted_against:
         kind: git_commit
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:09.536427Z
+branch: tiller/bugs/unknown-subcommand-exits-zero
+pr: 20
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:03:56.439622Z
+        against:
+            kind: git_commit
+            value: git:370c9c6
+            observed_at: 2026-11-15T01:03:56.28869Z
+        code: sha256:b6a77025629eb26aadd593ba2399b339251926a29183cf3435c61f17099eab1d
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-370c9c6-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:03:56.439622Z
+        against:
+            kind: git_commit
+            value: git:370c9c6
+            observed_at: 2026-11-15T01:03:56.28869Z
+        code: sha256:b6a77025629eb26aadd593ba2399b339251926a29183cf3435c61f17099eab1d
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-370c9c6-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:03:56.439622Z
+        against:
+            kind: git_commit
+            value: git:370c9c6
+            observed_at: 2026-11-15T01:03:56.28869Z
+        code: sha256:b6a77025629eb26aadd593ba2399b339251926a29183cf3435c61f17099eab1d
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-370c9c6-out-20844d705b76d1fecb2aac401ff00f6facf457591aa9fd1214016bd1625de21d.txt
