@@ -36,13 +36,16 @@ bullet, and the header of `site/scripts/sync-docs.mjs`.
 
 The screenshot fixture is a throwaway project outside the repository (default
 `/tmp/tiller-shots/acme`) that carries a sentinel file marking it as replaceable. See
-`site/screenshots/README.md`, "Reshoot".
+`site/screenshots/README.md`, "Reshoot", for the default directory. The sentinel guard is
+documented only in the shoot scripts and `screenshots/acme_test.sh`.
 
 ## Behavior to preserve
 
 Generated versus authored. `site/scripts/sync-docs.mjs` copies every file in `docs/spec/`, plus
 `CONTRIBUTING.md`, `docs/releasing.md`, and `docs/tiller-commands.md`, into the content collection.
-It takes the first `# ` line as the title, adds an edit link back to the source on GitHub, orders
+It drops the first `# ` line and uses it as the title, except for `CONTRIBUTING.md` and
+`docs/tiller-commands.md`, whose titles are fixed in the script, adds an edit link back to the
+source on GitHub, orders
 the five specs, turns links between specs into site links, and turns every other relative link
 into a GitHub URL on `main`. `predev` and `prebuild` run it. See `site/AGENTS.md`, first two
 bullets, and `CONTRIBUTING.md`, "The docs site". The link rewriting and the spec order are
@@ -72,9 +75,9 @@ CLI and shot in WebKit; state a shot needs is added to the fixture script, never
 a regular file, which `screenshots/acme_test.sh` proves in CI. See `site/AGENTS.md`, last
 paragraph, and `site/screenshots/README.md`, "Reshoot" and "The link preview".
 
-Deploy. `.github/workflows/docs.yml` builds on pushes to `main` and on pull requests that touch
-`site/`, `docs/`, `CONTRIBUTING.md`, the workflow, the notices generator, `third_party/`, or the
-console fonts, and on manual dispatch. The build runs the fetch test, builds, fails when the
+Deploy. `.github/workflows/docs.yml` builds on pushes to `main` and on pull requests, in both
+cases only when the change touches `site/`, `docs/`, `CONTRIBUTING.md`, the workflow, the notices
+generator, `third_party/`, or the console fonts, and on manual dispatch. The build runs the fetch test, builds, fails when the
 committed website notices or font licenses are stale, and uploads `site/dist`. Only non-PR runs
 deploy to the `github-pages` environment. `site/AGENTS.md`, first paragraph, names the workflow;
 the triggers and the freshness gate are described only in the workflow file.

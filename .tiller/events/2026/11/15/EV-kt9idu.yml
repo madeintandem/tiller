@@ -1,0 +1,13 @@
+id: EV-kt9idu
+type: add.question
+at: 2026-11-15T00:01:46.395718Z
+contributor: jc
+command: add question
+targets:
+    - Q-kr011m
+after:
+    blocks: []
+    status: open
+    title: An unreadable Codex rollout is skipped without being counted
+files:
+    - path: .tiller/decisions/open-questions.yml

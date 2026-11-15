@@ -1,0 +1,13 @@
+id: EV-63ug7v
+type: add.question
+at: 2026-11-15T00:01:46.322524Z
+contributor: jc
+command: add question
+targets:
+    - Q-3zwno2
+after:
+    blocks: []
+    status: open
+    title: Mutations documented as idempotent; guards re-run and amendment approve refuses a repeat
+files:
+    - path: .tiller/decisions/open-questions.yml

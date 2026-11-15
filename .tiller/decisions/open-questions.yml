@@ -149,3 +149,21 @@ questions:
       owner: jc
       status: open
       source: docs/roadmap.md#Not built yet
+    - id: Q-3zwno2
+      title: Mutations documented as idempotent; guards re-run and amendment approve refuses a repeat
+      statement: 'docs/spec/cli-surface.md, Output and exit codes, says mutations are idempotent: a transition whose target equals the current state is a no-op success, so retries are safe. In the code the no-op is reached only after the verb''s guards pass, so a retried start on an in-progress task can refuse on a moved basis, an open question, or another contributor''s claim; check on a task already in check re-runs its gates and writes; and a second approve or withdraw of an amendment refuses amendment_not_open (internal/core/mutate/transition.go, check.go, amendment_approve.go, amendment.go). Only propose amendment is idempotent. Read from code, not run. Decide: narrow the spec''s guarantee to what the code does, or make these retries no-op successes.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#Output and exit codes
+    - id: Q-kr011m
+      title: An unreadable Codex rollout is skipped without being counted
+      statement: 'docs/spec/cli-surface.md, Capturing agent usage, and docs/spec/artifact-schema.md, What capture leaves out, say a log that cannot be read is skipped and counted. Codex discovery returns without counting when a rollout''s first line cannot be opened or parsed (internal/usage/codex.go), while Claude Code and Pi logs, harness folders, and parse failures are counted. Read from code, not run. Decide: count it, or state the exception in the specs.'
+      owner: jc
+      status: open
+      source: 'docs/spec/cli-surface.md#Capturing agent usage: usage, docs/spec/artifact-schema.md#What capture leaves out'
+    - id: Q-7qeq76
+      title: resolve has no entry in the lifecycle actor table
+      statement: 'docs/spec/cli-surface.md, Who may run what, puts tiller resolve in the human-only approve class. The actor table in internal/core/lifecycle/table.go has no entry for resolve, so ActorFor reports that either a human or an agent may run it. Its one consumer is internal/views/nextowner.go; whether that is ever asked about resolve was not traced, so the visible effect may be nil. Decide: add the entry, or leave it.'
+      owner: jc
+      status: open
+      source: docs/spec/cli-surface.md#Who may run what

@@ -29,7 +29,7 @@ in React state; there is no persistent response cache (`ui-surface.md`, "Livenes
 What it does own is per-viewer convenience state in the browser's `localStorage`, every read and
 write wrapped so that blocked or corrupt storage falls back to the default. Keyed per project key:
 Build's epic selection (`tiller-build-epics:<key>`), Fix's filters and sort
-(`tiller-fix-filters`), Explore's expanded branches (`tiller-explore-open`), Explore's recently
+(`tiller-fix-filters:<key>`), Explore's expanded branches (`tiller-explore-open:<key>`), Explore's recently
 opened nodes (`tiller-explore-recent:<key>`, eight at most), and the Map's open set and viewport
 (`tiller.map.<key>`). Flat, per browser: the theme pick (`tiller-theme`), the board scrolling mode
 (`tiller-board-scroll`), the Build and Fix sidebar collapse (`tiller-build-panel`,
@@ -52,8 +52,8 @@ request. A reread is one module counter (`bumpFetchGeneration`) that every mount
 subscribes to. Two things bump it: the topbar refresh control (`ui/src/components/AsOf.tsx`) and
 the window coming back when the newest successful read is at least 30 seconds old
 (`ui/src/lib/useRefetchOnFocus.ts`), skipped while any read is still out. Build and Fix also reread
-on an arrival at the board already showing (`ui/src/lib/useArrivalKey.ts`), and Explore's navigator
-rereads when the pathname changes. Nothing polls. The only request that carries `X-Tiller-Visit: 1`
+on an arrival at the board already showing (`ui/src/lib/useArrivalKey.ts`), and the shell's status read and Explore's navigator
+reread when the pathname changes. Nothing polls. The only request that carries `X-Tiller-Visit: 1`
 is `markCaughtUp`, deliberately outside `useFetch`. See `ui-surface.md`, "Liveness" (all of
 "Current behavior" through "Read cost"), "History" (the horizon paragraphs), and "Task execution
 sources" (the two-step node history read).
@@ -70,9 +70,9 @@ palette and type paragraphs).
 remedies, the questions ledger). The UI composes the rest itself, which no source states: the node
 page's fallback attest, answer, and approve commands (`ui/src/lib/attentionFallback.ts`), a decision
 band's batch approve (`ui/src/views/home/bands.ts`), a question page's cancel and unlink
-(`ui/src/views/node/QuestionBody.tsx`), the stub-spec hint (`ui/src/views/node/ProseSection.tsx`),
+(`ui/src/views/node/QuestionBody.tsx`), the stub-spec hint and `tiller approve amendment` (`ui/src/views/node/ProseSection.tsx`),
 `tiller approve design` on a file page (`ui/src/views/FileDetail.tsx`), and the Map's `tiller query`
-line. A CLI grammar change must be mirrored in those files. It never composes a drift command.
+line (`ui/src/views/explore/map/relationshipPresentation.ts`). A CLI grammar change must be mirrored in those files. It never composes a drift command.
 
 **Visual system.** `ui/src/styles/tokens.css` defines role-named surfaces and inks, one accent, the
 seven `--st-<state>` pairs, two radii, and the spacing scale, themed through `light-dark()` and the
@@ -92,10 +92,11 @@ and notices steps) and "Dependency updates" (the `ui/` PR rule); `docs/spec/dist
 Tiller is built as" and "Third-party licenses".
 
 **Tests.** Vitest with jsdom and Testing Library (`npm test` in `ui`), configured in
-`ui/vite.config.ts` with `ui/src/test/setup.ts`; 162 test files sit beside the code they cover, and
+`ui/vite.config.ts` with `ui/src/test/setup.ts`; 162 test files sit beside the code they cover or in `__tests__/` folders next to it, and
 real CSS loads only for the sheets the config lists, so tests can pin layout rules by source.
-`ui/embed_test.go` is a Go test over the embedded notices and font licenses. No source documents
-the setup beyond the commands in `docs/releasing.md`.
+`ui/embed_test.go` is a Go test over the embedded notices and font licenses. The commands
+appear in `CONTRIBUTING.md`, "Set up", and `docs/releasing.md`; no source documents the Vitest
+configuration.
 
 ## Edges
 

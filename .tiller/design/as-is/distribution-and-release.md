@@ -26,16 +26,19 @@ recovery"; in `docs/releasing.md`, the opening paragraphs, "Cutting one", "Dry r
 It owns no project state. The version stamp is a constant in `internal/cli/root.go` (CLI page);
 this surface's scripts read it and a release tag must equal it. A release is four archives named
 `tiller_<version>_<os>_<arch>.tar.gz`, a SHA-256 `checksums.txt`, a GitHub Release, and
-`Casks/tiller.rb` in the tap repository. That archive name is one contract held in three places:
-`.goreleaser.yaml`, `install.sh`, and `AssetName` in `internal/selfupdate/swap.go`. See
-`docs/releasing.md`, opening paragraphs.
+`Casks/tiller.rb` in the tap repository. See `docs/releasing.md`, opening paragraphs, for what a
+release is made of. The archive name is one contract held in three places: `.goreleaser.yaml`,
+`install.sh`, and `AssetName` in `internal/selfupdate/swap.go`. No source documents that the three
+must agree.
 
 On a machine, self-update keeps each outgoing build at
 `~/.local/share/tiller/previous/<version>-<sha256>/tiller`, in private directories, never pruned
 and never overwritten. See `docs/spec/distribution.md`, "Retention and drain recovery" and the
-retained-executables row of "What Tiller places on a machine". In memory, `ExecutableIdentity` and
-`HomebrewInstall` bind a path to the bytes and file identity observed at verification, and every
-later use rechecks them; no source documents these types.
+retained-executables row of "What Tiller places on a machine". In memory, `ExecutableIdentity`
+binds the tiller executable's path to the digest and file identity observed at verification, and
+`HomebrewInstall` binds the owning `brew` executable the same way; every replacement or delegation
+rechecks them. The identity `internal/cli` builds only to report the executing binary is not
+verified. No source documents these types.
 
 Committed: the generated `THIRD_PARTY_NOTICES.txt`, and the hand-kept license provenance under
 `third_party/`, where `npm-notices.json` and `npm/` cover packages that ship no license file and
@@ -49,7 +52,7 @@ lives in the root `.gitleaks.toml`; only their own comments document either desi
 A tag that disagrees with the stamp never builds (`scripts/check-version-stamp.sh`, a GoReleaser
 before hook), and the docs that repeat the stamp must name the current one and drop the previous
 one (`scripts/check-doc-versions.sh`). See `docs/releasing.md`, opening paragraphs and "Cutting
-one". Two rules live only in that script's header: a previous stamp that was tagged may still
+one". Two rules live only in that script's body: a previous stamp that was tagged may still
 appear in its `vX.Y.Z` form, and a shallow clone with no earlier stamp exits 2.
 
 The release workflow runs `make test`, then GoReleaser pinned at v2.19.0: static builds for macOS
@@ -63,8 +66,10 @@ The installer verifies the archive against `checksums.txt` and refuses on a miss
 mismatch, runs the candidate's `--version` before it replaces anything, refuses a directory at the
 destination, and installs to `/usr/local/bin` when writable, otherwise `~/.local/bin`. See
 `docs/spec/distribution.md`, "Install", for the one-line contract. `TILLER_VERSION`,
-`TILLER_INSTALL_DIR`, `GITHUB_TOKEN`, and the refusals are documented only in the header of
-`install.sh` and exercised by `scripts/install_test.sh`.
+`TILLER_INSTALL_DIR`, and `GITHUB_TOKEN` are documented only in the header of `install.sh`, and
+its refusals exist only as messages in the script body. `scripts/install_test.sh` exercises a
+valid install, a replacement, a directory at the destination, and a candidate that fails its
+version check. Nothing exercises the checksum refusals or the `GITHUB_TOKEN` path.
 
 Self-update follows `docs/spec/distribution.md`, "Update", "Installation ownership", and
 "Retention and drain recovery", and `SECURITY.md`, "Scope notes". The code matches on what was
@@ -73,8 +78,9 @@ checked: checksum verification before use, extraction of only a regular archive 
 identity rechecks before replacement, delegation to the owning prefix's own `brew` with the two
 environment guards, and refusal of a Homebrew-looking path whose metadata does not verify.
 Undocumented in any source: a 30 second HTTP timeout that covers the whole download, a 10 second
-version probe, 30 second brew queries with auto-update off, a 10 minute brew upgrade, a 1 MiB cap
-on subprocess output, and the test seams `TILLER_UPGRADE_API_BASE`,
+version probe, Homebrew owner detection capped at 30 seconds overall with each brew query inside
+it also capped at 30 seconds and auto-update forced off, a 10 minute brew upgrade, a 1 MiB cap per
+stream on subprocess output, and the test seams `TILLER_UPGRADE_API_BASE`,
 `TILLER_UPGRADE_DOWNLOAD_BASE`, and `TILLER_UPGRADE_TARGET`.
 
 CI has four jobs: the Go job (privacy, doc-version, and script tests, then build, lint, and test);
@@ -84,7 +90,7 @@ allowlist; and DCO sign-off on pull requests. See
 up", "The embedded console", and "Sign your commits (DCO)". Notices generation and its ordering
 rule are in `docs/spec/distribution.md`, "Third-party licenses", and `docs/releasing.md`, "Cutting
 one". The Makefile's reasons for `-count=1`, the git maintenance settings, and the macOS git path
-are in its own comments and `CONTRIBUTING.md`, "Set up".
+are in its own comments; only the `-count=1` reason is also in `CONTRIBUTING.md`, "Set up".
 
 No source documents the workspace scripts. `scripts/reset-bare.sh` installs a built binary and
 resets a scratch run repository, `scripts/compaction-acceptance.sh` clones a project and proves

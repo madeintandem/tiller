@@ -5,7 +5,7 @@
 This is the Go half of the read-only local console. `internal/serve` builds one `http.Handler`
 (`serve.Handler(root, assets, version, authority)`): a request boundary wrapped around a mux that
 answers `/api/*` with JSON read projections and every other path with the embedded React app,
-falling back to `index.html` so client routes deep-link. Every route is GET and HEAD only. Its one
+falling back to `index.html` so client routes deep-link. Every registered `/api` route is GET and HEAD only; the embedded-app handler and the unknown-API 404 do not check the method (read from the code, not run). Its one
 caller is `internal/cli/serve_cmd.go`, which owns the flags, listener, timeouts, and browser opener.
 
 The other four packages are the read models the handlers project through, and none is console-only.
@@ -56,7 +56,10 @@ horizon, the cache file, and the marked request), and `cli-surface.md`, "tiller 
 
 Everything else is in memory and disposable: the `Authority` (a startup snapshot of the bind and its
 admitted Host names), the shared-load group (loads in flight only), and a relationship index built
-and discarded per request. `internal/relationships` keeps one process-wide mention cache keyed by
+and discarded per request. Two process-wide caches in other packages also serve observed reads:
+parsed commit-tree inventories in `internal/execution` (64 commits, 250,000 entries) and verified
+recovered-review evidence in `internal/core/mutate` (64 entries); `docs/spec/ui-surface.md`,
+"Liveness", names both. `internal/relationships` keeps one process-wide mention cache keyed by
 SHA-256 of freshly read document bytes (2048 entries and 8 MiB at most, least recently used
 evicted), holding work ids and line numbers only. `internal/corpus` has no cache: every walk reads
 and validates current bytes. The event and usage process caches the handler switches on belong to
@@ -68,8 +71,8 @@ lifetime".
 ## Behavior to preserve
 
 The request boundary runs before any project file, visit memory, or asset is read: Host must be in
-the bind's admitted set, a present Origin must match, `Sec-Fetch-Site` must be `none` or
-`same-origin`, and network binds also check Referer and send framing headers on every response. A
+the bind's admitted set, a present Origin must match, a present `Sec-Fetch-Site` must be `none` or
+`same-origin` (an absent one is accepted), and network binds also check Referer and send framing headers on every response. A
 missing `Authority` refuses everything. See `ui-surface.md`, "Who it serves, and identity";
 `cli-surface.md`, "tiller serve"; `SECURITY.md`, "Scope notes".
 
@@ -81,7 +84,9 @@ execution sources".
 The evidence reader serves only a ref some node records verbatim: lexical misuse is 400 before the
 record check, an unrecorded ref is 404 before disk is touched, a symlink at any segment is 400, over
 8 MiB is 413, and the body is `text/plain` with `nosniff`. Its execution-source form (`task`,
-`revision`, `digest`) answers 409 when the source or the bytes changed. The prose reader serves the
+`revision`, `digest`) answers 409 when the source or the bytes changed, 400 for a ref the task does
+not record or a malformed triple, and 404 for an unreadable source file; the 404-for-unrecorded
+rule is the served-checkout form only. The prose reader serves the
 `.tiller/` Markdown corpus plus Markdown a ledger record cites, never a hidden path, and adds
 `baseline` and `drift_detail` for a registered as-is doc. See `cli-surface.md`, "tiller serve";
 `ui-surface.md`, "File detail" and "Task execution sources".
@@ -94,7 +99,7 @@ execution sources". Per-page rules live in the view sections the table names; se
 catalog", and "Completeness, failures, and read lifetime".
 
 No source documents these, so the code is the record (`internal/serve/serve.go`,
-`internal/serve/boundary.go`): a refused request answers 403, another method answers 405 with
+`internal/serve/boundary.go`): a refused request answers 403, another method on a registered `/api` route answers 405 with
 `Allow: GET, HEAD`, an API error body is `{"error": "<message>"}`, API answers are `no-store`, and
 the embedded app is cached by directory (`assets/` immutable for a year, `fonts/` for a day,
 everything else `no-cache`).
@@ -112,7 +117,8 @@ by `internal/core/mutate`, `internal/readinput`, and `internal/search`.
 
 The handlers depend on `internal/store` (tree load, stability check, cache file),
 `internal/readinput` (workflow input, relationship index assembly), `internal/execution` (task
-source observations), `internal/gen` (`BrowseTree`, `BoardStatus`), `internal/core/drift`,
+source observations), `internal/gen` (`BrowseTree`, `BoardColumnByID`, `EvalPath`), `internal/core/mutate`,
+`internal/core/resolve`, `internal/core/review`, `internal/workflow`, `internal/core/drift`,
 `internal/core/events`, `internal/usage`, `internal/vcs` (read-only), and `internal/rootpath`
 (confined opens). Assets arrive as an `fs.FS` from `ui.Dist`. The outward contract is the JSON that
 `ui/src/api.ts` types; a test in `internal/views` pins the status vocabulary against
@@ -131,7 +137,10 @@ source observations), `internal/gen` (`BrowseTree`, `BoardStatus`), `internal/co
 - **Prose extension case.** `cli-surface.md`, "tiller serve", says every direct read rejects "an
   extension other than lowercase `.md`". `validateProseRef` in `internal/serve/prose.go` compares
   the extension with `strings.EqualFold`, so a path ending `.MD` under `.tiller/` passes validation
-  and scope and reaches the disk read. No test pins either answer.
+  and scope and reaches the disk read. A test pins the code's side:
+  `TestProseBaselineAliasRemainsUnconfirmedAndReadOnly` serves an uppercase `.MD` path with 200,
+  and no test pins a refusal. The corpus walk matches lowercase `.md` only, so such a file is
+  servable but not searchable.
 - **Unnamed routes.** `/api/status`, `/api/tree`, `/api/queue`, `/api/recap/peek`, and `/api/events`
   are served but no source names them by route, and `/api/events` has no caller in `ui/src` outside
   the typed client.
