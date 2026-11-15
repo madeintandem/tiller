@@ -58,11 +58,11 @@ func TestFeatureRollupReadyIsTheAwaitingSyncPhase(t *testing.T) {
 	}
 }
 
-// TestChecksDueNamesAwaitingCheckFeaturesOnly is the incident in miniature: a
+// TestChecksDueNamesFeaturesOwedACheckOnly is the incident in miniature: a
 // tree whose feature has every task done and no recorded feature gates is
-// named; one with gates recorded (awaiting sync) and one still in flight are
-// not.
-func TestChecksDueNamesAwaitingCheckFeaturesOnly(t *testing.T) {
+// named, and so is one whose recorded gate went stale; one with a current
+// result (awaiting sync) and one still in flight are not.
+func TestChecksDueNamesFeaturesOwedACheckOnly(t *testing.T) {
 	t.Parallel()
 	tree, f := rollupTree("active", nil, "done", "done")
 	due := checksDue(tree)
@@ -71,10 +71,21 @@ func TestChecksDueNamesAwaitingCheckFeaturesOnly(t *testing.T) {
 
 	checkedTree, _ := rollupTree("active",
 		map[string]store.Gate{"evals": {Status: store.GateStatusPending}}, "done")
-	require.Empty(t, checksDue(checkedTree), "awaiting_sync never lands in ChecksDue")
+	require.Empty(t, checksDue(checkedTree), "awaiting_sync on a current result never lands in ChecksDue")
+
+	staleTree, staleFeature := rollupTree("active",
+		map[string]store.Gate{"evals": {Status: store.GateStatusStale}}, "done")
+	require.Equal(t, []CheckDue{{Noun: store.NounFeature, ID: staleFeature.ID, Key: "foundation/repo-tooling"}},
+		checksDue(staleTree), "a stale required gate is a check owed, as an unrecorded one is")
+	require.True(t, featureRollupReady(staleTree, staleFeature),
+		"and it still does not park the rollup: presence stays the bar sync crosses on")
 
 	inFlight, _ := rollupTree("active", nil, "done", "in_progress")
 	require.Empty(t, checksDue(inFlight))
+
+	staleInFlight, _ := rollupTree("active",
+		map[string]store.Gate{"evals": {Status: store.GateStatusStale}}, "done", "in_progress")
+	require.Empty(t, checksDue(staleInFlight), "a stale gate with a task still open is not a check owed yet")
 }
 
 // TestFeatureQuestionBlockersMirrorsTheGuard verifies that the shared blocker

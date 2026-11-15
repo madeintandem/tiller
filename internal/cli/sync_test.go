@@ -1209,7 +1209,7 @@ func checksDueTree() *store.Tree {
 // checksDueFixture is the ChecksDue entry the tests below assert the
 // confirmation and JSON envelope name: one feature with every task done and a
 // required feature-grain gate left unrecorded (mutate's own
-// TestChecksDueNamesAwaitingCheckFeaturesOnly proves the core computes this
+// TestChecksDueNamesFeaturesOwedACheckOnly proves the core computes this
 // shape; these tests are the rendering half).
 var checksDueFixture = []mutate.CheckDue{
 	{Noun: store.NounFeature, ID: "F-dhzdb2", Key: "foundation/repo-tooling"},
@@ -1223,7 +1223,7 @@ var checksDueFixture = []mutate.CheckDue{
 func TestSyncHumanNamesChecksDueOnCleanRun(t *testing.T) {
 	tree := checksDueTree()
 	out := humanSync(tree, mutate.SyncResult{ChecksDue: checksDueFixture})
-	require.Contains(t, out, "Awaiting feature check: 1 feature(s) with every task done and required gates unrecorded:")
+	require.Contains(t, out, "Awaiting feature check: 1 feature(s) with every task done and required gates unrecorded or stale:")
 	require.Contains(t, out, "  - feature foundation/repo-tooling (F-dhzdb2); run: tiller check feature F-dhzdb2")
 }
 
@@ -1264,7 +1264,7 @@ func TestSyncHumanNamesChecksDueOnCrossingPath(t *testing.T) {
 	}
 	out := humanSync(tree, res)
 	require.Contains(t, out, "Sync: recorded 1 done crossing(s):")
-	require.Contains(t, out, "Awaiting feature check: 1 feature(s) with every task done and required gates unrecorded:")
+	require.Contains(t, out, "Awaiting feature check: 1 feature(s) with every task done and required gates unrecorded or stale:")
 	require.Contains(t, out, "run: tiller check feature F-dhzdb2")
 }
 

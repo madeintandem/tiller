@@ -164,8 +164,10 @@ type CheckDue struct {
 // Skipped carries the third outcome, a node whose rollup was earned but whose
 // completion record could not be built, so it did not move at all.
 //
-// ChecksDue carries the features whose rollup is parked on an unchecked gate,
-// named so a sync never strands one silently.
+// ChecksDue carries the features that are owed a feature check: every task
+// done and a required feature gate either never run, which parks the rollup,
+// or stale, which a reopen in this run leaves behind. They are named so a sync
+// never strands one silently.
 type SyncResult struct {
 	Crossings  []Crossing
 	Reopened   []Reopening
@@ -1789,7 +1791,11 @@ func reopenFeature(tree *store.Tree, deps Deps, owner store.Contributor, f *stor
 		return Reopening{}, err
 	}
 
+	// The loaded feature mirrors what was just written, gates included: this
+	// run's own ChecksDue reads the tree, and a gates block still reading pass
+	// here would hide the check the reopen just made due.
 	f.Status = doc.Status
+	f.GatesBlock = doc.GatesBlock
 	f.PR, f.ReviewRef, f.RecoveredReview = nil, nil, nil
 	return Reopening{Noun: store.NounFeature, ID: doc.ID, Key: deref(doc.Key), Status: doc.Status}, nil
 }
@@ -1971,12 +1977,16 @@ func sortedFeatures(tree *store.Tree) []*store.Feature {
 	return out
 }
 
-// checksDue gathers the features left in the awaiting-check phase, in
-// sortedFeatures order for a deterministic confirmation.
+// checksDue gathers the features this run leaves owed a feature check
+// (gen.FeatureCheckDue), in sortedFeatures order for a deterministic
+// confirmation. That is every feature in the awaiting-check phase, plus one
+// whose required gates are stale. Sync crosses a stale feature on presence, so
+// one still active here is a feature this run reopened and left for the next
+// sync, or one whose crossing it had to skip.
 func checksDue(tree *store.Tree) []CheckDue {
 	var out []CheckDue
 	for _, f := range sortedFeatures(tree) {
-		if gen.FeatureActivity(tree, f) == gen.FeatureActivityAwaitingCheck {
+		if gen.FeatureCheckDue(tree, f) {
 			out = append(out, CheckDue{Noun: store.NounFeature, ID: f.ID, Key: deref(f.Key)})
 		}
 	}

@@ -129,6 +129,83 @@ func TestFeatureActivityWithNoRequiredFeatureGatesIsAwaitingSync(t *testing.T) {
 		"an empty required set is vacuously checked, matching featureGatesChecked today")
 }
 
+// TestFeatureCheckDueCoversUnrecordedAndStaleRequiredGates: a feature check is
+// owed when every live task is done and a required feature gate was never run
+// or went stale. A current fail or pending result is not a check owed, and
+// neither is anything on a feature that is still in flight or already done.
+func TestFeatureCheckDueCoversUnrecordedAndStaleRequiredGates(t *testing.T) {
+	gate := func(status string) map[string]store.Gate {
+		return map[string]store.Gate{"evals": {Required: true, Status: status}}
+	}
+	done := func() []*store.Task { return []*store.Task{taskWithStatus("T-1", "done")} }
+
+	cases := []struct {
+		name   string
+		status string
+		gates  map[string]store.Gate
+		tasks  []*store.Task
+		want   bool
+	}{
+		{"all done, gate never run", "active", nil, done(), true},
+		{"all done, gate stale", "active", gate(store.GateStatusStale), done(), true},
+		{"all done, gate failed", "active", gate(store.GateStatusFail), done(), false},
+		{"all done, gate pending", "active", gate(store.GateStatusPending), done(), false},
+		{"all done, gate green", "active", gate(store.GateStatusPass), done(), false},
+		{"stale gate, a task still open", "active", gate(store.GateStatusStale),
+			[]*store.Task{taskWithStatus("T-1", "done"), taskWithStatus("T-2", "in_progress")}, false},
+		{"stale gate, the open task cancelled", "active", gate(store.GateStatusStale),
+			[]*store.Task{taskWithStatus("T-1", "done"), taskWithStatus("T-2", "cancelled")}, true},
+		{"stale gate, no live task", "active", gate(store.GateStatusStale),
+			[]*store.Task{taskWithStatus("T-1", "cancelled")}, false},
+		{"stale gate on a done feature", "done", gate(store.GateStatusStale), done(), false},
+		{"stale gate on a ready feature", "ready", gate(store.GateStatusStale), done(), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tree, f := featureTree(tc.status, tc.gates, tc.tasks...)
+			require.Equal(t, tc.want, FeatureCheckDue(tree, f))
+		})
+	}
+}
+
+// TestFeatureCheckDueIgnoresAHeldTask: a held draft changes no rollup, so a
+// task an open amendment holds does not keep a stale gate from being due.
+func TestFeatureCheckDueIgnoresAHeldTask(t *testing.T) {
+	held := taskWithStatus("T-2", "proposed")
+	tree, f := featureTree("active", map[string]store.Gate{"evals": {Required: true, Status: store.GateStatusStale}},
+		taskWithStatus("T-1", "done"), held)
+	require.False(t, FeatureCheckDue(tree, f), "unheld, the proposed task is work still to do")
+	tree.Amendments = map[string]*store.Amendment{"A-aaaaaa": {ID: "A-aaaaaa", Status: store.AmendmentStatusProposed}}
+	tree.AmendmentHolds = map[string]string{held.ID: "A-aaaaaa"}
+	require.True(t, FeatureCheckDue(tree, f))
+}
+
+// TestFeatureCheckDueLeavesAStaleAttestationToTheHuman: check never runs an
+// attestation gate and carries an expired verdict forward as it is, so naming
+// `tiller check feature` for it would name a command that changes nothing.
+func TestFeatureCheckDueLeavesAStaleAttestationToTheHuman(t *testing.T) {
+	tree, f := featureTree("active", map[string]store.Gate{
+		"evals":   {Required: true, Status: store.GateStatusPass},
+		"signoff": {Required: true, Kind: store.GateKindAttestation, Status: store.GateStatusStale},
+	}, taskWithStatus("T-1", "done"))
+	tree.Manifest.Gates.Required["signoff"] = store.GateSpec{Kind: store.GateKindAttestation, On: store.StringList{"feature"}}
+	require.False(t, FeatureCheckDue(tree, f))
+
+	f.Gates["evals"] = store.Gate{Required: true, Status: store.GateStatusStale}
+	require.True(t, FeatureCheckDue(tree, f), "a stale command gate beside it is still a check owed")
+}
+
+// TestFeatureCheckDueIgnoresAGateTheFeatureGrainDoesNotRun: a stale record for
+// a gate the manifest scopes to another grain is not this feature's to rerun.
+func TestFeatureCheckDueIgnoresAGateTheFeatureGrainDoesNotRun(t *testing.T) {
+	tree, f := featureTree("active", map[string]store.Gate{
+		"evals": {Required: true, Status: store.GateStatusPass},
+		"tests": {Required: true, Status: store.GateStatusStale},
+	}, taskWithStatus("T-1", "done"))
+	tree.Manifest.Gates.Required["tests"] = store.GateSpec{Kind: store.GateKindCommand, On: store.StringList{"task"}}
+	require.False(t, FeatureCheckDue(tree, f))
+}
+
 func TestFeatureDisplayAppendsThePhase(t *testing.T) {
 	tree, f := featureTree("active", nil, taskWithStatus("T-1", "done"))
 	require.Equal(t, "active, awaiting check", FeatureDisplay(tree, f))
