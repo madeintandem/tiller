@@ -1,0 +1,13 @@
+id: EV-x0wsip
+type: approve.bug
+at: 2026-11-15T23:57:54.087635Z
+contributor: jc
+command: approve bug B-9k2p9d
+targets:
+    - B-9k2p9d
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml

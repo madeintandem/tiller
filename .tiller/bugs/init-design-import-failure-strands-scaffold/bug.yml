@@ -2,7 +2,17 @@ id: B-9k2p9d
 key: bugs/init-design-import-failure-strands-scaffold
 title: A failed --design import leaves a half-built scaffold that a rerun cannot finish
 severity: important
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:4267c727622e208c7948fd4b7277509881a74ce6
+        path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.md
+        observed_at: 2026-11-15T23:57:54.06834Z
+    commit:
+        kind: git_commit
+        value: git:01755cd
+        observed_at: 2026-11-15T23:57:54.087565Z
