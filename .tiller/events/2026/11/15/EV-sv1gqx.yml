@@ -1,0 +1,11 @@
+id: EV-sv1gqx
+type: claim.bug
+at: 2026-11-15T23:58:01.339834Z
+contributor: jc
+command: claim bug bugs/init-design-import-failure-strands-scaffold
+targets:
+    - B-9k2p9d
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml

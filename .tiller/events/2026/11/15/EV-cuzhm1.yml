@@ -1,0 +1,13 @@
+id: EV-cuzhm1
+type: start.bug
+at: 2026-11-15T23:58:05.646948Z
+contributor: jc
+command: start bug B-9k2p9d
+targets:
+    - B-9k2p9d
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml
