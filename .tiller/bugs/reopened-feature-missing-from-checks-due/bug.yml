@@ -2,7 +2,7 @@ id: B-k5fzoh
 key: bugs/reopened-feature-missing-from-checks-due
 title: A reopened feature with stale gates is missing from checks_due
 severity: medium
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -19,3 +19,49 @@ accepted_against:
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:09.813783Z
 branch: tiller/bugs/reopened-feature-missing-from-checks-due
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:08:15.57325Z
+        against:
+            kind: git_commit
+            value: git:b6c78f0
+            observed_at: 2026-11-15T01:08:15.487325Z
+        code: sha256:4a258002e67f337a338bc340cc6167e096f3f99cac16efe6177a45ae9c55f48b
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-b6c78f0-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:08:15.57325Z
+        against:
+            kind: git_commit
+            value: git:b6c78f0
+            observed_at: 2026-11-15T01:08:15.487325Z
+        code: sha256:4a258002e67f337a338bc340cc6167e096f3f99cac16efe6177a45ae9c55f48b
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-b6c78f0-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T01:08:15.57325Z
+        against:
+            kind: git_commit
+            value: git:b6c78f0
+            observed_at: 2026-11-15T01:08:15.487325Z
+        code: sha256:4a258002e67f337a338bc340cc6167e096f3f99cac16efe6177a45ae9c55f48b
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-b6c78f0-out-ec586a1863a0e3bd0901b6d47fd593a7f7c9cc3cd38764cdd570e869e40c5459.txt
