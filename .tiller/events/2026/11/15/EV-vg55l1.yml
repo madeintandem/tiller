@@ -1,0 +1,13 @@
+id: EV-vg55l1
+type: check.tweak
+at: 2026-11-15T18:47:16.477768Z
+contributor: jc
+command: check tweak TW-0w7qc8
+targets:
+    - TW-0w7qc8
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml
