@@ -2,7 +2,7 @@ id: B-k5fzoh
 key: bugs/reopened-feature-missing-from-checks-due
 title: A reopened feature with stale gates is missing from checks_due
 severity: medium
-status: in_review
+status: done
 blocked: false
 started: true
 owner: jc
@@ -20,6 +20,7 @@ accepted_against:
         observed_at: 2026-11-14T23:45:09.813783Z
 branch: tiller/bugs/reopened-feature-missing-from-checks-due
 pr: 20
+done_basis: ancestry
 gates:
     build:
         required: true

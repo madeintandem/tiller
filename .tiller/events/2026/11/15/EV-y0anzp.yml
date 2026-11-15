@@ -1,0 +1,14 @@
+id: EV-y0anzp
+type: sync.bug
+at: 2026-11-15T08:14:24.45489Z
+contributor: jc
+command: sync bug B-k5fzoh
+targets:
+    - B-k5fzoh
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/reopened-feature-missing-from-checks-due/bug.yml

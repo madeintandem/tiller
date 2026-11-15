@@ -1,0 +1,14 @@
+id: EV-u4mcmh
+type: sync.bug
+at: 2026-11-15T08:14:24.530019Z
+contributor: jc
+command: sync bug B-ldsix8
+targets:
+    - B-ldsix8
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml
