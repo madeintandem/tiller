@@ -1,0 +1,66 @@
+id: TW-0w7qc8
+key: tweaks/skills-point-at-search
+title: Skills tell the agent to read the shelves where one search would do
+status: in_review
+blocked: false
+started: true
+owner: jc
+proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:4c5f645456a90ac5ebf5436b226045163793826e
+        path: .tiller/tweaks/skills-point-at-search/tweak.md
+        observed_at: 2026-11-15T18:43:22.070203Z
+    commit:
+        kind: git_commit
+        value: git:c47515b
+        observed_at: 2026-11-15T18:43:22.087937Z
+branch: tiller/tweaks/skills-point-at-search
+pr: 21
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T18:44:29.208608Z
+        against:
+            kind: git_commit
+            value: git:6ec370d
+            observed_at: 2026-11-15T18:44:29.1221Z
+        code: sha256:c9451fc984f550f164c7788d8166ebaf7d1011efd6b0bda1a4bc10323421b76c
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-6ec370d-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T18:44:29.208608Z
+        against:
+            kind: git_commit
+            value: git:6ec370d
+            observed_at: 2026-11-15T18:44:29.1221Z
+        code: sha256:c9451fc984f550f164c7788d8166ebaf7d1011efd6b0bda1a4bc10323421b76c
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-6ec370d-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-15T18:44:29.208608Z
+        against:
+            kind: git_commit
+            value: git:6ec370d
+            observed_at: 2026-11-15T18:44:29.1221Z
+        code: sha256:c9451fc984f550f164c7788d8166ebaf7d1011efd6b0bda1a4bc10323421b76c
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-6ec370d-out-30fc21c619a96a955e655f01edb8e17d03403ae8deceb61d131ee46cbbd33c1f.txt

@@ -1,0 +1,13 @@
+id: EV-io5s9y
+type: add.tweak
+at: 2026-11-15T18:38:46.044021Z
+contributor: jc
+command: add tweak skills-point-at-search
+targets:
+    - TW-0w7qc8
+after:
+    key: tweaks/skills-point-at-search
+    status: proposed
+files:
+    - path: .tiller/tweaks/skills-point-at-search/tweak.md
+    - path: .tiller/tweaks/skills-point-at-search/tweak.yml
