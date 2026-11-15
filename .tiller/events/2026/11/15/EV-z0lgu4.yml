@@ -1,0 +1,11 @@
+id: EV-z0lgu4
+type: claim.bug
+at: 2026-11-15T00:53:52.429992Z
+contributor: jc
+command: claim bug bugs/unknown-subcommand-exits-zero
+targets:
+    - B-ldsix8
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/unknown-subcommand-exits-zero/bug.yml
