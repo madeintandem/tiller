@@ -1,0 +1,13 @@
+id: EV-mt58od
+type: check.tweak
+at: 2026-11-16T02:56:26.773044Z
+contributor: jc
+command: check tweak TW-zwxmbu
+targets:
+    - TW-zwxmbu
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml

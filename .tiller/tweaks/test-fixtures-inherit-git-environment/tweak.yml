@@ -1,7 +1,7 @@
 id: TW-zwxmbu
 key: tweaks/test-fixtures-inherit-git-environment
 title: Test fixtures outside internal/vcs spawn git with the inherited environment
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -18,3 +18,49 @@ accepted_against:
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:10.186968Z
 branch: tiller/tweaks/test-fixtures-inherit-git-environment
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:52:30.834935Z
+        against:
+            kind: git_commit
+            value: git:dd12b7d
+            observed_at: 2026-11-16T02:52:30.742876Z
+        code: sha256:55114b170e300f427c682dc3a24b70bbbadda313e154861f3f092fe0bbbf647a
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-dd12b7d-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:52:30.834935Z
+        against:
+            kind: git_commit
+            value: git:dd12b7d
+            observed_at: 2026-11-16T02:52:30.742876Z
+        code: sha256:55114b170e300f427c682dc3a24b70bbbadda313e154861f3f092fe0bbbf647a
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-dd12b7d-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:52:30.834935Z
+        against:
+            kind: git_commit
+            value: git:dd12b7d
+            observed_at: 2026-11-16T02:52:30.742876Z
+        code: sha256:55114b170e300f427c682dc3a24b70bbbadda313e154861f3f092fe0bbbf647a
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-dd12b7d-out-5bf81aa0445a103d29b91a9eac172b7c57eedeeefa1f67d488087515d497f8b1.txt
