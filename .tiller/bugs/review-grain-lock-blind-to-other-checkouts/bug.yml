@@ -1,0 +1,8 @@
+id: B-8i441b
+key: bugs/review-grain-lock-blind-to-other-checkouts
+title: The review-grain lock misses work started in another checkout
+severity: medium
+status: proposed
+blocked: false
+started: false
+proposed_by: jc

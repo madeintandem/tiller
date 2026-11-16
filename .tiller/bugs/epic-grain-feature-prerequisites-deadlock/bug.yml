@@ -1,0 +1,8 @@
+id: B-yl9d2s
+key: bugs/epic-grain-feature-prerequisites-deadlock
+title: Feature prerequisites inside an epic-grain epic deadlock, and nothing warns before the grain locks
+severity: important
+status: proposed
+blocked: false
+started: false
+proposed_by: jc

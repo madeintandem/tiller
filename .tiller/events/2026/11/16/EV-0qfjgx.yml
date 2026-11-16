@@ -1,0 +1,14 @@
+id: EV-0qfjgx
+type: add.bug
+at: 2026-11-16T01:17:12.571355Z
+contributor: jc
+command: add bug review-grain-lock-blind-to-other-checkouts
+targets:
+    - B-8i441b
+after:
+    key: bugs/review-grain-lock-blind-to-other-checkouts
+    severity: medium
+    status: proposed
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.md
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml

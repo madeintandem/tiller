@@ -1,0 +1,14 @@
+id: EV-stbzbv
+type: add.bug
+at: 2026-11-16T01:17:12.508593Z
+contributor: jc
+command: add bug epic-grain-feature-prerequisites-deadlock
+targets:
+    - B-yl9d2s
+after:
+    key: bugs/epic-grain-feature-prerequisites-deadlock
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.md
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml
