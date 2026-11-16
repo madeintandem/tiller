@@ -1,0 +1,13 @@
+id: EV-tzv84g
+type: approve.bug
+at: 2026-11-16T18:07:50.922348Z
+contributor: jc
+command: approve bug B-un831z
+targets:
+    - B-un831z
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml
