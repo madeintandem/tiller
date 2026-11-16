@@ -18,3 +18,49 @@ accepted_against:
         value: git:a5bb545
         observed_at: 2026-11-16T01:21:48.688768Z
 branch: tiller/bugs/review-grain-lock-blind-to-other-checkouts
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T01:29:54.880404Z
+        against:
+            kind: git_commit
+            value: git:d676d72
+            observed_at: 2026-11-16T01:29:54.781208Z
+        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-d676d72-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T01:29:54.880404Z
+        against:
+            kind: git_commit
+            value: git:d676d72
+            observed_at: 2026-11-16T01:29:54.781208Z
+        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-d676d72-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: fail
+        run_by: jc
+        run_at: 2026-11-16T01:29:54.880404Z
+        against:
+            kind: git_commit
+            value: git:d676d72
+            observed_at: 2026-11-16T01:29:54.781208Z
+        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-d676d72-out-944f5b88558673f79d55dd0d512d656ead5f4c82df8943fe4c3d9f22b1c4f903.txt
