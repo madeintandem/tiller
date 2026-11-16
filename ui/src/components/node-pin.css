@@ -72,3 +72,35 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The reading pane's top edge can land on a fractional device pixel (the
+   topbar and the tab strip above it have fractional heights), and Safari then
+   paints one device-pixel row of scrolled content there, above the pinned
+   band (B-un831z). Paper inside the pane does not hide that row, so the cover
+   belongs to the split and sits outside every scroll area. It starts a pixel
+   above the edge and ends a pixel below it, so the partial row is covered
+   whichever way the edge rounds. Only paper lies under it at rest: the gap
+   under the tab strip above, and the panes' own top padding below. The
+   divider's seam runs up through the same pixels and stays on top. */
+@media (width > 48rem) {
+  .explore-split {
+    position: relative;
+  }
+
+  .explore-split::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--paper);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .explore-divider {
+    position: relative;
+    z-index: 4;
+  }
+}
