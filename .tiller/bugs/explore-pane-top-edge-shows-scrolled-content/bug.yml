@@ -2,7 +2,7 @@ id: B-un831z
 key: bugs/explore-pane-top-edge-shows-scrolled-content
 title: A one-pixel line of scrolled content shows above the pinned node header in Safari
 severity: minor
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -18,3 +18,49 @@ accepted_against:
         value: git:056318b
         observed_at: 2026-11-16T18:07:50.922151Z
 branch: tiller/bugs/explore-pane-top-edge-shows-scrolled-content
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T18:09:55.625029Z
+        against:
+            kind: git_commit
+            value: git:1aeedcd
+            observed_at: 2026-11-16T18:09:55.416709Z
+        code: sha256:e1b3e4a50d6a1611453df2e1c2e81f977ea62434ee74b11c5e7216116b0c0f6e
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-1aeedcd-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T18:09:55.625029Z
+        against:
+            kind: git_commit
+            value: git:1aeedcd
+            observed_at: 2026-11-16T18:09:55.416709Z
+        code: sha256:e1b3e4a50d6a1611453df2e1c2e81f977ea62434ee74b11c5e7216116b0c0f6e
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-1aeedcd-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T18:09:55.625029Z
+        against:
+            kind: git_commit
+            value: git:1aeedcd
+            observed_at: 2026-11-16T18:09:55.416709Z
+        code: sha256:e1b3e4a50d6a1611453df2e1c2e81f977ea62434ee74b11c5e7216116b0c0f6e
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-1aeedcd-out-d48b80cbfc2b5f29f87e27e296c732ad358ba12115f72be65703ef1345ce5a11.txt

@@ -1,0 +1,13 @@
+id: EV-1jy8n4
+type: check.bug
+at: 2026-11-16T18:15:03.874002Z
+contributor: jc
+command: check bug B-un831z
+targets:
+    - B-un831z
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml
