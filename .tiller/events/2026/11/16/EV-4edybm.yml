@@ -1,0 +1,13 @@
+id: EV-4edybm
+type: check.tweak
+at: 2026-11-16T03:01:03.000214Z
+contributor: jc
+command: check tweak TW-jr15wo
+targets:
+    - TW-jr15wo
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.yml

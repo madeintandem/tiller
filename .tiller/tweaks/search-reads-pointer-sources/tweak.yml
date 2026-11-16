@@ -1,7 +1,7 @@
 id: TW-jr15wo
 key: tweaks/search-reads-pointer-sources
 title: Search does not reach the documents a baseline points at
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -17,3 +17,49 @@ accepted_against:
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:19.992463Z
 branch: tiller/tweaks/search-reads-pointer-sources
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:57:13.237296Z
+        against:
+            kind: git_commit
+            value: git:ea5c1a5
+            observed_at: 2026-11-16T02:57:13.123862Z
+        code: sha256:5904b01d40fac893485ee7b6a7da563952cd88b3ed4cd414e8d4438957f97a8f
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-ea5c1a5-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:57:13.237296Z
+        against:
+            kind: git_commit
+            value: git:ea5c1a5
+            observed_at: 2026-11-16T02:57:13.123862Z
+        code: sha256:5904b01d40fac893485ee7b6a7da563952cd88b3ed4cd414e8d4438957f97a8f
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-ea5c1a5-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:57:13.237296Z
+        against:
+            kind: git_commit
+            value: git:ea5c1a5
+            observed_at: 2026-11-16T02:57:13.123862Z
+        code: sha256:5904b01d40fac893485ee7b6a7da563952cd88b3ed4cd414e8d4438957f97a8f
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-ea5c1a5-out-45524903bd45ca49e9df43dcd31fa737422041876ceaed63b6b936fedc973861.txt
