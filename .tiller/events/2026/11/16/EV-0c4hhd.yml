@@ -1,0 +1,14 @@
+id: EV-0c4hhd
+type: sync.bug
+at: 2026-11-16T02:43:51.15839Z
+contributor: jc
+command: sync bug B-8i441b
+targets:
+    - B-8i441b
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml
