@@ -2,10 +2,12 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -735,6 +737,55 @@ func TestInitDesignRejectsForeignLedgerBeforeWriting(t *testing.T) {
 			require.Equal(t, before, snapshotTree(t, src))
 		})
 	}
+}
+
+// TestInitDesignRefusesUnreadableFileBeforeWriting pins B-9k2p9d: a source file
+// that lists but cannot be read is refused up front as invalid_design, naming
+// the file, with no manifest, skeleton, or partial copy left behind, so the
+// same command succeeds once the source is fixed. The import happens only on
+// the init that scaffolds, so a failure after the manifest write would strand
+// the project with no command that completes it.
+func TestInitDesignRefusesUnreadableFileBeforeWriting(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads a mode-000 file, so the fixture cannot be made unreadable")
+	}
+	root, src := t.TempDir(), t.TempDir()
+	writeFixture(t, src, "a.md", "# a\n")
+	writeFixture(t, src, "notes/b.md", "# b\n")
+	unreadable := filepath.Join(src, "notes", "b.md")
+	require.NoError(t, os.Chmod(unreadable, 0))
+	t.Chdir(root)
+	args := []string{"init", "--name", "New", "--key", "new", "--kind", "greenfield", "--design", src}
+
+	out, stderr, code := execCLI(t, append(args, "--json")...)
+	require.Equal(t, 2, code, stderr)
+	require.Contains(t, out, `"reason": "invalid_design"`)
+	require.Contains(t, out, unreadable, "the refusal names the file")
+	require.NoDirExists(t, filepath.Join(root, ".tiller"))
+	require.NoFileExists(t, filepath.Join(root, ".gitignore"))
+
+	_, stderr, code = execCLI(t, args...)
+	require.Equal(t, 2, code)
+	require.Contains(t, stderr, unreadable)
+	require.NoDirExists(t, filepath.Join(root, ".tiller"))
+
+	require.NoError(t, os.Chmod(unreadable, 0o644))
+	out, stderr, code = execCLI(t, args...)
+	require.Equal(t, 0, code, stderr)
+	require.Contains(t, out, "Imported 2 design files")
+	require.FileExists(t, filepath.Join(root, ".tiller", "design", "a.md"))
+	require.FileExists(t, filepath.Join(root, ".tiller", "design", "notes", "b.md"))
+	m, err := store.LoadManifest(root)
+	require.NoError(t, err)
+	require.Len(t, m.Inputs.ImportedFrom, 1)
+}
+
+// TestUnreadableDesignFileHint pins the one read failure whose raw text misleads:
+// a cloud-synced placeholder whose contents are not on local disk fails with
+// EDEADLK ("resource deadlock avoided"), so the refusal says to download it.
+func TestUnreadableDesignFileHint(t *testing.T) {
+	require.Contains(t, unreadableDesignFileHint(fmt.Errorf("read x: %w", syscall.EDEADLK)), "download")
+	require.Contains(t, unreadableDesignFileHint(fs.ErrPermission), "readable")
 }
 
 // TestInitDesignRefusesMissingSource confirms a --design path that does not exist
