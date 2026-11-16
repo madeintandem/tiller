@@ -1,0 +1,15 @@
+id: EV-7ankq4
+type: cancel.chore
+at: 2026-11-16T07:48:24.724062Z
+contributor: jc
+command: cancel chore CH-shdylf
+targets:
+    - CH-shdylf
+before:
+    status: ready
+after:
+    reason: Cancelled on JC's instruction, 2026-11-16
+    resolution: wontfix
+    status: cancelled
+files:
+    - path: .tiller/chores/audit-foreign-usage-files/chore.yml

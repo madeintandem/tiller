@@ -1,10 +1,11 @@
 id: CH-shdylf
 key: chores/audit-foreign-usage-files
 title: Audit managed projects for usage files captured from other projects
-status: ready
+status: cancelled
 blocked: false
 started: false
 proposed_by: jc
+resolution: wontfix
 source: https://github.com/madeintandem/tiller/issues/15
 accepted_against:
     spec:
