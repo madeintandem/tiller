@@ -2,7 +2,17 @@ id: B-8i441b
 key: bugs/review-grain-lock-blind-to-other-checkouts
 title: The review-grain lock misses work started in another checkout
 severity: medium
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:dfe1e227669637be5a6376c70d0c0c200bd15b53
+        path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.md
+        observed_at: 2026-11-16T01:21:48.668183Z
+    commit:
+        kind: git_commit
+        value: git:a5bb545
+        observed_at: 2026-11-16T01:21:48.688768Z

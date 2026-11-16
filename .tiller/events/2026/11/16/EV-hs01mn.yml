@@ -1,0 +1,13 @@
+id: EV-hs01mn
+type: approve.bug
+at: 2026-11-16T01:21:48.688838Z
+contributor: jc
+command: approve bug B-8i441b
+targets:
+    - B-8i441b
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml

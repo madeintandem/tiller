@@ -1,0 +1,13 @@
+id: EV-isu3fc
+type: approve.bug
+at: 2026-11-16T01:21:48.61114Z
+contributor: jc
+command: approve bug B-yl9d2s
+targets:
+    - B-yl9d2s
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml
