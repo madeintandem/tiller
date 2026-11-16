@@ -1,0 +1,14 @@
+id: EV-z6kwb1
+type: sync.tweak
+at: 2026-11-16T07:46:37.212336Z
+contributor: jc
+command: sync tweak TW-zwxmbu
+targets:
+    - TW-zwxmbu
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml

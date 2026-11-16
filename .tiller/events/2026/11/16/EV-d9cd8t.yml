@@ -1,0 +1,14 @@
+id: EV-d9cd8t
+type: sync.tweak
+at: 2026-11-16T07:46:37.061927Z
+contributor: jc
+command: sync tweak TW-kybzhj
+targets:
+    - TW-kybzhj
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/search-status-filter/tweak.yml

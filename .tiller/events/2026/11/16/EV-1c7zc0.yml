@@ -1,0 +1,14 @@
+id: EV-1c7zc0
+type: sync.tweak
+at: 2026-11-16T07:46:36.987633Z
+contributor: jc
+command: sync tweak TW-jr15wo
+targets:
+    - TW-jr15wo
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.yml

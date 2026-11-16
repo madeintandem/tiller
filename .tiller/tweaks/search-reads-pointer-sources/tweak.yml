@@ -1,7 +1,7 @@
 id: TW-jr15wo
 key: tweaks/search-reads-pointer-sources
 title: Search does not reach the documents a baseline points at
-status: in_review
+status: done
 blocked: false
 started: true
 owner: jc
@@ -18,6 +18,7 @@ accepted_against:
         observed_at: 2026-11-16T02:44:19.992463Z
 branch: tiller/tweaks/search-reads-pointer-sources
 pr: 24
+done_basis: ancestry
 gates:
     build:
         required: true

@@ -1,0 +1,14 @@
+id: EV-c91s97
+type: sync.tweak
+at: 2026-11-16T07:46:36.91223Z
+contributor: jc
+command: sync tweak TW-jg1dr5
+targets:
+    - TW-jg1dr5
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.yml

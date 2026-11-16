@@ -1,0 +1,14 @@
+id: EV-4x5amk
+type: sync.tweak
+at: 2026-11-16T07:46:36.835119Z
+contributor: jc
+command: sync tweak TW-d4xb1o
+targets:
+    - TW-d4xb1o
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml
