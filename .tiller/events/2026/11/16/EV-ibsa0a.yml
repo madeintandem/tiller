@@ -1,0 +1,11 @@
+id: EV-ibsa0a
+type: claim.bug
+at: 2026-11-16T01:21:55.408047Z
+contributor: jc
+command: claim bug bugs/review-grain-lock-blind-to-other-checkouts
+targets:
+    - B-8i441b
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml
