@@ -1,0 +1,13 @@
+id: EV-d9fnmg
+type: start.bug
+at: 2026-11-16T08:12:21.181476Z
+contributor: jc
+command: start bug B-wzm3xm
+targets:
+    - B-wzm3xm
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml

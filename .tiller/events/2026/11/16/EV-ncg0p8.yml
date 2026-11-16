@@ -1,0 +1,11 @@
+id: EV-ncg0p8
+type: claim.bug
+at: 2026-11-16T08:12:21.124958Z
+contributor: jc
+command: claim bug bugs/recovery-refuses-shelf-gate-scopes
+targets:
+    - B-wzm3xm
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml
