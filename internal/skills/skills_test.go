@@ -2598,3 +2598,19 @@ func TestDuplicateChecksNameTheSearch(t *testing.T) {
 		require.Containsf(t, text, "`tiller search <keyword>`", "%s names the search in its duplicate check", skill)
 	}
 }
+
+// execute covers a feature prerequisite inside one epic review beside the
+// task rule: the dependent starts from the aggregate once the prerequisite
+// feature's tasks are submitted and merged into it.
+func TestExecuteCoversSameEpicFeaturePrerequisiteStarts(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"A coarse dependent may branch from the aggregate after submitted prerequisites and submission-state commits are assembled there.",
+		"Under epic review the same holds between features of one epic",
+		"starts once every task of that feature is submitted and merged into the aggregate",
+		"a refused start names the task still to submit or merge",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+}

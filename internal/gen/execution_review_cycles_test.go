@@ -79,3 +79,61 @@ func TestClassifyCyclesEpicReviewCompletionObligations(t *testing.T) {
 		})
 	}
 }
+
+// Riders of one epic aggregate order themselves inside it: a dependent rider
+// waits on its prerequisite's submission into the aggregate, not on the
+// completion only the shared merge brings.
+func TestClassifyCyclesSameEpicRidersWaitOnSubmissionNotCompletion(t *testing.T) {
+	skeletonToSpike := DependencyEdge{Source: "F-spike", Target: "F-skeleton"}
+	for _, scenario := range []struct {
+		name      string
+		configure func(*store.Tree)
+		edges     []DependencyEdge
+	}{
+		{"prerequisite and dependent ride the aggregate", func(*store.Tree) {}, nil},
+		{"project epic aggregate", func(tree *store.Tree) {
+			tree.Epics["E-a"].ReviewGrain = ""
+			tree.Manifest = &store.Manifest{}
+			tree.Manifest.Execution.ReviewGrain = store.ReviewGrainEpic
+		}, nil},
+		{"prerequisite takes its own review", func(tree *store.Tree) {
+			tree.Features["F-skeleton"].ReviewGrain = store.ReviewGrainFeature
+		}, nil},
+		{"dependent takes its own review", func(tree *store.Tree) {
+			tree.Features["F-spike"].ReviewGrain = store.ReviewGrainFeature
+		}, []DependencyEdge{skeletonToSpike}},
+		{"riders require each other", func(tree *store.Tree) {
+			tree.Features["F-skeleton"].DependsOn = []string{"F-spike"}
+		}, []DependencyEdge{{Source: "F-skeleton", Target: "F-spike"}, skeletonToSpike}},
+		{"epic requires its own rider", func(tree *store.Tree) {
+			tree.Epics["E-a"].DependsOn = []string{"F-skeleton"}
+		}, []DependencyEdge{{Source: "E-a", Target: "F-skeleton"}}},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			ptr := func(s string) *string { return &s }
+			epic := &store.Epic{ID: "E-a", Key: ptr("a"), Status: "ready", ReviewGrain: store.ReviewGrainEpic}
+			skeleton := &store.Feature{ID: "F-skeleton", Key: ptr("a/skeleton"), EpicKey: "a", Status: "ready"}
+			spike := &store.Feature{ID: "F-spike", Key: ptr("a/spike"), EpicKey: "a", Status: "ready", DependsOn: []string{skeleton.ID}}
+			tree := &store.Tree{
+				Epics:        map[string]*store.Epic{epic.ID: epic},
+				Features:     map[string]*store.Feature{skeleton.ID: skeleton, spike.ID: spike},
+				Tasks:        map[string]*store.Task{},
+				FeatureTasks: map[string][]*store.Task{},
+			}
+			for id := range tree.Features {
+				task := &store.Task{ID: "T-" + id, FeatureID: id, Status: "ready"}
+				tree.Tasks[task.ID] = task
+				tree.FeatureTasks[id] = []*store.Task{task}
+			}
+			scenario.configure(tree)
+			got := ClassifyCycles(tree)
+			require.Empty(t, got.Advisory)
+			if scenario.edges == nil {
+				require.Empty(t, got.Blocking)
+				return
+			}
+			require.Len(t, got.Blocking, 1)
+			require.Subset(t, got.Blocking[0].Edges, scenario.edges)
+		})
+	}
+}

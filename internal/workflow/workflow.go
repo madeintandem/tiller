@@ -575,22 +575,7 @@ func OrderedEpics(t *store.Tree, order *gen.Order) []*store.Epic {
 // review or done, ready for the coarse review. A held task is not live work
 // yet, so it neither counts nor blocks (gen.AmendmentHold).
 func FeatureTasksReadyToSubmit(t *store.Tree, f *store.Feature) bool {
-	live := 0
-	for _, tk := range t.FeatureTasks[f.ID] {
-		if tk.Status == "cancelled" || gen.AmendmentHold(t, tk) != nil {
-			continue
-		}
-		live++
-		// A task PR, or a task started at task grain (R6), is a
-		// task-owned review the aggregate never absorbs; it holds the submit.
-		if tk.Status == "in_review" && (tk.PR != nil || tk.StartedGrain == store.ReviewGrainTask) {
-			return false
-		}
-		if tk.Status != "in_review" && tk.Status != "done" {
-			return false
-		}
-	}
-	return live > 0
+	return gen.FeatureTasksSubmitted(t, f)
 }
 
 func HasRecordedReview(pr *int, ref *store.ReviewRef) bool {
@@ -598,7 +583,9 @@ func HasRecordedReview(pr *int, ref *store.ReviewRef) bool {
 }
 
 func UnmetDependency(t *store.Tree, f *store.Feature, owning *store.Epic) string {
-	if unmet := unmetTarget(t, f.DependsOn); unmet != "" {
+	// A prerequisite riding the same epic aggregate is met once it is
+	// submitted into it; the epic's own edges below still wait for done.
+	if unmet := unmetTarget(t, f.DependsOn, f); unmet != "" {
 		return unmet
 	}
 	// The owning epic's recorded depends_on gates its features the same way:
@@ -612,15 +599,17 @@ func UnmetDependency(t *store.Tree, f *store.Feature, owning *store.Epic) string
 	// epic (both walks already hold the key-to-epic map); a feature whose
 	// EpicKey names no epic gates on its own edges alone.
 	if owning != nil {
-		return unmetTarget(t, owning.DependsOn)
+		return unmetTarget(t, owning.DependsOn, nil)
 	}
 	return ""
 }
 
-func unmetTarget(t *store.Tree, deps []string) string {
+// unmetTarget names the first unfinished prerequisite in deps. dependent is
+// the feature recording them, nil for prerequisites its epic records.
+func unmetTarget(t *store.Tree, deps []string, dependent *store.Feature) string {
 	for _, dep := range deps {
 		if df, ok := t.Features[dep]; ok {
-			if df.Status != "done" && df.Status != "cancelled" {
+			if df.Status != "done" && df.Status != "cancelled" && !gen.FeaturePrerequisiteSubmitted(t, dependent, df) {
 				return gen.Ref(t, df)
 			}
 			continue

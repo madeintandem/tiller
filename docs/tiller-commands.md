@@ -665,7 +665,9 @@ pattern yields `tiller/<epic>/<feature>/<task>`; aggregates use
 `tiller/reviews/features/<epic>/<feature>` or `tiller/reviews/epics/<epic>`.
 The model creates independent task branches from integration. Task-PR dependencies wait for
 integration, never stacked task PRs. A coarse dependent task may start from the aggregate once
-submitted prerequisites and their submission-state commits have been merged into it.
+submitted prerequisites and their submission-state commits have been merged into it. Under epic
+review grain a prerequisite feature of the same epic counts the same way: its dependents start
+from the aggregate once every task under it is submitted and merged there.
 If a hand-built ref already sits at the derived aggregate name and nothing records it, plain
 start refuses `aggregate_unrecorded`. Inspect `git log <integration>..<ref>`, then rerun with
 `--adopt-aggregate` to record it, or rename the ref aside with Git. Tiller will not delete refs.

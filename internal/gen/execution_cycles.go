@@ -37,7 +37,9 @@ type CycleClassification struct {
 // ClassifyCycles uses taskStartBase prerequisites, rollup completion, and
 // submitEpic/reviewedAggregate review obligations. Parent approval is not
 // parent completion. Aggregate submission is not rider completion: sibling
-// work may be assembled before the shared human merge. Done/archived recorded
+// work may be assembled before the shared human merge, and a rider's own
+// prerequisite on another rider of the same aggregate waits on that
+// rider's submission into it, not on its completion. Done/archived recorded
 // assertions retain their historical diagnostic treatment; cancellation
 // removes work. No recorded edge or rendering order is changed.
 func ClassifyCycles(t *store.Tree) CycleClassification {
@@ -93,6 +95,17 @@ func ClassifyCycles(t *store.Tree) CycleClassification {
 	// overrides must be done (submitEpic). Separate submission vertices avoid
 	// inventing a mutual completion requirement between independent riders.
 	reviewEpics := map[string]string{}
+	riders := map[string]bool{}
+	// startPrerequisite is the vertex a rider's own recorded prerequisite
+	// waits on: the submission of a prerequisite riding the same aggregate,
+	// else the target's completion.
+	startPrerequisite := func(source store.Node, target string) string {
+		f, ok := source.(*store.Feature)
+		if !ok || !riders[f.ID] || !riders[target] || current.Features[target].EpicKey != f.EpicKey {
+			return target
+		}
+		return "submission:" + target
+	}
 	for id, f := range current.Features {
 		epicID := epicByKey[f.EpicKey]
 		epic := current.Epics[epicID]
@@ -106,6 +119,13 @@ func ClassifyCycles(t *store.Tree) CycleClassification {
 			reviewEpics[reviewID] = epicID
 		}
 		deps[id] = append(deps[id], reviewID)
+		riders[id] = true
+	}
+	// deps[id] opens with the feature's own recorded prerequisites, in order.
+	for id := range riders {
+		for i, target := range recorded[id] {
+			deps[id][i] = startPrerequisite(current.Features[id], target)
+		}
 	}
 	for reviewID, epicID := range reviewEpics {
 		epic := current.Epics[epicID]
@@ -122,7 +142,9 @@ func ClassifyCycles(t *store.Tree) CycleClassification {
 			byID[submissionID] = f
 			ids = append(ids, submissionID)
 			deps[reviewID] = append(deps[reviewID], submissionID)
-			deps[submissionID] = append(deps[submissionID], recorded[id]...)
+			for _, target := range recorded[id] {
+				deps[submissionID] = append(deps[submissionID], startPrerequisite(f, target))
+			}
 			deps[submissionID] = append(deps[submissionID], recorded[epicID]...)
 			recorded[submissionID] = recorded[id]
 		}
@@ -191,7 +213,7 @@ func ClassifyCycles(t *store.Tree) CycleClassification {
 		edges := map[DependencyEdge]bool{}
 		for _, id := range group {
 			for _, target := range recorded[id] {
-				if members[target] {
+				if members[startPrerequisite(byID[id], target)] {
 					edges[DependencyEdge{byID[id].NodeID(), target}] = true
 				}
 			}

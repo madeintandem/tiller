@@ -96,6 +96,8 @@ type ConfigureView struct {
 	Key         string `json:"key,omitempty"`
 	ReviewGrain string `json:"review_grain"`
 	Changed     bool   `json:"changed"`
+	// DependencyCycles are the blocking cycles this change created.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 // runConfigure loads the tree, resolves the acting contributor, and drives
@@ -134,12 +136,14 @@ func runConfigure(cmd *cobra.Command, target, key, grain string) error {
 	if err != nil {
 		return emitFailure(cmd, "configure", err)
 	}
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.Configure(tree, d, mutate.ConfigureInput{Noun: target, Key: key, ReviewGrain: grain})
 	if err != nil {
 		return reportConfigureError(cmd, tree, err)
 	}
 	view := ConfigureView{Noun: res.Noun, ID: res.ID, Key: res.Key, ReviewGrain: res.ReviewGrain, Changed: res.Changed}
-	return emitSuccess(cmd, "configure", view, humanConfigure(tree, res))
+	view.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+	return emitSuccess(cmd, "configure", view, withCycleDiagnosis(humanConfigure(tree, res), view.DependencyCycles))
 }
 
 // reviewGrainSourceLabel names where a just-recorded grain took effect: the
