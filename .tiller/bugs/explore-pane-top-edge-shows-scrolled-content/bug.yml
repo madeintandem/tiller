@@ -2,7 +2,7 @@ id: B-un831z
 key: bugs/explore-pane-top-edge-shows-scrolled-content
 title: A one-pixel line of scrolled content shows above the pinned node header in Safari
 severity: minor
-status: in_review
+status: done
 blocked: false
 started: true
 owner: jc
@@ -19,6 +19,7 @@ accepted_against:
         observed_at: 2026-11-16T18:07:50.922151Z
 branch: tiller/bugs/explore-pane-top-edge-shows-scrolled-content
 pr: 26
+done_basis: ancestry
 gates:
     build:
         required: true

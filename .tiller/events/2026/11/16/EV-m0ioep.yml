@@ -1,0 +1,14 @@
+id: EV-m0ioep
+type: sync.bug
+at: 2026-11-16T19:56:41.630025Z
+contributor: jc
+command: sync bug B-un831z
+targets:
+    - B-un831z
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml
