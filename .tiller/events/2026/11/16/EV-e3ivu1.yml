@@ -1,0 +1,14 @@
+id: EV-e3ivu1
+type: add.bug
+at: 2026-11-16T20:37:19.198235Z
+contributor: jc
+command: add bug outline-links-reload-the-page
+targets:
+    - B-iqc14u
+after:
+    key: bugs/outline-links-reload-the-page
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.md
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml

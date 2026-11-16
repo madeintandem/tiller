@@ -1,0 +1,8 @@
+id: B-iqc14u
+key: bugs/outline-links-reload-the-page
+title: An On this page link reloads the console in Safari and does not land on its heading
+severity: important
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
