@@ -750,3 +750,19 @@ func TestConfigureFeatureFailsClosedOnUnparseableStateAtCanonicalBranch(t *testi
 	require.Contains(t, err.Error(), "task.yml")
 	requireNoWrites(t, before, snapshotDir(t, root))
 }
+
+func TestConfigureFeatureStillSucceedsOutsideAGitRepository(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(root, ".tiller"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".tiller", "tiller.yml"), []byte(ownedManifest), 0o644))
+	mustAddEpic(t, root, "pay")
+	mustAddFeature(t, root, "pay/checkout")
+
+	res, err := mutate.Configure(load(t, root), testDeps(), mutate.ConfigureInput{
+		Noun: store.NounFeature, Key: "pay/checkout", ReviewGrain: store.ReviewGrainFeature,
+	})
+
+	require.NoError(t, err, "with no repository there is no other branch to read")
+	require.True(t, res.Changed)
+}

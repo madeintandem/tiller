@@ -12,11 +12,12 @@ import (
 )
 
 // reviewGrainRefReader is what the ref half of the safe configure window needs
-// beyond vcs.Revisions: one listing of local branches and a committed file read
-// at a ref. *vcs.Git provides both. A Revisions without them (a test stub)
+// beyond vcs.Revisions: one listing of local branches, a committed file read at
+// a ref, and a way to tell a directory outside git from a failing git. *vcs.Git provides both. A Revisions without them (a test stub)
 // leaves the lock reading the current checkout only.
 type reviewGrainRefReader interface {
 	LocalBranches() ([]string, error)
+	InRepository() (bool, error)
 	FileAt(commit, path string) ([]byte, error)
 }
 
@@ -61,6 +62,10 @@ func evaluateReviewGrainRefs(tree *store.Tree, rev vcs.Revisions, change reviewG
 	}
 	branches, err := reader.LocalBranches()
 	if err != nil {
+		// A project not yet under git has no other branch to hold state.
+		if inside, repoErr := reader.InRepository(); repoErr == nil && !inside {
+			return nil
+		}
 		return err
 	}
 	local := make(map[string]bool, len(branches))
