@@ -11,7 +11,7 @@ tiller guide            # the same list, then the skill for the top agent move
 tiller guide execute    # prints that skill in full
 ```
 
-This build, stamped v1.0.1, carries eleven skills. Eight of them are the workflow seams:
+This build, stamped v1.0.2, carries eleven skills. Eight of them are the workflow seams:
 
 - `orient` reads state, relays the ranked next moves, and stops for your go.
 - `derive-baseline` derives or translates as-is docs and stops at human per-doc confirmation.
