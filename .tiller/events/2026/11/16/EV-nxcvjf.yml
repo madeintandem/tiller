@@ -1,0 +1,13 @@
+id: EV-nxcvjf
+type: start.bug
+at: 2026-11-16T18:07:56.289127Z
+contributor: jc
+command: start bug B-un831z
+targets:
+    - B-un831z
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml

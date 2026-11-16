@@ -1,0 +1,11 @@
+id: EV-eb0mw1
+type: claim.bug
+at: 2026-11-16T18:07:56.213762Z
+contributor: jc
+command: claim bug bugs/explore-pane-top-edge-shows-scrolled-content
+targets:
+    - B-un831z
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml

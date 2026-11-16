@@ -51,4 +51,30 @@ describe("node pin", () => {
     expect(title).toMatch(/white-space:\s*nowrap/);
     expect(title).toMatch(/overflow:\s*hidden/);
   });
+
+  it("covers the reading pane's top edge from outside the pane, so no row of scrolled content shows above the band", () => {
+    // Safari paints one device-pixel row of scrolled content at the pane's
+    // top edge when that edge lands on a fractional pixel (B-un831z). A cover
+    // inside the pane did not hide it, so this one belongs to the split.
+    const media = pinCss.match(/@media \(width > 48rem\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const wide = (selector: string) => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return media.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+    };
+    expect(wide(".explore-split")).toMatch(/position:\s*relative/);
+    const cover = wide(".explore-split::before");
+    expect(cover).toMatch(/content:\s*""/);
+    expect(cover).toMatch(/position:\s*absolute/);
+    // It starts a pixel above the edge and ends a pixel below it, so the
+    // partial row is covered whichever way the edge rounds.
+    expect(cover).toMatch(/top:\s*-1px/);
+    expect(cover).toMatch(/height:\s*2px/);
+    expect(cover).toMatch(/background:\s*var\(--paper\)/);
+    expect(cover).toMatch(/z-index:\s*3/);
+    expect(cover).toMatch(/pointer-events:\s*none/);
+    // The divider's seam runs up through the same pixels and stays on top.
+    const divider = wide(".explore-divider");
+    expect(divider).toMatch(/position:\s*relative/);
+    expect(divider).toMatch(/z-index:\s*4/);
+  });
 });
