@@ -20,6 +20,8 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/madeintandem/tiller/internal/corpus"
 	"github.com/madeintandem/tiller/internal/store"
@@ -117,12 +119,40 @@ type DocumentResult struct {
 
 // Hit is one match: a line in a searched file (Line is 1-based), or
 // a question's statement or recorded answer, which live only in the ledger
-// yaml and carry Line 0 and the Field that matched.
+// yaml and carry Line 0 and the Field that matched. Snippet is the trimmed
+// line, capped at snippetWindow runes, and Truncated says the cap cut it, so
+// a consumer can tell a whole line from part of one.
 type Hit struct {
-	Path    string `json:"path"`
-	Line    int    `json:"line"`
-	Snippet string `json:"snippet"`
-	Field   string `json:"field,omitempty"`
+	Path      string `json:"path"`
+	Line      int    `json:"line"`
+	Snippet   string `json:"snippet"`
+	Truncated bool   `json:"truncated,omitempty"`
+	Field     string `json:"field,omitempty"`
+
+	// excerpt is set only when it differs from Snippet.
+	excerpt string
+}
+
+// Excerpt is the text human output prints for the hit: the line when it fits
+// excerptWindow runes, otherwise a window that holds the match, with an
+// ellipsis at each end where the line was cut.
+func (h Hit) Excerpt() string {
+	if h.excerpt != "" {
+		return h.excerpt
+	}
+	return h.Snippet
+}
+
+// matchHit builds the hit for a match in text. lower is text lowercased and
+// at the match's byte offset in it; q is the lowercased query.
+func matchHit(text, lower string, at int, q string) Hit {
+	hit := Hit{Snippet: snippet(text, at, len(q))}
+	trimmed := []rune(strings.TrimSpace(text))
+	hit.Truncated = len(trimmed) > snippetWindow
+	if len(trimmed) > excerptWindow {
+		hit.excerpt = excerpt(text, utf8.RuneCountInString(lower[:at]), utf8.RuneCountInString(q))
+	}
+	return hit
 }
 
 // ReasonCorpusUnreadable is the store.EnvError discriminator for a corpus
@@ -172,11 +202,13 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 	// the node that owns the file, or into the file's own document result.
 	scan := func(filePath string, content []byte, owner store.Node) {
 		for i, line := range strings.Split(string(content), "\n") {
-			at := strings.Index(strings.ToLower(line), q)
+			lower := strings.ToLower(line)
+			at := strings.Index(lower, q)
 			if at < 0 {
 				continue
 			}
-			hit := Hit{Path: filePath, Line: i + 1, Snippet: snippet(line, at, len(q))}
+			hit := matchHit(line, lower, at, q)
+			hit.Path, hit.Line = filePath, i+1
 			if owner != nil {
 				nodes.add(tree, owner, rankText).addHit(hit)
 				continue
@@ -346,4 +378,40 @@ func snippet(line string, at, n int) string {
 	start := len([]rune(s[:max(0, min(len(s), at-lead))])) - snippetLead
 	start = max(0, min(start, len(runes)-snippetWindow))
 	return "…" + string(runes[start:start+snippetWindow])
+}
+
+// excerptWindow caps how much of a matching line human output prints, in
+// runes: enough to recognize the passage, far less than a paragraph written
+// on one line. excerptLead is how much of the line an excerpt keeps before a
+// match it had to window into view.
+const (
+	excerptWindow = 120
+	excerptLead   = 40
+)
+
+// excerpt is the trimmed line when it fits excerptWindow runes, otherwise
+// excerptWindow runes of it that hold the match, with an ellipsis at each end
+// where text was cut. at and n are the match's offset and length in runes of
+// the untrimmed line. Lowercasing maps rune to rune, so a rune offset found
+// in the lowercased line is the same offset in the original, which a byte
+// offset is not.
+func excerpt(line string, at, n int) string {
+	runes := []rune(strings.TrimLeftFunc(line, unicode.IsSpace))
+	at -= utf8.RuneCountInString(line) - len(runes)
+	runes = []rune(strings.TrimRightFunc(string(runes), unicode.IsSpace))
+	if len(runes) <= excerptWindow {
+		return string(runes)
+	}
+	// A match too long to sit behind the full lead takes the room it needs.
+	lead := min(excerptLead, max(0, excerptWindow-n))
+	start := max(0, min(at-lead, len(runes)-excerptWindow))
+	end := start + excerptWindow
+	out := string(runes[start:end])
+	if start > 0 {
+		out = "…" + out
+	}
+	if end < len(runes) {
+		out += "…"
+	}
+	return out
 }

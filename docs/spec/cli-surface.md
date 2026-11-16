@@ -1038,12 +1038,27 @@ or ledger fields. Within a rank, a node whose stored status is live leads one th
 feature, task, bug, chore, tweak, question, amendment) and reference. Documents follow the nodes:
 a file whose path contains the query first, then by matching lines, then path. Each result carries
 its total matching lines and ledger fields as `count` and the first three as `hits`; a node's title
-is its label and is never repeated as a hit. `--kind` keeps one kind (any node noun, or
+is its label and is never repeated as a hit.
+
+**Long lines.** Prose is often written one paragraph per line, so a single matching line can run to
+hundreds of characters. Human output bounds what it prints for one hit. A line of at most 120
+characters, after its surrounding whitespace is trimmed, prints unchanged. A longer line prints a
+120-character excerpt that holds the match, with up to 40 characters before it, and an ellipsis
+(`…`) at each end where text was cut: none at the start when the excerpt begins the line, none at
+the end when it finishes it. A query too long to fit behind that lead takes the room it needs, and
+one longer than the excerpt shows its beginning. Cuts fall between characters, never inside a
+multi-byte one. A question's statement or answer is bounded the same way.
+
+`--json` does not carry the human excerpt. A hit's `snippet` is the trimmed line capped at 200
+characters, windowed so the match is in view (a snippet that had to move past the start of the line
+begins with `…`). A hit whose `snippet` is not the whole line carries `truncated: true`; a hit that
+holds the whole line omits the field. A consumer that needs the rest reads the file at the hit's
+`path` and `line`. `GET /api/search` carries the same `snippet` and `truncated`. `--kind` keeps one kind (any node noun, or
 `document`); an unknown kind is misuse (`unknown_kind`, exit `2`).
 
 The payload is `{query, kind?, count, truncated, kinds, nodes, documents}`. `count` is the number of
 results within the kind filter and `truncated` says the page holds fewer; `kinds` tallies every
-matched result by kind regardless of the filter. A bug's node result carries its `severity` when set. A page holds at most 200 results, shared between
+matched result by kind regardless of the filter. A bug's node result carries its `severity` when set. Each hit is `{path, line, snippet, truncated?, field?}`. A page holds at most 200 results, shared between
 nodes and documents so neither crowds the other out. Corpus
 validation covers every regular, UTF-8, NUL-free file beneath the canonical `.tiller/` root with a
 lowercase `.md` extension, including generated `orientation.md`. Orientation

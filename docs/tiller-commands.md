@@ -1141,6 +1141,10 @@ tiller search "<keyword>" [--kind <kind>]                    # an id, key, or re
                                                              # missing, directory, or non-text source is
                                                              # skipped, a symlinked one refuses);
                                                              # one ranked result per node or document;
+                                                             # a matching line over 120 characters prints
+                                                             # an excerpt around the match with … at each
+                                                             # cut end; --json carries a 200-character
+                                                             # snippet and truncated: true when cut;
                                                              # orientation.md validated, not returned
 tiller query --from <address> [--from <address>]... --follow <direction[,direction]...> \
   [--depth <nonnegative-integer>] [--where <kind|status|owner|contributor>=<value>]...

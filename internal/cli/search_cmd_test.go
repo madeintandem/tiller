@@ -359,3 +359,43 @@ func TestSearchRefusesASymlinkedBaselineSource(t *testing.T) {
 	require.Contains(t, out, `"reason": "corpus_unreadable"`)
 	require.NotContains(t, out, `"documents"`)
 }
+
+// TestSearchHumanCapsALongLine pins the bounded excerpt: a matching line
+// longer than the cap prints 120 characters of it around the match with an
+// ellipsis at each cut end, a line under the cap prints unchanged, and
+// --json keeps its 200-character snippet and marks it truncated.
+func TestSearchHumanCapsALongLine(t *testing.T) {
+	laySearchTree(t)
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	long := strings.Repeat("a", 300) + " zebra-crossing " + strings.Repeat("b", 300)
+	require.NoError(t, os.WriteFile(filepath.Join(cwd, ".tiller", "design", "02-long.md"),
+		[]byte(long+"\nA short zebra-crossing line.\n"), 0o644))
+
+	out, _, code := execCLI(t, "search", "zebra-crossing")
+	require.Equal(t, 0, code)
+	require.Equal(t, ".tiller/design/02-long.md  [document · 2 matches]\n"+
+		"    .tiller/design/02-long.md:1  …"+strings.Repeat("a", 39)+" zebra-crossing "+strings.Repeat("b", 65)+"…\n"+
+		"    .tiller/design/02-long.md:2  A short zebra-crossing line.\n", out)
+
+	out, _, code = execCLI(t, "search", "zebra-crossing", "--json")
+	require.Equal(t, 0, code)
+	var env struct {
+		Data struct {
+			Documents []struct {
+				Hits []struct {
+					Snippet   string `json:"snippet"`
+					Truncated bool   `json:"truncated"`
+				} `json:"hits"`
+			} `json:"documents"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	hits := env.Data.Documents[0].Hits
+	require.Len(t, hits, 2)
+	require.True(t, hits[0].Truncated)
+	require.Equal(t, "…"+strings.Repeat("a", 59)+" zebra-crossing "+strings.Repeat("b", 125), hits[0].Snippet)
+	require.False(t, hits[1].Truncated)
+	require.Equal(t, "A short zebra-crossing line.", hits[1].Snippet)
+	require.Equal(t, 1, strings.Count(out, `"truncated": true`), "a whole line omits the field")
+}

@@ -30,7 +30,11 @@ func newSearchCmd() *cobra.Command {
 			"at its working-tree content.\n\n" +
 			"Results are one per node, ranked id, key, title, key fragment, then\n" +
 			"prose-only by how often the node matches, each with its first few\n" +
-			"matching lines. Prose no node owns is grouped by file after the nodes.\n" +
+			"matching lines. A matching line longer than 120 characters prints an\n" +
+			"excerpt of that length around the match, with … at each end that was\n" +
+			"cut; --json carries up to 200 characters as snippet and sets\n" +
+			"truncated on a hit whose snippet is not the whole line.\n" +
+			"Prose no node owns is grouped by file after the nodes.\n" +
 			"--kind keeps one kind: epic, feature, task, bug, chore, tweak,\n" +
 			"question, amendment, or document. An unsafe or unreadable corpus\n" +
 			"refuses the whole search; partial results are never returned. A\n" +
@@ -64,8 +68,8 @@ func runSearch(cmd *cobra.Command, query, kind string) error {
 // ranked order. A node's head line is its reference, its title, and a bracket
 // naming its kind, status, and how it matched; a document's head line is its
 // path and match count. Beneath each, its kept hits print as path:line and
-// the snippet (a ledger field prints its field name instead of a line), then
-// how many more matches the result holds. An empty result names the query,
+// the hit's bounded excerpt (a ledger field prints its field name instead of
+// a line), then how many more matches the result holds. An empty result names the query,
 // an answer rather than a shrug (exit 0), and a capped result says so last.
 func renderSearchHuman(r search.Result) string {
 	if r.Count == 0 {
@@ -98,7 +102,7 @@ func searchBlock(head string, hits []search.Hit, count int) string {
 		if h.Field != "" {
 			at = h.Field
 		}
-		lines = append(lines, fmt.Sprintf("    %s  %s", at, h.Snippet))
+		lines = append(lines, fmt.Sprintf("    %s  %s", at, h.Excerpt()))
 	}
 	if more := count - len(hits); more > 0 {
 		lines = append(lines, fmt.Sprintf("    (+%d more)", more))
