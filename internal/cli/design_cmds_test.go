@@ -10,6 +10,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,7 +93,9 @@ func TestDesignJSONReferencesRecoverSourcesAfterRetirement(t *testing.T) {
 	require.True(t, ok, "the JSON source reference must expose its recoverable value")
 	gitRun(t, root, "rm", "--", "docs/one,two.md")
 	gitRun(t, root, "commit", "-m", "Retire translated source")
-	recovered, err := exec.Command("git", "-C", root, "show", strings.TrimPrefix(value, "git:")).Output()
+	show := exec.Command("git", "-C", root, "show", strings.TrimPrefix(value, "git:"))
+	show.Env = testgit.Env()
+	recovered, err := show.Output()
 	require.NoError(t, err)
 	require.Equal(t, "# Original\nRecover this source.\n", string(recovered))
 
@@ -101,7 +104,9 @@ func TestDesignJSONReferencesRecoverSourcesAfterRetirement(t *testing.T) {
 	confirmation := doc["confirmed"].(map[string]any)
 	commit, ok := confirmation["commit"].(map[string]any)
 	require.True(t, ok, "the JSON confirmation must expose its commit")
-	head, err := exec.Command("git", "-C", root, "rev-parse", "--short", "HEAD").Output()
+	revParse := exec.Command("git", "-C", root, "rev-parse", "--short", "HEAD")
+	revParse.Env = testgit.Env()
+	head, err := revParse.Output()
 	require.NoError(t, err)
 	require.Equal(t, "git:"+strings.TrimSpace(string(head)), commit["value"])
 	surface := confirmation["surfaces"].([]any)[0].(map[string]any)

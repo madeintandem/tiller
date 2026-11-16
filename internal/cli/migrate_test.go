@@ -12,6 +12,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -339,6 +340,7 @@ func TestMigrateHumanOutputCarriesTheStageCommand(t *testing.T) {
 	line := stageLine(t, out)
 	git := exec.Command("git", strings.Fields(line)[1:]...)
 	git.Dir = root
+	git.Env = testgit.Env()
 	output, err := git.CombinedOutput()
 	require.NoError(t, err, "%s\n%s", line, output)
 }

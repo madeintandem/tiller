@@ -10,6 +10,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
@@ -245,6 +246,7 @@ func gitOutput(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "git %s: %s", strings.Join(args, " "), out)
 	return strings.TrimSpace(string(out))

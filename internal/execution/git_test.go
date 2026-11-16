@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,9 +14,10 @@ import (
 // size check: output past the limit is refused, never buffered whole.
 func TestGitReadAtMostRefusesOutputPastTheLimit(t *testing.T) {
 	root := t.TempDir()
-	require.NoError(t, exec.Command("git", "init", "-q", root).Run())
+	testgit.Run(t, root, "init", "-q")
 	hash := exec.Command("git", "hash-object", "-w", "--stdin")
 	hash.Dir = root
+	hash.Env = testgit.Env()
 	hash.Stdin = strings.NewReader("0123456789")
 	out, err := hash.Output()
 	require.NoError(t, err)
@@ -34,10 +36,11 @@ func TestGitReadAtMostRefusesOutputPastTheLimit(t *testing.T) {
 // size bound.
 func TestGitBatchBlobsReadsBlobsAndRefusesUnreadableObjects(t *testing.T) {
 	root := t.TempDir()
-	require.NoError(t, exec.Command("git", "init", "-q", root).Run())
+	testgit.Run(t, root, "init", "-q")
 	write := func(content string) string {
 		hash := exec.Command("git", "hash-object", "-w", "--stdin")
 		hash.Dir = root
+		hash.Env = testgit.Env()
 		hash.Stdin = strings.NewReader(content)
 		out, err := hash.Output()
 		require.NoError(t, err)
@@ -57,6 +60,7 @@ func TestGitBatchBlobsReadsBlobsAndRefusesUnreadableObjects(t *testing.T) {
 
 	tree := exec.Command("git", "write-tree")
 	tree.Dir = root
+	tree.Env = testgit.Env()
 	out, err := tree.Output()
 	require.NoError(t, err)
 	_, err = gitBatchBlobs(context.Background(), root, []string{strings.TrimSpace(string(out))})

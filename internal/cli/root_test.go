@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -145,7 +146,9 @@ func soleEnvelope(t *testing.T, stdout string) map[string]any {
 
 func gitStatus(t *testing.T) string {
 	t.Helper()
-	out, err := exec.Command("git", "status", "--porcelain", "--untracked-files=all").CombinedOutput()
+	cmd := exec.Command("git", "status", "--porcelain", "--untracked-files=all")
+	cmd.Env = testgit.Env()
+	out, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(out))
 	return string(out)
 }

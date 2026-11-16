@@ -10,6 +10,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/readinput"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/vcs"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
@@ -93,6 +94,7 @@ func mirrorDriftFixture(t *testing.T, taskFinalStatus string) (root string, deps
 		t.Helper()
 		cmd := exec.Command("git", args...)
 		cmd.Dir = root
+		cmd.Env = testgit.Env()
 		out, err := cmd.CombinedOutput()
 		require.NoError(t, err, "%s", out)
 		return strings.TrimSpace(string(out))
@@ -195,6 +197,7 @@ func TestSharedCloseoutRequiresCurrentTaskTipInAggregate(t *testing.T) {
 		t.Helper()
 		command := exec.Command("git", args...)
 		command.Dir = root
+		command.Env = testgit.Env()
 		output, err := command.CombinedOutput()
 		require.NoError(t, err, "%s", output)
 	}

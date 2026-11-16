@@ -19,6 +19,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
@@ -529,6 +530,7 @@ func TestRecapResolvesShelfAndAmendmentTargets(t *testing.T) {
 	} {
 		cmd := exec.Command("git", args...)
 		cmd.Dir = root
+		cmd.Env = testgit.Env()
 		out, err := cmd.CombinedOutput()
 		require.NoError(t, err, string(out))
 	}

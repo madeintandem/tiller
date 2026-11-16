@@ -84,6 +84,25 @@ copy. `cd site && npm ci && npm run dev` serves it at
   one-off, and `Template`, `Templates`, or `CopyWithResult` to lay a fixture
   once and copy it per test. A template's lay must not call `t.Setenv` or
   `t.Chdir`.
+- **Fixture commands never follow inherited Git routing.** Git hands
+  `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_INDEX_FILE`, and
+  `GIT_OBJECT_DIRECTORY` to the commands it starts, so a suite started from a
+  commit hook, or from `git rebase --exec 'make test'` in a linked worktree,
+  inherits them. A fixture command that kept them would commit to your real
+  checkout instead of its temporary directory. Every `git`, `sh`, and `go`
+  process a test starts therefore runs under `testgit.Env()`, which drops
+  those variables: use `testgit.Run`, or set the command's `Env` from
+  `testgit.Env()`. A test in `internal/testgit` reads the test sources and
+  fails when one does not.
+  The suite is safe from a routed environment, and it does not pass there. We
+  decided not to scrub the test process's own environment. Tiller refuses
+  routing that names another checkout (`git_routing_conflict`), so the tests
+  that run Tiller in process against a temporary repository meet that refusal
+  and fail, which is the shipped behavior shown as it is. Passing would take a
+  `TestMain` that unsets the variables in each of the nine packages that build
+  Git fixtures, because Go has no one place to put it. To run the suite from a
+  hook or a rebase, unset them on the command:
+  `env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_INDEX_FILE -u GIT_OBJECT_DIRECTORY make test`.
 - **Write plainly.** Docs, commit messages, and PR descriptions are concrete
   and direct, prose over bullet soup, no em dashes. Lead with the outcome.
 - **Keep it small.** SOLID, YAGNI, and aggressive about simplicity and about

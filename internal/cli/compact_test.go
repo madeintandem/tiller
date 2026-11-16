@@ -125,6 +125,7 @@ func TestCompactVerbStageCommandRunsWhenADayWasNeverCommitted(t *testing.T) {
 
 	git := exec.Command("git", strings.Fields(line)[1:]...)
 	git.Dir = dir
+	git.Env = testgit.Env()
 	output, err := git.CombinedOutput()
 	require.NoError(t, err, "%s\n%s", line, output)
 
@@ -326,6 +327,7 @@ func runStageLine(t *testing.T, dir, line string) {
 	t.Helper()
 	git := exec.Command("sh", "-c", line)
 	git.Dir = dir
+	git.Env = testgit.Env()
 	output, err := git.CombinedOutput()
 	require.NoError(t, err, "%s\n%s", line, output)
 }
