@@ -1,0 +1,11 @@
+id: EV-r6v48b
+type: claim.tweak
+at: 2026-11-16T02:44:21.44459Z
+contributor: jc
+command: claim tweak tweaks/search-caps-long-match-lines
+targets:
+    - TW-d4xb1o
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml

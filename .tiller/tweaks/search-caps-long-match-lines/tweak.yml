@@ -1,9 +1,10 @@
 id: TW-d4xb1o
 key: tweaks/search-caps-long-match-lines
 title: Search prints a matching line in full, however long
-status: ready
+status: in_progress
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 accepted_against:
     spec:
@@ -15,3 +16,4 @@ accepted_against:
         kind: git_commit
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:20.051911Z
+branch: tiller/tweaks/search-caps-long-match-lines
