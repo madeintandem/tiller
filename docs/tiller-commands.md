@@ -665,7 +665,9 @@ pattern yields `tiller/<epic>/<feature>/<task>`; aggregates use
 `tiller/reviews/features/<epic>/<feature>` or `tiller/reviews/epics/<epic>`.
 The model creates independent task branches from integration. Task-PR dependencies wait for
 integration, never stacked task PRs. A coarse dependent task may start from the aggregate once
-submitted prerequisites and their submission-state commits have been merged into it.
+submitted prerequisites and their submission-state commits have been merged into it. Under epic
+review grain a prerequisite feature of the same epic counts the same way: its dependents start
+from the aggregate once every task under it is submitted and merged there.
 If a hand-built ref already sits at the derived aggregate name and nothing records it, plain
 start refuses `aggregate_unrecorded`. Inspect `git log <integration>..<ref>`, then rerun with
 `--adopt-aggregate` to record it, or rename the ref aside with Git. Tiller will not delete refs.
@@ -930,6 +932,11 @@ at three homes, most specific wins. A change is safe only for affected descendan
 review surface, no task in `in_progress`, `check`, or `in_review`, and, when entering or leaving
 epic grain, no recorded aggregate branch. Existing task PRs remain independent and must merge and
 sync before a later coarse submit. Do not hand-edit state to evade a refusal.
+
+The check reads the current checkout and also the committed state on the affected nodes' canonical
+local branches (the epic and feature aggregates and each open task's branch), so work started in
+another worktree of the same repository locks the change too. That refusal names the branch. It
+does not fetch or read remote-tracking refs.
 
 ```sh
 tiller configure project --review-grain task|feature|epic     # writes execution.review_grain in tiller.yml

@@ -1,0 +1,14 @@
+id: EV-prmcr9
+type: submit.bug
+at: 2026-11-16T01:49:03.831921Z
+contributor: jc
+command: submit bug B-8i441b
+targets:
+    - B-8i441b
+before:
+    status: check
+after:
+    pr: 23
+    status: in_review
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml

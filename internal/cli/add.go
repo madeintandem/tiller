@@ -48,6 +48,8 @@ type nodeResult struct {
 	Severity   string   `json:"severity,omitempty"`
 	Path       string   `json:"path"`
 	Created    bool     `json:"created"`
+	// DependencyCycles are the blocking cycles a recorded dependency created.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 func newAddCmd() *cobra.Command {
@@ -142,11 +144,12 @@ func runAddEpic(cmd *cobra.Command, key, title, source string, dependsOn []strin
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.AddEpic(tree, d, mutate.EpicInput{Key: key, Title: title, Source: source, DependsOn: dependsOn})
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
-	return emitSuccess(cmd, "add", payload(res), humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
+	return emitAddWithCycles(cmd, tree, cyclesBefore, res, humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
 }
 
 func runAddFeature(cmd *cobra.Command, key, title, changeType, source string, dependsOn []string) error {
@@ -167,13 +170,14 @@ func runAddFeature(cmd *cobra.Command, key, title, changeType, source string, de
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.AddFeature(tree, d, mutate.FeatureInput{
 		Key: key, Title: title, ChangeType: changeType, Source: source, DependsOn: dependsOn,
 	})
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
-	return emitSuccess(cmd, "add", payload(res), humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
+	return emitAddWithCycles(cmd, tree, cyclesBefore, res, humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
 }
 
 func runAddTask(cmd *cobra.Command, key, title string, dependsOn []string) error {
@@ -188,11 +192,12 @@ func runAddTask(cmd *cobra.Command, key, title string, dependsOn []string) error
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.AddTask(tree, d, mutate.TaskInput{Key: key, Title: title, DependsOn: dependsOn})
 	if err != nil {
 		return emitFailure(cmd, "add", err)
 	}
-	return emitSuccess(cmd, "add", payload(res), humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
+	return emitAddWithCycles(cmd, tree, cyclesBefore, res, humanLine(res, title, gen.RefParts(res.Key, res.ID), "", refsByID(tree, res.DependsOn)))
 }
 
 func newAddBugCmd() *cobra.Command   { return newAddWorkItemCmd(store.NounBug) }
@@ -285,6 +290,17 @@ func validateTaskKey(raw string) error {
 		}
 	}
 	return nil
+}
+
+// emitAddWithCycles is add's success for an epic, feature, or task: when the
+// node recorded a dependency, the blocking cycles that edge created ride the
+// payload and close the confirmation.
+func emitAddWithCycles(cmd *cobra.Command, tree *store.Tree, cyclesBefore []cycleDiagnosis, res mutate.Result, human string) error {
+	view := payload(res)
+	if len(res.DependsOn) > 0 {
+		view.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+	}
+	return emitSuccess(cmd, "add", view, withCycleDiagnosis(human, view.DependencyCycles))
 }
 
 // payload maps a core Result onto the stable JSON envelope payload.

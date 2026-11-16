@@ -324,7 +324,7 @@ func transitionEpic(tree *store.Tree, deps Deps, owner store.Contributor, treeEp
 		if err := refuseReviewSurfaceLocked(store.NounEpic, doc.ID, key, doc.Status, doc.PR, doc.ReviewRef, terminal); err != nil {
 			return TransitionResult{}, err
 		}
-		reviewGrainGuards, err = guardReviewGrainChange(tree, reviewGrainChange{
+		reviewGrainGuards, err = guardReviewGrainChange(tree, deps.rev(tree.Root), reviewGrainChange{
 			Noun: store.NounEpic, Epic: &doc, Desired: *in.ReviewGrain,
 		})
 		if err != nil {
@@ -562,7 +562,7 @@ func transitionFeature(tree *store.Tree, deps Deps, owner store.Contributor, tre
 			if err := refuseReviewSurfaceLocked(store.NounFeature, doc.ID, deref(doc.Key), doc.Status, doc.PR, doc.ReviewRef, terminal); err != nil {
 				return TransitionResult{}, err
 			}
-			reviewGrainGuards, err = guardReviewGrainChange(tree, reviewGrainChange{
+			reviewGrainGuards, err = guardReviewGrainChange(tree, deps.rev(tree.Root), reviewGrainChange{
 				Noun: store.NounFeature, Epic: epicByKey(tree, doc.EpicKey), Feature: &doc, Desired: *in.ReviewGrain,
 			})
 			if err != nil {
@@ -667,7 +667,7 @@ func approveFeaturePlan(tree *store.Tree, deps Deps, owner store.Contributor, tr
 	var reviewGrainGuards []store.PlannedWrite
 	if in.ReviewGrain != nil {
 		var guardErr error
-		reviewGrainGuards, guardErr = guardReviewGrainChange(tree, reviewGrainChange{
+		reviewGrainGuards, guardErr = guardReviewGrainChange(tree, deps.rev(tree.Root), reviewGrainChange{
 			Noun: store.NounFeature, Epic: epicByKey(tree, doc.EpicKey), Feature: doc, Desired: *in.ReviewGrain,
 		})
 		if guardErr != nil {

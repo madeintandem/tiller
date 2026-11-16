@@ -1,0 +1,67 @@
+id: B-yl9d2s
+key: bugs/epic-grain-feature-prerequisites-deadlock
+title: Feature prerequisites inside an epic-grain epic deadlock, and nothing warns before the grain locks
+severity: important
+status: in_review
+blocked: false
+started: true
+owner: jc
+proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:8ac0ddfa5c491af4f57631dec60edbf9b91c0427
+        path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.md
+        observed_at: 2026-11-16T01:21:48.589146Z
+    commit:
+        kind: git_commit
+        value: git:a5bb545
+        observed_at: 2026-11-16T01:21:48.610711Z
+branch: tiller/bugs/epic-grain-feature-prerequisites-deadlock
+pr: 23
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T01:40:33.101206Z
+        against:
+            kind: git_commit
+            value: git:c8a3fe7
+            observed_at: 2026-11-16T01:40:32.993742Z
+        code: sha256:6ae2fb0364016b13aa0719d1762666d4d241a8026c92b61b65a805a9e8b4670f
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-c8a3fe7-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T01:40:33.101206Z
+        against:
+            kind: git_commit
+            value: git:c8a3fe7
+            observed_at: 2026-11-16T01:40:32.993742Z
+        code: sha256:6ae2fb0364016b13aa0719d1762666d4d241a8026c92b61b65a805a9e8b4670f
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-c8a3fe7-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T01:40:33.101206Z
+        against:
+            kind: git_commit
+            value: git:c8a3fe7
+            observed_at: 2026-11-16T01:40:32.993742Z
+        code: sha256:6ae2fb0364016b13aa0719d1762666d4d241a8026c92b61b65a805a9e8b4670f
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-c8a3fe7-out-5eb91769ea3e4ee62c604856361583e28e315f791f2b35d15596e011cd3c100d.txt

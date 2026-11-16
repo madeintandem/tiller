@@ -6,6 +6,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/vcs"
 )
 
 type reviewGrainChange struct {
@@ -34,6 +35,9 @@ type ReviewGrainChangeBlockedError struct {
 	BlockerID     string
 	BlockerKey    string
 	BlockerStatus string
+	// BlockerBranch names the local branch whose committed state carries the
+	// blocker, when the lock found it at a ref rather than in the checkout.
+	BlockerBranch string
 	BeforeGrain   string
 	AfterGrain    string
 }
@@ -43,9 +47,13 @@ func (e *ReviewGrainChangeBlockedError) Error() string {
 	if ident := reviewGrainChangeIdent(e.TargetID, e.TargetKey); ident != "" {
 		target += " " + ident
 	}
-	return fmt.Sprintf("mutate: changing review grain on %s from %s to %s is blocked by %s %s (%s)",
+	msg := fmt.Sprintf("mutate: changing review grain on %s from %s to %s is blocked by %s %s (%s)",
 		target, e.BeforeGrain, e.AfterGrain, e.BlockerNoun,
 		reviewGrainChangeIdent(e.BlockerID, e.BlockerKey), e.BlockerStatus)
+	if e.BlockerBranch != "" {
+		msg += " on branch " + e.BlockerBranch
+	}
+	return msg
 }
 
 func reviewGrainChangeIdent(id, key string) string {
@@ -88,11 +96,9 @@ func evaluateReviewGrainChange(tree *store.Tree, change reviewGrainChange) error
 		epicIDs = append(epicIDs, id)
 	}
 	sort.Strings(epicIDs)
-	epicsByKey := make(map[string]*store.Epic, len(epicIDs))
 
 	for _, id := range epicIDs {
 		epic := reviewGrainCurrentEpic(tree.Epics[id], change)
-		epicsByKey[deref(epic.Key)] = epic
 		before := store.ResolvedReviewGrain(tree.Manifest, epic, nil)
 		after := resolvedReviewGrainAfterChange(tree, epic, nil, change)
 		if before == after || (epic.PR == nil && epic.ReviewRef == nil) {
@@ -101,20 +107,8 @@ func evaluateReviewGrainChange(tree *store.Tree, change reviewGrainChange) error
 		return reviewGrainBlocked(change, store.NounEpic, epic.ID, deref(epic.Key), epic.Status, before, after)
 	}
 
-	featureIDs := make([]string, 0, len(tree.Features))
-	for id := range tree.Features {
-		featureIDs = append(featureIDs, id)
-	}
-	sort.Strings(featureIDs)
-
-	for _, id := range featureIDs {
-		feature := reviewGrainCurrentFeature(tree.Features[id], change)
-		epic := epicsByKey[feature.EpicKey]
-		before := store.ResolvedReviewGrain(tree.Manifest, epic, feature)
-		after := resolvedReviewGrainAfterChange(tree, epic, feature, change)
-		if before == after {
-			continue
-		}
+	for _, a := range reviewGrainAffectedFeatures(tree, change) {
+		feature, before, after := a.feature, a.before, a.after
 		if feature.PR != nil || feature.ReviewRef != nil {
 			return reviewGrainBlocked(change, store.NounFeature, feature.ID, deref(feature.Key), feature.Status, before, after)
 		}
@@ -131,12 +125,42 @@ func evaluateReviewGrainChange(tree *store.Tree, change reviewGrainChange) error
 	return nil
 }
 
-func guardReviewGrainChange(tree *store.Tree, change reviewGrainChange) ([]store.PlannedWrite, error) {
+// reviewGrainAffected is one feature whose resolved grain the change moves.
+type reviewGrainAffected struct {
+	feature       *store.Feature
+	before, after string
+}
+
+// reviewGrainAffectedFeatures lists, in id order, the features whose resolved
+// grain would differ after change. Only these can be retargeted by it.
+func reviewGrainAffectedFeatures(tree *store.Tree, change reviewGrainChange) []reviewGrainAffected {
+	epicsByKey := make(map[string]*store.Epic, len(tree.Epics))
+	for _, id := range sortedMapKeys(tree.Epics) {
+		epic := reviewGrainCurrentEpic(tree.Epics[id], change)
+		epicsByKey[deref(epic.Key)] = epic
+	}
+	var affected []reviewGrainAffected
+	for _, id := range sortedMapKeys(tree.Features) {
+		feature := reviewGrainCurrentFeature(tree.Features[id], change)
+		epic := epicsByKey[feature.EpicKey]
+		before := store.ResolvedReviewGrain(tree.Manifest, epic, feature)
+		after := resolvedReviewGrainAfterChange(tree, epic, feature, change)
+		if before != after {
+			affected = append(affected, reviewGrainAffected{feature: feature, before: before, after: after})
+		}
+	}
+	return affected
+}
+
+func guardReviewGrainChange(tree *store.Tree, rev vcs.Revisions, change reviewGrainChange) ([]store.PlannedWrite, error) {
 	fresh, freshChange, guards, err := freshReviewGrainState(tree, change)
 	if err != nil {
 		return nil, err
 	}
 	if err := evaluateReviewGrainChange(fresh, freshChange); err != nil {
+		return nil, err
+	}
+	if err := evaluateReviewGrainRefs(fresh, rev, freshChange); err != nil {
 		return nil, err
 	}
 	return guards, nil

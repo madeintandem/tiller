@@ -1,0 +1,13 @@
+id: EV-9salml
+type: start.bug
+at: 2026-11-16T01:21:54.626533Z
+contributor: jc
+command: start bug B-yl9d2s
+targets:
+    - B-yl9d2s
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml

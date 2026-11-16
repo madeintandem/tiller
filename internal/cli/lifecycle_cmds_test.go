@@ -2277,6 +2277,22 @@ func TestTaskDependencyBlockedLineNamesUnrecordedAggregate(t *testing.T) {
 	require.Equal(t, "Blocked: task T-bbbbbb requires T-aaaaaa; aggregate tiller/reviews/features/pay/checkout is not recorded and does not exist. Build it containing the prerequisite's complete branch, then start with --adopt-aggregate.", human)
 }
 
+// A prerequisite feature riding the same epic aggregate names the task still
+// to submit and merge, in the line and in the payload.
+func TestTaskDependencyBlockedLineNamesThePrerequisiteFeaturesPendingTask(t *testing.T) {
+	data, human, ok := branchBlockedView(&store.Tree{}, &mutate.TaskDependencyBlockedError{
+		TaskID: "T-bbbbbb", DependencyID: "F-aaaaaa", DependencyStatus: "active",
+		Branch: "tiller/reviews/epics/pay", PendingTaskID: "T-aaaaaa", PendingTaskKey: "pay/alpha/only-task", PendingTaskStatus: "in_progress",
+	})
+	require.True(t, ok)
+	blocked := data.(branchBlockedData)
+	require.Equal(t, "task_dependency_unfinished", blocked.Reason)
+	require.Equal(t, "F-aaaaaa", blocked.Dependency)
+	require.Equal(t, "T-aaaaaa", blocked.Task)
+	require.Equal(t, "pay/alpha/only-task", blocked.TaskKey)
+	require.Equal(t, "Blocked: task T-bbbbbb requires F-aaaaaa, which rides the same aggregate; submit its task T-aaaaaa (in_progress) and merge that task's complete branch into tiller/reviews/epics/pay before starting.", human)
+}
+
 // An adopted aggregate holding nothing beyond integration says so rather than
 // ending on a colon with no list.
 func TestStartAdoptAggregateHumanLineWithNoCommits(t *testing.T) {

@@ -1,0 +1,11 @@
+id: EV-d68qsc
+type: claim.bug
+at: 2026-11-16T01:21:54.537137Z
+contributor: jc
+command: claim bug bugs/epic-grain-feature-prerequisites-deadlock
+targets:
+    - B-yl9d2s
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml

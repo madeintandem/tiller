@@ -1,0 +1,13 @@
+id: EV-l7c5q9
+type: check.bug
+at: 2026-11-16T01:43:54.892Z
+contributor: jc
+command: check bug B-yl9d2s
+targets:
+    - B-yl9d2s
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml

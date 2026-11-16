@@ -311,6 +311,56 @@ func TestConfigureReviewGrainWorkInFlightRendersStableBlockedAnswer(t *testing.T
 	}
 }
 
+// TestConfigureReviewGrainNamesTheBranchHoldingWorkInFlight pins the refusal
+// when the in-flight state is committed on the task's canonical branch and the
+// integration checkout still reads the task as ready.
+func TestConfigureReviewGrainNamesTheBranchHoldingWorkInFlight(t *testing.T) {
+	for _, jsonOutput := range []bool{false, true} {
+		name := "human"
+		if jsonOutput {
+			name = "json"
+		}
+		t.Run(name, func(t *testing.T) {
+			dir := layApprovedFeatureWithTask(t)
+			branch := "tiller/" + cliFeatureKey + "/transcribe-the-schema"
+			gitRun(t, dir, "add", "-A")
+			gitRun(t, dir, "commit", "-q", "-m", "approved plan")
+			integration := gitOut(t, dir, "rev-parse", "--abbrev-ref", "HEAD")
+			gitRun(t, dir, "checkout", "-q", "-b", branch)
+			setTaskStatusOnDisk(t, "transcribe-the-schema", "in_review")
+			gitRun(t, dir, "add", "-A")
+			gitRun(t, dir, "commit", "-q", "-m", "task submitted")
+			gitRun(t, dir, "checkout", "-q", integration)
+			tree := loadTestTree(t)
+			featureID := soleFeatureID(t)
+			taskID := soleTaskID(t)
+			require.Equal(t, "ready", tree.Tasks[taskID].Status)
+			args := []string{"configure", "feature", cliFeatureKey,
+				"--review-grain", "feature", "--contributor", "jc"}
+			if jsonOutput {
+				args = append(args, "--json")
+			}
+
+			stdout, stderr, code := execCLI(t, args...)
+			output := stdout + stderr
+
+			require.Equal(t, 1, code, output)
+			require.Empty(t, gitStatus(t), "a refusal writes no state and no event")
+			if jsonOutput {
+				require.Contains(t, output, `"reason": "review_grain_work_in_flight"`)
+				require.Contains(t, output, `"blocker_id": "`+taskID+`"`)
+				require.Contains(t, output, `"blocker_status": "in_review"`)
+				require.Contains(t, output, `"blocker_branch": "`+branch+`"`)
+				return
+			}
+			require.Equal(t, "Blocked: changing review grain on "+gen.RefByID(tree, featureID)+
+				" would retarget "+gen.RefByID(tree, taskID)+
+				", currently in_review; finish and sync that review first."+
+				" That state is committed on branch "+branch+", not in this checkout.\n", output)
+		})
+	}
+}
+
 func TestConfigureReviewGrainBranchLockedRendersStableBlockedAnswer(t *testing.T) {
 	for _, jsonOutput := range []bool{false, true} {
 		name := "human"

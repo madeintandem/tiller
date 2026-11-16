@@ -96,6 +96,8 @@ type ConfigureView struct {
 	Key         string `json:"key,omitempty"`
 	ReviewGrain string `json:"review_grain"`
 	Changed     bool   `json:"changed"`
+	// DependencyCycles are the blocking cycles this change created.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 // runConfigure loads the tree, resolves the acting contributor, and drives
@@ -134,12 +136,14 @@ func runConfigure(cmd *cobra.Command, target, key, grain string) error {
 	if err != nil {
 		return emitFailure(cmd, "configure", err)
 	}
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.Configure(tree, d, mutate.ConfigureInput{Noun: target, Key: key, ReviewGrain: grain})
 	if err != nil {
 		return reportConfigureError(cmd, tree, err)
 	}
 	view := ConfigureView{Noun: res.Noun, ID: res.ID, Key: res.Key, ReviewGrain: res.ReviewGrain, Changed: res.Changed}
-	return emitSuccess(cmd, "configure", view, humanConfigure(tree, res))
+	view.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+	return emitSuccess(cmd, "configure", view, withCycleDiagnosis(humanConfigure(tree, res), view.DependencyCycles))
 }
 
 // reviewGrainSourceLabel names where a just-recorded grain took effect: the
@@ -285,6 +289,7 @@ type ReviewGrainChangeBlockedData struct {
 	BlockerID     string `json:"blocker_id"`
 	BlockerKey    string `json:"blocker_key,omitempty"`
 	BlockerStatus string `json:"blocker_status"`
+	BlockerBranch string `json:"blocker_branch,omitempty"`
 	BeforeGrain   string `json:"before_grain"`
 	AfterGrain    string `json:"after_grain"`
 }
@@ -293,21 +298,28 @@ func reviewGrainChangeBlockedView(tree *store.Tree, e *mutate.ReviewGrainChangeB
 	data := ReviewGrainChangeBlockedData{
 		Noun: e.TargetNoun, ID: e.TargetID, Key: e.TargetKey, Reason: e.Reason, Desired: e.Desired,
 		BlockerNoun: e.BlockerNoun, BlockerID: e.BlockerID, BlockerKey: e.BlockerKey,
-		BlockerStatus: e.BlockerStatus, BeforeGrain: e.BeforeGrain, AfterGrain: e.AfterGrain,
+		BlockerStatus: e.BlockerStatus, BlockerBranch: e.BlockerBranch,
+		BeforeGrain: e.BeforeGrain, AfterGrain: e.AfterGrain,
 	}
 	targetRef := e.TargetNoun
 	if e.TargetID != "" {
 		targetRef = gen.RefByID(tree, e.TargetID)
 	}
 	blockerRef := gen.RefByID(tree, e.BlockerID)
+	// The lock also reads committed state on other local branches; say which
+	// one, since this checkout's own files show nothing in flight.
+	foundOn := ""
+	if e.BlockerBranch != "" {
+		foundOn = " That state is committed on branch " + e.BlockerBranch + ", not in this checkout."
+	}
 	if e.Reason == mutate.ReasonReviewGrainBranchLocked {
 		return data, fmt.Sprintf(
-			"Blocked: changing review grain on %s would move %s into or out of the epic branch after work began; choose the grain before the first task starts.",
-			targetRef, blockerRef)
+			"Blocked: changing review grain on %s would move %s into or out of the epic branch after work began; choose the grain before the first task starts.%s",
+			targetRef, blockerRef, foundOn)
 	}
 	return data, fmt.Sprintf(
-		"Blocked: changing review grain on %s would retarget %s, currently %s; finish and sync that review first.",
-		targetRef, blockerRef, e.BlockerStatus)
+		"Blocked: changing review grain on %s would retarget %s, currently %s; finish and sync that review first.%s",
+		targetRef, blockerRef, e.BlockerStatus, foundOn)
 }
 
 // reportConfigureError classifies a mutate.Configure error: the locked-grain

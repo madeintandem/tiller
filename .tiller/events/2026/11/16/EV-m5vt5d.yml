@@ -1,0 +1,13 @@
+id: EV-m5vt5d
+type: check.bug
+at: 2026-11-16T01:33:28.408887Z
+contributor: jc
+command: check bug B-8i441b
+targets:
+    - B-8i441b
+before:
+    status: in_progress
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/review-grain-lock-blind-to-other-checkouts/bug.yml

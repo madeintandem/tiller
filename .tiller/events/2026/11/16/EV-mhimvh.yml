@@ -1,0 +1,14 @@
+id: EV-mhimvh
+type: submit.bug
+at: 2026-11-16T01:49:02.227305Z
+contributor: jc
+command: submit bug B-yl9d2s
+targets:
+    - B-yl9d2s
+before:
+    status: check
+after:
+    pr: 23
+    status: in_review
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml

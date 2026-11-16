@@ -46,14 +46,15 @@ func eligibleTask(t *store.Tree, task *store.Task, assigned bool) bool {
 	if epic.Status != "ready" && !(allowDone && epic.Status == "done") {
 		return false
 	}
-	dependenciesDone := func(ids []string) bool {
+	// dependent is the feature recording ids, nil for its epic's own.
+	dependenciesDone := func(ids []string, dependent *store.Feature) bool {
 		for _, id := range ids {
 			if e := t.Epics[id]; e != nil {
 				if e.Status != "done" && e.Status != "cancelled" && e.Status != "archived" {
 					return false
 				}
 			} else if prerequisite := t.Features[id]; prerequisite != nil {
-				if UnfinishedAssignment(prerequisite.Status) {
+				if UnfinishedAssignment(prerequisite.Status) && !FeaturePrerequisiteSubmitted(t, dependent, prerequisite) {
 					return false
 				}
 			} else {
@@ -62,7 +63,7 @@ func eligibleTask(t *store.Tree, task *store.Task, assigned bool) bool {
 		}
 		return true
 	}
-	if !dependenciesDone(epic.DependsOn) || !dependenciesDone(f.DependsOn) {
+	if !dependenciesDone(epic.DependsOn, nil) || !dependenciesDone(f.DependsOn, f) {
 		return false
 	}
 	for _, id := range task.DependsOn {
