@@ -1,7 +1,7 @@
 id: TW-jr15wo
 key: tweaks/search-reads-pointer-sources
 title: Search does not reach the documents a baseline points at
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -17,6 +17,7 @@ accepted_against:
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:19.992463Z
 branch: tiller/tweaks/search-reads-pointer-sources
+pr: 24
 gates:
     build:
         required: true
