@@ -2,7 +2,7 @@ id: B-wzm3xm
 key: bugs/recovery-refuses-shelf-gate-scopes
 title: Historical review recovery refuses a manifest whose required gates name bug, chore, or tweak
 severity: important
-status: in_review
+status: done
 blocked: false
 started: true
 owner: jc
@@ -20,6 +20,7 @@ accepted_against:
         observed_at: 2026-11-16T08:12:05.870432Z
 branch: tiller/bugs/recovery-refuses-shelf-gate-scopes
 pr: 25
+done_basis: ancestry
 gates:
     build:
         required: true

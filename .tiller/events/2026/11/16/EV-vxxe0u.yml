@@ -1,0 +1,14 @@
+id: EV-vxxe0u
+type: sync.bug
+at: 2026-11-16T16:35:42.555094Z
+contributor: jc
+command: sync bug B-wzm3xm
+targets:
+    - B-wzm3xm
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml
