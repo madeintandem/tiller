@@ -1,0 +1,13 @@
+id: EV-7rb4al
+type: check.tweak
+at: 2026-11-16T02:51:28.658765Z
+contributor: jc
+command: check tweak TW-jg1dr5
+targets:
+    - TW-jg1dr5
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.yml
