@@ -17,7 +17,7 @@ import (
 // read, so it takes no owner.
 
 func newSearchCmd() *cobra.Command {
-	var kind string
+	var kind, status string
 	cmd := &cobra.Command{
 		Use:   "search <query>",
 		Short: "Keyword search across .tiller/ and the baseline's sources.",
@@ -36,25 +36,29 @@ func newSearchCmd() *cobra.Command {
 			"truncated on a hit whose snippet is not the whole line.\n" +
 			"Prose no node owns is grouped by file after the nodes.\n" +
 			"--kind keeps one kind: epic, feature, task, bug, chore, tweak,\n" +
-			"question, amendment, or document. An unsafe or unreadable corpus\n" +
+			"question, amendment, or document. --status keeps the nodes in one\n" +
+			"stored status, or with live every node that is not done, cancelled,\n" +
+			"or archived. A document has no status, so --status leaves documents\n" +
+			"out. The two filters combine. An unsafe or unreadable corpus\n" +
 			"refuses the whole search; partial results are never returned. A\n" +
 			"baseline source that is gone, is a directory, or is not UTF-8 text is\n" +
 			"skipped; one that is a symlink or not a regular file refuses.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSearch(cmd, args[0], kind)
+			return runSearch(cmd, args[0], search.Options{Kind: kind, Status: status, Sources: true})
 		},
 	}
 	cmd.Flags().StringVar(&kind, "kind", "", "keep only results of this kind")
+	cmd.Flags().StringVar(&status, "status", "", "keep only nodes in this status, or live for work not done, cancelled, or archived (leaves documents out)")
 	return cmd
 }
 
-func runSearch(cmd *cobra.Command, query, kind string) error {
+func runSearch(cmd *cobra.Command, query string, opts search.Options) error {
 	tree, err := loadTree(cmd)
 	if err != nil {
 		return emitFailure(cmd, "search", err)
 	}
-	result, err := search.Search(tree.Root, tree, query, search.Options{Kind: kind, Sources: true})
+	result, err := search.Search(tree.Root, tree, query, opts)
 	if stableErr := tree.CheckStable(); stableErr != nil {
 		return emitFailure(cmd, "search", stableErr)
 	}

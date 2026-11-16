@@ -1022,7 +1022,7 @@ Bare `tiller guide` prints the same list, then `Suggested skill: <skill>`, the r
 
 ### Searching: search
 
-`tiller search <query> [--kind <kind>]` finds nodes and documents across `.tiller/`, and in the
+`tiller search <query> [--kind <kind>] [--status <status>]` finds nodes and documents across `.tiller/`, and in the
 source files the baseline ledger records, and is the command behind Explore search. A query that equals a node's id, its id suffix, its full
 `<key-path> (<id>)` reference, its whole key, or its key's last segment is a lookup that names that
 node. Otherwise the query is a case-insensitive substring matched against titles, keys, question
@@ -1056,9 +1056,24 @@ holds the whole line omits the field. A consumer that needs the rest reads the f
 `path` and `line`. `GET /api/search` carries the same `snippet` and `truncated`. `--kind` keeps one kind (any node noun, or
 `document`); an unknown kind is misuse (`unknown_kind`, exit `2`).
 
-The payload is `{query, kind?, count, truncated, kinds, nodes, documents}`. `count` is the number of
-results within the kind filter and `truncated` says the page holds fewer; `kinds` tallies every
-matched result by kind regardless of the filter. A bug's node result carries its `severity` when set. Each hit is `{path, line, snippet, truncated?, field?}`. A page holds at most 200 results, shared between
+**Status filter.** `--status <status>` keeps the nodes whose stored status is the one named:
+`draft`, `specced`, `proposed`, `ready`, `active`, `in_progress`, `check`, `in_review`, `done`,
+`cancelled`, `archived`, or a ledger's own `open`, `answered`, `approved`, or `withdrawn`.
+`--status live` is the one group: it keeps every node that is not `done`, `cancelled`, or
+`archived`, which is the question "is this already tracked?" before adding work. An answered
+question and an approved or withdrawn amendment are records, not finished work, and stay under
+`live`; name `open`, `draft`, or `proposed` to leave them out. The filter matches the stored status
+only, as `tiller ls --status` does, never the console's derived column. An unknown status is misuse
+(`unknown_status`, exit `2`), and the message lists the accepted values.
+
+Documents have no status, so they are in no status: any `--status` leaves every document out of
+the results, `count`, and `kinds`, baseline sources included. `--kind` and `--status` combine, so
+`--kind bug --status live` is the live bugs, and `--kind document --status <status>` is a legal
+empty answer, exit `0`. Ranking is unchanged within what the filter keeps.
+
+The payload is `{query, kind?, status?, count, truncated, kinds, nodes, documents}`. `count` is the number of
+results within the kind and status filters and `truncated` says the page holds fewer; `kinds` tallies every
+matched result by kind regardless of the kind filter, and within the status filter when one is set. A bug's node result carries its `severity` when set. Each hit is `{path, line, snippet, truncated?, field?}`. A page holds at most 200 results, shared between
 nodes and documents so neither crowds the other out. Corpus
 validation covers every regular, UTF-8, NUL-free file beneath the canonical `.tiller/` root with a
 lowercase `.md` extension, including generated `orientation.md`. Orientation
@@ -1092,7 +1107,7 @@ cannot be read refuses the whole search as `corpus_unreadable`, so no file outsi
 read and no partial result is returned.
 
 The console's Explore search does not read baseline sources. `GET /api/search` keeps the `.tiller/`
-corpus described above.
+corpus described above, and takes no status filter.
 
 ### Ranked next
 
@@ -1320,7 +1335,7 @@ Explore search remains narrower than direct provenance reads. It indexes only th
 | `tiller next` | (read) | either | ranks the legal moves for this checkout from the tree, local branch observations, and the reader's last fourteen days of events |
 | `tiller guide` | (surfaces skill text; bare, the ranked list and a skill suggestion) | either | reads the skills; bare guide reads what `tiller next` reads |
 | `tiller readout` | (surfaces the seam block) | either | reads the tree, git, readiness, and the reader's recent events; renders the block ending on the ranked list |
-| `tiller search` | (read) | either | lookup by id, key, or reference, then keyword search over node fields, safe regular-text Markdown under `.tiller/` (skipping dot-prefixed entries such as `.tiller/.cache/`), and the baseline ledger's recorded source files; one ranked result per node or document |
+| `tiller search` | (read) | either | lookup by id, key, or reference, then keyword search over node fields, safe regular-text Markdown under `.tiller/` (skipping dot-prefixed entries such as `.tiller/.cache/`), and the baseline ledger's recorded source files; one ranked result per node or document; `--kind` and `--status` narrow it |
 | `tiller query` | (read) | either | traverses recorded relationships with provenance and explicit extraction completeness; never writes an index |
 | `tiller commit state` | unbuilt design: commit | human | would commit reviewed `.tiller/` changes |
 | `tiller serve` | (serve) | human | reads working tree |

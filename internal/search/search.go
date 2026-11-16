@@ -49,13 +49,38 @@ var Kinds = []string{
 	store.NounQuestion, store.NounAmendment, KindDocument,
 }
 
+// StatusLive is the status filter that keeps every node still in play: one
+// that is not done, cancelled, or archived.
+const StatusLive = "live"
+
+// Statuses is every value a status filter takes: StatusLive, then each
+// stored status a node can hold, the work lifecycle first and the question
+// and amendment ledgers' own after it.
+var Statuses = []string{
+	StatusLive,
+	"draft", "specced", "proposed", "ready", "active", "in_progress", "check", "in_review",
+	"done", "cancelled", "archived",
+	"open", "answered", "approved", "withdrawn",
+}
+
+// inStatus reports whether a node's stored status passes the filter.
+func inStatus(filter, status string) bool {
+	if filter == StatusLive {
+		return status != "done" && !retired(status)
+	}
+	return status == filter
+}
+
 // Options narrows or widens a search. Kind keeps one kind of result (""
-// keeps all); Limit bounds the results returned, with 0 or anything above
+// keeps all); Status keeps the nodes in one stored status, or the live ones
+// with StatusLive, and leaves every document out, since a document has no
+// status; Limit bounds the results returned, with 0 or anything above
 // MaxResults meaning MaxResults. Sources adds the files the baseline ledger
 // records as derived_from sources to the corpus (sources.go); `tiller search`
 // asks for them and the console's search does not.
 type Options struct {
 	Kind    string
+	Status  string
 	Limit   int
 	Sources bool
 }
@@ -64,11 +89,13 @@ type Options struct {
 // Count is the number of results the query matched within Kind, not the
 // number returned, so Truncated can say a bounded page dropped some. Kinds
 // tallies every matched result by kind regardless of Kind, so a reader
-// narrowed to one kind still sees what the others hold. Every slice is an
+// narrowed to one kind still sees what the others hold. A Status filter
+// narrows Count and Kinds alike. Every slice is an
 // array, empty rather than null, so a caller parses one shape.
 type Result struct {
 	Query     string           `json:"query"`
 	Kind      string           `json:"kind,omitempty"`
+	Status    string           `json:"status,omitempty"`
 	Count     int              `json:"count"`
 	Truncated bool             `json:"truncated"`
 	Kinds     []KindCount      `json:"kinds"`
@@ -155,6 +182,16 @@ func matchHit(text, lower string, at int, q string) Hit {
 	return hit
 }
 
+// UnknownStatusError is the typed misuse a status filter outside Statuses
+// maps to.
+type UnknownStatusError struct{ Status string }
+
+func (e *UnknownStatusError) Error() string {
+	return fmt.Sprintf("search has no status %q; use one of %s", e.Status, strings.Join(Statuses, ", "))
+}
+func (*UnknownStatusError) ExitCode() int  { return 2 }
+func (*UnknownStatusError) Reason() string { return "unknown_status" }
+
 // ReasonCorpusUnreadable is the store.EnvError discriminator for a corpus
 // file the scan could not read: a broken repo condition, exit 3.
 const ReasonCorpusUnreadable = "corpus_unreadable"
@@ -189,6 +226,9 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 	}
 	if opts.Kind != "" && !slices.Contains(Kinds, opts.Kind) {
 		return Result{}, &UnknownKindError{Kind: opts.Kind}
+	}
+	if opts.Status != "" && !slices.Contains(Statuses, opts.Status) {
+		return Result{}, &UnknownStatusError{Status: opts.Status}
 	}
 	limit := opts.Limit
 	if limit <= 0 || limit > MaxResults {
@@ -256,7 +296,13 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 
 	ranked := nodes.ranked()
 	sortDocuments(docs, q)
-	res := Result{Query: query, Kind: opts.Kind, Kinds: countKinds(ranked, len(docs))}
+	if opts.Status != "" {
+		// The status filter narrows the answer itself, so it comes before the
+		// tally: Kinds says what each kind holds in this status.
+		ranked = slices.DeleteFunc(ranked, func(n NodeResult) bool { return !inStatus(opts.Status, n.Status) })
+		docs = nil
+	}
+	res := Result{Query: query, Kind: opts.Kind, Status: opts.Status, Kinds: countKinds(ranked, len(docs))}
 	if opts.Kind != "" {
 		ranked = slices.DeleteFunc(ranked, func(n NodeResult) bool { return n.Noun != opts.Kind })
 		if opts.Kind != KindDocument {

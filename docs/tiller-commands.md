@@ -1133,7 +1133,8 @@ tiller ls <noun> [--status <state>] [--owner <id>] [--contributor <id>] [--epic 
                                                              # (bugs, chores, tweaks) or the singular
 tiller queue [--kind <queue-kind>] [--noun <noun>]           # exact current attention entries; read-only
 tiller tree [<epic|feature> <node>] [--status] [--files]     # the work tree, whole or rooted at one node
-tiller search "<keyword>" [--kind <kind>]                    # an id, key, or ref names its node first;
+tiller search "<keyword>" [--kind <kind>] [--status <status>]
+                                                             # an id, key, or ref names its node first;
                                                              # else node fields + project-authored regular
                                                              # UTF-8, NUL-free lowercase .md under .tiller,
                                                              # plus the files baseline.yml records under
@@ -1145,7 +1146,12 @@ tiller search "<keyword>" [--kind <kind>]                    # an id, key, or re
                                                              # an excerpt around the match with … at each
                                                              # cut end; --json carries a 200-character
                                                              # snippet and truncated: true when cut;
-                                                             # orientation.md validated, not returned
+                                                             # orientation.md validated, not returned;
+                                                             # --status keeps nodes in one stored status,
+                                                             # or with live those not done, cancelled, or
+                                                             # archived; documents have no status, so
+                                                             # --status leaves them out; it combines
+                                                             # with --kind
 tiller query --from <address> [--from <address>]... --follow <direction[,direction]...> \
   [--depth <nonnegative-integer>] [--where <kind|status|owner|contributor>=<value>]...
                                                              # recorded relationships, provenance, and completeness

@@ -399,3 +399,67 @@ func TestSearchHumanCapsALongLine(t *testing.T) {
 	require.Equal(t, "A short zebra-crossing line.", hits[1].Snippet)
 	require.Equal(t, 1, strings.Count(out, `"truncated": true`), "a whole line omits the field")
 }
+
+// laySearchStatuses lays the search tree plus two bugs that match "ledger",
+// one proposed and one cancelled, and a design doc that matches too.
+func laySearchStatuses(t *testing.T) {
+	t.Helper()
+	laySearchTree(t)
+	for _, add := range [][]string{
+		{"add", "bug", "ledger-drift", "--title", "Ledger drift", "--contributor", "jc"},
+		{"add", "bug", "ledger-gone", "--title", "Ledger gone", "--contributor", "jc"},
+		{"cancel", "bug", "ledger-gone", "--reason", "not a defect", "--resolution", "invalid", "--contributor", "jc"},
+	} {
+		out, stderr, code := execCLI(t, add...)
+		require.Equal(t, 0, code, out+stderr)
+	}
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(cwd, ".tiller", "design", "02-ledger.md"), []byte("# Ledger notes\n"), 0o644))
+}
+
+// TestSearchStatusKeepsLiveWork pins --status: live leaves out the cancelled
+// bug and the document, a named status keeps exactly that status, it composes
+// with --kind and --json, and a status search does not know is misuse.
+func TestSearchStatusKeepsLiveWork(t *testing.T) {
+	laySearchStatuses(t)
+
+	out, _, code := execCLI(t, "search", "ledger")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "Ledger drift  [bug · proposed · title match]")
+	require.Contains(t, out, "Ledger gone  [bug · cancelled · title match]")
+	require.Contains(t, out, ".tiller/design/02-ledger.md  [document")
+
+	out, _, code = execCLI(t, "search", "ledger", "--status", "live")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "Ledger drift  [bug · proposed · title match]")
+	require.NotContains(t, out, "Ledger gone")
+	require.NotContains(t, out, "[document")
+
+	out, _, code = execCLI(t, "search", "ledger", "--status", "cancelled", "--kind", "bug", "--json")
+	require.Equal(t, 0, code)
+	var env struct {
+		Data struct {
+			Kind      string `json:"kind"`
+			Status    string `json:"status"`
+			Count     int    `json:"count"`
+			Nodes     []struct{ Title, Status string }
+			Documents []struct{ Path string }
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	require.Equal(t, "bug", env.Data.Kind)
+	require.Equal(t, "cancelled", env.Data.Status)
+	require.Equal(t, 1, env.Data.Count)
+	require.Len(t, env.Data.Nodes, 1)
+	require.Equal(t, "Ledger gone", env.Data.Nodes[0].Title)
+	require.Empty(t, env.Data.Documents)
+
+	out, _, code = execCLI(t, "search", "ledger", "--status", "live", "--kind", "document")
+	require.Equal(t, 0, code)
+	require.Equal(t, "No matches for \"ledger\".\n", out)
+
+	out, _, code = execCLI(t, "search", "ledger", "--status", "finished", "--json")
+	require.Equal(t, 2, code)
+	require.Contains(t, out, `"reason": "unknown_status"`)
+}
