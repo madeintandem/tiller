@@ -1,7 +1,17 @@
 id: TW-jr15wo
 key: tweaks/search-reads-pointer-sources
 title: Search does not reach the documents a baseline points at
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:ec4c9856f17a516947965bce4a38f75229008f38
+        path: .tiller/tweaks/search-reads-pointer-sources/tweak.md
+        observed_at: 2026-11-16T02:44:19.97029Z
+    commit:
+        kind: git_commit
+        value: git:e6634e2
+        observed_at: 2026-11-16T02:44:19.992463Z

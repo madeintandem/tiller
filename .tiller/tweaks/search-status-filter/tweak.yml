@@ -1,7 +1,17 @@
 id: TW-kybzhj
 key: tweaks/search-status-filter
 title: Search has no filter by status
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:e7452766ff5f3b51e7bc31a25b71dd04554b3ac7
+        path: .tiller/tweaks/search-status-filter/tweak.md
+        observed_at: 2026-11-16T02:44:20.091116Z
+    commit:
+        kind: git_commit
+        value: git:e6634e2
+        observed_at: 2026-11-16T02:44:20.113892Z
