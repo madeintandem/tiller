@@ -1,9 +1,10 @@
 id: TW-wdlmab
 key: tweaks/console-arrival-reread-other-pages
 title: Reread Home, Report, and Explore when the reader arrives again
-status: ready
+status: in_progress
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/issues/16
 accepted_against:
@@ -16,3 +17,4 @@ accepted_against:
         kind: git_commit
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:10.06357Z
+branch: tiller/tweaks/console-arrival-reread-other-pages
