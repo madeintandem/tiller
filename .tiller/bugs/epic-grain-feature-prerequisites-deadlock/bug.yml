@@ -2,9 +2,10 @@ id: B-yl9d2s
 key: bugs/epic-grain-feature-prerequisites-deadlock
 title: Feature prerequisites inside an epic-grain epic deadlock, and nothing warns before the grain locks
 severity: important
-status: ready
+status: in_progress
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 accepted_against:
     spec:
@@ -16,3 +17,4 @@ accepted_against:
         kind: git_commit
         value: git:a5bb545
         observed_at: 2026-11-16T01:21:48.610711Z
+branch: tiller/bugs/epic-grain-feature-prerequisites-deadlock
