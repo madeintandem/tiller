@@ -26,6 +26,8 @@ type linkView struct {
 	Surface    []string `json:"surface,omitempty"`
 	AttachedTo string   `json:"attached_to,omitempty"`
 	Changed    bool     `json:"changed"`
+	// DependencyCycles are the blocking cycles a recorded dependency created.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 func newLinkCmd() *cobra.Command {
@@ -130,11 +132,15 @@ func runLink(cmd *cobra.Command, noun, node string, dependsOn, surface []string,
 		})
 	}
 
+	cyclesBefore := blockingCycles(tree)
 	res, err := mutate.Link(tree, d, mutate.LinkInput{Noun: sing, Node: node, DependsOn: dependsOn, Surface: surface, Attach: attach})
 	if err != nil {
 		return reportDependencyChangeError(cmd, "link", err)
 	}
 	view := linkView{Noun: sing, ID: res.ID, Key: res.Key, Changed: res.Changed}
+	if len(dependsOn) > 0 {
+		view.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+	}
 	ref := gen.RefParts(res.Key, res.ID)
 	var lines []string
 	if len(dependsOn) > 0 {
@@ -164,5 +170,5 @@ func runLink(cmd *cobra.Command, noun, node string, dependsOn, surface []string,
 		}
 	}
 
-	return emitSuccess(cmd, "link", view, strings.Join(lines, " "))
+	return emitSuccess(cmd, "link", view, withCycleDiagnosis(strings.Join(lines, " "), view.DependencyCycles))
 }

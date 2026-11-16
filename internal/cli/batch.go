@@ -43,6 +43,8 @@ type BatchSummary struct {
 type BatchData struct {
 	Results []map[string]any `json:"results"`
 	Summary BatchSummary     `json:"summary"`
+	// DependencyCycles are the blocking cycles the batch's --review-grain created.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 // runTransitionBatch is the multi-node arm of a lifecycle verb: validate the
@@ -142,6 +144,10 @@ func applyTransitionBatch(cmd *cobra.Command, command string, tree *store.Tree, 
 	if err != nil {
 		return emitFailure(cmd, command, err)
 	}
+	var cyclesBefore []cycleDiagnosis
+	if in.ReviewGrain != nil {
+		cyclesBefore = blockingCycles(tree)
+	}
 	for _, n := range nodes {
 		res, err := mutate.Transition(tree, d, n, in)
 		if err != nil {
@@ -182,7 +188,14 @@ func applyTransitionBatch(cmd *cobra.Command, command string, tree *store.Tree, 
 	// resolves this to MomentApprove every time it actually runs; it stays a
 	// lookup rather than a literal so a future batchable gate does not have
 	// to touch this line to pick up its own readout.
-	return emitBatch(cmd, command, BatchData{Results: results, Summary: sum}, lines, gateMomentFor(command), tree.Root, act)
+	data := BatchData{Results: results, Summary: sum}
+	if in.ReviewGrain != nil {
+		data.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+		for _, cycle := range data.DependencyCycles {
+			lines = append(lines, "Blocking dependency cycle: "+cycle.Message)
+		}
+	}
+	return emitBatch(cmd, command, data, lines, gateMomentFor(command), tree.Root, act)
 }
 
 // resolveAll resolves every address before anything mutates: the all-or-nothing

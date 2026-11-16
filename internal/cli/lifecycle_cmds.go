@@ -77,6 +77,10 @@ type TransitionView struct {
 	// refusals. Only `spec` fills it today (a preserve criterion that only
 	// repeats the required tests gate); every other verb leaves it absent.
 	Warnings []string `json:"warnings,omitempty"`
+
+	// DependencyCycles are the blocking cycles `approve --review-grain`
+	// created by recording the grain.
+	DependencyCycles []cycleDiagnosis `json:"dependency_cycles,omitempty"`
 }
 
 // ReviewedAssumptionView is the SUCCESS payload of approve
@@ -1280,6 +1284,10 @@ func runTransition(cmd *cobra.Command, command, noun, node string, allowed []str
 	if err != nil {
 		return emitFailure(cmd, command, err)
 	}
+	var cyclesBefore []cycleDiagnosis
+	if in.ReviewGrain != nil {
+		cyclesBefore = blockingCycles(tree)
+	}
 	res, err := mutate.Transition(tree, d, n, in)
 	if err != nil {
 		return reportTransitionError(cmd, command, tree, n, err)
@@ -1315,6 +1323,10 @@ func runTransition(cmd *cobra.Command, command, noun, node string, allowed []str
 	view := transitionView(res)
 	view.UnpushedReview = unpushedReviewView(unpushed)
 	human := humanTransition(tree, command, in, res, gen.Ref(tree, n), unpushed)
+	if in.ReviewGrain != nil {
+		view.DependencyCycles = cyclesCreated(tree.Root, cyclesBefore)
+		human = withCycleDiagnosis(human, view.DependencyCycles)
+	}
 	var data any = view
 	if command == "submit" {
 		// A completing command ends on the ranked list.

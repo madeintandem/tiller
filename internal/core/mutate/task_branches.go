@@ -330,9 +330,23 @@ type TaskDependencyBlockedError struct {
 	// it recorded one. At task grain it takes its own PR and never enters the
 	// aggregate, so the only remedy is waiting for its merge.
 	DependencyStartedGrain string
+	// PendingTaskID, PendingTaskKey, and PendingTaskStatus name the task of
+	// a prerequisite feature riding the same epic aggregate that is not yet
+	// submitted and merged into it.
+	PendingTaskID, PendingTaskKey, PendingTaskStatus string
 }
 
 func (e *TaskDependencyBlockedError) Error() string {
+	if e.PendingTaskID != "" {
+		prefix := fmt.Sprintf("task %s depends on %s (%s), which rides the same aggregate; ", e.TaskKey, e.DependencyID, e.DependencyStatus)
+		switch {
+		case e.DependencyStartedGrain == store.ReviewGrainTask:
+			return prefix + fmt.Sprintf("its task %s (%s) started at task grain; wait for that task's PR to merge and sync before starting", e.PendingTaskKey, e.PendingTaskStatus)
+		case e.AggregateUnrecorded:
+			return prefix + fmt.Sprintf("aggregate %q is not recorded and does not exist; build it containing the complete branch of its task %s (%s), then start with --adopt-aggregate", e.Branch, e.PendingTaskKey, e.PendingTaskStatus)
+		}
+		return prefix + fmt.Sprintf("submit its task %s (%s) and merge that task's complete branch into aggregate %q first", e.PendingTaskKey, e.PendingTaskStatus, e.Branch)
+	}
 	if e.DependencyStartedGrain == store.ReviewGrainTask {
 		return fmt.Sprintf("task %s depends on %s (%s), which started at task grain; wait for its PR to merge and sync before starting", e.TaskKey, e.DependencyID, e.DependencyStatus)
 	}
@@ -350,6 +364,8 @@ func (e *TaskDependencyBlockedError) Error() string {
 // so a dependency refusal must not send anyone to assemble into it as if it
 // existed.
 func taskStartBase(tree *store.Tree, rev vcs.Revisions, feature *store.Feature, task *store.Task, minted bool) (string, error) {
+	aggregate, aggregateNoun, aggregateID := aggregateForTask(tree, feature)
+	prerequisiteInAggregate := false
 	ancestors := []store.Node{feature}
 	if epic := epicByKey(tree, feature.EpicKey); epic != nil {
 		ancestors = append(ancestors, epic)
@@ -377,6 +393,26 @@ func taskStartBase(tree *store.Tree, rev vcs.Revisions, feature *store.Feature, 
 			if dependency != nil {
 				blocked.DependencyKey, blocked.DependencyStatus = deref(dependency.NodeKey()), dependency.NodeStatus()
 			}
+			// The feature's own prerequisite on a feature riding the same
+			// epic aggregate is met by that feature's submission into it, as
+			// a same-feature task prerequisite is. An epic's prerequisites
+			// and a feature with its own review still wait for integration.
+			if prerequisite := tree.Features[id]; ancestor == store.Node(feature) && gen.RidesSameEpicAggregate(tree, feature, prerequisite) {
+				pending, submitted, assembled, err := featurePrerequisitePending(tree, rev, prerequisite, aggregate)
+				if err != nil {
+					return "", err
+				}
+				if submitted {
+					prerequisiteInAggregate = prerequisiteInAggregate || assembled
+					continue
+				}
+				blocked.Branch = aggregate
+				if pending != nil {
+					blocked.PendingTaskID, blocked.PendingTaskKey, blocked.PendingTaskStatus = pending.ID, deref(pending.Key), pending.Status
+					blocked.DependencyStartedGrain = pending.StartedGrain
+					blocked.AggregateUnrecorded = minted && pending.Status == "in_review" && pending.StartedGrain != store.ReviewGrainTask
+				}
+			}
 			return "", blocked
 		}
 	}
@@ -388,11 +424,13 @@ func taskStartBase(tree *store.Tree, rev vcs.Revisions, feature *store.Feature, 
 		return "", err
 	}
 	base = strings.TrimPrefix(base, "refs/heads/")
-	aggregate, noun, id := aggregateForTask(tree, feature)
-	if noun != "" {
+	if aggregateNoun != "" {
 		if aggregate == "" {
-			return "", &BranchSafetyError{Reason: "branch_missing", Noun: noun, NodeID: id}
+			return "", &BranchSafetyError{Reason: "branch_missing", Noun: aggregateNoun, NodeID: aggregateID}
 		}
+	}
+	if prerequisiteInAggregate {
+		base = aggregate
 	}
 	for _, dependencyID := range task.DependsOn {
 		dependency := tree.Tasks[dependencyID]
@@ -423,4 +461,35 @@ func taskStartBase(tree *store.Tree, rev vcs.Revisions, feature *store.Feature, 
 		return "", blocked
 	}
 	return base, nil
+}
+
+// featurePrerequisitePending judges a prerequisite feature riding aggregate.
+// submitted reports that every live task is done or in review with its
+// complete branch merged into aggregate; otherwise pending names the first
+// task that is not, nil when the feature has no live task yet. assembled
+// reports that the aggregate, not integration, holds some of that work. A
+// task started at task grain takes its own PR and never enters the aggregate.
+func featurePrerequisitePending(tree *store.Tree, rev vcs.Revisions, prerequisite *store.Feature, aggregate string) (pending *store.Task, submitted, assembled bool, err error) {
+	live := 0
+	for _, task := range gen.OrderTasks(tree, tree.FeatureTasks[prerequisite.ID], prerequisite.Order) {
+		if task.Status == statusCancelled || gen.AmendmentHold(tree, task) != nil {
+			continue
+		}
+		live++
+		if task.Status == statusDone {
+			continue
+		}
+		if task.Status == "in_review" && task.StartedGrain != store.ReviewGrainTask {
+			included, err := TaskIncludedInAggregate(rev, task, aggregate)
+			if err != nil {
+				return nil, false, false, err
+			}
+			if included {
+				assembled = true
+				continue
+			}
+		}
+		return task, false, false, nil
+	}
+	return nil, live > 0, assembled, nil
 }

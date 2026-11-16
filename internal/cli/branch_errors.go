@@ -46,6 +46,20 @@ func branchBlockedView(tree *store.Tree, err error) (any, string, bool) {
 	var dependency *mutate.TaskDependencyBlockedError
 	if errors.As(err, &dependency) {
 		data := branchBlockedData{Reason: "task_dependency_unfinished", Noun: store.NounTask, ID: dependency.TaskID, Branch: dependency.Branch, Dependency: dependency.DependencyID, DependencyStatus: dependency.DependencyStatus, AggregateUnrecorded: dependency.AggregateUnrecorded, DependencyStartedGrain: dependency.DependencyStartedGrain}
+		// A prerequisite feature riding the same epic aggregate names its
+		// first task not yet submitted and merged into it.
+		if dependency.PendingTaskID != "" {
+			data.Task, data.TaskKey = dependency.PendingTaskID, dependency.PendingTaskKey
+			prefix := fmt.Sprintf("Blocked: task %s requires %s, which rides the same aggregate; ", gen.RefByID(tree, dependency.TaskID), gen.RefByID(tree, dependency.DependencyID))
+			pending := gen.RefByID(tree, dependency.PendingTaskID)
+			switch {
+			case dependency.DependencyStartedGrain == store.ReviewGrainTask:
+				return data, prefix + fmt.Sprintf("its task %s started at task grain. Wait for that task's PR to merge and sync before starting.", pending), true
+			case dependency.AggregateUnrecorded:
+				return data, prefix + fmt.Sprintf("aggregate %s is not recorded and does not exist. Build it containing the complete branch of its task %s, then start with --adopt-aggregate.", dependency.Branch, pending), true
+			}
+			return data, prefix + fmt.Sprintf("submit its task %s (%s) and merge that task's complete branch into %s before starting.", pending, dependency.PendingTaskStatus, dependency.Branch), true
+		}
 		// A task-grain prerequisite can never enter the aggregate, so this
 		// outranks the adopt text even when the start also minted it.
 		if dependency.DependencyStartedGrain == store.ReviewGrainTask {
