@@ -1,0 +1,14 @@
+id: EV-y2xs4l
+type: submit.bug
+at: 2026-11-16T16:21:20.668545Z
+contributor: jc
+command: submit bug B-wzm3xm
+targets:
+    - B-wzm3xm
+before:
+    status: check
+after:
+    pr: 25
+    status: in_review
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml
