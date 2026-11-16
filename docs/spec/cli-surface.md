@@ -1022,14 +1022,15 @@ Bare `tiller guide` prints the same list, then `Suggested skill: <skill>`, the r
 
 ### Searching: search
 
-`tiller search <query> [--kind <kind>]` finds nodes and documents across `.tiller/` and is the
-command behind Explore search. A query that equals a node's id, its id suffix, its full
+`tiller search <query> [--kind <kind>]` finds nodes and documents across `.tiller/`, and in the
+source files the baseline ledger records, and is the command behind Explore search. A query that equals a node's id, its id suffix, its full
 `<key-path> (<id>)` reference, its whole key, or its key's last segment is a lookup that names that
 node. Otherwise the query is a case-insensitive substring matched against titles, keys, question
-statements and recorded answers, and the project-authored regular-text Markdown corpus. There is no
-query language and no semantic search.
+statements and recorded answers, the project-authored regular-text Markdown corpus, and the
+baseline's source files. There is no query language and no semantic search.
 
-Results are grouped, one per node and one per Markdown file no node owns. A file belongs to the node
+Results are grouped, one per node and one per file no node owns (Markdown under `.tiller/`, or a
+baseline source, named by its project-relative path). A file belongs to the node
 whose folder holds it, and an amendment's `<A-id>-<key>.md` belongs to that amendment. Nodes rank by
 how they matched, strongest first: `id`, `key`, `title` (an equal title, then a title starting with
 the query, then one containing it), `key_fragment`, then `text` for a node matched only in its prose
@@ -1055,6 +1056,28 @@ before opening or validating its type or content; a directory there is skipped w
 Stale contents, unreadable files, malformed bytes, symlinks, and FIFOs at that coordinate cannot
 break or contribute to a read. Explicit prose requests return ordinary not found. Authored files
 such as `.tiller/design/board.md` remain searchable, citable, and subject to normal safety checks.
+
+**Baseline sources.** An as-is page can be a pointer: it says where a rule lives and the rule
+itself sits in a document outside `.tiller/`. So `tiller search` also reads every file that
+`.tiller/design/baseline.yml` records under a doc's `derived_from`, at its current working-tree
+content, not at the recorded blob. Each one is a `document` result under its project-relative path
+(`docs/spec/artifact-schema.md`), ordered with the other documents. The set is exactly the ledger's
+recorded paths, each read once however many docs name it. Search does not read a source's
+neighbors, walk a directory, or scan a declared root. A recorded path is a literal file coordinate;
+it carries no anchor or line range.
+
+The ledger outlives the files it names, so three conditions skip a source without failing the
+search: the path no longer exists (or a parent of it is now a file), a directory stands at the
+path, or the file is not UTF-8 text or holds a NUL byte, since a source may be any file. A source
+under `.tiller/` is not read again, because the corpus above already covers the Markdown there, and
+a path with a dot-prefixed segment is hidden local state and is never read. Everything else is
+confined as the corpus is. Each path component is opened beneath the project root without following
+a symlink. A source that is a symlink, sits behind a symlinked directory, is not a regular file, or
+cannot be read refuses the whole search as `corpus_unreadable`, so no file outside the project is
+read and no partial result is returned.
+
+The console's Explore search does not read baseline sources. `GET /api/search` keeps the `.tiller/`
+corpus described above.
 
 ### Ranked next
 
@@ -1224,7 +1247,7 @@ The evidence reader accepts `GET` or `HEAD` at `/api/evidence?ref=<repo-relative
 
 The server bounds slow clients on every bind: 10 seconds to read request headers, 30 seconds to read a whole request, 2 minutes to write a response, and 2 minutes for an idle keep-alive connection. No endpoint streams.
 
-Explore search remains narrower than direct provenance reads. `tiller search` indexes only the canonically contained `.tiller/` Markdown corpus specified above. A valid node citation outside that corpus can be opened directly through `/file/...` and `/api/prose`, but it does not become searchable.
+Explore search remains narrower than direct provenance reads. It indexes only the canonically contained `.tiller/` Markdown corpus specified above. A valid node citation outside that corpus can be opened directly through `/file/...` and `/api/prose`, but it does not become searchable in the console. The CLI's `tiller search` adds one bounded set beyond that corpus, the baseline ledger's recorded source files, and nothing else.
 
 ---
 
@@ -1282,7 +1305,7 @@ Explore search remains narrower than direct provenance reads. `tiller search` in
 | `tiller next` | (read) | either | ranks the legal moves for this checkout from the tree, local branch observations, and the reader's last fourteen days of events |
 | `tiller guide` | (surfaces skill text; bare, the ranked list and a skill suggestion) | either | reads the skills; bare guide reads what `tiller next` reads |
 | `tiller readout` | (surfaces the seam block) | either | reads the tree, git, readiness, and the reader's recent events; renders the block ending on the ranked list |
-| `tiller search` | (read) | either | lookup by id, key, or reference, then keyword search over node fields and safe regular-text Markdown under `.tiller/`, skipping dot-prefixed entries such as `.tiller/.cache/`; one ranked result per node or document |
+| `tiller search` | (read) | either | lookup by id, key, or reference, then keyword search over node fields, safe regular-text Markdown under `.tiller/` (skipping dot-prefixed entries such as `.tiller/.cache/`), and the baseline ledger's recorded source files; one ranked result per node or document |
 | `tiller query` | (read) | either | traverses recorded relationships with provenance and explicit extraction completeness; never writes an index |
 | `tiller commit state` | unbuilt design: commit | human | would commit reviewed `.tiller/` changes |
 | `tiller serve` | (serve) | human | reads working tree |

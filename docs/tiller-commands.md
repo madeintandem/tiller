@@ -43,7 +43,7 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller resolve`](#bugs-chores-and-tweaks) | Point a bug, chore, or tweak at the tree work whose merge fixes it. |
 | [`tiller resume`](#execute-the-task-loop) | Re-enter work from review. |
 | [`tiller return`](#specify) | Reverse a mistaken pre-work gate. |
-| [`tiller search`](#reads) | Keyword search across `.tiller/`. |
+| [`tiller search`](#reads) | Keyword search across `.tiller/` and the baseline's sources. |
 | [`tiller serve`](#reads) | Serve the read-only local web console. |
 | [`tiller show`](#reads) | Print a node in full. |
 | [`tiller spec`](#specify) | Assert a feature's specify-stage output is written. |
@@ -1136,6 +1136,10 @@ tiller tree [<epic|feature> <node>] [--status] [--files]     # the work tree, wh
 tiller search "<keyword>" [--kind <kind>]                    # an id, key, or ref names its node first;
                                                              # else node fields + project-authored regular
                                                              # UTF-8, NUL-free lowercase .md under .tiller,
+                                                             # plus the files baseline.yml records under
+                                                             # derived_from (working-tree content; a
+                                                             # missing, directory, or non-text source is
+                                                             # skipped, a symlinked one refuses);
                                                              # one ranked result per node or document;
                                                              # orientation.md validated, not returned
 tiller query --from <address> [--from <address>]... --follow <direction[,direction]...> \
