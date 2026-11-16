@@ -798,6 +798,17 @@ func TestHeadBranch_NotARepo(t *testing.T) {
 	assert.Equal(t, ReasonGitUnavailable, ee.Reason)
 }
 
+func TestInRepositoryTellsNoRepositoryFromAWorkingOne(t *testing.T) {
+	_, g := newRepo(t)
+	inside, err := g.InRepository()
+	require.NoError(t, err)
+	require.True(t, inside)
+
+	inside, err = New(t.TempDir()).InRepository()
+	require.NoError(t, err, "a directory outside any repository is an answer, not an environment fault")
+	require.False(t, inside)
+}
+
 func TestRefExists(t *testing.T) {
 	dir, g := newRepo(t)
 	run(t, dir, "branch", "feature")

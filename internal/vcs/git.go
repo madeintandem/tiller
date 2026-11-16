@@ -711,6 +711,22 @@ func (g *Git) RefCommit(ref string) (string, error) {
 	return "", g.asEnv(err)
 }
 
+// InRepository reports whether Dir is inside a git repository. Git's own "not a
+// git repository" answer is false; any other failure (a missing binary, a
+// broken repository) is a git_unavailable EnvError. It lets a guard that reads
+// refs tell "there are no refs to read" from "the refs could not be read".
+func (g *Git) InRepository() (bool, error) {
+	_, err := g.run("rev-parse", "--git-dir")
+	if err == nil {
+		return true, nil
+	}
+	var ge *gitError
+	if errors.As(err, &ge) && ge.exitCode == 128 && strings.Contains(ge.stderr, "not a git repository") {
+		return false, nil
+	}
+	return false, g.asEnv(err)
+}
+
 // LocalBranches lists local branch names without resolving tags or changing refs.
 // Mutation guards use it to diagnose both directions of a ref-prefix collision.
 func (g *Git) LocalBranches() ([]string, error) {
