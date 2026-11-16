@@ -2,7 +2,7 @@ id: B-9k2p9d
 key: bugs/init-design-import-failure-strands-scaffold
 title: A failed --design import leaves a half-built scaffold that a rerun cannot finish
 severity: important
-status: in_review
+status: done
 blocked: false
 started: true
 owner: jc
@@ -19,6 +19,7 @@ accepted_against:
         observed_at: 2026-11-15T23:57:54.087565Z
 branch: tiller/bugs/init-design-import-failure-strands-scaffold
 pr: 22
+done_basis: ancestry
 gates:
     build:
         required: true

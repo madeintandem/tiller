@@ -1,0 +1,14 @@
+id: EV-3l7dij
+type: sync.bug
+at: 2026-11-16T00:09:22.822489Z
+contributor: jc
+command: sync bug B-9k2p9d
+targets:
+    - B-9k2p9d
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml
