@@ -2,7 +2,7 @@ id: B-8i441b
 key: bugs/review-grain-lock-blind-to-other-checkouts
 title: The review-grain lock misses work started in another checkout
 severity: medium
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -24,43 +24,43 @@ gates:
         kind: command
         status: pass
         run_by: jc
-        run_at: 2026-11-16T01:29:54.880404Z
+        run_at: 2026-11-16T01:34:41.182722Z
         against:
             kind: git_commit
-            value: git:d676d72
-            observed_at: 2026-11-16T01:29:54.781208Z
-        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+            value: git:bf83d0e
+            observed_at: 2026-11-16T01:34:40.971754Z
+        code: sha256:cc229e0b920f46621a65f4876633264f118e88420a2bcbd17901791a6ffa2db6
         config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
         evidence:
             - kind: command_output
-              ref: artifacts/tiller/gates/build-d676d72-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+              ref: artifacts/tiller/gates/build-bf83d0e-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
     lint:
         required: true
         kind: command
         status: pass
         run_by: jc
-        run_at: 2026-11-16T01:29:54.880404Z
+        run_at: 2026-11-16T01:34:41.182722Z
         against:
             kind: git_commit
-            value: git:d676d72
-            observed_at: 2026-11-16T01:29:54.781208Z
-        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+            value: git:bf83d0e
+            observed_at: 2026-11-16T01:34:40.971754Z
+        code: sha256:cc229e0b920f46621a65f4876633264f118e88420a2bcbd17901791a6ffa2db6
         config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
         evidence:
             - kind: command_output
-              ref: artifacts/tiller/gates/lint-d676d72-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+              ref: artifacts/tiller/gates/lint-bf83d0e-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
     tests:
         required: true
         kind: command
-        status: fail
+        status: pass
         run_by: jc
-        run_at: 2026-11-16T01:29:54.880404Z
+        run_at: 2026-11-16T01:34:41.182722Z
         against:
             kind: git_commit
-            value: git:d676d72
-            observed_at: 2026-11-16T01:29:54.781208Z
-        code: sha256:c4cf30436066a1380b5cbdb89fe609acea3b2ceb1277ad30ae75998ad6d46ac0
+            value: git:bf83d0e
+            observed_at: 2026-11-16T01:34:40.971754Z
+        code: sha256:cc229e0b920f46621a65f4876633264f118e88420a2bcbd17901791a6ffa2db6
         config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
         evidence:
             - kind: command_output
-              ref: artifacts/tiller/gates/tests-d676d72-out-944f5b88558673f79d55dd0d512d656ead5f4c82df8943fe4c3d9f22b1c4f903.txt
+              ref: artifacts/tiller/gates/tests-bf83d0e-out-b555763cf86a0f67d6b3ddbba559bc84fc669d9d7c948f1675f76a06eec413bd.txt
