@@ -1,0 +1,13 @@
+id: EV-aukxwo
+type: check.tweak
+at: 2026-11-16T03:06:27.935971Z
+contributor: jc
+command: check tweak TW-d4xb1o
+targets:
+    - TW-d4xb1o
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml
