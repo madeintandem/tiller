@@ -701,6 +701,7 @@ func gitRun(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "git %s: %s", strings.Join(args, " "), out)
 }
@@ -711,6 +712,7 @@ func setOrigin(t *testing.T, root, url string) {
 	t.Helper()
 	rm := exec.Command("git", "remote", "remove", "origin")
 	rm.Dir = root
+	rm.Env = testgit.Env()
 	_ = rm.Run() // there may be no origin to remove yet
 	if url != "" {
 		gitRun(t, root, "remote", "add", "origin", url)
@@ -774,6 +776,7 @@ func gitOut(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "git %s: %s", strings.Join(args, " "), out)
 	return strings.TrimSpace(string(out))

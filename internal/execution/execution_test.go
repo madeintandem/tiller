@@ -13,6 +13,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/execution"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -31,7 +32,7 @@ func git(t *testing.T, root string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=Execution Test", "GIT_AUTHOR_EMAIL=test@example.com", "GIT_COMMITTER_NAME=Execution Test", "GIT_COMMITTER_EMAIL=test@example.com")
+	cmd.Env = append(testgit.Env(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=Execution Test", "GIT_AUTHOR_EMAIL=test@example.com", "GIT_COMMITTER_NAME=Execution Test", "GIT_COMMITTER_EMAIL=test@example.com")
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err, "%s: %s", strings.Join(args, " "), out)
 	return strings.TrimSpace(string(out))

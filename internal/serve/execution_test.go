@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/serve"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +25,7 @@ func observationGit(t *testing.T, root string, args ...string) string {
 	t.Helper()
 	command := exec.Command("git", args...)
 	command.Dir = root
-	command.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null")
+	command.Env = append(testgit.Env(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null")
 	output, err := command.CombinedOutput()
 	require.NoError(t, err, "%s", output)
 	return string(output)

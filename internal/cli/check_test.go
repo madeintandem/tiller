@@ -39,6 +39,7 @@ func gitRun(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "git %s: %s", strings.Join(args, " "), out)
 }

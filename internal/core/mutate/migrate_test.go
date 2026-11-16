@@ -11,6 +11,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -756,6 +757,7 @@ func TestMigrateRefusesUnresolvedGitConflictsOutsideItsInputs(t *testing.T) {
 	gitCommitAllM(t, root, "right edit")
 	merge := exec.Command("git", "merge", "migration-left")
 	merge.Dir = root
+	merge.Env = testgit.Env()
 	_, err := merge.CombinedOutput()
 	require.Error(t, err, "the fixture must retain an unresolved conflict")
 	before := snapshotDir(t, root)

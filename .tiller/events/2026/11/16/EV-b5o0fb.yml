@@ -1,0 +1,13 @@
+id: EV-b5o0fb
+type: start.tweak
+at: 2026-11-16T02:44:24.304981Z
+contributor: jc
+command: start tweak TW-zwxmbu
+targets:
+    - TW-zwxmbu
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml

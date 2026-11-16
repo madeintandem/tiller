@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -334,6 +335,7 @@ func buildTiller(t *testing.T) string {
 	bin := filepath.Join(t.TempDir(), "tiller")
 	cmd := exec.Command("go", "build", "-o", bin, "./cmd/tiller")
 	cmd.Dir = root
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "go build cmd/tiller: %s", out)
 	return bin
@@ -368,7 +370,7 @@ func cleanEnv(home string) []string {
 		"GIT_COMMITTER_NAME": true, "GIT_COMMITTER_EMAIL": true,
 	}
 	var env []string
-	for _, kv := range os.Environ() {
+	for _, kv := range testgit.Env() {
 		i := strings.IndexByte(kv, '=')
 		if i < 0 || drop[kv[:i]] {
 			continue

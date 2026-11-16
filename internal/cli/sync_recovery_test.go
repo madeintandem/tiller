@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,6 +49,7 @@ func stepCommand(t *testing.T, step string) string {
 func runCopied(cwd, command string) (string, error) {
 	cmd := exec.Command("sh", "-c", command)
 	cmd.Dir = cwd
+	cmd.Env = testgit.Env()
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }

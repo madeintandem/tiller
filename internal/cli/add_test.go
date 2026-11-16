@@ -200,7 +200,9 @@ func TestAddExistingTitleMismatchShellQuotesSuggestedRename(t *testing.T) {
 
 			command := strings.TrimSpace(strings.Split(out, "\n")[2])
 			arg := strings.TrimPrefix(command, fmt.Sprintf("tiller rename epic %s --title ", epicID))
-			reproduced, err := exec.Command("sh", "-c", "printf '%s' "+arg).Output()
+			printf := exec.Command("sh", "-c", "printf '%s' "+arg)
+			printf.Env = testgit.Env()
+			reproduced, err := printf.Output()
 			require.NoError(t, err)
 			require.Equal(t, tt.title, string(reproduced), "the displayed POSIX argument reproduces the title literally")
 		})
