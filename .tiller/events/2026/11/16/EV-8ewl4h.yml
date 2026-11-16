@@ -1,0 +1,14 @@
+id: EV-8ewl4h
+type: submit.bug
+at: 2026-11-16T00:05:42.342266Z
+contributor: jc
+command: submit bug B-9k2p9d
+targets:
+    - B-9k2p9d
+before:
+    status: check
+after:
+    pr: 22
+    status: in_review
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml
