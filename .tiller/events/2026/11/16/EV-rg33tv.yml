@@ -1,0 +1,13 @@
+id: EV-rg33tv
+type: start.bug
+at: 2026-11-16T20:37:36.597547Z
+contributor: jc
+command: start bug B-iqc14u
+targets:
+    - B-iqc14u
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml
