@@ -2,8 +2,18 @@ id: B-wzm3xm
 key: bugs/recovery-refuses-shelf-gate-scopes
 title: Historical review recovery refuses a manifest whose required gates name bug, chore, or tweak
 severity: important
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
 source: internal/core/mutate/recover_review_history.go#L58-L62
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:dc0d370195d18a3f48da5bf4c63495f90f7affd9
+        path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.md
+        observed_at: 2026-11-16T08:12:05.854786Z
+    commit:
+        kind: git_commit
+        value: git:a58ee8b
+        observed_at: 2026-11-16T08:12:05.870432Z

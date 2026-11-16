@@ -1,0 +1,13 @@
+id: EV-1lr0p9
+type: approve.bug
+at: 2026-11-16T08:12:05.870538Z
+contributor: jc
+command: approve bug B-wzm3xm
+targets:
+    - B-wzm3xm
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml
