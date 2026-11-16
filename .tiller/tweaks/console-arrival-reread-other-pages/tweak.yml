@@ -1,7 +1,7 @@
 id: TW-wdlmab
 key: tweaks/console-arrival-reread-other-pages
 title: Reread Home, Report, and Explore when the reader arrives again
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -18,3 +18,49 @@ accepted_against:
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:10.06357Z
 branch: tiller/tweaks/console-arrival-reread-other-pages
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:59:03.722108Z
+        against:
+            kind: git_commit
+            value: git:fd646c1
+            observed_at: 2026-11-16T02:59:03.592371Z
+        code: sha256:1b3344affb78b9bdc83492159a20f70d690c401961f2ace989d83184fca2f0ae
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-fd646c1-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:59:03.722108Z
+        against:
+            kind: git_commit
+            value: git:fd646c1
+            observed_at: 2026-11-16T02:59:03.592371Z
+        code: sha256:1b3344affb78b9bdc83492159a20f70d690c401961f2ace989d83184fca2f0ae
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-fd646c1-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:59:03.722108Z
+        against:
+            kind: git_commit
+            value: git:fd646c1
+            observed_at: 2026-11-16T02:59:03.592371Z
+        code: sha256:1b3344affb78b9bdc83492159a20f70d690c401961f2ace989d83184fca2f0ae
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-fd646c1-out-5ca5fa713c8b35075f7610bb6a1d909e196bfc3f9e2f20eef30c05378f741b33.txt
