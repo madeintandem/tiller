@@ -2,7 +2,17 @@ id: B-iqc14u
 key: bugs/outline-links-reload-the-page
 title: An On this page link reloads the console in Safari and does not land on its heading
 severity: important
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:9d516de88638db891ffec059a0a228cb43429363
+        path: .tiller/bugs/outline-links-reload-the-page/bug.md
+        observed_at: 2026-11-16T20:37:35.922273Z
+    commit:
+        kind: git_commit
+        value: git:ff67fe8
+        observed_at: 2026-11-16T20:37:35.941406Z

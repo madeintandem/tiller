@@ -1,0 +1,13 @@
+id: EV-3h8k1z
+type: approve.bug
+at: 2026-11-16T20:37:35.941527Z
+contributor: jc
+command: approve bug B-iqc14u
+targets:
+    - B-iqc14u
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml
