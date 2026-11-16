@@ -1,7 +1,7 @@
 id: TW-jg1dr5
 key: tweaks/flaky-reread-report-file-scroll-assertion
 title: Console test races the file page's scroll to its line
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -18,3 +18,49 @@ accepted_against:
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:19.924801Z
 branch: tiller/tweaks/flaky-reread-report-file-scroll-assertion
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:47:57.766837Z
+        against:
+            kind: git_commit
+            value: git:fa761fd
+            observed_at: 2026-11-16T02:47:57.663247Z
+        code: sha256:50f5444d570464a23f789e5cfa26f9b58f15b0b2491d38f607e1c0513b36abe2
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-fa761fd-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:47:57.766837Z
+        against:
+            kind: git_commit
+            value: git:fa761fd
+            observed_at: 2026-11-16T02:47:57.663247Z
+        code: sha256:50f5444d570464a23f789e5cfa26f9b58f15b0b2491d38f607e1c0513b36abe2
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-fa761fd-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T02:47:57.766837Z
+        against:
+            kind: git_commit
+            value: git:fa761fd
+            observed_at: 2026-11-16T02:47:57.663247Z
+        code: sha256:50f5444d570464a23f789e5cfa26f9b58f15b0b2491d38f607e1c0513b36abe2
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-fa761fd-out-a7e73532583036f87e6978a9a0af1b0391ae6c314f09052c2980b2c785d8b086.txt
