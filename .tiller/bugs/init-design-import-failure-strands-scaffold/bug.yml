@@ -1,0 +1,67 @@
+id: B-9k2p9d
+key: bugs/init-design-import-failure-strands-scaffold
+title: A failed --design import leaves a half-built scaffold that a rerun cannot finish
+severity: important
+status: in_review
+blocked: false
+started: true
+owner: jc
+proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:4267c727622e208c7948fd4b7277509881a74ce6
+        path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.md
+        observed_at: 2026-11-15T23:57:54.06834Z
+    commit:
+        kind: git_commit
+        value: git:01755cd
+        observed_at: 2026-11-15T23:57:54.087565Z
+branch: tiller/bugs/init-design-import-failure-strands-scaffold
+pr: 22
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T00:01:58.384883Z
+        against:
+            kind: git_commit
+            value: git:7e2175c
+            observed_at: 2026-11-16T00:01:58.284179Z
+        code: sha256:9ec996ee3796b876ef018e8e68638f29421b58993af1987d0b3507de966ae6a8
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-7e2175c-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T00:01:58.384883Z
+        against:
+            kind: git_commit
+            value: git:7e2175c
+            observed_at: 2026-11-16T00:01:58.284179Z
+        code: sha256:9ec996ee3796b876ef018e8e68638f29421b58993af1987d0b3507de966ae6a8
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-7e2175c-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T00:01:58.384883Z
+        against:
+            kind: git_commit
+            value: git:7e2175c
+            observed_at: 2026-11-16T00:01:58.284179Z
+        code: sha256:9ec996ee3796b876ef018e8e68638f29421b58993af1987d0b3507de966ae6a8
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-7e2175c-out-3549f5871ced41916d64bc561776758b6df17fcf1eca4f1b03e8b0cda3e4d647.txt

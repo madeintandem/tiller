@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/madeintandem/tiller/internal/store"
 )
@@ -35,6 +36,39 @@ func dirHasFiles(dir string) bool {
 // ignores (.DS_Store, Thumbs.db). Junk filter only; everything else copies.
 func junkFile(name string) bool {
 	return store.IsJunkFile(name)
+}
+
+// firstUnreadableFile reads every file importDocs would copy from dir and
+// returns the first path that cannot be listed or read, with its error. Init
+// runs it before any scaffold write: the import happens only on the init that
+// writes the manifest, so a read that fails mid-copy would leave a scaffold no
+// rerun can complete.
+func firstUnreadableFile(dir string) (string, error) {
+	var failed string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr == nil && (d.IsDir() || !d.Type().IsRegular() || junkFile(d.Name())) {
+			return nil
+		}
+		if walkErr == nil {
+			_, walkErr = os.ReadFile(path)
+		}
+		if walkErr != nil {
+			failed = path
+		}
+		return walkErr
+	})
+	return failed, err
+}
+
+// unreadableDesignFileHint says what to do about a source file that could not
+// be read. A cloud-synced placeholder whose contents are not on local disk
+// fails with EDEADLK, whose text ("resource deadlock avoided") names nothing
+// the developer can act on.
+func unreadableDesignFileHint(err error) string {
+	if errors.Is(err, syscall.EDEADLK) {
+		return "its contents are not on this disk (a cloud-synced placeholder); download the file, then rerun"
+	}
+	return "make the file readable, then rerun"
 }
 
 // importDocs copies an explicitly selected external source into destDir beneath

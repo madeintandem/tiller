@@ -211,8 +211,9 @@ func initNextSteps(result initResult) string {
 // resolveDesignSource validates the optional --design flag up front, before any
 // scaffold write. It returns nil when the flag is unset, the validated source
 // otherwise, and a misuse error (exit 2) when the path is missing, not a
-// directory, empty, or overlapping root's .tiller/design/. It only reads the
-// source here; the copy-out happens once the scaffold exists.
+// directory, empty, overlapping root's .tiller/design/, or holding a file that
+// cannot be read. It only reads the source here; the copy-out happens once the
+// scaffold exists.
 func resolveDesignSource(cmd *cobra.Command, root string) (*designSource, error) {
 	raw, _ := cmd.Flags().GetString("design")
 	if strings.TrimSpace(raw) == "" {
@@ -240,6 +241,15 @@ func resolveDesignSource(cmd *cobra.Command, root string) (*designSource, error)
 	}
 	if !dirHasFiles(abs) {
 		return nil, &usageError{reason: "invalid_design", msg: fmt.Sprintf("design source %q is empty", raw)}
+	}
+	if path, err := firstUnreadableFile(abs); err != nil {
+		// The path is named once: a path error repeats it in its own text.
+		cause := err
+		var pathErr *fs.PathError
+		if errors.As(err, &pathErr) {
+			cause = pathErr.Err
+		}
+		return nil, &usageError{reason: "invalid_design", msg: fmt.Sprintf("design source file %q cannot be read: %v; %s", path, cause, unreadableDesignFileHint(err))}
 	}
 	return &designSource{abs: abs, at: time.Now().UTC().Format(time.RFC3339)}, nil
 }

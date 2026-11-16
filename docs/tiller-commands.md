@@ -117,6 +117,8 @@ Fresh imports refuse a root-level `baseline.yml` entry, case-insensitively, befo
 scaffold. Import a prose-only directory, never another project's confirmation state.
 A `--design` source that contains `.tiller/design/` (the checkout, an ancestor, or the same
 directory through a symlink) or lies inside it refuses with `invalid_design` before any write.
+A source holding a file that cannot be read refuses the same way and names the file, so a failed
+import never leaves a half-built `.tiller/`; a cloud-synced file must be downloaded first.
 An init rerun over a checkout whose orientation a newer binary generated refuses with
 `orientation_newer` (exit `3`) and changes nothing; same- and older-generation reruns refresh it.
 

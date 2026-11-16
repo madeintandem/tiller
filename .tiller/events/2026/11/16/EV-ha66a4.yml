@@ -1,0 +1,13 @@
+id: EV-ha66a4
+type: check.bug
+at: 2026-11-16T00:05:21.105287Z
+contributor: jc
+command: check bug B-9k2p9d
+targets:
+    - B-9k2p9d
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/init-design-import-failure-strands-scaffold/bug.yml
