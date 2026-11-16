@@ -1,0 +1,14 @@
+id: EV-v6aj0e
+type: submit.bug
+at: 2026-11-16T19:09:44.561102Z
+contributor: jc
+command: submit bug B-un831z
+targets:
+    - B-un831z
+before:
+    status: check
+after:
+    pr: 26
+    status: in_review
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml
