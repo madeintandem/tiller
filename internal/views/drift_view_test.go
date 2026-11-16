@@ -11,6 +11,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/drift"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
@@ -100,7 +101,9 @@ func TestDesignRemedyPreservesLiteralShellArgument(t *testing.T) {
 	view := views.DriftReportOf(driftTree(t), rep)
 	remedy := view.Candidates[drift.MarkerShiftedDesign][0].Remedy
 	// Parse the runnable command as a shell would, without invoking Tiller.
-	out, err := exec.Command("sh", "-c", "set -- "+remedy+"; printf '%s\\n' \"$@\"").CombinedOutput()
+	parse := exec.Command("sh", "-c", "set -- "+remedy+"; printf '%s\\n' \"$@\"")
+	parse.Env = testgit.Env()
+	out, err := parse.CombinedOutput()
 	require.NoError(t, err)
 	require.Equal(t, "tiller\napprove\ndesign\n--\n"+doc+"\n", string(out))
 }

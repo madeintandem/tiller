@@ -1,0 +1,11 @@
+id: EV-45ij7o
+type: claim.tweak
+at: 2026-11-16T02:44:24.228204Z
+contributor: jc
+command: claim tweak tweaks/test-fixtures-inherit-git-environment
+targets:
+    - TW-zwxmbu
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/test-fixtures-inherit-git-environment/tweak.yml

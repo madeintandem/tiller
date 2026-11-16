@@ -1,0 +1,13 @@
+id: EV-3m9yn3
+type: approve.tweak
+at: 2026-11-16T02:44:20.113981Z
+contributor: jc
+command: approve tweak TW-kybzhj
+targets:
+    - TW-kybzhj
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/tweaks/search-status-filter/tweak.yml

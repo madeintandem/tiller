@@ -15,6 +15,7 @@ import NodeTabs from "../components/NodeTabs";
 import OutOfDate from "../components/OutOfDate";
 import PageLoading from "../components/PageLoading";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../lib/useArrivalKey";
 import AgentUseTab from "./report/AgentUseTab";
 import { formatAsOf } from "./report/format";
 import ProjectTab from "./report/ProjectTab";
@@ -23,7 +24,11 @@ import "./report.css";
 
 export default function Report() {
   useDocumentTitle(titleOf("Report"));
-  const { data, error } = useFetch<ReportPayload>(reportPath);
+  // Arriving at Report again while it is showing rereads it once and keeps
+  // the figures until the answer lands (lib/useArrivalKey.ts). The tab and
+  // range changes below carry IN_PAGE_CHANGE so they read nothing.
+  const arrival = useArrivalKey();
+  const { data, error } = useFetch<ReportPayload>(reportPath, { refreshKey: arrival, retainData: true });
   const [search, setSearch] = useSearchParams();
   // ?tab= picks the view; Project is the default and leaves the URL bare. An
   // unknown value reads as Project through NodeTabs' first-tab rule.
@@ -34,7 +39,7 @@ export default function Report() {
     } else {
       next.set("tab", key);
     }
-    setSearch(next, { replace: true });
+    setSearch(next, { replace: true, state: IN_PAGE_CHANGE });
   };
   // ?weeks= picks the Project charts' range the same way: the default leaves
   // the URL bare, and an unknown value reads as the default.
@@ -47,7 +52,7 @@ export default function Report() {
     } else {
       next.set("weeks", rangeValue(picked));
     }
-    setSearch(next, { replace: true });
+    setSearch(next, { replace: true, state: IN_PAGE_CHANGE });
   };
   // An error replaces the report only before there is one; a failed reread
   // keeps the last figures, marked out of date.
@@ -88,7 +93,7 @@ export default function Report() {
           onSelect={selectTab}
           tabs={[
             { key: "project", label: "Project", render: () => <ProjectTab report={data} range={range} onRange={selectRange} /> },
-            { key: "agent-use", label: "Agent use", render: () => <AgentUseTab /> },
+            { key: "agent-use", label: "Agent use", render: () => <AgentUseTab arrival={arrival} /> },
           ]}
         />
       ) : (

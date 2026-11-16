@@ -9,6 +9,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -598,6 +599,7 @@ func TestEndToEndSyncRefusesOnTheTaskBranchCLI(t *testing.T) {
 	require.Equal(t, branch, gitOut(t, dir, "branch", "--show-current"))
 	merged := exec.Command("git", "merge-base", "--is-ancestor", branch, "main")
 	merged.Dir = dir
+	merged.Env = testgit.Env()
 	require.Error(t, merged.Run(), "the branch is genuinely NOT merged into main")
 
 	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")
@@ -624,6 +626,7 @@ func TestEndToEndSquashMergeReachesDoneCLI(t *testing.T) {
 
 	notAncestor := exec.Command("git", "merge-base", "--is-ancestor", branch, "main")
 	notAncestor.Dir = dir
+	notAncestor.Env = testgit.Env()
 	require.Error(t, notAncestor.Run(), "a squash leaves ancestry false; only content can see this merge")
 
 	out, _, code := execCLI(t, "sync", "--contributor", "jc", "--json")

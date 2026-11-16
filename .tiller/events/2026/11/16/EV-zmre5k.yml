@@ -1,0 +1,13 @@
+id: EV-zmre5k
+type: start.tweak
+at: 2026-11-16T02:44:20.717195Z
+contributor: jc
+command: start tweak TW-jr15wo
+targets:
+    - TW-jr15wo
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.yml

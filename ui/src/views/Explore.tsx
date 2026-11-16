@@ -5,7 +5,8 @@
 // heading, and mode nav stay mounted while the outlet swaps among the
 // no-selection pane, ledger, node reader, and loose-file reader. That stable
 // element position preserves navigator expansion across destinations.
-// Navigator reads refresh on pathname changes alongside the reading pane.
+// Navigator reads refresh on pathname changes alongside the reading pane, and
+// when the reader arrives at /explore again while it is showing.
 //
 // The active mode lives in the URL (?mode=), so every view here is linkable
 // and the back button walks real history instead of lost component state.
@@ -77,6 +78,7 @@ import { listPath, statusPath, treePath } from "../api";
 import Navigator, { isSelected, type NavigatorSelection } from "../components/Navigator";
 import PageLoading from "../components/PageLoading";
 import { titleOf, useDocumentTitle, useFetch } from "../hooks";
+import { useArrivalKey } from "../lib/useArrivalKey";
 import {
   autoOpen,
   closeAll,
@@ -143,7 +145,14 @@ export default function Explore() {
   // the tab itself there. In Browse the pane's own destination (node, file,
   // questions, amendments, or the empty pane) owns the title.
   useDocumentTitle(split ? null : titleOf("Explore"));
-  const navigatorOptions = { refreshKey: location.pathname, retainData: true };
+  // Arriving at /explore again while it is showing (the topbar link, a mode
+  // link, back and forward between two /explore addresses) rereads this
+  // layout's reads once (lib/useArrivalKey.ts). The count is for /explore
+  // alone: the layout also stands behind node, file, and ledger pages, whose
+  // own address changes must not reread the navigator. Each mode's own URL
+  // rewrites carry IN_PAGE_CHANGE.
+  const exploreArrival = useArrivalKey("/explore");
+  const navigatorOptions = { refreshKey: `${location.pathname} ${exploreArrival}`, retainData: true };
   const tree = useFetch<TreeModel>(split ? treePath : null, navigatorOptions);
   const questions = useFetch<ListResult>(listPath("question"), navigatorOptions);
   const bugs = useFetch<ListResult>(split ? listPath("bug") : null, navigatorOptions);
@@ -156,7 +165,7 @@ export default function Explore() {
   // map's storage key is namespaced per project, the same every-view-
   // fetches-its-own posture Build.tsx already keeps for its own default
   // selection (App.tsx:66-72).
-  const summary = useFetch<ProjectSummary>(statusPath);
+  const summary = useFetch<ProjectSummary>(statusPath, { refreshKey: exploreArrival, retainData: true });
   const projectKey = summary.data?.project.key;
   // Whether /api/status resolved to real project
   // data or to an error, "settled" is the one signal the auto-open effect

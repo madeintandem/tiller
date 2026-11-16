@@ -22,6 +22,7 @@ import (
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/selfupdate"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -256,6 +257,7 @@ func buildTillerCandidate(t *testing.T) string {
 	binary := filepath.Join(t.TempDir(), "tiller")
 	build := exec.Command("go", "build", "-o", binary, "./cmd/tiller")
 	build.Dir = repo
+	build.Env = testgit.Env()
 	output, err := build.CombinedOutput()
 	require.NoError(t, err, string(output))
 	body, err := os.ReadFile(binary)

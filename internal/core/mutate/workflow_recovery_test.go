@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/workflow"
 	"github.com/stretchr/testify/require"
 )
@@ -19,6 +20,7 @@ func TestWorkflowObservesHistoricalReviewWithoutItsLiveAggregateBranch(t *testin
 		t.Helper()
 		cmd := exec.Command("git", args...)
 		cmd.Dir = root
+		cmd.Env = testgit.Env()
 		out, err := cmd.CombinedOutput()
 		require.NoError(t, err, "%s", out)
 		return strings.TrimSpace(string(out))

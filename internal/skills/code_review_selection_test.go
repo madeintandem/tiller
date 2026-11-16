@@ -96,6 +96,7 @@ func (p reviewProcedure) run(template string, values ...string) (string, int) {
 	line := strings.NewReplacer(values...).Replace(template)
 	cmd := exec.Command("sh", "-c", line)
 	cmd.Dir = p.dir
+	cmd.Env = testgit.Env()
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err := cmd.Run()
@@ -113,6 +114,7 @@ func (p reviewProcedure) run(template string, values ...string) (string, int) {
 func (p reviewProcedure) refExists(branch string) bool {
 	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
 	cmd.Dir = p.dir
+	cmd.Env = testgit.Env()
 	return cmd.Run() == nil
 }
 

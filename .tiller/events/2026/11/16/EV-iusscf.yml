@@ -1,0 +1,14 @@
+id: EV-iusscf
+type: sync.bug
+at: 2026-11-16T02:43:51.236635Z
+contributor: jc
+command: sync bug B-yl9d2s
+targets:
+    - B-yl9d2s
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/epic-grain-feature-prerequisites-deadlock/bug.yml

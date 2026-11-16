@@ -59,6 +59,7 @@ import { useSearchParams } from "react-router-dom";
 import type { MapView } from "../../api";
 import { mapPath } from "../../api";
 import { useFetch } from "../../hooks";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../../lib/useArrivalKey";
 import "../map.css";
 import "./map/relationships.css";
 import { chainOf } from "./map/chain";
@@ -275,7 +276,9 @@ export default function MapMode({
   // failed there is no name to say, and a blank card at the center of the
   // map would read as a bug, so it says the generic noun instead.
   const rootTitle = projectName ?? "Project";
-  const { data: view, error } = useFetch<MapView>(mapPath);
+  // Arriving at the map again rereads it (lib/useArrivalKey.ts); selecting a
+  // card is the page's own rewrite and reads nothing.
+  const { data: view, error } = useFetch<MapView>(mapPath, { refreshKey: useArrivalKey(), retainData: true });
   const { inspectionView, mappedResults: activeResults, clearedOnRefresh, selectContext, mapResults, clearMappedResults } = useRelationshipContext(view);
   const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState<Set<string> | null>(null);
@@ -335,7 +338,7 @@ export default function MapMode({
     } else {
       next.set("sel", id);
     }
-    setParams(next, { replace: true });
+    setParams(next, { replace: true, state: IN_PAGE_CHANGE });
   };
 
   // The persist effects below read all three of these through refs so that

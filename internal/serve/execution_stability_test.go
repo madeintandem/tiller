@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func movingGit(t *testing.T, root string, args ...string) {
 	t.Helper()
 	command := exec.Command("git", args...)
 	command.Dir = root
-	command.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=Smoke", "GIT_AUTHOR_EMAIL=smoke@example.test", "GIT_COMMITTER_NAME=Smoke", "GIT_COMMITTER_EMAIL=smoke@example.test")
+	command.Env = append(testgit.Env(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_AUTHOR_NAME=Smoke", "GIT_AUTHOR_EMAIL=smoke@example.test", "GIT_COMMITTER_NAME=Smoke", "GIT_COMMITTER_EMAIL=smoke@example.test")
 	output, err := command.CombinedOutput()
 	require.NoError(t, err, "%s", output)
 }

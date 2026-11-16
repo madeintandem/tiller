@@ -1,0 +1,11 @@
+id: EV-flcj0m
+type: claim.tweak
+at: 2026-11-16T02:44:22.219507Z
+contributor: jc
+command: claim tweak tweaks/search-status-filter
+targets:
+    - TW-kybzhj
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/search-status-filter/tweak.yml

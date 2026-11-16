@@ -51,6 +51,7 @@ import SectionHead from "../components/SectionHead";
 import TitleRef from "../components/TitleRef";
 import { addrOf } from "../lib/addr";
 import { has } from "../lib/has";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../lib/useArrivalKey";
 import { statusLabel } from "../lib/statusLabel";
 import { DriftReport } from "./Drift";
 import type { BandRun } from "./home/bands";
@@ -77,7 +78,12 @@ export default function Home({ summary, summaryError }: HomeProps) {
   useDocumentTitle(summary === null ? "Tiller" : titleOf(summary.project.name));
   // Every fetch is unconditional so hook order never depends on whether
   // summary has arrived yet (App.tsx's own useFetch resolves independently).
-  const queue = useFetch<Queue>(queuePath);
+  // Arriving at Home again while it is showing (its topbar link, or back and
+  // forward between two Home addresses) rereads every one of them once, and
+  // the desk stays until the answers land (lib/useArrivalKey.ts). The tab
+  // changes below carry IN_PAGE_CHANGE so they read nothing.
+  const arrival = { refreshKey: useArrivalKey(), retainData: true };
+  const queue = useFetch<Queue>(queuePath, arrival);
   // Every read here keeps its last answer while a reread is pending (the
   // topbar refresh, or the window regaining focus): useFetch does that for
   // every caller. Four of them decide which tabs exist and what their counts
@@ -86,14 +92,14 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // and let NodeTabs' unknown-tab fallback flip the pane to Overview. A
   // reread that fails keeps the last good data and also sets the error,
   // which each panel states beside its content.
-  const epics = useFetch<ListResult>(listPath("epic"));
-  const features = useFetch<ListResult>(listPath("feature"));
-  const tasks = useFetch<ListResult>(listPath("task"));
-  const questions = useFetch<ListResult>(listPath("question"));
-  const bugs = useFetch<ListResult>(listPath("bug"));
-  const chores = useFetch<ListResult>(listPath("chore"));
-  const tweaks = useFetch<ListResult>(listPath("tweak"));
-  const drift = useFetch<DriftReportView>(driftPath);
+  const epics = useFetch<ListResult>(listPath("epic"), arrival);
+  const features = useFetch<ListResult>(listPath("feature"), arrival);
+  const tasks = useFetch<ListResult>(listPath("task"), arrival);
+  const questions = useFetch<ListResult>(listPath("question"), arrival);
+  const bugs = useFetch<ListResult>(listPath("bug"), arrival);
+  const chores = useFetch<ListResult>(listPath("chore"), arrival);
+  const tweaks = useFetch<ListResult>(listPath("tweak"), arrival);
+  const drift = useFetch<DriftReportView>(driftPath, arrival);
 
   // The pulse's three reads. recapPath("24h") is a FIXED window - never
   // "visit" - so it never advances the last-visit mark (the invariant this
@@ -102,14 +108,14 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // fetchBoard); nextPath is the ranked next list for the served checkout's
   // contributor, read never recomputed, which also carries the dependency
   // diagnostics.
-  const justHappened = useFetch<Recap>(recapPath("24h"));
-  const board = useFetch<Streams>(boardPath);
-  const upNext = useFetch<NextAnswer>(nextPath);
+  const justHappened = useFetch<Recap>(recapPath("24h"), arrival);
+  const board = useFetch<Streams>(boardPath, arrival);
+  const upNext = useFetch<NextAnswer>(nextPath, arrival);
   // Read with the desk rather than when the Branches tab opens, since the
   // tab's own label carries the diagnostics count. Like every read above it
   // refetches on mount and on every reread (the topbar refresh, the window
   // regaining focus), never on a tab switch.
-  const execution = useFetch<ExecutionSnapshot>(executionPath);
+  const execution = useFetch<ExecutionSnapshot>(executionPath, arrival);
 
   // A failed status read replaces the desk only when there is no desk yet;
   // after a failed reread the last one stays, marked out of date.
@@ -150,7 +156,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
   const selectKind = (kind: string) => {
     const next = new URLSearchParams(search);
     next.set("needs", kind);
-    setSearch(next, { replace: true });
+    setSearch(next, { replace: true, state: IN_PAGE_CHANGE });
   };
   const renderRun = (run: BandRun) =>
     run.type === "band" ? (
@@ -177,7 +183,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
     } else {
       next.set("tab", key);
     }
-    setSearch(next, { replace: true });
+    setSearch(next, { replace: true, state: IN_PAGE_CHANGE });
   };
   const diagnosticCount = execution.data?.diagnostics.length ?? 0;
   // Recovered reviews are provenance, not decisions, and a finished one never

@@ -9,6 +9,7 @@ import (
 
 	"github.com/madeintandem/tiller/internal/core/drift"
 	"github.com/madeintandem/tiller/internal/core/mutate"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/madeintandem/tiller/internal/vcs"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +18,9 @@ import (
 // read wrote nothing there.
 func objectCounts(t *testing.T, root string) string {
 	t.Helper()
-	out, err := exec.Command("git", "-C", root, "count-objects", "-v").Output()
+	cmd := exec.Command("git", "-C", root, "count-objects", "-v")
+	cmd.Env = testgit.Env()
+	out, err := cmd.Output()
 	require.NoError(t, err)
 	return string(out)
 }

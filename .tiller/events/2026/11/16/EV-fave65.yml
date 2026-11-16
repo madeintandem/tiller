@@ -1,0 +1,13 @@
+id: EV-fave65
+type: check.tweak
+at: 2026-11-16T03:11:58.327444Z
+contributor: jc
+command: check tweak TW-kybzhj
+targets:
+    - TW-kybzhj
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/search-status-filter/tweak.yml

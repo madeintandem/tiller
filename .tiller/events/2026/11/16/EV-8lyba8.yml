@@ -1,0 +1,13 @@
+id: EV-8lyba8
+type: start.tweak
+at: 2026-11-16T02:44:21.521529Z
+contributor: jc
+command: start tweak TW-d4xb1o
+targets:
+    - TW-d4xb1o
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml

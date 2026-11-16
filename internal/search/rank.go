@@ -136,13 +136,14 @@ func matchNodes(tree *store.Tree, q string) nodeSet {
 			fields = append(fields, struct{ name, text string }{"answer", *qn.Answer})
 		}
 		for _, f := range fields {
-			at := strings.Index(strings.ToLower(f.text), q)
+			lower := strings.ToLower(f.text)
+			at := strings.Index(lower, q)
 			if at < 0 || strings.TrimSpace(f.text) == "" {
 				continue
 			}
-			set.add(tree, n, rankText).addHit(Hit{
-				Path: questionsLedger, Snippet: snippet(f.text, at, len(q)), Field: f.name,
-			})
+			hit := matchHit(f.text, lower, at, q)
+			hit.Path, hit.Field = questionsLedger, f.name
+			set.add(tree, n, rankText).addHit(hit)
 		}
 	}
 	return set

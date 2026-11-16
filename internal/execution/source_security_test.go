@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -221,6 +222,7 @@ func TestMissingPromisorObjectsNeverFetchOrWriteObjects(t *testing.T) {
 			args = append(args, packPrefix)
 			cmd := exec.Command("git", args...)
 			cmd.Dir = root
+			cmd.Env = testgit.Env()
 			cmd.Stdin = strings.NewReader(head + "\n")
 			out, err := cmd.CombinedOutput()
 			require.NoError(t, err, "%s", out)
@@ -255,7 +257,7 @@ func TestMissingPromisorObjectsNeverFetchOrWriteObjects(t *testing.T) {
 			// the fixture exposes lazy fetching, rather than an inert remote.
 			control := exec.Command("git", "cat-file", "-p", oid)
 			control.Dir = root
-			control.Env = append(os.Environ(), "GIT_NO_LAZY_FETCH=0")
+			control.Env = append(testgit.Env(), "GIT_NO_LAZY_FETCH=0")
 			controlOut, err := control.CombinedOutput()
 			require.NoError(t, err, "%s", controlOut)
 			_, err = os.Stat(marker)

@@ -11,6 +11,7 @@ import (
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/testgit"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,6 +39,7 @@ func TestSchemaNineRecoveryMigrationOnlyStampsManifestAndAppendsEvent(t *testing
 	refs := func() []byte {
 		cmd := exec.Command("git", "show-ref")
 		cmd.Dir = root
+		cmd.Env = testgit.Env()
 		data, err := cmd.Output()
 		require.NoError(t, err)
 		return data

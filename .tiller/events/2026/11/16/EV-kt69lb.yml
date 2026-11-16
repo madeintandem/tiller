@@ -1,0 +1,11 @@
+id: EV-kt69lb
+type: claim.tweak
+at: 2026-11-16T02:44:22.804159Z
+contributor: jc
+command: claim tweak tweaks/flaky-reread-report-file-scroll-assertion
+targets:
+    - TW-jg1dr5
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.yml
