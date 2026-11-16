@@ -1,9 +1,10 @@
 id: TW-kybzhj
 key: tweaks/search-status-filter
 title: Search has no filter by status
-status: ready
+status: check
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 accepted_against:
     spec:
@@ -15,3 +16,50 @@ accepted_against:
         kind: git_commit
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:20.113892Z
+branch: tiller/tweaks/search-status-filter
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T03:09:09.724058Z
+        against:
+            kind: git_commit
+            value: git:4a395f7
+            observed_at: 2026-11-16T03:09:09.629468Z
+        code: sha256:774810175df348863b44ed0301bd8b2b9bd6d1000561b244a5c0ae8f1567532e
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-4a395f7-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T03:09:09.724058Z
+        against:
+            kind: git_commit
+            value: git:4a395f7
+            observed_at: 2026-11-16T03:09:09.629468Z
+        code: sha256:774810175df348863b44ed0301bd8b2b9bd6d1000561b244a5c0ae8f1567532e
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-4a395f7-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T03:09:09.724058Z
+        against:
+            kind: git_commit
+            value: git:4a395f7
+            observed_at: 2026-11-16T03:09:09.629468Z
+        code: sha256:774810175df348863b44ed0301bd8b2b9bd6d1000561b244a5c0ae8f1567532e
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-4a395f7-out-00fd5e37f1c940fa67e6495cff374183daa8b97cdf8fc89d2c1fba5034211e0c.txt
