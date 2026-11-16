@@ -38,7 +38,7 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 	}
 	var originalManifest []byte
 	switch mode {
-	case "missing_policy", "invalid_policy", "null_policy", "unknown_policy", "null_required_policy", "empty_policy", "pending_task_c8", "invalid_task_criterion":
+	case "missing_policy", "invalid_policy", "null_policy", "unknown_policy", "null_required_policy", "empty_policy", "shelf_scoped_policy", "unknown_scope_policy", "pending_task_c8", "invalid_task_criterion":
 		var err error
 		originalManifest, err = os.ReadFile(filepath.Join(root, ".tiller/tiller.yml"))
 		require.NoError(t, err)
@@ -59,6 +59,17 @@ func recoveryFixtureMode(t *testing.T, grain, mode string, extraTaskKeys ...stri
 			sections["required"] = nil
 		case "empty_policy":
 			policy["gates"] = map[string]any{}
+		case "shelf_scoped_policy", "unknown_scope_policy":
+			// A project may list the shelf nouns beside feature and task, as one
+			// brownfield project did (B-wzm3xm). Shelf work reads gates at task
+			// grain, so the extra names change nothing a feature or task must carry.
+			scope := []string{store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak}
+			if mode == "unknown_scope_policy" {
+				scope = []string{store.NounFeature, store.NounTask, "widget"}
+			}
+			for _, name := range []string{"build", "tests"} {
+				sections["required"].(map[string]any)[name].(map[string]any)["on"] = scope
+			}
 		default:
 			sections["required"].(map[string]any)["evals"].(map[string]any)["on"] = []string{store.NounTask}
 		}
@@ -607,6 +618,37 @@ func TestRecoverReviewAcceptsHistoricalContractWithoutNode(t *testing.T) {
 			require.Equal(t, "done", task.Status)
 		})
 	}
+}
+
+// A historical manifest that scopes required gates to the shelf nouns as well
+// as feature and task is the manifest check ran under while the review was
+// live (B-wzm3xm). Recovery records it and sync then closes the reviewed work.
+func TestRecoverReviewAcceptsHistoricalShelfGateScopes(t *testing.T) {
+	t.Parallel()
+	for _, grain := range []string{store.ReviewGrainFeature, store.ReviewGrainEpic} {
+		t.Run(grain, func(t *testing.T) {
+			root, d, in := recoveryFixtureMode(t, grain, "shelf_scoped_policy")
+			recovered, err := mutate.RecoverReview(load(t, root), d, in)
+			require.NoError(t, err)
+			require.True(t, recovered.Changed)
+			gitCommitAllM(t, root, "record recovery under shelf-scoped gates")
+			_, err = mutate.Sync(load(t, root), d, vcs.New(root), mutate.SyncInput{})
+			require.NoError(t, err)
+			task := resolveNode(t, load(t, root), store.NounTask, "pay/checkout/alfa").(*store.Task)
+			require.Equal(t, "done", task.Status)
+		})
+	}
+}
+
+func TestRecoverReviewRefusesUnknownHistoricalGateScope(t *testing.T) {
+	t.Parallel()
+	root, d, in := recoveryFixtureMode(t, store.ReviewGrainFeature, "unknown_scope_policy")
+	before := snapshotDir(t, filepath.Join(root, ".tiller"))
+	_, err := mutate.RecoverReview(load(t, root), d, in)
+	var refusal *mutate.RecoverReviewError
+	require.ErrorAs(t, err, &refusal)
+	require.Equal(t, "historical_policy_invalid", refusal.Reason)
+	requireNoWrites(t, before, snapshotDir(t, filepath.Join(root, ".tiller")))
 }
 
 func TestRecoverReviewRefusesHistoricalContractNamingAnotherFeature(t *testing.T) {

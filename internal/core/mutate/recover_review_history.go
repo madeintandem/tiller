@@ -55,9 +55,11 @@ func readRecoveryHistory(rev vcs.HistoricalRevisions, head, root string) (*recov
 		if spec.Kind == store.GateKindCommand && strings.TrimSpace(spec.Run) == "" {
 			return nil, recoveryRefusal("historical_policy_invalid", name, "restore the required historical command")
 		}
+		// A shelf noun in on: is inert: bugs, chores, and tweaks read gates at
+		// task grain, so naming one changes nothing a feature or task carries.
 		for _, noun := range spec.On {
-			if noun != store.NounFeature && noun != store.NounTask {
-				return nil, recoveryRefusal("historical_policy_invalid", name, "restore supported historical feature/task gate scopes")
+			if noun != store.NounFeature && noun != store.NounTask && !store.IsWorkNoun(noun) {
+				return nil, recoveryRefusal("historical_policy_invalid", name, "restore supported historical gate scopes: feature, task, bug, chore, or tweak")
 			}
 		}
 	}
