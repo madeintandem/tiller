@@ -1,0 +1,14 @@
+id: EV-z63oyb
+type: add.bug
+at: 2026-11-16T08:11:51.500494Z
+contributor: jc
+command: add bug recovery-refuses-shelf-gate-scopes
+targets:
+    - B-wzm3xm
+after:
+    key: bugs/recovery-refuses-shelf-gate-scopes
+    severity: important
+    status: proposed
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.md
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml

@@ -1,0 +1,9 @@
+id: B-wzm3xm
+key: bugs/recovery-refuses-shelf-gate-scopes
+title: Historical review recovery refuses a manifest whose required gates name bug, chore, or tweak
+severity: important
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
+source: internal/core/mutate/recover_review_history.go#L58-L62
