@@ -18,6 +18,7 @@ import { searchPath } from "../../api";
 import EmptyNote from "../../components/EmptyNote";
 import NodeTabs from "../../components/NodeTabs";
 import { useFetch } from "../../hooks";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../../lib/useArrivalKey";
 import { readHideCancelled, writeHideCancelled } from "./hideCancelled";
 import { AllResults, KindResults, kindPlural, SEARCH_KINDS } from "./SearchResults";
 
@@ -30,8 +31,11 @@ export default function SearchMode() {
   // A kind the console does not know reads as All, so a stale or hand-edited
   // link still answers rather than tripping the API's misuse refusal.
   const kind = SEARCH_KINDS.includes(raw) ? raw : ALL;
+  // Arriving at this address again rereads the answer, which is what
+  // submitting the same search from the topbar does (lib/useArrivalKey.ts).
   const { data: answer, error, loading } = useFetch<SearchResult>(
     query === "" ? null : searchPath(query, kind === ALL ? undefined : kind),
+    { refreshKey: useArrivalKey(), retainData: true },
   );
   // The navigator's Hide cancelled preference applies here too, and the
   // summary counts what it took out so a filtered list never reads as whole.
@@ -64,7 +68,8 @@ export default function SearchMode() {
     const updated = new URLSearchParams(params);
     if (next === ALL) updated.delete("kind");
     else updated.set("kind", next);
-    setParams(updated);
+    // The page's own rewrite: it reads the kind it names and nothing else.
+    setParams(updated, { state: IN_PAGE_CHANGE });
   }
 
   return (

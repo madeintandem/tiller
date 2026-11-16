@@ -61,7 +61,7 @@ async function renderTab(payload: UsageReport) {
     "fetch",
     vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(payload) })),
   );
-  const view = render(<AgentUseTab />);
+  const view = render(<AgentUseTab arrival="0" />);
   await screen.findByText(/^Measured:/);
   return view;
 }

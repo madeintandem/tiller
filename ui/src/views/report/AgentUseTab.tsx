@@ -14,8 +14,10 @@ import { Tile } from "./KpiStrip";
 import { ModelStageChart, StageChart } from "./StageCharts";
 import { CacheReadsChart, FreshTokensChart } from "./UsageWeekCharts";
 
-export default function AgentUseTab() {
-  const { data, error } = useFetch<UsageReport>(usageReportPath);
+// arrival is the page's arrival count (lib/useArrivalKey.ts): the tab rereads
+// with the page when the reader arrives at Report again.
+export default function AgentUseTab({ arrival }: { arrival: string }) {
+  const { data, error } = useFetch<UsageReport>(usageReportPath, { refreshKey: arrival, retainData: true });
   // A failed reread keeps the last figures, marked out of date.
   if (error !== null && data === null) return <p className="error">{error}</p>;
   if (data === null) return <p className="muted" role="status">Loading…</p>;

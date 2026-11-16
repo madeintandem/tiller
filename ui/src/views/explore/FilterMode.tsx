@@ -9,6 +9,7 @@ import Chip from "../../components/Chip";
 import Contributors from "../../components/Contributors";
 import EmptyNote from "../../components/EmptyNote";
 import { useFetch } from "../../hooks";
+import { IN_PAGE_CHANGE, useArrivalKey } from "../../lib/useArrivalKey";
 import { withActivityPhrase } from "../../lib/activityPhrase";
 import { displayStatus } from "../../lib/displayStatus";
 import { statusLabel } from "../../lib/statusLabel";
@@ -41,7 +42,13 @@ export default function FilterMode() {
     const value = params.get(axis);
     if (value !== null && value !== "") filters[axis] = value;
   }
-  const { data, error, loading } = useFetch<ListResult>(listPath(noun, filters));
+  // Arriving at this address again rereads the list (lib/useArrivalKey.ts).
+  // A filter change is the page's own rewrite: it reads the list it names and
+  // nothing else, so every one below carries IN_PAGE_CHANGE.
+  const { data, error, loading } = useFetch<ListResult>(listPath(noun, filters), {
+    refreshKey: useArrivalKey(),
+    retainData: true,
+  });
   // useFetch retains refreshes of an identical path. Filter picks change the
   // path, so retain the bar's last success locally, scoped strictly to noun.
   const [retained, setRetained] = useState<{ noun: string; data: ListResult | null }>({ noun, data: null });
@@ -60,14 +67,14 @@ export default function FilterMode() {
     if (stale.length === 0) return;
     const next = new URLSearchParams(params);
     for (const axis of stale) next.delete(axis);
-    setParams(next, { replace: true });
+    setParams(next, { replace: true, state: IN_PAGE_CHANGE });
   }, [fresh, loading, params, setParams]);
 
   function navigate(change: (next: URLSearchParams) => void) {
     const next = new URLSearchParams(params);
     next.set("mode", "filter");
     change(next);
-    setParams(next);
+    setParams(next, { state: IN_PAGE_CHANGE });
   }
 
   function pick(axis: FilterAxis, value: string) {
