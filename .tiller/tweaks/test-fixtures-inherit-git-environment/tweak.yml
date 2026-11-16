@@ -1,7 +1,7 @@
 id: TW-zwxmbu
 key: tweaks/test-fixtures-inherit-git-environment
 title: Test fixtures outside internal/vcs spawn git with the inherited environment
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -18,6 +18,7 @@ accepted_against:
         value: git:ed8b7e1
         observed_at: 2026-11-14T23:45:10.186968Z
 branch: tiller/tweaks/test-fixtures-inherit-git-environment
+pr: 24
 gates:
     build:
         required: true
