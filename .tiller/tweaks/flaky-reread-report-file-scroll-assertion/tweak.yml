@@ -1,9 +1,10 @@
 id: TW-jg1dr5
 key: tweaks/flaky-reread-report-file-scroll-assertion
 title: Console test races the file page's scroll to its line
-status: ready
+status: in_progress
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 source: https://github.com/madeintandem/tiller/actions/runs/43745942783
 accepted_against:
@@ -16,3 +17,4 @@ accepted_against:
         kind: git_commit
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:19.924801Z
+branch: tiller/tweaks/flaky-reread-report-file-scroll-assertion
