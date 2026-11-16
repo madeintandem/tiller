@@ -1,7 +1,7 @@
 id: TW-d4xb1o
 key: tweaks/search-caps-long-match-lines
 title: Search prints a matching line in full, however long
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -17,6 +17,7 @@ accepted_against:
         value: git:e6634e2
         observed_at: 2026-11-16T02:44:20.051911Z
 branch: tiller/tweaks/search-caps-long-match-lines
+pr: 24
 gates:
     build:
         required: true

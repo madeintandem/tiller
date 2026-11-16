@@ -1,0 +1,14 @@
+id: EV-j8n06k
+type: submit.tweak
+at: 2026-11-16T03:17:15.660715Z
+contributor: jc
+command: submit tweak TW-d4xb1o
+targets:
+    - TW-d4xb1o
+before:
+    status: check
+after:
+    pr: 24
+    status: in_review
+files:
+    - path: .tiller/tweaks/search-caps-long-match-lines/tweak.yml
