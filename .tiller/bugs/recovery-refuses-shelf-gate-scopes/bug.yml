@@ -2,7 +2,7 @@ id: B-wzm3xm
 key: bugs/recovery-refuses-shelf-gate-scopes
 title: Historical review recovery refuses a manifest whose required gates name bug, chore, or tweak
 severity: important
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -19,3 +19,49 @@ accepted_against:
         value: git:a58ee8b
         observed_at: 2026-11-16T08:12:05.870432Z
 branch: tiller/bugs/recovery-refuses-shelf-gate-scopes
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T08:13:58.097653Z
+        against:
+            kind: git_commit
+            value: git:3b095c3
+            observed_at: 2026-11-16T08:13:58.012433Z
+        code: sha256:50be03fc7091e424d6541201de60714253954bd8b1a347c3b83f9c21f44a4847
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-3b095c3-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T08:13:58.097653Z
+        against:
+            kind: git_commit
+            value: git:3b095c3
+            observed_at: 2026-11-16T08:13:58.012433Z
+        code: sha256:50be03fc7091e424d6541201de60714253954bd8b1a347c3b83f9c21f44a4847
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-3b095c3-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-16T08:13:58.097653Z
+        against:
+            kind: git_commit
+            value: git:3b095c3
+            observed_at: 2026-11-16T08:13:58.012433Z
+        code: sha256:50be03fc7091e424d6541201de60714253954bd8b1a347c3b83f9c21f44a4847
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-3b095c3-out-535e2d3c9ca405d5404898aa25c87b8bc8ebbf0791752678f4201d9479cdd1a6.txt
