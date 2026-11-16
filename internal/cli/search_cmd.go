@@ -11,26 +11,31 @@ import (
 // This file implements `tiller search <query>`, the keyword read
 // (cli-surface.md, "Inspecting and maintaining") behind the console's Explore
 // search (ui-surface.md, "Explore"): a lookup by id, key, or reference plus a
-// case-insensitive scan over .tiller/ markdown and the tree's
-// human-meaningful fields, answered as one ranked result per node and one per
-// unowned document. It is a project-level read, so it takes no owner.
+// case-insensitive scan over .tiller/ markdown, the source files the baseline
+// ledger records, and the tree's human-meaningful fields, answered as one
+// ranked result per node and one per unowned document. It is a project-level
+// read, so it takes no owner.
 
 func newSearchCmd() *cobra.Command {
 	var kind string
 	cmd := &cobra.Command{
 		Use:   "search <query>",
-		Short: "Keyword search across .tiller/.",
-		Long: "search finds nodes and documents under .tiller/. A query that is a\n" +
+		Short: "Keyword search across .tiller/ and the baseline's sources.",
+		Long: "search finds nodes and documents under .tiller/, and the source files\n" +
+			"the baseline ledger records under derived_from. A query that is a\n" +
 			"node's id, id suffix, key, or full reference names that node, and it\n" +
 			"comes first. Otherwise the query is a case-insensitive keyword matched\n" +
-			"against titles, keys, question statements and answers, and every\n" +
-			"regular UTF-8 markdown file under .tiller/.\n\n" +
+			"against titles, keys, question statements and answers, every\n" +
+			"regular UTF-8 markdown file under .tiller/, and each baseline source\n" +
+			"at its working-tree content.\n\n" +
 			"Results are one per node, ranked id, key, title, key fragment, then\n" +
 			"prose-only by how often the node matches, each with its first few\n" +
 			"matching lines. Prose no node owns is grouped by file after the nodes.\n" +
 			"--kind keeps one kind: epic, feature, task, bug, chore, tweak,\n" +
 			"question, amendment, or document. An unsafe or unreadable corpus\n" +
-			"refuses the whole search; partial results are never returned.",
+			"refuses the whole search; partial results are never returned. A\n" +
+			"baseline source that is gone, is a directory, or is not UTF-8 text is\n" +
+			"skipped; one that is a symlink or not a regular file refuses.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runSearch(cmd, args[0], kind)
@@ -45,7 +50,7 @@ func runSearch(cmd *cobra.Command, query, kind string) error {
 	if err != nil {
 		return emitFailure(cmd, "search", err)
 	}
-	result, err := search.Search(tree.Root, tree, query, search.Options{Kind: kind})
+	result, err := search.Search(tree.Root, tree, query, search.Options{Kind: kind, Sources: true})
 	if stableErr := tree.CheckStable(); stableErr != nil {
 		return emitFailure(cmd, "search", stableErr)
 	}

@@ -1,0 +1,11 @@
+id: EV-gdkj8b
+type: claim.tweak
+at: 2026-11-16T02:44:20.645861Z
+contributor: jc
+command: claim tweak tweaks/search-reads-pointer-sources
+targets:
+    - TW-jr15wo
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/search-reads-pointer-sources/tweak.yml

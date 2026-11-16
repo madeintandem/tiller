@@ -2,9 +2,10 @@
 // console's Explore search (cli-surface.md, "Inspecting and maintaining";
 // ui-surface.md, "Explore"). It stays plain: a case-insensitive substring
 // match over every markdown file under .tiller/ plus the tree's
-// human-meaningful fields, and an exact lookup by id, key, or reference. No
-// query language and no semantic search. The whole corpus is local files, so
-// the honest implementation is a scan, not an index.
+// human-meaningful fields, and an exact lookup by id, key, or reference. The
+// CLI also reads the source files the baseline ledger records. No query
+// language and no semantic search. The whole corpus is local files, so the
+// honest implementation is a scan, not an index.
 //
 // What it returns is organized rather than raw. Every match inside one node
 // folds into that node's single result, and prose no node owns folds into one
@@ -46,12 +47,15 @@ var Kinds = []string{
 	store.NounQuestion, store.NounAmendment, KindDocument,
 }
 
-// Options narrows a search. Kind keeps one kind of result ("" keeps all);
-// Limit bounds the results returned, with 0 or anything above MaxResults
-// meaning MaxResults.
+// Options narrows or widens a search. Kind keeps one kind of result (""
+// keeps all); Limit bounds the results returned, with 0 or anything above
+// MaxResults meaning MaxResults. Sources adds the files the baseline ledger
+// records as derived_from sources to the corpus (sources.go); `tiller search`
+// asks for them and the console's search does not.
 type Options struct {
-	Kind  string
-	Limit int
+	Kind    string
+	Limit   int
+	Sources bool
 }
 
 // Result is the payload `tiller search --json` and GET /api/search share.
@@ -103,14 +107,15 @@ type NodeResult struct {
 	rank rank
 }
 
-// DocumentResult is one file no node owns and its matching lines.
+// DocumentResult is one file no node owns and its matching lines: Markdown
+// under .tiller/, or a baseline source anywhere in the project.
 type DocumentResult struct {
 	Path  string `json:"path"`
 	Count int    `json:"count"`
 	Hits  []Hit  `json:"hits"`
 }
 
-// Hit is one match: a line in a .tiller/ markdown file (Line is 1-based), or
+// Hit is one match: a line in a searched file (Line is 1-based), or
 // a question's statement or recorded answer, which live only in the ledger
 // yaml and carry Line 0 and the Field that matched.
 type Hit struct {
@@ -145,7 +150,8 @@ func (*UnknownKindError) Reason() string { return "unknown_kind" }
 // Search answers query over the repo at root: node fields and identities
 // first (matchNodes), then every project-authored .md file under .tiller/
 // line by line, each line folded into the node attribute() places its file
-// under or into its file's document result.
+// under or into its file's document result. With Options.Sources the
+// baseline ledger's source files follow, each a document.
 func Search(root string, tree *store.Tree, query string, opts Options) (Result, error) {
 	q := strings.ToLower(strings.TrimSpace(query))
 	if q == "" {
@@ -162,27 +168,23 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 	nodes := matchNodes(tree, q)
 	var docs []*DocumentResult
 	docByPath := map[string]*DocumentResult{}
-	err := corpus.Walk(context.Background(), root, func(document corpus.Document) error {
-		p := strings.TrimPrefix(document.Path, ".tiller/")
-		// Orientation is generated guidance, not the project's authored prose.
-		if p == "orientation.md" {
-			return nil
-		}
-		owner := attribute(tree, p)
-		for i, line := range strings.Split(string(document.Content), "\n") {
+	// scan matches one file line by line, folding each matching line into
+	// the node that owns the file, or into the file's own document result.
+	scan := func(filePath string, content []byte, owner store.Node) {
+		for i, line := range strings.Split(string(content), "\n") {
 			at := strings.Index(strings.ToLower(line), q)
 			if at < 0 {
 				continue
 			}
-			hit := Hit{Path: path.Join(".tiller", p), Line: i + 1, Snippet: snippet(line, at, len(q))}
+			hit := Hit{Path: filePath, Line: i + 1, Snippet: snippet(line, at, len(q))}
 			if owner != nil {
 				nodes.add(tree, owner, rankText).addHit(hit)
 				continue
 			}
-			doc := docByPath[hit.Path]
+			doc := docByPath[filePath]
 			if doc == nil {
-				doc = &DocumentResult{Path: hit.Path, Hits: []Hit{}}
-				docByPath[hit.Path] = doc
+				doc = &DocumentResult{Path: filePath, Hits: []Hit{}}
+				docByPath[filePath] = doc
 				docs = append(docs, doc)
 			}
 			doc.Count++
@@ -190,6 +192,14 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 				doc.Hits = append(doc.Hits, hit)
 			}
 		}
+	}
+	err := corpus.Walk(context.Background(), root, func(document corpus.Document) error {
+		p := strings.TrimPrefix(document.Path, ".tiller/")
+		// Orientation is generated guidance, not the project's authored prose.
+		if p == "orientation.md" {
+			return nil
+		}
+		scan(path.Join(".tiller", p), document.Content, attribute(tree, p))
 		return nil
 	})
 	if err != nil {
@@ -198,6 +208,17 @@ func Search(root string, tree *store.Tree, query string, opts Options) (Result, 
 		return Result{}, &store.EnvError{
 			Reason: ReasonCorpusUnreadable,
 			Msg:    fmt.Sprintf("search cannot read the .tiller/ corpus: %v", err),
+		}
+	}
+	if opts.Sources {
+		err := walkSources(root, tree.Baseline, func(sourcePath string, content []byte) {
+			scan(sourcePath, content, nil)
+		})
+		if err != nil {
+			return Result{}, &store.EnvError{
+				Reason: ReasonCorpusUnreadable,
+				Msg:    fmt.Sprintf("search cannot read a %v", err),
+			}
 		}
 	}
 
