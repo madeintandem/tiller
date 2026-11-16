@@ -285,3 +285,117 @@ func TestSearchArgCountIsMisuse(t *testing.T) {
 	_, _, code = execCLI(t, "search", "one", "two")
 	require.Equal(t, 2, code)
 }
+
+// laySearchSource records docs/spec/rules.md as a derived_from source in the
+// baseline ledger and lays the file with content only that file holds.
+func laySearchSource(t *testing.T) string {
+	t.Helper()
+	laySearchTree(t)
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	ledger := "docs:\n    - path: as-is/rules.md\n      describes:\n        - internal\n      derived_from:\n" +
+		"        - kind: git_blob\n          value: git:e4e6449ef45d9b6e092ee27d0aae3e66acefc31a\n" +
+		"          path: docs/spec/rules.md\n          observed_at: 2026-11-14T23:09:09Z\n" +
+		"        - kind: git_blob\n          value: git:e4e6449ef45d9b6e092ee27d0aae3e66acefc31a\n" +
+		"          path: docs/spec/deleted.md\n          observed_at: 2026-11-14T23:09:09Z\n"
+	require.NoError(t, os.WriteFile(filepath.Join(cwd, ".tiller", "design", "baseline.yml"), []byte(ledger), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(cwd, "docs", "spec"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(cwd, "docs", "spec", "rules.md"),
+		[]byte("# Rules\n\nEvery rubric names its grader.\n"), 0o644))
+	return cwd
+}
+
+// TestSearchReadsBaselineSources pins the wider corpus at the CLI: a keyword
+// that appears only in a file the baseline ledger records as a source returns
+// that file and its matching line, in human and --json output, and a recorded
+// source that no longer exists is skipped.
+func TestSearchReadsBaselineSources(t *testing.T) {
+	laySearchSource(t)
+
+	out, _, code := execCLI(t, "search", "rubric")
+	require.Equal(t, 0, code)
+	require.Equal(t, "docs/spec/rules.md  [document · 1 match]\n"+
+		"    docs/spec/rules.md:3  Every rubric names its grader.\n", out)
+
+	out, _, code = execCLI(t, "search", "rubric", "--kind", "document", "--json")
+	require.Equal(t, 0, code)
+	var env struct {
+		Data struct {
+			Count     int `json:"count"`
+			Documents []struct {
+				Path  string `json:"path"`
+				Count int    `json:"count"`
+				Hits  []struct {
+					Path    string `json:"path"`
+					Line    int    `json:"line"`
+					Snippet string `json:"snippet"`
+				} `json:"hits"`
+			} `json:"documents"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	require.Equal(t, 1, env.Data.Count)
+	require.Len(t, env.Data.Documents, 1)
+	require.Equal(t, "docs/spec/rules.md", env.Data.Documents[0].Path)
+	require.Len(t, env.Data.Documents[0].Hits, 1)
+	require.Equal(t, "docs/spec/rules.md", env.Data.Documents[0].Hits[0].Path)
+	require.Equal(t, 3, env.Data.Documents[0].Hits[0].Line)
+	require.Equal(t, "Every rubric names its grader.", env.Data.Documents[0].Hits[0].Snippet)
+}
+
+// TestSearchRefusesASymlinkedBaselineSource: a source replaced by a symlink
+// out of the project is the corpus refusal, exit 3, and nothing is read
+// through it.
+func TestSearchRefusesASymlinkedBaselineSource(t *testing.T) {
+	cwd := laySearchSource(t)
+	outside := filepath.Join(t.TempDir(), "outside.md")
+	require.NoError(t, os.WriteFile(outside, []byte("outside-only-token\n"), 0o644))
+	source := filepath.Join(cwd, "docs", "spec", "rules.md")
+	require.NoError(t, os.Remove(source))
+	require.NoError(t, os.Symlink(outside, source))
+
+	out, _, code := execCLI(t, "search", "outside-only-token", "--json")
+	require.Equal(t, 3, code)
+	require.Contains(t, out, `"reason": "corpus_unreadable"`)
+	require.NotContains(t, out, `"documents"`)
+}
+
+// TestSearchHumanCapsALongLine pins the bounded excerpt: a matching line
+// longer than the cap prints 120 characters of it around the match with an
+// ellipsis at each cut end, a line under the cap prints unchanged, and
+// --json keeps its 200-character snippet and marks it truncated.
+func TestSearchHumanCapsALongLine(t *testing.T) {
+	laySearchTree(t)
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	long := strings.Repeat("a", 300) + " zebra-crossing " + strings.Repeat("b", 300)
+	require.NoError(t, os.WriteFile(filepath.Join(cwd, ".tiller", "design", "02-long.md"),
+		[]byte(long+"\nA short zebra-crossing line.\n"), 0o644))
+
+	out, _, code := execCLI(t, "search", "zebra-crossing")
+	require.Equal(t, 0, code)
+	require.Equal(t, ".tiller/design/02-long.md  [document · 2 matches]\n"+
+		"    .tiller/design/02-long.md:1  …"+strings.Repeat("a", 39)+" zebra-crossing "+strings.Repeat("b", 65)+"…\n"+
+		"    .tiller/design/02-long.md:2  A short zebra-crossing line.\n", out)
+
+	out, _, code = execCLI(t, "search", "zebra-crossing", "--json")
+	require.Equal(t, 0, code)
+	var env struct {
+		Data struct {
+			Documents []struct {
+				Hits []struct {
+					Snippet   string `json:"snippet"`
+					Truncated bool   `json:"truncated"`
+				} `json:"hits"`
+			} `json:"documents"`
+		} `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &env))
+	hits := env.Data.Documents[0].Hits
+	require.Len(t, hits, 2)
+	require.True(t, hits[0].Truncated)
+	require.Equal(t, "…"+strings.Repeat("a", 59)+" zebra-crossing "+strings.Repeat("b", 125), hits[0].Snippet)
+	require.False(t, hits[1].Truncated)
+	require.Equal(t, "A short zebra-crossing line.", hits[1].Snippet)
+	require.Equal(t, 1, strings.Count(out, `"truncated": true`), "a whole line omits the field")
+}
