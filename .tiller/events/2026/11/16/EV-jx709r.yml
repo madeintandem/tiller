@@ -1,0 +1,14 @@
+id: EV-jx709r
+type: add.bug
+at: 2026-11-16T18:07:38.186833Z
+contributor: jc
+command: add bug explore-pane-top-edge-shows-scrolled-content
+targets:
+    - B-un831z
+after:
+    key: bugs/explore-pane-top-edge-shows-scrolled-content
+    severity: minor
+    status: proposed
+files:
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.md
+    - path: .tiller/bugs/explore-pane-top-edge-shows-scrolled-content/bug.yml
