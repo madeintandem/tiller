@@ -1,0 +1,13 @@
+id: EV-2esfu6
+type: check.bug
+at: 2026-11-16T08:16:58.591917Z
+contributor: jc
+command: check bug B-wzm3xm
+targets:
+    - B-wzm3xm
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/recovery-refuses-shelf-gate-scopes/bug.yml
