@@ -1,0 +1,14 @@
+id: EV-5q82n6
+type: submit.tweak
+at: 2026-11-16T03:17:19.328652Z
+contributor: jc
+command: submit tweak TW-jg1dr5
+targets:
+    - TW-jg1dr5
+before:
+    status: check
+after:
+    pr: 24
+    status: in_review
+files:
+    - path: .tiller/tweaks/flaky-reread-report-file-scroll-assertion/tweak.yml
