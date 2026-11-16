@@ -65,7 +65,7 @@ func TestReviewGrainChangeReadSetStalesWhenDescendantStartsBeforeCommit(t *testi
 	task.Status = "ready"
 	task.Started = false
 	writeReviewGrainAtomicYAML(t, reviewGrainAtomicTaskPath(tree.Root), task)
-	guards, err := guardReviewGrainChange(tree, reviewGrainChange{
+	guards, err := guardReviewGrainChange(tree, nil, reviewGrainChange{
 		Noun: store.NounEpic, Epic: epic, Desired: store.ReviewGrainFeature,
 	})
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestReviewGrainChangeReadSetStalesWhenAffectedNodeChangesBeforeCommit(t *te
 			task.Status = "ready"
 			task.Started = false
 			writeReviewGrainAtomicYAML(t, reviewGrainAtomicTaskPath(tree.Root), task)
-			guards, err := guardReviewGrainChange(tree, reviewGrainChange{
+			guards, err := guardReviewGrainChange(tree, nil, reviewGrainChange{
 				Noun: "project", Desired: store.ReviewGrainFeature,
 			})
 			require.NoError(t, err)

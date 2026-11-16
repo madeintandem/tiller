@@ -121,7 +121,7 @@ func configureProject(tree *store.Tree, deps Deps, owner store.Contributor, grai
 	}
 	guardTree := *tree
 	guardTree.Manifest = manifest
-	guards, err := guardReviewGrainChange(&guardTree, reviewGrainChange{
+	guards, err := guardReviewGrainChange(&guardTree, deps.rev(tree.Root), reviewGrainChange{
 		Noun: "project", Desired: grain,
 	})
 	if err != nil {
@@ -196,7 +196,7 @@ func configureEpic(tree *store.Tree, deps Deps, owner store.Contributor, treeEpi
 	if err := refuseReviewSurfaceLocked(store.NounEpic, doc.ID, key, doc.Status, doc.PR, doc.ReviewRef, terminal); err != nil {
 		return ConfigureResult{}, err
 	}
-	guards, err := guardReviewGrainChange(tree, reviewGrainChange{
+	guards, err := guardReviewGrainChange(tree, deps.rev(tree.Root), reviewGrainChange{
 		Noun: store.NounEpic, Epic: &doc, Desired: grain,
 	})
 	if err != nil {
@@ -248,7 +248,7 @@ func configureFeature(tree *store.Tree, deps Deps, owner store.Contributor, tree
 	if err := refuseReviewSurfaceLocked(store.NounFeature, doc.ID, key, doc.Status, doc.PR, doc.ReviewRef, terminal); err != nil {
 		return ConfigureResult{}, err
 	}
-	guards, err := guardReviewGrainChange(tree, reviewGrainChange{
+	guards, err := guardReviewGrainChange(tree, deps.rev(tree.Root), reviewGrainChange{
 		Noun: store.NounFeature, Epic: epicByKey(tree, doc.EpicKey), Feature: &doc, Desired: grain,
 	})
 	if err != nil {

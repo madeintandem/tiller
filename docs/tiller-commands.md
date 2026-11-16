@@ -931,6 +931,11 @@ review surface, no task in `in_progress`, `check`, or `in_review`, and, when ent
 epic grain, no recorded aggregate branch. Existing task PRs remain independent and must merge and
 sync before a later coarse submit. Do not hand-edit state to evade a refusal.
 
+The check reads the current checkout and also the committed state on the affected nodes' canonical
+local branches (the epic and feature aggregates and each open task's branch), so work started in
+another worktree of the same repository locks the change too. That refusal names the branch. It
+does not fetch or read remote-tracking refs.
+
 ```sh
 tiller configure project --review-grain task|feature|epic     # writes execution.review_grain in tiller.yml
 tiller configure epic <epic> --review-grain task|feature|epic

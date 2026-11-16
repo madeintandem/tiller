@@ -2,6 +2,7 @@ package mutate_test
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -529,4 +530,223 @@ func countFiles(t *testing.T, dir string) int {
 		return nil
 	})
 	return n
+}
+
+// layEpicGrainWorkInSecondCheckout builds the two-checkout arrangement: epic
+// grain committed on integration in the primary checkout, then one task
+// started, checked, and submitted in a linked worktree, its state committed on
+// its task branch and merged into the epic aggregate. Integration never sees
+// that state, so its task still reads ready.
+func layEpicGrainWorkInSecondCheckout(t *testing.T, deps mutate.Deps) (root, worktree string) {
+	t.Helper()
+	root = rgLayFeature(t, deps, "pay", "checkout", "charge-card", "send-receipt")
+	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
+		Noun: store.NounEpic, Key: "pay", ReviewGrain: store.ReviewGrainEpic,
+	})
+	require.NoError(t, err)
+	gitCommitAllM(t, root, "epic grain on integration")
+
+	worktree = filepath.Join(t.TempDir(), "second-checkout")
+	gitRunM(t, root, "worktree", "add", "--detach", worktree, "main")
+	rgDriveTaskToInReview(t, worktree, deps, "pay", "checkout", "charge-card", 1)
+	return root, worktree
+}
+
+func TestConfigureFeatureRefusesWorkInFlightOnAggregateBranchFromIntegration(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root, worktree := layEpicGrainWorkInSecondCheckout(t, deps)
+
+	taskID := resolveNode(t, load(t, root), store.NounTask, "pay/checkout/charge-card").NodeID()
+	require.Equal(t, "ready", load(t, root).Tasks[taskID].Status, "integration never saw the start")
+	require.Equal(t, "in_review", load(t, worktree).Tasks[taskID].Status)
+	before := snapshotDir(t, root)
+
+	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
+		Noun: store.NounFeature, Key: "pay/checkout", ReviewGrain: store.ReviewGrainFeature,
+	})
+
+	var blocked *mutate.ReviewGrainChangeBlockedError
+	require.ErrorAs(t, err, &blocked)
+	require.Equal(t, mutate.ReasonReviewGrainWorkInFlight, blocked.Reason)
+	require.Equal(t, taskID, blocked.BlockerID)
+	require.Equal(t, "in_review", blocked.BlockerStatus)
+	require.Equal(t, "tiller/reviews/epics/pay", blocked.BlockerBranch)
+	require.Contains(t, err.Error(), "on branch tiller/reviews/epics/pay")
+	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+// commitStateOnBranch commits whatever edit makes to the tree on a new local
+// branch cut from main, then returns the checkout to main. It stands in for
+// state another checkout committed without the cost of driving real work.
+func commitStateOnBranch(t *testing.T, root, branch string, edit func()) {
+	t.Helper()
+	gitRunM(t, root, "checkout", "-q", "-b", branch, "main")
+	edit()
+	gitCommitAllM(t, root, "state on "+branch)
+	gitRunM(t, root, "checkout", "-q", "main")
+}
+
+// layReadyFeatureOnMain commits an approved pay/checkout feature with one ready
+// task on main and returns the task's id.
+func layReadyFeatureOnMain(t *testing.T, deps mutate.Deps) (root, taskID string) {
+	t.Helper()
+	root = rgLayFeature(t, deps, "pay", "checkout", "charge-card")
+	gitCommitAllM(t, root, "approved plan")
+	return root, onlyTaskID(t, load(t, root))
+}
+
+func configureCheckoutFeatureGrain(t *testing.T, root string, deps mutate.Deps) error {
+	t.Helper()
+	_, err := mutate.Configure(load(t, root), deps, mutate.ConfigureInput{
+		Noun: store.NounFeature, Key: "pay/checkout", ReviewGrain: store.ReviewGrainFeature,
+	})
+	return err
+}
+
+func TestConfigureFeatureRefusesTaskInFlightOnItsOwnBranch(t *testing.T) {
+	t.Parallel()
+	for _, status := range []string{"in_progress", "check", "in_review"} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+			deps := seqDeps()
+			root, taskID := layReadyFeatureOnMain(t, deps)
+			commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+				setTaskStatusOnDisk(t, root, taskID, status)
+			})
+			before := snapshotDir(t, root)
+
+			err := configureCheckoutFeatureGrain(t, root, deps)
+
+			var blocked *mutate.ReviewGrainChangeBlockedError
+			require.ErrorAs(t, err, &blocked)
+			require.Equal(t, mutate.ReasonReviewGrainWorkInFlight, blocked.Reason)
+			require.Equal(t, taskID, blocked.BlockerID)
+			require.Equal(t, status, blocked.BlockerStatus)
+			require.Equal(t, "tiller/pay/checkout/charge-card", blocked.BlockerBranch)
+			requireNoWrites(t, before, snapshotDir(t, root))
+		})
+	}
+}
+
+func TestConfigureFeatureRefusesAggregateRecordedOnAnotherBranch(t *testing.T) {
+	t.Parallel()
+	for name, branch := range map[string]func(taskID string) string{
+		"feature aggregate": func(string) string { return "tiller/reviews/features/pay/checkout" },
+		"epic aggregate":    func(string) string { return "tiller/reviews/epics/pay" },
+		"rotated aggregate": func(taskID string) string { return "tiller/reviews/epics/pay-" + taskID },
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			deps := seqDeps()
+			root, taskID := layReadyFeatureOnMain(t, deps)
+			aggregate := branch(taskID)
+			commitStateOnBranch(t, root, aggregate, func() {
+				setFeatureBranchOnDisk(t, root, "pay", "checkout", aggregate)
+			})
+			before := snapshotDir(t, root)
+
+			err := configureCheckoutFeatureGrain(t, root, deps)
+
+			var blocked *mutate.ReviewGrainChangeBlockedError
+			require.ErrorAs(t, err, &blocked)
+			require.Equal(t, mutate.ReasonReviewGrainBranchLocked, blocked.Reason)
+			require.Equal(t, store.NounFeature, blocked.BlockerNoun)
+			require.Equal(t, aggregate, blocked.BlockerBranch)
+			requireNoWrites(t, before, snapshotDir(t, root))
+		})
+	}
+}
+
+func TestApproveFeatureReviewGrainRefusesWorkInFlightOnAnotherBranch(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root, taskID := layReadyFeatureOnMain(t, deps)
+	commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+		setTaskStatusOnDisk(t, root, taskID, "in_progress")
+	})
+	before := snapshotDir(t, root)
+
+	grain := store.ReviewGrainFeature
+	err := tryTransition(t, root, deps, store.NounFeature, "pay/checkout",
+		mutate.TransitionInput{Verb: "approve", ReviewGrain: &grain})
+
+	var blocked *mutate.ReviewGrainChangeBlockedError
+	require.ErrorAs(t, err, &blocked)
+	require.Equal(t, mutate.ReasonReviewGrainWorkInFlight, blocked.Reason)
+	require.Equal(t, "tiller/pay/checkout/charge-card", blocked.BlockerBranch)
+	requireNoWrites(t, before, snapshotDir(t, root))
+}
+
+func TestConfigureFeatureIgnoresBranchesThatCarryNoLockingState(t *testing.T) {
+	t.Parallel()
+	t.Run("canonical branches with untouched state", func(t *testing.T) {
+		t.Parallel()
+		deps := seqDeps()
+		root, _ := layReadyFeatureOnMain(t, deps)
+		for _, branch := range []string{"tiller/pay/checkout/charge-card", "tiller/reviews/epics/pay"} {
+			commitStateOnBranch(t, root, branch, func() {
+				require.NoError(t, os.WriteFile(filepath.Join(root, "code.txt"), []byte(branch), 0o644))
+			})
+		}
+		require.NoError(t, configureCheckoutFeatureGrain(t, root, deps))
+	})
+	t.Run("a branch cut before the task existed", func(t *testing.T) {
+		t.Parallel()
+		deps := seqDeps()
+		root := writeGatedRepo(t, "true", "true")
+		gitRunM(t, root, "branch", "-M", "main")
+		commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+			require.NoError(t, os.WriteFile(filepath.Join(root, "code.txt"), []byte("early"), 0o644))
+		})
+		mustAddEpic(t, root, "pay")
+		mustAddFeature(t, root, "pay/checkout")
+		rgAddTask(t, root, deps, "pay", "checkout", "charge-card")
+		gitCommitAllM(t, root, "plan")
+		require.NoError(t, configureCheckoutFeatureGrain(t, root, deps))
+	})
+	t.Run("a finished task whose branch outlived a squash merge", func(t *testing.T) {
+		t.Parallel()
+		deps := seqDeps()
+		root, taskID := layReadyFeatureOnMain(t, deps)
+		commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+			setTaskStatusOnDisk(t, root, taskID, "in_review")
+		})
+		setTaskStatusOnDisk(t, root, taskID, "done")
+		gitCommitAllM(t, root, "squash merge and sync")
+		require.NoError(t, configureCheckoutFeatureGrain(t, root, deps))
+	})
+	t.Run("an in-flight branch already merged into the checkout", func(t *testing.T) {
+		t.Parallel()
+		deps := seqDeps()
+		root, taskID := layReadyFeatureOnMain(t, deps)
+		ready, err := os.ReadFile(taskYMLPath(t, root, taskID))
+		require.NoError(t, err)
+		commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+			setTaskStatusOnDisk(t, root, taskID, "in_progress")
+		})
+		gitRunM(t, root, "merge", "-q", "--no-ff", "-m", "merge", "tiller/pay/checkout/charge-card")
+		require.NoError(t, os.WriteFile(taskYMLPath(t, root, taskID), ready, 0o644))
+		gitCommitAllM(t, root, "reset on integration")
+		require.NoError(t, configureCheckoutFeatureGrain(t, root, deps))
+	})
+}
+
+func TestConfigureFeatureFailsClosedOnUnparseableStateAtCanonicalBranch(t *testing.T) {
+	t.Parallel()
+	deps := seqDeps()
+	root, taskID := layReadyFeatureOnMain(t, deps)
+	commitStateOnBranch(t, root, "tiller/pay/checkout/charge-card", func() {
+		require.NoError(t, os.WriteFile(taskYMLPath(t, root, taskID), []byte("status: [unterminated\n"), 0o644))
+	})
+	before := snapshotDir(t, root)
+
+	err := configureCheckoutFeatureGrain(t, root, deps)
+
+	require.Error(t, err)
+	var blocked *mutate.ReviewGrainChangeBlockedError
+	require.False(t, errors.As(err, &blocked), "an unreadable ref is not reported as work in flight")
+	require.Contains(t, err.Error(), "tiller/pay/checkout/charge-card")
+	require.Contains(t, err.Error(), "task.yml")
+	requireNoWrites(t, before, snapshotDir(t, root))
 }
