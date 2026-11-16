@@ -38,9 +38,12 @@ import { Link } from "react-router-dom";
 import type { RecapPeek } from "../api";
 import { recapPeekPath } from "../api";
 import { useFetch } from "../hooks";
+import { useArrivalKey } from "../lib/useArrivalKey";
 
 export default function RecapSignal() {
-  const { data, error } = useFetch<RecapPeek>(recapPeekPath);
+  // One of Home's own reads, so it rereads when the reader arrives at Home
+  // again (lib/useArrivalKey.ts).
+  const { data, error } = useFetch<RecapPeek>(recapPeekPath, { refreshKey: useArrivalKey(), retainData: true });
 
   return (
     <Link to="/history" className="recap-signal">

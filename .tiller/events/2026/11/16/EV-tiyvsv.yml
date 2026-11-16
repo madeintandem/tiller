@@ -1,0 +1,13 @@
+id: EV-tiyvsv
+type: start.tweak
+at: 2026-11-16T02:44:23.505361Z
+contributor: jc
+command: start tweak TW-wdlmab
+targets:
+    - TW-wdlmab
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/console-arrival-reread-other-pages/tweak.yml

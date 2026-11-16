@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import type { BuildBoard, Queue } from "../../api";
 import { buildPath, queuePath } from "../../api";
 import { useFetch } from "../../hooks";
+import { useArrivalKey } from "../../lib/useArrivalKey";
 import { readRecent } from "../../lib/recentNodes";
 import { columnCards, visibleCards } from "../build/columns";
 import { ALL_EPICS, showableEpics } from "../build/selection";
@@ -35,8 +36,11 @@ function nounLabel(noun: string): string {
 }
 
 export default function ExploreEmpty({ projectKey }: { projectKey: string | undefined }) {
-  const queue = useFetch<Queue>(queuePath);
-  const board = useFetch<BuildBoard>(buildPath);
+  // The pane shows only at /explore, and rereads when the reader arrives
+  // there again (lib/useArrivalKey.ts).
+  const arrival = { refreshKey: useArrivalKey(), retainData: true };
+  const queue = useFetch<Queue>(queuePath, arrival);
+  const board = useFetch<BuildBoard>(buildPath, arrival);
   const recent = projectKey === undefined ? [] : readRecent(projectKey);
 
   const decisions = queue.data?.entries.length;

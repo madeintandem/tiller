@@ -8,6 +8,7 @@ import AsOf from "./components/AsOf";
 import ThemeToggle from "./components/ThemeToggle";
 import TopbarSearch from "./components/TopbarSearch";
 import { titleOf, useDocumentTitle, useFetch } from "./hooks";
+import { useArrivalKey } from "./lib/useArrivalKey";
 import { useRefetchOnFocus } from "./lib/useRefetchOnFocus";
 import { PeopleProvider } from "./people";
 import Build from "./views/Build";
@@ -63,9 +64,12 @@ export default function App() {
   // Each navigation rereads the status, and the shell keeps the last answer
   // while it does: the topbar's project and Home's desk never blank for a
   // read of the same resource. Coming back to the window rereads every
-  // mounted page the same way, in the background.
+  // mounted page the same way, in the background. Home draws its desk from
+  // this read, so arriving at Home again while it is showing rereads it with
+  // Home's own reads (lib/useArrivalKey.ts).
+  const homeArrival = useArrivalKey("/");
   const { data: summary, error: summaryError } = useFetch<ProjectSummary>(statusPath, {
-    refreshKey: pathname,
+    refreshKey: `${pathname} ${homeArrival}`,
     retainData: true,
   });
   const { data: build } = useFetch<{ version: string }>(versionPath);

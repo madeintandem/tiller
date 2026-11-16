@@ -8,6 +8,7 @@ import type { FetchState } from "../../hooks";
 import type { DriftReportView, ListResult } from "../../api";
 import StateBar from "../../components/StateBar";
 import { statusLabel } from "../../lib/statusLabel";
+import { IN_PAGE_CHANGE } from "../../lib/useArrivalKey";
 import { composeDriftBand } from "./driftBand";
 import { composeFunnel, composeShelfStat } from "./funnel";
 import { composeStat } from "./stat";
@@ -179,6 +180,8 @@ function DriftStat({ state }: { state: FetchState<DriftReportView> }) {
   return (
     <Link
       to="/?tab=drift"
+      // A tab of the page this tile is on: not an arrival, so it reads nothing.
+      state={IN_PAGE_CHANGE}
       className="stat drift"
       aria-label={`${band.total} drift items (${band.text}), open the drift tab`}
       aria-describedby={state.error !== null ? noteId : undefined}

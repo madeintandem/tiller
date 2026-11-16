@@ -3,7 +3,7 @@
 // and says they are out of date, and the file page does not scroll back to
 // its line on a reread.
 
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ProseFile, Report, UsageReport } from "../../api";
@@ -115,8 +115,11 @@ describe("The file page while the page rereads", () => {
     const stub = stubReread({ "/api/status": summary(), [FILE]: file("The line itself") });
     renderApp("/file/docs/notes.md#L3");
     expect(await screen.findByText("The line itself", { selector: "code" })).toBeInTheDocument();
+    // The line's text is on screen one commit before the effect that scrolls
+    // to it has run, so wait for that first scroll before taking the count
+    // the reread is held to.
+    await waitFor(() => expect(scrolls).toHaveBeenCalled());
     const arrived = scrolls.mock.calls.length;
-    expect(arrived).toBeGreaterThan(0);
 
     const watch = watchLoading();
     stub.reread();
