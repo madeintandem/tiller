@@ -1,4 +1,5 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it } from "vitest";
 
 import type { NodePage } from "../../api";
@@ -34,7 +35,11 @@ const bugPage: NodePage = {
 };
 
 it("renders bug prose and optional gates without an eval contract", () => {
-  render(<WorkItemSpecPanel page={bugPage} />);
+  render(
+    <MemoryRouter>
+      <WorkItemSpecPanel page={bugPage} />
+    </MemoryRouter>,
+  );
   expect(screen.getByRole("heading", { name: "Bug contract" })).toBeInTheDocument();
   expect(screen.getByText("Reload after saving")).toBeInTheDocument();
 

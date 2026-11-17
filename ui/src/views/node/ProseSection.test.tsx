@@ -11,9 +11,9 @@
 // drawn, since drawing none of a file is the most destructive thing this
 // component does.
 
-import { cleanup, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter, useLocation, useNavigationType } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { NodeView, ProseRef } from "../../api";
 import ProseSection from "./ProseSection";
@@ -373,5 +373,88 @@ describe("ProseSection: the outline", () => {
   it("renders no nav for fewer than three items", () => {
     renderSection(prose({ content: "## One\n\ntext\n\n## Two\n\ntext\n" }), featureNode);
     expect(screen.queryByRole("navigation", { name: "On this page" })).not.toBeInTheDocument();
+  });
+});
+
+// An outline link is handled by the console itself, not left to the browser's
+// anchor navigation, which reloaded the console in Safari (B-iqc14u). jsdom
+// has no layout, so the scroll is observed as the call on the heading.
+describe("ProseSection: following an outline link", () => {
+  const SPEC = "## One\n\ntext\n\n## Two\n\ntext\n\n### Three\n\ntext\n";
+  let scrolled: string[];
+  const original = Element.prototype.scrollIntoView;
+
+  beforeEach(() => {
+    scrolled = [];
+    Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+      scrolled.push(this.id);
+    });
+  });
+
+  afterEach(() => {
+    Element.prototype.scrollIntoView = original;
+  });
+
+  function Address() {
+    const location = useLocation();
+    const inPage = (location.state as { inPage?: boolean } | null)?.inPage === true;
+    return (
+      <output data-testid="address">
+        {`${location.pathname}${location.search}${location.hash} ${useNavigationType()} ${inPage ? "in-page" : "arrival"}`}
+      </output>
+    );
+  }
+
+  function renderAt(entry: string) {
+    return render(
+      <MemoryRouter initialEntries={[entry]}>
+        <ProseSection prose={prose({ content: SPEC })} label="Spec" node={featureNode} />
+        <Address />
+      </MemoryRouter>,
+    );
+  }
+
+  it("scrolls to the heading in place and names it in the address, without a browser navigation", () => {
+    renderAt("/node/feature/F-1?tab=spec");
+    const link = screen.getByRole("link", { name: "Two" });
+
+    // fireEvent returns false when the handler prevented the default action.
+    expect(fireEvent.click(link)).toBe(false);
+
+    expect(scrolled).toEqual(["two"]);
+    // The path and query stay; the change replaces the entry and is marked as
+    // the page's own, so nothing counts it as an arrival and rereads.
+    expect(screen.getByTestId("address")).toHaveTextContent("/node/feature/F-1?tab=spec#two REPLACE in-page");
+  });
+
+  it("leaves a modified click to the browser, so the link still opens in a new tab", () => {
+    renderAt("/node/feature/F-1");
+    const link = screen.getByRole("link", { name: "Two" });
+
+    expect(fireEvent.click(link, { metaKey: true })).toBe(true);
+
+    expect(scrolled).toEqual([]);
+    expect(screen.getByTestId("address")).toHaveTextContent("/node/feature/F-1 POP arrival");
+  });
+
+  it("lands on the heading the address names when the page loads", () => {
+    renderAt("/node/feature/F-1#three");
+    expect(scrolled).toEqual(["three"]);
+  });
+
+  it("lands once, not again on every render of the same address", () => {
+    const { rerender } = renderAt("/node/feature/F-1#three");
+    rerender(
+      <MemoryRouter initialEntries={["/node/feature/F-1#three"]}>
+        <ProseSection prose={prose({ content: SPEC })} label="Spec" node={featureNode} />
+        <Address />
+      </MemoryRouter>,
+    );
+    expect(scrolled).toEqual(["three"]);
+  });
+
+  it("ignores an address fragment that names no heading of this spec", () => {
+    renderAt("/node/feature/F-1#L12");
+    expect(scrolled).toEqual([]);
   });
 });

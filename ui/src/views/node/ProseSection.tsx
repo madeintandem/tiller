@@ -39,7 +39,7 @@ import type { NodeView, ProseRef, RelationshipDiagnostic } from "../../api";
 import CopyCmd from "../../components/CopyCmd";
 import InstrSection, { InstrNote } from "../../components/InstrSection";
 import Prose from "../../components/Prose";
-import ProseOutline from "../../components/ProseOutline";
+import ProseOutline, { useHeadingLanding } from "../../components/ProseOutline";
 import SourceLink from "../../components/SourceLink";
 import { addrOf } from "../../lib/addr";
 import { has } from "../../lib/has";
@@ -85,20 +85,27 @@ export default function ProseSection({
   // source the prose came from, as a one-hop link (SourceLink). A node with
   // no source gets the bare head, so the prose simply begins.
   const markdown = stripLeadingTitle(prose.content, node.title);
-  const outline = outlineOf(markdown);
   return (
     <InstrSection label={label} lead={sourceLead(node, diagnostics)}>
-      {outline.length >= OUTLINE_MIN ? (
-        <div className="prose-outline-host">
-          <div className="prose-with-outline">
-            <Prose markdown={markdown} />
-            <ProseOutline items={outline} />
-          </div>
-        </div>
-      ) : (
-        <Prose markdown={markdown} />
-      )}
+      <ProseBody markdown={markdown} />
     </InstrSection>
+  );
+}
+
+// The written spec with its outline. Its own component so the landing hook
+// runs only when there is prose to land in.
+function ProseBody({ markdown }: { markdown: string }) {
+  const outline = outlineOf(markdown);
+  useHeadingLanding(outline);
+  return outline.length >= OUTLINE_MIN ? (
+    <div className="prose-outline-host">
+      <div className="prose-with-outline">
+        <Prose markdown={markdown} />
+        <ProseOutline items={outline} />
+      </div>
+    </div>
+  ) : (
+    <Prose markdown={markdown} />
   );
 }
 

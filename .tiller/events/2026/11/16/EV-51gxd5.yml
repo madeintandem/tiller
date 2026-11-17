@@ -1,0 +1,11 @@
+id: EV-51gxd5
+type: claim.bug
+at: 2026-11-16T20:37:36.537371Z
+contributor: jc
+command: claim bug bugs/outline-links-reload-the-page
+targets:
+    - B-iqc14u
+after:
+    owner: jc
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml

@@ -1,0 +1,13 @@
+id: EV-2l4fpd
+type: check.bug
+at: 2026-11-16T20:43:10.608199Z
+contributor: jc
+command: check bug B-iqc14u
+targets:
+    - B-iqc14u
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml
