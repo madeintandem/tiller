@@ -1,0 +1,14 @@
+id: EV-0wwjao
+type: submit.tweak
+at: 2026-11-17T16:22:01.394184Z
+contributor: jc
+command: submit tweak TW-k4q2yd
+targets:
+    - TW-k4q2yd
+before:
+    status: check
+after:
+    pr: 28
+    status: in_review
+files:
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.yml

@@ -40,7 +40,8 @@ export default defineConfig({
       // node-pin.css: node-pin.css.test.ts pins the pinned rail's sticky
       // offset and background. explore.css joins for its own pins.
       // explore-ledgers.css: explore-ledgers.css.test.ts pins the ledgers'
-      // fixed header and scrolling panel.
+      // fixed header and scrolling panel. prose.css: prose.css.test.ts pins
+      // the width at which the spec outline gives way.
       include: [
         /components\/board\.css/,
         /components\/node-pin\.css/,
@@ -49,6 +50,7 @@ export default defineConfig({
         /views\/explore-ledgers\.css/,
         /src\/styles\.css/,
         /styles\/tokens\.css/,
+        /styles\/prose\.css/,
         /views\/build\.css/,
         /views\/history\.css/,
         /views\/home\.css/,
