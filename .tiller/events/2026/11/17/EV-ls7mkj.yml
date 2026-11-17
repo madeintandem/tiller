@@ -1,0 +1,14 @@
+id: EV-ls7mkj
+type: sync.tweak
+at: 2026-11-17T16:30:42.118148Z
+contributor: jc
+command: sync tweak TW-k4q2yd
+targets:
+    - TW-k4q2yd
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.yml
