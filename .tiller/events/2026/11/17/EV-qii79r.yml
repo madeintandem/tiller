@@ -1,0 +1,13 @@
+id: EV-qii79r
+type: add.tweak
+at: 2026-11-17T16:06:52.704589Z
+contributor: jc
+command: add tweak outline-hides-too-early
+targets:
+    - TW-k4q2yd
+after:
+    key: tweaks/outline-hides-too-early
+    status: proposed
+files:
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.md
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.yml
