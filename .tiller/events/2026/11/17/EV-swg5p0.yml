@@ -1,0 +1,11 @@
+id: EV-swg5p0
+type: claim.tweak
+at: 2026-11-17T16:07:04.859128Z
+contributor: jc
+command: claim tweak tweaks/outline-hides-too-early
+targets:
+    - TW-k4q2yd
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.yml

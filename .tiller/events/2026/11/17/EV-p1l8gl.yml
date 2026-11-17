@@ -1,0 +1,13 @@
+id: EV-p1l8gl
+type: start.tweak
+at: 2026-11-17T16:07:04.949899Z
+contributor: jc
+command: start tweak TW-k4q2yd
+targets:
+    - TW-k4q2yd
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/outline-hides-too-early/tweak.yml
