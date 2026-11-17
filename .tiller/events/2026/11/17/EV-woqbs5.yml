@@ -1,0 +1,14 @@
+id: EV-woqbs5
+type: sync.bug
+at: 2026-11-17T06:27:39.445494Z
+contributor: jc
+command: sync bug B-iqc14u
+targets:
+    - B-iqc14u
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/bugs/outline-links-reload-the-page/bug.yml
