@@ -1,7 +1,7 @@
 id: TW-k4q2yd
 key: tweaks/outline-hides-too-early
 title: On this page outline hides while it still fits beside the spec
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -17,6 +17,7 @@ accepted_against:
         value: git:790c48f
         observed_at: 2026-11-17T16:07:04.260651Z
 branch: tiller/tweaks/outline-hides-too-early
+pr: 28
 gates:
     build:
         required: true
