@@ -185,7 +185,11 @@
    size container the grid answers to: the reading pane declares none, and the
    pane is narrower than the window (the tree takes the left side), so a
    container query on the host measures the width the spec really has.
-   Under 1100px the outline is hidden and the spec runs single-column. */
+   The prose column shrinks before the outline goes: at 72ch (636px of 14px
+   Inter) the full layout needs 896px, and the outline stays until the prose
+   would fall under 480px, about 54 characters. Under a 740px host (480 plus
+   the 40px gap and 220px outline) the outline is hidden and the spec runs
+   single-column (TW-k4q2yd). */
 .prose-outline-host {
   container-type: inline-size;
 }
@@ -255,7 +259,7 @@
   text-decoration: underline;
 }
 
-@container (max-width: 1099px) {
+@container (max-width: 739px) {
   .prose-with-outline {
     grid-template-columns: minmax(0, 1fr);
   }
