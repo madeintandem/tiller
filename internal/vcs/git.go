@@ -126,6 +126,10 @@ type Revisions interface {
 	// FirstParentPatchIDs returns the stable patch-ids of the newest limit
 	// first-parent commits of ref, newest first.
 	FirstParentPatchIDs(ref string, limit int) ([]CommitPatch, error)
+	// CodeCommitMessages reads the messages of at most limit commits reachable
+	// from ref that change the project's code (a path outside .tiller/ and
+	// artifacts/tiller/), newest first.
+	CodeCommitMessages(ref string, limit int) ([]CommitMessage, error)
 }
 
 // CommitPatch pairs one commit with the stable patch-id of its own diff. It is

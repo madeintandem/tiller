@@ -112,6 +112,9 @@ func (s stubRevisions) PatchDigest(string, string) (string, error) { return "", 
 func (s stubRevisions) FirstParentPatchIDs(string, int) ([]vcs.CommitPatch, error) {
 	return nil, nil
 }
+func (s stubRevisions) CodeCommitMessages(string, int) ([]vcs.CommitMessage, error) {
+	return nil, nil
+}
 
 // stubRev is the stub git window rooted at one repo, so the blob hashes the
 // basis guard reads come from that repo while every other observation stays
