@@ -100,7 +100,7 @@ func WhoseMoveOf(t *store.Tree) WhoseMoveCounts {
 	}
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range t.WorkNodesOf(noun) {
-			if gen.WorkActivity(t, work) == gen.ActivityCarried {
+			if gen.WorkLeftQueue(t, work) {
 				continue
 			}
 			tally(work)

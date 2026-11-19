@@ -75,6 +75,9 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		}
 	}
 	if in.Verb == "submit" {
+		if w.RecoveredReview != nil {
+			return TransitionResult{}, recoveredSubmitLocked(noun, w.ID, w.Branch)
+		}
 		if err := guardSubmitGates(tree.Manifest, noun, w.ID, deref(w.Key), w.Status, &w.GatesBlock); err != nil {
 			return TransitionResult{}, err
 		}

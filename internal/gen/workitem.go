@@ -22,26 +22,47 @@ const ActivityCarried = "carried"
 // something a read derives.
 const ActivityCarrierCancelled = "carrier_cancelled"
 
+// ActivityRecovered is the derived display phase of an unfinished shelf node
+// holding a recovered review: its fix already merged, so it has left the queue
+// and the next sync crosses it on the record.
+const ActivityRecovered = "recovered"
+
 // WorkActivity is a shelf node's derived display phase, recomputed on every
 // read against the carrier's current fate:
 //
 //   - ActivityCarried while resolved_by names a live epic, feature, or task;
+//   - ActivityRecovered while the node holds a recovered review and no live
+//     carrier, the order sync itself reads them in;
 //   - ActivityCarrierCancelled when that carrier is cancelled, archived, or
 //     absent from the tree;
-//   - "" when the node carries no resolved_by at all, or is itself terminal,
-//     where a display phase would say nothing the status does not.
+//   - "" when the node carries neither, or is itself terminal, where a
+//     display phase would say nothing the status does not.
 //
 // A done carrier still reads carried: it is the crossing sync is about to
 // record, not a carrier that failed.
 func WorkActivity(t *store.Tree, w store.WorkNode) string {
 	b := w.Body()
-	if b.ResolvedBy == "" || b.Status == "done" || b.Status == "cancelled" {
+	if b.Status == "done" || b.Status == "cancelled" {
 		return ""
 	}
-	if carrierLive(t, b.ResolvedBy) {
+	if b.ResolvedBy != "" && carrierLive(t, b.ResolvedBy) {
 		return ActivityCarried
 	}
+	if b.RecoveredReview != nil {
+		return ActivityRecovered
+	}
+	if b.ResolvedBy == "" {
+		return ""
+	}
 	return ActivityCarrierCancelled
+}
+
+// WorkLeftQueue reports a shelf node that no longer waits on its own work:
+// carried by live work, or holding a recovered review. Sync crosses it either
+// way, so it is nobody's to start, continue, or wait on a merge for.
+func WorkLeftQueue(t *store.Tree, w store.WorkNode) bool {
+	activity := WorkActivity(t, w)
+	return activity == ActivityCarried || activity == ActivityRecovered
 }
 
 // carrierLive reports whether id names an epic, feature, or task the tree

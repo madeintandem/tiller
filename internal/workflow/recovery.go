@@ -72,11 +72,17 @@ func RecoverySummary(r *RecoveredReview) string {
 	if r == nil {
 		return ""
 	}
-	identity := "branch " + r.Branch
-	if r.PR != nil {
-		identity = fmt.Sprintf("caller-supplied PR #%d on %s", *r.PR, r.Branch)
+	// A shelf node recovered before it ever started records no branch.
+	identity := ""
+	switch {
+	case r.PR != nil && r.Branch != "":
+		identity = fmt.Sprintf(" of caller-supplied PR #%d on %s", *r.PR, r.Branch)
+	case r.PR != nil:
+		identity = fmt.Sprintf(" of caller-supplied PR #%d", *r.PR)
+	case r.Branch != "":
+		identity = " of branch " + r.Branch
 	}
-	text := fmt.Sprintf("Recovered historical review of %s: head %s, integration result %s, basis %s.", identity, r.Head, r.MergeCommit, humanizeToken(r.Basis))
+	text := fmt.Sprintf("Recovered historical review%s: head %s, integration result %s, basis %s.", identity, r.Head, r.MergeCommit, humanizeToken(r.Basis))
 	text = addSentence(text, sentence(fmt.Sprintf("Recorded by %s: %s", r.RecoveredBy, r.Reason)))
 	for _, snapshot := range r.PolicySnapshots {
 		for _, observation := range snapshot.Observations {
@@ -104,11 +110,16 @@ func MissingReviewGuidance(review store.Node) string {
 }
 
 // ReviewStateOf supplies list consumers with the owning coarse review state,
-// including riding tasks. Independent task PRs retain ordinary behavior.
+// including riding tasks, and a shelf node's own recovered review. Independent task PRs retain ordinary behavior.
 // Missing means submitted work waits on an aggregate review nobody recorded:
 // the task itself is in review, or the feature or epic holds such a task.
 // Unstarted and in-progress work has nothing stranded, so it never warns.
 func ReviewStateOf(t *store.Tree, n store.Node) (*RecoveredReview, bool) {
+	// A shelf node owns its own review, so its record is its own and nothing
+	// rides it: submitted and unrecorded cannot both be true of it.
+	if work, ok := store.AsWorkNode(n); ok {
+		return RecoveryOf(work.Body().PR, work.Body().RecoveredReview.Review()), false
+	}
 	owner := ReviewOwnerOf(t, n)
 	var recovered *RecoveredReview
 	var recorded bool

@@ -1863,10 +1863,11 @@ func bindingBreakdown(counts map[string]int) string {
 }
 
 // basisBreakdown renders sync's own crossing-basis tally (syncContent) in
-// mutate.Sync's own order: ancestry, content, rollup, human_attested
-// (mutate/sync.go's basisAncestry/basisContent/basisRollup/
-// basisHumanAttested consts, unexported there, so this file names the same
-// four literal strings rather than importing across the package boundary).
+// mutate.Sync's own order: ancestry, content, rollup, human_attested, then
+// recovered for a shelf node crossed on a recovered review
+// (mutate's basisAncestry/basisContent/basisRollup/basisHumanAttested/
+// basisRecovered consts, unexported there, so this file names the same
+// literal strings rather than importing across the package boundary).
 // bindingBreakdown just above renders a DIFFERENT four-value vocabulary
 // (eval's test/command/manual/eval binding types) that shares no values
 // with sync's basis; the two must stay separate functions, since reusing
@@ -1874,7 +1875,7 @@ func bindingBreakdown(counts map[string]int) string {
 // real crossing, an easy mistake to make and to miss (caught in review
 // before it shipped, not after).
 func basisBreakdown(counts map[string]int) string {
-	order := []string{"ancestry", "content", "rollup", "human_attested"}
+	order := []string{"ancestry", "content", "rollup", "human_attested", "recovered"}
 	var parts []string
 	for _, k := range order {
 		if n := counts[k]; n > 0 {

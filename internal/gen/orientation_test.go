@@ -343,10 +343,12 @@ func TestOrientationNamesTheCompactionStagingException(t *testing.T) {
 // document, and the orientation text says so without naming an intake skill.
 // Generation 62 gives each shared rule one home: orientation defines its terms
 // under ## Terms, and maintenance guidance moves to the upgrade skill.
-func TestOrientationGeneration62(t *testing.T) {
+// Generation 63 extends missing-review recovery to the shelf nouns.
+func TestOrientationGeneration63(t *testing.T) {
 	got, ok := OrientationStampGeneration([]byte(Orientation()))
 	require.True(t, ok)
-	require.Equal(t, 62, got)
+	require.Equal(t, 63, got)
+	require.Contains(t, normalizedOrientation(), "If an aggregate, or the fix for a bug, chore, or tweak, finally merged before its Tiller review was recorded, a merge report alone does not authorize recording it")
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "## Terms")
 	require.Contains(t, text, "`tiller guide upgrade`")

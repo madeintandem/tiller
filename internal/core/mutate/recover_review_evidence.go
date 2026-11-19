@@ -75,7 +75,9 @@ func validateRecoveredEvidence(rev vcs.Revisions, record *store.RecoveredReview,
 	if strings.HasPrefix(into, "refs/") && !strings.HasPrefix(into, "refs/heads/") {
 		return fail("integration_mismatch", into, "recovery must name the configured local integration branch, not a tag or remote-tracking ref")
 	}
-	if !validWorkingBranch(record.Branch) {
+	// Only a shelf record may omit the branch: its fix can merge before the
+	// node ever started. An aggregate record is refused blank before it gets here.
+	if record.Branch != "" && !validWorkingBranch(record.Branch) {
 		return fail("aggregate_branch_invalid", record.Branch, "restore the recorded local aggregate branch identity")
 	}
 	if record.Head.Kind != store.KindGitCommit || record.MergeCommit.Kind != store.KindGitCommit || record.Head.Path != "" || record.MergeCommit.Path != "" || !strings.HasPrefix(record.Head.Value, "git:") || !strings.HasPrefix(record.MergeCommit.Value, "git:") {

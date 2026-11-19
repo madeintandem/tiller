@@ -789,13 +789,17 @@ func newSubmitCmd() *cobra.Command {
 			"in_review, but only ever records a review ref, remote or not. A bug,\n" +
 			"chore, or tweak always records its own PR or review ref; review grain does not\n" +
 			"apply to it.\n\n" +
-			"For explicitly authorized historical feature/epic recovery, run from the\n" +
-			"configured integration checkout with --recover-merged --head <reviewed-oid>\n" +
-			"--merge-commit <result-oid> --reason <explanation>. Recovery records only\n" +
-			"binding and audit evidence; it does not move statuses or approve gates.\n" +
-			"A configured remote requires positive --pr, supplied and host-verified by\n" +
-			"the caller; Tiller verifies local Git evidence, not the host association.\n" +
-			"Commit the actual recovery delta on integration, then run ordinary sync.",
+			"For explicitly authorized historical recovery of a feature, epic, bug,\n" +
+			"chore, or tweak whose review merged before its submission was recorded,\n" +
+			"run from the configured integration checkout with --recover-merged\n" +
+			"--head <reviewed-oid> --merge-commit <result-oid> --reason <explanation>.\n" +
+			"Recovery records only binding and audit evidence; it does not move\n" +
+			"statuses or approve gates. A shelf node may be ready, in_progress, check,\n" +
+			"or in_review, and one merge may be recovered against several of them, one\n" +
+			"command each. A configured remote requires positive --pr, supplied and\n" +
+			"host-verified by the caller; Tiller verifies local Git evidence, not the\n" +
+			"host association. Commit the actual recovery delta on integration, then\n" +
+			"run ordinary sync. A task has no recovery of its own.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sing, ok := singularNoun(args[0])
@@ -808,8 +812,8 @@ func newSubmitCmd() *cobra.Command {
 			}
 			recoveryFlags := cmd.Flags().Changed("recover-merged") || cmd.Flags().Changed("head") || cmd.Flags().Changed("merge-commit")
 			if recoveryFlags {
-				if !recoverMerged || (sing != store.NounFeature && sing != store.NounEpic) {
-					return emitFailure(cmd, "submit", &usageError{reason: "recovery_flags_misuse", msg: "--recover-merged, --head, and --merge-commit require enabled recovery on submit feature or submit epic"})
+				if !recoverMerged || sing == store.NounTask {
+					return emitFailure(cmd, "submit", &usageError{reason: "recovery_flags_misuse", msg: "--recover-merged, --head, and --merge-commit require enabled recovery on submit feature, epic, bug, chore, or tweak"})
 				}
 				if cmd.Flags().Changed("assume-question") {
 					return emitFailure(cmd, "submit", &usageError{reason: "recovery_flags_misuse", msg: "--assume-question is task submission only, not historical recovery"})
@@ -829,7 +833,7 @@ func newSubmitCmd() *cobra.Command {
 				return runSubmitNode(cmd, sing, args[1], pr, cmd.Flags().Changed("pr"))
 			}
 			if sing != store.NounTask && (cmd.Flags().Changed("assume-question") || cmd.Flags().Changed("reason")) {
-				return emitFailure(cmd, "submit", &usageError{reason: "bad_args", msg: "--assume-question and assumption --reason apply only to submit task; recovery --reason requires a feature or epic with --recover-merged"})
+				return emitFailure(cmd, "submit", &usageError{reason: "bad_args", msg: "--assume-question and assumption --reason apply only to submit task; recovery --reason requires --recover-merged"})
 			}
 
 			if err := requireReasonWithAssume(cmd, "submit", assume, reason); err != nil {
@@ -896,8 +900,8 @@ func newSubmitCmd() *cobra.Command {
 	}
 	cmd.Flags().IntVar(&pr, "pr", 0, "the pull request number representing this change (required when the repo has a remote)")
 	cmd.Flags().StringVar(&assume, "assume-question", "", "accepted only on submit task, which refuses it: tasks cannot assume a question; record a feature assumption with check feature or approve feature")
-	cmd.Flags().StringVar(&reason, "reason", "", "justification for --assume-question, or for authorized merged aggregate recovery")
-	cmd.Flags().BoolVar(&recoverMerged, "recover-merged", false, "record an explicitly authorized historical merged feature/epic review from integration")
+	cmd.Flags().StringVar(&reason, "reason", "", "justification for --assume-question, or for authorized merged review recovery")
+	cmd.Flags().BoolVar(&recoverMerged, "recover-merged", false, "record an explicitly authorized historical merged review of a feature, epic, bug, chore, or tweak from integration")
 	cmd.Flags().StringVar(&recoveryHead, "head", "", "historical reviewed commit OID (recovery only)")
 	cmd.Flags().StringVar(&recoveryResult, "merge-commit", "", "exact integration result commit OID (recovery only)")
 	addContributorFlag(cmd)

@@ -17,7 +17,7 @@ func queueApproveShelf(t *store.Tree, noun string) []QueueEntry {
 	var out []QueueEntry
 	for _, work := range orderedShelfNodes(t, noun) {
 		body := work.Body()
-		if body.Status != "proposed" || gen.WorkActivity(t, work) == gen.ActivityCarried {
+		if body.Status != "proposed" || gen.WorkLeftQueue(t, work) {
 			continue
 		}
 		command := fmt.Sprintf("tiller approve %s %s", noun, queueAddr(work))

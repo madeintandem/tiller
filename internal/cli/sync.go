@@ -59,6 +59,11 @@ const (
 // end to end against a real crossing rather than against this constant.
 const basisHumanAttested = "human_attested"
 
+// basisRecovered is the basis of a shelf node crossed on a recovered review
+// (mutate's own basisRecovered, unexported there). The crossing line says so,
+// since the node may never have been started, checked, or submitted.
+const basisRecovered = "recovered"
+
 // intoSourceUnresolved is what the refusal reports as the value's source when
 // nothing resolved at all, so `source` is always populated in the envelope.
 const intoSourceUnresolved = "unresolved"
@@ -173,6 +178,7 @@ type ReopenedView struct {
 // Which token each grain records, enumerated rather than generalized:
 //
 //	task:    ancestry, content, or human_attested
+//	shelf:   those three, carried, or recovered
 //	feature: rollup or human_attested
 //	epic:    rollup
 //
@@ -1002,6 +1008,9 @@ func joinSyncBlocks(blocks ...string) string {
 // the basis is an assertion, and if anything it matters more there.
 func syncCrossingLine(tree *store.Tree, c mutate.Crossing) string {
 	line := fmt.Sprintf("  - %s %s -> %s", c.Noun, gen.RefByID(tree, c.ID), c.Status)
+	if c.Basis == basisRecovered {
+		line += " (recovered review)"
+	}
 	if c.MatchedCommit != "" {
 		line += fmt.Sprintf(" (content match: %s)", c.MatchedCommit)
 	}

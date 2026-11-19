@@ -31,7 +31,7 @@ func TestRecoveryFlagsRejectExplicitPresenceAcrossNouns(t *testing.T) {
 				require.Equal(t, "recovery_flags_misuse", envelope.Error.Reason)
 			})
 		}
-		if noun != "feature" && noun != "epic" {
+		if noun == "task" {
 			t.Run(noun+"enabled", func(t *testing.T) {
 				out, _, code := execCLI(t, "--json", "submit", noun, "not-a-node", "--recover-merged", "--head=abc", "--merge-commit=def", "--reason=authorized")
 				require.Equal(t, 2, code)

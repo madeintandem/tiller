@@ -403,7 +403,7 @@ func queueAttestGates(t *store.Tree, order *gen.Order) []QueueEntry {
 		if n.NodeStatus() != gen.ReviewState {
 			return
 		}
-		if work, ok := store.AsWorkNode(n); ok && gen.WorkActivity(t, work) == gen.ActivityCarried {
+		if work, ok := store.AsWorkNode(n); ok && gen.WorkLeftQueue(t, work) {
 			return
 		}
 		stored := NodeGates(n)

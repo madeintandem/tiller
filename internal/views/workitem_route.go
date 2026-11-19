@@ -22,7 +22,7 @@ func routableShelfNodes(t *store.Tree, owner string) []store.WorkNode {
 			if body.Owner != owner || (body.Status != "check" && body.Status != "ready" && body.Status != "in_progress") {
 				continue
 			}
-			if gen.WorkActivity(t, work) == gen.ActivityCarried {
+			if gen.WorkLeftQueue(t, work) {
 				continue
 			}
 			if body.Status == "check" {
@@ -50,7 +50,21 @@ func shelfMergeWaits(t *store.Tree) []store.WorkNode {
 	var out []store.WorkNode
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range orderedShelfNodes(t, noun) {
-			if work.Body().Status == "in_review" && gen.WorkActivity(t, work) != gen.ActivityCarried {
+			if work.Body().Status == "in_review" && !gen.WorkLeftQueue(t, work) {
+				out = append(out, work)
+			}
+		}
+	}
+	return out
+}
+
+// shelfRecoveredWaits lists the shelf work holding a recovered review that
+// sync has yet to cross, in shelf order.
+func shelfRecoveredWaits(t *store.Tree) []store.WorkNode {
+	var out []store.WorkNode
+	for _, noun := range store.ShelfNouns() {
+		for _, work := range orderedShelfNodes(t, noun) {
+			if gen.WorkActivity(t, work) == gen.ActivityRecovered {
 				out = append(out, work)
 			}
 		}
@@ -63,7 +77,7 @@ func ReadyShelfQueueLine(t *store.Tree) string {
 	for _, shelf := range store.Shelves() {
 		ready := 0
 		for _, work := range t.WorkNodesOf(shelf.Noun) {
-			if work.Body().Status == "ready" && gen.WorkActivity(t, work) != gen.ActivityCarried {
+			if work.Body().Status == "ready" && !gen.WorkLeftQueue(t, work) {
 				ready++
 			}
 		}

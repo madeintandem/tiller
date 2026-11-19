@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v1.0.6 exposes (schema 15, orientation generation 62, eleven embedded
+Every command Tiller v1.0.6 exposes (schema 15, orientation generation 63, eleven embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
@@ -604,6 +604,13 @@ tiller submit <feature|epic> <node> [--pr <number>] \
   --recover-merged --head <historical-reviewed-commit> \
   --merge-commit <integration-result-commit> --reason "<explanation>"
                                                              # record-only historical binding on integration
+tiller submit <bug|chore|tweak> <node> [--pr <number>] \
+  --recover-merged --head <historical-reviewed-commit> \
+  --merge-commit <integration-result-commit> --reason "<explanation>"
+                                                             # the same for a shelf node whose fix merged
+                                                             # before its submission was recorded; the node
+                                                             # is ready, in_progress, check, or in_review,
+                                                             # and sync then crosses it (basis recovered)
 tiller submit <bug|chore|tweak> <node> [--pr <number>]       # check -> in_review; a shelf node always
                                                              # records its own PR or review ref, since
                                                              # review grain does not apply to it; refused
@@ -649,7 +656,7 @@ IDs, and a nonblank reason. With a remote, use the positive actual PR number and
 repository, merged state, base, head repository/branch/OID, and result through ordinary host tools.
 Tiller checks local immutable Git evidence, never host state; its PR association is caller-supplied.
 Explicit recovery-only flags without enabled recovery, including empty values or false recovery,
-refuse, as do task/shelf nouns. Historical submitted task blobs and included heads/retained tips
+refuse, as does the task noun. Historical submitted task blobs and included heads/retained tips
 must prove the riding set; deleted aggregate/task refs are allowed when those anchors remain.
 
 Recovery changes only the owning aggregate review binding and audit event. It requires no green
@@ -658,6 +665,15 @@ actual state on configured integration, run ordinary sync, inspect historical wa
 acceptance independently, commit actual sync state, publish when authorized, and read it back.
 An identical retry writes nothing. Exact merge/squash evidence uses ancestry/content; contained
 work without a local witness remains pending for the human's existing fast-forward assertion.
+
+A bug, chore, or tweak recovers with the same command, authorization, and evidence when its fix
+merged from a branch Tiller never recorded or before `start`, `check`, or `submit` ran. The node may
+be `ready`, `in_progress`, `check`, or `in_review`; a proposed or terminal node and a node with a
+live carrier refuse. One merge may be recorded against several nodes, one command each. Recovery
+writes the record and one audit event, moves no status, and approves no gate: its result lists the
+required gates with no recorded pass as `missing_gates`. After the delta is committed, ordinary
+sync crosses each node to `done` with basis `recovered` and records those gates as policy
+violations. Until then `tiller next` offers the sync and `status` shows the recovered review.
 Do not reset refs, open an extra PR, or commit to the finally merged branch.
 
 Every task uses its recorded full-canonical-key branch, unchanged on resume. The default
