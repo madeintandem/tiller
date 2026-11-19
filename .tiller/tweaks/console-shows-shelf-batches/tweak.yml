@@ -1,9 +1,19 @@
 id: TW-5u3b5y
 key: tweaks/console-shows-shelf-batches
 title: The console does not show shelf batches
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
 depends_on:
     - TW-taq0ps
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:1a6e2ac05c6fc248d92c72655fa7af59ed9c1c09
+        path: .tiller/tweaks/console-shows-shelf-batches/tweak.md
+        observed_at: 2026-11-19T22:01:35.416269Z
+    commit:
+        kind: git_commit
+        value: git:2355812
+        observed_at: 2026-11-19T22:01:35.436331Z

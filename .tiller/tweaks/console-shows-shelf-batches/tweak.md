@@ -36,5 +36,9 @@ page would take batched work for untouched work.
   is not ranked as a milestone above the batch being added or claimed.
 - `TestVocabularyCoversEveryTransition` covers the batch noun again, with its
   event types added to `ui/src/lib/vocabulary.json`.
+- A bug, chore, or tweak holding a recovered review (TW-3eo3s2) shows its
+  recovered-review panel without an empty riders list or a blank branch row,
+  and Home's Recovered reviews tab lists it beside recovered features and
+  epics.
 - The status glyph for `batched` is distinguishable by shape, not only color.
 - `ui/dist` is rebuilt in the same change.

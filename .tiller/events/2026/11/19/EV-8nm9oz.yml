@@ -1,0 +1,13 @@
+id: EV-8nm9oz
+type: approve.tweak
+at: 2026-11-19T22:01:35.436438Z
+contributor: jc
+command: approve tweak TW-5u3b5y
+targets:
+    - TW-5u3b5y
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/tweaks/console-shows-shelf-batches/tweak.yml
