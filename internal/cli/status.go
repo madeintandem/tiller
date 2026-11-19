@@ -226,6 +226,9 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 		} else {
 			fmt.Fprintf(&b, "\n  next:  tiller approve amendment %s (held draft: the amendment's approval is the only move)", holdAmendmentAddr(*v.AmendmentHold))
 		}
+	} else if len(v.LegalNext) == 0 && v.Activity == gen.ActivityBatched {
+		// Not terminal: the member waits on its batch, whose merge crosses it.
+		fmt.Fprint(&b, "\n  next:  (none of its own: tiller sync crosses it with its batch)")
 	} else if len(v.LegalNext) == 0 {
 		fmt.Fprint(&b, "\n  next:  (none, terminal)")
 	} else {

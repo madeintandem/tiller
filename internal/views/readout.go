@@ -815,7 +815,7 @@ func approveContent(t *store.Tree, in ReadoutInput, r *Readout) {
 			// reload sees the post-approval status lifecycle.NextMoves
 			// needs to answer "what did this specific approval unblock."
 			if fresh := lookupNode(t, n.Noun, n.ID); fresh != nil {
-				for _, v := range legalNext(fresh) {
+				for _, v := range legalNextIn(t, fresh) {
 					unblocked[v] = true
 				}
 			}

@@ -225,6 +225,8 @@ type BatchRefusalData struct {
 	BatchKey     string `json:"batch_key,omitempty"`
 	Member       string `json:"member,omitempty"`
 	Command      string `json:"command,omitempty"`
+	// Paths are the state files to commit, on batch_state_uncommitted.
+	Paths []string `json:"paths,omitempty"`
 }
 
 // batchBlockedView maps a batch refusal onto its data block and human line,
@@ -236,7 +238,7 @@ func batchBlockedView(_ *store.Tree, err error) (any, string, bool) {
 	}
 	return BatchRefusalData{
 		Reason: refusal.Reason, Noun: refusal.Noun, ID: refusal.NodeID, Key: refusal.Key, CurrentState: refusal.CurrentState,
-		Batch: refusal.Batch, BatchKey: refusal.BatchKey, Member: refusal.Member, Command: refusal.Seam,
+		Batch: refusal.Batch, BatchKey: refusal.BatchKey, Member: refusal.Member, Command: refusal.Seam, Paths: refusal.Paths,
 	}, "Blocked: " + refusal.Error() + ".", true
 }
 

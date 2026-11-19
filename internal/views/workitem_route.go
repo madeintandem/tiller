@@ -22,6 +22,11 @@ func routableShelfNodes(t *store.Tree, owner string) []store.WorkNode {
 		if body.Owner != owner || (body.Status != "check" && body.Status != "ready" && body.Status != "in_progress") {
 			continue
 		}
+		// A ready batch with an unapproved member cannot start: the move is
+		// the human's triage of that member, which the triage rows carry.
+		if work.Noun() == store.NounBatch && body.Status == "ready" && !batchStartable(t, work) {
+			continue
+		}
 		if body.Status == "check" {
 			checked = append(checked, work)
 		} else {
@@ -77,11 +82,11 @@ func ReadyShelfQueueLine(t *store.Tree) string {
 		}
 		parts = append(parts, fmt.Sprintf("%d %s", ready, plural(ready, shelf.Noun, shelf.Dir)))
 	}
-	// Batches join the line only when one is ready, so a project that never
-	// batches reads exactly as it did.
+	// Batches join the line only when one is ready to start, every member
+	// approved, so a project that never batches reads exactly as it did.
 	ready := 0
 	for _, batch := range t.Batches {
-		if batch.Status == "ready" {
+		if batch.Status == "ready" && batchStartable(t, batch) {
 			ready++
 		}
 	}

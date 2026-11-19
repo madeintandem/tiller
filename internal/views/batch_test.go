@@ -54,6 +54,15 @@ func TestBatchedPhaseFollowsTheBatch(t *testing.T) {
 
 func TestNextOffersABatchAsOneUnitAndNeverItsMembers(t *testing.T) {
 	tree := batchTree()
+	// With a member still proposed the batch cannot start, so the move is the
+	// human's triage of that member and the batch is not offered as work.
+	waiting := nextFor(tree, "jc", workflow.Input{})
+	require.Empty(t, candidatesFor(waiting.Candidates, "BT-aaaaaa"), "start batch would refuse batch_member_unready")
+	triage := candidatesFor(waiting.Candidates, "CH-aaaaaa")
+	require.Len(t, triage, 1)
+	require.Equal(t, "human", triage[0].Actor)
+
+	tree.Chores["CH-aaaaaa"].Status = "ready"
 	next := nextFor(tree, "jc", workflow.Input{})
 	require.Equal(t, []string{"BT-aaaaaa", "B-bbbbbb"}, candidateNodeIDs(candidatesOfKind(next.Candidates, "continue")))
 	require.Empty(t, candidatesFor(next.Candidates, "B-aaaaaa"))
@@ -72,6 +81,8 @@ func TestNextOffersABatchAsOneUnitAndNeverItsMembers(t *testing.T) {
 
 func TestReadyQueueLineCountsABatchOnceAndNotItsMembers(t *testing.T) {
 	tree := batchTree()
+	require.Equal(t, "queue: 1 bug, 0 chores, 0 tweaks ready", views.ReadyShelfQueueLine(tree), "a batch with an unapproved member is not ready to start")
+	tree.Chores["CH-aaaaaa"].Status = "ready"
 	require.Equal(t, "queue: 1 bug, 0 chores, 0 tweaks, 1 batch ready", views.ReadyShelfQueueLine(tree))
 	startBatch(tree, "in_progress")
 	require.Equal(t, "queue: 1 bug, 0 chores, 0 tweaks ready", views.ReadyShelfQueueLine(tree))
@@ -116,7 +127,7 @@ func TestMemberViewsNameTheBatchAndBatchViewsListTheMembers(t *testing.T) {
 	status := views.NodeStatus(tree, member, workflow.Input{})
 	require.Equal(t, "ready", status.Status, "the stored status is the member's own")
 	require.Equal(t, gen.ActivityBatched, status.Activity)
-	require.Equal(t, []string{"cancel"}, status.LegalNext, "the batch owns start, and return closed when it started")
+	require.Empty(t, status.LegalNext, "the batch owns start, return closed when it started, and cancel closed when it went to review")
 	require.NotNil(t, status.Batch)
 	require.Equal(t, "BT-aaaaaa", status.Batch.ID)
 	require.Equal(t, "in_review", status.Batch.Status)
@@ -125,7 +136,12 @@ func TestMemberViewsNameTheBatchAndBatchViewsListTheMembers(t *testing.T) {
 
 	shown := views.Node(tree, member)
 	require.Equal(t, "BT-aaaaaa", shown.Batch.ID)
-	require.Equal(t, "human", shown.NextOwner)
+	require.Empty(t, shown.NextOwner, "nothing moves the member itself while its batch is in review")
+
+	batch.Status = "in_progress"
+	require.Equal(t, []string{"cancel"}, views.NodeStatus(tree, member, workflow.Input{}).LegalNext)
+	require.Equal(t, "human", views.Node(tree, member).NextOwner)
+	batch.Status = "in_review"
 	require.Equal(t, "BT-aaaaaa", views.Item(tree, member).Batch)
 
 	onBatch := views.NodeStatus(tree, batch, workflow.Input{})

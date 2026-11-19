@@ -39,6 +39,7 @@ var catalog = []RelationKind{
 	{Name: "supersedes", Inverse: "superseded_by", FromKinds: []string{"feature", "task", "bug", "chore", "tweak", "reference"}, ToKinds: []string{"feature", "task", "bug", "chore", "tweak", "reference"}},
 	{Name: "attached_to", Inverse: "attached_work", FromKinds: []string{"bug", "chore", "tweak"}, ToKinds: []string{"epic", "feature", "task", "reference"}},
 	{Name: "resolved_by", Inverse: "resolves", FromKinds: []string{"bug", "chore", "tweak"}, ToKinds: []string{"epic", "feature", "task", "reference"}},
+	{Name: "batched_in", Inverse: "batches", FromKinds: []string{"bug", "chore", "tweak"}, ToKinds: []string{"batch", "reference"}},
 	{Name: "duplicate_of", Inverse: "duplicates", FromKinds: []string{"bug", "chore", "tweak"}, ToKinds: []string{"bug", "chore", "tweak", "reference"}},
 	{Name: "blocks", Inverse: "blocked_by", FromKinds: []string{"question"}, ToKinds: []string{"epic", "feature", "task", "reference"}},
 	{Name: "assumes", Inverse: "assumed_by", FromKinds: []string{"feature"}, ToKinds: []string{"question", "reference"}},

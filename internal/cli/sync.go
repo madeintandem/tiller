@@ -113,6 +113,10 @@ type SyncView struct {
 	// integration branch name while they have no recorded submission
 	// (sync_unrecorded.go). Sync recorded nothing for them.
 	UnrecordedMerges []UnrecordedMergeView `json:"unrecorded_merges,omitempty"`
+	// MemberlessBatches carries each batch whose merge sync observed while no
+	// bug, chore, or tweak on the integration tree points at it
+	// (sync_unrecorded.go). It was left in review.
+	MemberlessBatches []MemberlessBatchView `json:"memberless_batches,omitempty"`
 	// UsageWarning is set when the best-effort agent usage capture sync runs
 	// after its own work failed, ran out of time, or was skipped. It never
 	// changes sync's exit code or what sync recorded.
@@ -302,6 +306,8 @@ type SyncAttestRefusedNode struct {
 	Branch   string        `json:"branch,omitempty"`
 	Reason   string        `json:"reason"`
 	Recovery *RecoveryView `json:"recovery,omitempty"`
+	// Batch is the batch to name instead, on a batch_member refusal.
+	Batch string `json:"batch,omitempty"`
 }
 
 // RecoveryView is the additive recovery object a not_contained refusal carries
@@ -579,7 +585,13 @@ func syncRefusedView(tree *store.Tree, err error) (data any, human string, match
 			if n.Branch != "" {
 				line += " on " + n.Branch
 			}
-			lines = append(lines, line+": "+attestReasonPhrase(n.Reason, attest.Into))
+			view.Batch = n.Batch
+			if n.Reason == mutate.AttestReasonBatchMember {
+				lines = append(lines, fmt.Sprintf("%s: batch %s reviews it, so the merge to assert is the batch's: tiller sync --accept-fast-forward %s",
+					line, gen.RefByID(tree, n.Batch), n.Batch))
+			} else {
+				lines = append(lines, line+": "+attestReasonPhrase(n.Reason, attest.Into))
+			}
 
 			if n.Recovery != nil {
 				steps := recoverySteps(n)
@@ -769,7 +781,8 @@ func syncView(res mutate.SyncResult) SyncView {
 		Attested:   res.Attested,
 		ChecksDue:  due,
 
-		UnrecordedMerges: unrecordedMergeViews(res.UnrecordedMerges),
+		UnrecordedMerges:  unrecordedMergeViews(res.UnrecordedMerges),
+		MemberlessBatches: memberlessBatchViews(res.MemberlessBatches),
 	}
 }
 
@@ -796,7 +809,7 @@ func syncView(res mutate.SyncResult) SyncView {
 func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 	if len(res.Crossings) == 0 {
 		reopened, skipped := humanSyncReopened(tree, res), humanSyncSkipped(tree, res)
-		unrecorded := humanSyncUnrecordedMerges(res)
+		unrecorded := humanSyncUnrecorded(res)
 		// The clean-run line is suppressed whenever another block has something
 		// to say, because "no merged branches to record" directly contradicts a
 		// list of nodes this run just moved or could not record, and reads as
@@ -849,7 +862,7 @@ func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 		lines = append(lines, mismatch)
 	}
 	return joinSyncBlocks(strings.Join(lines, "\n"), humanSyncReopened(tree, res), humanSyncSkipped(tree, res),
-		humanSyncUnrecordedMerges(res), humanSyncChecksDue(tree, res))
+		humanSyncUnrecorded(res), humanSyncChecksDue(tree, res))
 }
 
 func humanSyncTouchedDesign(crossings []mutate.Crossing) string {
@@ -1124,7 +1137,7 @@ func humanSyncAwaiting(tree *store.Tree, res mutate.SyncResult) string {
 			"A node in "+res.Into+" already with no merge commit to witness it crosses only on the "+
 				"human's assertion, which is theirs to type: tiller sync --accept-fast-forward <node>.")
 		lines = append(lines,
-			"  Name the task at task grain, the reviewed feature or epic at coarse grain, or the bug/chore/tweak.")
+			"  Name the task at task grain, the reviewed feature or epic at coarse grain, the bug/chore/tweak, or the batch.")
 	}
 	return strings.Join(lines, "\n")
 }

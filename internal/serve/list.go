@@ -74,6 +74,7 @@ var listNouns = map[string]string{
 	"bug": store.NounBug, "bugs": store.NounBug,
 	"chore": store.NounChore, "chores": store.NounChore,
 	"tweak": store.NounTweak, "tweaks": store.NounTweak,
+	"batch": store.NounBatch, "batches": store.NounBatch,
 }
 
 // ListHandler answers GET /api/ls?noun=features&status=&owner=&contributor=&feature=&epic=.
@@ -88,7 +89,7 @@ func ListHandler(root string) http.HandlerFunc {
 		q := r.URL.Query()
 		noun, ok := listNouns[q.Get("noun")]
 		if !ok {
-			return nil, &httpError{http.StatusBadRequest, "noun must be one of epic(s), feature(s), task(s), question(s), amendment(s), bug(s), chore(s), tweak(s)"}
+			return nil, &httpError{http.StatusBadRequest, "noun must be one of epic(s), feature(s), task(s), question(s), amendment(s), bug(s), chore(s), tweak(s), batch(es)"}
 		}
 		f := views.ListFilters{
 			Status:      q.Get("status"),

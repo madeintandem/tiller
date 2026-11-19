@@ -181,13 +181,10 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 	for _, tk := range t.Tasks {
 		addActive(tk, tk.Status)
 	}
-	for _, noun := range store.ShelfNouns() {
-		for _, w := range t.WorkNodesOf(noun) {
-			if gen.WorkLeftQueue(t, w) {
-				continue
-			}
-			addActive(w, w.Body().Status)
-		}
+	// A batch is the unit its members' work shows up as: it is listed, and
+	// they are not.
+	for _, w := range shelfExecutionUnits(t) {
+		addActive(w, w.Body().Status)
 	}
 
 	addBlocked := func(n store.Node, dependsOn []string) {
@@ -217,13 +214,8 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 	for _, task := range t.Tasks {
 		addBlocked(task, task.DependsOn)
 	}
-	for _, noun := range store.ShelfNouns() {
-		for _, w := range t.WorkNodesOf(noun) {
-			if gen.WorkLeftQueue(t, w) {
-				continue
-			}
-			addBlocked(w, w.Body().DependsOn)
-		}
+	for _, w := range shelfExecutionUnits(t) {
+		addBlocked(w, w.Body().DependsOn)
 	}
 
 	// Retired ancestry holds only the owner's current task assignments.
@@ -281,16 +273,14 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, tk)
 		s.GatesInReview = append(s.GatesInReview, item)
 	}
-	for _, noun := range store.ShelfNouns() {
-		for _, w := range t.WorkNodesOf(noun) {
-			body := w.Body()
-			if Owner(w) != o.ID || body.Status != gen.ReviewState || gen.WorkLeftQueue(t, w) {
-				continue
-			}
-			item := GatesItem{Noun: w.Noun(), ID: body.ID, Key: Key(w), Ref: gen.Ref(t, w), Gates: Gates(body.GatesBlock)}
-			item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, w)
-			s.GatesInReview = append(s.GatesInReview, item)
+	for _, w := range shelfExecutionUnits(t) {
+		body := w.Body()
+		if Owner(w) != o.ID || body.Status != gen.ReviewState {
+			continue
 		}
+		item := GatesItem{Noun: w.Noun(), ID: body.ID, Key: Key(w), Ref: gen.Ref(t, w), Gates: Gates(body.GatesBlock)}
+		item.Title, item.FeatureID, item.FeatureTitle = streamIdentity(t, w)
+		s.GatesInReview = append(s.GatesInReview, item)
 	}
 
 	for _, q := range t.Questions {

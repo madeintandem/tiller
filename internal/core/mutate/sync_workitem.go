@@ -1,10 +1,12 @@
 package mutate
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/lifecycle"
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/vcs"
 	"gopkg.in/yaml.v3"
@@ -57,13 +59,14 @@ func observationWorkBranch(m *store.Manifest, w store.WorkNode) string {
 // It computes its own awaiting entries; task observations are collected in the
 // preceding pass, while each independent shelf node owns its own observation.
 func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revisions, tip integrationTip, cache *patchCache,
-	attested, recovered map[string]mergeObs) ([]Crossing, []Awaiting, error) {
+	attested, recovered map[string]mergeObs) ([]Crossing, []Awaiting, []MemberlessBatch, error) {
 	fresh, err := store.Load(tree.Root)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	var crossings []Crossing
 	var awaiting []Awaiting
+	var memberless []MemberlessBatch
 	// observeOwn answers for a node on its own review: its branch against the
 	// integration branch, or the recovered review it holds.
 	observeOwn := func(live store.WorkNode) error {
@@ -88,6 +91,14 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 				Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Branch: mo.Branch,
 				BranchMissing: !mo.BranchExists, NoMergeWitness: mo.NoMergeWitness,
 			})
+			return nil
+		}
+		if live.Noun() == store.NounBatch && len(tree.BatchMembers(w.ID)) == 0 {
+			// The batch merged, but the integration tree holds no member
+			// pointing at it. Crossing it would close the batch and strand
+			// every bug it reviewed at ready, so it is reported and left in
+			// review.
+			memberless = append(memberless, MemberlessBatch{ID: w.ID, Key: deref(w.Key), Branch: mo.Branch})
 			return nil
 		}
 		match := ""
@@ -115,7 +126,7 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 			continue
 		}
 		if err := observeOwn(batch); err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 	for _, noun := range store.ShelfNouns() {
@@ -132,7 +143,7 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 				}
 				c, cerr := crossWorkBatched(tree, deps, owner, live, batch, tip.Ref)
 				if cerr != nil {
-					return nil, nil, cerr
+					return nil, nil, nil, cerr
 				}
 				crossings = append(crossings, c)
 				continue
@@ -143,7 +154,7 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 				}
 				c, cerr := crossWorkCarried(tree, deps, owner, live, tip.Ref)
 				if cerr != nil {
-					return nil, nil, cerr
+					return nil, nil, nil, cerr
 				}
 				crossings = append(crossings, c)
 				continue
@@ -152,11 +163,11 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 			// carry it: the node answers on its own branch from here, unless a
 			// recovered review answers for it.
 			if err := observeOwn(live); err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 		}
 	}
-	return crossings, awaiting, nil
+	return crossings, awaiting, memberless, nil
 }
 
 // crossWorkDone records an observed merge on a shelf node: the lifecycle's
@@ -250,4 +261,27 @@ func crossWorkBatched(tree *store.Tree, deps Deps, owner store.Contributor, live
 	}
 	live.Body().Status = w.Status
 	return Crossing{Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Status: w.Status, Observed: observed.Value, Basis: basisBatched, Batch: batch.ID}, nil
+}
+
+// MemberlessBatch is a batch whose merge sync observed while this checkout
+// shows it with no members at all. Its members' batch pointers were written by add batch or
+// batch --add and never committed onto the branch that carried the batch
+// record here, so sync has no member to cross and refuses to cross the batch
+// alone.
+type MemberlessBatch struct {
+	ID     string
+	Key    string
+	Branch string
+}
+
+// NextStep is the repair: cancelling the batch closes the empty record, and
+// each bug, chore, or tweak whose fix merged is then recorded on its own.
+func (m MemberlessBatch) NextStep() string {
+	return fmt.Sprintf(`tiller cancel batch %s --reason "<why>"`, localKey(m.Key))
+}
+
+// Warning is the whole finding as one sentence.
+func (m MemberlessBatch) Warning() string {
+	return fmt.Sprintf("batch %s merged with no members on this branch, so it was not crossed: the state files that point its bugs, chores, or tweaks at it were never committed on %s. Cancel it (%s), then record each one that merged with tiller submit <bug|chore|tweak> <node> --recover-merged",
+		gen.RefParts(m.Key, m.ID), m.Branch, m.NextStep())
 }

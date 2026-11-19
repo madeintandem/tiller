@@ -188,6 +188,9 @@ type SyncResult struct {
 	// branch name while they have no recorded submission. Nothing was recorded
 	// for them; they are named so the merge is not met with silence.
 	UnrecordedMerges []UnrecordedMerge
+	// MemberlessBatches carries each batch whose merge was observed while no
+	// shelf node on the integration tree points at it. It was not crossed.
+	MemberlessBatches []MemberlessBatch
 }
 
 // Reopening is one rollup-backed node sync returned to work: a done feature that
@@ -496,7 +499,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	// The shelf pass runs last, so a carried bug or chore reads the carrier
 	// status the two passes above just wrote rather than the one this run
 	// started with (docs/spec/cli-surface.md).
-	workCrossings, workAwaiting, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested, recoveredShelf)
+	workCrossings, workAwaiting, memberless, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested, recoveredShelf)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -522,7 +525,8 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 		Attested:   named,
 		ChecksDue:  due,
 
-		UnrecordedMerges: unrecorded,
+		UnrecordedMerges:  unrecorded,
+		MemberlessBatches: memberless,
 	}, nil
 }
 
@@ -1168,6 +1172,14 @@ func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, int
 				msg: fmt.Sprintf("--accept-fast-forward names %s, which is not a %s in this project", id, englishList("or", reviewed...))}
 		}
 		named = append(named, id)
+		if w, ok := tree.WorkNode(id); ok {
+			if batch := liveBatchOf(tree, w); batch != nil {
+				n := notEligible(noun, id, key, "", AttestReasonBatchMember)
+				n.Batch = batch.ID
+				ineligible = append(ineligible, n)
+				continue
+			}
+		}
 		if !would {
 			ineligible = append(ineligible, notEligible(noun, id, key, branch, AttestReasonNothingToCross))
 			continue

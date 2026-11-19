@@ -70,7 +70,10 @@ type BatchError struct {
 	BatchKey     string
 	Member       string
 	Seam         string
-	msg          string
+	// Paths are the state files a batch_state_uncommitted refusal wants
+	// committed.
+	Paths []string
+	msg   string
 }
 
 func (e *BatchError) Error() string { return e.msg }
@@ -89,6 +92,8 @@ const (
 	ReasonBatchInReview            = "batch_in_review"
 	ReasonBatchClosed              = "batch_closed"
 	ReasonBatchStarted             = "batch_started"
+	ReasonBatchStateUncommitted    = "batch_state_uncommitted"
+	reasonBatchEditContradiction   = "batch_edit_contradiction"
 	reasonBatchTooSmall            = "batch_too_small"
 	reasonBatchMemberRef           = "batch_member_ref"
 	reasonBatchEditRequired        = "batch_edit_required"
@@ -207,18 +212,33 @@ func memberIDs(members []BatchMember) []string {
 }
 
 // memberWrite plans one member's state file with its batch pointer set to
-// batchID ("" leaves the batch).
-func memberWrite(tree *store.Tree, member store.WorkNode, batchID string) (store.PlannedWrite, string, error) {
+// batchID ("" leaves the batch), and the member's own event for it. The event
+// is batch.<noun>, as resolve.<noun> records a carrier: it carries the pointer
+// and no status, so the member's history says it joined or left a batch and
+// never borrows the batch's verb or state.
+func memberWrite(tree *store.Tree, deps Deps, owner store.Contributor, member store.WorkNode, batchID, command string) (store.PlannedWrite, events.Event, error) {
 	doc, relYml, snapshot, err := loadWorkItemFile(tree, member)
 	if err != nil {
-		return store.PlannedWrite{}, "", err
+		return store.PlannedWrite{}, events.Event{}, err
 	}
+	before := doc.Body().BatchID
 	doc.Body().BatchID = batchID
 	data, err := yaml.Marshal(doc)
 	if err != nil {
-		return store.PlannedWrite{}, "", err
+		return store.PlannedWrite{}, events.Event{}, err
 	}
-	return store.PlanWrite(filepath.Join(tree.Root, relYml), snapshot, data), relYml, nil
+	ev := memberBatchEvent(deps, owner, member, before, batchID, command)
+	ev.Files = []events.FileChange{{Path: relYml}}
+	return store.PlanWrite(filepath.Join(tree.Root, relYml), snapshot, data), ev, nil
+}
+
+// memberBatchEvent is the member-side record of joining or leaving a batch.
+func memberBatchEvent(deps Deps, owner store.Contributor, member store.WorkNode, before, after, command string) events.Event {
+	ev := events.NewEvent(deps.clock(), workItemEventType("batch", member.Noun()), owner.ID, command, member.NodeID())
+	ev.ID = deps.mintRaw("EV")
+	ev.Before = map[string]any{"batch": before}
+	ev.After = map[string]any{"batch": after}
+	return ev
 }
 
 // AddBatch creates a batch over two or more shelf nodes. The batch is born
@@ -274,23 +294,25 @@ func AddBatch(tree *store.Tree, deps Deps, in BatchInput) (BatchResult, error) {
 	if err != nil {
 		return BatchResult{}, err
 	}
+	res := BatchResult{ID: batchID, Key: canonical, Title: batch.Title, Status: batch.Status, Members: batchMembersOf(members), Created: true}
+	res.Added = res.Members
+	// The batch's own event targets the batch alone and names its members in
+	// after.members, so no member's history shows the batch's status as its own.
+	ev := events.NewEvent(deps.clock(), "add."+store.NounBatch, owner.ID, "add batch "+local, batchID)
+	ev.ID = deps.mintRaw("EV")
+	ev.After = map[string]any{"status": batch.Status, "key": canonical, "members": memberIDs(res.Members)}
+	ev.Files = []events.FileChange{{Path: relYml}}
 	writes := []store.PlannedWrite{store.PlanWrite(filepath.Join(tree.Root, relYml), store.AbsentSnapshot(), data)}
-	files := []events.FileChange{{Path: relYml}}
+	evs := []events.Event{ev}
 	for _, member := range members {
-		write, rel, err := memberWrite(tree, member, batchID)
+		write, memberEvent, err := memberWrite(tree, deps, owner, member, batchID, "add batch "+local)
 		if err != nil {
 			return BatchResult{}, err
 		}
 		writes = append(writes, write)
-		files = append(files, events.FileChange{Path: rel})
+		evs = append(evs, memberEvent)
 	}
-	res := BatchResult{ID: batchID, Key: canonical, Title: batch.Title, Status: batch.Status, Members: batchMembersOf(members), Created: true}
-	res.Added = res.Members
-	ev := events.NewEvent(deps.clock(), "add."+store.NounBatch, owner.ID, "add batch "+local, append([]string{batchID}, memberIDs(res.Members)...)...)
-	ev.ID = deps.mintRaw("EV")
-	ev.After = map[string]any{"status": batch.Status, "key": canonical, "members": memberIDs(res.Members)}
-	ev.Files = files
-	if err := commitMutation(tree, "add batch", writes, []events.Event{ev}); err != nil {
+	if err := commitMutation(tree, "add batch", writes, evs); err != nil {
 		return BatchResult{}, err
 	}
 	return res, nil
@@ -367,6 +389,13 @@ func EditBatch(tree *store.Tree, deps Deps, in BatchEditInput) (BatchResult, err
 	if err != nil {
 		return BatchResult{}, err
 	}
+	for _, member := range adding {
+		for _, other := range removing {
+			if member.NodeID() == other.NodeID() {
+				return BatchResult{}, &usageError{reason: reasonBatchEditContradiction, msg: fmt.Sprintf("--add and --remove both name %s; a member is added or removed, not both", member.NodeID())}
+			}
+		}
+	}
 	// Drop the requests that already hold, so a retry is a no-change success.
 	adding = filterMembers(adding, func(w store.WorkNode) bool { return w.Body().BatchID != batch.ID })
 	for _, member := range removing {
@@ -400,22 +429,29 @@ func EditBatch(tree *store.Tree, deps Deps, in BatchEditInput) (BatchResult, err
 		}
 	}
 
+	res.Added, res.Removed = batchMembersOf(adding), batchMembersOf(removing)
+	command := "batch " + batchAddr(batch)
+	for _, member := range res.Added {
+		command += " --add " + member.ID
+	}
+	for _, member := range res.Removed {
+		command += " --remove " + member.ID
+	}
 	var writes []store.PlannedWrite
-	var files []events.FileChange
+	var evs []events.Event
 	for _, change := range []struct {
 		members []store.WorkNode
 		batchID string
 	}{{adding, batch.ID}, {removing, ""}} {
 		for _, member := range change.members {
-			write, rel, err := memberWrite(tree, member, change.batchID)
+			write, memberEvent, err := memberWrite(tree, deps, owner, member, change.batchID, command)
 			if err != nil {
 				return BatchResult{}, err
 			}
 			writes = append(writes, write)
-			files = append(files, events.FileChange{Path: rel})
+			evs = append(evs, memberEvent)
 		}
 	}
-	res.Added, res.Removed = batchMembersOf(adding), batchMembersOf(removing)
 	gone := map[string]bool{}
 	for _, member := range res.Removed {
 		gone[member.ID] = true
@@ -424,68 +460,77 @@ func EditBatch(tree *store.Tree, deps Deps, in BatchEditInput) (BatchResult, err
 	remaining := filterMembers(tree.BatchMembers(batch.ID), func(w store.WorkNode) bool { return !gone[w.NodeID()] })
 	res.Members = append(batchMembersOf(remaining), res.Added...)
 
-	before := batch.Status
-	after := map[string]any{}
-	if len(res.Added) > 0 {
-		after["added"] = memberIDs(res.Added)
-	}
-	if len(res.Removed) > 0 {
-		after["removed"] = memberIDs(res.Removed)
-	}
-	changed, err := batchAfterMembershipChange(batch, len(res.Members) == 0, after)
+	ev, changed, err := batchMembershipEvent(deps, owner, batch, command, memberIDs(res.Added), memberIDs(res.Removed), len(res.Members) == 0)
 	if err != nil {
 		return BatchResult{}, err
 	}
-	res.Status, res.Cancelled, res.GatesStaled = batch.Status, batch.Status == statusCancelled, after["gates"] == store.GateStatusStale
+	res.Status, res.Cancelled, res.GatesStaled = batch.Status, batch.Status == statusCancelled, ev.After["gates"] == store.GateStatusStale
 	if changed {
 		data, err := yaml.Marshal(batch)
 		if err != nil {
 			return BatchResult{}, err
 		}
 		writes = append(writes, store.PlanWrite(filepath.Join(tree.Root, relYml), snapshot, data))
-		files = append(files, events.FileChange{Path: relYml})
+		ev.Files = []events.FileChange{{Path: relYml}}
 	} else {
 		writes = append(writes, store.PlanReadGuard(filepath.Join(tree.Root, relYml), snapshot))
 	}
-	command := "batch " + batchAddr(batch)
-	for _, member := range res.Added {
-		command += " --add " + member.ID
-	}
-	for _, member := range res.Removed {
-		command += " --remove " + member.ID
-	}
-	targets := append([]string{batch.ID}, append(memberIDs(res.Added), memberIDs(res.Removed)...)...)
-	ev := events.NewEvent(deps.clock(), "edit."+store.NounBatch, owner.ID, command, targets...)
-	ev.ID = deps.mintRaw("EV")
-	ev.Before = map[string]any{"status": before}
-	after["status"] = batch.Status
-	ev.After = after
-	ev.Files = files
-	if err := commitMutation(tree, "edit batch", writes, []events.Event{ev}); err != nil {
+	if err := commitMutation(tree, "edit batch", writes, append([]events.Event{ev}, evs...)); err != nil {
 		return BatchResult{}, err
 	}
 	res.Changed = true
 	return res, nil
 }
 
-// batchAfterMembershipChange applies what a membership change does to the
-// batch record itself, noting it on the event's after map: a batch with no
-// members left is cancelled, and one at check has its gates staled. It reports
-// whether the record changed.
-func batchAfterMembershipChange(batch *store.Batch, empty bool, after map[string]any) (bool, error) {
-	if empty {
+// batchMembershipEvent applies what a membership change does to the batch
+// record and returns the batch's own event for it, which targets the batch
+// alone and names the members in after.added and after.removed. A batch with
+// no members left is cancelled, and that is a cancel.batch event. Otherwise it
+// is edit.batch, and a batch at check has whatever gates it recorded staled.
+// changed reports whether the record itself moved.
+func batchMembershipEvent(deps Deps, owner store.Contributor, batch *store.Batch, command string, added, removed []string, empty bool) (events.Event, bool, error) {
+	before := batch.Status
+	after := map[string]any{}
+	if len(added) > 0 {
+		after["added"] = added
+	}
+	if len(removed) > 0 {
+		after["removed"] = removed
+	}
+	verb, changed := "edit", false
+	switch {
+	case empty:
 		if err := lifecycle.Apply(batch, "cancel", lifecycle.Payload{}); err != nil {
-			return false, err
+			return events.Event{}, false, err
 		}
 		after["reason"] = "its last member left"
-		return true, nil
-	}
-	if batch.Status == "check" {
-		lifecycle.StaleGates(batch)
+		verb, changed = "cancel", true
+	case batch.Status == "check" && staleRecordedGates(batch):
 		after["gates"] = store.GateStatusStale
-		return true, nil
+		changed = true
 	}
-	return false, nil
+	after["status"] = batch.Status
+	ev := events.NewEvent(deps.clock(), verb+"."+store.NounBatch, owner.ID, command, batch.ID)
+	ev.ID = deps.mintRaw("EV")
+	ev.Before = map[string]any{"status": before}
+	ev.After = after
+	return ev, changed, nil
+}
+
+// staleRecordedGates stales a batch's recorded gates and reports whether any
+// was still current. A batch with nothing recorded, as when no gate applies to
+// shelf work, has nothing to run again.
+func staleRecordedGates(batch *store.Batch) bool {
+	staled := false
+	for _, gate := range batch.Gates {
+		if gate.Status != store.GateStatusStale {
+			staled = true
+		}
+	}
+	if staled {
+		lifecycle.StaleGates(batch)
+	}
+	return staled
 }
 
 func filterMembers(nodes []store.WorkNode, keep func(store.WorkNode) bool) []store.WorkNode {

@@ -111,6 +111,9 @@ const (
 	AttestReasonBranchMissing  = "branch_missing"
 	AttestReasonNotContained   = "not_contained"
 	AttestReasonNothingToCross = "nothing_to_cross"
+	// AttestReasonBatchMember is a bug, chore, or tweak a live batch reviews:
+	// the merge to assert is the batch's, and Batch names it.
+	AttestReasonBatchMember = "batch_member"
 )
 
 // AttestNotEligible is one node the human named on --accept-fast-forward that the
@@ -130,6 +133,8 @@ type AttestNotEligible struct {
 	Branch   string
 	Reason   string
 	Recovery *Recovery
+	// Batch is the batch to name instead, on a batch_member refusal.
+	Batch string
 }
 
 // Recovery is the honest remediation for a not_contained refusal: the branch's

@@ -45,7 +45,7 @@ const KindDocument = "document"
 // then the ledgers, then loose documents.
 var Kinds = []string{
 	store.NounEpic, store.NounFeature, store.NounTask,
-	store.NounBug, store.NounChore, store.NounTweak,
+	store.NounBug, store.NounChore, store.NounTweak, store.NounBatch,
 	store.NounQuestion, store.NounAmendment, KindDocument,
 }
 

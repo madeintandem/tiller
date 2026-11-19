@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
+	"github.com/madeintandem/tiller/internal/views"
 	"github.com/stretchr/testify/require"
 )
 
@@ -189,6 +192,8 @@ func TestSyncNamesTheBatchOnEachMemberCrossing(t *testing.T) {
 	gitRun(t, root, "commit", "-m", "start the pair")
 	gitRun(t, root, "checkout", "-b", "tiller/batches/pair")
 	mustRun(t, "check", "batch", "pair", "--contributor", "jc")
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "pair gate evidence")
 	mustRun(t, "submit", "batch", "pair", "--contributor", "jc")
 	gitRun(t, root, "add", "-A")
 	gitRun(t, root, "commit", "-m", "pair in review")
@@ -267,4 +272,235 @@ func bugByKey(t *testing.T, key string) *store.Bug {
 	}
 	require.Failf(t, "no bug", "bugs/%s", key)
 	return nil
+}
+
+// layPairInReview drives two approved bugs through one batch to in_review on
+// its branch. commitMembers says whether the start commit carries the member
+// state files, the step whose omission strands a batch.
+func layPairInReview(t *testing.T, commitMembers bool) string {
+	t.Helper()
+	root := laySevenBugs(t)
+	mustRun(t, append([]string{"approve", "bug", "--contributor", "jc"}, sevenBugKeys...)...)
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "approve")
+	mustRun(t, "add", "batch", "pair", "--title", "Pair", "bugs/one", "bugs/two", "--contributor", "jc")
+	mustRun(t, "claim", "batch", "pair", "--contributor", "jc")
+	mustRun(t, "start", "batch", "pair", "--contributor", "jc")
+	gitRun(t, root, "checkout", "-b", "tiller/batches/pair")
+	if commitMembers {
+		gitRun(t, root, "add", "-A")
+	} else {
+		gitRun(t, root, "add", "--", ".tiller/batches", ".tiller/events")
+	}
+	gitRun(t, root, "commit", "-m", "start batch")
+	return root
+}
+
+// Following the choreography with the member state files left out of the
+// batch branch: check and submit refuse and name the paths.
+func TestBatchCheckAndSubmitRefuseUncommittedMemberStateCLI(t *testing.T) {
+	root := layPairInReview(t, false)
+	refusal := batchRefusal(t, "check", "batch", "pair", "--contributor", "jc")
+	require.Equal(t, "batch_state_uncommitted", refusal.Reason)
+	require.Equal(t, []string{".tiller/bugs/one/bug.yml", ".tiller/bugs/two/bug.yml"}, refusal.Paths)
+	require.Equal(t, "git add -- .tiller/bugs/one/bug.yml .tiller/bugs/two/bug.yml", refusal.Command)
+
+	out, stderr, code := execCLI(t, "check", "batch", "pair", "--contributor", "jc")
+	require.Equal(t, 1, code)
+	require.Contains(t, out+stderr, "cannot be checked while its state is uncommitted: .tiller/bugs/one/bug.yml, .tiller/bugs/two/bug.yml. Commit these on branch tiller/batches/pair with the events beside them")
+
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "member pointers")
+	mustRun(t, "check", "batch", "pair", "--contributor", "jc")
+	refusal = batchRefusal(t, "submit", "batch", "pair", "--contributor", "jc")
+	require.Equal(t, "batch_state_uncommitted", refusal.Reason)
+	require.Equal(t, []string{".tiller/batches/pair/batch.yml"}, refusal.Paths)
+}
+
+// The integration branch receives the batch record and no member pointer.
+// Sync refuses to close the batch over bugs it cannot see, and says what to do.
+func TestSyncLeavesAMemberlessBatchInReviewCLI(t *testing.T) {
+	root := layPairInReview(t, true)
+	mustRun(t, "check", "batch", "pair", "--contributor", "jc")
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "gate evidence")
+	mustRun(t, "submit", "batch", "pair", "--contributor", "jc")
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "in review")
+	gitRun(t, root, "checkout", "main")
+	gitRun(t, root, "merge", "--no-ff", "-m", "merge the pair", "tiller/batches/pair")
+	// What integration holds when the member files never rode the branch.
+	for _, key := range []string{"one", "two"} {
+		path := filepath.Join(root, ".tiller", "bugs", key, "bug.yml")
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		var kept []string
+		for _, line := range strings.Split(string(data), "\n") {
+			if !strings.HasPrefix(line, "batch: ") {
+				kept = append(kept, line)
+			}
+		}
+		require.NoError(t, os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0o644))
+	}
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "integration without member pointers")
+
+	out, _, code := execCLI(t, "sync", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "Warning: merged into main but not crossed (1):")
+	require.Contains(t, out, "merged with no members on this branch, so it was not crossed: the state files that point its bugs, chores, or tweaks at it were never committed on tiller/batches/pair.")
+	require.Contains(t, out, `Cancel it (tiller cancel batch pair --reason "<why>"), then record each one that merged with tiller submit <bug|chore|tweak> <node> --recover-merged`)
+	require.NotContains(t, out, "-> done")
+	require.NotContains(t, out, "no merged branches to record")
+
+	out, _, code = execCLI(t, "--json", "sync", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	var envelope struct {
+		Data SyncView `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(out), &envelope))
+	require.Empty(t, envelope.Data.Crossings)
+	require.Len(t, envelope.Data.MemberlessBatches, 1)
+	require.Equal(t, `tiller cancel batch pair --reason "<why>"`, envelope.Data.MemberlessBatches[0].Next)
+	for _, batch := range loadTestTree(t).Batches {
+		require.Equal(t, "in_review", batch.Status)
+	}
+}
+
+// A member's History is its own story: it joined a batch and left it. The
+// batch's verbs and statuses never appear on it.
+func TestMemberHistoryNeverShowsTheBatchsVerbOrStatus(t *testing.T) {
+	laySevenBugs(t)
+	mustRun(t, "approve", "bug", "one", "two", "--contributor", "jc")
+	mustRun(t, "add", "batch", "trio", "--title", "Trio", "bugs/one", "bugs/two", "bugs/three", "--contributor", "jc")
+	mustRun(t, "batch", "trio", "--remove", "bugs/two", "--contributor", "jc")
+	mustRun(t, "cancel", "batch", "trio", "--reason", "apart after all", "--contributor", "jc")
+
+	tree := loadTestTree(t)
+	evs, err := events.List(tree)
+	require.NoError(t, err)
+	history := func(key string) (types, outcomes []string) {
+		for _, entry := range views.HistoryOf(evs, bugByKey(t, key).ID) {
+			types = append(types, entry.Type)
+			if entry.Outcome != "" {
+				outcomes = append(outcomes, entry.Outcome)
+			}
+		}
+		return
+	}
+	// three stayed proposed throughout: added once, joined, released.
+	types, outcomes := history("three")
+	require.ElementsMatch(t, []string{"add.bug", "batch.bug", "batch.bug"}, types)
+	require.Equal(t, []string{"proposed"}, outcomes, "no Ready chip from add.batch and no Cancelled from cancel.batch")
+	// two was removed by an edit; one was released by the cancel.
+	for _, key := range []string{"one", "two"} {
+		types, outcomes = history(key)
+		require.ElementsMatch(t, []string{"add.bug", "approve.bug", "batch.bug", "batch.bug"}, types, key)
+		require.NotContains(t, outcomes, "cancelled", key)
+	}
+	// The batch's own history still names every member it held.
+	var batchID string
+	for id := range tree.Batches {
+		batchID = id
+	}
+	var batchTypes []string
+	for _, entry := range views.HistoryOf(evs, batchID) {
+		batchTypes = append(batchTypes, entry.Type)
+	}
+	require.ElementsMatch(t, []string{"add.batch", "edit.batch", "cancel.batch"}, batchTypes)
+	for _, ev := range evs {
+		if ev.Type == "add.batch" {
+			require.Len(t, ev.After["members"], 3, "members stay discoverable from the batch's event")
+		}
+	}
+}
+
+func TestBatchReadsAndRefusalsTellTheTruthCLI(t *testing.T) {
+	root := laySevenBugs(t)
+	mustRun(t, "approve", "bug", "one", "--contributor", "jc")
+	mustRun(t, "add", "batch", "pair", "--title", "Paired fixes", "bugs/one", "bugs/two", "--contributor", "jc")
+	mustRun(t, "claim", "batch", "pair", "--contributor", "jc")
+
+	// An unstartable batch is not the agent's move; the triage of its
+	// proposed member is the human's.
+	out, _, code := execCLI(t, "next", "--all", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	require.NotContains(t, out, "continue batches/pair")
+	require.Contains(t, out, "triage bugs/two")
+	require.NotContains(t, out, "1 batch ready")
+
+	// Approving a member reports the moves that are really open on it.
+	out, _, code = execCLI(t, "approve", "bug", "two", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "Now legal on the node(s) just approved: cancel, return")
+	require.NotContains(t, out, "cancel, return, start")
+	out, _, code = execCLI(t, "next", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "continue batches/pair")
+
+	// Contradictory edit input.
+	_, stderr, code := execCLI(t, "batch", "pair", "--add", "bugs/two", "--remove", "bugs/two", "--contributor", "jc")
+	require.Equal(t, 2, code)
+	require.Contains(t, stderr, "--add and --remove both name")
+
+	// Search and query find the batch.
+	var batchID string
+	for id := range loadTestTree(t).Batches {
+		batchID = id
+	}
+	for _, q := range []string{batchID, "batches/pair", "Paired"} {
+		out, _, code = execCLI(t, "search", q)
+		require.Equal(t, 0, code, q)
+		require.Contains(t, out, "batches/pair ("+batchID+")", q)
+	}
+	out, _, code = execCLI(t, "query", "--from", batchID, "--follow", "batches")
+	require.Equal(t, 0, code, out)
+	require.Contains(t, out, "bugs/one")
+	require.Contains(t, out, "bugs/two")
+	out, _, code = execCLI(t, "query", "--from", "bugs/one", "--follow", "batched_in")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "batches/pair ("+batchID+")")
+
+	// A removed contributor's remedy for a batch is not transfer.
+	mustRun(t, "add", "contributor", "pat", "--name", "Pat Nguyen")
+	out, stderr, code = execCLI(t, "remove", "contributor", "jc", "--contributor", "pat")
+	out += stderr
+	require.Equal(t, 1, code)
+	require.Contains(t, out, "1 live batch(es)")
+	require.Contains(t, out, "release or reassign an unstarted batch, and finish a started one or cancel it")
+
+	// A merged fix for a member of an unsubmitted batch: the advice names the
+	// batch's own repair, since neither it nor a member can be recovered.
+	mustRun(t, "start", "batch", "pair", "--contributor", "jc")
+	gitRun(t, root, "add", "-A")
+	gitRun(t, root, "commit", "-m", "start the pair")
+	require.NoError(t, os.WriteFile(filepath.Join(root, "fix.txt"), []byte("fix\n"), 0o644))
+	gitRun(t, root, "add", "fix.txt")
+	gitRun(t, root, "commit", "-m", bugByKey(t, "one").ID+" fix on the wrong branch")
+	out, _, code = execCLI(t, "sync", "--contributor", "jc")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "batch batches/pair ("+batchID+") is in_progress with no recorded submission")
+	require.Contains(t, out, "it observes a bug, chore, tweak, or batch only once it is in review")
+	require.Contains(t, out, `A batch has no recovery of its own: cancel it with tiller cancel batch <batch> --reason "<why>", which releases its members, then recover each member that merged.`)
+
+	// The fast-forward assertion on a member names its batch.
+	out, stderr, code = execCLI(t, "sync", "--accept-fast-forward", "bugs/one", "--contributor", "jc")
+	out += stderr
+	require.Equal(t, 1, code)
+	require.Contains(t, out, "reviews it, so the merge to assert is the batch's: tiller sync --accept-fast-forward "+batchID)
+}
+
+// While a batch is done and a member has yet to cross, the member's status
+// offers no move that would refuse.
+func TestStatusOfAMemberWaitingOnADoneBatchCLI(t *testing.T) {
+	root := layPairInReview(t, true)
+	batchPath := filepath.Join(root, ".tiller", "batches", "pair", "batch.yml")
+	data, err := os.ReadFile(batchPath)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(batchPath, []byte(strings.Replace(string(data), "status: in_progress", "status: done\ndone_basis: ancestry", 1)), 0o644))
+	out, _, code := execCLI(t, "status", "bug", "one")
+	require.Equal(t, 0, code)
+	require.Contains(t, out, "state: ready (batched:")
+	require.Contains(t, out, "next:  (none of its own: tiller sync crosses it with its batch)")
+	require.NotContains(t, out, "cancel")
 }

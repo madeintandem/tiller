@@ -2,6 +2,8 @@ package mutate
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/store"
@@ -43,10 +45,12 @@ func returnAfterBatchStart(member store.WorkNode, batch *store.Batch) error {
 
 // releaseBatchMembers plans each member's release when its batch is
 // cancelled: the pointer clears and the stored status stays, so every member
-// is back in its own queue. The writes carry no event; the batch's own cancel
-// event names the released members and their files.
-func releaseBatchMembers(tree *store.Tree, batch *store.Batch) ([]nodeWrite, []string, error) {
+// is back in its own queue. Each write carries the member's own batch.<noun>
+// event; the batch's cancel event names the released members in
+// after.released without targeting them.
+func releaseBatchMembers(tree *store.Tree, deps Deps, owner store.Contributor, batch *store.Batch) ([]nodeWrite, []string, error) {
 	members := tree.BatchMembers(batch.ID)
+	command := "cancel batch " + batchAddr(batch)
 	writes := make([]nodeWrite, 0, len(members))
 	for _, member := range members {
 		doc, rel, snapshot, err := loadWorkItemFile(tree, member)
@@ -58,43 +62,42 @@ func releaseBatchMembers(tree *store.Tree, batch *store.Batch) ([]nodeWrite, []s
 		if err != nil {
 			return nil, nil, err
 		}
-		writes = append(writes, nodeWrite{rel: rel, data: data, before: snapshot})
+		ev := memberBatchEvent(deps, owner, member, batch.ID, "", command)
+		ev.Files = []events.FileChange{{Path: rel}}
+		writes = append(writes, nodeWrite{rel: rel, data: data, before: snapshot, event: ev})
 	}
 	return writes, memberIDs(batchMembersOf(members)), nil
 }
 
-// memberLeavesBatch plans what a cancelled member's departure does to its
-// batch: nothing while other members remain and the gates are not yet
-// recorded, stale gates at check, and cancellation when it was the last one.
-// A batch in review refuses, like every other membership change.
-func memberLeavesBatch(tree *store.Tree, deps Deps, owner store.Contributor, member store.WorkNode, treeBatch *store.Batch) ([]nodeWrite, error) {
+// memberLeavesBatch plans what a cancelled member's departure records on its
+// batch: an edit.batch naming the member, with stale gates when the batch was
+// at check, or a cancel.batch when it was the last one. A batch in review
+// refuses, like every other membership change. The batch file is written only
+// when the record itself moved.
+func memberLeavesBatch(tree *store.Tree, deps Deps, owner store.Contributor, member store.WorkNode, treeBatch *store.Batch) ([]nodeWrite, []events.Event, error) {
 	b := member.Body()
 	if err := batchEditable(treeBatch, member.Noun(), b.ID, deref(b.Key), b.Status); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	doc, rel, snapshot, err := loadWorkItemFile(tree, treeBatch)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	batch := doc.(*store.Batch)
-	before := batch.Status
-	after := map[string]any{"removed": []string{b.ID}}
 	last := len(tree.BatchMembers(batch.ID)) == 1
-	changed, err := batchAfterMembershipChange(batch, last, after)
-	if err != nil || !changed {
-		return nil, err
+	ev, changed, err := batchMembershipEvent(deps, owner, batch, "cancel "+member.Noun()+" "+b.ID, nil, []string{b.ID}, last)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !changed {
+		return nil, []events.Event{ev}, nil
 	}
 	data, err := yaml.Marshal(batch)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	ev := events.NewEvent(deps.clock(), "edit."+store.NounBatch, owner.ID, "cancel "+member.Noun()+" "+b.ID, batch.ID, b.ID)
-	ev.ID = deps.mintRaw("EV")
-	ev.Before = map[string]any{"status": before}
-	after["status"] = batch.Status
-	ev.After = after
 	ev.Files = []events.FileChange{{Path: rel}}
-	return []nodeWrite{{rel: rel, data: data, before: snapshot, event: ev}}, nil
+	return []nodeWrite{{rel: rel, data: data, before: snapshot, event: ev}}, nil, nil
 }
 
 // guardBatchOwnership keeps a batch to one owner. A member of a live batch
@@ -119,4 +122,47 @@ func guardBatchOwnership(tree *store.Tree, node store.WorkNode, holder, verb str
 		}
 	}
 	return nil
+}
+
+// guardBatchStateCommitted refuses check batch and submit batch while the
+// state that makes the batch whole is uncommitted: each member's state file,
+// which carries its batch pointer, and at submit the batch record too. Sync
+// reads the integration branch, so a pointer that never rode the batch branch
+// into the merge leaves the batch with no members to cross. The guard asks
+// Git's scoped status, and a revision source that cannot answer is not
+// refused: the sync-side guard still holds.
+func guardBatchStateCommitted(tree *store.Tree, rev vcs.Revisions, batch *store.Batch, verb string, includeRecord bool) error {
+	status, ok := rev.(interface {
+		DirtyUnder(string) ([]string, error)
+	})
+	if !ok {
+		return nil
+	}
+	var paths []string
+	if includeRecord {
+		paths = append(paths, filepath.Join(workItemRelDir(batch), store.ShelfStateFile(store.NounBatch)))
+	}
+	for _, member := range tree.BatchMembers(batch.ID) {
+		paths = append(paths, filepath.Join(workItemRelDir(member), store.ShelfStateFile(member.Noun())))
+	}
+	var uncommitted []string
+	for _, rel := range paths {
+		dirty, err := status.DirtyUnder(":(literal)" + filepath.ToSlash(rel))
+		if err != nil {
+			return err
+		}
+		if len(dirty) > 0 {
+			uncommitted = append(uncommitted, filepath.ToSlash(rel))
+		}
+	}
+	if len(uncommitted) == 0 {
+		return nil
+	}
+	return &BatchError{
+		Reason: ReasonBatchStateUncommitted, Noun: store.NounBatch, NodeID: batch.ID, Key: deref(batch.Key), CurrentState: batch.Status,
+		Batch: batch.ID, BatchKey: deref(batch.Key), Paths: uncommitted,
+		Seam: "git add -- " + strings.Join(uncommitted, " "),
+		msg: fmt.Sprintf("batch %s cannot %s while its state is uncommitted: %s. Commit these on %s with the events beside them, so the merge carries every member's batch pointer to the integration branch",
+			batch.ID, verb, strings.Join(uncommitted, ", "), batchBranchName(batch)),
+	}
 }

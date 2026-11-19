@@ -89,17 +89,33 @@ var batchOwnedVerbs = []string{"start", "check", "submit", "resume"}
 
 // legalNextIn is legalNext for a node read in its tree: a member of a live
 // batch loses the verbs its batch owns, and loses return once the batch has
-// started, the same refusals the mutation gives.
+// started and cancel once it is in review, the same refusals the mutation
+// gives.
 func legalNextIn(t *store.Tree, n store.Node) []string {
 	moves := legalNext(n)
 	w, ok := store.AsWorkNode(n)
 	if !ok || !gen.Batched(t, w) {
 		return moves
 	}
-	started := t.BatchOf(w).Started
+	batch := t.BatchOf(w)
+	// Once the batch is in review its membership is closed, so a member's
+	// cancel refuses too; a done batch only waits for sync to cross it.
+	closed := batch.Status == "in_review" || batch.Status == "done"
 	return slices.DeleteFunc(moves, func(verb string) bool {
-		return slices.Contains(batchOwnedVerbs, verb) || (verb == "return" && started)
+		return slices.Contains(batchOwnedVerbs, verb) || (verb == "return" && batch.Started) || (verb == "cancel" && closed)
 	})
+}
+
+// batchStartable reports a batch whose every member is approved and ready,
+// the condition start batch enforces. A batch that is not waits on the human's
+// triage of its proposed members, which the queue already lists.
+func batchStartable(t *store.Tree, batch store.WorkNode) bool {
+	for _, member := range t.BatchMembers(batch.NodeID()) {
+		if member.NodeStatus() != "ready" {
+			return false
+		}
+	}
+	return true
 }
 
 // liveBatches lists the batches that are still work, in key order, as the

@@ -251,3 +251,40 @@ func TestStreamItemsCarryTitlesAndTaskFeatureIdentity(t *testing.T) {
 	require.NotContains(t, string(data), "feature_id")
 	require.NotContains(t, string(data), "feature_title")
 }
+
+// A batch is the unit its members' work shows up as on the board streams: the
+// owner's batch is listed in the lens its own status puts it in, and the
+// members it reviews are not listed at all.
+func TestStreamsListABatchInPlaceOfItsMembers(t *testing.T) {
+	tree := streamsTree()
+	batchKey, memberKey := "batches/core", "bugs/alpha"
+	tree.Batches = map[string]*store.Batch{
+		"BT-aaaaaa": {WorkItem: store.WorkItem{ID: "BT-aaaaaa", Key: &batchKey, Title: "Core fixes", Status: "in_progress", Started: true, Owner: "current", Blocked: true}},
+	}
+	tree.Bugs = map[string]*store.Bug{
+		"B-member": {WorkItem: store.WorkItem{ID: "B-member", Key: &memberKey, Status: "ready", Owner: "current", BatchID: "BT-aaaaaa"}},
+	}
+	ids := func(s ContributorStream) (active, blocked, review []string) {
+		for _, row := range s.Active {
+			active = append(active, row.ID)
+		}
+		for _, row := range s.Blocked {
+			blocked = append(blocked, row.ID)
+		}
+		for _, row := range s.GatesInReview {
+			review = append(review, row.ID)
+		}
+		return
+	}
+	active, blocked, review := ids(contributorStreamByID(t, StreamsOf(tree), "current"))
+	require.Contains(t, active, "BT-aaaaaa")
+	require.NotContains(t, active, "B-member")
+	require.Equal(t, []string{"BT-aaaaaa"}, blocked)
+	require.NotContains(t, review, "BT-aaaaaa")
+
+	tree.Batches["BT-aaaaaa"].Status, tree.Batches["BT-aaaaaa"].Blocked = "in_review", false
+	tree.Batches["BT-aaaaaa"].Gates = map[string]store.Gate{"tests": {Status: store.GateStatusPass}}
+	_, _, review = ids(contributorStreamByID(t, StreamsOf(tree), "current"))
+	require.Contains(t, review, "BT-aaaaaa")
+	require.NotContains(t, review, "B-member")
+}

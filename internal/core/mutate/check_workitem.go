@@ -36,6 +36,9 @@ func checkWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 		if err := guardBatchMembersReady(tree, rev, batch); err != nil {
 			return CheckResult{}, err
 		}
+		if err := guardBatchStateCommitted(tree, rev, batch, "be checked", false); err != nil {
+			return CheckResult{}, err
+		}
 	}
 	against, err := gateAgainst(rev)
 	if err != nil {

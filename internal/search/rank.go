@@ -199,6 +199,9 @@ func allNodes(tree *store.Tree) []store.Node {
 	for _, n := range tree.Tweaks {
 		out = append(out, n)
 	}
+	for _, n := range tree.Batches {
+		out = append(out, n)
+	}
 	for _, n := range tree.Questions {
 		out = append(out, n)
 	}
@@ -223,6 +226,8 @@ func titleOf(n store.Node) string {
 	case *store.Chore:
 		return v.Title
 	case *store.Tweak:
+		return v.Title
+	case *store.Batch:
 		return v.Title
 	case *store.Question:
 		return gen.QuestionTitle(v)

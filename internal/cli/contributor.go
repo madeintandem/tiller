@@ -196,14 +196,16 @@ func reportContributorRemoveError(cmd *cobra.Command, err error) error {
 		h := held.Holdings
 		d := ContributorRemoveHoldingsData{ID: held.ID, Reason: held.Reason, Tasks: h.Tasks,
 			Bugs: h.Bugs, Chores: h.Chores, Tweaks: h.Tweaks, Batches: h.Batches, Questions: h.Questions}
-		batches := ""
+		batches, batchRemedy := "", ""
 		if h.Batches > 0 {
 			batches = fmt.Sprintf(" %d live batch(es),", h.Batches)
+			// transfer does not take a batch, so the remedy for one is its own.
+			batchRemedy = " release or reassign an unstarted batch, and finish a started one or cancel it (`tiller cancel batch <batch> --reason \"<why>\"`), which releases its members;"
 		}
 		return emitReport(cmd, "remove contributor", false, d,
 			fmt.Sprintf("Blocked: %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s),"+batches+" and %d open question(s); "+
 				"release or reassign unstarted reservations, finish or explicitly transfer started work "+
-				"(`tiller transfer task|bug|chore|tweak <node> --to <contributor-id> --reason \"<why>\"`), "+
+				"(`tiller transfer task|bug|chore|tweak <node> --to <contributor-id> --reason \"<why>\"`),"+batchRemedy+" "+
 				"and answer open questions (`tiller answer question <Q-id> --answer \"<answer>\"`).",
 				held.ID, h.Tasks, h.Bugs, h.Chores, h.Tweaks, h.Questions),
 			1)

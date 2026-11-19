@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/gen"
@@ -117,6 +119,7 @@ func layReviewedBatch(t *testing.T) string {
 	t.Helper()
 	root := layStartedBatch(t)
 	checkBatch(t, root)
+	gitCommitAllM(t, root, "batch gate evidence")
 	pr := 77
 	driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "submit", PR: &pr})
 	gitCommitAllM(t, root, "batch in review")
@@ -175,7 +178,12 @@ func TestAddBatchCreatesAReadyBatchOverMixedShelves(t *testing.T) {
 	require.Equal(t, "minor", gen.BatchSeverity(tree, batch))
 
 	ev := lastEvent(t, root, "add.batch")
-	require.Equal(t, []string{batchID, batchBugAlpha, batchChoreGamma, batchTweakDelta}, ev.Targets)
+	require.Equal(t, []string{batchID}, ev.Targets, "the batch's event targets the batch alone")
+	require.Equal(t, []any{batchBugAlpha, batchChoreGamma, batchTweakDelta}, ev.After["members"])
+	joined := lastEvent(t, root, "batch.chore")
+	require.Equal(t, []string{batchChoreGamma}, joined.Targets)
+	require.Equal(t, batchID, joined.After["batch"])
+	require.NotContains(t, joined.After, "status", "joining a batch moves no status on the member")
 
 	again, err := mutate.AddBatch(load(t, root), batchDeps(), mutate.BatchInput{Key: "core", Title: "Core fixes", Members: []string{batchBugBeta}})
 	require.NoError(t, err)
@@ -335,6 +343,7 @@ func TestBatchRunsTheShelfGatesAndRecordsItsOwnReview(t *testing.T) {
 		names[g.Name] = true
 	}
 	require.Equal(t, map[string]bool{"build": true, "tests": true}, names, "a batch runs the gate set one shelf node runs")
+	gitCommitAllM(t, root, "batch gate evidence")
 
 	pr := 77
 	submitted := driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "submit", PR: &pr})
@@ -471,6 +480,9 @@ func TestMembershipEditsFollowTheBatchState(t *testing.T) {
 	refusal := requireBatchError(t, err, mutate.ReasonBatchMemberUnready)
 	require.Equal(t, batchChoreGamma, refusal.Member, "a started batch takes only approved members")
 
+	_, err = edit(mutate.BatchEditInput{Add: []string{batchBugBeta}, Remove: []string{batchBugBeta}})
+	require.ErrorContains(t, err, "--add and --remove both name "+batchBugBeta)
+
 	checkBatch(t, root)
 	driveTo(t, root, store.NounChore, "gamma", mutate.TransitionInput{Verb: "approve"})
 	added, err := edit(mutate.BatchEditInput{Add: []string{batchChoreGamma}})
@@ -484,6 +496,10 @@ func TestMembershipEditsFollowTheBatchState(t *testing.T) {
 	_, err = mutate.Transition(tree, testDeps(), tree.Batches[batchID], mutate.TransitionInput{Verb: "submit"})
 	var notGreen *mutate.RequiredGatesNotGreenError
 	require.ErrorAs(t, err, &notGreen, "stale gates block submit until check runs again")
+	_, err = mutate.Check(tree, testDeps(), vcs.New(root), tree.Batches[batchID], mutate.CheckInput{})
+	uncommitted := requireBatchError(t, err, mutate.ReasonBatchStateUncommitted)
+	require.Equal(t, []string{".tiller/chores/gamma/chore.yml"}, uncommitted.Paths, "the new member's pointer has to ride the batch branch")
+	gitCommitAllM(t, root, "add gamma to the batch")
 	require.True(t, checkBatch(t, root).Passed)
 
 	removed, err := edit(mutate.BatchEditInput{Remove: []string{batchBugBeta}})
@@ -501,7 +517,9 @@ func TestMembershipEditsFollowTheBatchState(t *testing.T) {
 	_, err = edit(mutate.BatchEditInput{Remove: []string{batchBugBeta}})
 	requireBatchError(t, err, mutate.ReasonBatchNotMember)
 
+	gitCommitAllM(t, root, "remove beta from the batch")
 	checkBatch(t, root)
+	gitCommitAllM(t, root, "batch gate evidence")
 	driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "submit"})
 	_, err = edit(mutate.BatchEditInput{Remove: []string{batchChoreGamma}})
 	refusal = requireBatchError(t, err, mutate.ReasonBatchInReview)
@@ -525,7 +543,10 @@ func TestABatchThatLosesItsLastMemberIsCancelled(t *testing.T) {
 	tree := load(t, root)
 	require.Equal(t, "cancelled", tree.Batches[batchID].Status)
 	require.Equal(t, "ready", tree.Bugs[batchBugAlpha].Status)
-	require.Equal(t, "cancelled", lastEvent(t, root, "edit.batch").After["status"])
+	closed := lastEvent(t, root, "cancel.batch")
+	require.Equal(t, "cancelled", closed.After["status"])
+	require.Equal(t, "its last member left", closed.After["reason"])
+	require.Equal(t, []string{batchID}, closed.Targets)
 
 	_, err = mutate.EditBatch(load(t, root), batchDeps(), mutate.BatchEditInput{Batch: batchID, Add: []string{batchBugAlpha}})
 	requireBatchError(t, err, mutate.ReasonBatchClosed)
@@ -543,18 +564,28 @@ func TestCancellingAMemberRemovesItFromItsBatch(t *testing.T) {
 	require.Equal(t, "cancelled", tree.Bugs[batchBugAlpha].Status)
 	require.Empty(t, tree.Bugs[batchBugAlpha].BatchID)
 	require.Equal(t, "ready", tree.Batches[batchID].Status, "one member remains")
+	left := lastEvent(t, root, "cancel.bug")
+	require.Equal(t, batchID, left.Before["batch"], "the member's own cancel says which batch it left")
+	departure := lastEvent(t, root, "edit.batch")
+	require.Equal(t, []string{batchID}, departure.Targets)
+	require.Equal(t, []any{batchBugAlpha}, departure.After["removed"])
 
 	cancel("beta")
 	tree = load(t, root)
 	require.Equal(t, "cancelled", tree.Batches[batchID].Status, "its last member left")
-	ev := lastEvent(t, root, "edit.batch")
-	require.Equal(t, []string{batchID, batchBugBeta}, ev.Targets)
+	ev := lastEvent(t, root, "cancel.batch")
+	require.Equal(t, []string{batchID}, ev.Targets)
+	require.Equal(t, []any{batchBugBeta}, ev.After["removed"])
 }
 
 func TestCancellingABatchReleasesItsMembersAndCancelsNone(t *testing.T) {
 	t.Parallel()
 	root := layStartedBatch(t)
-	res := driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "cancel", Reason: "reviewing them apart after all"})
+	// A later clock than the add's, so the release is each member's last
+	// batch event by time and not by a tie on a random event id.
+	later := testDeps()
+	later.Clock = fixedClock{t: time.Date(2026, 6, 27, 15, 0, 0, 0, time.UTC)}
+	res := driveWith(t, root, later, store.NounBatch, "core", mutate.TransitionInput{Verb: "cancel", Reason: "reviewing them apart after all"})
 	require.Equal(t, "cancelled", res.Status)
 	tree := load(t, root)
 	for _, id := range []string{batchBugAlpha, batchBugBeta, batchTweakDelta} {
@@ -565,6 +596,10 @@ func TestCancellingABatchReleasesItsMembersAndCancelsNone(t *testing.T) {
 	}
 	ev := lastEvent(t, root, "cancel.batch")
 	require.Equal(t, []any{batchBugAlpha, batchBugBeta, batchTweakDelta}, ev.After["released"])
+	require.Equal(t, []string{batchID}, ev.Targets, "a released member is named, never targeted, by the batch's cancel")
+	released := lastEvent(t, root, "batch.tweak")
+	require.Equal(t, batchID, released.Before["batch"])
+	require.Equal(t, "", released.After["batch"])
 
 	// A released member is free to join another batch or start on its own.
 	_, err := mutate.AddBatch(tree, batchDeps(), mutate.BatchInput{Key: "second", Title: "Second", Members: []string{batchBugAlpha, batchBugBeta}})
@@ -666,4 +701,175 @@ func TestCancelBatchTakesNoResolution(t *testing.T) {
 	_, err := mutate.Transition(tree, testDeps(), tree.Batches[batchID], mutate.TransitionInput{Verb: "cancel", Reason: "no", Resolution: "wontfix"})
 	require.ErrorContains(t, err, "cancelling a batch releases its members and cancels none")
 	require.Equal(t, "ready", load(t, root).Batches[batchID].Status)
+}
+
+// The Headway-shaped accident one layer down: the batch record reaches the
+// integration branch in the merge, and the member state files that point at it
+// do not, because add batch's member writes were never committed. Sync must
+// not close the batch over bugs it cannot see.
+func TestSyncDoesNotCrossABatchWhoseMembersNeverReachedIntegration(t *testing.T) {
+	t.Parallel()
+	root := layReviewedBatch(t)
+	gitRunM(t, root, "merge", "--no-ff", "-m", "Merge pull request #77", batchBranch)
+	// Integration as it would be had only .tiller/batches been committed.
+	for _, member := range []struct{ noun, key string }{{store.NounBug, "alpha"}, {store.NounBug, "beta"}, {store.NounTweak, "delta"}} {
+		path := filepath.Join(root, store.ShelfRelDir(member.noun, member.key), store.ShelfStateFile(member.noun))
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(path, []byte(strings.Replace(string(data), "batch: "+batchID+"\n", "", 1)), 0o644))
+	}
+	gitCommitAllM(t, root, "integration without the member pointers")
+
+	res, err := mutate.Sync(load(t, root), testDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Empty(t, res.Crossings, "a batch with no members to cross does not cross alone")
+	require.Len(t, res.MemberlessBatches, 1)
+	finding := res.MemberlessBatches[0]
+	require.Equal(t, batchID, finding.ID)
+	require.Equal(t, `tiller cancel batch core --reason "<why>"`, finding.NextStep())
+	require.Contains(t, finding.Warning(), "were never committed on "+batchBranch)
+	tree := load(t, root)
+	require.Equal(t, "in_review", tree.Batches[batchID].Status)
+	require.Equal(t, "ready", tree.Bugs[batchBugAlpha].Status)
+
+	// The repair the warning names leaves every bug free to be recovered.
+	driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "cancel", Reason: "member pointers never merged"})
+	require.Equal(t, "cancelled", load(t, root).Batches[batchID].Status)
+}
+
+func TestSubmitBatchRefusesWhileItsStateIsUncommitted(t *testing.T) {
+	t.Parallel()
+	root := layBatchRepo(t)
+	addBatch(t, root, batchBugAlpha, batchBugBeta)
+	_, err := mutate.ClaimWork(load(t, root), testDeps(), store.NounBatch, "core", "")
+	require.NoError(t, err)
+	started := driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "start"})
+	gitRunM(t, root, "checkout", "-b", started.Branch)
+	// Only the batch folder is committed, the mistake the guard exists for.
+	gitRunM(t, root, "add", "--", ".tiller/batches")
+	gitRunM(t, root, "commit", "-m", "start batch, members forgotten")
+
+	tree := load(t, root)
+	_, err = mutate.Check(tree, testDeps(), vcs.New(root), tree.Batches[batchID], mutate.CheckInput{})
+	refusal := requireBatchError(t, err, mutate.ReasonBatchStateUncommitted)
+	require.Equal(t, []string{".tiller/bugs/alpha/bug.yml", ".tiller/bugs/beta/bug.yml"}, refusal.Paths)
+	require.Equal(t, "git add -- .tiller/bugs/alpha/bug.yml .tiller/bugs/beta/bug.yml", refusal.Seam)
+	require.Contains(t, refusal.Error(), "Commit these on branch "+batchBranch)
+
+	gitCommitAllM(t, root, "the member pointers")
+	require.True(t, checkBatch(t, root).Passed)
+	tree = load(t, root)
+	_, err = mutate.Transition(tree, testDeps(), tree.Batches[batchID], mutate.TransitionInput{Verb: "submit"})
+	refusal = requireBatchError(t, err, mutate.ReasonBatchStateUncommitted)
+	require.Equal(t, []string{".tiller/batches/core/batch.yml"}, refusal.Paths, "the gate state check wrote is uncommitted")
+	require.Equal(t, "check", load(t, root).Batches[batchID].Status)
+
+	gitCommitAllM(t, root, "gate evidence")
+	driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "submit"})
+}
+
+// A sync interrupted after it crossed the batch and before every member heals
+// on the next run: a member of a done batch crosses on that batch's done.
+func TestSyncHealsAMemberLeftBehindByAnInterruptedRun(t *testing.T) {
+	t.Parallel()
+	root := layReviewedBatch(t)
+	gitRunM(t, root, "merge", "--no-ff", "-m", "Merge pull request #77", batchBranch)
+	_, err := mutate.Sync(load(t, root), testDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	// Put one member back the way an interrupted run would have left it.
+	path := filepath.Join(root, ".tiller", "bugs", "beta", "bug.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	stale := strings.Replace(strings.Replace(string(data), "status: done", "status: ready", 1), "done_basis: batched\n", "", 1)
+	require.NoError(t, os.WriteFile(path, []byte(stale), 0o644))
+
+	tree := load(t, root)
+	require.Equal(t, gen.ActivityBatched, gen.WorkActivity(tree, tree.Bugs[batchBugBeta]), "it still waits on its batch")
+	_, err = mutate.Transition(tree, testDeps(), tree.Bugs[batchBugBeta], mutate.TransitionInput{Verb: "cancel", Reason: "no", Resolution: "wontfix"})
+	requireBatchError(t, err, mutate.ReasonBatchClosed)
+
+	res, err := mutate.Sync(load(t, root), testDeps(), vcs.New(root), mutate.SyncInput{})
+	require.NoError(t, err)
+	require.Len(t, res.Crossings, 1)
+	require.Equal(t, batchBugBeta, res.Crossings[0].ID)
+	require.Equal(t, "batched", res.Crossings[0].Basis)
+	require.Equal(t, "done", load(t, root).Bugs[batchBugBeta].Status)
+}
+
+func TestCancellingAMemberAtCheckStalesTheBatchGates(t *testing.T) {
+	t.Parallel()
+	root := layStartedBatch(t)
+	checkBatch(t, root)
+	driveTo(t, root, store.NounTweak, "delta", mutate.TransitionInput{Verb: "cancel", Reason: "not needed", Resolution: "wontfix"})
+	tree := load(t, root)
+	require.Equal(t, "check", tree.Batches[batchID].Status)
+	require.Equal(t, store.GateStatusStale, tree.Batches[batchID].Gates["build"].Status)
+	require.Equal(t, store.GateStatusStale, lastEvent(t, root, "edit.batch").After["gates"])
+}
+
+func TestMembershipChangeWithNoRecordedGatesStalesNothing(t *testing.T) {
+	t.Parallel()
+	root := layStartedBatch(t)
+	// Reach check with no gate recorded, as a project with no shelf gate does.
+	path := filepath.Join(root, ".tiller", "batches", "core", "batch.yml")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, []byte(strings.Replace(string(data), "status: in_progress", "status: check", 1)), 0o644))
+	res, err := mutate.EditBatch(load(t, root), batchDeps(), mutate.BatchEditInput{Batch: "core", Remove: []string{batchTweakDelta}})
+	require.NoError(t, err)
+	require.False(t, res.GatesStaled, "nothing was recorded, so there is nothing to run again")
+}
+
+func TestReassignBatchRefusesWhileAnotherContributorHoldsAMember(t *testing.T) {
+	t.Parallel()
+	root := layBatchRepo(t)
+	_, err := mutate.ClaimWork(load(t, root), testDeps(), store.NounBug, "beta", "")
+	require.NoError(t, err)
+	addBatch(t, root, batchBugAlpha, batchBugBeta)
+	_, err = mutate.ReassignWork(load(t, root), testDeps(), store.NounBatch, "core", "pat", "pat takes the batch")
+	refusal := requireBatchError(t, err, mutate.ReasonBatchMemberClaimed)
+	require.Equal(t, batchBugBeta, refusal.Member)
+	require.Equal(t, "tiller release bug bugs/beta", refusal.Seam)
+
+	_, err = mutate.ReleaseWork(load(t, root), testDeps(), store.NounBug, "beta")
+	require.NoError(t, err, "a member may release the claim it brought")
+	res, err := mutate.ReassignWork(load(t, root), testDeps(), store.NounBatch, "core", "pat", "pat takes the batch")
+	require.NoError(t, err)
+	require.Equal(t, "pat", res.To)
+}
+
+func TestResumeEditAndResubmitKeepTheSamePR(t *testing.T) {
+	t.Parallel()
+	root := layReviewedBatch(t)
+	gitRunM(t, root, "checkout", batchBranch)
+	driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "resume", Reason: "drop the tweak"})
+	_, err := mutate.EditBatch(load(t, root), batchDeps(), mutate.BatchEditInput{Batch: "core", Remove: []string{batchTweakDelta}})
+	require.NoError(t, err)
+	gitCommitAllM(t, root, "resume and drop delta")
+	checkBatch(t, root)
+	gitCommitAllM(t, root, "gate evidence")
+
+	tree := load(t, root)
+	other := 78
+	_, err = mutate.Transition(tree, testDeps(), tree.Batches[batchID], mutate.TransitionInput{Verb: "submit", PR: &other})
+	var unsafe *mutate.BranchSafetyError
+	require.ErrorAs(t, err, &unsafe, "a batch keeps the PR it recorded")
+	require.Equal(t, "branch_review_identity", unsafe.Reason)
+
+	pr := 77
+	res := driveTo(t, root, store.NounBatch, "core", mutate.TransitionInput{Verb: "submit", PR: &pr})
+	require.Equal(t, "in_review", res.Status)
+	require.Equal(t, 77, *load(t, root).Batches[batchID].PR)
+	require.Len(t, load(t, root).BatchMembers(batchID), 2)
+}
+
+func TestAcceptFastForwardOnAMemberNamesItsBatch(t *testing.T) {
+	t.Parallel()
+	root := layReviewedBatch(t)
+	gitRunM(t, root, "merge", "--ff-only", batchBranch)
+	_, err := mutate.Sync(load(t, root), testDeps(), vcs.New(root), mutate.SyncInput{AcceptFastForward: []string{batchBugAlpha}})
+	var ineligible *mutate.AttestNotEligibleError
+	require.ErrorAs(t, err, &ineligible)
+	require.Equal(t, mutate.AttestReasonBatchMember, ineligible.Nodes[0].Reason)
+	require.Equal(t, batchID, ineligible.Nodes[0].Batch)
 }
