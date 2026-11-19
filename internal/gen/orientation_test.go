@@ -344,10 +344,11 @@ func TestOrientationNamesTheCompactionStagingException(t *testing.T) {
 // Generation 62 gives each shared rule one home: orientation defines its terms
 // under ## Terms, and maintenance guidance moves to the upgrade skill.
 // Generation 63 extends missing-review recovery to the shelf nouns.
-func TestOrientationGeneration63(t *testing.T) {
+// Generation 64 adds the batch.
+func TestOrientationGeneration64(t *testing.T) {
 	got, ok := OrientationStampGeneration([]byte(Orientation()))
 	require.True(t, ok)
-	require.Equal(t, 63, got)
+	require.Equal(t, 64, got)
 	require.Contains(t, normalizedOrientation(), "If an aggregate, or the fix for a bug, chore, or tweak, finally merged before its Tiller review was recorded, a merge report alone does not authorize recording it")
 	text := strings.Join(strings.Fields(Orientation()), " ")
 	require.Contains(t, text, "## Terms")
@@ -358,6 +359,22 @@ func TestOrientationGeneration63(t *testing.T) {
 	require.Contains(t, text, "`tiller intake`")
 	require.Contains(t, text, "draft amendment")
 	require.Contains(t, text, "`tiller propose amendment`")
+}
+
+// Generation 64: the orientation defines the batch, puts creating one in the
+// resolve delegation class, and sends a shared-review request to it.
+func TestOrientationDefinesTheBatch(t *testing.T) {
+	text := strings.Join(strings.Fields(Orientation()), " ")
+	for _, want := range []string{
+		"- **batch**, **batched**: a batch is one review of several bugs, chores, or tweaks: one claim, one branch, one set of gates, one pull request.",
+		"Creating or changing a batch (`tiller add batch`, `tiller batch`) sits in the same class: run it only on an explicit instruction that names the members and asks for one review.",
+		"On a batch's branch every commit carries the id of the member it serves.",
+		"When the developer asks for several bugs, chores, or tweaks under one review, that is a batch, never a hand-named branch",
+		"a `batched` node waits on its batch: it is never claimed, started, checked, or submitted on its own.",
+		"`batches/<batch-key>/` holds a batch's machine-owned `batch.yml` state and no prose",
+	} {
+		require.Contains(t, text, want)
+	}
 }
 
 func TestOrientationBoundsRetries(t *testing.T) {

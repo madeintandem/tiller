@@ -698,6 +698,48 @@ func TestSpecifyAcceptsOnlyExplicitBatches(t *testing.T) {
 	}
 }
 
+// execute carries the batch: the lawful path for several bugs, chores, or
+// tweaks under one review (TW-taq0ps). The pins are the rules an agent broke
+// when no such path existed: a hand-named branch, commits naming no node, and
+// one test for many bugs.
+func TestExecuteCarriesTheBatchWorkLoop(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	for _, want := range []string{
+		"An agent asked for a shared review of shelf work must use a batch, never a hand-named branch.",
+		"Every commit on the batch branch carries the id of the member it serves.",
+		"Each bug in the batch still needs its own regression test that would fail on its reproduced defect",
+		"run them only on an explicit human instruction that names the members and asks for one review",
+		"A batch is one unit of work as well: it takes one worktree for the whole batch, never one per member.",
+		"Naming a batch, or asking for several named bugs, chores, or tweaks under one review, scopes the run to that batch",
+		"each member with basis `batched`",
+		"tiller sync --accept-fast-forward <batch>",
+		"A batch has no recovery of its own",
+	} {
+		require.Containsf(t, text, want, "execute pins %q", want)
+	}
+	order := func(steps ...string) {
+		t.Helper()
+		last := -1
+		for _, step := range steps {
+			at := strings.Index(text, step)
+			require.GreaterOrEqualf(t, at, 0, "execute carries %q", step)
+			require.Greaterf(t, at, last, "%q follows the step before it", step)
+			last = at
+		}
+	}
+	order(
+		"tiller add batch core-model-fixes --title \"Core model fixes\" bugs/blank-on-reload bugs/stale-total bugs/lost-draft",
+		"tiller claim batch core-model-fixes",
+		"tiller start batch core-model-fixes",
+		"git checkout -b tiller/batches/core-model-fixes",
+		"each commit carrying the id of the member it serves",
+		"tiller check batch core-model-fixes",
+		"tiller submit batch core-model-fixes --pr \"$pr\"",
+		"tiller status batch core-model-fixes",
+	)
+}
+
 func TestExecuteCarriesTheShelfWorkLoop(t *testing.T) {
 	text, ok := Lookup("execute")
 	require.True(t, ok)
@@ -1981,6 +2023,7 @@ func TestExecuteSectionsAreInOrder(t *testing.T) {
 		"### Worktrees and other agents",
 		"### Claiming and starting",
 		"### Shelf work",
+		"### Batched shelf work",
 		"### Working from the plan",
 		"### Gate commands",
 		"### Departures",

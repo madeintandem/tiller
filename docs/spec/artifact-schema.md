@@ -80,6 +80,9 @@ Everything Tiller owns lives under `.tiller/` at the repo root, beside the code 
       <tweak-key>/
         tweak.md                   # prose: what, why, done-when
         tweak.yml
+    batches/                       # shared reviews of several bugs, chores, or tweaks; not a shelf
+      <batch-key>/
+        batch.yml                  # state: id, status, owner, branch, gates, pr; no prose file
     plans/                         # semi-ephemeral execution plans
       YYYY-MM-DD-<slug>.md
     amendments/                    # reviewed, recorded changes to the plan
@@ -116,13 +119,13 @@ This is path confinement, not a sandbox against a user who controls the filesyst
 
 **Why a folder per epic, feature, and task.** Separate task records let engineers work on different tasks in the same feature. Features and epics group scope and acceptance, not exclusive ownership. Shared aggregate records and code still require ordinary Git coordination and deliberate semantic conflict resolution; the folder layout is not a distributed lock.
 
-**Lazy files.** A feature starts life as `feature.md` + `feature.yml`, holding the narrative the first decompose stage wrote. The eval file and the `tasks/` subtree appear together at the second stage, when the feature is specified and exploded into tasks in one pass. You don't pay the file-count cost for features you haven't reached. The three shelves are lazy in the same way: `tiller init` scaffolds none, and the first `add bug`, `add chore`, or `add tweak` creates the one it needs.
+**Lazy files.** A feature starts life as `feature.md` + `feature.yml`, holding the narrative the first decompose stage wrote. The eval file and the `tasks/` subtree appear together at the second stage, when the feature is specified and exploded into tasks in one pass. You don't pay the file-count cost for features you haven't reached. The three shelves are lazy in the same way: `tiller init` scaffolds none, and the first `add bug`, `add chore`, or `add tweak` creates the one it needs. `batches/` appears with the first `add batch`.
 
 ---
 
 ## IDs
 
-Every Tiller node id is a type-prefixed, collision-resistant token, not a counter. The shape is `<prefix>-<token>`, where the prefix is the node type (`E`, `F`, `T`, `Q`, `A`, `ADR`, `B`, `CH`, or `TW`) and the token follows the compact random token rule. `B` is a bug, `CH` a chore, and `TW` a tweak; `C` alone was passed over because eval rubric output already labels criteria `C1`, `C2`, `C3`.
+Every Tiller node id is a type-prefixed, collision-resistant token, not a counter. The shape is `<prefix>-<token>`, where the prefix is the node type (`E`, `F`, `T`, `Q`, `A`, `ADR`, `B`, `CH`, `TW`, or `BT`) and the token follows the compact random token rule. `B` is a bug, `CH` a chore, `TW` a tweak, and `BT` a batch; `C` alone was passed over because eval rubric output already labels criteria `C1`, `C2`, `C3`.
 
 **Compact random token.** A compact random token is exactly six characters from lowercase base36 (`[a-z0-9]{6}`), minted from cryptographic randomness. `F-79dh3q` is a feature id; `T-k3p9w6` is a task id.
 
@@ -133,6 +136,8 @@ A null entry in `open-questions.yml` fails the load with an error naming the led
 **Keys and paths.** A `key` is built from local key segments, each matching `[a-z0-9]+(?:-[a-z0-9]+)*`. An epic's key is a single segment, and it lives at `.tiller/epics/<epic-key>/`. A feature's canonical key is the two-segment `<epic-key>/<feature-key>`, and it lives at `.tiller/epics/<epic-key>/features/<feature-key>/`. The directory segment under `features/` is the LOCAL `<feature-key>` alone, while the `key` field in `feature.yml` and any branch interpolation use the CANONICAL `<epic-key>/<feature-key>`. That is why the layout shows a `certification-form-loading/` folder while the feature's `key` is `form-engine/certification-form-loading`: the folder name is the local segment, and the canonical key prepends the owning epic's key. A task follows the same rule one level down: its directory segment under `tasks/` is the local `<task-key>`, and its canonical key is the three-segment `<epic-key>/<feature-key>/<task-key>`. A bug's canonical key prepends its shelf the same way, `bugs/<bug-key>`, and a chore's is `chores/<chore-key>`; the directory segment is the local key alone, and `bugs`, `chores`, and `tweaks` are reserved epic keys, since an epic folder sits beside the shelves. Tree load holds every recorded key to this rule in full: an epic's, feature's, or task's `key` must be exactly the canonical key its folders spell, the epic folder, then the feature folder, then the task folder, and a shelf node's must be its shelf and folder. A key that only ends in the right folder is refused. That is the shape a feature folder moved by hand under another epic leaves, where the node would list under one epic and answer to the other's name; a key with a missing or extra segment, or one that climbs with `..`, is refused the same way. The load fails with an error naming the state file, the recorded key, and the key the folders spell, and Tiller neither moves the folder nor rewrites the key: which of the two is wrong is for the human to say. A node that records no key at all still loads and simply does not resolve by key. The rendering convention for human output is defined in [cli-surface.md](./cli-surface.md), this document staying canonical for the id/key model alone.
 
 A Tweak's canonical key is `tweaks/<tweak-key>`. It lives at `.tiller/tweaks/<tweak-key>/`, uses `tweak.md` and `tweak.yml`, and resolves by its local key when the `tweak` noun selects the shelf. `tweaks` is reserved as an epic key, alongside `bugs` and `chores`.
+
+A batch's canonical key is `batches/<batch-key>`. It lives at `.tiller/batches/<batch-key>/`, holds `batch.yml` and nothing else, and resolves by its local key when the `batch` noun selects the folder. `batches` is reserved as an epic key too.
 
 ### Derived relationship identities
 
@@ -611,7 +616,7 @@ A bug is **not an amendment**. An amendment changes the work tree; a bug, chore,
 
 Optional review gates can be attested at bug, chore, or tweak grain because each shelf node owns its review surface. `tiller attest bug|chore|tweak --gate` writes the same existing `gates` and `attestations` shapes shown for features and tasks. No shelf criterion or eval exists: `attest bug|chore|tweak --criterion` and every `eval bug|chore|tweak` form remain unsupported. Attestation uses the existing gate state shape.
 
-A bug ignores `review_grain` entirely. The grain calibrates oversight over planned work under an epic, and a bug is one unit with one PR at every setting.
+A bug ignores `review_grain` entirely. The grain calibrates oversight over planned work under an epic, and a bug is one unit with one PR at every setting, unless a batch reviews it with others ([Batches](#batches)), in which case the batch is the one unit and holds the one PR.
 
 `bug.yml`:
 
@@ -640,7 +645,8 @@ branch: null               # tiller/bugs/certification-form-blank-on-reload once
 pr: null
 review_ref: null
 recovered_review: null     # optional immutable historical binding; see Merged shelf review recovery
-done_basis: null           # ancestry | content | human_attested | carried | recovered
+done_basis: null           # ancestry | content | human_attested | carried | recovered | batched
+batch: null                # optional id of the batch reviewing this node; see Batches
 supersedes: []             # same-noun transferred predecessor IDs
 superseded_by: null        # reciprocal successor ID, at most one
 policy_violations: []
@@ -660,7 +666,7 @@ Not a fix is `cancel` with `--resolution wontfix | invalid | duplicate`, which a
 
 **Queue and dependencies.** The queue is a soft order at shelf grain and nothing more, `.tiller/bugs/order.yml`, `.tiller/chores/order.yml`, and `.tiller/tweaks/order.yml`, written only by `tiller order bug`, `tiller order chore`, and `tiller order tweak`, with the precedence every other order carries: recorded `depends_on` edges first, then the list, then canonical key ascending for the unlisted, and it never gates. No `priority` enum ships in v1, since an ordered list is a priority, and a bug's `severity` never enters this order. Dependencies stay inside the shelves: a bug may `depends_on` other bugs, chores, and tweaks only, and no tree node may depend on one, because a cross-graph edge would let the frontier be gated by the queue. "The feature must wait for this fix" is a question with `blocks`, which already exists.
 
-**States, and who drives them.** `proposed` (captured) → `ready` (triaged) → `in_progress` → `check` → `in_review` → `done`, plus `ready → proposed` on return, `in_review → in_progress` on resume, and `cancelled` with a resolution. `done` arrives by the node's own observed merge (basis `ancestry`, `content`, or `human_attested`), by its carrier's (`carried`), or by a recovered review's (`recovered`), and `sync` writes it every way.
+**States, and who drives them.** `proposed` (captured) → `ready` (triaged) → `in_progress` → `check` → `in_review` → `done`, plus `ready → proposed` on return, `in_review → in_progress` on resume, and `cancelled` with a resolution. `done` arrives by the node's own observed merge (basis `ancestry`, `content`, or `human_attested`), by its carrier's (`carried`), by a recovered review's (`recovered`), or by its batch's merge (`batched`), and `sync` writes it every way.
 
 **Merged shelf review recovery.** A bug, chore, or tweak carries an optional typed `recovered_review`, written by `submit bug|chore|tweak --recover-merged` when the node's fix merged before any submission was recorded. It holds the same evidence and provenance fields as an aggregate's record, `head`, `merge_commit`, `integration_branch`, `basis`, `recovered_by`, `recovered_at`, and `reason`, and no `tasks` or `policy_snapshots`, because a shelf node has no riders and no acceptance contract. `branch` is the node's recorded working branch and is absent when the fix merged before the node ever started. Load validates the record's shape as strictly as an aggregate's: an unknown field, a missing one, an abbreviated commit, or an explicit null refuses instead of leaving the node to ordinary observation. The caller-supplied PR number is stored in the node's own `pr`.
 
@@ -673,6 +679,53 @@ The record moves no status. `sync` validates it against configured integration a
 Prerequisites and live position survive. Unstarted dependents redirect with deduplication; terminal dependents retain historical edges; a started unfinished dependent refuses the whole transfer. Direct question targets retain the original and carry to the replacement; ancestor holds, pauses, attachment context, and both directions of carrier relationships remain operative. No transfer grants assumptions, reviewed answers, or automatic unblocking. Authored references/events remain historical and `duplicate_of` is not replacement lineage. Unsafe relationships refuse before any writes. A repeated transfer identifies its existing successor rather than creating another.
 
 Tiller never changes Git refs or host PRs during transfer. Task/shelf PRs must be closed without merging and replaced; coarse reviews retain the unmerged aggregate identity and require replacement completion and fresh affected checks/acceptance. Existing aggregate commits and host approvals do not disappear automatically. A review already merged requires sync and forward work instead.
+
+---
+
+## Batches
+
+A batch is one review of several bugs, chores, or tweaks: one claim, one branch, one set of gates, one pull request, and one merge. It exists because "fix these seven bugs under one PR" is an ordinary request, and without a record for it the agent had to choose between the developer's instruction and the lifecycle. The batch is a first-class record with its own id, key, and status. Its members stay ordinary shelf nodes that name the batch reviewing them. No member stands in for the others, and the carrier pointer (`tiller resolve --by`) is not the mechanism: a carrier is tree work whose merge happens to fix a bug, while a batch is the bugs' own review.
+
+A batch is **not a shelf noun**. It has no contract file, no severity, no attachment, no carrier, and no dependencies, and nothing that enumerates shelf work lists it. Its members' contracts are its contract. It does carry the shelf's execution body (owner, start marker, branch, gates, attestations, PR, review ref, done basis, policy violations), so `claim`, `start`, `check`, `submit`, `resume`, `cancel`, `attest --gate`, and `sync` treat it as they treat one shelf node. Load refuses a `batch.yml` that sets a field only a shelf node carries.
+
+`batch.yml`:
+
+```yaml
+id: BT-5x2k8m
+key: batches/core-model-fixes
+title: Core model fixes
+status: in_review          # ready | in_progress | check | in_review | done | cancelled
+blocked: false
+started: true
+owner: jc
+branch: tiller/batches/core-model-fixes
+pr: 214
+review_ref: null
+done_basis: null           # ancestry | content | human_attested
+gates: {}
+attestations: []
+policy_violations: []
+```
+
+**Membership.** Membership is stored once, on the member: a bug, chore, or tweak names its batch in `batch`. The batch record lists nothing, so the two can never disagree, and a batch's member list is computed on read. Load refuses a `batch` pointer that names no record under `.tiller/batches/`. The pointer is set while the node is a member of a live batch and stays as history after the batch crosses it to `done`. Leaving the batch any other way clears it.
+
+A node may join a batch while it is `proposed` or `ready`. It is refused when it is `done` or `cancelled`, has started its own work, rides a live carrier, holds a recovered review, is in another live batch, or is claimed by a contributor other than the batch's owner (or, while the batch is unowned, other than the contributor making the change). A batch is created with two or more members and may mix the three shelf nouns.
+
+**The derived phase.** A member keeps its stored status and reads the derived phase `batched`, computed on read the way `carried` is and never stored. A batched node has left its own queue: it is not offered as work, takes no claim, and refuses `start`, `check`, `submit`, and `resume` on itself with a refusal that names the batch and the command to run there. `resolve --by`, `reassign`, `remove`, and merged review recovery refuse it too. `approve`, `grade`, `show`, and `status` act on the member as usual. `return` acts on it until the batch starts and refuses afterwards, since the member's fix may already be on the batch branch; removing it from the batch is the deliberate act. `cancel` on a member takes it out of the batch in the same mutation. A batch that is cancelled reviews nothing, so a pointer to one reads as no batch at all.
+
+**Lifecycle.** A batch is born `ready` and needs no approval of its own, because every member is approved on its own contract. It may be created while members are still `proposed`. `start batch` refuses, naming the member, until every member is `ready`, and it re-checks each member's pinned contract the way a shelf node's own start does. It records the branch, `branch_pattern` over the canonical key, so the default is `tiller/batches/<batch-key>`. `check batch` runs the gate set one shelf node runs: the manifest's `on` list read at task grain, and never the `evals` gate. `submit batch` records the one PR or review ref on the batch. `resume batch` re-enters work from review on the same branch and PR. `sync` observes the batch from `in_review` on its own branch exactly as it observes a shelf node (ancestry, then content, then the human's `sync --accept-fast-forward <batch>`), records required gates that were not green as `policy_violations` on the batch, and in the same run crosses every member to `done` with `done_basis: batched`. A member's crossing is written directly, as a carried crossing is, and needs no `started: true`: the batch started, and its members never did. Members of an unmerged batch are never listed as awaiting a merge of their own. A batch has no merged review recovery; when its fixes merged with nothing recorded, the batch is cancelled and each member is recovered on its own.
+
+**Changing membership.** `tiller batch <key> --add <member>` and `--remove <member>` are allowed while the batch is `ready`, `in_progress`, or `check`, and refused in `in_review` until `resume batch`, because the membership is what the reviewer is reading. A member added to a started batch must already be `ready`. A change while the batch is at `check` flips its recorded gates to `stale`, so `submit` refuses until `check` runs again. A removed member keeps its stored status and returns to its own queue, and the command warns that commits already made for it on the batch branch are the developer's to revert. A batch that loses its last member, by removal or by the member's own cancel, is cancelled in the same mutation. `cancel batch` cancels the batch alone: every member is released to its own queue and none is cancelled, so it takes no `--resolution`.
+
+**Ownership.** A batch has one owner, taken with `claim batch` and fixed at `start batch` like any execution claim. `release` and `reassign` take `batch` before start. `claim batch` and `reassign batch` refuse while a member is claimed by someone other than the new holder. `transfer` does not apply to a batch.
+
+**Who may create one.** `add batch` and `batch` sit in the delegation class of `resolve`: the human runs them, or the agent does on an explicit instruction that names the members and asks for one review.
+
+**Read surfaces.** `show` and `status` on a member name its batch with the batch's status, branch, and PR; on a batch they list every member with its stored status. A batch displays the highest severity among its members and stores none. The queue, the readout, and the ranked next list hold a batch as one unit of work and never offer its members separately, except that a `proposed` member still appears for its own approval. The unrecorded-merge warning treats a batched member as accounted for and reports the batch instead, when merged commits name the batch or any member while the batch is `ready`, `in_progress`, or `check`.
+
+**States, and who drives them.** `ready` → `in_progress` → `check` → `in_review` → `done`, plus `in_review → in_progress` on resume and `cancelled` from any live state. The agent drives `start`, `check`, `submit`, and `resume` for a batch it holds. `cancel` is the human's, and so is the merge.
+
+**Events.** `add.batch` records the batch and its first members, `edit.batch` each membership change made through `tiller batch`, and the lifecycle verbs record `claim.batch`, `start.batch`, `check.batch`, `submit.batch`, `resume.batch`, `cancel.batch`, and `sync.batch`. An event that changes members targets them beside the batch, and `cancel.batch` lists the members it released. A member's own cancel records `cancel.<noun>`, with an `edit.batch` beside it when the batch itself changed (stale gates, or cancellation as its last member left). A member's own crossing is `sync.<noun>` with the batch id in `after.batch`.
 
 ---
 
@@ -1030,7 +1083,8 @@ Every node carries a stable `id`; whether it also carries a human `key` depends 
 | Epic | draft → ready → done → archived, plus draft/ready → cancelled; `done` is a `sync` rollup observation and recomputes when new work lands beneath it; `active` is a derived display status (from children), not stored | draft tree proposal, derived active-work tracking | approve to `ready`; cancel before done work exists; archive |
 | Feature | draft → specced → ready → active → done, plus ready → specced on return; `done` is a `sync` rollup observation over its tasks and recomputes; an `active` feature whose non-cancelled tasks are all done carries a derived display phase (`awaiting check`, then `awaiting sync`), computed from its tasks and gates, not stored | specced (the stage-2 output, tasks included), active, checked | approve to `ready` (the feature plan, initial tasks included); return to `specced` before work starts; cancel |
 | Task | proposed → ready → in_progress → check → in_review → done, plus ready → proposed on return and in_review → in_progress on resume | proposed, in_progress, check, in_review, resume to `in_progress` on a requested-changes review | approve to `ready`; return before work starts; cancel; merge-backed `done` observed by `sync` |
-| Bug, chore | the task's states verbatim; done by the node's own observed merge, or carried by its resolved_by carrier's done | proposed, in_progress, check, in_review, resume | approve (triage) to ready; return; cancel with a resolution; resolve (agent only on instruction) |
+| Bug, chore, tweak | the task's states verbatim; done by the node's own observed merge, carried by its resolved_by carrier's done, crossed on a recovered review, or crossed with its batch; `carried` and `batched` are derived display phases, not stored | proposed, in_progress, check, in_review, resume | approve (triage) to ready; return; cancel with a resolution; resolve (agent only on instruction) |
+| Batch | ready → in_progress → check → in_review → done, plus in_review → in_progress on resume and any live state → cancelled; born ready with no approval; its merge crosses every member | in_progress, check, in_review, resume; create or change membership only on instruction | cancel, which releases its members; merge-backed `done` observed by `sync` |
 | Amendment | draft → proposed → approved, or withdrawn from either open state | proposed (stages the reshape and its held drafts, then hands it over) | approve, which validates, promotes the held drafts, and applies the batch; withdraw, which removes them |
 
 The invariant across them all: the agent can take work right up to the edge of `done`, attaching evidence and turning gates green, but only a human merge crosses it, and every `done` above a task is arithmetic over merges the human performed, recorded by `sync`. The amendment follows the same shape one level up, where the agent stages a reshape and only the human's approve validates and applies it.
@@ -1209,6 +1263,18 @@ For merged shelf review recovery, settled 2026-11-19:
 - The shelf record carries evidence and provenance only. It has no riders and no policy snapshots, and its branch is the node's own recorded branch or nothing, never a name Tiller would have chosen.
 - Sync records the crossing with basis `recovered`, with the Git evidence in the record and on the crossing event. Recovery approves no gate, and a missing pass is a policy violation at the crossing.
 - Schema 16 is stamp-only: shelf nodes gain the optional `recovered_review` field and the `recovered` done basis. The stamp keeps an older binary from rewriting a recovered node and dropping its record.
+
+For batches, settled 2026-11-19 (JC):
+
+- Several bugs, chores, or tweaks under one review is a batch noun. Extending the carrier so one lead bug carried the rest was rejected, because it makes one member's record stand in for a review that belongs to all of them.
+- The batch alone carries the lifecycle. A member keeps its stored status, reads the derived phase `batched`, and crosses to `done` with `done_basis: batched` when sync records the batch's merge.
+- A batch needs no approval of its own and is born `ready`. It may hold `proposed` members, and `start batch` refuses until each is approved. Creating or changing one sits in the delegation class of `resolve`.
+- Membership changes are allowed in `ready`, `in_progress`, and `check`, and refused in `in_review` until resume. A change after `check` stales the gates. Removal returns a member to its queue with a warning about its commits. Cancelling a member removes it, cancelling the batch releases every member and cancels none, and a batch with no members left is cancelled.
+- The record is `.tiller/batches/<key>/batch.yml`, id `BT-`, with a title and no contract file. Its branch is `tiller/batches/<key>`. Membership is stored on the member alone.
+- A batch has one owner through `claim batch`, and a node another contributor has claimed refuses to join.
+- The batch runs the gate set a single shelf node runs, may mix the three shelf nouns, and displays its highest member severity.
+- Returning a member to triage is refused once its batch has started; `batch --remove` is the path. Merged review recovery does not apply to a batch.
+- The record is folded into schema 16, which was merged and unreleased when batches landed: the `batches/` folder, the shelf `batch` pointer, and the `batched` done basis are additive and ride the same stamp.
 
 ---
 

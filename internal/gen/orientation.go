@@ -51,7 +51,9 @@ import (
 // upgrade skill.
 // Generation 63 extends missing-review recovery to bugs, chores, and tweaks:
 // the authorization rule names a shelf node's review beside an aggregate's.
-const orientationSchemaGen = 63
+// Generation 64 adds the batch: several bugs, chores, or tweaks under one
+// branch and one review, created only on an explicit instruction.
+const orientationSchemaGen = 64
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -162,6 +164,7 @@ unrequested replan.
 - **operative question**: an open question that currently holds a node, directly or through an ancestor; a recorded feature-only assumption lifts its hold on that feature, never on its tasks.
 - **held draft**: a node an open amendment created and holds inert until approval promotes it or withdrawal removes it.
 - **carrier**, **carried**: a shelf node is carried while a live epic, feature, or task, its carrier, is recorded through ` + "`tiller resolve`" + ` as the work whose merge fixes it.
+- **batch**, **batched**: a batch is one review of several bugs, chores, or tweaks: one claim, one branch, one set of gates, one pull request. A member is batched while its batch is live: it keeps its stored status, takes no execute verb of its own, and crosses to ` + "`done`" + ` when the batch's merge is synced.
 
 ## The rules you must follow
 
@@ -211,7 +214,9 @@ unrequested replan.
   evidence through gates, run gates, and open PRs. A gate is the human's
   decision, not the human's keyboard: on an explicit instruction naming the
   node and target, or the exact design docs, you may run ` + "`approve`" + ` or ` + "`resolve`" + ` yourself, stating exactly
-  what you are about to record and reporting what you recorded. A declarative
+  what you are about to record and reporting what you recorded. Creating or
+  changing a batch (` + "`tiller add batch`" + `, ` + "`tiller batch`" + `) sits in the same class: run it
+  only on an explicit instruction that names the members and asks for one review. A declarative
   past-tense claim ("they're all approved") is authorization to record only
   when the set is unambiguous: verify the recorded state first, then record,
   then report the delta. ` + "`cancel`" + ` on a work node is human-only: hand the exact ` + "`cancel`" + ` command
@@ -258,7 +263,8 @@ unrequested replan.
   One requirement rides on top of those conventions rather than replacing them:
   a commit you author while executing a task carries that task's id. A commit
   while executing a started shelf node carries that shelf node's own id, so
-  ` + "`git log`" + ` can walk from either commit to the node that explains it. An
+  ` + "`git log`" + ` can walk from either commit to the node that explains it. On a
+  batch's branch every commit carries the id of the member it serves. An
   uncommitted ` + "`.tiller/`" + ` change is not shared state and is not a review
   surface. The final integration merge is still the human's; committing is not. A diff that
   touches only ` + "`.tiller/`" + ` never needs a pull request: planning state, gate
@@ -277,7 +283,8 @@ unrequested replan.
   moved to for this, commit only when it holds no changes you did not make;
   otherwise stop and name what is in the way.
   A mid-task delta belongs on its own recorded task branch. A delta while executing a
-  started shelf node belongs on that shelf node's branch; pre-start shelf state
+  started shelf node belongs on that shelf node's branch, and one while executing a
+  started batch on the batch's branch; pre-start shelf state
   remains under the integration-branch fallback, as does other planning state.
   The PR ceremony is for code.
 - Every started task has its own recorded branch, unchanged on resume. Tiller
@@ -571,6 +578,11 @@ The shelves use the same explicit ownership boundary. The human chooses queue
 work, then you claim the top eligible node in that shelf's soft order with
 ` + "`tiller claim bug <key>`" + `, ` + "`tiller claim chore <key>`" + `, or ` + "`tiller claim tweak <key>`" + `. An unclaimed shelf
 node never enters the ranked list. A live ` + "`carried`" + ` node waits on its carrier.
+A batch is claimed the same way with ` + "`tiller claim batch <key>`" + `, and a ` + "`batched`" + ` node
+waits on its batch: it is never claimed, started, checked, or submitted on its own.
+When the developer asks for several bugs, chores, or tweaks under one review,
+that is a batch, never a hand-named branch; ` + "`tiller guide execute`" + ` carries it
+under **Batched shelf work**.
 
 **Review grain.** Review does not have to land once per task. ` + "`review_grain`" + ` records where
 it lands instead: ` + "`task`" + ` by default, ` + "`feature`" + `, or ` + "`epic`" + `. It lives in the
@@ -688,6 +700,7 @@ those nodes.
 The list holds only legal moves, so every row can be acted on as printed. The
 standing queue line is always present: ` + "`queue: N bugs, M chores, K tweaks ready`" + `. It
 reports ready, non-carried shelf work, which a human chooses before any claim.
+A ready batch adds its own count to the line, and its members leave the others.
 
 ` + "`tiller guide`" + ` serves eleven skills:
 
@@ -706,7 +719,7 @@ reports ready, non-carried shelf work, which a human chooses before any claim.
   nothing was staged.
 - ` + "`specify`" + `: a feature is in draft. Write its specification, its acceptance
   contract, and its tasks in one pass, then ` + "`tiller spec feature`" + `.
-- ` + "`execute`" + `: you hold a ready, in-progress, or checked task or shelf node,
+- ` + "`execute`" + `: you hold a ready, in-progress, or checked task, shelf node, or batch,
   reviewed work has requested changes, acceptance resumes, a coarse review reaches
   its finish line, or the developer reports a related merge. Prepare verified
   draft/offline acceptance review, complete formal submission/state publication
@@ -784,6 +797,8 @@ Everything Tiller owns is under ` + "`.tiller/`" + ` at the repo root:
   beside machine-owned ` + "`chore.yml`" + ` state; ` + "`chores/order.yml`" + ` records shelf order.
 - ` + "`tweaks/<tweak-key>/`" + ` holds a tweak's human-owned ` + "`tweak.md`" + ` contract
   beside machine-owned ` + "`tweak.yml`" + ` state; ` + "`tweaks/order.yml`" + ` records shelf order.
+- ` + "`batches/<batch-key>/`" + ` holds a batch's machine-owned ` + "`batch.yml`" + ` state and no
+  prose: its members' contracts are its contract.
 - ` + "`plans/`" + `, ` + "`decisions/`" + `, and ` + "`events/`" + ` hold optional working plans, decision records
   and open questions, and the append-only event stream.
 
