@@ -36,11 +36,15 @@ type ReassignView struct {
 	Reason string `json:"reason"`
 }
 
+// claimNouns are the execution units that take a claim: a task, a shelf node,
+// or a batch, which takes the one claim for all of its members.
+var claimNouns = []string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch}
+
 func newClaimCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "claim", Short: "Reserve a task, bug, chore, or tweak before it starts.",
+	cmd := &cobra.Command{Use: "claim", Short: "Reserve a task, bug, chore, tweak, or batch before it starts.",
 		Long: "Claim individual execution work. Taking another developer's unstarted reservation requires --from naming its holder and an explicit human handoff instruction. Started and terminal ownership cannot change; started unfinished work needs an explicitly authorized transfer.",
 		RunE: func(cmd *cobra.Command, args []string) error { return cmd.Help() }}
-	for _, noun := range []string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak} {
+	for _, noun := range claimNouns {
 		cmd.AddCommand(newClaimWorkCmd(noun))
 	}
 	return cmd
@@ -48,7 +52,7 @@ func newClaimCmd() *cobra.Command {
 
 func newClaimWorkCmd(noun string) *cobra.Command {
 	var from string
-	cmd := &cobra.Command{Use: noun + " <node>", Aliases: []string{noun + "s"}, Short: "Reserve an unstarted " + noun + ".",
+	cmd := &cobra.Command{Use: noun + " <node>", Aliases: []string{pluralNoun(noun)}, Short: "Reserve an unstarted " + noun + ".",
 		Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error { return runClaimWork(cmd, noun, args[0], from) }}
 	cmd.Flags().StringVar(&from, "from", "", "current holder; use only for an explicit human-directed pre-start handoff")
 	addContributorFlag(cmd)
@@ -89,16 +93,16 @@ func humanClaim(ref string, res mutate.ClaimResult) string {
 
 func newReleaseCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "release", Short: "Return an unstarted execution claim to the pool.",
-		Long: "Release your own task, bug, chore, or tweak reservation before start. Started and terminal ownership is immutable.",
+		Long: "Release your own task, bug, chore, tweak, or batch reservation before start. Started and terminal ownership is immutable.",
 		RunE: func(cmd *cobra.Command, args []string) error { return cmd.Help() }}
-	for _, noun := range []string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak} {
+	for _, noun := range claimNouns {
 		cmd.AddCommand(newReleaseWorkCmd(noun))
 	}
 	return cmd
 }
 
 func newReleaseWorkCmd(noun string) *cobra.Command {
-	cmd := &cobra.Command{Use: noun + " <node>", Aliases: []string{noun + "s"}, Short: "Release an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
+	cmd := &cobra.Command{Use: noun + " <node>", Aliases: []string{pluralNoun(noun)}, Short: "Release an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error { return runReleaseWork(cmd, noun, args[0]) }}
 	addContributorFlag(cmd)
 	return cmd
@@ -137,7 +141,7 @@ func newReassignCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "reassign", Short: "Hand an unstarted execution claim to a registered contributor.",
 		Long: "Reassign only before start. An agent runs this human decision only on an explicit instruction naming the work, recipient, and reason. For started unfinished work use transfer; terminal history never changes.",
 		RunE: func(cmd *cobra.Command, args []string) error { return cmd.Help() }}
-	for _, noun := range []string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak} {
+	for _, noun := range claimNouns {
 		cmd.AddCommand(newReassignWorkCmd(noun))
 	}
 	return cmd
@@ -145,7 +149,7 @@ func newReassignCmd() *cobra.Command {
 
 func newReassignWorkCmd(noun string) *cobra.Command {
 	var to, reason string
-	cmd := &cobra.Command{Use: noun + " <node> --to <contributor-id> --reason <text>", Aliases: []string{noun + "s"}, Short: "Reassign an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
+	cmd := &cobra.Command{Use: noun + " <node> --to <contributor-id> --reason <text>", Aliases: []string{pluralNoun(noun)}, Short: "Reassign an unstarted " + noun + ".", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error { return runReassignWork(cmd, noun, args[0], to, reason) }}
 	cmd.Flags().StringVar(&to, "to", "", "registered contributor who receives the claim (required)")
 	cmd.Flags().StringVar(&reason, "reason", "", "human-directed reason (required)")

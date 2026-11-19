@@ -173,6 +173,9 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Activity == gen.ActivityCarrierCancelled {
 		fmt.Fprint(&b, " (carrier cancelled: it will never merge; resolve --clear or --by re-points it)")
 	}
+	if v.Activity == gen.ActivityBatched {
+		fmt.Fprint(&b, " (batched: its batch owns the branch, gates, and review, and sync crosses it when the batch merges)")
+	}
 	if v.Blocked {
 		fmt.Fprint(&b, " (blocked)")
 	}
@@ -183,6 +186,10 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 		}
 		fmt.Fprintf(&b, "\n  severity: %s", severity)
 	}
+	if v.Noun == store.NounBatch && v.Severity != "" {
+		fmt.Fprintf(&b, "\n  severity: %s (highest member)", v.Severity)
+	}
+	renderBatchHuman(&b, v.Batch, v.Members)
 	// The review-state warning sits directly under state, the
 	// status this task carries while the warning applies, in the identical
 	// wording submit's own confirmation renders (unpushedReviewWarning): a
@@ -326,6 +333,9 @@ func renderStatusHuman(s ProjectSummary) string {
 		s.Counts.Epics, s.Counts.Features, s.Counts.Tasks, s.Counts.Questions)
 	if s.Counts.Bugs > 0 || s.Counts.Chores > 0 || s.Counts.Tweaks > 0 {
 		fmt.Fprintf(&b, "  Bugs %d  Chores %d  Tweaks %d", s.Counts.Bugs, s.Counts.Chores, s.Counts.Tweaks)
+	}
+	if s.Counts.Batches > 0 {
+		fmt.Fprintf(&b, "  Batches %d", s.Counts.Batches)
 	}
 	if len(s.ActiveEpicRefs) > 0 {
 		fmt.Fprintf(&b, "\nActive epics: %s", strings.Join(s.ActiveEpicRefs, ", "))

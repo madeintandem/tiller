@@ -182,7 +182,8 @@ type ReopenedView struct {
 // Which token each grain records, enumerated rather than generalized:
 //
 //	task:    ancestry, content, or human_attested
-//	shelf:   those three, carried, or recovered
+//	shelf:   those three, carried, recovered, or batched
+//	batch:   ancestry, content, or human_attested
 //
 // evidence appears on a recovered crossing only and names what the recovery
 // record's result showed: ancestry, content, or human_attested.
@@ -202,6 +203,7 @@ type CrossingView struct {
 	Basis                      string                      `json:"basis"`
 	MatchedCommit              string                      `json:"matched_commit,omitempty"`
 	Evidence                   string                      `json:"evidence,omitempty"`
+	Batch                      string                      `json:"batch,omitempty"`
 	PolicyViolations           []string                    `json:"policy_violations,omitempty"`
 	HistoricalPolicyViolations []views.PolicyViolationView `json:"historical_policy_violations,omitempty"`
 	TouchedDesign              []string                    `json:"touched_design,omitempty"`
@@ -450,9 +452,11 @@ func resolveAttested(tree *store.Tree, refs []string) ([]string, error) {
 	r := resolve.NewResolver(tree)
 	ids := make([]string, 0, len(refs))
 	for _, raw := range refs {
-		nouns := append([]string{store.NounFeature, store.NounTask, store.NounEpic}, store.ShelfNouns()...)
+		nouns := append([]string{store.NounFeature, store.NounTask, store.NounEpic}, append(store.ShelfNouns(), store.NounBatch)...)
 		shelf, onShelf := store.ShelfOfRef(raw)
 		switch {
+		case strings.HasPrefix(raw, "BT-"), strings.HasPrefix(raw, store.ShelfDir(store.NounBatch)+"/"):
+			nouns = []string{store.NounBatch}
 		case strings.HasPrefix(raw, "T-"):
 			nouns = []string{store.NounTask}
 		case strings.HasPrefix(raw, "E-"):
@@ -717,6 +721,7 @@ func syncView(res mutate.SyncResult) SyncView {
 			Basis:                      c.Basis,
 			MatchedCommit:              c.MatchedCommit,
 			Evidence:                   c.Evidence,
+			Batch:                      c.Batch,
 			PolicyViolations:           nonNilStrings(c.PolicyViolations),
 			HistoricalPolicyViolations: views.PolicyViolations(store.GatesBlock{PolicyViolations: c.HistoricalPolicyViolations}),
 			TouchedDesign:              c.TouchedDesign,
@@ -1029,6 +1034,9 @@ func syncCrossingLine(tree *store.Tree, c mutate.Crossing) string {
 	line := fmt.Sprintf("  - %s %s -> %s", c.Noun, gen.RefByID(tree, c.ID), c.Status)
 	if c.Basis == basisRecovered {
 		line += " (recovered review)"
+	}
+	if c.Batch != "" {
+		line += fmt.Sprintf(" (batched: %s)", gen.RefByID(tree, c.Batch))
 	}
 	if c.MatchedCommit != "" {
 		line += fmt.Sprintf(" (content match: %s)", c.MatchedCommit)

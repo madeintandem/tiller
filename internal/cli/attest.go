@@ -71,7 +71,7 @@ func newAttestCmd() *cobra.Command {
 // runAttest resolves the node, records the attestation through the core, and renders
 // the success envelope.
 func runAttest(cmd *cobra.Command, noun, node string, in mutate.AttestInput) error {
-	tree, n, err := resolveForMutation(cmd, "attest", noun, node, []string{store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak})
+	tree, n, err := resolveForMutation(cmd, "attest", noun, node, []string{store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch})
 	if err != nil {
 		return err
 	}

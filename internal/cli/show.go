@@ -86,7 +86,7 @@ func resolveNodeWithTree(cmd *cobra.Command, command, noun, node string) (*store
 	if !ok {
 		return nil, nil, emitFailure(cmd, command, &usageError{
 			reason: "unknown_noun",
-			msg:    fmt.Sprintf("unknown noun %q (want one of epic, feature, task, question, amendment, bug, chore, tweak)", noun),
+			msg:    fmt.Sprintf("unknown noun %q (want one of epic, feature, task, question, amendment, bug, chore, tweak, batch)", noun),
 		})
 	}
 	tree, err := loadTree(cmd)
@@ -100,11 +100,11 @@ func resolveNodeWithTree(cmd *cobra.Command, command, noun, node string) (*store
 	return tree, n, nil
 }
 
-// singularNoun reports whether noun is one of the seven addressable node
+// singularNoun reports whether noun is one of the addressable node
 // classes the read commands accept, the validated set the grammar's checksum
 // rests on. amendment joined the set in task 4 (`tiller status amendment
 // <addr>`, `tiller ls amendment`) and bug and chore with the shelves
-// (2026-08-28); show's own amendment arm (runShow above)
+// (2026-08-28), and batch with shelf batches; show's own amendment arm (runShow above)
 // intercepts before reaching here, since an amendment's full render is its
 // own shape rather than views.Node's.
 func singularNoun(noun string) (string, bool) {
@@ -113,7 +113,7 @@ func singularNoun(noun string) (string, bool) {
 	}
 	switch noun {
 	case store.NounEpic, store.NounFeature, store.NounTask, store.NounQuestion, store.NounAmendment,
-		store.NounBug, store.NounChore, store.NounTweak:
+		store.NounBug, store.NounChore, store.NounTweak, store.NounBatch:
 		return noun, true
 	default:
 		return "", false
@@ -158,6 +158,9 @@ func renderNodeHuman(tree *store.Tree, v NodeView) string {
 		// way to done.
 		fmt.Fprint(&b, " (carrier cancelled)")
 	}
+	if v.Activity == gen.ActivityBatched {
+		fmt.Fprint(&b, " (batched)")
+	}
 	if v.Owner != "" {
 		fmt.Fprintf(&b, "\n  owner:  %s", v.Owner)
 	}
@@ -185,6 +188,16 @@ func renderNodeHuman(tree *store.Tree, v NodeView) string {
 		}
 		fmt.Fprintf(&b, "\n  severity: %s", severity)
 	}
+	if v.Noun == store.NounBatch && v.Severity != "" {
+		fmt.Fprintf(&b, "\n  severity: %s (highest member)", v.Severity)
+	}
+	if v.Noun == store.NounBatch && v.Branch != "" {
+		fmt.Fprintf(&b, "\n  branch: %s", v.Branch)
+	}
+	if v.Noun == store.NounBatch && v.PR != nil {
+		fmt.Fprintf(&b, "\n  pr: #%d", *v.PR)
+	}
+	renderBatchHuman(&b, v.Batch, v.Members)
 	if v.Resolution != "" {
 		fmt.Fprintf(&b, "\n  resolution: %s", v.Resolution)
 		if v.DuplicateOf != "" {

@@ -44,6 +44,7 @@ type ContributorRemoveHoldingsData struct {
 	Bugs      int    `json:"bugs"`
 	Chores    int    `json:"chores"`
 	Tweaks    int    `json:"tweaks"`
+	Batches   int    `json:"batches,omitempty"`
 	Questions int    `json:"questions"`
 }
 
@@ -194,9 +195,13 @@ func reportContributorRemoveError(cmd *cobra.Command, err error) error {
 	if errors.As(err, &held) {
 		h := held.Holdings
 		d := ContributorRemoveHoldingsData{ID: held.ID, Reason: held.Reason, Tasks: h.Tasks,
-			Bugs: h.Bugs, Chores: h.Chores, Tweaks: h.Tweaks, Questions: h.Questions}
+			Bugs: h.Bugs, Chores: h.Chores, Tweaks: h.Tweaks, Batches: h.Batches, Questions: h.Questions}
+		batches := ""
+		if h.Batches > 0 {
+			batches = fmt.Sprintf(" %d live batch(es),", h.Batches)
+		}
 		return emitReport(cmd, "remove contributor", false, d,
-			fmt.Sprintf("Blocked: %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s), and %d open question(s); "+
+			fmt.Sprintf("Blocked: %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s),"+batches+" and %d open question(s); "+
 				"release or reassign unstarted reservations, finish or explicitly transfer started work "+
 				"(`tiller transfer task|bug|chore|tweak <node> --to <contributor-id> --reason \"<why>\"`), "+
 				"and answer open questions (`tiller answer question <Q-id> --answer \"<answer>\"`).",

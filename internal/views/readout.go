@@ -997,6 +997,9 @@ func lookupNode(t *store.Tree, noun, id string) store.Node {
 		if w, ok := t.WorkNode(id); ok && w.Noun() == noun {
 			return w
 		}
+		if b, ok := t.Batches[id]; ok && noun == store.NounBatch {
+			return b
+		}
 	}
 	return nil
 }
@@ -1874,7 +1877,8 @@ func bindingBreakdown(counts map[string]int) string {
 
 // basisBreakdown renders sync's own crossing-basis tally (syncContent) in
 // mutate.Sync's own order: ancestry, content, rollup, human_attested, then
-// recovered for a shelf node crossed on a recovered review
+// recovered for a shelf node crossed on a recovered review and batched for
+// one crossed on its batch's merge
 // (mutate's basisAncestry/basisContent/basisRollup/basisHumanAttested/
 // basisRecovered consts, unexported there, so this file names the same
 // literal strings rather than importing across the package boundary).
@@ -1885,7 +1889,7 @@ func bindingBreakdown(counts map[string]int) string {
 // real crossing, an easy mistake to make and to miss (caught in review
 // before it shipped, not after).
 func basisBreakdown(counts map[string]int) string {
-	order := []string{"ancestry", "content", "rollup", "human_attested", "recovered"}
+	order := []string{"ancestry", "content", "rollup", "human_attested", "recovered", "batched"}
 	var parts []string
 	for _, k := range order {
 		if n := counts[k]; n > 0 {

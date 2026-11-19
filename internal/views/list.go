@@ -42,7 +42,11 @@ type ListItem struct {
 	AttachedTo string `json:"attached_to,omitempty"`
 	// Severity is a bug's triage grade (store.Severities), empty for an
 	// unrated bug and for every other noun. It never orders anything.
-	Severity                  string                       `json:"severity,omitempty"`
+	Severity string `json:"severity,omitempty"`
+	// Batch is the id of the batch reviewing a bug, chore, or tweak, and
+	// Members is a batch row's member count.
+	Batch                     string                       `json:"batch,omitempty"`
+	Members                   int                          `json:"members,omitempty"`
 	RecoveredReview           *workflow.RecoveredReview    `json:"recovered_review,omitempty"`
 	ReviewMissing             bool                         `json:"review_missing,omitempty"`
 	Gates                     map[string]GateView          `json:"gates,omitempty"`
@@ -131,6 +135,10 @@ func Collect(t *store.Tree, noun string) []store.Node {
 		for _, w := range t.WorkNodesOf(noun) {
 			out = append(out, w)
 		}
+	case store.NounBatch:
+		for _, b := range t.Batches {
+			out = append(out, b)
+		}
 	}
 	return out
 }
@@ -203,7 +211,7 @@ func resolveParent(r *resolve.Resolver, noun, raw string) (string, error) {
 func Matches(tree *store.Tree, n store.Node, f ListFilters) bool {
 	if f.Status == "unfinished" {
 		switch n.Noun() {
-		case store.NounTask, store.NounBug, store.NounChore, store.NounTweak:
+		case store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch:
 			if !gen.UnfinishedAssignment(n.NodeStatus()) {
 				return false
 			}
@@ -285,7 +293,13 @@ func Item(tree *store.Tree, n store.Node) ListItem {
 		if w, ok := store.AsWorkNode(n); ok {
 			item.Title = w.Body().Title
 			item.AttachedTo = w.Body().AttachedTo
-			item.Severity = w.Body().Severity
+			item.Severity = severityOf(tree, n)
+			if batch := batchRefOf(tree, n); batch != nil {
+				item.Batch = batch.ID
+			}
+			if _, isBatch := n.(*store.Batch); isBatch {
+				item.Members = len(tree.BatchMembers(n.NodeID()))
+			}
 		}
 	}
 	return item

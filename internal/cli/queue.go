@@ -19,7 +19,7 @@ type queueFlags struct {
 
 var queueNounOrder = []string{
 	store.NounAmendment, store.NounEpic, store.NounFeature, store.NounTask,
-	store.NounBug, store.NounChore, store.NounTweak, store.NounQuestion,
+	store.NounBug, store.NounChore, store.NounTweak, store.NounBatch, store.NounQuestion,
 }
 
 func newQueueCmd() *cobra.Command {

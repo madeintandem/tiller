@@ -38,24 +38,27 @@ import (
 // here unchanged. answer and cancel are human-only, so an open question reports "human";
 // an answered or cancelled question is terminal and reports "".
 func NextOwner(n store.Node) string {
-	return nextOwner(n, nil)
+	return nextOwner(lifecycle.NextMoves(n), nil)
 }
 
 // NextOwnerIn is NextOwner for a node that may be held: a held draft's move is
 // its amendment's, the agent's while the amendment is a draft (finish and
 // propose) and the human's once it is proposed (approve the amendment).
+//
+// A member of a live batch is read without the verbs its batch owns
+// (legalNextIn), so a ready member waits on the human's cancel or return and
+// the batch itself carries the agent's move.
 func NextOwnerIn(t *store.Tree, n store.Node) string {
-	return nextOwner(n, gen.AmendmentHold(t, n))
+	return nextOwner(legalNextIn(t, n), gen.AmendmentHold(t, n))
 }
 
-func nextOwner(n store.Node, hold *store.Amendment) string {
+func nextOwner(moves []string, hold *store.Amendment) string {
 	if hold != nil {
 		if hold.Status == store.AmendmentStatusDraft {
 			return "agent"
 		}
 		return "human"
 	}
-	moves := lifecycle.NextMoves(n)
 	if len(moves) == 0 {
 		return ""
 	}
@@ -77,8 +80,10 @@ type WhoseMoveCounts struct {
 }
 
 // WhoseMoveOf tallies NextOwner across every node the loaded tree carries.
-// Live carried shelf nodes have left the queue and contribute no move; all
-// other shelf nodes fold through the same lifecycle derivation as tree grains.
+// Shelf nodes that left the queue (carried, recovered, or in a batch)
+// contribute no move, except a proposed batch member, which still awaits its
+// triage; every other shelf node and every live batch folds through the same
+// lifecycle derivation as tree grains.
 func WhoseMoveOf(t *store.Tree) WhoseMoveCounts {
 	var c WhoseMoveCounts
 	tally := func(n store.Node) {
@@ -98,12 +103,16 @@ func WhoseMoveOf(t *store.Tree) WhoseMoveCounts {
 	for _, tk := range t.Tasks {
 		tally(tk)
 	}
-	for _, noun := range store.ShelfNouns() {
-		for _, work := range t.WorkNodesOf(noun) {
-			if gen.WorkLeftQueue(t, work) {
-				continue
+	for _, unit := range shelfExecutionUnits(t) {
+		tally(unit)
+	}
+	// A batched member's work is its batch's, tallied above, but a proposed
+	// member still waits on its own triage.
+	for _, batch := range liveBatches(t) {
+		for _, member := range t.BatchMembers(batch.NodeID()) {
+			if member.NodeStatus() == "proposed" {
+				tally(member)
 			}
-			tally(work)
 		}
 	}
 	for _, q := range t.Questions {

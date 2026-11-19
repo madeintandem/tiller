@@ -88,7 +88,7 @@ func runCheck(cmd *cobra.Command, noun, node, assume, reason string, rerun bool,
 		only = append(only, name)
 	}
 
-	tree, n, err := resolveForMutation(cmd, "check", noun, node, []string{store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak})
+	tree, n, err := resolveForMutation(cmd, "check", noun, node, []string{store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch})
 	if err != nil {
 		return err
 	}

@@ -93,6 +93,7 @@ func NewRootCmd() *cobra.Command {
 		newLinkCmd(),
 		newUnlinkCmd(),
 		newResolveCmd(),
+		newBatchCmd(),
 		newRenameCmd(),
 		newGradeCmd(),
 		newRemoveCmd(),

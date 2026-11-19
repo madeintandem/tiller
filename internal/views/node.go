@@ -97,6 +97,12 @@ type NodeView struct {
 	ReviewMissing   bool                      `json:"review_missing,omitempty"`
 	PRURL           string                    `json:"pr_url,omitempty"` // serve fills; CLI never emits
 
+	// Batch is the batch reviewing a bug, chore, or tweak: its status, branch,
+	// and PR are the member's review. Members is the reverse, on the batch's
+	// own view: every member with its stored status.
+	Batch   *BatchRefView     `json:"batch,omitempty"`
+	Members []BatchMemberView `json:"members,omitempty"`
+
 	// Blocks is a question's block targets, id plus key (BlockRef), resolved
 	// through the SAME relatedByIDs computation the node page's own
 	// Relationships.Blocks calls (nodepage.go's relationshipsOf, *store.Question
@@ -474,6 +480,9 @@ func Node(tree *store.Tree, n store.Node) NodeView {
 			}
 			v.DoneBasis = b.DoneBasis
 			v.ProposedBy = b.ProposedBy
+			v.Severity = severityOf(tree, n)
+			v.Batch = batchRefOf(tree, n)
+			v.Members = batchMembersOf(tree, n)
 		}
 	}
 	v.NextOwner = NextOwnerIn(tree, n)
@@ -752,6 +761,8 @@ func StatusTitle(n store.Node) string {
 	case *store.Question:
 		return gen.QuestionTitle(t)
 	case *store.Amendment:
+		return t.Title
+	case *store.Batch:
 		return t.Title
 	}
 	return ""

@@ -12,14 +12,7 @@ import (
 // readout completed a handoff. Git publication facts come only from the caller.
 func executeContent(t *store.Tree, in ReadoutInput, order *gen.Order, r *Readout) {
 	tasks := orderedTasks(t, order)
-	var shelf []store.WorkNode
-	for _, noun := range store.ShelfNouns() {
-		for _, work := range orderedShelfNodes(t, noun) {
-			if !gen.WorkLeftQueue(t, work) {
-				shelf = append(shelf, work)
-			}
-		}
-	}
+	shelf := shelfExecutionUnits(t)
 
 	total, green, submitted := 0, 0, 0
 	add := func(node store.Node, gates map[string]store.Gate, pr *int, ref *store.ReviewRef, branch string) {

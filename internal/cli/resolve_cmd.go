@@ -59,7 +59,7 @@ func newResolveCmd() *cobra.Command {
 						"reason": terminal.Reason, "noun": terminal.Noun, "id": terminal.ID, "key": terminal.Key, "status": terminal.Status,
 					}, fmt.Sprintf("%s %s is %s; nothing is left to resolve.", terminal.Noun, gen.RefParts(terminal.Key, terminal.ID), terminal.Status), 1)
 				}
-				return emitFailure(cmd, "resolve", err)
+				return reportBatchError(cmd, "resolve", tree, err)
 			}
 			view := resolveView{Noun: res.Noun, ID: res.ID, Key: res.Key, ResolvedBy: res.ResolvedBy, Before: res.Before, Changed: res.Changed}
 			ref := gen.RefParts(res.Key, res.ID)
