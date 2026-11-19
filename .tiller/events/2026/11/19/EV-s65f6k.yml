@@ -1,0 +1,14 @@
+id: EV-s65f6k
+type: sync.tweak
+at: 2026-11-19T19:56:22.50217Z
+contributor: jc
+command: sync tweak TW-3eo3s2
+targets:
+    - TW-3eo3s2
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml
