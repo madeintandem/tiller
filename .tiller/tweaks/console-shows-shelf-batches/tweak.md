@@ -26,5 +26,15 @@ page would take batched work for untouched work.
 - A batched member is not listed on Fix or Home as work waiting to start.
 - Home's needs-you columns treat a batch as one unit of work.
 - Search finds a batch by id, key, and title.
+- An in-review batch waiting on the human's merge appears on Home, and Home
+  never reads "All clear" while one is waiting.
+- An owner's in-progress batch appears in Home's In flight.
+- Every batch link in Up next, Needs you, Just happened, and History opens the
+  batch page.
+- Batch events read correctly in History and Just happened: membership edits
+  have a past-tense phrase, the plural reads "batches", and a membership edit
+  is not ranked as a milestone above the batch being added or claimed.
+- `TestVocabularyCoversEveryTransition` covers the batch noun again, with its
+  event types added to `ui/src/lib/vocabulary.json`.
 - The status glyph for `batched` is distinguishable by shape, not only color.
 - `ui/dist` is rebuilt in the same change.
