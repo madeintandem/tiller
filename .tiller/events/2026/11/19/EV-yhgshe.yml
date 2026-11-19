@@ -1,0 +1,14 @@
+id: EV-yhgshe
+type: submit.tweak
+at: 2026-11-19T18:42:51.93182Z
+contributor: jc
+command: submit tweak TW-xfjsgw
+targets:
+    - TW-xfjsgw
+before:
+    status: check
+after:
+    pr: 29
+    status: in_review
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml

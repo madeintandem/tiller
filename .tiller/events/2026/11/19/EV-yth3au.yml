@@ -1,0 +1,13 @@
+id: EV-yth3au
+type: add.tweak
+at: 2026-11-19T18:16:37.386691Z
+contributor: jc
+command: add tweak several-shelf-items-one-review
+targets:
+    - TW-taq0ps
+after:
+    key: tweaks/several-shelf-items-one-review
+    status: proposed
+files:
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.md
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.yml

@@ -1,0 +1,13 @@
+id: EV-ifj4ht
+type: check.tweak
+at: 2026-11-19T18:42:21.720094Z
+contributor: jc
+command: check tweak TW-xfjsgw
+targets:
+    - TW-xfjsgw
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml
