@@ -72,6 +72,17 @@ func Resolve(tree *store.Tree, deps Deps, in ResolveInput) (ResolveResult, error
 	if s := treeNode.NodeStatus(); s == statusDone || s == statusCancelled {
 		return ResolveResult{}, &WorkTerminalError{Noun: in.Noun, ID: treeNode.NodeID(), Key: deref(treeNode.NodeKey()), Status: s, Reason: "work_terminal"}
 	}
+	if !in.Clear {
+		// A batch already owns this node's completion; a carrier would be a
+		// second answer to the same question.
+		if batch := liveBatchOf(tree, treeNode); batch != nil {
+			b := treeNode.Body()
+			seam := fmt.Sprintf("tiller batch %s --remove %s", batchAddr(batch), b.ID)
+			return ResolveResult{}, &BatchError{Reason: ReasonWorkBatched, Noun: in.Noun, NodeID: b.ID, Key: deref(b.Key), CurrentState: b.Status,
+				Batch: batch.ID, BatchKey: deref(batch.Key), Seam: seam,
+				msg: fmt.Sprintf("%s %s is in batch %s, whose merge closes it; take it out with `%s` before naming a carrier", in.Noun, b.ID, batch.ID, seam)}
+		}
+	}
 	carrier := ""
 	if !in.Clear {
 		id, err := resolveAttachTarget(tree, in.By)

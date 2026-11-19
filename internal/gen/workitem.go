@@ -27,9 +27,16 @@ const ActivityCarrierCancelled = "carrier_cancelled"
 // and the next sync crosses it on the record.
 const ActivityRecovered = "recovered"
 
+// ActivityBatched is the derived display phase of a shelf node a batch is
+// reviewing: the batch owns its branch, gates, and pull request, and sync
+// crosses it when the batch lands. Its stored status stays where triage left
+// it.
+const ActivityBatched = "batched"
+
 // WorkActivity is a shelf node's derived display phase, recomputed on every
 // read against the carrier's current fate:
 //
+//   - ActivityBatched while the node names a batch that is not cancelled;
 //   - ActivityCarried while resolved_by names a live epic, feature, or task;
 //   - ActivityRecovered while the node holds a recovered review and no live
 //     carrier, the order sync itself reads them in;
@@ -45,6 +52,9 @@ func WorkActivity(t *store.Tree, w store.WorkNode) string {
 	if b.Status == "done" || b.Status == "cancelled" {
 		return ""
 	}
+	if Batched(t, w) {
+		return ActivityBatched
+	}
 	if b.ResolvedBy != "" && carrierLive(t, b.ResolvedBy) {
 		return ActivityCarried
 	}
@@ -58,11 +68,40 @@ func WorkActivity(t *store.Tree, w store.WorkNode) string {
 }
 
 // WorkLeftQueue reports a shelf node that no longer waits on its own work:
-// carried by live work, or holding a recovered review. Sync crosses it either
-// way, so it is nobody's to start, continue, or wait on a merge for.
+// reviewed by a batch, carried by live work, or holding a recovered review.
+// Sync crosses it each way, so it is nobody's to start, continue, or wait on a
+// merge for.
 func WorkLeftQueue(t *store.Tree, w store.WorkNode) bool {
 	activity := WorkActivity(t, w)
-	return activity == ActivityCarried || activity == ActivityRecovered
+	return activity == ActivityBatched || activity == ActivityCarried || activity == ActivityRecovered
+}
+
+// Batched reports an unfinished shelf node whose batch can still cross it: the
+// batch exists and is not cancelled. A done batch still counts, because that
+// is the crossing sync is about to record. A batch itself is never batched.
+func Batched(t *store.Tree, w store.WorkNode) bool {
+	if t == nil || w.Noun() == store.NounBatch {
+		return false
+	}
+	b := w.Body()
+	if b.Status == "done" || b.Status == "cancelled" {
+		return false
+	}
+	batch := t.Batches[b.BatchID]
+	return batch != nil && batch.Status != "cancelled"
+}
+
+// BatchSeverity is the highest severity among a batch's members, "" when none
+// is graded. A batch stores no severity of its own.
+func BatchSeverity(t *store.Tree, batch *store.Batch) string {
+	highest := ""
+	for _, member := range t.BatchMembers(batch.ID) {
+		severity := member.Body().Severity
+		if severity != "" && (highest == "" || store.SeverityRank(severity) < store.SeverityRank(highest)) {
+			highest = severity
+		}
+	}
+	return highest
 }
 
 // carrierLive reports whether id names an epic, feature, or task the tree

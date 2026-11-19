@@ -55,6 +55,22 @@ var workItemRows = []transition{
 	{From: "in_review", Verb: "cancel", To: "cancelled"},
 }
 
+// batchRows is the shelf row set from ready onward. A batch needs no approval
+// of its own, so it has no proposed state to approve, return to, or cancel
+// from. Its members cross to done on its merge without a row, as a carried
+// node does.
+var batchRows = []transition{
+	{From: "ready", Verb: "start", To: "in_progress"},
+	{From: "ready", Verb: "cancel", To: "cancelled"},
+	{From: "in_progress", Verb: "check", To: "check"},
+	{From: "in_progress", Verb: "cancel", To: "cancelled"},
+	{From: "check", Verb: "submit", To: "in_review"},
+	{From: "check", Verb: "cancel", To: "cancelled"},
+	{From: "in_review", Verb: "resume", To: "in_progress"},
+	{From: "in_review", Verb: "sync", To: "done"},
+	{From: "in_review", Verb: "cancel", To: "cancelled"},
+}
+
 // transitions maps a node noun to its ordered status transition rows. Orthogonal
 // operations that do not change status (block/unblock, claim/release) are not
 // transitions and are deliberately absent. The done crossing is encoded as the
@@ -108,6 +124,7 @@ var transitions = map[string][]transition{
 	store.NounBug:   workItemRows,
 	store.NounChore: workItemRows,
 	store.NounTweak: workItemRows,
+	store.NounBatch: batchRows,
 	// The amendment's own status writes do not run through this engine, unlike
 	// every noun above it. Its three verbs (AddAmendment, ApproveAmendment, and
 	// WithdrawAmendment in internal/core/mutate) set status directly, each with

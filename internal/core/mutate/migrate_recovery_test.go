@@ -320,7 +320,7 @@ func TestMigrate15To16StampsOnly(t *testing.T) {
 	before := snapshotDir(t, filepath.Join(root, ".tiller"))
 	inspection, err := mutate.InspectMigration(root, testDeps())
 	require.NoError(t, err)
-	require.Contains(t, inspection.Notes, "stamp schema_version 16; a shelf node's recovered review and its recovered done basis are additive; preserve work, events, and active reviews without drain")
+	require.Contains(t, inspection.Notes, "stamp schema_version 16; a shelf node's recovered review and recovered done basis, and shelf batches (.tiller/batches/, a member's batch pointer, the batched done basis), are additive; preserve work, events, and active reviews without drain")
 	result, err := mutate.Migrate(root, testDeps())
 	require.NoError(t, err)
 	require.Equal(t, mutate.MigrateOutcomeMigrated, result.Outcome)

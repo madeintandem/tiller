@@ -344,9 +344,15 @@ func collectRemovedNodes(tree *store.Tree, node store.Node) ([]removedNode, erro
 			supported := append([]string{store.NounEpic, store.NounFeature, store.NounTask}, store.ShelfNouns()...)
 			return nil, &usageError{reason: "remove_noun", msg: "remove supports " + englishList("or", supported...)}
 		}
+		if w.Noun() == store.NounBatch {
+			return nil, &usageError{reason: "remove_noun", msg: "remove does not apply to a batch; tiller cancel batch releases its members and keeps the record"}
+		}
 		b := w.Body()
 		if b.Key == nil {
 			return nil, fmt.Errorf("mutate: %s %s carries no key, so its folder cannot be named", w.Noun(), b.ID)
+		}
+		if batch := liveBatchOf(tree, w); batch != nil {
+			return locked(w.Noun(), b.ID, *b.Key, b.Status, fmt.Sprintf("it is in batch %s; take it out first (tiller batch %s --remove %s)", batch.ID, batchAddr(batch), b.ID))
 		}
 		if b.Status != statusProposed {
 			return locked(w.Noun(), b.ID, *b.Key, b.Status, store.ShelfDir(w.Noun())+" must be proposed; return a ready, unstarted "+w.Noun()+" before removing it")

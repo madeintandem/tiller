@@ -41,6 +41,9 @@ type RecoverReviewResult struct {
 // RecoverReview records a human-authorized historical binding. No lifecycle,
 // gate, accepted basis, task, or Git ref is changed by this planner.
 func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result RecoverReviewResult, err error) {
+	if in.Noun == store.NounBatch {
+		return result, &usageError{reason: reasonBatchRecoveryUnsupported, msg: "merged review recovery does not apply to a batch; cancel the batch, which releases its members, and recover each bug, chore, or tweak that merged with its own submit --recover-merged"}
+	}
 	if in.Noun != store.NounFeature && in.Noun != store.NounEpic && !store.IsWorkNoun(in.Noun) {
 		return result, &usageError{reason: "unsupported_noun", msg: "merged review recovery applies to a feature, epic, bug, chore, or tweak; a task rides its own or its aggregate's review"}
 	}

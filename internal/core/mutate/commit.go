@@ -96,7 +96,11 @@ func commitNodeWritesWithGuards(tree *store.Tree, operation string, writes []nod
 	evs := make([]events.Event, 0, len(writes))
 	for _, write := range writes {
 		planned = append(planned, store.PlanWrite(filepath.Join(tree.Root, write.rel), write.before, write.data))
-		evs = append(evs, write.event)
+		// A write with no event of its own is recorded by another write's
+		// event in the same mutation.
+		if write.event.Type != "" {
+			evs = append(evs, write.event)
+		}
 	}
 	return commitMutation(tree, operation, planned, evs)
 }

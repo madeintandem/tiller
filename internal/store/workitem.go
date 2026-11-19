@@ -16,17 +16,21 @@ import (
 // resolution and duplicate_of describe cancellation. Each shelf noun embeds
 // this body and may grow its own fields independently.
 type WorkItem struct {
-	ID           string   `yaml:"id"`
-	Key          *string  `yaml:"key,omitempty"`
-	Title        string   `yaml:"title,omitempty"`
-	Severity     string   `yaml:"severity,omitempty"`
-	Status       string   `yaml:"status,omitempty"`
-	Blocked      bool     `yaml:"blocked"`
-	Started      bool     `yaml:"started"`
-	Owner        string   `yaml:"owner,omitempty"`
-	ProposedBy   string   `yaml:"proposed_by,omitempty"`
-	AttachedTo   string   `yaml:"attached_to,omitempty"`
-	ResolvedBy   string   `yaml:"resolved_by,omitempty"`
+	ID         string  `yaml:"id"`
+	Key        *string `yaml:"key,omitempty"`
+	Title      string  `yaml:"title,omitempty"`
+	Severity   string  `yaml:"severity,omitempty"`
+	Status     string  `yaml:"status,omitempty"`
+	Blocked    bool    `yaml:"blocked"`
+	Started    bool    `yaml:"started"`
+	Owner      string  `yaml:"owner,omitempty"`
+	ProposedBy string  `yaml:"proposed_by,omitempty"`
+	AttachedTo string  `yaml:"attached_to,omitempty"`
+	ResolvedBy string  `yaml:"resolved_by,omitempty"`
+	// BatchID names the batch reviewing this node. It is set while the node is
+	// a member of a live batch and kept as history once that batch crosses it
+	// to done; leaving the batch any other way clears it.
+	BatchID      string   `yaml:"batch,omitempty"`
 	Resolution   string   `yaml:"resolution,omitempty"`
 	DuplicateOf  string   `yaml:"duplicate_of,omitempty"`
 	DependsOn    []string `yaml:"depends_on,omitempty"`
@@ -45,7 +49,8 @@ type WorkItem struct {
 	// RecoveredReview is the human-authorized record of a review that merged
 	// before its submission was recorded; sync crosses the node on it.
 	RecoveredReview *RecoveredShelfReview `yaml:"recovered_review,omitempty"`
-	// DoneBasis is ancestry, content, human_attested, carried, or recovered.
+	// DoneBasis is ancestry, content, human_attested, carried, recovered, or
+	// batched.
 	DoneBasis  string `yaml:"done_basis,omitempty"`
 	GatesBlock `yaml:",inline"`
 }
@@ -91,9 +96,12 @@ type WorkNode interface {
 	Body() *WorkItem
 }
 
-// AsWorkNode narrows a Node to the shelf nouns.
+// AsWorkNode narrows a Node to the nouns that carry the shelf lifecycle body:
+// the three shelf nouns and the batch that reviews several of them.
 func AsWorkNode(n Node) (WorkNode, bool) {
 	switch v := n.(type) {
+	case *Batch:
+		return v, true
 	case *Bug:
 		return v, true
 	case *Chore:
@@ -105,10 +113,12 @@ func AsWorkNode(n Node) (WorkNode, bool) {
 	}
 }
 
-// NewWorkNode returns an empty node of the shelf noun, for the loader and
-// the writers to fill.
+// NewWorkNode returns an empty node of the shelf noun, or an empty batch, for
+// the loader and the writers to fill.
 func NewWorkNode(noun string) (WorkNode, error) {
 	switch noun {
+	case NounBatch:
+		return &Batch{}, nil
 	case NounBug:
 		return &Bug{}, nil
 	case NounChore:

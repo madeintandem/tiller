@@ -24,9 +24,13 @@ func observationWorkBranch(m *store.Manifest, w store.WorkNode) string {
 }
 
 // syncWorkItems is the third pass of Sync, after features and epics
-// (docs/spec/cli-surface.md). For every
-// shelf node, id order, bugs then chores:
+// (docs/spec/cli-surface.md). Every live batch is observed first, in key
+// order, on its own branch from in_review. Then, for every shelf node, id
+// order, bugs then chores:
 //
+//   - a member of a batch crosses on the batch's done, basis batched, in the
+//     same run that crossed the batch; while the batch is unmerged the member
+//     stays where it is and is never listed as awaiting its own merge;
 //   - a node with a live carrier crosses on the carrier's done, basis
 //     carried, read fresh off disk so a task or feature the two passes
 //     above just crossed counts in this same run; a carrier not yet done
@@ -60,10 +64,77 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 	}
 	var crossings []Crossing
 	var awaiting []Awaiting
+	// observeOwn answers for a node on its own review: its branch against the
+	// integration branch, or the recovered review it holds.
+	observeOwn := func(live store.WorkNode) error {
+		w := live.Body()
+		mo, already := attested[w.ID]
+		evidence, isRecovered := recovered[w.ID]
+		if isRecovered && !already {
+			mo, already = evidence, true
+		}
+		if !isRecovered && w.Status != "in_review" {
+			return nil
+		}
+		if !already {
+			o, oerr := observeMerge(rev, observationWorkBranch(tree.Manifest, live), tip.Commit, cache)
+			if oerr != nil {
+				return oerr
+			}
+			mo = o
+		}
+		if !mo.Merged {
+			awaiting = append(awaiting, Awaiting{
+				Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Branch: mo.Branch,
+				BranchMissing: !mo.BranchExists, NoMergeWitness: mo.NoMergeWitness,
+			})
+			return nil
+		}
+		match := ""
+		if mo.Commit != "" {
+			match = "git:" + mo.Commit
+		}
+		var c Crossing
+		var cerr error
+		if isRecovered {
+			c, cerr = crossWorkRecovered(tree, deps, owner, live, tip.Ref, mo)
+		} else {
+			c, cerr = crossWorkDone(tree, deps, owner, live, tip.Ref, mo.Basis, match)
+		}
+		if cerr != nil {
+			return cerr
+		}
+		crossings = append(crossings, c)
+		return nil
+	}
+	// Batches answer first, each on its own branch exactly as a shelf node
+	// does, so the shelf loop below reads the status this run just wrote and
+	// crosses every member in the same run.
+	for _, batch := range tree.BatchesInOrder() {
+		if !store.BatchLive(batch) || batch.Key == nil {
+			continue
+		}
+		if err := observeOwn(batch); err != nil {
+			return nil, nil, err
+		}
+	}
 	for _, noun := range store.ShelfNouns() {
 		for _, live := range tree.WorkNodesOf(noun) {
 			w := live.Body()
 			if w.Status == statusDone || w.Status == statusCancelled || w.Key == nil {
+				continue
+			}
+			// A member of a batch has no merge of its own: it crosses on the
+			// batch's done, and until then it is never listed as awaiting.
+			if batch := liveBatchOf(tree, live); batch != nil {
+				if batch.Status != statusDone {
+					continue
+				}
+				c, cerr := crossWorkBatched(tree, deps, owner, live, batch, tip.Ref)
+				if cerr != nil {
+					return nil, nil, cerr
+				}
+				crossings = append(crossings, c)
 				continue
 			}
 			if workNodeCarried(fresh, live) {
@@ -80,43 +151,9 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 			// Not carried, whether it never was or its carrier can no longer
 			// carry it: the node answers on its own branch from here, unless a
 			// recovered review answers for it.
-			mo, already := attested[w.ID]
-			evidence, isRecovered := recovered[w.ID]
-			if isRecovered && !already {
-				mo, already = evidence, true
+			if err := observeOwn(live); err != nil {
+				return nil, nil, err
 			}
-			if !isRecovered && w.Status != "in_review" {
-				continue
-			}
-			if !already {
-				o, oerr := observeMerge(rev, observationWorkBranch(tree.Manifest, live), tip.Commit, cache)
-				if oerr != nil {
-					return nil, nil, oerr
-				}
-				mo = o
-			}
-			if !mo.Merged {
-				awaiting = append(awaiting, Awaiting{
-					Noun: noun, ID: w.ID, Key: deref(w.Key), Branch: mo.Branch,
-					BranchMissing: !mo.BranchExists, NoMergeWitness: mo.NoMergeWitness,
-				})
-				continue
-			}
-			match := ""
-			if mo.Commit != "" {
-				match = "git:" + mo.Commit
-			}
-			var c Crossing
-			var cerr error
-			if isRecovered {
-				c, cerr = crossWorkRecovered(tree, deps, owner, live, tip.Ref, mo)
-			} else {
-				c, cerr = crossWorkDone(tree, deps, owner, live, tip.Ref, mo.Basis, match)
-			}
-			if cerr != nil {
-				return nil, nil, cerr
-			}
-			crossings = append(crossings, c)
 		}
 	}
 	return crossings, awaiting, nil
@@ -183,4 +220,34 @@ func crossWorkCarried(tree *store.Tree, deps Deps, owner store.Contributor, live
 	}
 	live.Body().Status = w.Status
 	return Crossing{Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Status: w.Status, Observed: observed.Value, Basis: basisCarried}, nil
+}
+
+// crossWorkBatched records a member's crossing on its batch's merge: done set
+// directly, as the carried crossing sets it, because the observation belongs
+// to the batch. The event names the batch beside the basis. It records no
+// policy violations for the reason a carried crossing records none: the member
+// ran no gate of its own, and the batch's crossing already recorded whatever
+// that merge carried.
+func crossWorkBatched(tree *store.Tree, deps Deps, owner store.Contributor, live store.WorkNode, batch *store.Batch, observed store.RevisionRef) (Crossing, error) {
+	doc, ymlRel, snapshot, err := loadWorkItemFile(tree, live)
+	if err != nil {
+		return Crossing{}, err
+	}
+	w := doc.Body()
+	before := w.Status
+	w.Status = statusDone
+	w.DoneBasis = basisBatched
+	ydata, err := yaml.Marshal(doc)
+	if err != nil {
+		return Crossing{}, err
+	}
+	ev := transitionEvent(deps, owner, TransitionInput{Verb: "sync", SyncBasis: basisBatched}, live.Noun(), w.ID, ymlRel, before, w.Status, "")
+	ev.After["batch"] = batch.ID
+	if err := commitMutation(tree, "sync "+live.Noun(), []store.PlannedWrite{
+		store.PlanWrite(filepath.Join(tree.Root, ymlRel), snapshot, ydata),
+	}, []events.Event{ev}); err != nil {
+		return Crossing{}, err
+	}
+	live.Body().Status = w.Status
+	return Crossing{Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Status: w.Status, Observed: observed.Value, Basis: basisBatched, Batch: batch.ID}, nil
 }

@@ -74,8 +74,8 @@ func QuestionTitle(q *store.Question) string {
 }
 
 // NodeByID resolves an id across every node map the tree holds: epics,
-// features, tasks, questions, amendments, and the bug, chore, and tweak
-// shelves. An id the tree does not know comes back nil.
+// features, tasks, questions, amendments, the bug, chore, and tweak shelves,
+// and batches. An id the tree does not know comes back nil.
 func NodeByID(t *store.Tree, id string) store.Node {
 	if t == nil {
 		return nil
@@ -97,6 +97,9 @@ func NodeByID(t *store.Tree, id string) store.Node {
 	}
 	if w, ok := t.WorkNode(id); ok {
 		return w
+	}
+	if b, ok := t.Batches[id]; ok {
+		return b
 	}
 	return nil
 }
