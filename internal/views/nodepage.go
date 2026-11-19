@@ -266,12 +266,15 @@ type ProseRef struct {
 // always the short scan handle; a question also retains its full Statement for
 // structured clients that need detail without another lookup.
 type RelatedNode struct {
-	Noun          string             `json:"noun"`
-	ID            string             `json:"id"`
-	Key           string             `json:"key,omitempty"`
-	Ref           string             `json:"ref"`
-	Status        string             `json:"status"`
-	Column        string             `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
+	Noun   string `json:"noun"`
+	ID     string `json:"id"`
+	Key    string `json:"key,omitempty"`
+	Ref    string `json:"ref"`
+	Status string `json:"status"`
+	Column string `json:"column,omitempty"` // an epic's or a feature's board column (gen.BoardColumn)
+	// Activity is a bug's, chore's, or tweak's derived phase (gen.WorkActivity):
+	// a member of a live batch reads batched wherever the row is drawn.
+	Activity      string             `json:"activity,omitempty"`
 	Title         string             `json:"title,omitempty"`
 	Statement     string             `json:"statement,omitempty"`
 	AmendmentHold *AmendmentHoldView `json:"amendment_hold,omitempty"`
@@ -549,6 +552,9 @@ func relatedOf(t *store.Tree, n store.Node) RelatedNode {
 		Title:  handleOf(n),
 	}
 	row.AmendmentHold = amendmentHoldViewOf(t, n)
+	if w, ok := store.AsWorkNode(n); ok {
+		row.Activity = gen.WorkActivity(t, w)
+	}
 	if q, ok := n.(*store.Question); ok {
 		row.Statement = q.Statement
 	}
@@ -570,6 +576,8 @@ func handleOf(n store.Node) string {
 	case *store.Chore:
 		return v.Title
 	case *store.Tweak:
+		return v.Title
+	case *store.Batch:
 		return v.Title
 	case *store.Amendment:
 		return v.Title
