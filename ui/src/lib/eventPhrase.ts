@@ -41,6 +41,9 @@ const PARTICIPLE: Record<string, string> = {
   // itself; correct-eval's participle names its object so a single row reads
   // "Fast logging eval corrected".
   "correct-eval": "eval corrected",
+  // A batch's membership edit (tiller batch --add / --remove, or a member's
+  // own cancel) mints edit.batch.
+  edit: "edited",
   eval: "evaluated",
   grade: "graded",
   link: "linked",
@@ -72,10 +75,16 @@ const PARTICIPLE: Record<string, string> = {
 const PLURAL_NOUNS = new Set(["features", "tasks", "bugs", "chores", "tweaks"]);
 
 // Irregular plurals: criterion -> criteria, the plural the decision cards'
-// plan line also uses.
+// plan line also uses, and batch -> batches.
 const PLURAL: Record<string, string> = {
   criterion: "criteria",
+  batch: "batches",
 };
+
+// batch.<noun> is a bug, chore, or tweak joining or leaving a batch. The type
+// is the same both ways, so the phrase names the change and no direction.
+const BATCH_MEMBER_VERB = "batch";
+const BATCH_MEMBER_PARTICIPLE = "batch changed";
 
 // Type-scoped participles for a verb.noun type: composing add.question gives
 // "questions added", while the recap's ask story hangs on the word ask.
@@ -141,6 +150,10 @@ export function eventPhrase(type: string, count: number): EventPhrase {
   }
   if (parts.length === 2 && parts[0] !== "" && parts[1] !== "") {
     const [verb, noun] = parts;
+    if (verb === BATCH_MEMBER_VERB) {
+      const changes = count === 1 ? "change" : "changes";
+      return { subject: `${tokenWords(noun)} batch ${changes}`, verb: BATCH_MEMBER_PARTICIPLE };
+    }
     const participle = TYPE_PARTICIPLE[type] ?? PARTICIPLE[verb];
     if (participle !== undefined) {
       return { subject: `${pluralize(noun, count)} ${participle}`, verb: participle };

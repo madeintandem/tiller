@@ -5,7 +5,8 @@
 // and sync are the legal Tiller verbs from there and merge is not one Tiller
 // can see; a human's PR review and merge is very much still outstanding. So
 // this block never claims a blanket "nothing needs you" - the headline scopes
-// itself to the mechanical queue, the ownership line is a plain whose_move
+// itself to the mechanical queue, and reads "All clear" only while no node is
+// in review (a batch waiting on its merge is one such node), the ownership line is a plain whose_move
 // tally rather than a narrated guess, and any in-review node is enumerated by
 // name, never folded into a silent "agent" bucket.
 
@@ -51,14 +52,20 @@ export default function AllClear({
   inReview: AllClearReviewItem[];
   titles?: ReadonlyMap<string, string>;
 }) {
+  // A node in review waits on the human's merge, so the block claims All
+  // clear, and wears its tick, only when none does. The claim is carried by
+  // the words and the tick's shape, never by the tick's color.
+  const waiting = inReview.length > 0;
   return (
     <div className="all-clear">
-      <span className="all-clear-tick" aria-hidden="true">
-        ✓
-      </span>
+      {!waiting && (
+        <span className="all-clear-tick" aria-hidden="true">
+          ✓
+        </span>
+      )}
       <div className="all-clear-body">
         <p className="all-clear-headline">
-          <b>All clear — nothing waiting in the queue.</b>
+          <b>{waiting ? "Nothing is waiting in the queue." : "All clear — nothing waiting in the queue."}</b>
         </p>
         <p className="all-clear-ownership muted">{ownershipLine(whoseMove)}</p>
         {inReview.length > 0 && (

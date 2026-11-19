@@ -317,7 +317,7 @@ describe("App routing: /fix, the shared work-item shelf", () => {
   it("reaches the board directly and marks its own tab active", async () => {
     stubFetch({
       "/api/status": summary(),
-      "/api/work-items": { open: [], closed: [], attachments: [] },
+      "/api/work-items": { open: [], closed: [], batches: [], attachments: [] },
     });
 
     render(
@@ -487,7 +487,7 @@ describe("App routing: /recap, the pre-rename address", () => {
 
 describe("App routing: /bugs-chores, the pre-rename address of Fix", () => {
   it("redirects to /fix carrying the query string and hash along", async () => {
-    stubFetch({ "/api/status": summary(), "/api/work-items": { open: [], closed: [], attachments: [] } });
+    stubFetch({ "/api/status": summary(), "/api/work-items": { open: [], closed: [], batches: [], attachments: [] } });
     function LocationProbe() {
       const location = useLocation();
       return <p data-testid="where">{`${location.pathname}${location.search}${location.hash}`}</p>;

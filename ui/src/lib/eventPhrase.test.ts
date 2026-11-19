@@ -56,6 +56,17 @@ describe("eventPhrase", () => {
     ["owner.add", 2, "owners added", "added"],
     ["add.question", 1, "question asked", "asked"],
     ["add.criterion", 4, "criteria added", "added"],
+    // A batch: the plural is batches, and a membership edit has a participle.
+    ["add.batch", 1, "batch added", "added"],
+    ["add.batch", 2, "batches added", "added"],
+    ["edit.batch", 1, "batch edited", "edited"],
+    ["edit.batch", 3, "batches edited", "edited"],
+    ["sync.batch", 2, "batches synced", "synced"],
+    // batch.<noun> is a member joining or leaving a batch; the type does not
+    // say which, so the phrase names the change and no direction.
+    ["batch.bug", 1, "bug batch change", "batch changed"],
+    ["batch.chore", 2, "chore batch changes", "batch changed"],
+    ["batch.tweak", 3, "tweak batch changes", "batch changed"],
   ])("phrases %s at %i as %s", (type, count, subject, verb) => {
     expect(eventPhrase(type, count)).toEqual({ subject, verb });
   });

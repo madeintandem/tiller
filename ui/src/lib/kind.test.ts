@@ -2,7 +2,7 @@
 // 2026-08-30): one per noun the console draws, and a capitalized fallback for
 // a noun this build has never heard of, so the pill can never be blank.
 import { describe, expect, it } from "vitest";
-import { kindLabel } from "./kind";
+import { kindLabel, kindPlural } from "./kind";
 
 describe("kindLabel", () => {
   it.each([
@@ -11,6 +11,8 @@ describe("kindLabel", () => {
     ["task", "Task"],
     ["bug", "Bug"],
     ["chore", "Chore"],
+    ["tweak", "Tweak"],
+    ["batch", "Batch"],
     ["question", "Question"],
     ["amendment", "Amendment"],
   ])("names %s as %s", (noun, label) => {
@@ -19,5 +21,16 @@ describe("kindLabel", () => {
 
   it("capitalizes a noun it does not know rather than going blank", () => {
     expect(kindLabel("decision")).toBe("Decision");
+  });
+});
+
+describe("kindPlural", () => {
+  it.each([
+    ["epic", "Epics"],
+    ["bug", "Bugs"],
+    ["batch", "Batches"],
+    ["document", "Documents"],
+  ])("names several of %s as %s", (noun, label) => {
+    expect(kindPlural(noun)).toBe(label);
   });
 });

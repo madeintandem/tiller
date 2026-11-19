@@ -150,6 +150,46 @@ describe("Explore search: grouped by kind", () => {
   });
 });
 
+describe("Explore search: batches", () => {
+  const batches = [
+    node({ noun: "batch", id: "BT-1", key: "batches/core-fixes", title: "Core fixes", status: "in_review", match: "title" }),
+    node({ noun: "batch", id: "BT-2", key: "batches/more-fixes", title: "More fixes", match: "title" }),
+  ];
+
+  it("heads the section and the tab Batches, and links a row to the batch page", async () => {
+    stubFetch({ "/api/search?q=fixes": result(batches, [], "fixes") });
+
+    renderAt("/explore?mode=search&q=fixes");
+
+    const tabs = await screen.findByRole("tablist", { name: "Result kind" });
+    expect(within(tabs).getAllByRole("tab").map((b) => b.textContent)).toEqual(["All · 2", "Batches · 2"]);
+    const section = screen.getByRole("region", { name: "Batches" });
+    expect(within(section).getByRole("link", { name: /Core/ })).toHaveAttribute("href", "/node/batch/BT-1");
+  });
+
+  it("reads the batch tab from the URL and asks the server for that kind", async () => {
+    const fetchMock = stubFetch({ "/api/search?q=fixes&kind=batch": { ...result(batches, [], "fixes"), kind: "batch" } });
+
+    renderAt("/explore?mode=search&q=fixes&kind=batch");
+
+    expect(await screen.findByRole("link", { name: /Core/ })).toBeInTheDocument();
+    expect(fetchMock.mock.calls.map((c) => String(c[0]))).toContain("/api/search?q=fixes&kind=batch");
+    const tabs = screen.getByRole("tablist", { name: "Result kind" });
+    expect(within(tabs).getByRole("tab", { name: "Batches · 2" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("reads a ready member of a live batch as batched", async () => {
+    const member = { ...node({ noun: "bug", id: "B-9", title: "Fixes the total", match: "title" }), activity: "batched" };
+    stubFetch({ "/api/search?q=fixes": result([member], [], "fixes") });
+
+    renderAt("/explore?mode=search&q=fixes");
+
+    const section = await screen.findByRole("region", { name: "Bugs" });
+    expect(within(section).getByText("Batched")).toBeInTheDocument();
+    expect(within(section).queryByText("Ready")).toBeNull();
+  });
+});
+
 describe("Explore search: a result row", () => {
   it("on a kind tab, leads with the highlighted title, then key, status, and the node's matching lines", async () => {
     const feature = node({

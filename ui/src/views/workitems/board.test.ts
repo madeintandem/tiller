@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { WorkItemCard, WorkItemsBoard } from "../../api";
+import type { BatchCard, WorkItemCard, WorkItemsBoard } from "../../api";
 import { ROW_CAP } from "../../lib/disclosure";
 import {
   readWorkItemFilters,
@@ -57,7 +57,7 @@ const board: WorkItemsBoard = {
     closed_at: `2026-08-29T${String(20 - index).padStart(2, "0")}:00:00Z`,
     attachment_ids: ["E-1", "F-1"],
   })),
-  attachments: [
+  batches: [], attachments: [
     {
       noun: "feature",
       id: "F-1",
@@ -223,7 +223,7 @@ describe("work item board filters", () => {
         { noun: "bug", id: "B-4", ref: "B-4", status: "ready", severity: "important" },
       ],
       closed: [],
-      attachments: [],
+      batches: [], attachments: [],
     };
     const ready = (f: Partial<WorkItemFilters>) => workItemColumns(sevBoard, fl(f)).ready.map((i) => i.id);
 
@@ -265,7 +265,7 @@ describe("work item board filters", () => {
       noun: "bug" as const, id: `X-${i}`, ref: `X-${i}`, status: "done",
       severity: (["minor", "blocker", "medium", "important"] as const)[i % 4],
     }));
-    const b: WorkItemsBoard = { open: [], closed, attachments: [] };
+    const b: WorkItemsBoard = { open: [], closed, batches: [], attachments: [] };
     const shelf = workItemColumns(b, fl({})).closed;
     const sev = workItemColumns(b, fl({ sort: "severity" })).closed;
     expect(shelf.map((i) => i.id)).toEqual(closed.slice(0, ROW_CAP).map((i) => i.id));
@@ -277,10 +277,81 @@ describe("work item board filters", () => {
   });
 });
 
+describe("batches on the board", () => {
+  const member = (noun: WorkItemCard["noun"], id: string, batch: string, over: Partial<WorkItemCard> = {}): WorkItemCard =>
+    ({ noun, id, ref: id, title: id, status: "ready", activity: "batched", batch, ...over });
+  const batch = (id: string, status: string, members: WorkItemCard[], over: Partial<BatchCard> = {}): BatchCard => ({
+    noun: "batch", id, ref: id, title: id, status, members: members.length,
+    member_list: members.map((m) => ({ noun: m.noun, id: m.id, title: m.title, status: m.status, severity: m.severity })),
+    ...over,
+  });
+  const wip = [member("bug", "B-w", "BT-wip", { severity: "blocker" }), member("chore", "CH-w", "BT-wip")];
+  const waiting = [member("bug", "B-r", "BT-ready", { severity: "minor" }), member("tweak", "TW-p", "BT-ready", { status: "proposed" })];
+  const crossed = [member("bug", "B-d", "BT-done", { status: "done", activity: undefined })];
+  const solo: WorkItemCard = { noun: "bug", id: "B-solo", ref: "B-solo", title: "Solo", status: "ready", severity: "important" };
+  const batched: WorkItemsBoard = {
+    open: [solo, ...wip, ...waiting],
+    closed: crossed,
+    batches: [
+      batch("BT-done", "done", crossed),
+      batch("BT-gone", "cancelled", []),
+      batch("BT-ready", "ready", waiting, { severity: "minor" }),
+      batch("BT-wip", "in_progress", wip, { severity: "blocker", owner: "robin" }),
+    ],
+    attachments: [],
+  };
+  const ids = (cards: Array<{ id: string }>) => cards.map((card) => card.id);
+
+  it("draws a live batch as one card in its own status column, ahead of the column's own items", () => {
+    const got = workItemColumns(batched, fl({}));
+    expect(ids(got.in_progress)).toEqual(["BT-wip"]);
+    expect(ids(got.ready)).toEqual(["BT-ready", "B-solo"]);
+  });
+
+  it("never lists a ready member of a live batch as its own card", () => {
+    const got = workItemColumns(batched, fl({}));
+    const drawn = [...got.proposed, ...got.ready, ...got.in_progress, ...got.check, ...got.in_review].map((card) => card.id);
+    for (const id of ["B-w", "CH-w", "B-r"]) expect(drawn, id).not.toContain(id);
+  });
+
+  it("keeps a proposed member in Proposed, where it waits on triage", () => {
+    expect(ids(workItemColumns(batched, fl({})).proposed)).toEqual(["TW-p"]);
+  });
+
+  it("draws no card for a done or cancelled batch, and keeps a crossed member in Closed", () => {
+    const got = workItemColumns(batched, fl({}));
+    const all = Object.values(got).flat().map((card) => card.id);
+    expect(all).not.toContain("BT-done");
+    expect(all).not.toContain("BT-gone");
+    expect(ids(got.closed)).toEqual(["B-d"]);
+  });
+
+  it("shows a batch under a narrowing filter only while one of its members passes it", () => {
+    expect(ids(workItemColumns(batched, fl({ noun: "chore" })).in_progress)).toEqual(["BT-wip"]);
+    expect(ids(workItemColumns(batched, fl({ noun: "chore" })).ready)).toEqual([]);
+    expect(ids(workItemColumns(batched, fl({ noun: "tweak" })).ready)).toEqual(["BT-ready"]);
+    expect(ids(workItemColumns(batched, fl({ severity: ["blocker"] })).in_progress)).toEqual(["BT-wip"]);
+    expect(ids(workItemColumns(batched, fl({ severity: ["blocker"] })).ready)).toEqual([]);
+  });
+
+  it("sorts a batch by its highest member severity", () => {
+    expect(ids(workItemColumns(batched, fl({ sort: "severity" })).ready)).toEqual(["B-solo", "BT-ready"]);
+  });
+
+  it("counts a batch's members as open work and names how many batches show", () => {
+    expect(boardScope(workItemColumns(batched, fl({})))).toEqual({
+      open: { bug: 3, chore: 1, tweak: 1 }, batches: 2, closedShown: 1,
+    });
+    expect(boardScope(workItemColumns(batched, fl({ noun: "bug" })))).toEqual({
+      open: { bug: 3, chore: 0, tweak: 0 }, batches: 2, closedShown: 1,
+    });
+  });
+});
+
 describe("boardScope", () => {
   it("counts open work by noun across the five open columns and names how many closed cards show", () => {
     const columns = workItemColumns(board, fl({}));
-    expect(boardScope(columns)).toEqual({ open: { bug: 2, chore: 1, tweak: 0 }, closedShown: ROW_CAP });
+    expect(boardScope(columns)).toEqual({ open: { bug: 2, chore: 1, tweak: 0 }, batches: 0, closedShown: ROW_CAP });
   });
 
   it("reports zero closed shown when the closed column is empty", () => {

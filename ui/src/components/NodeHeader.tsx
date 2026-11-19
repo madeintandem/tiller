@@ -13,7 +13,7 @@
 
 import { Fragment, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import type { AmendmentHoldView, DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
+import type { AmendmentHoldView, BatchRefView, DriftBadgeView, HeldView, NodePage, NodeView, RelatedNode } from "../api";
 import { withActivityPhrase } from "../lib/activityPhrase";
 import { displayStatus } from "../lib/displayStatus";
 import { markerCopy } from "../lib/drift";
@@ -286,8 +286,8 @@ function RefLine({ page }: { page: NodePage }) {
 // divider sat between metadata and metadata. Every fact is independently
 // optional and the block draws nothing when none is present, the same "a
 // section that holds nothing is not drawn" discipline InstrSection keeps.
-// The order is the reading order: who holds it, where it was found, where
-// the work sits, what kind of change, what it touches, what it was signed
+// The order is the reading order: who holds it, where it was found, which
+// batch reviews it, where the work sits, what kind of change, what it touches, what it was signed
 // against, and how it crossed done.
 interface Fact {
   label: string;
@@ -311,17 +311,28 @@ function Facts({ page }: { page: NodePage }) {
   if (node.noun === "bug") {
     items.push({ label: "Severity", value: <SeverityChip severity={node.severity} /> });
   }
+  // A batch shows the highest severity among its members, and none when no
+  // member is a rated bug.
+  if (node.noun === "batch" && node.severity !== undefined) {
+    items.push({ label: "Highest severity", value: <SeverityChip severity={node.severity} /> });
+  }
   if (rel.attached_to !== undefined) {
     items.push({ label: "Found in", value: <RelationValue node={rel.attached_to} /> });
   }
   if (rel.resolved_by !== undefined) {
     items.push({ label: "Carried by", value: <RelationValue node={rel.resolved_by} /> });
   }
-  if (has(node.branch)) {
-    items.push({ label: "Branch", value: <BranchValue node={node} /> });
+  if (node.batch !== undefined) {
+    items.push({ label: "Batch", value: <BatchValue batch={node.batch} /> });
   }
-  if (node.pr !== undefined) {
-    items.push({ label: "PR", value: <PRValue node={node} /> });
+  // A batch member records no branch or PR of its own: its batch does, for
+  // every member, so the member's page shows the batch's.
+  const review: ReviewFacts = has(node.branch) || node.pr !== undefined ? node : (node.batch ?? node);
+  if (has(review.branch)) {
+    items.push({ label: "Branch", value: <BranchValue node={review} /> });
+  }
+  if (review.pr !== undefined) {
+    items.push({ label: "PR", value: <PRValue node={review} /> });
   }
   if (has(node.change_type)) {
     items.push({ label: "Change", value: changeTypeLabel(node.change_type) });
@@ -374,6 +385,25 @@ function RelationValue({ node }: { node: RelatedNode }) {
   );
 }
 
+// BatchValue is the batch reviewing a shelf node, in RelationValue's own
+// shape: the batch's title as a link with the batch's state chip beside it,
+// so a member's page says where its work stands without leaving the page.
+function BatchValue({ batch }: { batch: BatchRefView }) {
+  return (
+    <>
+      <RefLink
+        node={{ noun: "batch", id: batch.id, ref: batch.key ?? batch.id }}
+        label={batch.title}
+        className=""
+      />
+      <Chip status={batch.status} />
+    </>
+  );
+}
+
+// Where the work sits: the node's own branch and PR, or its batch's.
+type ReviewFacts = Pick<NodeView, "branch" | "branch_url" | "pr" | "pr_url">;
+
 // Outbound is the cue on a link that leaves the console: the stylesheet's
 // glyph rides ::after, which assistive tech never hears, so the words ride
 // a visually hidden span inside the same link.
@@ -385,7 +415,7 @@ function Outbound() {
 // (branch_url, pr_url: a GitHub origin only) and read as plain text
 // otherwise, the same honest-number rule ProvenanceLine already keeps for a
 // PR with no resolvable origin.
-function BranchValue({ node }: { node: NodeView }) {
+function BranchValue({ node }: { node: ReviewFacts }) {
   if (has(node.branch_url)) {
     return (
       <a className="ext mono" href={node.branch_url} target="_blank" rel="noreferrer">
@@ -397,7 +427,7 @@ function BranchValue({ node }: { node: NodeView }) {
   return <span className="mono">{node.branch}</span>;
 }
 
-function PRValue({ node }: { node: NodeView }) {
+function PRValue({ node }: { node: ReviewFacts }) {
   if (has(node.pr_url)) {
     return (
       <a className="ext" href={node.pr_url} target="_blank" rel="noreferrer">

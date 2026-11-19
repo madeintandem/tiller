@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
-import type { ProjectSummary, WorkItemCard, WorkItemsBoard } from "../api";
+import type { BatchCard, ProjectSummary, WorkItemCard, WorkItemsBoard } from "../api";
 import { statusPath, workItemsPath } from "../api";
 import BoardGrid, { type LaneMark } from "../components/BoardGrid";
 import BoardToolbar from "../components/BoardToolbar";
@@ -19,6 +19,7 @@ import { ROW_CAP } from "../lib/disclosure";
 import { formatAdded } from "../lib/added";
 import { formatAbsolute } from "../lib/time";
 import { resolutionLabel } from "../lib/fieldWords";
+import { BATCHED } from "../lib/displayStatus";
 import { has } from "../lib/has";
 import { statusLabel } from "../lib/statusLabel";
 import { IN_PAGE_CHANGE, useArrivalKey } from "../lib/useArrivalKey";
@@ -33,11 +34,13 @@ import {
   UNATTACHED,
   UNRATED,
   workItemMatchesFilters,
+  isBatchEntry,
   isUnfilteredVisit,
   narrowsOpenWork,
 } from "./workitems/board";
 import AttachmentFilter from "./workitems/AttachmentFilter";
-import type { FixSort, ShelfColumnKey, WorkItemFilters } from "./workitems/board";
+import BatchCardView from "./workitems/BatchCardView";
+import type { FixCard, FixSort, ShelfColumnKey, WorkItemFilters } from "./workitems/board";
 import SortSelect, { type SortOption } from "./workitems/SortSelect";
 import { hasFilterParams, readFilterQuery, writeFilterQuery } from "./workitems/filterStorage";
 import { readPanelState, writePanelState } from "./build/panelStorage";
@@ -126,6 +129,8 @@ export default function WorkItems() {
     workItemMatchesFilters(item, { ...filters, showAllTerminal: true }),
   ).length;
   const scope = boardScope(columns);
+  // A member's card names its batch by title, live or crossed.
+  const batches = new Map(board.data.batches.map((batch) => [batch.id, batch]));
   const openTotal = scope.open.bug + scope.open.chore + scope.open.tweak;
   // A filtered count must never pass for the whole: the summary says so, with
   // a link that clears the narrowing axes the way the rail's All links do
@@ -164,7 +169,7 @@ export default function WorkItems() {
             onScrollMode={changeScrollMode}
             summary={
               <>
-                {`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
+                {`${openTotal} open: ${scope.open.bug} ${scope.open.bug === 1 ? "bug" : "bugs"}, ${scope.open.chore} ${scope.open.chore === 1 ? "chore" : "chores"}, ${scope.open.tweak} ${scope.open.tweak === 1 ? "tweak" : "tweaks"}.${scope.batches > 0 ? ` ${scope.batches} ${scope.batches === 1 ? "batch" : "batches"}.` : ""}${scope.closedShown > 0 ? ` ${scope.closedShown} recently closed shown.` : ""}`}
                 {filtered && (
                   <>
                     {" Filtered. "}
@@ -190,7 +195,7 @@ export default function WorkItems() {
               empty: columns[column.key].length === 0,
               label: column.label,
               head: <WorkItemColumnHeading column={column} count={columns[column.key].length} />,
-              body: <WorkItemColumn column={column} items={columns[column.key]} />,
+              body: <WorkItemColumn column={column} items={columns[column.key]} batches={batches} />,
             }))}
           />
         </div>
@@ -360,10 +365,12 @@ function WorkItemColumnHeading({
 function WorkItemColumn({
   column,
   items,
+  batches,
   ...mark
 }: {
   column: { key: ShelfColumnKey; label: string };
-  items: WorkItemCard[];
+  items: FixCard[];
+  batches: ReadonlyMap<string, BatchCard>;
 } & LaneMark) {
   return (
     <section className="work-item-column board-column" role="region" aria-label={column.label} {...mark}>
@@ -371,16 +378,28 @@ function WorkItemColumn({
         <EmptyNote />
       ) : (
         <div className="work-item-column-cards">
-          {items.map((item) => (
-            <WorkItemCardView key={item.id} item={item} terminal={column.key === "closed"} />
-          ))}
+          {items.map((item) =>
+            isBatchEntry(item) ? (
+              <BatchCardView key={item.id} batch={item} />
+            ) : (
+              <WorkItemCardView
+                key={item.id}
+                item={item}
+                batch={item.batch === undefined ? undefined : batches.get(item.batch)}
+                terminal={column.key === "closed"}
+              />
+            ),
+          )}
         </div>
       )}
     </section>
   );
 }
 
-function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: boolean }) {
+// batch is the batch reviewing this item, or the one it crossed in. Its line
+// says what the plain Batched chip could not: which batch, with a link.
+function WorkItemCardView({ item, batch, terminal }: { item: WorkItemCard; batch?: BatchCard; terminal: boolean }) {
+  const activity = batch !== undefined && item.activity === BATCHED ? undefined : item.activity;
   return (
     <article className="work-item-card">
       <span className="work-item-noun-chip" data-noun={item.noun}>{item.noun}</span>
@@ -393,6 +412,11 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
       {item.attached !== undefined && (
         <p className="work-item-attachment">
           Attached to <TitleRef node={item.attached} title={item.attached.title} addr={addrOf(item.attached)} />
+        </p>
+      )}
+      {batch !== undefined && (
+        <p className="work-item-attachment">
+          In batch <RefLink node={batch} label={has(batch.title) ? batch.title : batch.ref} className="" />
         </p>
       )}
       {has(item.resolution) && <p className="work-item-attachment">Resolution: {resolutionLabel(item.resolution)}</p>}
@@ -413,10 +437,10 @@ function WorkItemCardView({ item, terminal }: { item: WorkItemCard; terminal: bo
           </time>
         </p>
       )}
-      {(item.noun === "bug" || has(item.activity) || terminal) && (
+      {(item.noun === "bug" || has(activity) || terminal) && (
         <div className="work-item-card-chips">
           {item.noun === "bug" && <SeverityChip severity={item.severity} />}
-          {has(item.activity) && <Chip status={item.activity}>{statusLabel(item.activity)}</Chip>}
+          {has(activity) && <Chip status={activity}>{statusLabel(activity)}</Chip>}
           {terminal && <Chip status={item.status}>{statusLabel(item.status)}</Chip>}
         </div>
       )}

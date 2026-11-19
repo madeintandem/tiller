@@ -152,6 +152,7 @@ function baseRoutes(extra: Record<string, unknown> = {}): Record<string, unknown
     "/api/ls?noun=bug": emptyList("bug"),
     "/api/ls?noun=chore": emptyList("chore"),
     "/api/ls?noun=tweak": emptyList("tweak"),
+    "/api/ls?noun=batch": emptyList("batch"),
     "/api/recap/peek": peek(),
     "/api/recap?window=24h": emptyRecap(),
     "/api/board": emptyStreams(),
@@ -1260,7 +1261,10 @@ describe("Home needs-you: empty queue", () => {
 
     renderHome(summary({ whose_move: { human: 3, agent: 5 } }));
 
-    await screen.findByText(/all clear/i);
+    // A node in review waits on the human's merge, so the block scopes its
+    // headline to the queue and never says All clear over it.
+    await screen.findByText("Nothing is waiting in the queue.");
+    expect(screen.queryByText(/all clear/i)).toBeNull();
     expect(
       screen.getByText("5 nodes move with the agent next · 3 nodes sit on a human gate elsewhere in the tree."),
     ).toBeInTheDocument();

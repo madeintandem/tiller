@@ -233,7 +233,7 @@ function fixBoard(status: string): WorkItemsBoard {
       { noun: "bug", id: "B-1", key: "bugs/zulu", title: "Zulu", status: "ready", ref: "bugs/zulu (B-1)" },
     ],
     closed: [],
-    attachments: [],
+    batches: [], attachments: [],
   };
 }
 

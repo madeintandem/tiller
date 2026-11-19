@@ -6,7 +6,9 @@
 // (active), three-quarters filled (in review), a solid check (done), and a
 // solid no-entry bar (blocked). Cancelled is not a chart state but draws an
 // eighth shape of its own, a ring struck through, so it is never told from
-// draft by color and fading alone (CANCELLED below). Every other wire status
+// draft by color and fading alone (CANCELLED below). Batched, a shelf node's
+// derived phase while a batch reviews it, draws a ninth: two overlapping
+// rings (BATCHED_SHAPE below). Every other wire status
 // folds onto its chart sibling through lib/states.ts's foldStatus, the same
 // table every dot and chip paints with, so the shape and the color can never
 // name two states; an unknown status rests at draft's shape.
@@ -85,6 +87,23 @@ const CANCELLED = (
   </>
 );
 
+// Batched is not a chart state either. A member of a live batch stores ready
+// while its batch does the work, and the ready glyph would say it is waiting
+// to start. It draws two overlapping rings, several things held as one, in
+// the draft slate: the batch's own row carries the working state.
+const BATCHED_SHAPE = (
+  <>
+    <circle cx="5.9" cy="8" r="4.3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+    <circle cx="10.1" cy="8" r="4.3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+  </>
+);
+
+// The shapes outside the seven chart states, by the status that draws them.
+const OWN_SHAPES: ReadonlyMap<string, ReactElement> = new Map([
+  ["cancelled", CANCELLED],
+  ["batched", BATCHED_SHAPE],
+]);
+
 // AttentionMark is the blocked shape (the solid no-entry bar) as a small
 // decorative mark: the shape a warning-toned count wears beside its number
 // so the warning never rests on color alone. It is aria-hidden; the words
@@ -106,8 +125,8 @@ const GAP = 8;
 const EDGE = 8;
 
 export default function StateGlyph({ status, size = 14 }: { status: string; size?: number }) {
-  const cancelled = status === "cancelled";
-  const shape = cancelled ? "cancelled" : foldStatus(status);
+  const own = OWN_SHAPES.get(status);
+  const shape = own !== undefined ? status : foldStatus(status);
   const label = statusLabel(status);
   const glyphRef = useRef<SVGSVGElement>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -151,7 +170,7 @@ export default function StateGlyph({ status, size = 14 }: { status: string; size
         onPointerEnter={show}
         onPointerLeave={hide}
       >
-        {cancelled ? CANCELLED : SHAPES[foldStatus(status)]}
+        {own ?? SHAPES[foldStatus(status)]}
       </svg>
       {anchor !== null && <GlyphTooltip anchor={anchor} label={label} />}
     </>

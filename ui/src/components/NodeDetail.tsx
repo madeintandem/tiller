@@ -63,6 +63,7 @@ import { EpicEvalsPanel, EpicFeaturesPanel, EpicSpecPanel } from "../views/node/
 import { FeatureEvalsPanel, FeatureSpecPanel, FeatureTasksPanel } from "../views/node/FeatureBody";
 import { TaskGatesPanel, TaskSpecPanel } from "../views/node/TaskBody";
 import { WorkItemGatesPanel, WorkItemSpecPanel } from "../views/node/WorkItemBody";
+import BatchMembersPanel from "../views/node/BatchMembersPanel";
 import QuestionBody from "../views/node/QuestionBody";
 import AmendmentBody from "../views/node/AmendmentBody";
 import AmendmentRelationsPanel, { ProposedAmendmentNotice, uniqueAmendments } from "../views/node/AmendmentRelationsPanel";
@@ -677,6 +678,25 @@ function workItemTabs(page: NodePage): NodeTab[] {
 // for a tab row: "An amendment or a design doc ... stays flat the same
 // way") and a noun this client does not recognize (the API validates nouns,
 // so that is only reachable against a server newer than its client).
+// A batch has no contract of its own (its members' contracts are the
+// contract), so it has no Spec tab and opens on its members. Its gates are the
+// set one shelf node runs, recorded once on the batch.
+function batchTabs(page: NodePage): NodeTab[] {
+  const members = page.node.members ?? [];
+  const tabs: NodeTab[] = [
+    {
+      key: "members",
+      label: "Members",
+      count: members.length,
+      render: () => <BatchMembersPanel members={members} />,
+    },
+    { key: "gates", label: "Gates", render: () => <WorkItemGatesPanel page={page} /> },
+    backlinksTab(page),
+    historyTab(page),
+  ];
+  return tabs.filter((tab) => tab.key === "members" || tab.count === undefined || tab.count > 0);
+}
+
 function tabsFor(page: NodePage): NodeTab[] | null {
   switch (page.node.noun) {
     case "epic":
@@ -689,6 +709,8 @@ function tabsFor(page: NodePage): NodeTab[] | null {
     case "chore":
     case "tweak":
       return workItemTabs(page);
+    case "batch":
+      return batchTabs(page);
     default:
       return null;
   }
