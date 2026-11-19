@@ -68,7 +68,7 @@ const (
 // CurrentSchemaVersion-1, tiller upgrade --project-only (distribution.md's Versioning
 // section); above CurrentSchemaVersion, upgrade the binary (since removing
 // .tiller/ would discard data ahead of this binary).
-const CurrentSchemaVersion = 15
+const CurrentSchemaVersion = 16
 
 // MinMigratableSchemaVersion is the oldest stamp tiller migrate can carry
 // forward. Below it lies the 1-to-2 boundary, which shipped as a refusal with

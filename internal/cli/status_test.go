@@ -43,7 +43,7 @@ func TestStatusHeldNodeGuidanceFollowsAmendmentStatus(t *testing.T) {
 
 // readyManifest is a complete manifest (contributors and kind set) used to drive the
 // ready path of `check readiness`.
-const readyManifest = `schema_version: 15
+const readyManifest = `schema_version: 16
 schema_epoch: initial
 project:
   name: Ready Project

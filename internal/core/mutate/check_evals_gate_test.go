@@ -19,7 +19,7 @@ import (
 
 // extraGateManifestTmpl carries passing build and tests gates plus whatever
 // further required gate lines a test supplies.
-const extraGateManifestTmpl = `schema_version: 15
+const extraGateManifestTmpl = `schema_version: 16
 schema_epoch: initial
 project:
   name: Test Project

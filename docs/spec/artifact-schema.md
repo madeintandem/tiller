@@ -179,7 +179,7 @@ observed_at: "2026-06-23T00:00:00Z"
 ## The root manifest: `tiller.yml`
 
 ```yaml
-schema_version: 15            # current on-disk format version; moved forward by reviewed `tiller migrate`
+schema_version: 16            # current on-disk format version; moved forward by reviewed `tiller migrate`
 schema_epoch: initial         # changed only by Class 3 migrations; used as the branch fence
 
 project:

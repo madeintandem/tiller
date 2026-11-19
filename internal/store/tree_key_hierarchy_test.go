@@ -26,7 +26,7 @@ type hierarchyNode struct {
 // root and each file's absolute path by its relative one.
 func layHierarchy(t *testing.T, nodes ...hierarchyNode) (string, map[string]string) {
 	t.Helper()
-	root := writeManifestFixture(t, "schema_version: 15\nschema_epoch: initial\nproject:\n  name: X\n  key: x\n  kind: greenfield\ncontributors: []\n")
+	root := writeManifestFixture(t, "schema_version: 16\nschema_epoch: initial\nproject:\n  name: X\n  key: x\n  kind: greenfield\ncontributors: []\n")
 	paths := map[string]string{}
 	for _, n := range nodes {
 		abs := filepath.Join(root, ".tiller", "epics", filepath.FromSlash(n.path))

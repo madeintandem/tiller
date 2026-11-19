@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v1.0.6 exposes (schema 15, orientation generation 63, eleven embedded
+Every command Tiller v1.0.6 exposes (schema 16, orientation generation 63, eleven embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
