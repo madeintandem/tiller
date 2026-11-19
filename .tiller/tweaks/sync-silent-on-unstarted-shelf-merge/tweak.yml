@@ -1,7 +1,7 @@
 id: TW-xfjsgw
 key: tweaks/sync-silent-on-unstarted-shelf-merge
 title: Sync says nothing when a merge names shelf items that never started
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -17,3 +17,49 @@ accepted_against:
         value: git:819abfa
         observed_at: 2026-11-19T18:22:26.791528Z
 branch: tiller/tweaks/sync-silent-on-unstarted-shelf-merge
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T18:39:27.686247Z
+        against:
+            kind: git_commit
+            value: git:87463f8
+            observed_at: 2026-11-19T18:39:27.598727Z
+        code: sha256:2eccb16338134ff048be9d9e33a9acbe286f037857c58f08160abbc4e577e308
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-87463f8-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T18:39:27.686247Z
+        against:
+            kind: git_commit
+            value: git:87463f8
+            observed_at: 2026-11-19T18:39:27.598727Z
+        code: sha256:2eccb16338134ff048be9d9e33a9acbe286f037857c58f08160abbc4e577e308
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-87463f8-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T18:39:27.686247Z
+        against:
+            kind: git_commit
+            value: git:87463f8
+            observed_at: 2026-11-19T18:39:27.598727Z
+        code: sha256:2eccb16338134ff048be9d9e33a9acbe286f037857c58f08160abbc4e577e308
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-87463f8-out-048520382dfacbc1f9e33830646ffa682adfdefe08117343664226d6a5de0bb6.txt
