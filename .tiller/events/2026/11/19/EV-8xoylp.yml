@@ -1,0 +1,14 @@
+id: EV-8xoylp
+type: submit.tweak
+at: 2026-11-19T21:36:21.262669Z
+contributor: jc
+command: submit tweak TW-taq0ps
+targets:
+    - TW-taq0ps
+before:
+    status: check
+after:
+    pr: 31
+    status: in_review
+files:
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.yml
