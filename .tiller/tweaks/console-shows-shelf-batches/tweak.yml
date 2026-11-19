@@ -1,7 +1,7 @@
 id: TW-5u3b5y
 key: tweaks/console-shows-shelf-batches
 title: The console does not show shelf batches
-status: in_progress
+status: check
 blocked: false
 started: true
 owner: jc
@@ -19,3 +19,49 @@ accepted_against:
         value: git:2355812
         observed_at: 2026-11-19T22:01:35.436331Z
 branch: tiller/tweaks/console-shows-shelf-batches
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T22:26:18.861426Z
+        against:
+            kind: git_commit
+            value: git:1b507cf
+            observed_at: 2026-11-19T22:26:18.763414Z
+        code: sha256:927441e7bfae3c4e3bda70271e08dd19c341bbe7a53a3fa799433767903ae59d
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-1b507cf-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T22:26:18.861426Z
+        against:
+            kind: git_commit
+            value: git:1b507cf
+            observed_at: 2026-11-19T22:26:18.763414Z
+        code: sha256:927441e7bfae3c4e3bda70271e08dd19c341bbe7a53a3fa799433767903ae59d
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-1b507cf-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T22:26:18.861426Z
+        against:
+            kind: git_commit
+            value: git:1b507cf
+            observed_at: 2026-11-19T22:26:18.763414Z
+        code: sha256:927441e7bfae3c4e3bda70271e08dd19c341bbe7a53a3fa799433767903ae59d
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-1b507cf-out-1d078d8059629cf878de49c13d41f14a1f4395c978eed923162c4c69b0bb1d5f.txt

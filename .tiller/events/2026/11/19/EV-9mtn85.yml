@@ -1,0 +1,13 @@
+id: EV-9mtn85
+type: check.tweak
+at: 2026-11-19T22:29:11.730391Z
+contributor: jc
+command: check tweak TW-5u3b5y
+targets:
+    - TW-5u3b5y
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/console-shows-shelf-batches/tweak.yml
