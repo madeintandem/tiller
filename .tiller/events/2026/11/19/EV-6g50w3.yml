@@ -1,0 +1,13 @@
+id: EV-6g50w3
+type: add.tweak
+at: 2026-11-19T18:16:37.47692Z
+contributor: jc
+command: add tweak shelf-merged-review-recovery
+targets:
+    - TW-3eo3s2
+after:
+    key: tweaks/shelf-merged-review-recovery
+    status: proposed
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.md
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml

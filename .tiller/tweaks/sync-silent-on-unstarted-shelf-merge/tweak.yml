@@ -1,0 +1,7 @@
+id: TW-xfjsgw
+key: tweaks/sync-silent-on-unstarted-shelf-merge
+title: Sync says nothing when a merge names shelf items that never started
+status: proposed
+blocked: false
+started: false
+proposed_by: jc

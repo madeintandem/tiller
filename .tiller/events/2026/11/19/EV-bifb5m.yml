@@ -1,0 +1,13 @@
+id: EV-bifb5m
+type: add.tweak
+at: 2026-11-19T18:16:37.55254Z
+contributor: jc
+command: add tweak sync-silent-on-unstarted-shelf-merge
+targets:
+    - TW-xfjsgw
+after:
+    key: tweaks/sync-silent-on-unstarted-shelf-merge
+    status: proposed
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.md
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml
