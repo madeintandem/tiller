@@ -1,7 +1,7 @@
 id: TW-5u3b5y
 key: tweaks/console-shows-shelf-batches
 title: The console does not show shelf batches
-status: check
+status: in_review
 blocked: false
 started: true
 owner: jc
@@ -19,6 +19,7 @@ accepted_against:
         value: git:2355812
         observed_at: 2026-11-19T22:01:35.436331Z
 branch: tiller/tweaks/console-shows-shelf-batches
+pr: 32
 gates:
     build:
         required: true

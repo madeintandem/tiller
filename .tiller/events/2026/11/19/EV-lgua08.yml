@@ -1,0 +1,14 @@
+id: EV-lgua08
+type: submit.tweak
+at: 2026-11-19T22:29:33.266554Z
+contributor: jc
+command: submit tweak TW-5u3b5y
+targets:
+    - TW-5u3b5y
+before:
+    status: check
+after:
+    pr: 32
+    status: in_review
+files:
+    - path: .tiller/tweaks/console-shows-shelf-batches/tweak.yml
