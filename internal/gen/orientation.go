@@ -49,7 +49,9 @@ import (
 // and carries the cross-skill rules, each seam's procedures live in its skill, a
 // run and the go that starts it are defined, and maintenance moves to the
 // upgrade skill.
-const orientationSchemaGen = 62
+// Generation 63 extends missing-review recovery to bugs, chores, and tweaks:
+// the authorization rule names a shelf node's review beside an aggregate's.
+const orientationSchemaGen = 63
 
 // Orientation returns the committed .tiller/orientation.md text. It is a pure
 // function of constants for a generation, so two inits produce byte-identical
@@ -315,10 +317,10 @@ unrequested replan.
   Tiller does not push or create PRs: use ordinary Git and the project's host tools.
   Never attest, never assert a fast-forward, and never perform the final
   integration merge. Never force-push, bypass a gate, invent a PR, or commit to a review branch after its final integration merge: a force-push rewrites history and discards commits other people hold, and a commit after that merge is in no review and never reaches integration.
-  Pure reads verify neither host state nor pushes. If an aggregate finally
-  merged before its Tiller review was recorded, a merge report alone does not
-  authorize recording it: recording the missing historical review needs explicit
-  authorization naming it. ` + "`tiller guide execute`" + ` carries the sequence
+  Pure reads verify neither host state nor pushes. If an aggregate, or the
+  fix for a bug, chore, or tweak, finally merged before its Tiller review was
+  recorded, a merge report alone does not authorize recording it: recording
+  the missing historical review needs explicit authorization naming it. ` + "`tiller guide execute`" + ` carries the sequence
   under **Publication sequence**, from checks and evidence commits through the
   draft review, human acceptance, formal submission, and state publication, with
   merge closeout and missing-review recovery in the sections after it.

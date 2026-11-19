@@ -2,7 +2,7 @@
 
 **Scope.** This document defines how Tiller reaches a developer and a project: how it is built, installed, updated, versioned, migrated, wired into a coding harness, adopted, and documented. It layers over the [artifact schema](./artifact-schema.md), canonical for the on-disk model, and the [CLI command surface](./cli-surface.md), canonical for commands. Where this document disagrees with either, they win and this one is fixed.
 
-**Status.** Current reference at version stamp 1.0.6, schema 15, orientation generation 62, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
+**Status.** Current reference at version stamp 1.0.6, schema 16, orientation generation 63, and eleven embedded skills. Installation, publication, and adoption of a build in a managed project remain separately authorized acts. The [roadmap](../roadmap.md) lists what is not built yet.
 
 ---
 
@@ -222,6 +222,8 @@ A Class 3 migration is a coordinated team event. One person runs upgrade on the 
 
 The 14-to-15 boundary is stamp-only and moves no file and rewrites no amendment. Three additive changes ride it: an amendment's add operation gains the id of the node it created at staging, an amendment's source may name a folder with a fingerprint per file, and an amendment gains the `draft` status. The stamp has to move because an older binary would treat a held draft as an ordinary draft, approve it on its own, and let it reopen a done epic. An amendment that is `proposed` at migration stays `proposed`, and one staged before the stamp (its adds carry no node id) keeps its old approval rule, in which approval creates the nodes. Files under `.tiller/feedback/` are left where they are. The orientation generation moves from 60 to 61 with the merged `decompose` skill and the retired `intake` skill, so projects re-join and obsolete `tiller-intake` shims are cleaned by the ordinary ownership-marker rule.
 
+The 15-to-16 boundary is stamp-only and moves no file. Two additive changes ride it: a bug, chore, or tweak gains the optional `recovered_review` record, and a shelf node's `done_basis` gains the value `recovered`. The stamp has to move because an older binary that rewrote a recovered node would drop the record it does not know, and sync would then never cross the node. The orientation generation moves from 62 to 63 with the rule that recording a shelf node's missing review needs explicit authorization, so projects refresh their generated guidance with the same upgrade.
+
 The 13-to-14 boundary compacts on whichever branch runs the upgrade. When at least one day was compacted, its human output names the compacted days and prints the same `git add -A --` command `tiller sync` and `tiller compact` print, plus the count of events left loose; those paths are staged as given, the one exception to the rule against staging a whole directory. When no day folded it says nothing about compaction, and `tiller compact` reports any events left loose.
 
 **Team order for schema 14.** Upgrade the integration branch first, and every teammate upgrades their binary before observing migrated branches. An older binary refuses a schema 14 checkout, but it cannot refuse a branch it only observes: a schema 13 binary watching a work branch that already ran the migration reads only that branch's loose files, so its execution view would miss the events that branch compacted.
@@ -308,7 +310,7 @@ The hard rule stays inline, where it is always in the harness's loaded context, 
 
 `tiller upgrade` refreshes this checkout's orientation after binary selection and migration. `tiller upgrade --project-only` refreshes it offline with the running binary, without joining or changing identity. Join's onboarding and standalone migrate reuse the same refresh. Readiness names a stamped generation mismatch: behind the binary, use project-only; ahead of the binary, use upgrade. Refresh refuses to overwrite higher on-disk generations rather than downgrading them. Byte-identical outputs are not rewritten.
 
-The orientation generation is 62, with schema 15 and eleven embedded skills. The generation moves only when the rules the generated file states change, and older generated instructions must not overwrite a higher orientation generation. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline and design-brief guidance, project independence, and the human acceptance, final-merge, and fast-forward boundaries are stable across generations.
+The orientation generation is 63, with schema 16 and eleven embedded skills. The generation moves only when the rules the generated file states change, and older generated instructions must not overwrite a higher orientation generation. Individual claims, frozen execution ownership, contributor-versus-assignment semantics, transfer, shared closeout, baseline and design-brief guidance, project independence, and the human acceptance, final-merge, and fast-forward boundaries are stable across generations.
 
 Use the reviewed project-only ownership migration above for schema-5 active work; only schemas 2 through 4 crossing schema 5 require old-work drain. Review and commit source and generated changes separately from binary installation outcomes. Current-schema refresh is identity-free, real migration needs a registered actor, and neither selects checkout identity. Every continuing branch/checkout must incorporate the published migration and refresh its own artifacts. Do not hand-edit installed shims or generated orientation.
 
@@ -411,7 +413,7 @@ Contributors and any required reference declaration still need completing before
 imported docs. Init leaves an existing `.gitignore` alone; join upserts the shared Tiller patterns.
 The baseline ledger, named-doc confirmation gate, and the `derive-baseline` startup move are built. Fresh imports
 refuse a root-level `baseline.yml`, including case variants, before scaffold writes; import prose,
-not another project's confirmations. The current build uses schema 15, eleven skills, and orientation generation 62.
+not another project's confirmations. The current build uses schema 16, eleven skills, and orientation generation 63.
 Fresh scaffolds include `stale_design` in drift checks; `shifted_design` remains opt-in. Init reruns, join, and migrate
 never rewrite an existing manifest's checks list or confirm its baseline. Empty or invalid modes that
 older binaries tolerated now need a human manifest correction; no migration rewrites them, and

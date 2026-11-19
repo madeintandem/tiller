@@ -1,0 +1,11 @@
+id: EV-w70svf
+type: claim.tweak
+at: 2026-11-19T18:25:40.592255Z
+contributor: jc
+command: claim tweak tweaks/shelf-merged-review-recovery
+targets:
+    - TW-3eo3s2
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml

@@ -1023,8 +1023,9 @@ func transitionEvent(deps Deps, owner store.Contributor, in TransitionInput,
 		afterMap["severity"] = *in.Severity
 	}
 	// basis is written on every sync crossing, "ancestry", "content", "rollup",
-	// "human_attested", or "carried" (a bug or chore crossed on its carrier's
-	// merge), so a reader never has to interpret its absence;
+	// "human_attested", "carried" (a bug or chore crossed on its carrier's
+	// merge), or "recovered" (a shelf node crossed on a recovered review), so
+	// a reader never has to interpret its absence;
 	// merge_commit appears only on a content crossing and carries the full sha,
 	// since it is an evidence pointer rather than a RevisionRef field.
 	if in.SyncBasis != "" {

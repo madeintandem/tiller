@@ -42,7 +42,10 @@ type WorkItem struct {
 	Branch    string     `yaml:"branch,omitempty"`
 	PR        *int       `yaml:"pr,omitempty"`
 	ReviewRef *ReviewRef `yaml:"review_ref,omitempty"`
-	// DoneBasis is ancestry, content, human_attested, or carried.
+	// RecoveredReview is the human-authorized record of a review that merged
+	// before its submission was recorded; sync crosses the node on it.
+	RecoveredReview *RecoveredShelfReview `yaml:"recovered_review,omitempty"`
+	// DoneBasis is ancestry, content, human_attested, carried, or recovered.
 	DoneBasis  string `yaml:"done_basis,omitempty"`
 	GatesBlock `yaml:",inline"`
 }

@@ -167,6 +167,9 @@ func renderStatusNodeHuman(v NodeStatusView, basis string, unpushed *UnpushedRev
 	if v.Activity == gen.FeatureActivityAwaitingSync && (v.Workflow == nil || v.Workflow.Phase == "sync") {
 		fmt.Fprint(&b, " (awaiting sync: rollup earned, the next sync records it)")
 	}
+	if v.Activity == gen.ActivityRecovered {
+		fmt.Fprint(&b, " (recovered review recorded: the next sync on integration records done)")
+	}
 	if v.Activity == gen.ActivityCarrierCancelled {
 		fmt.Fprint(&b, " (carrier cancelled: it will never merge; resolve --clear or --by re-points it)")
 	}

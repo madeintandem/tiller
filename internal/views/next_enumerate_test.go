@@ -527,3 +527,32 @@ func TestFrontierSkipsAHeldFeature(t *testing.T) {
 	specs := candidatesOfKind(enumerate(tree, "", workflow.Input{}), "specify")
 	require.Equal(t, []string{free.ID}, candidateNodeIDs(specs))
 }
+
+// A shelf node holding a recovered review has left the work queue: nothing
+// offers to start it, and the one move on it is the sync that crosses it. A
+// contained head has no merge witness, so that crossing is the human's.
+func TestRecoveredShelfReviewWaitsOnSyncNotOnWork(t *testing.T) {
+	tree := &store.Tree{
+		Manifest: &store.Manifest{},
+		Bugs: map[string]*store.Bug{
+			"B-merged": {WorkItem: store.WorkItem{ID: "B-merged", Key: strPtr("bugs/merged"), Status: "ready", Owner: "jc",
+				RecoveredReview: &store.RecoveredShelfReview{Basis: "ancestry"}}},
+			"B-ffward": {WorkItem: store.WorkItem{ID: "B-ffward", Key: strPtr("bugs/ffward"), Status: "ready", Owner: "jc",
+				RecoveredReview: &store.RecoveredShelfReview{Basis: "contained"}}},
+		},
+	}
+	all := enumerate(tree, "jc", workflow.Input{})
+	require.Empty(t, candidatesOfKind(all, "continue"), "recovered work is not the owner's to start")
+	syncs := candidatesOfKind(all, "sync_recovered")
+	require.Len(t, syncs, 2)
+	byID := map[string]views.NextCandidate{}
+	for _, c := range syncs {
+		byID[c.Node.ID] = c
+	}
+	require.Equal(t, "agent", byID["B-merged"].Actor)
+	require.Equal(t, "tiller sync", byID["B-merged"].Command)
+	require.Equal(t, "human", byID["B-ffward"].Actor)
+	require.Equal(t, "tiller sync --accept-fast-forward B-ffward", byID["B-ffward"].Command)
+	require.Equal(t, "recovered", views.Item(tree, tree.Bugs["B-merged"]).Activity)
+	require.NotNil(t, views.Item(tree, tree.Bugs["B-merged"]).RecoveredReview)
+}

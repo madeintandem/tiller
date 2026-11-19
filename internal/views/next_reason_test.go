@@ -39,6 +39,10 @@ func lineFixtures(t *testing.T) map[string]lineFixture {
 	execution.Chores = map[string]*store.Chore{
 		"CH-aaaaa0": {WorkItem: store.WorkItem{ID: "CH-aaaaa0", Key: strPtr("chores/bump"), Status: "in_review", Owner: "jc"}},
 	}
+	execution.Tweaks = map[string]*store.Tweak{
+		"TW-aaaaa0": {WorkItem: store.WorkItem{ID: "TW-aaaaa0", Key: strPtr("tweaks/merged-early"), Status: "ready",
+			RecoveredReview: &store.RecoveredShelfReview{Basis: "ancestry"}}},
+	}
 	require.Equal(t, "ready", claimable.Status)
 
 	own := readyEpics(t, 1)
@@ -114,7 +118,7 @@ var yourWord = regexp.MustCompile(`(?i)\byour\b`)
 // ranked (the tier reasons a surface shows).
 func TestEveryKindsLineReadsRightWithAndWithoutAReader(t *testing.T) {
 	kinds := append([]string{"derive_baseline", "confirm_design", "continue", "claim_task",
-		"resolve_blocker", "specify", "merge_task", "decompose"}, views.QueueKinds...)
+		"resolve_blocker", "specify", "merge_task", "sync_recovered", "decompose"}, views.QueueKinds...)
 	readerOnly := map[string]bool{"continue": true, "resolve_blocker": true}
 	seen := map[string]map[string]bool{"": {}, "jc": {}}
 

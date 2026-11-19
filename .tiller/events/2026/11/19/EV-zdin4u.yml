@@ -1,0 +1,13 @@
+id: EV-zdin4u
+type: check.tweak
+at: 2026-11-19T19:07:21.56786Z
+contributor: jc
+command: check tweak TW-3eo3s2
+targets:
+    - TW-3eo3s2
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml

@@ -16,7 +16,7 @@ import (
 
 // ownedManifest is a manifest with one owner, the only environment precondition
 // the add verbs need.
-const ownedManifest = `schema_version: 15
+const ownedManifest = `schema_version: 16
 schema_epoch: initial
 project:
   name: Test Project

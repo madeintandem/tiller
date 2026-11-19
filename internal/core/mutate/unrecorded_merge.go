@@ -155,7 +155,9 @@ func unrecordedShelfMerges(tree *store.Tree, rev commitMessageReader, intoBranch
 // in_progress, or check, with a merge of their own still to come.
 //
 // A carried node is left out, because its fix rides its carrier's merge and it
-// never submits anything. So is a node whose working branch is the branch
+// never submits anything. A node holding a recovered review is left out too:
+// its merge is on record and the next sync crosses it. So is a node whose
+// working branch is the branch
 // being read: a branch contains its own commits, and work in progress there has
 // not landed anywhere.
 func unsubmittedShelfNodes(tree *store.Tree, intoBranch string) []store.WorkNode {
@@ -163,7 +165,7 @@ func unsubmittedShelfNodes(tree *store.Tree, intoBranch string) []store.WorkNode
 	for _, noun := range store.ShelfNouns() {
 		for _, node := range tree.WorkNodesOf(noun) {
 			w := node.Body()
-			if !awaitsSubmission(w.Status) || workNodeCarried(tree, node) {
+			if !awaitsSubmission(w.Status) || workNodeCarried(tree, node) || w.RecoveredReview != nil {
 				continue
 			}
 			if intoBranch != "" && canonicalBranch(observationWorkBranch(tree.Manifest, node), "") == intoBranch {

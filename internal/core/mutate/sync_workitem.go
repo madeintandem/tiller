@@ -43,12 +43,17 @@ func observationWorkBranch(m *store.Manifest, w store.WorkNode) string {
 //     is observed on its own branch against the integration branch, exactly
 //     as a feature branch is, and crosses on ancestry, content, or the
 //     human's fast-forward assertion; unobserved, it is listed as awaiting.
-//     A node in any other state simply waits for its own work.
+//     A node in any other state simply waits for its own work;
+//   - a node holding a recovered review, in any unfinished state, crosses on
+//     that record's evidence instead of its branch (recovered), which Sync
+//     validated before any crossing was written. A contained head with no
+//     merge witness waits for the human's fast-forward assertion like any
+//     other.
 //
 // It computes its own awaiting entries; task observations are collected in the
 // preceding pass, while each independent shelf node owns its own observation.
 func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs.Revisions, tip integrationTip, cache *patchCache,
-	attested map[string]mergeObs) ([]Crossing, []Awaiting, error) {
+	attested, recovered map[string]mergeObs) ([]Crossing, []Awaiting, error) {
 	fresh, err := store.Load(tree.Root)
 	if err != nil {
 		return nil, nil, err
@@ -73,11 +78,16 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 				continue
 			}
 			// Not carried, whether it never was or its carrier can no longer
-			// carry it: the node answers on its own branch from here.
-			if w.Status != "in_review" {
+			// carry it: the node answers on its own branch from here, unless a
+			// recovered review answers for it.
+			mo, already := attested[w.ID]
+			evidence, isRecovered := recovered[w.ID]
+			if isRecovered && !already {
+				mo, already = evidence, true
+			}
+			if !isRecovered && w.Status != "in_review" {
 				continue
 			}
-			mo, already := attested[w.ID]
 			if !already {
 				o, oerr := observeMerge(rev, observationWorkBranch(tree.Manifest, live), tip.Commit, cache)
 				if oerr != nil {
@@ -96,7 +106,13 @@ func syncWorkItems(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 			if mo.Commit != "" {
 				match = "git:" + mo.Commit
 			}
-			c, cerr := crossWorkDone(tree, deps, owner, live, tip.Ref, mo.Basis, match)
+			var c Crossing
+			var cerr error
+			if isRecovered {
+				c, cerr = crossWorkRecovered(tree, deps, owner, live, tip.Ref, mo)
+			} else {
+				c, cerr = crossWorkDone(tree, deps, owner, live, tip.Ref, mo.Basis, match)
+			}
 			if cerr != nil {
 				return nil, nil, cerr
 			}

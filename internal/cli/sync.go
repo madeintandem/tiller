@@ -59,6 +59,11 @@ const (
 // end to end against a real crossing rather than against this constant.
 const basisHumanAttested = "human_attested"
 
+// basisRecovered is the basis of a shelf node crossed on a recovered review
+// (mutate's own basisRecovered, unexported there). The crossing line says so,
+// since the node may never have been started, checked, or submitted.
+const basisRecovered = "recovered"
+
 // intoSourceUnresolved is what the refusal reports as the value's source when
 // nothing resolved at all, so `source` is always populated in the envelope.
 const intoSourceUnresolved = "unresolved"
@@ -177,6 +182,11 @@ type ReopenedView struct {
 // Which token each grain records, enumerated rather than generalized:
 //
 //	task:    ancestry, content, or human_attested
+//	shelf:   those three, carried, or recovered
+//
+// evidence appears on a recovered crossing only and names what the recovery
+// record's result showed: ancestry, content, or human_attested.
+//
 //	feature: rollup or human_attested
 //	epic:    rollup
 //
@@ -191,6 +201,7 @@ type CrossingView struct {
 	Observed                   string                      `json:"observed,omitempty"`
 	Basis                      string                      `json:"basis"`
 	MatchedCommit              string                      `json:"matched_commit,omitempty"`
+	Evidence                   string                      `json:"evidence,omitempty"`
 	PolicyViolations           []string                    `json:"policy_violations,omitempty"`
 	HistoricalPolicyViolations []views.PolicyViolationView `json:"historical_policy_violations,omitempty"`
 	TouchedDesign              []string                    `json:"touched_design,omitempty"`
@@ -705,6 +716,7 @@ func syncView(res mutate.SyncResult) SyncView {
 			Observed:                   c.Observed,
 			Basis:                      c.Basis,
 			MatchedCommit:              c.MatchedCommit,
+			Evidence:                   c.Evidence,
 			PolicyViolations:           nonNilStrings(c.PolicyViolations),
 			HistoricalPolicyViolations: views.PolicyViolations(store.GatesBlock{PolicyViolations: c.HistoricalPolicyViolations}),
 			TouchedDesign:              c.TouchedDesign,
@@ -794,7 +806,7 @@ func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 	}
 	var observed, asserted []mutate.Crossing
 	for _, c := range res.Crossings {
-		if c.Basis == basisHumanAttested {
+		if c.Basis == basisHumanAttested || c.Evidence == basisHumanAttested {
 			asserted = append(asserted, c)
 			continue
 		}
@@ -811,7 +823,11 @@ func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 	if len(asserted) > 0 {
 		lines = append(lines, "Recorded on your assertion, not observation:")
 		for _, c := range asserted {
-			lines = append(lines, syncCrossingLine(tree, c), "    basis: "+c.Basis)
+			basis := c.Basis
+			if c.Basis == basisRecovered {
+				basis += ", on a " + c.Evidence + " fast-forward"
+			}
+			lines = append(lines, syncCrossingLine(tree, c), "    basis: "+basis)
 		}
 		// "contains this work" would overstate the observation on the accepted
 		// vacuous-branch case, where the branch carries no work at all and what
@@ -1011,6 +1027,9 @@ func joinSyncBlocks(blocks ...string) string {
 // the basis is an assertion, and if anything it matters more there.
 func syncCrossingLine(tree *store.Tree, c mutate.Crossing) string {
 	line := fmt.Sprintf("  - %s %s -> %s", c.Noun, gen.RefByID(tree, c.ID), c.Status)
+	if c.Basis == basisRecovered {
+		line += " (recovered review)"
+	}
 	if c.MatchedCommit != "" {
 		line += fmt.Sprintf(" (content match: %s)", c.MatchedCommit)
 	}

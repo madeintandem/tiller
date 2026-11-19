@@ -835,14 +835,14 @@ func TestEndToEndLegacyAmendment(t *testing.T) {
 	manifest := filepath.Join(".tiller", "tiller.yml")
 	mbody, err := os.ReadFile(manifest)
 	require.NoError(t, err)
-	require.Contains(t, string(mbody), "schema_version: 15")
-	require.NoError(t, os.WriteFile(manifest, []byte(strings.Replace(string(mbody), "schema_version: 15", "schema_version: 14", 1)), 0o644))
+	require.Contains(t, string(mbody), "schema_version: 16")
+	require.NoError(t, os.WriteFile(manifest, []byte(strings.Replace(string(mbody), "schema_version: 16", "schema_version: 14", 1)), 0o644))
 	gitRun(t, ".", "add", "-A")
 	gitRun(t, ".", "commit", "-m", "schema 14 fixture")
 
 	out, stderr, code := execCLI(t, "migrate", "--contributor", "jc", "--json")
 	require.Equal(t, 0, code, out+stderr)
-	require.Equal(t, 15, migratedManifestSchema(t, "."))
+	require.Equal(t, store.CurrentSchemaVersion, migratedManifestSchema(t, "."))
 	tree := loadCwdTree(t)
 	require.Equal(t, "proposed", tree.Amendments[aid].Status)
 	for _, op := range tree.Amendments[aid].Operations {

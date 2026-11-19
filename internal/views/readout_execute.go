@@ -15,7 +15,7 @@ func executeContent(t *store.Tree, in ReadoutInput, order *gen.Order, r *Readout
 	var shelf []store.WorkNode
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range orderedShelfNodes(t, noun) {
-			if gen.WorkActivity(t, work) != gen.ActivityCarried {
+			if !gen.WorkLeftQueue(t, work) {
 				shelf = append(shelf, work)
 			}
 		}

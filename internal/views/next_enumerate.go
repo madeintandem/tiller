@@ -389,7 +389,7 @@ func specifyCandidates(t *store.Tree, order *gen.Order) []NextCandidate {
 }
 
 // mergeWaitCandidates are the in-review tasks and shelf work waiting on a
-// human merge. A coarse-grain task whose reviewed node has recorded no
+// human merge, and the shelf work whose recovered review waits on sync. A coarse-grain task whose reviewed node has recorded no
 // review surface yet is no one's merge.
 func mergeWaitCandidates(t *store.Tree, order *gen.Order, in NextInput) []NextCandidate {
 	var out []NextCandidate
@@ -407,7 +407,28 @@ func mergeWaitCandidates(t *store.Tree, order *gen.Order, in NextInput) []NextCa
 	for _, work := range shelfMergeWaits(t) {
 		out = append(out, mergeCandidate(t, work, mergeWaitReason("", work.Body().PR, work.Body().ReviewRef, in.Reader)))
 	}
+	for _, work := range shelfRecoveredWaits(t) {
+		out = append(out, recoveredSyncCandidate(t, work))
+	}
 	return inArm(armTaskMerge, out)
+}
+
+// recoveredSyncCandidate is the sync a recovered shelf review waits on. Its
+// merge already happened, so the move is the agent's, unless the record holds
+// a contained head with no merge witness: that crossing is the human's
+// fast-forward assertion.
+func recoveredSyncCandidate(t *store.Tree, work store.WorkNode) NextCandidate {
+	c := NextCandidate{
+		Actor: actorAgent, Kind: "sync_recovered", Action: "sync",
+		Node: nextNodeOf(t, work), Command: "tiller sync",
+		Reason: "its merged review is recorded, and sync has yet to cross it",
+	}
+	if work.Body().RecoveredReview.Basis == "contained" {
+		c.Actor = actorHuman
+		c.Command = "tiller sync --accept-fast-forward " + work.NodeID()
+		c.Reason = "its recovered review has no merge witness, so the crossing needs a human fast-forward assertion"
+	}
+	return c
 }
 
 // taskMergeWaitReason says what an in-review task's merge waits on: its own

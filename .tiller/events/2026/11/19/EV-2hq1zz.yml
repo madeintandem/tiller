@@ -1,0 +1,14 @@
+id: EV-2hq1zz
+type: submit.tweak
+at: 2026-11-19T19:03:20.448442Z
+contributor: jc
+command: submit tweak TW-3eo3s2
+targets:
+    - TW-3eo3s2
+before:
+    status: check
+after:
+    pr: 30
+    status: in_review
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml

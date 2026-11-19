@@ -64,6 +64,7 @@ func humanSyncUnrecordedMerges(res mutate.SyncResult) string {
 	lines = append(lines,
 		"  Sync recorded nothing for these and moved no status: it observes a bug, chore, or tweak only once"+
 			" it is in review. Each still has to go through its own start, check, and submit before a sync"+
-			" can record it done.")
+			" can record it done. When the fix has already merged, a human can record that review with"+
+			" tiller submit <bug|chore|tweak> <node> --recover-merged.")
 	return strings.Join(lines, "\n")
 }

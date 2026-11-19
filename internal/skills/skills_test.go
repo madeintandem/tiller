@@ -1990,7 +1990,7 @@ func TestExecuteSectionsAreInOrder(t *testing.T) {
 		"### Publication sequence",
 		"### Feature acceptance and merge closeout",
 		"### Review grain and coarse submit guards",
-		"### Missing aggregate review after merge",
+		"### Missing review after merge",
 		"### Exceptional human-directed transfer",
 		"## Recovery",
 		"## Choreography",
@@ -2613,4 +2613,25 @@ func TestExecuteCoversSameEpicFeaturePrerequisiteStarts(t *testing.T) {
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
+}
+
+// Execute carries shelf recovery beside aggregate recovery: the same command
+// and authorization, the nodes it applies to, and what it never does.
+func TestExecuteCoversShelfReviewRecovery(t *testing.T) {
+	text, ok := Lookup("execute")
+	require.True(t, ok)
+	flat := strings.Join(strings.Fields(text), " ")
+	for _, want := range []string{
+		"Explicit authorization to recover the review of a named feature, epic, bug, chore, or tweak also enters execute.",
+		"tiller submit feature|epic|bug|chore|tweak <node> --recover-merged",
+		"One merged PR may be recorded against every node it fixed",
+		"Recovery refuses a `proposed`, `done`, or `cancelled` node and a node a live carrier still carries",
+		"the result lists `missing_gates`",
+		"crosses to `done` with basis `recovered`",
+	} {
+		require.Containsf(t, flat, want, "execute states %q", want)
+	}
+	description, ok := Description("execute")
+	require.True(t, ok)
+	require.Contains(t, description, "explicitly authorized historical review recovery")
 }

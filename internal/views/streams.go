@@ -183,7 +183,7 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 	}
 	for _, noun := range store.ShelfNouns() {
 		for _, w := range t.WorkNodesOf(noun) {
-			if gen.WorkActivity(t, w) == gen.ActivityCarried {
+			if gen.WorkLeftQueue(t, w) {
 				continue
 			}
 			addActive(w, w.Body().Status)
@@ -219,7 +219,7 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 	}
 	for _, noun := range store.ShelfNouns() {
 		for _, w := range t.WorkNodesOf(noun) {
-			if gen.WorkActivity(t, w) == gen.ActivityCarried {
+			if gen.WorkLeftQueue(t, w) {
 				continue
 			}
 			addBlocked(w, w.Body().DependsOn)
@@ -284,7 +284,7 @@ func contributorStream(t *store.Tree, order *gen.Order, o store.Contributor) Con
 	for _, noun := range store.ShelfNouns() {
 		for _, w := range t.WorkNodesOf(noun) {
 			body := w.Body()
-			if Owner(w) != o.ID || body.Status != gen.ReviewState || gen.WorkActivity(t, w) == gen.ActivityCarried {
+			if Owner(w) != o.ID || body.Status != gen.ReviewState || gen.WorkLeftQueue(t, w) {
 				continue
 			}
 			item := GatesItem{Noun: w.Noun(), ID: body.ID, Key: Key(w), Ref: gen.Ref(t, w), Gates: Gates(body.GatesBlock)}

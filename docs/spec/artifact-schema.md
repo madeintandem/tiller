@@ -179,7 +179,7 @@ observed_at: "2026-06-23T00:00:00Z"
 ## The root manifest: `tiller.yml`
 
 ```yaml
-schema_version: 15            # current on-disk format version; moved forward by reviewed `tiller migrate`
+schema_version: 16            # current on-disk format version; moved forward by reviewed `tiller migrate`
 schema_epoch: initial         # changed only by Class 3 migrations; used as the branch fence
 
 project:
@@ -639,7 +639,8 @@ gates: {}                  # same shape as task.yml gates, written by `tiller ch
 branch: null               # tiller/bugs/certification-form-blank-on-reload once started; cut from the integration branch
 pr: null
 review_ref: null
-done_basis: null           # ancestry | content | human_attested | carried
+recovered_review: null     # optional immutable historical binding; see Merged shelf review recovery
+done_basis: null           # ancestry | content | human_attested | carried | recovered
 supersedes: []             # same-noun transferred predecessor IDs
 superseded_by: null        # reciprocal successor ID, at most one
 policy_violations: []
@@ -653,11 +654,17 @@ It touches nothing else: not the branch, not the review grain, not claims, routi
 
 Fixed by its own PR is the ordinary case: `done`, basis `ancestry` or `content`, observed. Fixed by other work in the tree uses `resolved_by`, a live carrier pointer to the epic, feature, or task whose merge fixes the bug, set by `tiller resolve`. The bug keeps its stored state, takes the derived display phase `carried`, and drops out of the queue; in the same run that records the carrier's `done`, `sync` crosses the bug `done` with `done_basis: carried`. A cancelled or archived carrier is refused at the moment it is named, since its merge will never come, and a carrier cancelled afterwards returns the bug to the queue rather than letting it vanish, as `resolve --clear` also does. Closing a bug the day its feature is minted is refused for the same reason: a promise is not a fix, and `carried` recomputes on the carrier's fate the way a rollup `done` recomputes. That recompute has a name of its own. A `resolved_by` whose carrier is cancelled, archived, or no longer in the tree derives the phase `carrier_cancelled` instead of `carried`, rendered beside the node's status as "carrier cancelled" the same way a feature's rollup phases are; `sync` then treats the node as having no carrier at all, so an `in_review` one is observed on its own branch and listed as awaiting again. The pointer itself stays on the record: clearing or re-pointing it is `tiller resolve --clear` or `--by`, a human judgment, not something a read or an observation pass decides. A terminal bug refuses `resolve` outright, there being nothing left to carry.
 
+Fixed by a merge Tiller never recorded is the third case, described under Merged shelf review recovery below: a human-authorized `recovered_review` record, and a crossing whose basis is `recovered`.
+
 Not a fix is `cancel` with `--resolution wontfix | invalid | duplicate`, which a shelf node requires and no other noun accepts, and `duplicate` additionally requires `--duplicate-of` naming another node of the same noun. Duplicates are a cancel resolution rather than a carrier because "tracked over there" is a human ruling and the survivor's fate is visible on the survivor; letting duplicates ride carriers invites cascades. A regression of a `done` bug is a new bug; whether it records the earlier one is one of the bug-specific fields left to drift.
 
 **Queue and dependencies.** The queue is a soft order at shelf grain and nothing more, `.tiller/bugs/order.yml`, `.tiller/chores/order.yml`, and `.tiller/tweaks/order.yml`, written only by `tiller order bug`, `tiller order chore`, and `tiller order tweak`, with the precedence every other order carries: recorded `depends_on` edges first, then the list, then canonical key ascending for the unlisted, and it never gates. No `priority` enum ships in v1, since an ordered list is a priority, and a bug's `severity` never enters this order. Dependencies stay inside the shelves: a bug may `depends_on` other bugs, chores, and tweaks only, and no tree node may depend on one, because a cross-graph edge would let the frontier be gated by the queue. "The feature must wait for this fix" is a question with `blocks`, which already exists.
 
-**States, and who drives them.** `proposed` (captured) → `ready` (triaged) → `in_progress` → `check` → `in_review` → `done`, plus `ready → proposed` on return, `in_review → in_progress` on resume, and `cancelled` with a resolution. `done` arrives by the node's own observed merge (basis `ancestry`, `content`, or `human_attested`) or by its carrier's (`carried`), and `sync` writes it either way.
+**States, and who drives them.** `proposed` (captured) → `ready` (triaged) → `in_progress` → `check` → `in_review` → `done`, plus `ready → proposed` on return, `in_review → in_progress` on resume, and `cancelled` with a resolution. `done` arrives by the node's own observed merge (basis `ancestry`, `content`, or `human_attested`), by its carrier's (`carried`), or by a recovered review's (`recovered`), and `sync` writes it every way.
+
+**Merged shelf review recovery.** A bug, chore, or tweak carries an optional typed `recovered_review`, written by `submit bug|chore|tweak --recover-merged` when the node's fix merged before any submission was recorded. It holds the same evidence and provenance fields as an aggregate's record, `head`, `merge_commit`, `integration_branch`, `basis`, `recovered_by`, `recovered_at`, and `reason`, and no `tasks` or `policy_snapshots`, because a shelf node has no riders and no acceptance contract. `branch` is the node's recorded working branch and is absent when the fix merged before the node ever started. Load validates the record's shape as strictly as an aggregate's: an unknown field, a missing one, an abbreviated commit, or an explicit null refuses instead of leaving the node to ordinary observation. The caller-supplied PR number is stored in the node's own `pr`.
+
+The record moves no status. `sync` validates it against configured integration and writes `done` with `done_basis: recovered`, directly, the way a carried crossing is written, since the node may never have started and the lifecycle has no row from `ready` to `done`. The crossing event's `evidence` names what the crossing rested on (`ancestry`, `content`, or `human_attested`), and required gates without a recorded pass become `policy_violations`, because recovery approves none. A recovered node needs no `started: true`: its PR and its done crossing belong to work that happened outside Tiller's record, as a carried crossing does. The record stays on the node after `done` as its audit trail, alongside one `recover_review.<noun>` event. While the node is unfinished it takes the derived display phase `recovered` and drops out of the queue.
 
 **Severity.** A bug may carry `severity`, one of `blocker`, `important`, `medium`, or `minor`, stored lowercase and graded by impact, never by the size of the fix (the scale's meanings live in the capture skill). It is optional while the bug is `proposed`, because impact is often unknown when a bug is filed, and `approve bug` refuses an unrated bug with `severity_required`. Three writers set it: `add bug --severity`, `approve bug --severity` (which grades or regrades a `proposed` bug at triage, since triage is the human's call; on a bug past `proposed` it refuses with `severity_not_triage` and the change goes through `grade`), and `grade bug`, open to any contributor from `proposed` through `in_review` and refused on a done or cancelled bug, whose grade is part of the closed record. There is no clearing a grade. `grade` records one `grade.bug` event with the old and new severity in `before` and `after`; an unchanged level writes nothing. Transfer copies the original's severity onto its replacement. Severity is bug only: a `chore.yml` or `tweak.yml` carrying one is a parse error, and any write that would set one refuses with `severity applies to bugs`. No migration writes a severity nobody chose, so a bug already past `proposed` when schema 13 arrived stays unrated until someone grades it. Severity never routes: `tiller next`, the readout, and the approve queue keep the shelf's soft order, and only the console's Fix board sorts or filters by it.
 
@@ -1195,6 +1202,13 @@ For one door for documents, settled 2026-11-11 to 2026-11-12:
 - An amendment is handed over: it opens `draft`, `tiller propose amendment` moves it to `proposed`, and approval refuses a draft and an empty amendment. Hand-over is a signal, not a lock. (JC)
 - Amendments staged before schema 15 keep the old approval rule, and a staged question stays staged until approval. (JC)
 - Schema 15 is stamp-only: an add operation gains a node id, a source may name a folder, and an amendment gains the `draft` status, all additive; the stamp keeps an older binary from approving a held draft on its own.
+
+For merged shelf review recovery, settled 2026-11-19:
+
+- A bug, chore, or tweak whose fix merged before its submission was recorded is closed by the aggregate recovery command and evidence rules, not a second mechanism: `submit <noun> --recover-merged`, then ordinary sync.
+- The shelf record carries evidence and provenance only. It has no riders and no policy snapshots, and its branch is the node's own recorded branch or nothing, never a name Tiller would have chosen.
+- Sync records the crossing with basis `recovered`, with the Git evidence in the record and on the crossing event. Recovery approves no gate, and a missing pass is a policy violation at the crossing.
+- Schema 16 is stamp-only: shelf nodes gain the optional `recovered_review` field and the `recovered` done basis. The stamp keeps an older binary from rewriting a recovered node and dropping its record.
 
 ---
 

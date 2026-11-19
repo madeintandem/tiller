@@ -82,10 +82,15 @@ func (t *Tree) ProjectContributors() {
 	}
 }
 
-func validateExecutionOwnership(id, status, owner, branch, doneBasis string, started bool, pr *int, review *ReviewRef) error {
+// recovered says the node holds a recovered review. Its fix merged outside
+// Tiller's record, possibly before the node ever started, so the PR that
+// record names and the done crossing it earns need no start marker, the way
+// a carried crossing needs none.
+func validateExecutionOwnership(id, status, owner, branch, doneBasis string, started, recovered bool, pr *int, review *ReviewRef) error {
 	active := status == "in_progress" || status == "check" || status == "in_review"
 	terminal := status == "done" || status == "cancelled"
-	if (active || branch != "" || pr != nil || review != nil || (status == "done" && doneBasis != "carried")) && !started {
+	doneUnstarted := doneBasis == "carried" || recovered
+	if (active || branch != "" || (pr != nil && !recovered) || review != nil || (status == "done" && !doneUnstarted)) && !started {
 		return fmt.Errorf("%s has execution history without started: true; restore the durable start marker or migrate the original legacy snapshot", id)
 	}
 	if started && !terminal && owner == "" {
@@ -107,7 +112,7 @@ func (t *Tree) ValidateOwnership() error {
 	}
 	lineage := map[string]edge{}
 	for id, task := range t.Tasks {
-		if err := validateExecutionOwnership(id, task.Status, task.Owner, task.Branch, "", task.Started, task.PR, task.ReviewRef); err != nil {
+		if err := validateExecutionOwnership(id, task.Status, task.Owner, task.Branch, "", task.Started, false, task.PR, task.ReviewRef); err != nil {
 			return err
 		}
 		lineage[id] = edge{NounTask, task.Supersedes, task.SupersededBy}
@@ -115,7 +120,7 @@ func (t *Tree) ValidateOwnership() error {
 	for _, noun := range ShelfNouns() {
 		for _, node := range t.WorkNodesOf(noun) {
 			w := node.Body()
-			if err := validateExecutionOwnership(w.ID, w.Status, w.Owner, w.Branch, w.DoneBasis, w.Started, w.PR, w.ReviewRef); err != nil {
+			if err := validateExecutionOwnership(w.ID, w.Status, w.Owner, w.Branch, w.DoneBasis, w.Started, w.RecoveredReview != nil, w.PR, w.ReviewRef); err != nil {
 				return err
 			}
 			if w.Resolution == ResolutionTransferred && (w.Status != "cancelled" || !w.Started || w.SupersededBy == nil || w.DuplicateOf != "") {

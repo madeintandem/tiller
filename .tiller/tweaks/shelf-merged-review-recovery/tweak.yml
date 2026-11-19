@@ -1,9 +1,10 @@
 id: TW-3eo3s2
 key: tweaks/shelf-merged-review-recovery
 title: A shelf item's already-merged PR cannot be recorded
-status: ready
+status: in_review
 blocked: false
-started: false
+started: true
+owner: jc
 proposed_by: jc
 accepted_against:
     spec:
@@ -15,3 +16,51 @@ accepted_against:
         kind: git_commit
         value: git:819abfa
         observed_at: 2026-11-19T18:22:26.733787Z
+branch: tiller/tweaks/shelf-merged-review-recovery
+pr: 30
+gates:
+    build:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T19:04:32.433307Z
+        against:
+            kind: git_commit
+            value: git:d302cb7
+            observed_at: 2026-11-19T19:04:32.3348Z
+        code: sha256:d029e8e3bd964a6b549df2089de92222c7884846af6b4ea9ad11b86a84dde128
+        config: sha256:18320c22f2caf93ef8889a10bef882a38b42ed91315ccd9812f0f36b70cd0293
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/build-d302cb7-out-7667e0c0b29b6ae418b58ff64e7457afeaca2a3700e6f2b523bc7980446fd6f6.txt
+    lint:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T19:04:32.433307Z
+        against:
+            kind: git_commit
+            value: git:d302cb7
+            observed_at: 2026-11-19T19:04:32.3348Z
+        code: sha256:d029e8e3bd964a6b549df2089de92222c7884846af6b4ea9ad11b86a84dde128
+        config: sha256:3e2200b186b8956fc97ea2649af0d75769e37e0a9be48ccbe6e28938a4fa9120
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/lint-d302cb7-out-685d158f951e3eb11749d2e519a64eba4f57dcc93cd562eaee2cc9457f72846e.txt
+    tests:
+        required: true
+        kind: command
+        status: pass
+        run_by: jc
+        run_at: 2026-11-19T19:04:32.433307Z
+        against:
+            kind: git_commit
+            value: git:d302cb7
+            observed_at: 2026-11-19T19:04:32.3348Z
+        code: sha256:d029e8e3bd964a6b549df2089de92222c7884846af6b4ea9ad11b86a84dde128
+        config: sha256:6031ffcd18b874f5607c7dcacb78599ef98ded9055b2ccf545771b8b5135c512
+        evidence:
+            - kind: command_output
+              ref: artifacts/tiller/gates/tests-d302cb7-out-e9e2e579574e67450966d4ac13f0b19be66a9877f602e9a7dcc2b8bfc25f409a.txt

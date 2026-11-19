@@ -31,6 +31,7 @@ func TestSyncHumanWarnsOfAnUnrecordedMergeInsteadOfTheCleanRunLine(t *testing.T)
 	require.Contains(t, out, unrecordedMergeLine)
 	require.Contains(t, out, "Sync recorded nothing for these and moved no status")
 	require.Contains(t, out, "its own start, check, and submit")
+	require.Contains(t, out, "--recover-merged")
 }
 
 func TestSyncHumanWarnsOfAnUnrecordedMergeBesideCrossings(t *testing.T) {

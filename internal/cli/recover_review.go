@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/madeintandem/tiller/internal/core/mutate"
 	"github.com/madeintandem/tiller/internal/workflow"
@@ -22,7 +23,10 @@ type RecoverReviewView struct {
 	Changed           bool                      `json:"changed"`
 	EvidenceValidated bool                      `json:"evidence_validated"`
 	PRAssociation     string                    `json:"pr_association,omitempty"`
-	NextAction        string                    `json:"next_action"`
+	// MissingGates names a shelf node's required gates with no recorded pass.
+	// Recovery approves none; sync records each as a policy violation.
+	MissingGates []string `json:"missing_gates,omitempty"`
+	NextAction   string   `json:"next_action"`
 }
 
 type RecoverReviewRefusalView struct {
@@ -59,7 +63,7 @@ func runRecoverReview(cmd *cobra.Command, noun, key string, pr int, prChanged bo
 		}
 		return emitFailure(cmd, "submit", err)
 	}
-	view := RecoverReviewView{Noun: recovered.Noun, ID: recovered.ID, Key: recovered.Key, PR: recovered.PR, ReviewRef: reviewRefView(recovered.ReviewRef), RecoveredReview: workflow.RecoveryOf(recovered.PR, recovered.RecoveredReview), Changed: recovered.Changed, EvidenceValidated: recovered.Changed, NextAction: "tiller sync"}
+	view := RecoverReviewView{Noun: recovered.Noun, ID: recovered.ID, Key: recovered.Key, PR: recovered.PR, ReviewRef: reviewRefView(recovered.ReviewRef), RecoveredReview: workflow.RecoveryOf(recovered.PR, recovered.RecoveredReview), Changed: recovered.Changed, EvidenceValidated: recovered.Changed, MissingGates: recovered.MissingGates, NextAction: "tiller sync"}
 	if recovered.PR != nil {
 		view.PRAssociation = "caller_supplied"
 	}
@@ -69,6 +73,9 @@ func runRecoverReview(cmd *cobra.Command, noun, key string, pr int, prChanged bo
 	}
 	if recovered.PR != nil {
 		human += " PR association is caller-supplied, not host-observed."
+	}
+	if len(recovered.MissingGates) > 0 {
+		human += " Required gates with no recorded pass: " + strings.Join(recovered.MissingGates, ", ") + ". Recovery approves none, and sync records each as a policy violation."
 	}
 	return emitSuccess(cmd, "submit", view, human)
 }

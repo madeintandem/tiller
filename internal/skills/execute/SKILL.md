@@ -1,6 +1,6 @@
 ---
 name: execute
-description: Use for authorized ready, in_progress, or checked work, requested changes or acceptance re-entry, a coarse review finish line, a reported merge, or explicitly authorized historical aggregate review recovery. Completes related checks, review preparation, submission or integration-branch closeout, stopping at the exact human decision or real blocker.
+description: Use for authorized ready, in_progress, or checked work, requested changes or acceptance re-entry, a coarse review finish line, a reported merge, or explicitly authorized historical review recovery. Completes related checks, review preparation, submission or integration-branch closeout, stopping at the exact human decision or real blocker.
 ---
 
 # execute
@@ -11,7 +11,7 @@ This skill assumes `.tiller/orientation.md`. Read `.tiller/orientation.md` first
 
 A task, bug, chore, or tweak is `ready`, `in_progress`, or `check` and owned by you; reviewed work has requested changes; a human acceptance decision resumes the same review; a coarse review has reached its finish line; or the developer reports a merge of the related authorized work. Checked work re-enters without `start` or `resume`: complete outstanding checks and submission on its recorded branch. A reported merge authorizes bounded closeout of that work, not a new feature or unrelated planning. Inspect state and the merge, then continue on the integration branch through applicable feature acceptance, ordinary sync, state publication, and readback. A pure orient request still briefs and stops.
 
-Explicit authorization to recover a named feature/epic review also enters execute. A reported merge alone authorizes ordinary bounded closeout, not creation of missing historical PR/head/result identity; follow the missing aggregate recovery section below before recording it.
+Explicit authorization to recover the review of a named feature, epic, bug, chore, or tweak also enters execute. A reported merge alone authorizes ordinary bounded closeout, not creation of missing historical PR/head/result identity; follow **Missing review after merge** below before recording it.
 
 ## Reasoning
 
@@ -153,23 +153,25 @@ Review grain changes only in the safe configure window. Finish and sync submitte
 
 A feature overridden to task or feature grain finishes its own PR and reaches `done` before the epic PR opens. Coarse submit still enforces active basis, questions, reviewed assumptions, required gates, task readiness, review identity, and retired ancestors. Green gates do not bypass those refusals. To record a feature-only assumption on explicit human instruction use `tiller approve feature <ref> --assume-question <Q-id> --reason <text>`; this is record-only, does not move lifecycle, and does not grant an assumption to the task. Task start must satisfy its own holds.
 
-### Missing aggregate review after merge
+### Missing review after merge
 
 An aggregate review may have merged before `submit feature` or `submit epic` recorded it. `review_missing` means only that the review is absent: sync has not inspected its merge state. If unmerged, use ordinary assembly, checks, acceptance, and submission. If already merged, collect historical evidence and obtain explicit authorization to recover the named review. A merge report or general execute instruction does not authorize inventing its PR, historical head, or result.
+
+A bug, chore, or tweak meets the same accident in another shape: its fix merged from a branch Tiller never recorded, or before `start`, `check`, or `submit` ran. The node still reads `ready`, `in_progress`, `check`, or `in_review`, and sync never crosses it, because sync observes a shelf node only once it is in review and only on its own recorded branch. Ordinary `submit` cannot repair this: it runs on the node's branch, and state committed to a branch that already merged never reaches integration. With the same explicit authorization, naming the nodes, record the recovery once per node. One merged PR may be recorded against every node it fixed, each command carrying the same head, result, and PR number. Recovery refuses a `proposed`, `done`, or `cancelled` node and a node a live carrier still carries, and it refuses when the node's own recorded branch or submitted head holds work the reviewed head lacks.
 
 For remote-backed recovery, verify the host repository, actual PR number, merged state, configured integration base, head repository/owner, historical branch, head OID, and result commit through the project's existing host tools. Tiller has no host client: the PR association is caller-supplied, while the binary checks local Git evidence. Fetch or restore missing objects through ordinary Git without resetting refs. No remote means no host account or PR requirement. With a remote, recovery requires the real positive PR number; offline recovery omits `--pr` and retains a review ref.
 
 On the configured integration checkout, commit relevant manifest/work/prose inputs, preserving unrelated changes. Run the authorized record operation:
 
 ```sh
-tiller submit feature|epic <node> --recover-merged \
+tiller submit feature|epic|bug|chore|tweak <node> --recover-merged \
   --head <historical-reviewed-commit> --merge-commit <integration-result-commit> \
   --reason "<why the historical review was missing>" [--pr <actual-number>]
 ```
 
-The arguments name immutable historical commits, not today's aggregate tip. The result is the actual merge or squash commit, or the contained reviewed head in an unwitnessed fast-forward case. The operation records provenance and one recovery event only; it does not run gates, move lifecycle, approve criteria, or erase current drift/questions/acceptance.
+The arguments name immutable historical commits, not today's aggregate tip. The result is the actual merge or squash commit, or the contained reviewed head in an unwitnessed fast-forward case. The operation records provenance and one recovery event only; it does not run gates, move lifecycle, approve criteria, or erase current drift/questions/acceptance. For a shelf node the result lists `missing_gates`, the required gates with no recorded pass. Report them and leave them unrun: sync records each as a policy violation at the crossing, where the warning stays on the node.
 
-Commit the actual recovery delta on integration, run ordinary `tiller sync`, inspect crossings and remaining riders, current acceptance, historical policy warnings, and touched-doc notices, then commit actual sync state. Publish the integration state when authorized and remote-backed, verify the published tip, and read back status/show/queue/readout. Identical retries write nothing, so skip empty commits. Historical pending acceptance remains historical even when the current approved contract is green. For contained/unwitnessed recovery hand the human `tiller sync --accept-fast-forward <reviewed-node>`; never run the assertion yourself. Never send work back to a finally merged branch, create an extra PR for the recovery, manufacture acceptance, or reset refs.
+Commit the actual recovery delta on integration, run ordinary `tiller sync`, inspect crossings and remaining riders, current acceptance, historical policy warnings, and touched-doc notices, then commit actual sync state. Publish the integration state when authorized and remote-backed, verify the published tip, and read back status/show/queue/readout. Identical retries write nothing, so skip empty commits. Historical pending acceptance remains historical even when the current approved contract is green. A recovered bug, chore, or tweak crosses to `done` with basis `recovered` and keeps its record, so status and show still name the review it rested on. For contained/unwitnessed recovery hand the human `tiller sync --accept-fast-forward <reviewed-node>`; never run the assertion yourself. Never send work back to a finally merged branch, create an extra PR for the recovery, manufacture acceptance, or reset refs.
 
 ### Exceptional human-directed transfer
 

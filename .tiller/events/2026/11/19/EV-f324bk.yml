@@ -1,0 +1,14 @@
+id: EV-f324bk
+type: resume.tweak
+at: 2026-11-19T19:03:59.526038Z
+contributor: jc
+command: resume tweak TW-3eo3s2
+targets:
+    - TW-3eo3s2
+before:
+    status: in_review
+after:
+    reason: merge main after TW-xfjsgw; point the unrecorded-merge warning at shelf recovery
+    status: in_progress
+files:
+    - path: .tiller/tweaks/shelf-merged-review-recovery/tweak.yml

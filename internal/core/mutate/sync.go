@@ -75,6 +75,10 @@ type Crossing struct {
 	PolicyViolations           []string
 	HistoricalPolicyViolations []store.PolicyViolation
 	TouchedDesign              []string
+	// Evidence is set on a recovered shelf crossing only, whose Basis says
+	// the crossing rests on the recovery record: ancestry, content, or
+	// human_attested names what that record's result showed.
+	Evidence string
 	// EvalContractMismatch is set on a feature crossing whose completion
 	// record pins an integration eval blob other than the one accepted_against
 	// names. It is advisory: the crossing still happens and nothing new is
@@ -331,7 +335,11 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	// The human's assertion is classified before the walk and before any write, so
 	// a named node outside the candidate set refuses the whole command rather than
 	// crossing the eligible half of it.
-	attested, named, err := attestedObservations(tree, rev, in.AcceptFastForward, into, tip.Commit, cache, recovered)
+	recoveredShelf, err := prepareRecoveredShelfSync(tree, rev, into, tip.Commit)
+	if err != nil {
+		return SyncResult{}, err
+	}
+	attested, named, err := attestedObservations(tree, rev, in.AcceptFastForward, into, tip.Commit, cache, recovered, recoveredShelf)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -485,7 +493,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	// The shelf pass runs last, so a carried bug or chore reads the carrier
 	// status the two passes above just wrote rather than the one this run
 	// started with (docs/spec/cli-surface.md).
-	workCrossings, workAwaiting, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested)
+	workCrossings, workAwaiting, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested, recoveredShelf)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -1077,7 +1085,8 @@ func attestContained(mo mergeObs) mergeObs {
 // naming every node that is out of the candidate set.
 //
 // The named node must own the review surface: a task at task grain, a reviewed
-// feature or epic at coarse grain, or an uncarried shelf node.
+// feature or epic at coarse grain, or an uncarried shelf node in review or
+// holding a recovered review.
 //
 // The refusal is all-or-nothing. A human who named four nodes and got one wrong
 // should re-run one corrected command, not go looking for which half of their
@@ -1088,7 +1097,7 @@ func attestContained(mo mergeObs) mergeObs {
 // CLI resolves a reference to one of those ids before calling, so this is
 // unreachable through the command; it is here so a caller that skips that step
 // is told, instead of having its assertion silently dropped.
-func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, into, intoCommit string, cache *patchCache, recovered map[string]*recoveredSync) (map[string]mergeObs, []string, error) {
+func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, into, intoCommit string, cache *patchCache, recovered map[string]*recoveredSync, recoveredShelf map[string]mergeObs) (map[string]mergeObs, []string, error) {
 	if len(ids) == 0 {
 		return nil, nil, nil
 	}
@@ -1140,7 +1149,8 @@ func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, int
 				would = would || crosses
 			}
 		} else if w, ok := tree.WorkNode(id); ok {
-			branch, noun, key, would = observationWorkBranch(tree.Manifest, w), w.Noun(), deref(w.NodeKey()), w.NodeStatus() == "in_review" && !workNodeCarried(tree, w)
+			_, isRecovered := recoveredShelf[id]
+			branch, noun, key, would = observationWorkBranch(tree.Manifest, w), w.Noun(), deref(w.NodeKey()), (w.NodeStatus() == "in_review" || isRecovered) && !workNodeCarried(tree, w)
 		} else {
 			reviewed := append([]string{store.NounTask, store.NounFeature, store.NounEpic}, store.ShelfNouns()...)
 			return nil, nil, &usageError{reason: "unknown_node",
@@ -1155,6 +1165,8 @@ func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, int
 		var mo mergeObs
 		if recovery := recovered[id]; recovery != nil {
 			mo = recovery.obs
+		} else if evidence, isRecovered := recoveredShelf[id]; isRecovered {
+			mo = evidence
 		} else {
 			var err error
 			mo, err = observeMerge(rev, branch, intoCommit, cache)

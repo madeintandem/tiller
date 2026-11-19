@@ -148,6 +148,11 @@ var schemaMigrations = []schemaMigration{
 		note:  "stamp schema_version 15; amendment draft status, held-draft node ids, and folder sources are additive; preserve work, events, and active reviews without drain",
 		apply: func(d []byte) ([]byte, error) { return store.RenderSchemaVersion(d, 15) },
 	},
+	{
+		from:  15,
+		note:  "stamp schema_version 16; a shelf node's recovered review and its recovered done basis are additive; preserve work, events, and active reviews without drain",
+		apply: func(d []byte) ([]byte, error) { return store.RenderSchemaVersion(d, 16) },
+	},
 }
 
 // Migrate brings root's .tiller/tiller.yml forward from its stamped

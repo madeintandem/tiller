@@ -28,7 +28,7 @@ import (
 // absent drift: block reads as every check disabled (drift.go's own
 // enabledSet doc comment), so a test that wants a specific sweep scope has
 // to say so explicitly.
-const driftServeManifestTemplate = `schema_version: 15
+const driftServeManifestTemplate = `schema_version: 16
 schema_epoch: initial
 project:
   name: Drift Serve Test

@@ -3,6 +3,7 @@ package mutate
 import (
 	"errors"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -13,8 +14,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// RecoverReviewInput names the authorized aggregate and exact historical Git
-// commits. PR is caller-supplied association, never host-observed evidence.
+// RecoverReviewInput names the authorized feature, epic, or shelf node and the
+// exact historical Git commits. PR is caller-supplied association, never
+// host-observed evidence.
 type RecoverReviewInput struct {
 	Noun, Key                 string
 	PR                        *int
@@ -30,13 +32,17 @@ type RecoverReviewResult struct {
 	ReviewRef       *store.ReviewRef
 	RecoveredReview *store.RecoveredReview
 	Changed         bool
+	// MissingGates names the required gates a recovered shelf node has no
+	// recorded pass for. Recovery approves none of them; sync records each as
+	// a policy violation at the crossing.
+	MissingGates []string
 }
 
 // RecoverReview records a human-authorized historical binding. No lifecycle,
 // gate, accepted basis, task, or Git ref is changed by this planner.
 func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result RecoverReviewResult, err error) {
-	if in.Noun != store.NounFeature && in.Noun != store.NounEpic {
-		return result, &usageError{reason: "unsupported_noun", msg: "merged review recovery applies only to feature and epic"}
+	if in.Noun != store.NounFeature && in.Noun != store.NounEpic && !store.IsWorkNoun(in.Noun) {
+		return result, &usageError{reason: "unsupported_noun", msg: "merged review recovery applies to a feature, epic, bug, chore, or tweak; a task rides its own or its aggregate's review"}
 	}
 	if strings.TrimSpace(in.Reason) == "" || strings.TrimSpace(in.Head) == "" || strings.TrimSpace(in.MergeCommit) == "" {
 		return result, &usageError{reason: "recovery_args_required", msg: "recovery requires a historical --head, exact --merge-commit, and nonblank --reason"}
@@ -73,6 +79,9 @@ func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result R
 	actor, err := store.ResolveContributor(manifest, deps.Contributor)
 	if err != nil {
 		return result, err
+	}
+	if store.IsWorkNoun(in.Noun) {
+		return recoverShelfReview(tree, deps, actor, in, store.PlanReadGuard(manifestPath, manifestSnapshot))
 	}
 	node, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: in.Noun, Raw: in.Key})
 	if err != nil {
@@ -123,29 +132,11 @@ func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result R
 	result.Noun = in.Noun
 	result.Key = key
 	rev := deps.rev(tree.Root)
-	history, ok := rev.(vcs.HistoricalRevisions)
-	if !ok {
-		return result, recoveryRefusal("history_unavailable", "", "use Git with immutable historical-object reads")
-	}
-	head, err := history.ResolveCommit(in.Head)
-	if err != nil {
-		return result, recoveryReadError("object_unavailable", in.Head, "fetch or restore the historical reviewed commit using ordinary Git", err)
-	}
-	merge, err := history.ResolveCommit(in.MergeCommit)
-	if err != nil {
-		return result, recoveryReadError("object_unavailable", in.MergeCommit, "fetch or restore the named integration result using ordinary Git", err)
-	}
-	into := strings.TrimSpace(manifest.Git.IntegrationBranch)
-	if into == "" {
-		return result, recoveryRefusal("integration_not_configured", "", "configure git.integration_branch before authorized recovery")
-	}
-	checkout, err := rev.HeadBranch()
+	commits, err := resolveRecoveryCommits(rev, manifest, in)
 	if err != nil {
 		return result, err
 	}
-	if checkout != strings.TrimPrefix(into, "refs/heads/") {
-		return result, recoveryRefusal("integration_checkout_required", checkout, "check out configured integration with ordinary Git before recovery")
-	}
+	history, head, merge, into, checkout := commits.history, commits.head, commits.merge, commits.into, commits.checkout
 	if branch == "" {
 		return result, recoveryRefusal("aggregate_branch_missing", "", "restore the recorded aggregate branch identity for this review round")
 	}
@@ -314,37 +305,11 @@ func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result R
 			}
 		}
 	}
-	// Git status supplies index/worktree cleanliness with the repository's
-	// filters, EOL rules, and object format. Raw snapshots independently retain
-	// the bytes used by this source transaction; unrelated files are not gated.
-	scopedStatus, ok := rev.(interface {
-		DirtyUnder(string) ([]string, error)
-	})
-	if !ok {
-		return result, recoveryRefusal("cleanliness_unavailable", "", "use Git's scoped status to inspect relevant staged and working-tree changes")
+	inputGuards, err := committedRecoveryInputs(tree, rev, relevant, path, ".tiller/tiller.yml")
+	if err != nil {
+		return result, err
 	}
-	for _, rel := range sortedRecoveryStrings(relevant) {
-		_, pin, err := store.ReadRegularFileSnapshot(tree.Root, filepath.Join(tree.Root, rel))
-		if err != nil {
-			return result, err
-		}
-		if !pin.Exists() {
-			return result, recoveryRefusal("relevant_input_missing", rel, "restore the relevant work/prose input before recovery")
-		}
-		if _, err := rev.BlobHash(rel); err != nil {
-			return result, recoveryReadError("relevant_input_uncommitted", rel, "commit the relevant manifest/work/prose inputs on integration before recovery", err)
-		}
-		dirty, err := scopedStatus.DirtyUnder(":(literal)" + filepath.ToSlash(rel))
-		if err != nil {
-			return result, err
-		}
-		if len(dirty) > 0 {
-			return result, recoveryRefusal("relevant_input_uncommitted", rel, "commit the relevant staged and working-tree manifest/work/prose inputs on integration before recovery")
-		}
-		if rel != path && rel != ".tiller/tiller.yml" {
-			guards = append(guards, store.PlanReadGuard(filepath.Join(tree.Root, rel), pin))
-		}
-	}
+	guards = append(guards, inputGuards...)
 	eventDeps := deps
 	eventDeps.Clock = designClock{at: record.RecoveredAt}
 	ev := submitEvent(eventDeps, actor, "recover_review."+in.Noun, in.Noun, result.ID, key, path, pr, review, in.PR, newRef)
@@ -365,23 +330,8 @@ func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result R
 	if err != nil {
 		return result, err
 	}
-	// Source guards are checked under the journal lock. Git's independent ref
-	// namespace is re-read immediately before entering that guarded transaction.
-	for ref, tip := range refPins {
-		now, err := rev.MergeBase(ref, ref)
-		if err != nil {
-			return result, err
-		}
-		if now != tip {
-			return result, recoveryRefusal("recovery_stale", ref, "reload after the integration or retained task ref changed")
-		}
-	}
-	nowBranch, err := rev.HeadBranch()
-	if err != nil {
+	if err := recoveryRefsUnchanged(rev, refPins, checkout); err != nil {
 		return result, err
-	}
-	if nowBranch != checkout {
-		return result, recoveryRefusal("recovery_stale", nowBranch, "restore the integration checkout and retry")
 	}
 	ownerWrite := store.PlanWrite(filepath.Clean(filepath.Join(tree.Root, path)), snapshot, data)
 	for i := range guards {
@@ -399,6 +349,105 @@ func RecoverReview(tree *store.Tree, deps Deps, in RecoverReviewInput) (result R
 	result.RecoveredReview = record
 	result.Changed = true
 	return result, nil
+}
+
+// recoveryCommits are the two commits a recovery names, resolved on the
+// configured integration checkout.
+type recoveryCommits struct {
+	history                     vcs.HistoricalRevisions
+	head, merge, into, checkout string
+}
+
+// resolveRecoveryCommits resolves the reviewed head and the integration
+// result and proves the command runs on the configured integration checkout,
+// for an aggregate and a shelf node alike.
+func resolveRecoveryCommits(rev vcs.Revisions, manifest *store.Manifest, in RecoverReviewInput) (recoveryCommits, error) {
+	history, ok := rev.(vcs.HistoricalRevisions)
+	if !ok {
+		return recoveryCommits{}, recoveryRefusal("history_unavailable", "", "use Git with immutable historical-object reads")
+	}
+	head, err := history.ResolveCommit(in.Head)
+	if err != nil {
+		return recoveryCommits{}, recoveryReadError("object_unavailable", in.Head, "fetch or restore the historical reviewed commit using ordinary Git", err)
+	}
+	merge, err := history.ResolveCommit(in.MergeCommit)
+	if err != nil {
+		return recoveryCommits{}, recoveryReadError("object_unavailable", in.MergeCommit, "fetch or restore the named integration result using ordinary Git", err)
+	}
+	into := strings.TrimSpace(manifest.Git.IntegrationBranch)
+	if into == "" {
+		return recoveryCommits{}, recoveryRefusal("integration_not_configured", "", "configure git.integration_branch before authorized recovery")
+	}
+	checkout, err := rev.HeadBranch()
+	if err != nil {
+		return recoveryCommits{}, err
+	}
+	if checkout != strings.TrimPrefix(into, "refs/heads/") {
+		return recoveryCommits{}, recoveryRefusal("integration_checkout_required", checkout, "check out configured integration with ordinary Git before recovery")
+	}
+	return recoveryCommits{history: history, head: head, merge: merge, into: into, checkout: checkout}, nil
+}
+
+// committedRecoveryInputs refuses unless every relevant path is committed and
+// clean on integration, and returns a read guard for each one the caller does
+// not already write or guard (owned). Git status supplies index/worktree
+// cleanliness with the repository's filters, EOL rules, and object format. Raw
+// snapshots independently retain the bytes used by this source transaction;
+// unrelated files are not gated.
+func committedRecoveryInputs(tree *store.Tree, rev vcs.Revisions, relevant []string, owned ...string) ([]store.PlannedWrite, error) {
+	scopedStatus, ok := rev.(interface {
+		DirtyUnder(string) ([]string, error)
+	})
+	if !ok {
+		return nil, recoveryRefusal("cleanliness_unavailable", "", "use Git's scoped status to inspect relevant staged and working-tree changes")
+	}
+	var guards []store.PlannedWrite
+	for _, rel := range sortedRecoveryStrings(relevant) {
+		_, pin, err := store.ReadRegularFileSnapshot(tree.Root, filepath.Join(tree.Root, rel))
+		if err != nil {
+			return nil, err
+		}
+		if !pin.Exists() {
+			return nil, recoveryRefusal("relevant_input_missing", rel, "restore the relevant work/prose input before recovery")
+		}
+		if _, err := rev.BlobHash(rel); err != nil {
+			return nil, recoveryReadError("relevant_input_uncommitted", rel, "commit the relevant manifest/work/prose inputs on integration before recovery", err)
+		}
+		dirty, err := scopedStatus.DirtyUnder(":(literal)" + filepath.ToSlash(rel))
+		if err != nil {
+			return nil, err
+		}
+		if len(dirty) > 0 {
+			return nil, recoveryRefusal("relevant_input_uncommitted", rel, "commit the relevant staged and working-tree manifest/work/prose inputs on integration before recovery")
+		}
+		if !slices.Contains(owned, rel) {
+			guards = append(guards, store.PlanReadGuard(filepath.Join(tree.Root, rel), pin))
+		}
+	}
+	return guards, nil
+}
+
+// recoveryRefsUnchanged re-reads Git's independent ref namespace immediately
+// before the guarded transaction; source guards are checked under the journal
+// lock, and refs are not.
+func recoveryRefsUnchanged(rev vcs.Revisions, refPins map[string]string, checkout string) error {
+	for ref, tip := range refPins {
+		now, err := rev.MergeBase(ref, ref)
+		if err != nil {
+			return err
+		}
+		if now != tip {
+			return recoveryRefusal("recovery_stale", ref, "reload after the integration or retained work ref changed")
+		}
+	}
+	nowBranch, err := rev.HeadBranch()
+	if err != nil {
+		return err
+	}
+	if nowBranch != checkout {
+		return recoveryRefusal("recovery_stale", nowBranch, "restore the integration checkout and retry")
+	}
+	return nil
 }
 
 func taskDir(tree *store.Tree, t *store.Task) string {

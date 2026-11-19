@@ -32,7 +32,7 @@ func TestRemovalAbortsWhenTheAmendmentChangesBeforeCommit(t *testing.T) {
 		require.NoError(t, err)
 		return data
 	}
-	write(".tiller/tiller.yml", []byte("schema_version: 15\nschema_epoch: initial\nproject:\n  name: Acme\n  key: acme\n  kind: greenfield\n"+
+	write(".tiller/tiller.yml", []byte("schema_version: 16\nschema_epoch: initial\nproject:\n  name: Acme\n  key: acme\n  kind: greenfield\n"+
 		"contributors:\n  - { id: lantern, name: Lantern }\n"))
 	epicKey, amendmentKey := "hardening", "reshape"
 	write(".tiller/epics/hardening/epic.yml", marshal(store.Epic{ID: "E-aaaaaa", Key: &epicKey, Title: "Hardening", Status: statusDraft}))

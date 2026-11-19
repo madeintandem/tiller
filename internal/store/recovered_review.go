@@ -70,27 +70,11 @@ func (r *RecoveredReview) Validate() error {
 	if r == nil {
 		return bad("record must be a mapping")
 	}
-	for name, value := range map[string]string{"branch": r.Branch, "integration_branch": r.IntegrationBranch, "recovered_by": r.RecoveredBy, "reason": r.Reason} {
-		if strings.TrimSpace(value) == "" {
-			return bad("%s must not be blank", name)
-		}
+	if strings.TrimSpace(r.Branch) == "" {
+		return bad("branch must not be blank")
 	}
-	if r.Branch != strings.TrimSpace(r.Branch) || r.IntegrationBranch != strings.TrimSpace(r.IntegrationBranch) || r.RecoveredBy != strings.TrimSpace(r.RecoveredBy) {
-		return bad("branch, integration_branch, and recovered_by must be canonical nonblank identities")
-	}
-	if r.RecoveredAt.IsZero() {
-		return bad("recovered_at must record the actual recording time")
-	}
-	switch r.Basis {
-	case "ancestry", "content", "contained":
-	default:
-		return bad("unsupported basis %q", r.Basis)
-	}
-	if err := canonicalRecoveryRevision(r.Head, KindGitCommit, ""); err != nil {
-		return bad("head: %v", err)
-	}
-	if err := canonicalRecoveryRevision(r.MergeCommit, KindGitCommit, ""); err != nil {
-		return bad("merge_commit: %v", err)
+	if err := validateRecoveryProvenance(bad, r.Branch, r.IntegrationBranch, r.RecoveredBy, r.Reason, r.Basis, r.RecoveredAt, r.Head, r.MergeCommit); err != nil {
+		return err
 	}
 	if len(r.Tasks) == 0 {
 		return bad("tasks must contain at least one historical rider")
@@ -151,6 +135,35 @@ func (r *RecoveredReview) Validate() error {
 		if !exists || !strings.HasPrefix(feature.NodeID, "F-") {
 			return bad("task %s requires its historical feature policy snapshot", task.ID)
 		}
+	}
+	return nil
+}
+
+// validateRecoveryProvenance checks the evidence and audit fields every
+// recovery record carries, aggregate or shelf. A blank branch is the caller's
+// to refuse: only a shelf record may omit it.
+func validateRecoveryProvenance(bad func(string, ...any) error, branch, into, by, reason, basis string, at time.Time, head, merge RevisionRef) error {
+	for _, field := range []struct{ name, value string }{{"integration_branch", into}, {"recovered_by", by}, {"reason", reason}} {
+		if strings.TrimSpace(field.value) == "" {
+			return bad("%s must not be blank", field.name)
+		}
+	}
+	if branch != strings.TrimSpace(branch) || into != strings.TrimSpace(into) || by != strings.TrimSpace(by) {
+		return bad("branch, integration_branch, and recovered_by must be canonical nonblank identities")
+	}
+	if at.IsZero() {
+		return bad("recovered_at must record the actual recording time")
+	}
+	switch basis {
+	case "ancestry", "content", "contained":
+	default:
+		return bad("unsupported basis %q", basis)
+	}
+	if err := canonicalRecoveryRevision(head, KindGitCommit, ""); err != nil {
+		return bad("head: %v", err)
+	}
+	if err := canonicalRecoveryRevision(merge, KindGitCommit, ""); err != nil {
+		return bad("merge_commit: %v", err)
 	}
 	return nil
 }

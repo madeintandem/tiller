@@ -1431,3 +1431,16 @@ func TestSyncMatchingEvalContractIsSilentCLI(t *testing.T) {
 	require.Contains(t, out, "\"status\": \"done\"")
 	require.NotContains(t, out, "eval_contract_mismatch")
 }
+
+// A recovered shelf crossing that needed the human's fast-forward assertion is
+// reported as an assertion, like any other, while one the Git evidence
+// witnessed stays in the observed count.
+func TestHumanSyncSeparatesAnAssertedRecoveredCrossing(t *testing.T) {
+	tree := &store.Tree{Manifest: &store.Manifest{}}
+	out := humanSync(tree, mutate.SyncResult{Into: "main", Crossings: []mutate.Crossing{
+		{Noun: store.NounBug, ID: "B-seen00", Status: "done", Basis: "recovered", Evidence: "ancestry"},
+		{Noun: store.NounBug, ID: "B-said00", Status: "done", Basis: "recovered", Evidence: "human_attested"},
+	}})
+	require.Contains(t, out, "Sync: recorded 1 done crossing(s):\n  - bug B-seen00 -> done (recovered review)")
+	require.Contains(t, out, "Recorded on your assertion, not observation:\n  - bug B-said00 -> done (recovered review)\n    basis: recovered, on a human_attested fast-forward")
+}
