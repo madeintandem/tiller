@@ -94,6 +94,7 @@ func TestRecoverShelfReviewClosesSeveralBugsFromOneMerge(t *testing.T) {
 		require.Equal(t, store.NounBug, c.Noun)
 		require.Equal(t, "done", c.Status)
 		require.Equal(t, "recovered", c.Basis)
+		require.Equal(t, "ancestry", c.Evidence)
 		require.Equal(t, []string{"build", "tests"}, c.PolicyViolations, "missing gate evidence is a recorded warning")
 	}
 	for _, key := range []string{"alpha", "beta"} {
@@ -152,6 +153,7 @@ func TestRecoverShelfReviewContainedHeadAwaitsTheHumanAssertion(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, res.Crossings, 1)
 	require.Equal(t, "recovered", res.Crossings[0].Basis)
+	require.Equal(t, "human_attested", res.Crossings[0].Evidence, "the crossing says it rests on the human's word")
 	require.Equal(t, "human_attested", lastEvent(t, root, "sync.bug").After["evidence"])
 	require.Equal(t, "done", bugByKey(t, root, "alpha").Status)
 }

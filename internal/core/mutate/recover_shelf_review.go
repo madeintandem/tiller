@@ -275,5 +275,5 @@ func crossWorkRecovered(tree *store.Tree, deps Deps, owner store.Contributor, li
 	}
 	live.Body().Status = w.Status
 	return Crossing{Noun: live.Noun(), ID: w.ID, Key: deref(w.Key), Status: w.Status,
-		Observed: observed.Value, Basis: basisRecovered, MatchedCommit: match, PolicyViolations: violations}, nil
+		Observed: observed.Value, Basis: basisRecovered, Evidence: obs.Basis, MatchedCommit: match, PolicyViolations: violations}, nil
 }

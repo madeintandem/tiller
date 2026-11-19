@@ -75,6 +75,10 @@ type Crossing struct {
 	PolicyViolations           []string
 	HistoricalPolicyViolations []store.PolicyViolation
 	TouchedDesign              []string
+	// Evidence is set on a recovered shelf crossing only, whose Basis says
+	// the crossing rests on the recovery record: ancestry, content, or
+	// human_attested names what that record's result showed.
+	Evidence string
 	// EvalContractMismatch is set on a feature crossing whose completion
 	// record pins an integration eval blob other than the one accepted_against
 	// names. It is advisory: the crossing still happens and nothing new is
