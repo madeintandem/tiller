@@ -1,0 +1,13 @@
+id: EV-c4h2vw
+type: start.tweak
+at: 2026-11-19T22:01:37.950672Z
+contributor: jc
+command: start tweak TW-5u3b5y
+targets:
+    - TW-5u3b5y
+before:
+    status: ready
+after:
+    status: in_progress
+files:
+    - path: .tiller/tweaks/console-shows-shelf-batches/tweak.yml
