@@ -715,6 +715,9 @@ func TestExecuteCarriesTheBatchWorkLoop(t *testing.T) {
 		"each member with basis `batched`",
 		"tiller sync --accept-fast-forward <batch>",
 		"A batch has no recovery of its own",
+		"the first commit on the batch branch, made right after `git checkout -b`, carries the batch record, every member's changed state file, and their events",
+		"`check batch` and `submit batch` refuse with `batch_state_uncommitted`, naming the paths",
+		"Commit every membership change on the batch branch before the next `check`: the batch record, each added or removed member's state file, and the events.",
 	} {
 		require.Containsf(t, text, want, "execute pins %q", want)
 	}
@@ -733,6 +736,8 @@ func TestExecuteCarriesTheBatchWorkLoop(t *testing.T) {
 		"tiller claim batch core-model-fixes",
 		"tiller start batch core-model-fixes",
 		"git checkout -b tiller/batches/core-model-fixes",
+		"git add -- .tiller/batches/core-model-fixes .tiller/bugs/blank-on-reload/bug.yml",
+		"git commit --only -m \"BT-5x2k8m start batch\" -- <same-exact-paths>",
 		"each commit carrying the id of the member it serves",
 		"tiller check batch core-model-fixes",
 		"tiller submit batch core-model-fixes --pr \"$pr\"",

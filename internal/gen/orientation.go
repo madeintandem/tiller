@@ -284,7 +284,9 @@ unrequested replan.
   otherwise stop and name what is in the way.
   A mid-task delta belongs on its own recorded task branch. A delta while executing a
   started shelf node belongs on that shelf node's branch, and one while executing a
-  started batch on the batch's branch; pre-start shelf state
+  started batch on the batch's branch. Creating or changing a batch writes each
+  member's own state file, so the batch record, every member's changed state
+  file, and their events are committed together on the batch's branch; pre-start shelf state
   remains under the integration-branch fallback, as does other planning state.
   The PR ceremony is for code.
 - Every started task has its own recorded branch, unchanged on resume. Tiller

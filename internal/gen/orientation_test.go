@@ -369,6 +369,7 @@ func TestOrientationDefinesTheBatch(t *testing.T) {
 		"- **batch**, **batched**: a batch is one review of several bugs, chores, or tweaks: one claim, one branch, one set of gates, one pull request.",
 		"Creating or changing a batch (`tiller add batch`, `tiller batch`) sits in the same class: run it only on an explicit instruction that names the members and asks for one review.",
 		"On a batch's branch every commit carries the id of the member it serves.",
+		"Creating or changing a batch writes each member's own state file, so the batch record, every member's changed state file, and their events are committed together on the batch's branch",
 		"When the developer asks for several bugs, chores, or tweaks under one review, that is a batch, never a hand-named branch",
 		"a `batched` node waits on its batch: it is never claimed, started, checked, or submitted on its own.",
 		"`batches/<batch-key>/` holds a batch's machine-owned `batch.yml` state and no prose",

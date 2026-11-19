@@ -941,23 +941,37 @@ until `resume batch`. A change after `check` stales the batch's gates, so `check
 before `submit`. Removing a member warns that commits already made for it on the batch branch are
 yours to revert. A batch that loses its last member is cancelled.
 
+`add batch` and `batch` write each member's own state file (its `batch` pointer), and that file must
+be committed on the batch branch with the batch record and the events: first right after
+`git checkout -b tiller/batches/<key>`, then after every membership change. `check batch` and
+`submit batch` refuse `batch_state_uncommitted`, listing the paths, until they are. If a batch still
+merges without them, `sync` does not cross it: it prints `Warning: merged into <branch> but not
+crossed`, leaves the batch `in_review`, and names the repair, `tiller cancel batch <batch> --reason
+"<why>"` and then `submit <bug|chore|tweak> <node> --recover-merged` for each member that merged.
+
 After the human merges the batch branch, one `tiller sync` records the batch `done` on the basis it
 observed and every member `done` with `done_basis: batched`:
 
 ```
 Sync: recorded 4 done crossing(s):
   - batch batches/core-model-fixes (BT-5x2k8m) -> done
+  - bug bugs/stale-total (B-4m8t2c) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
   - bug bugs/blank-on-reload (B-7k2p9x) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
   - bug bugs/lost-draft (B-9w3h5d) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
-  - bug bugs/stale-total (B-4m8t2c) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
 ```
+
+The batch is listed first, then its members in id order within each shelf, the order every shelf
+crossing takes.
 
 `add batch` and `batch` sit in the delegation class of `resolve`: a human runs them, or an agent
 does on an explicit instruction that names the members and asks for one review. A batch has no
 `--recover-merged`: when its fixes merged with nothing recorded, cancel the batch and recover each
 member with its own `submit <bug|chore|tweak> <node> --recover-merged`. `tiller queue` lists a
 batch's optional review gates under the batch (`attest batch <batch> --gate <name>`), and
-`tiller next` and the readout list the batch as one row, never its members.
+`tiller next` and the readout list the batch as one row, never its members; a ready batch with a
+member still proposed is not listed until that member is approved. `tiller search` finds a batch by
+id, key, or title, and `tiller query --from <batch> --follow batches` lists its members
+(`--follow batched_in` from a member names its batch).
 
 ## Amend (a reshape of the plan)
 
