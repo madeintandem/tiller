@@ -8,10 +8,10 @@ proposed_by: jc
 accepted_against:
     spec:
         kind: git_blob
-        value: git:94b6c9d129ba8f614e222735afc0af610cb8dd33
+        value: git:b51ac722d4ba1119fa6153d92bb64199c046a394
         path: .tiller/tweaks/several-shelf-items-one-review/tweak.md
-        observed_at: 2026-11-19T18:22:26.655307Z
+        observed_at: 2026-11-19T20:22:25.948794Z
     commit:
         kind: git_commit
-        value: git:819abfa
-        observed_at: 2026-11-19T18:22:26.675Z
+        value: git:b48f10c
+        observed_at: 2026-11-19T20:22:25.971911Z

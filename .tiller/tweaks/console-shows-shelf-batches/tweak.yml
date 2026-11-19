@@ -1,0 +1,9 @@
+id: TW-5u3b5y
+key: tweaks/console-shows-shelf-batches
+title: The console does not show shelf batches
+status: proposed
+blocked: false
+started: false
+proposed_by: jc
+depends_on:
+    - TW-taq0ps

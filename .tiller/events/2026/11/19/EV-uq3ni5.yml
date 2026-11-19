@@ -1,0 +1,14 @@
+id: EV-uq3ni5
+type: return.tweak
+at: 2026-11-19T20:22:00.54258Z
+contributor: jc
+command: return tweak TW-taq0ps
+targets:
+    - TW-taq0ps
+before:
+    status: ready
+after:
+    reason: amend the contract with the settled batch design and move the console to a follow-up tweak
+    status: proposed
+files:
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.yml
