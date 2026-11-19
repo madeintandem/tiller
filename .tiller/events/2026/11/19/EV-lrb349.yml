@@ -1,0 +1,13 @@
+id: EV-lrb349
+type: approve.tweak
+at: 2026-11-19T18:22:26.791609Z
+contributor: jc
+command: approve tweak TW-xfjsgw
+targets:
+    - TW-xfjsgw
+before:
+    status: proposed
+after:
+    status: ready
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml

@@ -1,7 +1,17 @@
 id: TW-xfjsgw
 key: tweaks/sync-silent-on-unstarted-shelf-merge
 title: Sync says nothing when a merge names shelf items that never started
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:36a79494ad77ab2759104478fdc34d42e167ed84
+        path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.md
+        observed_at: 2026-11-19T18:22:26.772575Z
+    commit:
+        kind: git_commit
+        value: git:819abfa
+        observed_at: 2026-11-19T18:22:26.791528Z

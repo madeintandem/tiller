@@ -1,7 +1,17 @@
 id: TW-taq0ps
 key: tweaks/several-shelf-items-one-review
 title: Several bugs, chores, or tweaks cannot share one review
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:94b6c9d129ba8f614e222735afc0af610cb8dd33
+        path: .tiller/tweaks/several-shelf-items-one-review/tweak.md
+        observed_at: 2026-11-19T18:22:26.655307Z
+    commit:
+        kind: git_commit
+        value: git:819abfa
+        observed_at: 2026-11-19T18:22:26.675Z

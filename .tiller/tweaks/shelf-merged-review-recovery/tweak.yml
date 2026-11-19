@@ -1,7 +1,17 @@
 id: TW-3eo3s2
 key: tweaks/shelf-merged-review-recovery
 title: A shelf item's already-merged PR cannot be recorded
-status: proposed
+status: ready
 blocked: false
 started: false
 proposed_by: jc
+accepted_against:
+    spec:
+        kind: git_blob
+        value: git:035d7799e7cfd2e56c4465654a729a4f307bd11a
+        path: .tiller/tweaks/shelf-merged-review-recovery/tweak.md
+        observed_at: 2026-11-19T18:22:26.715668Z
+    commit:
+        kind: git_commit
+        value: git:819abfa
+        observed_at: 2026-11-19T18:22:26.733787Z
