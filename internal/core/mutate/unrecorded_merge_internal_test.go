@@ -199,3 +199,20 @@ func TestUnrecordedMergeWarningNamesNodeStatusCommitAndNextStep(t *testing.T) {
 		`bug alpha (B-aaaaaa) is ready with no recorded submission, but commit 1234567 "B-aaaaaa Preserve capture order" and 1 more name it; next: tiller status bug B-aaaaaa`,
 		m.Warning())
 }
+
+// A node holding a recovered review has its merge on record: the next sync
+// crosses it, so the warning about a missing submission would be wrong.
+func TestUnrecordedShelfMergesSkipsARecoveredReview(t *testing.T) {
+	t.Parallel()
+	tree := shelfTree("ready")
+	commits := landed("B-aaaaaa fix the thing")
+
+	found, err := unrecordedShelfMerges(tree, commits, "main", "tip")
+	require.NoError(t, err)
+	require.Len(t, found, 1)
+
+	tree.Bugs["B-aaaaaa"].RecoveredReview = &store.RecoveredShelfReview{}
+	found, err = unrecordedShelfMerges(tree, commits, "main", "tip")
+	require.NoError(t, err)
+	require.Empty(t, found)
+}

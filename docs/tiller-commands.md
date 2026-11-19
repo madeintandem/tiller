@@ -826,7 +826,9 @@ Warning: merged into main with no recorded submission (1):
 `--json` carries the same entries as `unrecorded_merges`, each with `noun`, `id`, `key`, `status`,
 `commits`, `next`, and `warning`. The warning moves no status, records no crossing, and exits 0.
 `tiller status <noun> <node>` names the node's next move: it still goes through its own start,
-check, and submit before a sync can record it done. `sync` reads the 200 most recent commits that
+check, and submit before a sync can record it done. When the fix has already merged, a human
+records that review with `tiller submit <bug|chore|tweak> <node> --recover-merged`, after which the
+warning stops and the next `sync` crosses the node. `sync` reads the 200 most recent commits that
 change something outside `.tiller/` and `artifacts/tiller/`, so a commit that only records Tiller
 state never raises the warning, and it matches each id as a whole word in the subject or body. A
 carried node is left to its carrier. The readout shows the same finding under Needs attention
