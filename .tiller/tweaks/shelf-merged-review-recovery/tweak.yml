@@ -1,7 +1,7 @@
 id: TW-3eo3s2
 key: tweaks/shelf-merged-review-recovery
 title: A shelf item's already-merged PR cannot be recorded
-status: in_review
+status: in_progress
 blocked: false
 started: true
 owner: jc
@@ -22,7 +22,7 @@ gates:
     build:
         required: true
         kind: command
-        status: pass
+        status: stale
         run_by: jc
         run_at: 2026-11-19T19:00:07.516378Z
         against:
@@ -37,7 +37,7 @@ gates:
     lint:
         required: true
         kind: command
-        status: pass
+        status: stale
         run_by: jc
         run_at: 2026-11-19T19:00:07.516378Z
         against:
@@ -52,7 +52,7 @@ gates:
     tests:
         required: true
         kind: command
-        status: pass
+        status: stale
         run_by: jc
         run_at: 2026-11-19T19:00:07.516378Z
         against:
