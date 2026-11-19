@@ -1,0 +1,14 @@
+id: EV-eclbup
+type: sync.tweak
+at: 2026-11-19T19:03:33.32055Z
+contributor: jc
+command: sync tweak TW-xfjsgw
+targets:
+    - TW-xfjsgw
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml

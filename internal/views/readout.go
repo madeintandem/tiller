@@ -70,7 +70,8 @@ type ReadoutCheck struct {
 }
 
 // ReadoutAction is a pending or next move. NeedsYou actions carry count text
-// and a read-only queue command; Next actions may additionally carry Owner as
+// and a read-only queue command, or one unrecorded merge and the read-only
+// status command for its node; Next actions may additionally carry Owner as
 // "human" or "agent", matching NextOwner's vocabulary.
 type ReadoutAction struct {
 	Text    string `json:"text"`
@@ -192,6 +193,14 @@ type ReadoutInput struct {
 	// with no warning looks identical whether the check ran clean or never
 	// ran, and either way there is nothing for a reader to act on.
 	UnpushedReviews []UnpushedReview
+
+	// UnrecordedMerges holds the bugs, chores, and tweaks that commits on the
+	// integration branch name while they have no recorded submission
+	// (mutate.ObserveUnrecordedShelfMerges, the same finding `tiller sync`
+	// warns about). Reading commit messages is I/O, so the caller supplies the
+	// answer on every moment. Nil means none found or not read; either way
+	// there is nothing to show.
+	UnrecordedMerges []mutate.UnrecordedMerge
 
 	// Act carries what a human gate's own mutation just did: which node(s)
 	// it touched, whether each was already at the target, and the
@@ -450,6 +459,7 @@ func ReadoutOfInput(t *store.Tree, m Moment, in ReadoutInput) Readout {
 	}
 	r.Baseline = baselineReadoutFor(t, m, in.DesignDocPresent, in.Act != nil && in.Act.DesignApproval != nil)
 	in.QueueInput.Workflow = in.Workflow
+	r.NeedsYou = append(r.NeedsYou, unrecordedMergeActions(in.UnrecordedMerges)...)
 	r.NeedsYou = append(r.NeedsYou, needsYouFromQueue(QueueOfInput(t, in.QueueInput))...)
 	r.Next = NextOf(t, NextInput{Reader: in.Contributor, Workflow: in.Workflow, Queue: in.QueueInput, Recent: in.Recent, Now: in.Now})
 	r.GrainNotes = grainNotes(t)

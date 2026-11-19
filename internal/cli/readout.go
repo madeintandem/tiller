@@ -202,6 +202,7 @@ func gatherReadoutInput(tree *store.Tree, m views.Moment, act *views.GateAct, ow
 		EpicSpecs:              epicSpecs,
 		AmendmentPreconditions: amendmentPreconditions,
 		UnpushedReviews:        unpushedReviews,
+		UnrecordedMerges:       readoutUnrecordedMerges(tree),
 		Act:                    act,
 		Contributor:            owner,
 		Recent:                 next.Recent,
@@ -604,4 +605,23 @@ func readoutUnpushedReviews(t *store.Tree) []views.UnpushedReview {
 		out = append(out, views.UnpushedReview{Node: id, Commit: facts.Commit, Upstream: facts.Upstream})
 	}
 	return out
+}
+
+// readoutUnrecordedMerges derives sync's unrecorded-merge warning for the
+// readout: shelf nodes that commits on the integration branch name while they
+// have no recorded submission. It is read on every moment, because the finding
+// stands until the node is submitted, done, or cancelled, and a readout run
+// days after the sync that first reported it has to show it too. The read costs
+// no git at all while no shelf node is ready, in_progress, or check, and one
+// bounded log otherwise.
+//
+// Any failure degrades to no finding, as every informational git read here
+// does: an unresolvable integration branch is sync's refusal to make, not a
+// reason to fail a readout.
+func readoutUnrecordedMerges(t *store.Tree) []mutate.UnrecordedMerge {
+	merges, err := mutate.ObserveUnrecordedShelfMerges(t, vcs.New(t.Root))
+	if err != nil {
+		return nil
+	}
+	return merges
 }

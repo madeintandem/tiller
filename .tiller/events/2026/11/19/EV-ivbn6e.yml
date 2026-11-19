@@ -1,0 +1,11 @@
+id: EV-ivbn6e
+type: claim.tweak
+at: 2026-11-19T18:25:41.229678Z
+contributor: jc
+command: claim tweak tweaks/sync-silent-on-unstarted-shelf-merge
+targets:
+    - TW-xfjsgw
+after:
+    owner: jc
+files:
+    - path: .tiller/tweaks/sync-silent-on-unstarted-shelf-merge/tweak.yml

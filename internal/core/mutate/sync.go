@@ -181,6 +181,10 @@ type SyncResult struct {
 	Awaiting   []Awaiting
 	Attested   []string
 	ChecksDue  []CheckDue
+	// UnrecordedMerges carries the shelf nodes that commits on the integration
+	// branch name while they have no recorded submission. Nothing was recorded
+	// for them; they are named so the merge is not met with silence.
+	UnrecordedMerges []UnrecordedMerge
 }
 
 // Reopening is one rollup-backed node sync returned to work: a done feature that
@@ -495,6 +499,14 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	}
 	crossings = append(crossings, workCrossings...)
 
+	// A merge that names shelf work nobody submitted is invisible to the pass
+	// above, which observes only in_review. It is read after the crossings so a
+	// node this run just moved is judged by where the run left it.
+	unrecorded, err := unrecordedShelfMerges(tree, rev, canonicalBranch(into, head), tip.Commit)
+	if err != nil {
+		return SyncResult{}, err
+	}
+
 	due := checksDue(tree)
 
 	return SyncResult{
@@ -506,6 +518,8 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 		Awaiting:   append(awaitingNodes(tree, seen), workAwaiting...),
 		Attested:   named,
 		ChecksDue:  due,
+
+		UnrecordedMerges: unrecorded,
 	}, nil
 }
 

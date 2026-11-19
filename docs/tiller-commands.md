@@ -814,6 +814,24 @@ branch exactly as it observes a feature's, by ancestry then content, and records
 basis it observed. The one crossing that rests on no branch is a shelf node with a carrier: see
 Bugs, chores, and tweaks below.
 
+`sync` observes a shelf node only once it is `in_review`. When commits on the integration branch
+name a bug, chore, or tweak id while that node is still `ready`, `in_progress`, or `check`, `sync`
+prints a warning instead of the clean-run line:
+
+```
+Warning: merged into main with no recorded submission (1):
+  - bug bugs/alpha (B-aaaaaa) is ready with no recorded submission, but commit 44b9c47 "B-aaaaaa Preserve Inbox capture order" names it; next: tiller status bug B-aaaaaa
+```
+
+`--json` carries the same entries as `unrecorded_merges`, each with `noun`, `id`, `key`, `status`,
+`commits`, `next`, and `warning`. The warning moves no status, records no crossing, and exits 0.
+`tiller status <noun> <node>` names the node's next move: it still goes through its own start,
+check, and submit before a sync can record it done. `sync` reads the 200 most recent commits that
+change something outside `.tiller/` and `artifacts/tiller/`, so a commit that only records Tiller
+state never raises the warning, and it matches each id as a whole word in the subject or body. A
+carried node is left to its carrier. The readout shows the same finding under Needs attention
+until the node is submitted, done, or cancelled.
+
 ## Bugs, chores, and tweaks
 
 Three shelves beside the work tree, `.tiller/bugs/`, `.tiller/chores/`, and `.tiller/tweaks/`, each holding leaf nodes

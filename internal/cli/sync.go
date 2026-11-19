@@ -109,6 +109,10 @@ type SyncView struct {
 	Awaiting   []AwaitingView `json:"awaiting,omitempty"`
 	Attested   []string       `json:"attested,omitempty"`
 	ChecksDue  []CheckDueView `json:"checks_due,omitempty"`
+	// UnrecordedMerges carries the bugs, chores, and tweaks that commits on the
+	// integration branch name while they have no recorded submission
+	// (sync_unrecorded.go). Sync recorded nothing for them.
+	UnrecordedMerges []UnrecordedMergeView `json:"unrecorded_merges,omitempty"`
 	// UsageWarning is set when the best-effort agent usage capture sync runs
 	// after its own work failed, ran out of time, or was skipped. It never
 	// changes sync's exit code or what sync recorded.
@@ -759,6 +763,8 @@ func syncView(res mutate.SyncResult) SyncView {
 		Awaiting:   awaiting,
 		Attested:   res.Attested,
 		ChecksDue:  due,
+
+		UnrecordedMerges: unrecordedMergeViews(res.UnrecordedMerges),
 	}
 }
 
@@ -785,15 +791,18 @@ func syncView(res mutate.SyncResult) SyncView {
 func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 	if len(res.Crossings) == 0 {
 		reopened, skipped := humanSyncReopened(tree, res), humanSyncSkipped(tree, res)
+		unrecorded := humanSyncUnrecordedMerges(res)
 		// The clean-run line is suppressed whenever another block has something
 		// to say, because "no merged branches to record" directly contradicts a
-		// list of nodes this run just moved or could not record. It survives
+		// list of nodes this run just moved or could not record, and reads as
+		// success over a merge that named work nobody submitted. It survives
 		// only where it is the whole truth: nothing crossed, nothing moved back,
-		// nothing was skipped, and nothing sits in review.
-		if len(res.Awaiting) == 0 && (reopened != "" || skipped != "") {
-			return joinSyncBlocks(reopened, skipped, humanSyncChecksDue(tree, res))
+		// nothing was skipped, nothing sits in review, and no merge went
+		// unrecorded.
+		if len(res.Awaiting) == 0 && (reopened != "" || skipped != "" || unrecorded != "") {
+			return joinSyncBlocks(reopened, skipped, unrecorded, humanSyncChecksDue(tree, res))
 		}
-		return joinSyncBlocks(humanSyncAwaiting(tree, res), reopened, skipped, humanSyncChecksDue(tree, res))
+		return joinSyncBlocks(humanSyncAwaiting(tree, res), reopened, skipped, unrecorded, humanSyncChecksDue(tree, res))
 	}
 	var observed, asserted []mutate.Crossing
 	for _, c := range res.Crossings {
@@ -835,7 +844,7 @@ func humanSync(tree *store.Tree, res mutate.SyncResult) string {
 		lines = append(lines, mismatch)
 	}
 	return joinSyncBlocks(strings.Join(lines, "\n"), humanSyncReopened(tree, res), humanSyncSkipped(tree, res),
-		humanSyncChecksDue(tree, res))
+		humanSyncUnrecordedMerges(res), humanSyncChecksDue(tree, res))
 }
 
 func humanSyncTouchedDesign(crossings []mutate.Crossing) string {
