@@ -1,0 +1,14 @@
+id: EV-b6trun
+type: sync.tweak
+at: 2026-11-19T21:59:45.279841Z
+contributor: jc
+command: sync tweak TW-taq0ps
+targets:
+    - TW-taq0ps
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.yml
