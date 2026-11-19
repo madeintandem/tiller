@@ -197,11 +197,12 @@ type RemoveContributorHoldings struct {
 	Bugs      int
 	Chores    int
 	Tweaks    int
+	Batches   int
 	Questions int
 }
 
 func (h RemoveContributorHoldings) blocking() bool {
-	return h.Tasks > 0 || h.Bugs > 0 || h.Chores > 0 || h.Tweaks > 0 || h.Questions > 0
+	return h.Tasks > 0 || h.Bugs > 0 || h.Chores > 0 || h.Tweaks > 0 || h.Batches > 0 || h.Questions > 0
 }
 
 func (h RemoveContributorHoldings) asError(id string) error {
@@ -219,8 +220,8 @@ type RemoveContributorHoldingsError struct {
 
 func (e *RemoveContributorHoldingsError) Error() string {
 	h := e.Holdings
-	return fmt.Sprintf("mutate: contributor %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s), %d open question(s)",
-		e.ID, h.Tasks, h.Bugs, h.Chores, h.Tweaks, h.Questions)
+	return fmt.Sprintf("mutate: contributor %s still holds %d live task(s), %d live bug(s), %d live chore(s), %d live tweak(s), %d live batch(es), %d open question(s)",
+		e.ID, h.Tasks, h.Bugs, h.Chores, h.Tweaks, h.Batches, h.Questions)
 }
 
 // contributorHoldings includes every nonterminal assignment, not only active work.
@@ -244,6 +245,11 @@ func contributorHoldings(tree *store.Tree, id string) RemoveContributorHoldings 
 	for _, w := range tree.WorkNodesOf(store.NounTweak) {
 		if b := w.Body(); b.Owner == id && b.Status != statusDone && b.Status != statusCancelled {
 			h.Tweaks++
+		}
+	}
+	for _, batch := range tree.Batches {
+		if batch.Owner == id && store.BatchLive(batch) {
+			h.Batches++
 		}
 	}
 	for _, q := range tree.Questions {

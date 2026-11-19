@@ -26,6 +26,12 @@ var shelves = []Shelf{
 	newShelf(NounTweak, "tweaks"),
 }
 
+// batchFolder lays batches out the way a shelf lays out its nodes: a folder of
+// keyed records under .tiller/. A batch is not a shelf. It is absent from
+// Shelves and ShelfNouns, so nothing that enumerates shelf work sees it, and
+// only the path helpers below read this entry.
+var batchFolder = newShelf(NounBatch, "batches")
+
 // newShelf takes the id prefix from the id package, which owns every noun's
 // id class, so the two can never disagree.
 func newShelf(noun, dir string) Shelf {
@@ -65,6 +71,9 @@ func ShelfFor(noun string) (Shelf, bool) {
 // unknown noun is a programming error, and it panics rather than quietly
 // reading or writing some other shelf.
 func mustShelf(noun string) Shelf {
+	if noun == NounBatch {
+		return batchFolder
+	}
 	s, ok := ShelfFor(noun)
 	if !ok {
 		panic(notAShelf(noun))
@@ -95,10 +104,13 @@ func IsWorkNoun(noun string) bool {
 	return ok
 }
 
-// IsReservedEpicKey reports whether key is a shelf folder name, which an epic
-// may not take: an epic key is a single segment and its folder sits beside
-// the shelves.
+// IsReservedEpicKey reports whether key is a shelf folder name or the batch
+// folder, which an epic may not take: an epic key is a single segment and its
+// folder sits beside them.
 func IsReservedEpicKey(key string) bool {
+	if key == batchFolder.Dir {
+		return true
+	}
 	for _, s := range shelves {
 		if s.Dir == key {
 			return true
@@ -107,7 +119,9 @@ func IsReservedEpicKey(key string) bool {
 	return false
 }
 
-// ShelfDir is the folder under .tiller/ a shelf noun lives in.
+// ShelfDir is the folder under .tiller/ a shelf noun lives in. The path
+// helpers from here down also answer for a batch, whose records are laid out
+// the same way.
 func ShelfDir(noun string) string { return mustShelf(noun).Dir }
 
 // ShelfProseFile and ShelfStateFile name the two files in a shelf folder.

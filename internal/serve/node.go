@@ -39,7 +39,7 @@ func NodeHandler(root string) http.HandlerFunc {
 		}
 		if !validNoun(noun) {
 			return nil, &httpError{http.StatusNotFound,
-				fmt.Sprintf("unknown noun %q (want one of epic, feature, task, question, amendment, bug, chore, tweak)", noun)}
+				fmt.Sprintf("unknown noun %q (want one of epic, feature, task, question, amendment, bug, chore, tweak, batch)", noun)}
 		}
 		n, err := resolve.NewResolver(t).Resolve(resolve.Ref{Noun: noun, Raw: addr})
 		if err != nil {
@@ -497,7 +497,7 @@ func nodePath(path string) (noun, addr string, ok bool) {
 func validNoun(noun string) bool {
 	switch noun {
 	case store.NounEpic, store.NounFeature, store.NounTask, store.NounQuestion, store.NounAmendment,
-		store.NounBug, store.NounChore, store.NounTweak:
+		store.NounBug, store.NounChore, store.NounTweak, store.NounBatch:
 		return true
 	default:
 		return false

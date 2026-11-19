@@ -23,7 +23,7 @@ Entering a project, finishing work, reaching a gate, or asking what to do next t
 
 #### Scope is the node's net change
 
-Gather every unit under the target that is not cancelled: the task itself, a feature's tasks, or every feature's tasks for an epic. A bug, chore, or tweak is its own single unit. Read each unit's state file for `status`, `branch`, `pr`, and `review_ref`, and read the integration branch from `.tiller/tiller.yml`.
+Gather every unit under the target that is not cancelled: the task itself, a feature's tasks, or every feature's tasks for an epic. A bug, chore, or tweak is its own single unit. One that a batch is reviewing has no branch of its own: `tiller show` names its batch, the batch's state file holds the `branch`, `pr`, and `review_ref`, and the unit's diff is the commits on that branch whose messages carry its ID. Read each unit's state file for `status`, `branch`, `pr`, and `review_ref`, and read the integration branch from `.tiller/tiller.yml`.
 
 Locate each unit's change with local, read-only Git:
 
@@ -136,7 +136,7 @@ Follow `Recording an amendment` in `tiller guide decompose` for staging and the 
 
 #### Fix on its branch
 
-Requested changes return to the unit's owner and branch. First run the review arm's merged-or-in-flight checks for the unit again. If its work has reached integration since the review, its branch takes no more commits: stop, report that the unit has merged, and wait for the developer to log the row as forward work instead. Compare the unit's `owner` against the checkout's identity (`.tiller/identity.yml`). When the acting developer does not own the unit, annotate the row `requested change on <unit>` and hand it to the owner without executing anything. Otherwise annotate, commit, and follow `tiller guide execute` for that unit: the requested-changes re-entry for in-review work, or the ordinary loop for work still in progress.
+Requested changes return to the unit's owner and branch. For a bug, chore, or tweak in a batch, that is the batch's owner and branch, re-entered with `resume batch`. First run the review arm's merged-or-in-flight checks for the unit again. If its work has reached integration since the review, its branch takes no more commits: stop, report that the unit has merged, and wait for the developer to log the row as forward work instead. Compare the unit's `owner` against the checkout's identity (`.tiller/identity.yml`). When the acting developer does not own the unit, annotate the row `requested change on <unit>` and hand it to the owner without executing anything. Otherwise annotate, commit, and follow `tiller guide execute` for that unit: the requested-changes re-entry for in-review work, or the ordinary loop for work still in progress.
 
 #### Annotate and commit once
 

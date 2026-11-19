@@ -174,6 +174,13 @@ func guardBranch(tree *store.Tree, rev vcs.Revisions, noun, id, branch string, a
 			reserved = append(reserved, reservation{node.NodeID(), b})
 		}
 	}
+	for _, batch := range tree.Batches {
+		b := batch.Branch
+		if b == "" && batch.Key != nil {
+			b = branchFor(tree.Manifest, *batch.Key)
+		}
+		reserved = append(reserved, reservation{batch.ID, b})
+	}
 	sort.Slice(reserved, func(i, j int) bool { return reserved[i].id < reserved[j].id })
 	for _, other := range reserved {
 		if other.id != id && other.branch != "" && branchesConflict(branch, other.branch) {

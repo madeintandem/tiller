@@ -10,7 +10,7 @@ import (
 
 // validPrefixes is the canonical set from docs/spec/artifact-schema.md (IDs)
 // plus the EV (event) and AT (attestation) classes the CLI mints internally.
-var allPrefixes = []string{"E", "F", "T", "Q", "A", "ADR", "EV", "AT", "B", "CH", "TW"}
+var allPrefixes = []string{"E", "F", "T", "Q", "A", "ADR", "EV", "AT", "B", "CH", "TW", "BT"}
 
 // TestMintShape asserts every minted id matches <prefix>-[a-z0-9]{6} exactly.
 func TestMintShape(t *testing.T) {

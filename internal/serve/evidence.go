@@ -139,6 +139,11 @@ func treeRecordsEvidence(t *store.Tree, ref string) bool {
 			}
 		}
 	}
+	for _, batch := range t.Batches {
+		if workItemRecordsEvidence(batch.Body(), ref) {
+			return true
+		}
+	}
 	return false
 }
 

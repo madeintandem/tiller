@@ -150,7 +150,7 @@ var schemaMigrations = []schemaMigration{
 	},
 	{
 		from:  15,
-		note:  "stamp schema_version 16; a shelf node's recovered review and its recovered done basis are additive; preserve work, events, and active reviews without drain",
+		note:  "stamp schema_version 16; a shelf node's recovered review and recovered done basis, and shelf batches (.tiller/batches/, a member's batch pointer, the batched done basis), are additive; preserve work, events, and active reviews without drain",
 		apply: func(d []byte) ([]byte, error) { return store.RenderSchemaVersion(d, 16) },
 	},
 }

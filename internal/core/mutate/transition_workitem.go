@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/core/lifecycle"
 	"github.com/madeintandem/tiller/internal/core/resolve"
 	"github.com/madeintandem/tiller/internal/store"
@@ -49,9 +50,30 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		return TransitionResult{}, &SeverityNotTriageError{NodeID: w.ID, Key: deref(w.Key), CurrentState: before}
 	}
 
+	// A batch owns its members' branch, gates, and review, so the verbs that
+	// would give a member its own refuse and name the batch. Approve, grade,
+	// and cancel still act on the member; return does until the batch starts.
+	isBatch := noun == store.NounBatch
+	memberOf := liveBatchOf(tree, treeNode)
+	if memberOf != nil {
+		switch in.Verb {
+		case "start", "submit", "resume":
+			return TransitionResult{}, workBatched(treeNode, memberOf, in.Verb)
+		case "return":
+			if memberOf.Started {
+				return TransitionResult{}, returnAfterBatchStart(treeNode, memberOf)
+			}
+		}
+	}
 	if legal, moves := lifecycle.Legal(target, in.Verb); !legal {
 		return TransitionResult{}, &lifecycle.IllegalTransitionError{Noun: noun, From: before, Verb: in.Verb, Legal: moves}
 	}
+	// extra holds the other records this transition moves in the same
+	// mutation: a cancelled batch's released members, or the batch a cancelled
+	// member leaves.
+	var extra []nodeWrite
+	var released []string
+	var extraEvents []events.Event
 
 	if in.Verb == "start" || in.Verb == "submit" {
 		if err := checkWorkBasis(tree.Root, target, rev); err != nil {
@@ -63,6 +85,11 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 	}
 	if workVerbs[in.Verb] {
 		if err := guardWorkClaim(target, owner.ID); err != nil {
+			return TransitionResult{}, err
+		}
+	}
+	if isBatch && (in.Verb == "start" || in.Verb == "submit") {
+		if err := guardBatchMembersReady(tree, rev, treeNode.(*store.Batch)); err != nil {
 			return TransitionResult{}, err
 		}
 	}
@@ -87,6 +114,11 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		if err := guardSubmitBranch(rev, noun, w.ID, w.Branch, in.ReviewRef); err != nil {
 			return TransitionResult{}, err
 		}
+		if isBatch && before == "check" {
+			if err := guardBatchStateCommitted(tree, rev, treeNode.(*store.Batch), "be submitted", true); err != nil {
+				return TransitionResult{}, err
+			}
+		}
 		if in.PR == nil {
 			head, err := rev.CurrentCommit()
 			if err != nil {
@@ -95,7 +127,19 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 			in.ReviewRef = &store.ReviewRef{Branch: w.Branch, Head: head}
 		}
 	}
-	if in.Verb == "cancel" {
+	if in.Verb == "cancel" && isBatch {
+		// Cancelling a batch cancels none of its members: each returns to its
+		// own queue, so there is no resolution to record.
+		if in.Resolution != "" || in.DuplicateOf != "" {
+			return TransitionResult{}, &usageError{reason: "bad_args", msg: "--resolution and --duplicate-of apply to cancel bug|chore|tweak only; cancelling a batch releases its members and cancels none"}
+		}
+		if before != statusCancelled {
+			extra, released, err = releaseBatchMembers(tree, deps, owner, treeNode.(*store.Batch))
+			if err != nil {
+				return TransitionResult{}, err
+			}
+		}
+	} else if in.Verb == "cancel" {
 		// The survivor is resolved once, here, and the SAME resolved id is
 		// what lands on both the node's own duplicate_of and the event's
 		// after map below (transitionEvent reads in.DuplicateOf directly):
@@ -145,13 +189,38 @@ func transitionWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, tr
 		// in.DuplicateOf already holds the resolved id (the cancel arm
 		// above), or "" on a non-duplicate resolution.
 		w.DuplicateOf = in.DuplicateOf
+		if memberOf != nil {
+			// A cancelled member leaves its batch in the same mutation.
+			extra, extraEvents, err = memberLeavesBatch(tree, deps, owner, treeNode, memberOf)
+			if err != nil {
+				return TransitionResult{}, err
+			}
+			w.BatchID = ""
+		}
 	}
 
 	ydata, err := yaml.Marshal(target)
 	if err != nil {
 		return TransitionResult{}, err
 	}
-	if err := commitTransition(tree, deps, owner, in, noun, w.ID, ymlRel, ydata, snapshot, before, after, ""); err != nil {
+	own := nodeWrite{rel: ymlRel, data: ydata, before: snapshot,
+		event: transitionEvent(deps, owner, in, noun, w.ID, ymlRel, before, after, "")}
+	if len(released) > 0 {
+		own.event.After["released"] = released
+	}
+	if in.Verb == "cancel" && memberOf != nil {
+		// The member's own cancel says which batch it left.
+		own.event.Before["batch"] = memberOf.ID
+		own.event.After["batch"] = ""
+	}
+	writes := append([]nodeWrite{own}, extra...)
+	planned := make([]store.PlannedWrite, 0, len(writes))
+	evs := make([]events.Event, 0, len(writes)+len(extraEvents))
+	for _, write := range writes {
+		planned = append(planned, store.PlanWrite(filepath.Join(tree.Root, write.rel), write.before, write.data))
+		evs = append(evs, write.event)
+	}
+	if err := commitMutation(tree, in.Verb+"."+noun, planned, append(evs, extraEvents...)); err != nil {
 		return TransitionResult{}, err
 	}
 	return workResult(target, true), nil

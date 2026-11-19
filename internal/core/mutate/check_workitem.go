@@ -23,11 +23,22 @@ func checkWorkItem(tree *store.Tree, deps Deps, owner store.Contributor, rev vcs
 	w := target.Body()
 	before := w.Status
 
+	if err := refuseBatched(tree, treeNode, "check"); err != nil {
+		return CheckResult{}, err
+	}
 	if legal, _ := lifecycle.Legal(target, "check"); !legal {
 		return CheckResult{}, &lifecycle.IllegalTransitionError{Noun: noun, From: before, Verb: "check", Legal: lifecycle.NextMoves(target)}
 	}
 	if err := checkWorkBasis(tree.Root, target, rev); err != nil {
 		return CheckResult{}, err
+	}
+	if batch, ok := treeNode.(*store.Batch); ok {
+		if err := guardBatchMembersReady(tree, rev, batch); err != nil {
+			return CheckResult{}, err
+		}
+		if err := guardBatchStateCommitted(tree, rev, batch, "be checked", false); err != nil {
+			return CheckResult{}, err
+		}
 	}
 	against, err := gateAgainst(rev)
 	if err != nil {

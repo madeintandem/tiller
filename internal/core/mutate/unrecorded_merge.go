@@ -23,7 +23,7 @@ import (
 // left unrecorded for longer than that ages out of the window.
 const unrecordedMergeScanLimit = 200
 
-// UnrecordedMerge is one bug, chore, or tweak that commits on the integration
+// UnrecordedMerge is one bug, chore, tweak, or batch that commits on the integration
 // branch name while the node has no recorded submission: it is still ready,
 // in_progress, or check. Sync observes a shelf node's merge only from
 // in_review, so without this finding the merge would pass in silence.
@@ -135,9 +135,14 @@ func unrecordedShelfMerges(tree *store.Tree, rev commitMessageReader, intoBranch
 	var findings []UnrecordedMerge
 	for _, node := range nodes {
 		w := node.Body()
+		// A batch's commits carry its members' ids, and may not carry its own.
+		ids := []string{w.ID}
+		if node.Noun() == store.NounBatch {
+			ids = append(ids, memberIDs(batchMembersOf(tree.BatchMembers(w.ID)))...)
+		}
 		var naming []NamingCommit
 		for _, commit := range landed {
-			if namesID(commit.Message, w.ID) {
+			if namesAnyID(commit.Message, ids) {
 				naming = append(naming, NamingCommit{Commit: commit.Commit, Subject: commit.Subject})
 			}
 		}
@@ -160,12 +165,25 @@ func unrecordedShelfMerges(tree *store.Tree, rev commitMessageReader, intoBranch
 // working branch is the branch
 // being read: a branch contains its own commits, and work in progress there has
 // not landed anywhere.
+//
+// A batch member is left out as well, because its batch answers for it: the
+// batch is listed in its place, ahead of the shelves, and a commit naming any
+// member counts as naming the batch.
 func unsubmittedShelfNodes(tree *store.Tree, intoBranch string) []store.WorkNode {
 	var nodes []store.WorkNode
+	for _, batch := range tree.BatchesInOrder() {
+		if !awaitsSubmission(batch.Status) || batch.Key == nil {
+			continue
+		}
+		if intoBranch != "" && canonicalBranch(observationWorkBranch(tree.Manifest, batch), "") == intoBranch {
+			continue
+		}
+		nodes = append(nodes, batch)
+	}
 	for _, noun := range store.ShelfNouns() {
 		for _, node := range tree.WorkNodesOf(noun) {
 			w := node.Body()
-			if !awaitsSubmission(w.Status) || workNodeCarried(tree, node) || w.RecoveredReview != nil {
+			if !awaitsSubmission(w.Status) || workNodeCarried(tree, node) || w.RecoveredReview != nil || liveBatchOf(tree, node) != nil {
 				continue
 			}
 			if intoBranch != "" && canonicalBranch(observationWorkBranch(tree.Manifest, node), "") == intoBranch {
@@ -181,6 +199,16 @@ func unsubmittedShelfNodes(tree *store.Tree, intoBranch string) []store.WorkNode
 // been submitted for review.
 func awaitsSubmission(status string) bool {
 	return status == "ready" || status == "in_progress" || status == "check"
+}
+
+// namesAnyID reports whether message names any of ids.
+func namesAnyID(message string, ids []string) bool {
+	for _, id := range ids {
+		if namesID(message, id) {
+			return true
+		}
+	}
+	return false
 }
 
 // namesID reports whether message carries id as a whole token: not inside a

@@ -81,6 +81,8 @@ type TreeCounts struct {
 	Bugs      int `json:"bugs"`
 	Chores    int `json:"chores"`
 	Tweaks    int `json:"tweaks"`
+	// Batches counts every batch record; omitted on a project with none.
+	Batches int `json:"batches,omitempty"`
 }
 
 // NodeStatusView is the typed oracle payload for `status <noun> <node>`: the
@@ -119,6 +121,10 @@ type NodeStatusView struct {
 	// Severity is a bug's triage grade, empty when unrated and for every
 	// other noun; the text renderer prints "unrated" for a bug.
 	Severity string `json:"severity,omitempty"`
+	// Batch is the batch reviewing a bug, chore, or tweak, and Members is a
+	// batch's own member list (NodeView carries the same two).
+	Batch   *BatchRefView     `json:"batch,omitempty"`
+	Members []BatchMemberView `json:"members,omitempty"`
 	// Title is a task's, amendment's, or question's short title; Statement
 	// retains a question's full detail. An epic's and a feature's own handle is
 	// the key path their reference already renders.
@@ -189,21 +195,20 @@ func NodeStatus(tree *store.Tree, n store.Node, in workflow.Input) NodeStatusVie
 	} else {
 		recovered, missing = workflow.ReviewStateOf(tree, n)
 	}
-	severity := ""
-	if b, ok := n.(*store.Bug); ok {
-		severity = b.Severity
-	}
+	severity := severityOf(tree, n)
 	// A held draft takes no lifecycle step (mutate refuses each with
 	// held_by_amendment), so the oracle offers none: the amendment's approval
 	// is what moves it, and AmendmentHold names that amendment.
 	hold := amendmentHoldViewOf(tree, n)
-	next := legalNext(n)
+	next := legalNextIn(tree, n)
 	if hold != nil {
 		next = []string{}
 	}
 	return NodeStatusView{
 		AmendmentHold:    hold,
 		Severity:         severity,
+		Batch:            batchRefOf(tree, n),
+		Members:          batchMembersOf(tree, n),
 		Noun:             n.Noun(),
 		ID:               n.NodeID(),
 		Key:              Key(n),
@@ -316,6 +321,7 @@ func Summary(t *store.Tree) ProjectSummary {
 			Bugs:      len(t.Bugs),
 			Chores:    len(t.Chores),
 			Tweaks:    len(t.Tweaks),
+			Batches:   len(t.Batches),
 		},
 		ActiveEpics:    activeEpics,
 		WhoseMove:      WhoseMoveOf(t),

@@ -85,11 +85,12 @@ func (t *Tree) ProjectContributors() {
 // recovered says the node holds a recovered review. Its fix merged outside
 // Tiller's record, possibly before the node ever started, so the PR that
 // record names and the done crossing it earns need no start marker, the way
-// a carried crossing needs none.
+// a carried crossing needs none. A batched crossing needs none either: the
+// batch started, and its members never did.
 func validateExecutionOwnership(id, status, owner, branch, doneBasis string, started, recovered bool, pr *int, review *ReviewRef) error {
 	active := status == "in_progress" || status == "check" || status == "in_review"
 	terminal := status == "done" || status == "cancelled"
-	doneUnstarted := doneBasis == "carried" || recovered
+	doneUnstarted := doneBasis == "carried" || doneBasis == "batched" || recovered
 	if (active || branch != "" || (pr != nil && !recovered) || review != nil || (status == "done" && !doneUnstarted)) && !started {
 		return fmt.Errorf("%s has execution history without started: true; restore the durable start marker or migrate the original legacy snapshot", id)
 	}
@@ -127,6 +128,11 @@ func (t *Tree) ValidateOwnership() error {
 				return fmt.Errorf("%s has invalid transferred resolution: require started cancelled work and reciprocal replacement lineage, not duplicate_of", w.ID)
 			}
 			lineage[w.ID] = edge{noun, w.Supersedes, w.SupersededBy}
+		}
+	}
+	for id, batch := range t.Batches {
+		if err := validateExecutionOwnership(id, batch.Status, batch.Owner, batch.Branch, batch.DoneBasis, batch.Started, false, batch.PR, batch.ReviewRef); err != nil {
+			return err
 		}
 	}
 	for id, e := range lineage {

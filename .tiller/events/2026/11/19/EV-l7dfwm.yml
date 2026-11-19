@@ -1,0 +1,13 @@
+id: EV-l7dfwm
+type: check.tweak
+at: 2026-11-19T21:06:37.476478Z
+contributor: jc
+command: check tweak TW-taq0ps
+targets:
+    - TW-taq0ps
+before:
+    status: in_progress
+after:
+    status: check
+files:
+    - path: .tiller/tweaks/several-shelf-items-one-review/tweak.yml

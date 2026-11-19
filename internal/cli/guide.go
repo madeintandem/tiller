@@ -177,7 +177,7 @@ func executeReason(t *store.Tree, top views.NextCandidate) string {
 	reason := "Continue the resolved review surface through its remaining checks, publication, and recorded submission."
 	if top.Node != nil {
 		switch top.Node.Noun {
-		case store.NounTask, store.NounBug, store.NounChore, store.NounTweak:
+		case store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch:
 			if status := nodeStatusByID(t, top.Node.ID); status == "check" {
 				reason = fmt.Sprintf("You hold a %s in check; continue execute without starting or resuming it again.", top.Node.Noun)
 			} else {
@@ -206,6 +206,9 @@ func nodeStatusByID(t *store.Tree, id string) string {
 	}
 	if work, ok := t.WorkNode(id); ok {
 		return work.NodeStatus()
+	}
+	if batch, ok := t.Batches[id]; ok {
+		return batch.NodeStatus()
 	}
 	return ""
 }

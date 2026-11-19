@@ -613,13 +613,13 @@ func newSpecCmd() *cobra.Command {
 func newStartCmd() *cobra.Command {
 	var adoptAggregate bool
 	cmd := &cobra.Command{
-		Use:   "start <task|bug|chore|tweak> <node>",
+		Use:   "start <task|bug|chore|tweak|batch> <node>",
 		Short: "Start claimed execution work and permanently fix its owner.",
-		Long:  "Start a claimed task, bug, chore, or tweak. The first task start atomically activates its approved parent feature and records task and aggregate branch identities. Parent guards still apply. Feature-only assumptions are recorded separately with approve feature --assume-question <Q-id> --reason <text>; task start never inherits them. --adopt-aggregate records an existing local ref at the derived aggregate name instead of minting one; inspect git log <integration>..<ref> first.",
+		Long:  "Start a claimed task, bug, chore, tweak, or batch. start batch refuses, naming the member, until every member is approved and ready; it records one branch for the whole batch. The first task start atomically activates its approved parent feature and records task and aggregate branch identities. Parent guards still apply. Feature-only assumptions are recorded separately with approve feature --assume-question <Q-id> --reason <text>; task start never inherits them. --adopt-aggregate records an existing local ref at the derived aggregate name instead of minting one; inspect git log <integration>..<ref> first.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTransition(cmd, "start", args[0], args[1],
-				[]string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak}, mutate.TransitionInput{Verb: "start", AdoptAggregate: adoptAggregate})
+				[]string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch}, mutate.TransitionInput{Verb: "start", AdoptAggregate: adoptAggregate})
 		},
 	}
 	cmd.Flags().BoolVar(&adoptAggregate, "adopt-aggregate", false, "record the existing ref at this feature's or epic's derived aggregate name as its aggregate; review its history first")
@@ -656,7 +656,7 @@ func newReturnCmd() *cobra.Command {
 func newResumeCmd() *cobra.Command {
 	var reason string
 	cmd := &cobra.Command{
-		Use:   "resume <task|bug|chore|tweak> <node>",
+		Use:   "resume <task|bug|chore|tweak|batch> <node>",
 		Short: "Re-enter work from review (in_review -> in_progress).",
 		Long: "resume is the path back from review when the work itself needs more: a\n" +
 			"task, bug, chore, or tweak moves in_review->in_progress. The recorded PR stays.\n" +
@@ -664,13 +664,15 @@ func newResumeCmd() *cobra.Command {
 			"keeps its result, so the next check reuses it; every attestation gate and\n" +
 			"every gate over other code flips to stale (every gate, when the code\n" +
 			"identity cannot be read). A reason is required. A bug, chore, or tweak\n" +
-			"resumes the same way; its PR is its own. A task's feature simply\n" +
+			"resumes the same way; its PR is its own. A batch resumes on its one\n" +
+			"branch and PR, which is also what reopens its membership to changes.\n" +
+			"A task's feature simply\n" +
 			"stays active: a requested-changes review routes the task back to work\n" +
 			"without touching the feature.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTransition(cmd, "resume", args[0], args[1],
-				[]string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak},
+				[]string{store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch},
 				mutate.TransitionInput{Verb: "resume", Reason: reason})
 		},
 	}
@@ -695,7 +697,10 @@ func newCancelCmd() *cobra.Command {
 			"moves to cancelled from the states the lifecycle allows. A --reason is\n" +
 			"required and recorded on the event. A bug, chore, or tweak also needs\n" +
 			"--resolution wontfix|invalid|duplicate, and duplicate names the\n" +
-			"survivor with --duplicate-of. cancel question closes an open question\n" +
+			"survivor with --duplicate-of. Cancelling a bug, chore, or tweak that a\n" +
+			"batch is reviewing takes it out of the batch. cancel batch cancels the\n" +
+			"batch alone: every member returns to its own queue and none is\n" +
+			"cancelled. cancel question closes an open question\n" +
 			"that no longer needs a decision, releasing every hold it had; an\n" +
 			"answered question refuses, and a cancelled one is a no-op success.",
 		Args: cobra.ExactArgs(2),
@@ -709,7 +714,7 @@ func newCancelCmd() *cobra.Command {
 				return runCancelQuestion(cmd, args[1], reason)
 			}
 			return runTransition(cmd, "cancel", args[0], args[1],
-				[]string{store.NounEpic, store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak},
+				[]string{store.NounEpic, store.NounFeature, store.NounTask, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch},
 				mutate.TransitionInput{Verb: "cancel", Reason: reason, Resolution: resolution, DuplicateOf: duplicateOf})
 		},
 	}
@@ -746,7 +751,7 @@ func newArchiveCmd() *cobra.Command {
 // coarse-grain siblings review grain adds (docs/spec/cli-surface.md), then the
 // two shelf nouns, which always record their own PR or review ref with no grain
 // check (docs/spec/cli-surface.md).
-var submitNouns = []string{store.NounTask, store.NounFeature, store.NounEpic, store.NounBug, store.NounChore, store.NounTweak}
+var submitNouns = []string{store.NounTask, store.NounFeature, store.NounEpic, store.NounBug, store.NounChore, store.NounTweak, store.NounBatch}
 
 // newSubmitCmd builds `submit <task|feature|epic|bug|chore|tweak> <node> [--pr
 // <n>]`. At task grain (the default) a PR always represents a task, so
@@ -775,7 +780,7 @@ func newSubmitCmd() *cobra.Command {
 	var reason, assume, recoveryHead, recoveryResult string
 	var recoverMerged bool
 	cmd := &cobra.Command{
-		Use:   "submit <task|feature|epic|bug|chore|tweak> <node> [--pr <n>]",
+		Use:   "submit <task|feature|epic|bug|chore|tweak|batch> <node> [--pr <n>]",
 		Short: "Record the review surface and move work to review.",
 		Long: "submit records the review surface: the pull request number, or, with\n" +
 			"no git remote, the current branch and head commit as a review ref.\n" +
@@ -788,7 +793,8 @@ func newSubmitCmd() *cobra.Command {
 			"epic carries no PR of its own at all: its own submit still moves it to\n" +
 			"in_review, but only ever records a review ref, remote or not. A bug,\n" +
 			"chore, or tweak always records its own PR or review ref; review grain does not\n" +
-			"apply to it.\n\n" +
+			"apply to it. A batch records the one PR or review ref its members\n" +
+			"share, on the batch and never on a member.\n\n" +
 			"For explicitly authorized historical recovery of a feature, epic, bug,\n" +
 			"chore, or tweak whose review merged before its submission was recorded,\n" +
 			"run from the configured integration checkout with --recover-merged\n" +
@@ -799,7 +805,8 @@ func newSubmitCmd() *cobra.Command {
 			"command each. A configured remote requires positive --pr, supplied and\n" +
 			"host-verified by the caller; Tiller verifies local Git evidence, not the\n" +
 			"host association. Commit the actual recovery delta on integration, then\n" +
-			"run ordinary sync. A task has no recovery of its own.",
+			"run ordinary sync. A task has no recovery of its own, and neither has\n" +
+			"a batch: cancel the batch and recover each member that merged.",
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sing, ok := singularNoun(args[0])
@@ -1455,6 +1462,9 @@ func blockedByQuestionsView(blk *mutate.BlockedByQuestionsError) (BlockedByQuest
 
 func transitionBlockedView(tree *store.Tree, n store.Node, err error) (data any, human string, matched bool) {
 	if data, human, matched := branchBlockedView(tree, err); matched {
+		return data, human, true
+	}
+	if data, human, matched := batchBlockedView(tree, err); matched {
 		return data, human, true
 	}
 	var carried *mutate.WorkCarriedError

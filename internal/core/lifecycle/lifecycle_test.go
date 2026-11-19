@@ -123,6 +123,19 @@ var specTransitions = []specTransition{
 	{store.NounChore, "in_review", "sync", "done"},
 	{store.NounChore, "in_review", "cancel", "cancelled"},
 
+	// Batch: the shelf lifecycle from ready onward (artifact-schema.md,
+	// Batches). It is born ready, so it has no approve, no return, and no
+	// proposed state.
+	{store.NounBatch, "ready", "start", "in_progress"},
+	{store.NounBatch, "ready", "cancel", "cancelled"},
+	{store.NounBatch, "in_progress", "check", "check"},
+	{store.NounBatch, "in_progress", "cancel", "cancelled"},
+	{store.NounBatch, "check", "submit", "in_review"},
+	{store.NounBatch, "check", "cancel", "cancelled"},
+	{store.NounBatch, "in_review", "resume", "in_progress"},
+	{store.NounBatch, "in_review", "sync", "done"},
+	{store.NounBatch, "in_review", "cancel", "cancelled"},
+
 	// Amendment: draft -> proposed (the agent hands it over), or withdrawn.
 	{amendmentNoun, "draft", "propose", "proposed"},
 	{amendmentNoun, "draft", "withdraw", "withdrawn"},
@@ -171,6 +184,15 @@ var expectedNextMoves = map[string]map[string][]string{
 	store.NounChore: {
 		"proposed":    {"approve", "cancel"},
 		"ready":       {"cancel", "return", "start"},
+		"in_progress": {"cancel", "check"},
+		"check":       {"cancel", "submit"},
+		"in_review":   {"cancel", "resume", "sync"},
+		"done":        {},
+		"cancelled":   {},
+	},
+	store.NounBatch: {
+		"proposed":    {},
+		"ready":       {"cancel", "start"},
 		"in_progress": {"cancel", "check"},
 		"check":       {"cancel", "submit"},
 		"in_review":   {"cancel", "resume", "sync"},

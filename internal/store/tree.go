@@ -56,6 +56,9 @@ type Tree struct {
 	Bugs   map[string]*Bug
 	Chores map[string]*Chore
 	Tweaks map[string]*Tweak
+	// Batches holds every shared shelf review under .tiller/batches/, keyed by
+	// id. Membership is read off the shelf nodes (WorkItem.BatchID).
+	Batches map[string]*Batch
 	// BugOrder and ChoreOrder are each shelf's recorded soft order.
 	BugOrder   ShelfOrder
 	ChoreOrder ShelfOrder
@@ -175,6 +178,7 @@ func loadTreeWithManifest(root string, m *Manifest) (*Tree, error) {
 		Bugs:         map[string]*Bug{},
 		Chores:       map[string]*Chore{},
 		Tweaks:       map[string]*Tweak{},
+		Batches:      map[string]*Batch{},
 		reader:       reader,
 	}
 	defer func() { t.reader = nil }()
@@ -193,6 +197,9 @@ func loadTreeWithManifest(root string, m *Manifest) (*Tree, error) {
 		if err := t.loadShelf(noun, ids); err != nil {
 			return nil, err
 		}
+	}
+	if err := t.loadBatches(ids); err != nil {
+		return nil, err
 	}
 	po, err := LoadProjectOrder(root)
 	if err != nil {

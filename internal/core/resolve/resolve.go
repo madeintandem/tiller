@@ -112,6 +112,9 @@ func (r *Resolver) byID(raw string) (store.Node, bool) {
 	if n, ok := r.tree.WorkNode(raw); ok {
 		return n, true
 	}
+	if n, ok := r.tree.Batches[raw]; ok {
+		return n, true
+	}
 	return nil, false
 }
 
@@ -148,6 +151,14 @@ func (r *Resolver) byKey(noun, key string) []store.Node {
 		for _, a := range r.tree.Amendments {
 			if a.Key != nil && *a.Key == key {
 				out = append(out, a)
+			}
+		}
+	case store.NounBatch:
+		// Like a shelf node, a batch answers to batches/<k> and to the bare
+		// local key, since the noun already names the folder.
+		for _, b := range r.tree.Batches {
+			if b.Key != nil && (*b.Key == key || *b.Key == store.ShelfCanonicalKey(noun, key)) {
+				out = append(out, b)
 			}
 		}
 	default:
@@ -208,7 +219,7 @@ func preferOpenAmendment(candidates []store.Node) []store.Node {
 // cli-surface.md so it stays correct as that bucket lands.
 func keyedNoun(noun string) bool {
 	switch noun {
-	case store.NounEpic, store.NounFeature, store.NounTask, store.NounAmendment, "adr":
+	case store.NounEpic, store.NounFeature, store.NounTask, store.NounAmendment, store.NounBatch, "adr":
 		return true
 	default:
 		return store.IsWorkNoun(noun)

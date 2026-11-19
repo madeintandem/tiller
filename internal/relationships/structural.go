@@ -56,6 +56,7 @@ func BuildStructural(tree *store.Tree) *Index {
 				{"attached_to", body.AttachedTo, []string{store.NounEpic, store.NounFeature, store.NounTask}},
 				{"resolved_by", body.ResolvedBy, []string{store.NounEpic, store.NounFeature, store.NounTask}},
 				{"duplicate_of", body.DuplicateOf, []string{node.Noun()}},
+				{"batched_in", body.BatchID, []string{store.NounBatch}},
 			} {
 				if field.raw == "" {
 					continue
@@ -136,6 +137,9 @@ func (builder *structuralBuilder) lookup(raw string) store.Node {
 	if node := tree.Tweaks[raw]; node != nil {
 		return node
 	}
+	if node := tree.Batches[raw]; node != nil {
+		return node
+	}
 	if node := tree.Questions[raw]; node != nil {
 		return node
 	}
@@ -185,6 +189,10 @@ func (builder *structuralBuilder) keyCandidates(raw string, nouns []string) []st
 			for _, node := range builder.tree.Amendments {
 				add(node)
 			}
+		case store.NounBatch:
+			for _, node := range builder.tree.Batches {
+				add(node)
+			}
 		default:
 			if store.IsWorkNoun(noun) {
 				for _, node := range builder.tree.WorkNodesOf(noun) {
@@ -221,6 +229,9 @@ func structuralNodes(tree *store.Tree) []store.Node {
 		nodes = append(nodes, node)
 	}
 	for _, node := range tree.Tweaks {
+		nodes = append(nodes, node)
+	}
+	for _, node := range tree.Batches {
 		nodes = append(nodes, node)
 	}
 	for _, node := range tree.Questions {

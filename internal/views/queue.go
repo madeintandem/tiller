@@ -439,6 +439,9 @@ func queueAttestGates(t *store.Tree, order *gen.Order) []QueueEntry {
 	for _, task := range tasks {
 		add(task)
 	}
+	for _, batch := range liveBatches(t) {
+		add(batch)
+	}
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range orderedShelfNodes(t, noun) {
 			add(work)
@@ -534,7 +537,7 @@ func optionalGateApplies(on store.StringList, noun string) bool {
 		if g == noun {
 			return true
 		}
-		if g == "pr" && (noun == store.NounTask || store.IsWorkNoun(noun)) {
+		if g == "pr" && (noun == store.NounTask || runsShelfLifecycle(noun)) {
 			return true
 		}
 	}

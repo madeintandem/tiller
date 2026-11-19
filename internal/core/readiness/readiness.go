@@ -128,6 +128,11 @@ func danglingOwnerGaps(m *store.Manifest, t *store.Tree) []Gap {
 			}
 		}
 	}
+	for _, batch := range t.BatchesInOrder() {
+		if batch.Owner != "" && !roster[batch.Owner] && store.BatchLive(batch) {
+			gaps = append(gaps, danglingOwnerGap(t, store.NounBatch, batch.ID, batch.Owner))
+		}
+	}
 	for _, id := range sortedKeys(t.Questions) {
 		if q := t.Questions[id]; q.Owner != "" && !roster[q.Owner] && gen.QuestionOpen(q) {
 			gaps = append(gaps, danglingOwnerGap(t, store.NounQuestion, id, q.Owner))

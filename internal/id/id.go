@@ -40,6 +40,7 @@ var nounPrefix = map[string]string{
 	"bug":         "B",
 	"chore":       "CH",
 	"tweak":       "TW",
+	"batch":       "BT",
 }
 
 // idRe matches a well-formed id: a known prefix, a hyphen, then exactly six

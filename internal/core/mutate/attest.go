@@ -69,10 +69,10 @@ func Attest(tree *store.Tree, deps Deps, node store.Node, in AttestInput) (Attes
 	if err := refuseCommandGateAttestation(tree.Manifest, in.Gate); err != nil {
 		return AttestResult{}, err
 	}
-	if in.Criterion != "" && store.IsWorkNoun(node.Noun()) {
+	if in.Criterion != "" && runsShelfGates(node.Noun()) {
 		return AttestResult{}, &usageError{
 			reason: "unsupported_noun",
-			msg:    fmt.Sprintf("attest --criterion does not run on a %s because a shelf node has no eval contract", node.Noun()),
+			msg:    fmt.Sprintf("attest --criterion does not run on a %s because shelf work has no eval contract", node.Noun()),
 		}
 	}
 	owner, err := store.ResolveContributor(tree.Manifest, deps.Contributor)

@@ -134,6 +134,9 @@ func treeHoldsID(tree *store.Tree, candidate string) bool {
 	if _, ok := tree.WorkNode(candidate); ok {
 		return true
 	}
+	if _, ok := tree.Batches[candidate]; ok {
+		return true
+	}
 	return false
 }
 

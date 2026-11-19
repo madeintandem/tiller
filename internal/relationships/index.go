@@ -373,6 +373,12 @@ func NodePath(tree *store.Tree, node store.Node, extension string) (string, bool
 			}
 			coordinate = path.Join(".tiller/epics", parts[0], "features", parts[1], store.TaskDirName, parts[2], "task."+extension)
 		}
+	case store.NounBatch:
+		// A batch has state and no prose: its members' contracts are its own.
+		if extension != "yml" {
+			return "", false
+		}
+		coordinate = path.Join(".tiller", store.ShelfDir(node.Noun()), parts[len(parts)-1], node.Noun()+"."+extension)
 	case store.NounBug, store.NounChore, store.NounTweak:
 		if extension == "eval.md" {
 			return "", false

@@ -4,7 +4,7 @@ What Tiller does today, what is designed but not built, and what it deliberately
 
 ## Built
 
-- **Work and gates.** One epic, feature, and task tree with just-in-time feature planning. Independent bugs, chores, and tweaks. Required command and eval gates, optional human reviews, and review grain at task, feature, or epic. A human merge backs task and shelf completion; feature and epic completion are recomputed.
+- **Work and gates.** One epic, feature, and task tree with just-in-time feature planning. Independent bugs, chores, and tweaks, and batches that put several of them under one review. Required command and eval gates, optional human reviews, and review grain at task, feature, or epic. A human merge backs task and shelf completion; feature and epic completion are recomputed.
 - **Contributors and routing.** A registered contributor roster, per-checkout identity, claims and guarded transfer of tasks and shelf items, question holds, hard dependencies and soft order, and the ranked list of next legal moves (`tiller next`, guide, and every readout).
 - **Questions.** Recorded questions that hold plans and work, answered or cancelled by the human, with links that widen or narrow what they block.
 - **Plan changes.** Reviewed amendments, with one door for documents (`tiller intake` lands a file or a folder under `design/` and opens a draft amendment; `--no-amendment` lands a founding design), new work staged as inert held drafts that one approval promotes, a `propose` hand-over, revision, cancellation, and supersession lineage, eval-binding corrections on done features, and identity-preserving moves of never-started feature subtrees.

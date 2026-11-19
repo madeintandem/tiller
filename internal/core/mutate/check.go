@@ -559,7 +559,7 @@ func requiredGateConfigs(m *store.Manifest, noun string) []gates.GateConfig {
 	if m == nil {
 		return nil
 	}
-	shelf := store.IsWorkNoun(noun)
+	shelf := runsShelfGates(noun)
 	var configs []gates.GateConfig
 	for name, spec := range m.Gates.Required {
 		if !onIncludes(spec.On, gateNoun(noun)) {
@@ -616,10 +616,17 @@ func onIncludes(on store.StringList, noun string) bool {
 // or chore runs the task-grade gates (docs/spec/cli-surface.md), so both read
 // as task here; every tree noun is itself.
 func gateNoun(noun string) string {
-	if store.IsWorkNoun(noun) {
+	if runsShelfGates(noun) {
 		return store.NounTask
 	}
 	return noun
+}
+
+// runsShelfGates reports the nouns that run the shelf gate set: the three
+// shelf nouns, and a batch, which runs once what each member would have run
+// alone.
+func runsShelfGates(noun string) bool {
+	return store.IsWorkNoun(noun) || noun == store.NounBatch
 }
 
 // isEvalRecursion reports whether a gate is the derived evals gate, the one

@@ -17,7 +17,9 @@ func queueApproveShelf(t *store.Tree, noun string) []QueueEntry {
 	var out []QueueEntry
 	for _, work := range orderedShelfNodes(t, noun) {
 		body := work.Body()
-		if body.Status != "proposed" || gen.WorkLeftQueue(t, work) {
+		// A proposed member of a batch still needs its triage: the batch
+		// cannot start until every member is approved.
+		if body.Status != "proposed" || (gen.WorkLeftQueue(t, work) && !gen.Batched(t, work)) {
 			continue
 		}
 		command := fmt.Sprintf("tiller approve %s %s", noun, queueAddr(work))

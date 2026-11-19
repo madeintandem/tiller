@@ -51,6 +51,9 @@ func recoverShelfReview(tree *store.Tree, deps Deps, actor store.Contributor, in
 		case statusDone, statusCancelled:
 			return result, recoveryRefusal("node_terminal", "", "a "+work.Status+" node has no review left to record")
 		}
+		if batch := liveBatchOf(tree, live); batch != nil {
+			return result, recoveryRefusal("batched_by_live_work", batch.ID, "the batch's own merge closes this node; take it out with tiller batch --remove before recovering a review of its own")
+		}
 		if workNodeCarried(tree, live) {
 			return result, recoveryRefusal("carried_by_live_work", work.ResolvedBy, "the carrier's own merge closes this node; clear it with tiller resolve --clear before recovering a review of its own")
 		}

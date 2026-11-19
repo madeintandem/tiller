@@ -1,6 +1,6 @@
 # Tiller commands
 
-Every command Tiller v1.0.6 exposes (schema 16, orientation generation 63, eleven embedded
+Every command Tiller v1.0.6 exposes (schema 16, orientation generation 64, eleven embedded
 skills), with stubs where an id, key, or text goes. When this page and
 `tiller <command> --help` disagree, the binary wins.
 
@@ -15,8 +15,9 @@ skills), with stubs where an id, key, or text goes. When this page and
 | [`tiller archive`](#the-done-crossing-and-rollups) | Move a done epic to archived. |
 | [`tiller attest`](#acceptance-and-gates) | Record a human attestation for a gate or a criterion. |
 | [`tiller cancel`](#the-done-crossing-and-rollups) | Terminate a node or an open question. |
+| [`tiller batch`](#batches) | Add members to a batch of bugs, chores, or tweaks, or remove them. |
 | [`tiller check`](#execute-the-task-loop) | Run and record a node's gates, or check project readiness. |
-| [`tiller claim`](#ownership) | Reserve a task, bug, chore, or tweak before it starts. |
+| [`tiller claim`](#ownership) | Reserve a task, bug, chore, tweak, or batch before it starts. |
 | [`tiller compact`](#compact) | Fold old event files into immutable day segments. |
 | [`tiller completion`](#help-and-shell-completion) | Generate the shell completion script. |
 | [`tiller configure`](#configure) | Record the review grain at the project, epic, or feature home. |
@@ -69,7 +70,11 @@ skills), with stubs where an id, key, or text goes. When this page and
   key (`bugs/blank-on-reload`, `chores/update-readme`, `tweaks/button-text`), or by the bare local segment
   (`blank-on-reload`), since the noun already names the shelf. A shelf key is one local segment;
   the `bugs/`, `chores/`, or `tweaks/` prefix is implied wherever you write one.
-- Work-node nouns are `epic`, `feature`, `task`, `question`, `amendment`, `bug`, `chore`, and `tweak`.
+- `<batch>` is one shared review of several shelf nodes, addressed by id (`BT-5x2k8m`), by the canonical
+  key (`batches/core-model-fixes`), or by the bare local segment. A batch `<member>` is a bug, chore, or
+  tweak named by id or by shelf key (`bugs/blank-on-reload`), never by a bare segment, since a batch
+  mixes shelves.
+- Work-node nouns are `epic`, `feature`, `task`, `question`, `amendment`, `bug`, `chore`, `tweak`, and `batch`.
   `design` on link, unlink, and approve addresses `<doc>` relative to `.tiller/design/`, not a node
   id or lifecycle. There is no effort or sequencing noun. `<amendment>` is a key or minted id
   (`form-engine-rework` or `A-d6w3f9`). `bugs`, `chores`, and `tweaks` cannot be epic keys.
@@ -508,9 +513,9 @@ start permanently fixes ownership. Resume, checking, review, cancellation, and c
 reset that boundary. All terminal ownership is immutable, even cancellation before start.
 
 ```sh
-tiller claim <task|bug|chore|tweak> <node> [--from <holder-id>]
-tiller release <task|bug|chore|tweak> <node>
-tiller reassign <task|bug|chore|tweak> <node> --to <contributor-id> --reason "<why>"
+tiller claim <task|bug|chore|tweak|batch> <node> [--from <holder-id>]
+tiller release <task|bug|chore|tweak|batch> <node>
+tiller reassign <task|bug|chore|tweak|batch> <node> --to <contributor-id> --reason "<why>"
 tiller transfer <task|bug|chore|tweak> <node> --to <contributor-id> --reason "<why>"
 tiller remove contributor <contributor-id>
 ```
@@ -831,7 +836,9 @@ records that review with `tiller submit <bug|chore|tweak> <node> --recover-merge
 warning stops and the next `sync` crosses the node. `sync` reads the 200 most recent commits that
 change something outside `.tiller/` and `artifacts/tiller/`, so a commit that only records Tiller
 state never raises the warning, and it matches each id as a whole word in the subject or body. A
-carried node is left to its carrier. The readout shows the same finding under Needs attention
+carried node is left to its carrier, and a batch member to its batch, which is reported in the
+member's place when a merged commit names the batch or any member while the batch is still `ready`,
+`in_progress`, or `check`. The readout shows the same finding under Needs attention
 until the node is submitted, done, or cancelled.
 
 ## Bugs, chores, and tweaks
@@ -893,6 +900,78 @@ its required `--resolution` and `sync` (The done crossing above), `rename`, `unl
 triage as `approve_bug`, `approve_chore`, and `approve_tweak`, plus stale carrier pointers as
 `carrier_cancelled`. There is no `merge_bug`, `merge_chore`, or `merge_tweak`. Optional review gates accept
 `attest bug|chore|tweak --gate`; criterion attestation and every `eval` form remain feature/task-only.
+
+## Batches
+
+A batch puts several bugs, chores, or tweaks under one review: one claim, one branch
+(`tiller/batches/<key>`), one set of gates, one pull request, and one merge. Use it when the
+instruction is "fix these n bugs under one PR". It lives at `.tiller/batches/<key>/batch.yml` with a
+`BT-` id and no prose file, because its members' contracts are its contract.
+
+```sh
+tiller add batch <key> --title "<title>" <member> <member> [<member>]...
+                                                             # two or more members, mixed shelves allowed;
+                                                             # lands ready, unowned, with no approval
+tiller batch <batch> --add <member> [--add <member>]...      # add members; ready, in_progress, or check
+tiller batch <batch> --remove <member>                       # remove one; it returns to its own queue
+tiller claim batch <batch>                                   # one claim for the whole batch
+tiller start batch <batch>                                   # ready -> in_progress; records the branch;
+                                                             # refuses while a member is not approved
+tiller check batch <batch>                                   # the gates one shelf node runs, once
+tiller submit batch <batch> [--pr <number>]                  # check -> in_review; the one PR or review ref
+tiller resume batch <batch> --reason "<what changed>"        # in_review -> in_progress, same branch and PR
+tiller cancel batch <batch> --reason "<why>"                 # human: releases every member, cancels none
+tiller show batch <batch>                                    # status, branch, PR, and every member
+tiller status batch <batch>
+tiller ls batches [--status <state>] [--owner <id>]
+tiller sync [--accept-fast-forward <batch>]                  # crosses the batch and every member
+```
+
+A member keeps its stored status and reads the derived phase `batched`, which `show`, `status`, and
+`ls` print beside it together with the batch's status, branch, and PR. The batch owns the work, so
+`claim`, `reassign`, `start`, `check`, `submit`, `resume`, and `resolve --by` on a member refuse with
+`work_batched`, naming the batch and the command to run there. `approve` and `grade` still act on
+the member. `return` does until the batch starts. `cancel` on a member takes it out of the batch.
+
+`add batch` refuses a node that is `done` or `cancelled`, has started its own work, rides a live
+carrier, holds a recovered review, is in another live batch, or is claimed by another contributor,
+and it refuses fewer than two members. It may take `proposed` members, but `start batch` refuses,
+naming the member, until each is approved. Membership changes refuse while the batch is `in_review`
+until `resume batch`. A change after `check` stales the batch's gates, so `check batch` runs again
+before `submit`. Removing a member warns that commits already made for it on the batch branch are
+yours to revert. A batch that loses its last member is cancelled.
+
+`add batch` and `batch` write each member's own state file (its `batch` pointer), and that file must
+be committed on the batch branch with the batch record and the events: first right after
+`git checkout -b tiller/batches/<key>`, then after every membership change. `check batch` and
+`submit batch` refuse `batch_state_uncommitted`, listing the paths, until they are. If a batch still
+merges without them, `sync` does not cross it: it prints `Warning: merged into <branch> but not
+crossed`, leaves the batch `in_review`, and names the repair, `tiller cancel batch <batch> --reason
+"<why>"` and then `submit <bug|chore|tweak> <node> --recover-merged` for each member that merged.
+
+After the human merges the batch branch, one `tiller sync` records the batch `done` on the basis it
+observed and every member `done` with `done_basis: batched`:
+
+```
+Sync: recorded 4 done crossing(s):
+  - batch batches/core-model-fixes (BT-5x2k8m) -> done
+  - bug bugs/stale-total (B-4m8t2c) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
+  - bug bugs/blank-on-reload (B-7k2p9x) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
+  - bug bugs/lost-draft (B-9w3h5d) -> done (batched: batches/core-model-fixes (BT-5x2k8m))
+```
+
+The batch is listed first, then its members in id order within each shelf, the order every shelf
+crossing takes.
+
+`add batch` and `batch` sit in the delegation class of `resolve`: a human runs them, or an agent
+does on an explicit instruction that names the members and asks for one review. A batch has no
+`--recover-merged`: when its fixes merged with nothing recorded, cancel the batch and recover each
+member with its own `submit <bug|chore|tweak> <node> --recover-merged`. `tiller queue` lists a
+batch's optional review gates under the batch (`attest batch <batch> --gate <name>`), and
+`tiller next` and the readout list the batch as one row, never its members; a ready batch with a
+member still proposed is not listed until that member is approved. `tiller search` finds a batch by
+id, key, or title, and `tiller query --from <batch> --follow batches` lists its members
+(`--follow batched_in` from a member names its batch).
 
 ## Amend (a reshape of the plan)
 

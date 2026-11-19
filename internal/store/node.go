@@ -18,6 +18,9 @@ const (
 	NounBug   = "bug"
 	NounChore = "chore"
 	NounTweak = "tweak"
+	// NounBatch is one shared review of several shelf nodes. It carries the
+	// shelf lifecycle from ready onward and is not itself a shelf noun.
+	NounBatch = "batch"
 )
 
 // Node is the common read view over any addressable artifact, so the resolver

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/views"
 	"github.com/spf13/cobra"
@@ -28,6 +29,7 @@ var pluralNouns = map[string]string{
 	"bugs":       store.NounBug,
 	"chores":     store.NounChore,
 	"tweaks":     store.NounTweak,
+	"batches":    store.NounBatch,
 }
 
 // resolveListNoun resolves the noun ls was given to its canonical singular node
@@ -59,10 +61,11 @@ func newLsCmd() *cobra.Command {
 		Use:   "ls <noun> [flags]",
 		Short: "List nodes of a noun, optionally filtered.",
 		Long: "ls lists the nodes of a noun (epics, features, tasks, questions,\n" +
-			"amendments, bugs, chores, tweaks), in either the plural or the singular\n" +
+			"amendments, bugs, chores, tweaks, batches), in either the plural or the singular\n" +
 			"form, narrowed by --status, --owner, --contributor, or a parent. Epics,\n" +
 			"features, and tasks are listed in dependency order, key order breaking\n" +
 			"ties; bugs, chores, and tweaks in their shelf's order; questions by id;\n" +
+			"batches by key;\n" +
 			"amendments by status, then key. The same tree always lists in the same order.",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -82,7 +85,7 @@ func runLs(cmd *cobra.Command, nounArg string, f lsFilters) error {
 	if !ok {
 		return emitFailure(cmd, "ls", &usageError{
 			reason: "unknown_noun",
-			msg:    fmt.Sprintf("unknown noun %q (want one of epic(s), feature(s), task(s), question(s), amendment(s), bug(s), chore(s), tweak(s))", nounArg),
+			msg:    fmt.Sprintf("unknown noun %q (want one of epic(s), feature(s), task(s), question(s), amendment(s), bug(s), chore(s), tweak(s), batch(es))", nounArg),
 		})
 	}
 	tree, err := loadTree(cmd)
@@ -164,9 +167,22 @@ func renderListHuman(r ListResult, f lsFilters) string {
 		// the last one. Question rows always arrive with gen.QuestionTitle's
 		// result in Title; this renderer never re-derives a statement fallback.
 		lines = append(lines, strings.TrimRight(
-			fmt.Sprintf("%-10s %s%s", it.Status, col(it.Ref, label), it.Title), " "))
+			fmt.Sprintf("%-10s %s%s%s", it.Status, col(it.Ref, label), it.Title, batchListNote(it)), " "))
 	}
 	return strings.Join(lines, "\n")
+}
+
+// batchListNote marks the two rows a batch changes the reading of: a member,
+// whose stored status is not the whole story while its batch reviews it, and a
+// batch, which is as large as its member count.
+func batchListNote(it ListItem) string {
+	switch {
+	case it.Activity == gen.ActivityBatched:
+		return fmt.Sprintf(" (batched: %s)", it.Batch)
+	case it.Members > 0:
+		return fmt.Sprintf(" (%d members)", it.Members)
+	}
+	return ""
 }
 
 // labelColumn is the width of the reference column: this list's own widest

@@ -79,6 +79,9 @@ type Crossing struct {
 	// the crossing rests on the recovery record: ancestry, content, or
 	// human_attested names what that record's result showed.
 	Evidence string
+	// Batch is set on a batched shelf crossing: the batch whose merge crossed
+	// the node.
+	Batch string
 	// EvalContractMismatch is set on a feature crossing whose completion
 	// record pins an integration eval blob other than the one accepted_against
 	// names. It is advisory: the crossing still happens and nothing new is
@@ -185,6 +188,9 @@ type SyncResult struct {
 	// branch name while they have no recorded submission. Nothing was recorded
 	// for them; they are named so the merge is not met with silence.
 	UnrecordedMerges []UnrecordedMerge
+	// MemberlessBatches carries each batch whose merge was observed while no
+	// shelf node on the integration tree points at it. It was not crossed.
+	MemberlessBatches []MemberlessBatch
 }
 
 // Reopening is one rollup-backed node sync returned to work: a done feature that
@@ -493,7 +499,7 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 	// The shelf pass runs last, so a carried bug or chore reads the carrier
 	// status the two passes above just wrote rather than the one this run
 	// started with (docs/spec/cli-surface.md).
-	workCrossings, workAwaiting, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested, recoveredShelf)
+	workCrossings, workAwaiting, memberless, err := syncWorkItems(tree, deps, owner, rev, tip, cache, attested, recoveredShelf)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -519,7 +525,8 @@ func Sync(tree *store.Tree, deps Deps, rev vcs.Revisions, in SyncInput) (SyncRes
 		Attested:   named,
 		ChecksDue:  due,
 
-		UnrecordedMerges: unrecorded,
+		UnrecordedMerges:  unrecorded,
+		MemberlessBatches: memberless,
 	}, nil
 }
 
@@ -839,7 +846,9 @@ type mergeObs struct {
 //	task:    ancestry, content, or human_attested (syncTasks)
 //	feature: rollup or human_attested (featureBasis)
 //	epic:    rollup (crossEpicDone)
-//	bug, chore: ancestry, content, human_attested, or carried (syncWorkItems)
+//	bug, chore, tweak: ancestry, content, human_attested, carried, recovered,
+//	                   or batched (syncWorkItems)
+//	batch:   ancestry, content, or human_attested (syncWorkItems)
 const (
 	basisAncestry      = "ancestry"
 	basisContent       = "content"
@@ -849,6 +858,8 @@ const (
 	// landed (docs/spec/cli-surface.md); sync
 	// writes it and nothing else does.
 	basisCarried = "carried"
+	// basisBatched is a shelf node crossed on its batch's merge.
+	basisBatched = "batched"
 )
 
 // observeMerge answers whether into carries branch's work, and it has exactly one
@@ -1150,13 +1161,25 @@ func attestedObservations(tree *store.Tree, rev vcs.Revisions, ids []string, int
 			}
 		} else if w, ok := tree.WorkNode(id); ok {
 			_, isRecovered := recoveredShelf[id]
-			branch, noun, key, would = observationWorkBranch(tree.Manifest, w), w.Noun(), deref(w.NodeKey()), (w.NodeStatus() == "in_review" || isRecovered) && !workNodeCarried(tree, w)
+			// A batch member has no merge of its own to assert: the assertion
+			// belongs on the batch.
+			branch, noun, key, would = observationWorkBranch(tree.Manifest, w), w.Noun(), deref(w.NodeKey()), (w.NodeStatus() == "in_review" || isRecovered) && !workNodeCarried(tree, w) && liveBatchOf(tree, w) == nil
+		} else if b := tree.Batches[id]; b != nil {
+			branch, noun, key, would = observationWorkBranch(tree.Manifest, b), store.NounBatch, deref(b.Key), b.Status == "in_review"
 		} else {
-			reviewed := append([]string{store.NounTask, store.NounFeature, store.NounEpic}, store.ShelfNouns()...)
+			reviewed := append([]string{store.NounTask, store.NounFeature, store.NounEpic}, append(store.ShelfNouns(), store.NounBatch)...)
 			return nil, nil, &usageError{reason: "unknown_node",
 				msg: fmt.Sprintf("--accept-fast-forward names %s, which is not a %s in this project", id, englishList("or", reviewed...))}
 		}
 		named = append(named, id)
+		if w, ok := tree.WorkNode(id); ok {
+			if batch := liveBatchOf(tree, w); batch != nil {
+				n := notEligible(noun, id, key, "", AttestReasonBatchMember)
+				n.Batch = batch.ID
+				ineligible = append(ineligible, n)
+				continue
+			}
+		}
 		if !would {
 			ineligible = append(ineligible, notEligible(noun, id, key, branch, AttestReasonNothingToCross))
 			continue

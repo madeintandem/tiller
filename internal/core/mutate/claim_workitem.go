@@ -11,10 +11,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Shelf claims reserve one execution unit and never cascade.
+// Shelf claims reserve one execution unit and never cascade. A batch is one
+// execution unit too: it takes the claim, and its members take none.
 
 func resolveWorkRef(tree *store.Tree, noun, ref string) (store.WorkNode, error) {
-	if !store.IsWorkNoun(noun) {
+	if !store.IsWorkNoun(noun) && noun != store.NounBatch {
 		return nil, notShelfNoun(noun)
 	}
 	n, err := resolve.NewResolver(tree).Resolve(resolve.Ref{Noun: noun, Raw: ref})
@@ -61,6 +62,9 @@ func ClaimWork(tree *store.Tree, deps Deps, noun, ref, from string) (ClaimResult
 	w := doc.Body()
 	key := deref(w.Key)
 	prior := w.Owner
+	if err := guardBatchOwnership(tree, treeNode, owner.ID, "claim"); err != nil {
+		return ClaimResult{}, err
+	}
 	takeover := false
 	if prior != owner.ID {
 		if err := guardOwnerMutable(noun, w.ID, key, w.Status, w.Started, prior); err != nil {
@@ -172,6 +176,9 @@ func ReassignWork(tree *store.Tree, deps Deps, noun, ref, to, reason string) (Re
 	key := deref(w.Key)
 	prior := w.Owner
 	if err := guardOwnerMutable(noun, w.ID, key, w.Status, w.Started, prior); err != nil {
+		return ReassignResult{}, err
+	}
+	if err := guardBatchOwnership(tree, treeNode, target.ID, "reassign"); err != nil {
 		return ReassignResult{}, err
 	}
 	w.Owner = target.ID
