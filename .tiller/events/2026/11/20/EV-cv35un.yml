@@ -1,0 +1,11 @@
+id: EV-cv35un
+type: migrate.schema
+at: 2026-11-20T16:42:35.33559Z
+contributor: jc
+command: upgrade --project-only
+before:
+    schema_version: 15
+after:
+    schema_version: 16
+files:
+    - path: .tiller/tiller.yml
