@@ -1,0 +1,14 @@
+id: EV-fe3j1p
+type: sync.tweak
+at: 2026-11-20T16:34:39.600659Z
+contributor: jc
+command: sync tweak TW-5u3b5y
+targets:
+    - TW-5u3b5y
+before:
+    status: in_review
+after:
+    basis: ancestry
+    status: done
+files:
+    - path: .tiller/tweaks/console-shows-shelf-batches/tweak.yml
