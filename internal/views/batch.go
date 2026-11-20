@@ -19,6 +19,10 @@ type BatchRefView struct {
 	Branch    string         `json:"branch,omitempty"`
 	PR        *int           `json:"pr,omitempty"`
 	ReviewRef *ReviewRefView `json:"review_ref,omitempty"`
+	// BranchURL and PRURL are the branch's and the PR's pages on a GitHub
+	// origin. Serve fills them for the console; the CLI never emits them.
+	BranchURL string `json:"branch_url,omitempty"`
+	PRURL     string `json:"pr_url,omitempty"`
 
 	// Ref is the batch's human reference, for the plain-text renderers only.
 	Ref string `json:"-"`

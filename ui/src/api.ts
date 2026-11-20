@@ -451,6 +451,34 @@ export interface RecoveredReviewView {
   }[];
 }
 
+// The batch a bug, chore, or tweak names (views.BatchRefView): the batch's
+// identity and status, and the branch and review it records for every member.
+// It stays on a member the batch crossed to done. branch_url and pr_url are
+// serve-filled from a GitHub origin only.
+export interface BatchRefView {
+  id: string;
+  key?: string;
+  title?: string;
+  status: string;
+  owner?: string;
+  branch?: string;
+  pr?: number;
+  review_ref?: ReviewRefView;
+  branch_url?: string;
+  pr_url?: string;
+}
+
+// One member as its batch lists it (views.BatchMemberView), with the status
+// the member itself stores.
+export interface BatchMemberView {
+  noun: string;
+  id: string;
+  key?: string;
+  title?: string;
+  status: string;
+  severity?: Severity;
+}
+
 // The full-node payload of show and the node page (views.NodeView): one stable
 // shape across every noun, fields that do not apply omitted. A question's
 // answer is a Go *string under omitempty, so it is absent until answered and a
@@ -468,10 +496,15 @@ export interface NodeView {
   // (lib/displayStatus); absent for every other noun and from the CLI's show.
   column?: string;
   // activity is the node's derived phase: a feature's rollup phase
-  // (awaiting_check / awaiting_sync) or an epic's active/idle working status
-  // (views.activity, matching the status oracle); absent for a task, a
-  // question, and for a feature or epic with no phase.
+  // (awaiting_check / awaiting_sync), an epic's active/idle working status,
+  // or a shelf node's (batched, carried, recovered; views.activity, matching
+  // the status oracle); absent for a task, a question, and for a node with
+  // no phase.
   activity?: string;
+  // batch is the batch reviewing a bug, chore, or tweak; members is a batch's
+  // own member list. Each is absent on every other noun.
+  batch?: BatchRefView;
+  members?: BatchMemberView[];
   blocked?: boolean;
   owner?: string;
   owner_name?: string;
@@ -631,6 +664,9 @@ export interface RelatedNode {
   ref: string;
   status: string;
   column?: string; // an epic's or a feature's board column (lib/displayStatus)
+  // A bug's, chore's, or tweak's derived phase; "batched" draws as the row's
+  // state while a live batch reviews it (lib/displayStatus).
+  activity?: string;
   title?: string;
   statement?: string;
   amendment_hold?: AmendmentHoldView;
@@ -1202,6 +1238,9 @@ export function fetchBuild(): Promise<BuildBoard> {
 export interface WorkItemCard extends ListRow {
   noun: "bug" | "chore" | "tweak";
   ref: string;
+  // The id of the batch reviewing this item, or the one it crossed in
+  // (views.ListItem.Batch).
+  batch?: string;
   attached_to?: string;
   attached?: RelatedNode;
   attachment_ids?: string[];
@@ -1213,9 +1252,24 @@ export interface WorkItemCard extends ListRow {
   superseded_by?: string;
 }
 
+// One batch as the Fix board draws it (views.BatchCard): the list row (title,
+// status, owner, member count, highest member severity) and its members.
+export interface BatchCard extends ListRow {
+  noun: "batch";
+  ref: string;
+  // The member count (views.ListItem.Members); member_list is the members.
+  members?: number;
+  added_at?: string;
+  added_event?: string;
+  member_list: BatchMemberView[];
+}
+
+// batches is every batch, live or not, in key order. The board draws a live
+// one as a card, and a member's card names its batch through this list.
 export interface WorkItemsBoard {
   open: WorkItemCard[];
   closed: WorkItemCard[];
+  batches: BatchCard[];
   attachments: RelatedNode[];
 }
 
@@ -1599,6 +1653,9 @@ export interface SearchNodeResult {
   title: string;
   status: string;
   column?: string; // an epic's or a feature's board column (lib/displayStatus)
+  // A shelf node's derived phase, "batched" while a live batch reviews it
+  // (lib/displayStatus); set by the console's search endpoint only.
+  activity?: string;
   ref: string;
   match: SearchMatch;
   count: number;

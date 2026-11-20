@@ -43,13 +43,14 @@ function routes(drift: DriftReportView): Record<string, unknown> {
     "/api/ls?noun=bug": emptyList("bug"),
     "/api/ls?noun=chore": emptyList("chore"),
     "/api/ls?noun=tweak": emptyList("tweak"),
+    "/api/ls?noun=batch": emptyList("batch"),
     "/api/recap/peek": { since: "2026-07-24T00:00:00Z", reader: "jc", total: 0, asks: 0 },
     "/api/recap?window=24h": { since: "", window: "24h", reader: "jc", total: 0, groups: [] },
     "/api/board": { contributors: [] },
     "/api/next": { reader: "jc", caught_up: true, candidates: [] },
     "/api/drift": drift,
     "/api/execution": { observations: [], diagnostics: [] },
-    "/api/work-items": { open: [], closed: [], attachments: [] },
+    "/api/work-items": { open: [], closed: [], batches: [], attachments: [] },
   };
 }
 

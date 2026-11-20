@@ -4,7 +4,8 @@ package serve
 // "Explore"): GET /api/search?q=<query>, the same keyword scan `tiller
 // search` runs and the same payload shape its --json Data carries, so the two
 // surfaces answer identically, except that an epic or feature hit here also
-// carries its board column (gen.BoardColumnByID). It rides the shared api()
+// carries its board column (gen.BoardColumnByID) and a shelf hit its derived
+// phase (gen.WorkActivity). It rides the shared api()
 // wrapper like every other read endpoint: the query parameter is the only
 // thing it reads off the request, plus the optional kind filter and limit,
 // and search.Search does the rest over the freshly loaded tree.
@@ -43,6 +44,9 @@ func SearchHandler(root string) http.HandlerFunc {
 		}
 		for i, node := range res.Nodes {
 			res.Nodes[i].Column = gen.BoardColumnByID(t, node.Noun, node.ID)
+			if w, ok := store.AsWorkNode(gen.NodeByID(t, node.ID)); ok {
+				res.Nodes[i].Activity = gen.WorkActivity(t, w)
+			}
 		}
 		return res, nil
 	})

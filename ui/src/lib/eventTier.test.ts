@@ -38,6 +38,14 @@ describe("eventTier", () => {
       "owner.remove",
       "add.feature",
       "add.task",
+      // A batch's upkeep: it being opened or claimed, its membership edited,
+      // and a member joining or leaving.
+      "add.batch",
+      "claim.batch",
+      "edit.batch",
+      "batch.bug",
+      "batch.chore",
+      "batch.tweak",
     ]) {
       expect(eventTier(type, false), type).toBe("bookkeeping");
     }
@@ -54,6 +62,10 @@ describe("eventTier", () => {
       "amendment_opened",
       "superseded",
       "approve.amendment",
+      "start.batch",
+      "submit.batch",
+      "sync.batch",
+      "cancel.batch",
     ]) {
       expect(eventTier(type, false), type).toBe("milestone");
     }

@@ -306,6 +306,49 @@
   text-decoration-style: solid;
 }
 
+/* A batch card's members: one compact row each, the member's noun chip, its
+   title as a link in the card's own quiet link register, and its stored
+   status in words when it is anything but ready. */
+.work-items-page .work-item-batch-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  margin: 0;
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--hair);
+  list-style: none;
+}
+
+.work-items-page .work-item-batch-members li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.work-items-page .work-item-batch-members a {
+  min-width: 0;
+  color: var(--ink-2);
+  text-decoration: underline dotted var(--hair);
+  text-underline-offset: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.work-items-page .work-item-batch-members a:hover {
+  color: var(--heading);
+  text-decoration-style: solid;
+}
+
+.work-items-page .work-item-batch-member-status {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .work-items-page .work-item-card-chips {
   display: flex;
   flex-wrap: wrap;

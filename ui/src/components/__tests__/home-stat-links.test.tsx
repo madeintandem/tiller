@@ -52,6 +52,7 @@ function table(extra: Record<string, unknown> = {}): Record<string, unknown> {
     "/api/ls?noun=bug": list("bug", []),
     "/api/ls?noun=chore": list("chore", []),
     "/api/ls?noun=tweak": list("tweak", []),
+    "/api/ls?noun=batch": list("batch", []),
     "/api/recap/peek": { since: "2026-07-24T00:00:00Z", reader: "jc", total: 0, asks: 0 },
     "/api/recap?window=24h": { since: "", window: "24h", reader: "jc", total: 0, groups: [] },
     "/api/board": { contributors: [] },

@@ -31,7 +31,7 @@ function card(noun: WorkItemCard["noun"], id: string, title: string, status: str
 const board: WorkItemsBoard = {
   open: [card("bug", "B-1", "Zulu", "ready"), card("bug", "B-2", "Alpha", "proposed"), card("chore", "CH-1", "Mike", "ready")],
   closed: [],
-  attachments: [],
+  batches: [], attachments: [],
 };
 
 function routes() {

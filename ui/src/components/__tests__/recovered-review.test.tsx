@@ -133,3 +133,40 @@ describe("leads with what matters", () => {
     expect(text).not.toMatch(/[a-z]+_[a-z_]+/);
   });
 });
+
+// A bug, chore, or tweak recovers with no riding tasks, no branch, and no
+// policy snapshot (tweaks/shelf-merged-review-recovery). The panel must not
+// draw an empty riders list, a dangling separator, or a heading over nothing.
+describe("a recovered shelf review", () => {
+  const shelf: RecoveredReviewView = { ...recovery, pr: undefined, branch: "", tasks: [], policy_snapshots: [] };
+
+  it("draws no riders heading or list when no task rode the review", () => {
+    render(<RecoveredReview record={shelf} />);
+    const panel = screen.getByRole("region", { name: /recovered historical review/i });
+    expect(within(panel).queryByText("Historical riding tasks")).toBeNull();
+    expect(panel.querySelectorAll("ul")).toHaveLength(0);
+  });
+
+  it("names the review ref alone when no branch was recorded", () => {
+    render(<RecoveredReview record={shelf} />);
+    const line = screen.getByText(/Local review ref/);
+    expect(line.textContent).toBe("Local review ref");
+  });
+
+  it("keeps the PR and drops only the blank branch", () => {
+    render(<RecoveredReview record={{ ...shelf, pr: 13 }} />);
+    expect(screen.getByText(/Caller-supplied PR #13/).textContent).toBe("Caller-supplied PR #13");
+  });
+
+  it("draws no policy heading over an empty snapshot list", () => {
+    render(<RecoveredReview record={shelf} />);
+    expect(screen.queryByText(/Historical policy/)).toBeNull();
+  });
+
+  it("still lists riders, branch, and policy when a feature's record has them", () => {
+    render(<MemoryRouter><RecoveredReview record={{ ...recovery, tasks: [{ id: "T-1", path: "task.yml", state: "in_review" }] }} /></MemoryRouter>);
+    expect(screen.getByText("Historical riding tasks")).toBeInTheDocument();
+    expect(screen.getByText("tiller/reviews/features/review")).toBeInTheDocument();
+    expect(screen.getByText(/Historical policy/)).toBeInTheDocument();
+  });
+});

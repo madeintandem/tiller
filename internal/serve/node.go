@@ -433,6 +433,14 @@ func fillGitHubLinks(n *views.NodeView, repo string) {
 		// would need per-segment escaping here, which no writer produces yet.
 		n.BranchURL = repo + "/tree/" + n.Branch
 	}
+	if n.Batch != nil {
+		if n.Batch.PR != nil {
+			n.Batch.PRURL = prURL(repo, *n.Batch.PR)
+		}
+		if n.Batch.Branch != "" {
+			n.Batch.BranchURL = repo + "/tree/" + n.Batch.Branch
+		}
+	}
 	if n.AcceptedAgainst != nil {
 		n.AcceptedAgainst.CommitURL = commitURL(repo, n.AcceptedAgainst.Commit)
 	}

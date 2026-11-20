@@ -12,11 +12,11 @@ import SeverityChip from "../../components/SeverityChip";
 import SectionHead from "../../components/SectionHead";
 import { displayStatus } from "../../lib/displayStatus";
 import { has } from "../../lib/has";
-import { kindLabel } from "../../lib/kind";
+import { kindLabel, kindPlural } from "../../lib/kind";
 
 // The kinds a result can have, in the API's order (search.Kinds).
 export const SEARCH_KINDS = [
-  "epic", "feature", "task", "bug", "chore", "tweak", "question", "amendment", "document",
+  "epic", "feature", "task", "bug", "chore", "tweak", "batch", "question", "amendment", "document",
 ];
 
 // How many rows one kind's section shows on the All tab before pointing at
@@ -28,10 +28,6 @@ const ROW_CAP = 25;
 // matching line, with the row's total on its head line. A kind tab is where
 // the reader reads, so its rows carry every line the API kept.
 const COMPACT_HITS = 1;
-
-export function kindPlural(kind: string): string {
-  return `${kindLabel(kind)}s`;
-}
 
 // An exact match is a lookup the reader made on purpose: the query was the
 // node's id, reference, or key.

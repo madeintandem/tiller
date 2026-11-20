@@ -45,7 +45,7 @@ function fixBoard(title: string): WorkItemsBoard {
   return {
     open: [{ noun: "bug", id: "B-1", key: "bugs/one", title, status: "ready", ref: "bugs/one (B-1)" }],
     closed: [],
-    attachments: [],
+    batches: [], attachments: [],
   };
 }
 

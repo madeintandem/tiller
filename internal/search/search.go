@@ -126,6 +126,9 @@ type NodeResult struct {
 	// console's search endpoint (serve.SearchHandler); the CLI's search
 	// leaves it empty.
 	Column string `json:"column,omitempty"`
+	// Activity is a bug's, chore's, or tweak's derived phase, such as batched,
+	// set only by the console's search endpoint like Column.
+	Activity string `json:"activity,omitempty"`
 	// Severity is a bug's triage grade; empty for unrated bugs and other nouns.
 	Severity string `json:"severity,omitempty"`
 	Ref      string `json:"ref"`

@@ -31,6 +31,10 @@ export const KNOWN_BOOKKEEPING_VERBS: ReadonlySet<string> = new Set([
   "owner",
   // add is bookkeeping for every noun except question, handled in eventTier.
   "add",
+  // A batch's membership edit, and batch.<noun>, a member joining or leaving:
+  // upkeep around the batch, never ranked above its start, submit, or sync.
+  "edit",
+  "batch",
 ]);
 
 export const KNOWN_MILESTONE_VERBS: ReadonlySet<string> = new Set([

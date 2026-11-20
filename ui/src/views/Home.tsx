@@ -45,6 +45,7 @@ import ExecutionSources from "../components/ExecutionSources";
 import NodeTabs from "../components/NodeTabs";
 import OutOfDate from "../components/OutOfDate";
 import PageLoading from "../components/PageLoading";
+import { ProseInline } from "../components/Prose";
 import RecapSignal from "../components/RecapSignal";
 import RecoveredReview from "../components/RecoveredReview";
 import SectionHead from "../components/SectionHead";
@@ -99,6 +100,9 @@ export default function Home({ summary, summaryError }: HomeProps) {
   const bugs = useFetch<ListResult>(listPath("bug"), arrival);
   const chores = useFetch<ListResult>(listPath("chore"), arrival);
   const tweaks = useFetch<ListResult>(listPath("tweak"), arrival);
+  // A batch is the unit that carries a shared review, so an in-review one is
+  // read here to be named while it waits on the merge (AllClearSlot).
+  const batches = useFetch<ListResult>(listPath("batch"), arrival);
   const drift = useFetch<DriftReportView>(driftPath, arrival);
 
   // The pulse's three reads. recapPath("24h") is a FIXED window - never
@@ -131,6 +135,7 @@ export default function Home({ summary, summaryError }: HomeProps) {
     { noun: "bug", state: bugs },
     { noun: "chore", state: chores },
     { noun: "tweak", state: tweaks },
+    { noun: "batch", state: batches },
   ];
   // Riding tasks show by title; the task list is already read for the desk.
   const taskTitles = titlesOf(tasks.data?.nodes ?? []);
@@ -190,12 +195,21 @@ export default function Home({ summary, summaryError }: HomeProps) {
   // stops being true, so they moved off the desk into their own tab (JC,
   // 2026-10-21: a done feature's recovery was the biggest thing on Home). The
   // tab exists only while there is a record to show; its count warns when any
-  // record still leaves riders pending or acceptance unresolved. Records come
-  // from the epic and feature lists alone: no next move carries one.
-  const recoveryOwners = recoveredOwners(features.data?.nodes ?? [], epics.data?.nodes ?? []);
+  // record still leaves riders pending or acceptance unresolved, or while a
+  // recovered bug, chore, or tweak still awaits the sync that crosses it.
+  // Records come from the epic, feature, and shelf lists: no next move
+  // carries one.
+  const recoveryOwners = [
+    ...recoveredOwners(features.data?.nodes ?? [], epics.data?.nodes ?? []),
+    ...recoveredShelfOwners([
+      { noun: "bug", rows: bugs.data?.nodes ?? [] },
+      { noun: "chore", rows: chores.data?.nodes ?? [] },
+      { noun: "tweak", rows: tweaks.data?.nodes ?? [] },
+    ]),
+  ];
   const recoveryCount = recoveryOwners.length;
-  const recoveryUnsettled = recoveryOwners.some(({ row }) => row.recovered_crossings_pending === true ||
-    row.current_acceptance?.acceptance_ready === false);
+  const recoveryUnsettled = recoveryOwners.some((owner) => owner.row.recovered_crossings_pending === true ||
+    owner.row.current_acceptance?.acceptance_ready === false || awaitsSync(owner));
 
   // Drift is a tab here, not a page of its own (R4, replacing the old /drift
   // address, which now forwards). It renders from the same /api/drift read the
@@ -324,8 +338,8 @@ interface NounList {
 }
 
 // AllClearSlot is the needs-you column's empty-queue branch, and the gate the
-// all-clear claim must pass: the claim is only rendered once all six lists
-// have actually loaded. A failed list replaces it with an honest error
+// all-clear claim must pass: the claim is only rendered once every list has
+// actually loaded. A failed list replaces it with an honest error
 // surface naming what could not be read (a failed shelf list, even one still
 // showing its last answer, is precisely where an in_review item could be
 // hiding); a still-pending list holds the slot at loading rather than
@@ -353,8 +367,9 @@ function AllClearSlot({ whoseMove, lists }: { whoseMove: WhoseMoveCounts; lists:
   return <AllClear whoseMove={whoseMove} inReview={inReviewItems(lists)} titles={titlesOf(lists.find((l) => l.noun === "task")?.state.data?.nodes ?? [])} />;
 }
 
-// inReviewItems enumerates every node across all six noun lists
-// sitting at in_review. This backs the all-clear rule: an in-review node's
+// inReviewItems enumerates every node across the noun lists sitting at
+// in_review. A batch is one of them: its members keep their stored status, so
+// the batch's own row is the one that says a shared review waits on a merge. This backs the all-clear rule: an in-review node's
 // next_owner reads "agent" (resume/sync are the legal Tiller verbs from
 // there), but the human's own PR review and merge is very much still
 // outstanding, so it must be named rather than folded into "nothing needs
@@ -408,6 +423,19 @@ function recoveredOwners(features: ListRow[], epics: ListRow[]): RecoveryOwner[]
   ];
 }
 
+// A recovered bug, chore, or tweak owns its record alone: nothing rides it.
+function recoveredShelfOwners(shelves: Array<{ noun: string; rows: ListRow[] }>): RecoveryOwner[] {
+  return shelves.flatMap(({ noun, rows }) =>
+    rows.filter((row) => row.recovered_review !== undefined).map((row) => ({ noun, row })));
+}
+
+const SHELF_NOUNS: ReadonlySet<string> = new Set(["bug", "chore", "tweak"]);
+
+// A recovered shelf node stays at its stored status until sync crosses it.
+function awaitsSync({ noun, row }: RecoveryOwner): boolean {
+  return SHELF_NOUNS.has(noun) && row.status !== "done" && row.status !== "cancelled";
+}
+
 // Terminal reviews remain visible even when no next move names them.
 // Current acceptance comes from the observed list projection, not gate inference.
 function RecoveredReviews({ owners, features, titles }: {
@@ -429,6 +457,11 @@ function RecoveredReviews({ owners, features, titles }: {
           historicalViolations={row.historical_violations}
           crossingViolations={row.crossing_violations}
         />
+        {awaitsSync({ noun, row }) && (
+          <p className="muted">
+            <ProseInline markdown="Recorded, and not yet crossed. The next `tiller sync` records it done." />
+          </p>
+        )}
         {noun === "epic" && recoveredEpicFeatures(row, features).map((feature) => (
           <section key={feature.id}>
             <TitleRef node={{ noun: "feature", id: feature.id, ref: feature.ref }} title={feature.title} addr={addrOf(feature)} />

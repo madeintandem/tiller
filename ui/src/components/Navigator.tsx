@@ -340,7 +340,7 @@ function ShelfBranch({
             aria-current={isSelected(selected, noun, row) ? "page" : undefined}
             className={rowClass("explore-shelf-node", row.status, isSelected(selected, noun, row) && "current")}
           >
-            <StateGlyph status={row.status} />
+            <StateGlyph status={displayStatus(row)} />
             <span title={rowTitle(row.title, row.key)}>{row.title ?? row.key ?? row.id}</span>
           </Link>
         ))}

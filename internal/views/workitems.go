@@ -12,9 +12,25 @@ import (
 )
 
 type WorkItemsBoard struct {
-	Open        []WorkItemCard `json:"open"`
-	Closed      []WorkItemCard `json:"closed"`
-	Attachments []RelatedNode  `json:"attachments"`
+	Open   []WorkItemCard `json:"open"`
+	Closed []WorkItemCard `json:"closed"`
+	// Batches is every batch in key order, live or not, each with its
+	// members. The board draws a live one as a card in its own status column,
+	// and a member's card names its batch through this list.
+	Batches     []BatchCard   `json:"batches"`
+	Attachments []RelatedNode `json:"attachments"`
+}
+
+// BatchCard is one batch as the Fix board draws it: the list row (title,
+// status, owner, member count, highest member severity) and the members
+// themselves, each with the status it stores.
+type BatchCard struct {
+	ListItem
+	Noun       string            `json:"noun"`
+	Ref        string            `json:"ref"`
+	AddedAt    string            `json:"added_at,omitempty"`
+	AddedEvent string            `json:"added_event,omitempty"`
+	MemberList []BatchMemberView `json:"member_list"`
 }
 
 type WorkItemCard struct {
@@ -40,18 +56,29 @@ func WorkItemsBoardOf(tree *store.Tree, evs []events.Event) WorkItemsBoard {
 	board := WorkItemsBoard{
 		Open:        []WorkItemCard{},
 		Closed:      []WorkItemCard{},
+		Batches:     []BatchCard{},
 		Attachments: []RelatedNode{},
 	}
 	stamps := terminalStamps(evs)
 	added := addStamps(evs)
+	for _, batch := range tree.BatchesInOrder() {
+		card := BatchCard{
+			ListItem: Item(tree, batch), Noun: store.NounBatch, Ref: gen.Ref(tree, batch),
+			MemberList: batchMembersOf(tree, batch),
+		}
+		if stamp, ok := added[terminalStampKey(store.NounBatch, batch.ID)]; ok {
+			card.AddedAt = addedAtOf(stamp)
+			card.AddedEvent = stamp.EventID
+		}
+		board.Batches = append(board.Batches, card)
+	}
 	cards := make([]WorkItemCard, 0, len(tree.Bugs)+len(tree.Chores)+len(tree.Tweaks))
 
 	for _, noun := range store.ShelfNouns() {
 		for _, work := range orderedShelfNodes(tree, noun) {
 			card := workItemCardOf(tree, work)
 			if stamp, ok := added[terminalStampKey(card.Noun, card.ID)]; ok {
-				// Fixed-width UTC keeps string sorting chronological down to nanoseconds.
-				card.AddedAt = stamp.At.UTC().Format("2006-01-02T15:04:05.000000000Z")
+				card.AddedAt = addedAtOf(stamp)
 				card.AddedEvent = stamp.EventID
 			}
 			cards = append(cards, card)
@@ -82,6 +109,12 @@ func WorkItemsBoardOf(tree *store.Tree, evs []events.Event) WorkItemsBoard {
 	})
 	board.Attachments = attachmentOptions(tree, cards)
 	return board
+}
+
+// addedAtOf formats an add stamp. Fixed-width UTC keeps string sorting
+// chronological down to nanoseconds.
+func addedAtOf(stamp terminalStamp) string {
+	return stamp.At.UTC().Format("2006-01-02T15:04:05.000000000Z")
 }
 
 func AttachedWorkOf(tree *store.Tree, targetID string) []RelatedNode {
@@ -230,7 +263,8 @@ func terminalStamps(evs []events.Event) map[string]terminalStamp {
 	return stamps
 }
 
-// addStamps maps each shelf item to the add event that created it. A transfer
+// addStamps maps each shelf item, and each batch, to the add event that
+// created it. A transfer
 // carries the original's stamp to its replacement, so a replacement keeps the
 // date the work was first reported. Events sort first so a transfer always
 // sees its original's add.
@@ -238,7 +272,7 @@ func addStamps(evs []events.Event) map[string]terminalStamp {
 	relevant := make([]events.Event, 0, len(evs))
 	for _, event := range evs {
 		verb, noun, ok := strings.Cut(event.Type, ".")
-		if ok && (verb == "add" || verb == "transfer") && slices.Contains(store.ShelfNouns(), noun) {
+		if ok && (verb == "add" || verb == "transfer") && runsShelfLifecycle(noun) {
 			relevant = append(relevant, event)
 		}
 	}

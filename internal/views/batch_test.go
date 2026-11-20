@@ -1,8 +1,11 @@
 package views_test
 
 import (
+	"encoding/json"
 	"testing"
+	"time"
 
+	"github.com/madeintandem/tiller/internal/core/events"
 	"github.com/madeintandem/tiller/internal/gen"
 	"github.com/madeintandem/tiller/internal/store"
 	"github.com/madeintandem/tiller/internal/views"
@@ -171,4 +174,68 @@ func TestCollectListsBatches(t *testing.T) {
 	nodes := views.Collect(tree, store.NounBatch)
 	require.Len(t, nodes, 1)
 	require.True(t, views.Matches(tree, nodes[0], views.ListFilters{Status: "unfinished"}))
+}
+
+// The Fix board draws a batch as one card listing its members, so the board
+// carries every batch with its member rows, in key order, and each member's
+// own card still names the batch by id.
+func TestWorkItemsBoardCarriesBatchesWithTheirMembers(t *testing.T) {
+	tree := batchTree()
+	doneKey := "batches/done"
+	tree.Batches["BT-bbbbbb"] = &store.Batch{WorkItem: store.WorkItem{ID: "BT-bbbbbb", Key: &doneKey, Title: "Done fixes", Status: "done"}}
+	evs := []events.Event{{ID: "EV-add", Type: "add.batch", At: time.Date(2026, 11, 19, 9, 0, 0, 0, time.UTC), Targets: []string{"BT-aaaaaa"}}}
+
+	board := views.WorkItemsBoardOf(tree, evs)
+
+	require.Len(t, board.Batches, 2)
+	core := board.Batches[0]
+	require.Equal(t, "BT-aaaaaa", core.ID)
+	require.Equal(t, store.NounBatch, core.Noun)
+	require.Equal(t, "batches/core (BT-aaaaaa)", core.Ref)
+	require.Equal(t, "Core fixes", core.Title)
+	require.Equal(t, "ready", core.Status)
+	require.Equal(t, "jc", core.Owner)
+	require.Equal(t, "important", core.Severity, "a batch shows its highest member severity")
+	require.Equal(t, 2, core.Members)
+	require.Equal(t, "EV-add", core.AddedEvent)
+	require.NotEmpty(t, core.AddedAt)
+	require.Len(t, core.MemberList, 2)
+	require.Equal(t, "B-aaaaaa", core.MemberList[0].ID)
+	require.Equal(t, "ready", core.MemberList[0].Status)
+	require.Equal(t, "proposed", core.MemberList[1].Status)
+	require.Equal(t, "BT-bbbbbb", board.Batches[1].ID)
+	require.Empty(t, board.Batches[1].MemberList)
+
+	raw, err := json.Marshal(views.WorkItemsBoardOf(&store.Tree{}, nil))
+	require.NoError(t, err)
+	require.Contains(t, string(raw), `"batches":[]`, "the board's batch list is always an array")
+}
+
+// History and Just happened name an event's target by its title, and a batch
+// has one.
+func TestRecapTargetCarriesABatchTitle(t *testing.T) {
+	at := time.Date(2026, 11, 19, 9, 0, 0, 0, time.UTC)
+	evs := []events.Event{{ID: "EV-add", Type: "add.batch", At: at, Contributor: "jc", Targets: []string{"BT-aaaaaa"}}}
+
+	recap := views.RecapOf(batchTree(), evs, at.Add(-time.Hour), "24h", "jc")
+
+	require.Len(t, recap.Groups, 1)
+	target := recap.Groups[0].Entries[0].Targets[0]
+	require.Equal(t, store.NounBatch, target.Noun)
+	require.Equal(t, "Core fixes", target.Title)
+}
+
+// A related row, such as a feature's Fix tab, draws a member with the phase
+// its batch gives it, so it never reads as work waiting to start.
+func TestRelatedRowCarriesTheBatchedPhase(t *testing.T) {
+	tree := batchTree()
+	tree.Bugs["B-aaaaaa"].AttachedTo = "F-aaaaaa"
+	tree.Bugs["B-bbbbbb"].AttachedTo = "F-aaaaaa"
+
+	rows := views.AttachedWorkOf(tree, "F-aaaaaa")
+
+	require.Len(t, rows, 2)
+	byID := map[string]views.RelatedNode{rows[0].ID: rows[0], rows[1].ID: rows[1]}
+	require.Equal(t, gen.ActivityBatched, byID["B-aaaaaa"].Activity)
+	require.Empty(t, byID["B-bbbbbb"].Activity)
 }

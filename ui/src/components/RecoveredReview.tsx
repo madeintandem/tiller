@@ -15,6 +15,8 @@ function prLabel(record: RecoveredReviewView) {
 }
 
 // Historical provenance is not current approval or a host observation.
+// A bug, chore, or tweak recovers with no riding tasks, no branch, and no
+// policy snapshot, so each of those draws only when the record has it.
 // The body leads with the reason, the PR, and the riding tasks; the recorded
 // head, integration result, basis, and policy snapshots sit in a closed
 // Details disclosure (native <details>, so its open state is not stored).
@@ -35,15 +37,17 @@ export default function RecoveredReview({ record, titles, acceptanceReady, outst
     <section className="abox warn" aria-label="Recovered historical review">
       <span className="kind">Recovered historical review</span>
       <p>Recorded by {record.recovered_by} <Time iso={record.recovered_at} />: {record.reason}</p>
-      <p>{prLabel(record)} · <span className="mono">{record.branch}</span></p>
-      <div>
-        <span className="kind">Historical riding tasks</span>
-        <ul>{record.tasks.map((task) => (
-          <li key={task.id}>
-            <TitleRef node={{ noun: "task", id: task.id, ref: task.id }} title={titles?.get(task.id)} addr={task.id} />
-          </li>
-        ))}</ul>
-      </div>
+      <p>{prLabel(record)}{record.branch !== "" && <> · <span className="mono">{record.branch}</span></>}</p>
+      {record.tasks.length > 0 && (
+        <div>
+          <span className="kind">Historical riding tasks</span>
+          <ul>{record.tasks.map((task) => (
+            <li key={task.id}>
+              <TitleRef node={{ noun: "task", id: task.id, ref: task.id }} title={titles?.get(task.id)} addr={task.id} />
+            </li>
+          ))}</ul>
+        </div>
+      )}
       <details className="recovered-fold">
         <summary>Details</summary>
         <p>Historical head: <code>{record.head}</code></p>
@@ -53,10 +57,14 @@ export default function RecoveredReview({ record, titles, acceptanceReady, outst
           : crossingsPending === false
             ? "; containment was not an observed merge; historical riders have crossed and need no further fast-forward assertion"
             : "; containment at recovery was not an observed merge; only still-pending historical riders need a human fast-forward assertion")}</p>
-        <ul>{record.tasks.map((task) => (
-          <li key={task.id}>{titles?.get(task.id) ?? task.id} · <span className="mono">{task.path}</span> · submitted state <code>{task.state}</code></li>
-        ))}</ul>
-        <span className="kind">Historical policy · recorded state, not a new check run</span>
+        {record.tasks.length > 0 && (
+          <ul>{record.tasks.map((task) => (
+            <li key={task.id}>{titles?.get(task.id) ?? task.id} · <span className="mono">{task.path}</span> · submitted state <code>{task.state}</code></li>
+          ))}</ul>
+        )}
+        {record.policy_snapshots.length > 0 && (
+          <span className="kind">Historical policy · recorded state, not a new check run</span>
+        )}
         {record.policy_snapshots.map((snapshot) => (
           <div key={`${snapshot.node_id ?? "manifest"}:${snapshot.path}:${snapshot.source}`}>
             <p>{snapshot.node_id ?? "Manifest"} · <code>{snapshot.source}</code> · {snapshot.path}</p>

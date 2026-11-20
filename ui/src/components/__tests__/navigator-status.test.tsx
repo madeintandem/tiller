@@ -51,7 +51,7 @@ const bugs = shelf("bug", [
   { id: "B-cancelled", ref: "B-cancelled", title: "Duplicate of reload", status: "cancelled" },
 ]);
 
-function renderNavigator() {
+function renderNavigator(shelfBugs: ListResult = bugs) {
   // Every branch open, so each tier's rows are on screen without clicking.
   const expansion = new Map([
     ["E-a", true],
@@ -63,7 +63,7 @@ function renderNavigator() {
       <Navigator
         tree={loaded(tree)}
         questions={loaded(shelf("question", []))}
-        bugs={loaded(bugs)}
+        bugs={loaded(shelfBugs)}
         chores={loaded(shelf("chore", []))}
         tweaks={loaded(shelf("tweak", []))}
         summary={loaded({} as ProjectSummary)}
@@ -83,6 +83,18 @@ function rowOf(title: string): HTMLElement {
 }
 
 describe("Navigator: status glyphs", () => {
+  // A member of a live batch stores ready; its glyph must say batched, by
+  // shape, so the shelf never shows it as work waiting to start.
+  it("draws a batched shelf row with the batched glyph, not the ready one", () => {
+    renderNavigator(shelf("bug", [
+      ...bugs.nodes,
+      { id: "B-batched", ref: "B-batched", title: "Stale total", status: "ready", activity: "batched" },
+    ]));
+    const glyph = within(rowOf("Stale total")).getByRole("img", { name: "Batched" });
+    expect(glyph).toHaveAttribute("data-shape", "batched");
+    expect(within(rowOf("Blank on reload")).getByRole("img", { name: "Ready" })).toHaveAttribute("data-shape", "ready");
+  });
+
   it("draws a named status glyph on every tier and shelf row", () => {
     renderNavigator();
     expect(within(rowOf("Checkout")).getByRole("img", { name: "Active" })).toBeInTheDocument();

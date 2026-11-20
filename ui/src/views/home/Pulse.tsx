@@ -279,9 +279,12 @@ function ActiveRow({ item, grouped }: { item: StreamItem; grouped: boolean }) {
 
 // A shelf noun (bug, chore, tweak) self-labels with a small noun chip so it reads as
 // such at a glance beside the epic/feature/task rows around it, which carry
-// no chip at all.
+// no chip at all. A batch, the unit several of them are reviewed as, does the
+// same: its members are not listed, so the chip is what says the row is one.
+const CHIP_NOUNS: ReadonlySet<string> = new Set(["bug", "chore", "tweak", "batch"]);
+
 function NounChip({ noun }: { noun: string }) {
-  if (noun !== "bug" && noun !== "chore" && noun !== "tweak") return null;
+  if (!CHIP_NOUNS.has(noun)) return null;
   return <span className="noun-chip mono">{noun}</span>;
 }
 

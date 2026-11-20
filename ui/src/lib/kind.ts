@@ -11,6 +11,7 @@ const KIND_LABEL: ReadonlyMap<string, string> = new Map([
   ["bug", "Bug"],
   ["chore", "Chore"],
   ["tweak", "Tweak"],
+  ["batch", "Batch"],
   ["question", "Question"],
   ["amendment", "Amendment"],
 ]);
@@ -21,4 +22,12 @@ export function kindLabel(noun: string): string {
     return known;
   }
   return noun.charAt(0).toUpperCase() + noun.slice(1);
+}
+
+// kindPlural is the heading for several of one kind (a search section, a
+// filter tab). Adding an s is right for every noun but the ones listed here.
+const KIND_PLURAL: ReadonlyMap<string, string> = new Map([["batch", "Batches"]]);
+
+export function kindPlural(noun: string): string {
+  return KIND_PLURAL.get(noun) ?? `${kindLabel(noun)}s`;
 }

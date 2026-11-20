@@ -60,7 +60,7 @@ const board: WorkItemsBoard = {
     closed_at: `2026-08-29T${String(20 - index).padStart(2, "0")}:00:00Z`,
     attachment_ids: ["E-1", "F-1"],
   })),
-  attachments: [attachment],
+  batches: [], attachments: [attachment],
 };
 
 afterEach(() => {
@@ -129,7 +129,7 @@ describe("Fix board empty columns", () => {
   });
 
   it("keeps every lane full width when the whole board is empty", async () => {
-    const { container } = renderWorkItems({ open: [], closed: [], attachments: [] }, "/fix");
+    const { container } = renderWorkItems({ open: [], closed: [], batches: [], attachments: [] }, "/fix");
     await waitFor(() => expect(container.querySelectorAll(".board-heads h2")).toHaveLength(6));
     expect(container.querySelectorAll('[data-collapsed="true"]')).toHaveLength(0);
   });
@@ -277,7 +277,7 @@ describe("Fix board", () => {
     renderWorkItems({
       ...board,
       open: [...board.open, { noun: "chore", id: "CH-t", ref: "CH-t", title: "Tasked", status: "ready", attachment_ids: ["T-9"] }],
-      attachments: [attachment, task],
+      batches: [], attachments: [attachment, task],
     }, "/fix?attached=F-1");
     expect(await screen.findByText("Zulu")).toBeInTheDocument();
     expect(screen.queryByText("Tasked")).not.toBeInTheDocument();
@@ -307,7 +307,7 @@ describe("Fix board", () => {
       open: [{ noun: "bug", id: "B-new", ref: "B-new", title: "Replacement", status: "ready", owner: "sam", supersedes: ["B-old"] }],
       closed: [{ noun: "bug", id: "B-old", ref: "B-old", title: "Original", status: "cancelled", owner: "pat",
         resolution: "transferred", superseded_by: "B-new", closed_at: "2026-09-19T12:00:00Z" }],
-      attachments: [],
+      batches: [], attachments: [],
     }, "/fix");
     const original = (await screen.findByRole("link", { name: "Original" })).closest("article") as HTMLElement;
     const replacement = screen.getByRole("link", { name: "Replacement" }).closest("article") as HTMLElement;
@@ -481,5 +481,93 @@ describe("Fix card words and times (browser walk of batches A to C)", () => {
     expect(time).toHaveAttribute("dateTime", iso);
     expect(time).toHaveAttribute("title", formatAbsolute(iso));
     expect(time.textContent).toBe(formatAdded(iso, new Date()));
+  });
+});
+
+// A batch reviews several bugs, chores, and tweaks on one branch and one PR
+// (tweaks/console-shows-shelf-batches). The board draws it as one card in its
+// own status column, and a member is never listed as work waiting to start.
+describe("Fix board batches", () => {
+  const batched: WorkItemsBoard = {
+    open: [
+      { noun: "bug", id: "B-w", key: "bugs/blank", title: "Blank on reload", status: "ready", activity: "batched", batch: "BT-wip", severity: "blocker", ref: "bugs/blank (B-w)" },
+      { noun: "chore", id: "CH-w", key: "chores/flags", title: "Drop old flags", status: "ready", activity: "batched", batch: "BT-wip", ref: "chores/flags (CH-w)" },
+      { noun: "tweak", id: "TW-p", key: "tweaks/gutter", title: "Widen the gutter", status: "proposed", activity: "batched", batch: "BT-ready", ref: "tweaks/gutter (TW-p)" },
+      { noun: "bug", id: "B-r", key: "bugs/stale", title: "Stale total", status: "ready", activity: "batched", batch: "BT-ready", severity: "minor", ref: "bugs/stale (B-r)" },
+      { noun: "bug", id: "B-solo", key: "bugs/solo", title: "Solo bug", status: "ready", severity: "minor", ref: "bugs/solo (B-solo)" },
+    ],
+    closed: [
+      { noun: "bug", id: "B-d", key: "bugs/typo", title: "Footer typo", status: "done", batch: "BT-done", ref: "bugs/typo (B-d)" },
+    ],
+    batches: [
+      { noun: "batch", id: "BT-done", key: "batches/polish", title: "Footer polish", status: "done", members: 1, ref: "batches/polish (BT-done)",
+        member_list: [{ noun: "bug", id: "B-d", title: "Footer typo", status: "done" }] },
+      { noun: "batch", id: "BT-ready", key: "batches/totals", title: "Totals fixes", status: "ready", members: 2, severity: "minor", ref: "batches/totals (BT-ready)",
+        member_list: [
+          { noun: "bug", id: "B-r", key: "bugs/stale", title: "Stale total", status: "ready", severity: "minor" },
+          { noun: "tweak", id: "TW-p", key: "tweaks/gutter", title: "Widen the gutter", status: "proposed" },
+        ] },
+      { noun: "batch", id: "BT-wip", key: "batches/reload", title: "Reload fixes", status: "in_progress", owner: "robin",
+        members: 2, severity: "blocker", ref: "batches/reload (BT-wip)",
+        member_list: [
+          { noun: "bug", id: "B-w", key: "bugs/blank", title: "Blank on reload", status: "ready", severity: "blocker" },
+          { noun: "chore", id: "CH-w", key: "chores/flags", title: "Drop old flags", status: "ready" },
+        ] },
+    ],
+    attachments: [],
+  };
+
+  it("draws a live batch as one card with its title, owner, member count, and highest severity", async () => {
+    renderWorkItems(batched, "/fix");
+    const lane = await screen.findByRole("region", { name: "In progress" });
+    const card = within(lane).getByRole("article");
+    expect(within(card).getByText("batch")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Reload fixes" })).toHaveAttribute("href", "/node/batch/BT-wip");
+    expect(within(card).getByText(/Owner:/)).toHaveTextContent("Owner: robin");
+    expect(within(card).getByText("2 members")).toBeInTheDocument();
+    expect(within(card).getByText("Blocker")).toBeInTheDocument();
+  });
+
+  it("lists each member inside its batch's card, with a link to it", async () => {
+    renderWorkItems(batched, "/fix");
+    const lane = await screen.findByRole("region", { name: "In progress" });
+    const members = within(lane).getByRole("list", { name: "Members of Reload fixes" });
+    expect(within(members).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(members).getByRole("link", { name: "Blank on reload" })).toHaveAttribute("href", "/node/bug/B-w");
+    expect(within(members).getByRole("link", { name: "Drop old flags" })).toHaveAttribute("href", "/node/chore/CH-w");
+  });
+
+  it("does not list a batched member in Ready as work waiting to start", async () => {
+    renderWorkItems(batched, "/fix");
+    const ready = await screen.findByRole("region", { name: "Ready" });
+    const cards = within(ready).getAllByRole("article");
+    expect(cards).toHaveLength(2);
+    expect(within(cards[0]).getByRole("link", { name: "Totals fixes" })).toBeInTheDocument();
+    expect(within(cards[1]).getByRole("link", { name: "Solo bug" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Blank on reload" })).toHaveLength(1);
+  });
+
+  it("keeps a proposed member in Proposed, naming its batch, and says so in the batch's card", async () => {
+    renderWorkItems(batched, "/fix");
+    const proposed = await screen.findByRole("region", { name: "Proposed" });
+    const card = within(proposed).getByRole("article");
+    expect(within(card).getByRole("link", { name: "Widen the gutter" })).toBeInTheDocument();
+    expect(within(card).getByText(/In batch/)).toHaveTextContent("In batch Totals fixes");
+    expect(within(card).getByRole("link", { name: "Totals fixes" })).toHaveAttribute("href", "/node/batch/BT-ready");
+    const members = screen.getByRole("list", { name: "Members of Totals fixes" });
+    expect(within(members).getByText("Proposed")).toBeInTheDocument();
+  });
+
+  it("names the batch a closed member crossed in, and draws no card for the done batch", async () => {
+    renderWorkItems(batched, "/fix");
+    const closed = await screen.findByRole("region", { name: "Closed" });
+    const card = within(closed).getByRole("article");
+    expect(within(card).getByText(/In batch/)).toHaveTextContent("In batch Footer polish");
+    expect(within(card).getByRole("link", { name: "Footer polish" })).toHaveAttribute("href", "/node/batch/BT-done");
+  });
+
+  it("counts members as open work and names the batches in the summary", async () => {
+    renderWorkItems(batched, "/fix");
+    expect(await screen.findByText(/5 open: 3 bugs, 1 chore, 1 tweak\. 2 batches\./)).toBeInTheDocument();
   });
 });

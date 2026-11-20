@@ -1,5 +1,6 @@
-import type { NodeStatus, Severity, WorkItemCard, WorkItemsBoard } from "../../api";
+import type { BatchCard, NodeStatus, Severity, WorkItemCard, WorkItemsBoard } from "../../api";
 import { ROW_CAP } from "../../lib/disclosure";
+import { BATCHED, displayStatus } from "../../lib/displayStatus";
 
 export type ShelfNounFilter = string;
 const SHELF_NOUNS = ["bug", "chore", "tweak"] as const;
@@ -114,17 +115,32 @@ export function workItemMatchesFilters(item: WorkItemCard, filters: WorkItemFilt
     && matchesSeverity(item, filters.severity);
 }
 
+// A live batch as the board draws it: one card standing for its members.
+// folded is the members drawn inside it and nowhere else, the ready ones that
+// pass the board's filters. A proposed member keeps its own card in Proposed.
+export interface BatchEntry extends BatchCard {
+  folded: WorkItemCard[];
+}
+
+// One card in a column: a bug, chore, or tweak, or a batch of them.
+export type FixCard = WorkItemCard | BatchEntry;
+
+export function isBatchEntry(card: FixCard): card is BatchEntry {
+  return card.noun === "batch";
+}
+
 const UNRATED_RANK = SEVERITY_ORDER.length;
 
-function severityRank(item: WorkItemCard): number {
-  if (item.noun !== "bug" || item.severity === undefined) return UNRATED_RANK;
+// A batch carries its highest member severity, so it ranks with the bugs.
+function severityRank(item: FixCard): number {
+  if ((item.noun !== "bug" && item.noun !== "batch") || item.severity === undefined) return UNRATED_RANK;
   const rank = SEVERITY_ORDER.indexOf(item.severity);
   return rank < 0 ? UNRATED_RANK : rank;
 }
 
 // Pure and stable: equal keys keep input (server) order. "added" is newest
 // first, ties broken by the higher EV id, items with no added_at last.
-export function sortWorkItems(items: WorkItemCard[], sort: FixSort): WorkItemCard[] {
+export function sortWorkItems<T extends FixCard>(items: T[], sort: FixSort): T[] {
   if (sort === "shelf") return items;
   const sorted = [...items];
   if (sort === "severity") return sorted.sort((a, b) => severityRank(a) - severityRank(b));
@@ -139,14 +155,34 @@ export function sortWorkItems(items: WorkItemCard[], sort: FixSort): WorkItemCar
   });
 }
 
+const isLive = (batch: BatchCard) => batch.status !== "done" && batch.status !== "cancelled";
+
+// The live batches as cards. With no narrowing filter every one shows; under
+// one, a batch shows while a member passes it.
+function batchEntries(board: WorkItemsBoard, open: WorkItemCard[], filters: WorkItemFilters): BatchEntry[] {
+  const narrowed = narrowsOpenWork(filters);
+  return board.batches.filter(isLive).flatMap((batch) => {
+    const members = open.filter((item) => item.batch === batch.id);
+    if (narrowed && members.length === 0) return [];
+    return [{ ...batch, folded: members.filter((item) => displayStatus(item) === BATCHED) }];
+  });
+}
+
+// A batch is the unit its members' work shows as: it takes one card in its
+// own status column, ahead of the column's bugs, chores, and tweaks, and its
+// ready members are drawn inside it instead of in Ready.
 export function workItemColumns(
   board: WorkItemsBoard,
   filters: WorkItemFilters,
-): Record<ShelfColumnKey, WorkItemCard[]> {
+): Record<ShelfColumnKey, FixCard[]> {
   const open = board.open.filter((item) => workItemMatchesFilters(item, filters));
   const closed = board.closed.filter((item) => workItemMatchesFilters(item, filters));
+  const cards: FixCard[] = [
+    ...batchEntries(board, open, filters),
+    ...open.filter((item) => displayStatus(item) !== BATCHED),
+  ];
 
-  const column = (status: string) => sortWorkItems(open.filter((item) => item.status === status), filters.sort);
+  const column = (status: string) => sortWorkItems(cards.filter((card) => card.status === status), filters.sort);
 
   return {
     proposed: column("proposed"),
@@ -160,18 +196,29 @@ export function workItemColumns(
 
 export interface BoardScope {
   open: Record<"bug" | "chore" | "tweak", number>;
+  batches: number;
   closedShown: number;
 }
 
 // boardScope names what the Fix board shows: open work by noun across the
-// five open columns, and how many closed cards the Closed column displays.
-export function boardScope(columns: Record<ShelfColumnKey, WorkItemCard[]>): BoardScope {
+// five open columns, how many batches hold part of it, and how many closed
+// cards the Closed column displays. A member drawn inside its batch's card is
+// still open work, so it counts under its own noun.
+export function boardScope(columns: Record<ShelfColumnKey, FixCard[]>): BoardScope {
   const open = { bug: 0, chore: 0, tweak: 0 };
+  let batches = 0;
   for (const column of SHELF_COLUMNS) {
     if (column.key === "closed") continue;
-    for (const item of columns[column.key]) open[item.noun]++;
+    for (const card of columns[column.key]) {
+      if (!isBatchEntry(card)) {
+        open[card.noun]++;
+        continue;
+      }
+      batches++;
+      for (const member of card.folded) open[member.noun]++;
+    }
   }
-  return { open, closedShown: columns.closed.length };
+  return { open, batches, closedShown: columns.closed.length };
 }
 
 export function setWorkItemFilter(

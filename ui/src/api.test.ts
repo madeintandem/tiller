@@ -87,7 +87,7 @@ describe("isAttestGate", () => {
 
 it("fetches the work-items projection from its stable path", async () => {
   const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-    new Response(JSON.stringify({ open: [], closed: [], attachments: [] }), {
+    new Response(JSON.stringify({ open: [], closed: [], batches: [], attachments: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     }),

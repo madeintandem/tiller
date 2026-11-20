@@ -51,6 +51,17 @@ describe("StateGlyph", () => {
     expect(shapeOf("cancelled")).not.toBe(shapeOf("draft"));
   });
 
+  // A batched member is not waiting to start, so it must not wear the ready
+  // glyph or any other state's: the developer reads these by shape.
+  it("draws batched as a shape no other status uses", () => {
+    const others = ["draft", "specced", "ready", "active", "in_review", "done", "blocked", "cancelled"];
+    const batched = shapeOf("batched");
+    expect(batched).toBe("batched");
+    for (const status of others) expect(shapeOf(status), status).not.toBe(batched);
+    render(<StateGlyph status="batched" />);
+    expect(screen.getByRole("img", { name: "Batched" })).toBeInTheDocument();
+  });
+
   it("names the status label for assistive tech", () => {
     render(<StateGlyph status="in_review" />);
     const glyph = screen.getByRole("img", { name: "In review" });

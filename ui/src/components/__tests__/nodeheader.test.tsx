@@ -548,3 +548,115 @@ describe("Node header: the amendment hold chip", () => {
     expect(header(container).queryByText("In amendment")).toBeNull();
   });
 });
+
+// A batch reviews several bugs, chores, and tweaks on one branch and one PR
+// (tweaks/console-shows-shelf-batches). A member keeps its stored status while
+// the batch works, so its page reads batched and names the batch, and the
+// batch has a page of its own.
+describe("Node header: a batch member", () => {
+  const member: NodeView = {
+    noun: "bug", id: "B-jn41qb", key: "bugs/lost-draft", title: "Draft is lost on navigation",
+    status: "ready", activity: "batched", severity: "medium",
+    batch: {
+      id: "BT-2m4vfp", key: "batches/review-fixes", title: "Draft and linter fixes", status: "in_review", owner: "robin",
+      branch: "tiller/batches/review-fixes", pr: 14,
+      branch_url: "https://github.com/acme/app/tree/tiller/batches/review-fixes", pr_url: "https://github.com/acme/app/pull/14",
+    },
+  };
+
+  it("reads batched at the hero size, never its stored ready", () => {
+    const { container } = mount(<NodeDetail page={pageOf(member)} />);
+    const hero = container.querySelector(".kind-line .chip-hero");
+    expect(hero?.textContent).toBe("Batched");
+    expect(hero).toHaveAttribute("data-status", "batched");
+  });
+
+  it("names its batch with a link and the batch's own state", () => {
+    const { container } = mount(<NodeDetail page={pageOf(member)} />);
+    const value = factValue(container, "Batch");
+    expect(within(value).getByRole("link", { name: "Draft and linter fixes" })).toHaveAttribute("href", "/node/batch/BT-2m4vfp");
+    expect(within(value).getByText("In review")).toBeInTheDocument();
+  });
+
+  it("shows the batch's branch and PR, since the member records neither", () => {
+    const { container } = mount(<NodeDetail page={pageOf(member)} />);
+    expect(within(factValue(container, "Branch")).getByRole("link", { name: /tiller\/batches\/review-fixes/ }))
+      .toHaveAttribute("href", "https://github.com/acme/app/tree/tiller/batches/review-fixes");
+    expect(within(factValue(container, "PR")).getByRole("link", { name: /#14/ })).toHaveAttribute("href", "https://github.com/acme/app/pull/14");
+  });
+
+  it("reads a branch and PR with no page as plain text", () => {
+    const plain: NodeView = { ...member, batch: { ...member.batch!, branch_url: undefined, pr_url: undefined } };
+    const { container } = mount(<NodeDetail page={pageOf(plain)} />);
+    expect(factValue(container, "Branch").textContent).toBe("tiller/batches/review-fixes");
+    expect(factValue(container, "PR").textContent).toBe("#14");
+  });
+
+  it("keeps a proposed member proposed, and says it is in a batch", () => {
+    const proposed: NodeView = { ...member, status: "proposed" };
+    const { container } = mount(<NodeDetail page={pageOf(proposed)} />);
+    expect(container.querySelector(".kind-line .chip-hero")?.textContent).toBe("Proposed, in a batch");
+    expect(facts(container).getByText("Batch")).toBeInTheDocument();
+  });
+
+  it("keeps naming the batch once the member has crossed in it", () => {
+    const done: NodeView = { ...member, status: "done", activity: undefined, done_basis: "batched", batch: { ...member.batch!, status: "done" } };
+    const { container } = mount(<NodeDetail page={pageOf(done)} />);
+    expect(container.querySelector(".kind-line .chip-hero")?.textContent).toBe("Done");
+    expect(within(factValue(container, "Batch")).getByRole("link", { name: "Draft and linter fixes" })).toBeInTheDocument();
+  });
+});
+
+describe("Node page: a batch", () => {
+  const batch: NodeView = {
+    noun: "batch", id: "BT-2m4vfp", key: "batches/review-fixes", title: "Draft and linter fixes",
+    status: "in_review", owner: "robin", severity: "medium", branch: "tiller/batches/review-fixes", pr: 14,
+    gates: { tests: { required: true, status: "pass" } },
+    members: [
+      { noun: "bug", id: "B-jn41qb", key: "bugs/lost-draft", title: "Draft is lost on navigation", status: "ready", severity: "medium" },
+      { noun: "chore", id: "CH-kr1p3q", key: "chores/bump-linter", title: "Bump the linter", status: "ready" },
+      { noun: "tweak", id: "TW-cr4t1m", key: "tweaks/wider-gutter", title: "Widen the list gutter", status: "proposed" },
+    ],
+  };
+
+  it("names the noun, the state, the owner, the branch, the PR, and the highest member severity", () => {
+    const { container } = mount(<NodeDetail page={pageOf(batch)} />);
+    expect(header(container).getByText("Batch")).toHaveClass("kind-pill");
+    expect(container.querySelector(".kind-line .chip-hero")?.textContent).toBe("In review");
+    expect(factValue(container, "Owner").textContent).toBe("robin");
+    expect(factValue(container, "Highest severity").textContent).toBe("Medium");
+    expect(factValue(container, "Branch").textContent).toBe("tiller/batches/review-fixes");
+    expect(factValue(container, "PR").textContent).toBe("#14");
+  });
+
+  it("opens on its members, each with its noun, a link, its key, and its own status", () => {
+    mount(<NodeDetail page={pageOf(batch)} />);
+    expect(screen.getByRole("tab", { name: "Members · 3" })).toHaveAttribute("aria-selected", "true");
+    const list = screen.getByRole("list", { name: "Batch members" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows).toHaveLength(3);
+    expect(within(rows[0]).getByText("bug")).toBeInTheDocument();
+    expect(within(rows[0]).getByRole("link", { name: "Draft is lost on navigation" })).toHaveAttribute("href", "/node/bug/B-jn41qb");
+    expect(within(rows[0]).getByText("bugs/lost-draft")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("Ready")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("Medium")).toBeInTheDocument();
+    expect(within(rows[1]).getByRole("link", { name: "Bump the linter" })).toHaveAttribute("href", "/node/chore/CH-kr1p3q");
+    expect(within(rows[2]).getByText("Proposed")).toBeInTheDocument();
+  });
+
+  it("offers Gates and History tabs and no Spec tab, since a batch has no contract of its own", () => {
+    const history = [{ at: "2026-11-19T22:03:45Z", type: "add.batch", contributor: "robin", command: "add batch review-fixes" }];
+    mount(<NodeDetail page={pageOf(batch, { history })} />);
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    expect(tabs[0]).toBe("Members · 3");
+    expect(tabs).toContain("Gates");
+    expect(tabs.some((label) => label?.startsWith("History"))).toBe(true);
+    expect(tabs).not.toContain("Spec");
+    expect(header(screen.getByRole("article")).getByText("tests")).toBeInTheDocument();
+  });
+
+  it("omits the severity fact when no member carries one", () => {
+    const { container } = mount(<NodeDetail page={pageOf({ ...batch, severity: undefined })} />);
+    expect(facts(container).queryByText("Highest severity")).toBeNull();
+  });
+});

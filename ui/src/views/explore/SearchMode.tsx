@@ -20,7 +20,8 @@ import NodeTabs from "../../components/NodeTabs";
 import { useFetch } from "../../hooks";
 import { IN_PAGE_CHANGE, useArrivalKey } from "../../lib/useArrivalKey";
 import { readHideCancelled, writeHideCancelled } from "./hideCancelled";
-import { AllResults, KindResults, kindPlural, SEARCH_KINDS } from "./SearchResults";
+import { kindPlural } from "../../lib/kind";
+import { AllResults, KindResults, SEARCH_KINDS } from "./SearchResults";
 
 const ALL = "all";
 
